@@ -33,6 +33,7 @@ public enum WalletEntryType
 {
     MarketTransaction = 2,
     TransactionTax = 54,
+    BountyPrizes = 85,
 }
 
 public enum WalletAccountKey

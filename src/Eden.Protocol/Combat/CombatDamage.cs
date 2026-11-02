@@ -1,3 +1,5 @@
+using Eden.Protocol.Docking;
+
 namespace Eden.Protocol.Combat;
 
 public sealed record DamageVector(double Em, double Explosive, double Kinetic, double Thermal)
@@ -26,6 +28,18 @@ public sealed record DamageResult(HullDamage Remaining, double Applied);
 
 public static class CombatDamage
 {
+    public static double AngularVelocity(SpacePosition separation, SpacePosition relativeVelocity)
+    {
+        if (new[] { separation.X, separation.Y, separation.Z, relativeVelocity.X, relativeVelocity.Y, relativeVelocity.Z }.Any(v => !double.IsFinite(v)))
+        {
+            throw new ArgumentOutOfRangeException(nameof(separation));
+        }
+        double distance = separation.Length;
+        if (distance == 0) { return 0; }
+        double radial = relativeVelocity.Dot(separation.Unit);
+        return Math.Sqrt(Math.Max(0, relativeVelocity.Dot(relativeVelocity) - radial * radial)) / distance;
+    }
+
     // Tracking uses the catalog's signature reference. Player turrets use 40,000 m
     // in build 3662168; older NPC turrets retain their own reference and rad/s values.
     public static double HitChance(double distance, double angularVelocity, double targetSignature,
@@ -104,8 +118,14 @@ public static class CombatDefinitions
     public const double WreckingChance = 0.01;
     public const double WreckingMultiplier = 3;
     public const double HitQualityOffset = 0.49;
+    public const double GrazingDamageLimit = 0.625;
+    public const double LightDamageLimit = 0.75;
+    public const double StandardDamageLimit = 1;
+    public const double WellAimedDamageLimit = 1.25;
     public const double GunneryCycleReduction = 0.02;
     public const double RapidFiringCycleReduction = 0.04;
     public const double SurgicalStrikeDamageBonus = 0.03;
     public const double WeaponSkillBonus = 0.05;
+    public const int ConcordCorporation = 1000125;
+    public const long FirstBountyJournalId = 6_000_000_000_000;
 }

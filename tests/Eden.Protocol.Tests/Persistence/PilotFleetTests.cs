@@ -59,21 +59,21 @@ public sealed class PilotFleetTests
     {
         using Fixture f = new();
         var original = f.Pilot;
-        var starter = Assert.Single(f.Inventory.List(original.PilotId, original.StationId));
+        var starter = Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         f.Inventory.Move(original.PilotId, [starter.Id], original.StationId, original.ShipId, (int)InventoryFlag.Cargo, null);
         var stack = f.Buy(2);
         Assert.Throws<InvalidDataException>(() => f.Fleet.Assemble(original.PilotId, [stack.Id], new string('x', FleetDefinitions.MaximumShipNameLength + 1)));
         Assert.Throws<InvalidDataException>(() => f.Fleet.Assemble(original.PilotId, [stack.Id, long.MaxValue], null));
-        Assert.Equal(2, Assert.Single(f.Inventory.List(original.PilotId, original.StationId)).Quantity);
+        Assert.Equal(2, Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity);
         Assert.Single(f.Fleet.Ships(original.PilotId, original.StationId));
         var result = f.Fleet.Assemble(original.PilotId, [stack.Id], "Prospector");
         long first = Assert.Single(result.ShipIds);
         Assert.NotEqual(stack.Id, first);
-        Assert.Equal(1, Assert.Single(f.Inventory.List(original.PilotId, original.StationId)).Quantity);
+        Assert.Equal(1, Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity);
         Assert.Empty(f.Fleet.Assemble(original.PilotId, [first], "Ignored retry").Changes);
         long second = Assert.Single(f.Fleet.Assemble(original.PilotId, [stack.Id], null).ShipIds);
         Assert.Equal(stack.Id, second);
-        Assert.Empty(f.Inventory.List(original.PilotId, original.StationId));
+        Assert.DoesNotContain(f.Inventory.List(original.PilotId, original.StationId), i => i.CategoryId == (int)InventoryCategory.Ship);
         Assert.Equal(3, f.Fleet.Ships(original.PilotId, original.StationId).Count);
         var boarded = f.Fleet.Board(original.PilotId, first, original.ShipId);
         Assert.Equal((int)StarterShipType.Venture, boarded.ShipTypeId);
@@ -122,7 +122,7 @@ public sealed class PilotFleetTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        var cargo = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId));
+        var cargo = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         f.Inventory.Move(pilot.PilotId, [cargo.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null);
         var stack = f.Buy();
         using var scope = f.Db.Services.CreateScope();
@@ -150,7 +150,7 @@ public sealed class PilotFleetTests
         Assert.Equal(pilot.ShipName, previous[1]);
         Assert.Equal(pilot.SystemId, previous[2]);
         Assert.NotEmpty(BlueMarshal.Encode(state));
-        Assert.Equal(2, Assert.IsType<List<object?>>(Call("@hangar", "List")).Count);
+        Assert.Equal(3, Assert.IsType<List<object?>>(Call("@hangar", "List")).Count);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public sealed class PilotFleetTests
         var stack = f.Buy();
         long ship = Assert.Single(f.Fleet.Assemble(pilot.PilotId, [stack.Id], null).ShipIds);
         f.Fleet.Board(pilot.PilotId, ship, pilot.ShipId);
-        var starter = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId));
+        var starter = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Throws<InvalidDataException>(() => f.Inventory.Move(pilot.PilotId, [starter.Id], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, null));
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {

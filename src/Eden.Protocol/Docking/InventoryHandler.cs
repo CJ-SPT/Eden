@@ -6,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -184,7 +184,8 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     private BlueInstance PrimeModule(DockedPilot pilot, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = mining.ModuleAttributes(pilot.PilotId, module).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
+        var attributes = (module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun ? combat.ModuleAttributes(pilot.PilotId, module) :
+            mining.ModuleAttributes(pilot.PilotId, module)).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[(long)DogmaAttributeId.Damage] = 0d;
         Dictionary<long, object?> effects = [];
@@ -193,6 +194,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             effects[(long)DogmaEffect.Online] = new object?[] { module.Id, pilot.PilotId, pilot.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online, now, InventoryDefinitions.InfiniteEffectDuration, 0 };
         }
         if (miningEffects.ActiveEffect(pilot, module.Id) is { } active) { effects[(long)DogmaEffect.MiningLaser] = active; }
+        if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing) { effects[(long)DogmaEffect.CivilianWeapon] = firing; }
         return KeyVal(new()
         {
             ["itemID"] = module.Id,

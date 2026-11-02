@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 18 migrates to version 19 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 19 migrates to version 20 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -160,6 +160,8 @@ Fit an online **Civilian Miner** to the Ibis while docked, then visit a belt as 
 4. Warp to a station, dock, and drag the ore from Ibis cargo into **Item Hangar**. Compare the quantity and used cargo space before and after unloading. During automated input checks, select the stack and wait for its selection to appear before dragging.
 5. Restart the host and client. Check that the ore remains in its saved cargo or hangar location. A depleted asteroid should remain absent when returning to its belt.
 
+Mining results appear after collection, including a full cycle or the earned portion on manual stop. To inspect them, open **Neocom → Utilities → Log and Messages**. Its gear menu under **Combat Messages to Display** includes **Mining Messages**. Keep that enabled to see native mining feedback. The green ring belongs to the active module: in the verified Venture layout **F1** is Miner I and **F2** is the civilian railgun. A miner can continue collecting from its locked asteroid after a separate NPC target dies.
+
 World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation supports regular mining lasers on corvettes and the Venture, including Civilian Miner, Miner I and Miner II. Strip/deep-core miners, crystals, other hulls, boosts and survey scans remain separate work.
 
 To upgrade, sell mined ore and buy **Miner I** through Regional Market. Search for `miner`, expand **Ship Equipment**, select Miner I and double-click the local station offer. Open Fitting with the **circled ship** button, unfit a civilian laser if both high slots are occupied, then use **Fit to Active Ship** on the purchase. Miner I requires Mining I and has a 10 km range, 15-second cycle, 10 m³ base yield and 5 GJ activation cost. Miner II requires Mining IV and has a 12 km range, 15-second cycle, 15 m³ base yield and 18 GJ cost. With Mining III and no other yield bonuses, a noncritical full Miner I cycle produces 115 Veldspar. Fitting tooltips currently show base yield; compare actual cargo gains to check the server's skill bonuses.
@@ -211,7 +213,17 @@ Ship switching preserves each hull's items and capacitor. The server requires ow
 
 Select **Eden Pilot**, check the active ship in Inventory, undock and warp to **Perimeter II – Asteroid Belt 1**. The local encounter policy places one Guristas Rookie 3,500 m from each Perimeter belt anchor. It should appear as a red NPC in an Overview preset that includes **Minor Threat**. The existing Mining preset also showed it during acceptance. Right-click it and choose **Lock Target**; after the normal scan delay, its portrait and health rings should appear. **Look at** should render its native ship model. **Approach** should move toward it. Restart the host and client at the belt and verify the same NPC appears without a duplicate.
 
-The client displays the catalog's 3,000 ISK bounty, but this milestone does not yet fire weapons, retaliate or pay rewards. NPCs remain stationary and do not aggress arriving miners. Positions and health are saved. Reconnect does not regenerate defeated entries; respawn policy will be added with combat lifecycle handling.
+NPCs remain stationary and do not aggress arriving miners. Positions and health are saved. The following firing check verifies player attacks and bounty payments; NPC retaliation and player losses remain separate work.
+
+## Fire a civilian railgun and earn a bounty
+
+1. While docked, select **Eden Pilot** and check the active ship in Inventory. World version 20 grants each existing pilot one **Civilian Gatling Railgun** in the active ship's station Item Hangar; new pilots receive one at their starting station. This is a one-time Eden starter grant, including for other races. It does not grant skills or ISK. The pinned type is unpublished, so use the owned item rather than searching Regional Market for it.
+2. Right-click the gun and choose **Fit to Active Ship**. It requires Gunnery I, an available high slot and turret hardpoint, 4 CPU and 6 power grid. Open Fitting with the **circled ship** button and check that it is online. A Venture can carry one mining laser and this gun together.
+3. Undock and warp to **Perimeter II – Asteroid Belt 1**. Lock the Guristas Rookie. Stop near its range of 4,800 m plus trained Sharpshooter bonuses, then activate the railgun's HUD button. Use **F2** if it occupies the second high slot. It carries its own civilian charge and consumes capacitor per shot. It fires at cycle start, repeats while the target remains locked, and stops after the current cycle when pressed again.
+4. Watch for native combat messages showing the damage amount, target, weapon and hit quality, while the target's shield, armor and structure rings decline. Misses are possible outside optimal range or with angular motion. When the Rookie is destroyed, it disappears from Overview, the gun stops, and the personal wallet increases by **3,000 ISK**. Under **My Wallet → Transactions**, check **Bounty Prizes**, the resulting balance and the Perimeter description.
+5. Restart both client and host using the same save. Verify the active hull, fitted gun, bounty balance and journal entry remain. The defeated NPC must not reappear early or pay again on reconnect. After ten minutes a replacement may appear at the same belt with a new identity. Dead rows and the paid bounty remain saved.
+
+Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, NPC retaliation, player loss/recovery, loot or wreck yet. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
 
 ## Check saved ship health
 

@@ -1,3 +1,4 @@
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
@@ -15,7 +16,7 @@ public sealed class PilotServicesTests
         long itemId;
         using (WorldDbContext saved = new(world.Path))
         {
-            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == 90000001);
+            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == 90000001 && i.TypeId == InventoryDefinitions.CivilianMinerType);
             item.Quantity = 30;
             itemId = item.Id;
             saved.SaveChanges();

@@ -123,6 +123,14 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WeaponCooldown>().ToTable("WorldWeaponCooldown").HasKey(w => w.ModuleId);
+        model.Entity<WeaponCooldown>().HasOne<OwnedItem>().WithMany().HasForeignKey(w => w.ModuleId);
+        model.Entity<NpcBounty>().ToTable("WorldNpcBounty", t =>
+            t.HasCheckConstraint("CK_NpcBounty_Amounts", "AmountCents > 0 AND BalanceCents >= 0"));
+        model.Entity<NpcBounty>().HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);
+        model.Entity<NpcBounty>().HasOne<WorldNpc>().WithMany().HasForeignKey(b => b.NpcId);
+        model.Entity<NpcBounty>().HasIndex(b => b.NpcId).IsUnique();
+        model.Entity<NpcBounty>().HasIndex(b => new { b.PilotId, b.Time });
         model.Entity<WorldNpc>().ToTable("WorldNpc", t =>
             t.HasCheckConstraint("CK_Npc_Health", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0"));
         model.Entity<WorldNpc>().HasIndex(n => n.BeltId);

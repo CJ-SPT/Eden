@@ -20,7 +20,7 @@ public sealed class PilotFittingTests
             INSERT INTO TypeAttribute VALUES (3386,275,1);
             """);
         using WorldDbContext world = new(db.Path);
-        world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3386,250); UPDATE WorldItem SET Quantity=3 WHERE OwnerId=90000001");
+        world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3386,250); UPDATE WorldItem SET Quantity=3 WHERE OwnerId=90000001 AND TypeId=3651");
     }
 
     [Fact]
@@ -31,14 +31,14 @@ public sealed class PilotFittingTests
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var fitting = db.Services.GetRequiredService<IPilotFitting>();
         var pilot = db.Store.FindPilot(1000001)!;
-        var stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        var stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         var changes = fitting.Fit(pilot.PilotId, [stack.Id], pilot.StationId, (int)InventoryFlag.AutoFit);
         Assert.Equal(2, changes.Count);
         var module = Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId));
         Assert.Equal((int)InventoryFlag.HighSlot0, module.FlagId);
         Assert.True(module.Singleton);
         Assert.False(module.Online);
-        Assert.Equal(2, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Quantity);
+        Assert.Equal(2, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity);
         fitting.SetOnline(pilot.PilotId, pilot.ShipId, module.Id, true);
         fitting.SetOnline(pilot.PilotId, pilot.ShipId, module.Id, true);
         Assert.Equal(65, fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.CpuLoad]);
@@ -47,7 +47,7 @@ public sealed class PilotFittingTests
         Assert.True(Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)).Online);
         fitting.Fit(pilot.PilotId, [stack.Id], pilot.StationId, (int)InventoryFlag.AutoFit);
         Assert.Throws<InvalidDataException>(() => fitting.Fit(pilot.PilotId, [stack.Id], pilot.StationId, (int)InventoryFlag.AutoFit));
-        Assert.Equal(1, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Quantity);
+        Assert.Equal(1, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity);
         fitting.SetOnline(pilot.PilotId, pilot.ShipId, module.Id, false);
         Assert.Equal(0, fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.CpuLoad]);
         inventory.Move(pilot.PilotId, [module.Id], pilot.ShipId, pilot.ShipId, (int)InventoryFlag.Cargo, null);
@@ -65,8 +65,8 @@ public sealed class PilotFittingTests
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var fitting = db.Services.GetRequiredService<IPilotFitting>();
         var pilot = db.Store.FindPilot(1000001)!;
-        long stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Id;
-        long foreign = Assert.Single(inventory.List(90000002, pilot.StationId)).Id;
+        long stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id;
+        long foreign = Assert.Single(inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id;
         Assert.Throws<InvalidDataException>(() => fitting.Fit(pilot.PilotId, [foreign], pilot.StationId, (int)InventoryFlag.AutoFit));
         Assert.Throws<InvalidDataException>(() => fitting.Fit(pilot.PilotId, [stack], pilot.StationId, (int)InventoryFlag.HighSlot7));
         Assert.Throws<InvalidDataException>(() => fitting.Fit(pilot.PilotId, [stack, stack], pilot.StationId, (int)InventoryFlag.AutoFit));
@@ -100,7 +100,7 @@ public sealed class PilotFittingTests
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
-        var stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        var stack = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         using PilotCallContext context = new(1000001, pilot.Account, [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
         context.Select(pilot);
@@ -144,16 +144,16 @@ public sealed class PilotFittingTests
         using TestWorld db = new();
         var pilot = db.Store.FindPilot(1000001)!;
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
-        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         var moved = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)).Item;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; PRAGMA user_version=13");
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=13");
         }
         _ = new SqliteWorld(db.Path);
         _ = new SqliteWorld(db.Path);
         Assert.Equal(moved, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
-        Assert.Empty(inventory.List(pilot.PilotId, pilot.StationId));
-        Assert.Single(inventory.List(90000002, pilot.StationId));
+        Assert.DoesNotContain(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
+        Assert.Single(inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
     }
 }

@@ -7,7 +7,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Mining;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting) : ISelectedPilotCallHandler
+internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting)
 {
     private sealed record Cycle(MiningLaser Laser, long Target, long Started, long StartTime, long Repeats);
     private readonly Dictionary<long, Cycle> _cycles = [];

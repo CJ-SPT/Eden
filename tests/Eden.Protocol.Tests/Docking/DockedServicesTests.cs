@@ -62,14 +62,14 @@ public sealed class DockedServicesTests
         var pilot = db.Store.FindPilot(1000001)!;
         using (WorldDbContext saved = new(db.Path))
         {
-            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId);
+            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId && i.TypeId == InventoryDefinitions.CivilianMinerType);
             item.Quantity = 30;
             saved.SaveChanges();
         }
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
-        long id = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Id;
+        long id = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id;
         using PilotCallContext context = new(1000001, pilot.Account, [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
         context.Select(pilot);
@@ -106,7 +106,7 @@ public sealed class DockedServicesTests
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
-        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         using PilotCallContext context = new(1000001, pilot.Account, [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
         context.Select(pilot);
@@ -146,7 +146,7 @@ public sealed class DockedServicesTests
         string boundService = Assert.IsType<string>(context.ResolveReference(handle.Id));
         var items = Assert.IsType<List<object?>>(router.Call(context, boundService, "List", new object?[] { 4L }, _ => { }));
         var item = Assert.IsType<BlueConstructor>(items[0]);
-        Assert.Equal(2, items.Count);
+        Assert.Equal(3, items.Count);
         Assert.Equal("blue.DBRow", item.Name);
         var descriptor = Assert.IsType<BlueConstructor>(item.Arguments[0]);
         var columns = Assert.IsType<object?[]>(descriptor.Arguments[0]);

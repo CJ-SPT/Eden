@@ -9,7 +9,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters, CombatHandler combat) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -53,6 +53,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     }
                     targeting.Advance(context);
                     mining.Advance(context);
+                    combat.Advance(context);
                     await FlushFlightUpdatesAsync();
                     await FlushNotificationsAsync();
                     checkpoint = null;
@@ -114,6 +115,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
             targeting.Advance(context);
             mining.Advance(context);
+            combat.Advance(context);
             if (result is PilotCallRouter.UserError userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
@@ -164,6 +166,11 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
         async Task FlushFlightUpdatesAsync()
         {
+            foreach (var (name, arguments) in context.NotificationsBeforeFlight)
+            {
+                await SendNotificationAsync(name, arguments);
+            }
+            context.NotificationsBeforeFlight.Clear();
             if (context.ActiveFlight is { Updates.Count: > 0 } flight)
             {
                 await SendNotificationAsync("DoDestinyUpdate", [flight.Updates, false, null]);
@@ -182,6 +189,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
         Task SendNotificationAsync(string name, object?[] arguments)
         {
+            report($"Notify {name}.");
             // Broadcast -> service -> object-call layers each wrap the payload.
             object?[] update = [1, arguments];
             object?[] payload = [0, BlueMarshal.Encode(new object?[] { 0, update })];

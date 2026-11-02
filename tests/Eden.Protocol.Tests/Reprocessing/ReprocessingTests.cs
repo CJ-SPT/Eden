@@ -204,7 +204,7 @@ public sealed class ReprocessingTests
         using Fixture f = new();
         var pilot = f.Pilot;
         var starter = f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.TypeId == InventoryDefinitions.CivilianMinerType);
-        var foreign = Assert.Single(f.Inventory.List(90000002, pilot.StationId));
+        var foreign = Assert.Single(f.Inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Throws<InvalidDataException>(() => f.Run(OreId, foreign.Id));
         Assert.Throws<InvalidDataException>(() => f.Run(OreId, OreId));
         Assert.Throws<InvalidDataException>(() => f.Run(OreId, starter.Id));

@@ -1,3 +1,4 @@
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -5,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPilotCombat combat) : ISelectedPilotCallHandler
 {
     private static readonly (string Name, BlueColumnType Type)[] s_columns =
     [
@@ -177,7 +178,24 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
             if (trade.TaxCents > 0) { entries.Add(Journal(trade.Id * 2 + 1, trade, WalletEntryType.TransactionTax, -trade.TaxCents, trade.BalanceCents)); }
             entries.Add(Journal(trade.Id * 2, trade, WalletEntryType.MarketTransaction, trade.IsBuy ? -gross : gross, trade.BalanceCents + trade.TaxCents));
         }
-        return entries;
+        foreach (var reward in combat.Rewards(context.Pilot.PilotId))
+        {
+            var date = DateTime.FromFileTimeUtc(reward.Time);
+            if (recent ? date < clock.GetUtcNow().UtcDateTime.AddDays(-30) : date.Year != (long)year! || date.Month != (long)month!) { continue; }
+            entries.Add(KeyVal(new()
+            {
+                ["transactionID"] = CombatDefinitions.FirstBountyJournalId + reward.Id,
+                ["transactionDate"] = reward.Time,
+                ["entryTypeID"] = (int)WalletEntryType.BountyPrizes,
+                ["ownerID1"] = CombatDefinitions.ConcordCorporation,
+                ["ownerID2"] = reward.PilotId,
+                ["referenceID"] = reward.SystemId,
+                ["amount"] = Isk(reward.AmountCents),
+                ["balance"] = Isk(reward.BalanceCents),
+                ["description"] = null,
+            }));
+        }
+        return entries.OrderByDescending(e => (long)((Dictionary<string, object?>)((BlueInstance)e!).State!)["transactionDate"]!).ToList();
     }
 
     private static BlueInstance Journal(long id, MarketTrade trade, WalletEntryType type, long amount, long balance) => KeyVal(new()

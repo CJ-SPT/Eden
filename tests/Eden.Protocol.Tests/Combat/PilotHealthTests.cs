@@ -158,7 +158,7 @@ public sealed class PilotHealthTests
             world.Database.ExecuteSqlRaw("""
                 INSERT INTO WorldWallet VALUES (90000001,12345);
                 INSERT INTO WorldShipEnergy VALUES (1000000000001,17,134000000000000000);
-                DROP TABLE WorldShipHealth; DROP TABLE WorldNpc;
+                DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=17;
                 """);
         }
@@ -170,7 +170,7 @@ public sealed class PilotHealthTests
         Assert.Equal(12345, reopened.Set<PilotWallet>().Find(PilotId)!.Cents);
         Assert.Equal(17, reopened.Set<ShipEnergy>().Find(ShipId)!.Charge);
         Assert.Empty(reopened.Set<ShipHealthState>());
-        Assert.Equal(2, reopened.Set<OwnedItem>().Count());
+        Assert.Equal(4, reopened.Set<OwnedItem>().Count());
         var fresh = db.Services.GetRequiredService<IPilotHealth>().Read(PilotId, s_now);
         Assert.Equal(fresh.Defense.Undamaged, fresh.Remaining);
         Assert.Throws<SqliteException>(() => reopened.Database.ExecuteSqlRaw("INSERT INTO WorldShipHealth VALUES (1000000000001,-1,0,0,0)"));

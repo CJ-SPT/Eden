@@ -40,11 +40,14 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
         var defense = ShipHealth.DefenseFrom(attributes);
         foreach (var belt in belts)
         {
-            // Keep defeated rows: reconnecting must not replace or heal an NPC.
-            if (world.Set<WorldNpc>().Any(n => n.BeltId == belt.Id)) { continue; }
+            // Keep defeated rows for bounty identity. A replacement gets a new
+            // AUTOINCREMENT ID only after the local ten-minute respawn delay.
+            var previous = world.Set<WorldNpc>().Where(n => n.BeltId == belt.Id).OrderByDescending(n => n.Id).FirstOrDefault();
+            if (previous is not null && (!previous.DestroyedAt.HasValue ||
+                now - previous.DestroyedAt.Value < TimeSpan.TicksPerSecond * NpcEncounterDefinitions.RespawnSeconds)) { continue; }
             world.Set<WorldNpc>().Add(new()
             {
-                Id = checked(NpcEncounterDefinitions.FirstNpcId + belt.Id),
+                Id = previous is null ? checked(NpcEncounterDefinitions.FirstNpcId + belt.Id) : 0,
                 BeltId = belt.Id,
                 SystemId = systemId,
                 TypeId = type.Id,
@@ -66,5 +69,11 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                     Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))))).ToArray();
         transaction.Commit();
         return contacts;
+    }
+
+    public bool WasDestroyed(long npcId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world.Set<WorldNpc>().Any(n => n.Id == npcId && n.DestroyedAt != null);
     }
 }

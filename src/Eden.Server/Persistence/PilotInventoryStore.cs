@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Protocol;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +126,19 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
     }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)
+    {
+        GrantStarterMiner(world, pilotId, stationId);
+        GrantStarterWeapon(world, pilotId, stationId);
+    }
+
+    internal static void GrantStarterWeapon(WorldDbContext world, long pilotId, int stationId)
+    {
+        long id = NextId(world);
+        int type = (int)CombatWeaponType.CivilianGatlingRailgun;
+        world.Database.ExecuteSql($"INSERT INTO WorldItem(Id,OwnerId,TypeId,LocationId,FlagId,Quantity) VALUES ({id},{pilotId},{type},{stationId},{(int)InventoryFlag.Hangar},1)");
+    }
+
+    internal static void GrantStarterMiner(WorldDbContext world, long pilotId, int stationId)
     {
         // A local starter grant, once per pilot, using the catalog's Civilian Miner.
         long id = NextId(world);

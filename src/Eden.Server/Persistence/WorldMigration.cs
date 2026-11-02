@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 19)
+        if (version is < 0 or > 20)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -106,7 +106,7 @@ internal static class WorldMigration
         {
             foreach (var pilot in world.Pilots.Select(p => new { p.Id, p.ActiveShip.StationId }).ToArray())
             {
-                PilotInventoryStore.GrantStarterEquipment(world, pilot.Id, pilot.StationId);
+                PilotInventoryStore.GrantStarterMiner(world, pilot.Id, pilot.StationId);
             }
             world.Database.ExecuteSqlRaw("PRAGMA user_version=13");
         }
@@ -185,6 +185,26 @@ internal static class WorldMigration
                 """);
         }
         if (version < 19) { world.Database.ExecuteSqlRaw("PRAGMA user_version=19"); }
+        if (version is >= 6 and < 20)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldWeaponCooldown(ModuleId INTEGER PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE, ReadyAt INTEGER NOT NULL);
+                CREATE TABLE WorldNpcBounty(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE CASCADE, TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                    Time INTEGER NOT NULL, AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL,
+                    CONSTRAINT CK_NpcBounty_Amounts CHECK(AmountCents > 0 AND BalanceCents >= 0));
+                CREATE UNIQUE INDEX IX_WorldNpcBounty_NpcId ON WorldNpcBounty(NpcId);
+                CREATE INDEX IX_WorldNpcBounty_PilotId_Time ON WorldNpcBounty(PilotId,Time);
+                """);
+        }
+        if (version < 20)
+        {
+            foreach (var pilot in world.Pilots.Select(p => new { p.Id, p.ActiveShip.StationId }).ToArray())
+            {
+                PilotInventoryStore.GrantStarterWeapon(world, pilot.Id, pilot.StationId);
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=20");
+        }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

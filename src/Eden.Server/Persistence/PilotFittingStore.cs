@@ -101,9 +101,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
         {
-            // Mining lasers are the first supported family. Other modules can have passive
-            // modifiers that must be implemented before they can safely be fitted.
-            if (catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId != InventoryDefinitions.MiningLaserGroup)
+            // Regular weapons need ammunition and additional effects; the civilian
+            // railgun has a built-in charge and shares turret/CPU/grid accounting.
+            if (catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId != InventoryDefinitions.MiningLaserGroup &&
+                item.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             {
                 throw new InvalidDataException("This module family is not supported yet.");
             }

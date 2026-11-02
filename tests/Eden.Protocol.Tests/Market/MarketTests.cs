@@ -76,7 +76,7 @@ public sealed class MarketTests
         Assert.Equal(3, Assert.Single(purchase.Changes).Item.Quantity);
         _ = new SqliteWorld(f.Db.Path);
         Assert.Equal(41512, f.Store.Balance(f.Pilot.PilotId));
-        Assert.Equal(3, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId)).Quantity);
+        Assert.Equal(3, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity);
         var book = f.Store.Orders(f.Pilot.PilotId);
         Assert.Equal(98, Assert.Single(book, o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
         Assert.Equal(999867, Assert.Single(book, o => o.TypeId == Scordite).Remaining);
@@ -244,7 +244,7 @@ public sealed class MarketTests
         Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 134)));
         Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 0)));
         Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(), f.Sale()));
-        var foreign = Assert.Single(f.Inventory.List(90000002, f.Pilot.StationId));
+        var foreign = Assert.Single(f.Inventory.List(90000002, f.Pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 10), f.Sale(foreign.Id, 1)));
         Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
         Assert.Empty(f.Store.Transactions(f.Pilot.PilotId));
@@ -379,7 +379,7 @@ public sealed class MarketTests
         var pilot = f.Pilot;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; PRAGMA user_version=16");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=16");
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);

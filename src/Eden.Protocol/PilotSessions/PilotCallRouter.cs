@@ -35,6 +35,9 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
     public List<(string Name, object?[] Arguments)> Notifications { get; } = [];
+    // Combat text resolves the target's slim item, including on a fatal hit.
+    // Deliver it before Destiny removes that ball from the client's park.
+    public List<(string Name, object?[] Arguments)> NotificationsBeforeFlight { get; } = [];
 
     private readonly Dictionary<string, string> _bindings = [];
     private readonly Dictionary<string, BlueObjectReference> _references = [];

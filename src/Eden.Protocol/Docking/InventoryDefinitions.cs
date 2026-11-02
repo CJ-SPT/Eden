@@ -83,6 +83,7 @@ public enum DogmaAttributeId
     RequiredSkill2Level = 278,
     RequiredSkill3Level = 279,
     ShieldRechargeTime = 479,
+    EntityKillBounty = 481,
     CapacitorCapacity = 482,
     SignatureRadius = 552,
     ScanResolution = 564,

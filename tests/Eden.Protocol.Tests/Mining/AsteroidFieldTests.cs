@@ -173,17 +173,17 @@ public sealed class AsteroidFieldTests
         using TestWorld db = new();
         var pilot = db.Store.FindPilot(1000001)!;
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
-        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         var cargo = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)).Item;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; PRAGMA user_version=14");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=14");
         }
         _ = new SqliteWorld(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
         Assert.Equal(cargo, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
         using WorldDbContext saved = new(db.Path);
         Assert.Empty(saved.Set<WorldAsteroid>());
-        Assert.Equal(2, saved.Set<OwnedItem>().Count());
+        Assert.Equal(4, saved.Set<OwnedItem>().Count());
     }
 }

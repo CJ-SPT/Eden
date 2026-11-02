@@ -8,6 +8,7 @@ public sealed record NpcContact(long Id, int TypeId, int GroupId, int CategoryId
 public interface INpcEncounters
 {
     IReadOnlyList<NpcContact> List(int systemId, long now);
+    bool WasDestroyed(long npcId);
 }
 
 public static class NpcEncounterDefinitions
@@ -21,6 +22,7 @@ public static class NpcEncounterDefinitions
     public const long FirstNpcId = 4_000_000_000_000;
     public const double AnchorOffset = 3500;
     public const double VisibilityRange = 250_000;
+    public const int RespawnSeconds = 600;
     // This type has no agility override and the catalog default is zero. A
     // stationary free ball uses a positive inertia until NPC movement is modeled.
     public const float StationaryAgility = 1;

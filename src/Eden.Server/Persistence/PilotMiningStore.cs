@@ -42,15 +42,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
     {
         using WorldDbContext world = new(database.Path);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        return Charge(world.Set<ShipEnergy>().Find(pilot.ActiveShipId), fitting.ShipAttributes(pilotId), now);
-    }
-
-    private static double Charge(ShipEnergy? saved, IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now)
-    {
-        double capacity = attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity);
-        return saved is null ? capacity : ChargedResource.Recharged(saved.Charge, capacity,
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime),
-            Math.Max(0, (now - saved.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond));
+        return ShipResources.Capacitor(world, pilot.ActiveShipId, fitting.ShipAttributes(pilotId), now);
     }
 
     private (Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser) Validate(WorldDbContext world, long pilotId, long moduleId, long asteroidId)
@@ -110,18 +102,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         {
             throw new CargoCapacityException(available, volume);
         }
-        var saved = world.Set<ShipEnergy>().Find(pilot.ActiveShipId);
-        double charge = Charge(saved, fitting.ShipAttributes(pilotId), now);
-        if (charge + InventoryDefinitions.ResourceTolerance < laser.CapacitorNeed)
-        {
-            throw new InvalidDataException("Insufficient capacitor to activate the mining laser.");
-        }
-        if (saved is null) { saved = world.Set<ShipEnergy>().Add(new() { ShipId = pilot.ActiveShipId }).Entity; }
-        saved.Charge = Math.Max(0, charge - laser.CapacitorNeed);
-        saved.UpdatedAt = now;
+        double charge = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, fitting.ShipAttributes(pilotId), laser.CapacitorNeed, now);
         world.SaveChanges();
         transaction.Commit();
-        return new(laser, saved.Charge);
+        return new(laser, charge);
     }
 
     public MiningYield Collect(long pilotId, long moduleId, long asteroidId, double volume, double criticalBonusYield)

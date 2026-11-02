@@ -23,7 +23,7 @@ public sealed class NpcEncounterTests
 
     private static readonly long s_now = DateTime.UtcNow.ToFileTimeUtc();
 
-    private static void Prepare(TestWorld db)
+    internal static void Prepare(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw("""
@@ -228,7 +228,7 @@ public sealed class NpcEncounterTests
         {
             world.Database.ExecuteSqlRaw("""
                 INSERT INTO WorldShipHealth VALUES (1000000000001,10,20,30,134000000000000000);
-                DROP TABLE WorldNpc;
+                DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=18;
                 """);
         }
