@@ -280,6 +280,10 @@ The server recomputes damage at payment time and caps the charge at the current 
 5. Undock and take shield damage from a Rookie using the encounter steps above. Activate the booster on the HUD. It needs no target lock. Watch the shield ring, capacitor, cycling indicator and native shield effect. The unmodified small booster restores up to 26 HP immediately for 20 capacitor, with a 2-second cycle. At full shields it still spends capacitor. Manual deactivation finishes the paid cycle; insufficient capacitor rejects the next cycle without healing.
 6. Warp or dock to end NPC aggression. The shield booster is warp-safe and stops on docking or hull loss. Restart and compare fitting, health and capacitor; no offline boosts are granted. Shield Compensation modifies capacitor cost when trained. Module overheating, ancillary charges and other repair families are separate work.
 
+## Check a rejected gameplay action
+
+Select **Eden Pilot**, open Inventory and verify the active equipped ship. Undock safely outside a station. Right-click an online module on the HUD, choose **Put Offline** and accept the local module prompt. Eden currently requires docking to change online state, so the native **Information** dialog should explain: **Change module online state on your docked active ship.** Dismiss it and check that the module remains online and the ship still responds. This check must preserve the module, cargo and wallet. Capacity errors retain the client's existing quantity-selection flow.
+
 ## Check saved ship health
 
 Combat encounters are still being integrated. For an isolated health acceptance fixture, start with a copy of the verified Venture save and let the server migrate it to world version 18 or later. With the client stopped, add a `WorldShipHealth` row for the active Venture with `ShieldCharge=75`, `ArmorDamage=100`, `StructureDamage=100` and `UpdatedAt` set to the current Windows FILETIME. This is test damage, not damage earned through a working encounter. Keep the normal gameplay save separate.

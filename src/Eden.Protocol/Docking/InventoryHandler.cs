@@ -256,7 +256,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         context.Notifications.Add(("OnModuleAttributeChanges", [changes]));
     }
 
-    private object? SetOnline(PilotCallContext context, long ship, long module, bool online)
+    internal object? SetOnline(PilotCallContext context, long ship, long module, bool online)
     {
         try
         {

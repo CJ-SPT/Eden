@@ -32,6 +32,8 @@ Losing all structure destroys the active hull and places the pilot in a capsule 
 
 Ship health is saved per hull, shields recharge across restarts, and the client receives existing armor and structure damage. Mechanics, Hull Upgrades, Shield Management and Shield Operation affect health and recharge. The starter market sells **Shield Operation** skillbooks for **5,000 ISK** and a **Small Shield Booster I** for **1,000 ISK**. Train Shield Operation I, fit the booster in a medium slot, and activate it in space to exchange capacitor for shield charge. The catalog's Small Shield Booster I restores up to **26 HP** for **20 capacitor** every **2 seconds** before trained modifiers. It works during warp, finishes its paid cycle on manual stop, and stops on docking, loss or insufficient capacitor. Shields and cooldowns are saved; reconnecting does not simulate missed boosts.
 
+Rejected gameplay actions show their reason in the client's native **Information** dialog, including missing skills, insufficient ISK and unavailable fitting actions.
+
 At a station with **Repair Facilities**, quote owned assembled ships and pay for full or partial armor/hull repairs. Eden charges **1 ISK per rounded damage point**; partial payments repair the same fraction of each selected hull's damage. Payments and wallet journal entries survive restarts. Repairs preserve shields, capacitor, cargo and fitting. Module heat/damage and structure repair services remain future work.
 
 ## Local game data

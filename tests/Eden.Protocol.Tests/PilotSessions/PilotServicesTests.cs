@@ -21,8 +21,48 @@ public sealed class PilotServicesTests
                 new object?[] { "DoStandingCheckForStationService", new object?[] { (long)StationService.Market }, new Dictionary<string, object?>() }]),
             Request("account", "GetCashBalance", [0L]));
         Assert.EndsWith(".ErrorResponse", packets[^2].Name);
+        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "This station does not provide a market." });
         Assert.EndsWith(".CallRsp", packets[^1].Name);
         Assert.Equal(0d, Result(packets[^1]));
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task GameplayRejectionExplainsTheReasonAndKeepsTheModuleAndSessionIntact(bool bound, bool native)
+    {
+        using TestWorld world = new();
+        const long ship = 1000000000001L;
+        long module;
+        using (WorldDbContext saved = new(world.Path))
+        {
+            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == 90000001 && i.TypeId == InventoryDefinitions.CivilianMinerType);
+            module = item.Id;
+            item.LocationId = ship;
+            item.FlagId = (int)InventoryFlag.HighSlot0;
+            item.Singleton = true;
+            item.Online = true;
+            saved.SaveChanges();
+        }
+        string method = native ? "Deactivate" : "TakeModuleOffline";
+        object?[] args = native ? [module, InventoryDefinitions.OnlineEffectName] : [ship, module];
+        var rejection = bound
+            ? Request("dogmaIM", "MachoBindObject", [null, new object?[] { method, args, new Dictionary<string, object?>() }])
+            : Request("dogmaIM", method, args);
+        var packets = await ExchangeAsync(world, 42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("ship", "Undock", [ship]), rejection,
+            Request("account", "GetCashBalance", [0L]));
+        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "Change module online state on your docked active ship." });
+        Assert.EndsWith(".CallRsp", packets[^1].Name);
+        Assert.Equal(0d, Result(packets[^1]));
+        using WorldDbContext persisted = new(world.Path);
+        var retained = persisted.Set<OwnedItem>().Find(module)!;
+        Assert.Equal(ship, retained.LocationId);
+        Assert.Equal((int)InventoryFlag.HighSlot0, retained.FlagId);
+        Assert.True(retained.Online);
     }
 
     [Fact]
@@ -73,13 +113,7 @@ public sealed class PilotServicesTests
             Request("invbroker", "GetInventoryFromId", [1000000000001L]),
             Request(null, "Add", [itemId, 60003760L], "N=10001:42-2", new() { ["flag"] = 5L }));
         var packet = packets[^1];
-        Assert.EndsWith(".ErrorResponse", packet.Name);
-        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
-        Assert.Equal(6, body[0]);
-        Assert.Equal(2, body[1]);
-        byte[] exception = PilotLogin.Bytes(Assert.Single(PilotLogin.Tuple(body[2], 1)));
-        Assert.Equal(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", ["NotEnoughCargoSpace",
-            new Dictionary<string, object?> { ["available"] = 125d, ["volume"] = 150d }])), exception);
+        AssertUserError(packet, "NotEnoughCargoSpace", new() { ["available"] = 125d, ["volume"] = 150d });
     }
 
     [Fact]
@@ -147,7 +181,11 @@ public sealed class PilotServicesTests
     public async Task UnknownMethodsReceiveAnError()
     {
         var packets = await ExchangeAsync("charUnboundMgr", "DeleteCharacter", [90000001], 42);
-        Assert.EndsWith(".ErrorResponse", packets.Single().Name);
+        var packet = Assert.Single(packets);
+        Assert.EndsWith(".ErrorResponse", packet.Name);
+        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
+        Assert.Equal(0, body[1]);
+        Assert.Equal("Unsupported local call charUnboundMgr.DeleteCharacter", body[2]);
     }
 
     [Fact]
@@ -172,6 +210,16 @@ public sealed class PilotServicesTests
         var home = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
         Assert.Equal(60015161L, home["id"]);
         Assert.Equal(30005305L, home["solar_system_id"]);
+    }
+
+    private static void AssertUserError(BlueInstance packet, string name, Dictionary<string, object?> values)
+    {
+        Assert.EndsWith(".ErrorResponse", packet.Name);
+        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
+        Assert.Equal(6, body[0]);
+        Assert.Equal(2, body[1]);
+        byte[] exception = PilotLogin.Bytes(Assert.Single(PilotLogin.Tuple(body[2], 1)));
+        Assert.Equal(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [name, values])), exception);
     }
 
     private static object? Result(BlueInstance packet)

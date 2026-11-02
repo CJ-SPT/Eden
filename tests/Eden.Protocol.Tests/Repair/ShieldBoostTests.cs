@@ -293,8 +293,10 @@ public sealed class ShieldBoostTests
         ShieldBoostHandler handler = new(f.Clock, f.Boosting);
         SharedTargetLocks locks = new();
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
+        using var activationScope = f.Db.Services.CreateScope();
         ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), handler);
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), handler,
+            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>());
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]);
         Assert.Null(Activate());
         Assert.Null(Activate());

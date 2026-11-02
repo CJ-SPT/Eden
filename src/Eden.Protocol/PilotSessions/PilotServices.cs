@@ -134,17 +134,24 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             {
                 await AnnounceTransitionAsync(previous);
             }
+            if (result is PilotCallRouter.Error validationError)
+            {
+                // The pinned fitting service uses CustomInfo/info for a readable
+                // gameplay rejection. Macho error code 0 means a bad destination.
+                result = new PilotCallRouter.UserError("CustomInfo", new() { ["info"] = validationError.Message });
+            }
             if (result is PilotCallRouter.UserError userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
-                // exception stream; inventory catches this UserError to offer a smaller quantity.
+                // exception stream. Named errors retain their client-specific handling,
+                // including inventory's smaller-quantity retry for cargo capacity.
                 byte[] exception = BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [userError.Name, userError.Values]));
                 await write(Response(state, "ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } }));
                 continue;
             }
-            if (result is PilotCallRouter.Error || ReferenceEquals(result, PilotCallRouter.Unsupported))
+            if (ReferenceEquals(result, PilotCallRouter.Unsupported))
             {
-                string message = (result as PilotCallRouter.Error)?.Message ?? $"Unsupported local call {service}.{method}";
+                string message = $"Unsupported local call {service}.{method}";
                 await write(Response(state, "ErrorResponse", 15, new object?[] { 6, 0, message }));
                 continue;
             }

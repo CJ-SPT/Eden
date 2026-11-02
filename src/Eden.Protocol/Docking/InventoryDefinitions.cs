@@ -148,6 +148,7 @@ public enum StationService
 
 public static class InventoryDefinitions
 {
+    public const string OnlineEffectName = "online";
     public const int MiningLaserGroup = 54;
     public const int CivilianMinerType = 3651;
     public const double OutputBonusPerSkillLevel = 0.05;

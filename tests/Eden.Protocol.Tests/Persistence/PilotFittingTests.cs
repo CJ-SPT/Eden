@@ -91,8 +91,10 @@ public sealed class PilotFittingTests
         Assert.False(Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)).Online);
     }
 
-    [Fact]
-    public void FittingNotificationsKeepTheNativeModuleRowAndRestoreOnlineEffects()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FittingNotificationsKeepTheNativeModuleRowAndRestoreOnlineEffects(bool native)
     {
         using TestWorld db = new();
         Prepare(db);
@@ -115,8 +117,10 @@ public sealed class PilotFittingTests
         foreach (bool online in new[] { true, false, true })
         {
             context.Notifications.Clear();
-            Assert.Null(router.Call(context, "dogmaIM", online ? "SetModuleOnline" : "TakeModuleOffline",
-                new object?[] { pilot.ShipId, module.Id }, _ => { }));
+            string method = native ? online ? "Activate" : "Deactivate" : online ? "SetModuleOnline" : "TakeModuleOffline";
+            object?[] args = native ? online ? [module.Id, InventoryDefinitions.OnlineEffectName, null, 0L] :
+                [module.Id, InventoryDefinitions.OnlineEffectName] : [pilot.ShipId, module.Id];
+            Assert.Null(router.Call(context, "dogmaIM", method, args, _ => { }));
             Assert.Equal(new[] { "OnGodmaShipEffect", "OnModuleAttributeChanges" }, context.Notifications.Select(n => n.Name));
             var effect = context.Notifications[0].Arguments;
             Assert.Equal(module.Id, effect[0]);
