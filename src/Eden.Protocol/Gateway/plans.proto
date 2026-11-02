@@ -1,0 +1,7 @@
+syntax = "proto3";
+package eve_public.character.skill.plan;
+option csharp_namespace = "Eden.Protocol.Gateway.Plans";
+
+message Identifier { bytes uuid = 1; }
+message GetActiveResponse { Identifier skill_plan = 1; }
+message GetAllResponse { repeated Identifier skill_plans = 1; }

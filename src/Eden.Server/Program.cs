@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
 using Eden.Server.Authentication;
 using Eden.Server.Catalog;
+using Eden.Server.Gateway;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,6 +55,15 @@ internal static class Program
         }
         Directory.CreateDirectory(directory);
         services.GetRequiredService<SqliteWorld>();
-        await services.GetRequiredService<LoopbackServer>().RunAsync();
+        await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>());
+        await gateway.StartAsync();
+        try
+        {
+            await services.GetRequiredService<LoopbackServer>().RunAsync();
+        }
+        finally
+        {
+            await gateway.StopAsync();
+        }
     }
 }

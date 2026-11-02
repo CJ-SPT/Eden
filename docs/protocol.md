@@ -195,3 +195,11 @@ The client's lower Training Time estimate uses whole SP. Its `_UpdateTrainingTim
 **Live Windows client.** In the Skill Catalogue, Eden Pilot added Amarr Frigate I. The queue showed one of 150 slots, a 500-SP target, and approximately 33 minutes 20 seconds. Pausing showed **Paused**, 488 points remaining and 384,059 total SP. Resuming started the countdown from the remaining points. After restarting the host and client, the queue still showed Amarr Frigate I with 28 minutes remaining and the catalogue showed 384,121 SP.
 
 **Automated checks.** Restore, build, 61 tests and formatting verification passed. A controlled clock verifies partial SP on pause, identical timestamps on retry, multiple levels completed during an offline interval, isolated pilots and exactly-once history. An invalid edit rolls back the entire mutation without disturbing ongoing training.
+
+## Local skill-plan gateway, November 2, 2026
+
+Build 3662168 sends tracked-plan and personal-plan queries over the bidirectional HTTP/2 gRPC stream `eve_public.gateway.Requests/Send`. The launcher selects the cleartext loopback endpoint on port 26001. Eden hosts that endpoint beside MachoNet and returns a correlated `eve_public.Response` containing the matching protobuf `Any` payload. For a pilot with no plans, `GetActiveResponse.skill_plan.uuid` is 16 zero bytes and `GetAllResponse.skill_plans` is empty. Unsupported gateway payloads receive status 501. Plan editing and tracking writes are separate work.
+
+**Live Windows client.** With Amarr Frigate I actively training, opening Skills returned the tracked-plan response. Certified Plans displayed its AIR page. Personal Plans displayed **No personal skill plans created yet** and **Create Plan**. The recurring Skill Plan Service unavailable notice from the earlier queue check did not appear. The host recorded successful active-plan and list requests. Other gateway services, including PLEX and career goals, remain unsupported.
+
+**Automated checks.** Restore, build and formatting passed. All 62 tests passed, including checks for correlation, response type, the no-plan UUID, and rejection of an unsupported request.

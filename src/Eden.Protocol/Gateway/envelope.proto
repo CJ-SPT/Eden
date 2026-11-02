@@ -1,0 +1,28 @@
+syntax = "proto3";
+package eve_public;
+option csharp_namespace = "Eden.Protocol.Gateway";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// Build 3662168's public request broker multiplexes payloads by their Any type.
+message Request {
+  bytes correlation_uuid = 2;
+  google.protobuf.Any payload = 3;
+  bytes application_instance_uuid = 5;
+}
+
+message Response {
+  google.protobuf.Timestamp dispatched = 1;
+  bytes correlation_uuid = 2;
+  uint32 status_code = 3;
+  string status_message = 4;
+  google.protobuf.Any payload = 5;
+  string internal_origin = 6;
+  bytes application_instance_uuid = 7;
+  bytes gateway_instance_uuid = 8;
+}
+
+// The local gateway accepts the event stream and keeps notice subscribers connected.
+message Event {}
+message Notice {}

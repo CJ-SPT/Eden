@@ -1,0 +1,19 @@
+syntax = "proto3";
+package eve_public.gateway;
+option csharp_namespace = "Eden.Server.Gateway";
+
+import "google/protobuf/empty.proto";
+import "envelope.proto";
+
+service Requests {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Send(stream eve_public.Request) returns (stream eve_public.Response);
+}
+service Notices {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Consume(stream google.protobuf.Empty) returns (stream eve_public.Notice);
+}
+service Events {
+  rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Publish(stream eve_public.Event) returns (stream google.protobuf.Empty);
+}
