@@ -48,6 +48,7 @@ public enum DogmaAttributeId
     ShieldCharge = 264,
     ArmorHitPoints = 265,
     SkillTimeConstant = 275,
+    RefiningYieldMutator = 379,
     RequiredSkill1Level = 277,
     RequiredSkill2Level = 278,
     RequiredSkill3Level = 279,
@@ -55,6 +56,7 @@ public enum DogmaAttributeId
     CapacitorCapacity = 482,
     SignatureRadius = 552,
     ScanResolution = 564,
+    ReprocessingSkillType = 790,
     RequiredSkill4 = 1285,
     RequiredSkill4Level = 1286,
     RequiredSkill5Level = 1287,
@@ -90,6 +92,7 @@ public enum DogmaEffect
 
 public enum StationService
 {
+    Reprocessing = 5,
     Fitting = 17,
 }
 

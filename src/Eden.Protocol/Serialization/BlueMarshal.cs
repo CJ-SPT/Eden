@@ -10,6 +10,8 @@ internal sealed record BlueConstructor(string Name, object?[] Arguments);
 internal sealed record PaperDollRow(string Name, object?[] Fields);
 internal sealed record BlueStream(byte[] Bytes);
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
+// Python dictionaries can use None as a key (station efficiency's default).
+internal sealed record BlueDictionary(IReadOnlyList<(object? Key, object? Value)> Entries);
 
 internal static class BlueMarshal
 {
@@ -92,11 +94,19 @@ internal static class BlueMarshal
             int size = Length();
             Dictionary<string, object?> values = [];
             Dictionary<long, object?> indexed = [];
+            bool hasDefault = false;
+            object? defaultValue = null;
             for (int i = 0; i < size; i++)
             {
                 object? value = Read(depth + 1);
                 object? key = Read(depth + 1);
-                if (key is long id)
+                if (key is null)
+                {
+                    if (hasDefault) { throw new InvalidDataException("Duplicate None dictionary key."); }
+                    hasDefault = true;
+                    defaultValue = value;
+                }
+                else if (key is long id)
                 {
                     indexed.Add(id, value);
                 }
@@ -110,21 +120,56 @@ internal static class BlueMarshal
             {
                 throw new InvalidDataException("Mixed dictionary keys.");
             }
+            if (hasDefault)
+            {
+                List<(object? Key, object? Value)> entries = [(null, defaultValue)];
+                entries.AddRange(indexed.Select(pair => ((object?)pair.Key, pair.Value)));
+                entries.AddRange(values.Select(pair => ((object?)pair.Key, pair.Value)));
+                return new BlueDictionary(entries);
+            }
             return indexed.Count > 0 ? indexed : values;
         }
 
-        HashSet<long> ReadIdSet(int depth)
+        object ReadReduction(int depth)
         {
-            // Bounty lookup reduces Python 2's built-in set to a list of owner IDs.
-            // Interpret only that data shape. Never resolve or execute a global.
-            if (Read(depth + 1) is not object?[] { Length: 2 } pair ||
-                pair[0] is not BlueGlobal { Name: "set" or "__builtin__.set" } ||
-                pair[1] is not object?[] { Length: 1 } args || args[0] is not List<object?> ids ||
-                reader.ReadByte() != 45 || reader.ReadByte() != 45 || ids.Any(id => id is not long))
+            // Bounty sets and inventory row descriptors reduce to inert arguments.
+            // Interpret only these allowlisted shapes; never execute a global.
+            if (Read(depth + 1) is not object?[] { Length: 2 } pair || pair[0] is not BlueGlobal global ||
+                pair[1] is not object?[] { Length: 1 } args || reader.ReadByte() != 45 || reader.ReadByte() != 45)
             {
                 throw new InvalidDataException("Unsupported Blue reduction.");
             }
-            return ids.Cast<long>().ToHashSet();
+            if (global.Name is "set" or "__builtin__.set" && args[0] is List<object?> ids && ids.All(id => id is long))
+            {
+                return ids.Cast<long>().ToHashSet();
+            }
+            if (global.Name == "blue.DBRowDescriptor" && args[0] is object?[] columns)
+            {
+                List<(string Name, BlueColumnType Type)> fields = [];
+                HashSet<string> names = [];
+                foreach (var column in columns)
+                {
+                    if (column is not object?[] { Length: 2 } field || field[1] is not long type) { throw new InvalidDataException("Invalid Blue row descriptor."); }
+                    string text = Text(field[0]);
+                    if (text.StartsWith("__", StringComparison.Ordinal) || !names.Add(text))
+                    {
+                        throw new InvalidDataException("Invalid Blue row column name.");
+                    }
+                    fields.Add((text, (BlueColumnType)type));
+                }
+                BlueRowDescriptor descriptor = new(fields);
+                _ = descriptor.DataLength;
+                return descriptor;
+            }
+            throw new InvalidDataException("Unsupported Blue reduction.");
+        }
+
+        BluePackedRow ReadPackedRow(int depth)
+        {
+            if (Read(depth + 1) is not BlueRowDescriptor descriptor) { throw new InvalidDataException("Expected a Blue row descriptor."); }
+            byte[] packed = reader.ReadBytes(Length());
+            BluePackedRow.Validate(packed, descriptor.DataLength);
+            return new(descriptor, packed, Items(descriptor.ObjectCount, depth));
         }
 
         PaperDollRow ReadPaperDollRow(int depth)
@@ -185,12 +230,13 @@ internal static class BlueMarshal
                 27 => shared.TryGetValue(ReadIndex() - 1, out object? reference) ? reference : throw new InvalidDataException("Unknown shared reference."),
                 31 => true,
                 32 => false,
-                34 => ReadIdSet(depth),
+                34 => ReadReduction(depth),
                 35 => ReadPaperDollRow(depth),
                 36 => Array.Empty<object?>(),
                 37 => Items(1, depth),
                 38 => new List<object?>(),
                 39 => Items(1, depth).ToList(),
+                42 => ReadPackedRow(depth),
                 43 => new BlueStream(reader.ReadBytes(Length())),
                 44 => Items(2, depth),
                 46 => Encoding.UTF8.GetString(reader.ReadBytes(Length())),
@@ -311,6 +357,19 @@ internal static class BlueMarshal
                 Size(writer, name.Length);
                 writer.Write(name);
                 break;
+            case BlueRowDescriptor descriptor:
+                Write(writer, new BlueConstructor("blue.DBRowDescriptor",
+                    [descriptor.Columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()]));
+                break;
+            case BluePackedRow row:
+                BluePackedRow.Validate(row.Packed, row.Descriptor.DataLength);
+                if (row.Objects.Length != row.Descriptor.ObjectCount) { throw new InvalidDataException("Invalid Blue row object count."); }
+                writer.Write((byte)42);
+                Write(writer, row.Descriptor);
+                Size(writer, row.Packed.Length);
+                writer.Write(row.Packed);
+                foreach (var item in row.Objects) { Write(writer, item); }
+                break;
             case BlueConstructor constructor:
                 writer.Write((byte)34); // Reduce: (callable, arguments), followed by two empty iterators.
                 writer.Write((byte)44);
@@ -321,6 +380,15 @@ internal static class BlueMarshal
                 Write(writer, constructor.Arguments);
                 writer.Write((byte)45);
                 writer.Write((byte)45);
+                break;
+            case BlueDictionary dictionary:
+                writer.Write((byte)22);
+                Size(writer, dictionary.Entries.Count);
+                foreach (var (key, item) in dictionary.Entries)
+                {
+                    Write(writer, item);
+                    Write(writer, key);
+                }
                 break;
             case Dictionary<long, object?> indexed:
                 writer.Write((byte)22);

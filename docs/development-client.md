@@ -160,7 +160,16 @@ Fit an online **Civilian Miner** to the Ibis while docked, then visit a belt as 
 4. Warp to a station, dock, and drag the ore from Ibis cargo into **Item Hangar**. Compare the quantity and used cargo space before and after unloading. During automated input checks, select the stack and wait for its selection to appear before dragging.
 5. Restart the host and client. Check that the ore remains in its saved cargo or hangar location. A depleted asteroid should remain absent when returning to its belt.
 
-World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation currently supports the Civilian Miner on corvettes. Other miners, boosts, specialized mining holds, survey scans, reprocessing and selling ore remain separate work.
+World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation currently supports the Civilian Miner on corvettes. Other miners, boosts, specialized mining holds, survey scans and selling ore remain separate work.
+
+## Reprocess mined ore
+
+1. Dock at a station with reprocessing, such as **Perimeter II – Moon 1 – Caldari Navy Assembly Plant**. Select **Eden Pilot**, open **Inventory**, and check that **Ibis (Ibis)** is the active ship.
+2. Right-click an ore stack in Item Hangar or the active ship's cargo and choose **Reprocess**. Review the native window's predicted mineral quantities. Veldspar and Scordite use batches of 100 units; smaller stacks cannot be processed.
+3. Choose Item Hangar or cargo as the output destination and press **Reprocess**. Complete batches become minerals; remaining ore stays in its original stack. Output must fit if sent to cargo. Reopen Inventory and check the mineral and leftover quantities.
+4. Restart the host and client and check that the same stacks remain. A repeated request cannot process the incomplete remainder again.
+
+The catalog supplies station efficiency, ore recipes, batch sizes and skill bonuses. This milestone supports fixed ore outputs and personal cargo/hangars. It does not recycle equipment or process randomized recipes. The fee display currently reads zero because Eden has no adjusted market prices or wallet economy; this follows the pinned client's missing-price behavior. Mineral losses reflect station efficiency and trained skills, rather than withholding minerals as a station tax.
 
 ## Check the character sheet
 

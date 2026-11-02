@@ -6,6 +6,41 @@ namespace Eden.Protocol.Tests.Serialization;
 public sealed class BlueMarshalTests
 {
     [Fact]
+    public void ReadsPackedRowsAsInertDataWithDescriptorAndTrailingObjects()
+    {
+        // TY_DBROW, descriptor(itemID I8, name STR), one literal byte 42 and
+        // implicit zero tail, followed by the row's separate string object.
+        var fixture = Convert.FromHexString("7E000000002A222C0214626C75652E4442526F7744657363726970746F72252C2C13066974656D494406142C13046E616D650581002D2D02072A13036F7265");
+        var row = Assert.IsType<BluePackedRow>(BlueMarshal.Decode(fixture));
+        Assert.Equal(9, row.Descriptor.DataLength);
+        Assert.Equal(1, row.Descriptor.ObjectCount);
+        Assert.Equal("ore", BlueMarshal.Text(Assert.Single(row.Objects)));
+        Assert.Equal(new byte[] { 7, 42 }, row.Packed);
+        Assert.Equal(fixture, BlueMarshal.Encode(row));
+        Assert.Throws<InvalidDataException>(() => BluePackedRow.Validate([0, 1], 9));
+        Assert.Throws<InvalidDataException>(() => BluePackedRow.Validate([15], 7));
+        Assert.Throws<InvalidDataException>(() => BluePackedRow.Validate([0, 1, 2, 3, 4, 5, 6, 7, 8, 0], 8));
+        var invalid = new BlueConstructor("blue.DBRowDescriptor", [new object?[] { new object?[] { "itemID", 999L } }]);
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(invalid)));
+    }
+
+    [Fact]
+    public void PreservesNoneDictionaryKeyAndDistinguishesItFromZero()
+    {
+        // Carbon's dictionary token writes each value before its key. The native
+        // reprocessing client indexes its default station efficiency with None.
+        byte[] fixture = Convert.FromHexString("7E0000000016010A000000000000E03F01");
+        var map = Assert.IsType<BlueDictionary>(BlueMarshal.Decode(fixture));
+        Assert.Null(Assert.Single(map.Entries).Key);
+        Assert.Equal(0.5, map.Entries[0].Value);
+        Assert.Equal(fixture, BlueMarshal.Encode(map));
+        var nested = new object?[] { new BlueDictionary([(null, 0.5), (0L, 0.7), (1230L, 0.8)]) };
+        var roundTrip = Assert.IsType<BlueDictionary>(Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(nested)))[0]);
+        Assert.Equal(new object?[] { null, 0L, 1230L }, roundTrip.Entries.Select(p => p.Key));
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(new BlueDictionary([(null, 1), (null, 2)]))));
+    }
+
+    [Fact]
     public void DecodesValueBeforeKeyAndUsesPinnedInternTable()
     {
         // One dictionary entry with integer value 1 and interned key 135.
