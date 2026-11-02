@@ -90,4 +90,4 @@ Each client receives its own ship as the ballpark ego. The initial snapshot incl
 
 **Automated checks on the committed revision.** Restore and build passed with zero warnings or errors, all 34 tests passed, and formatting verification passed. The flight tests cover peer arrival, course changes in both directions, departure, and stopping at the station surface.
 
-**Remaining live check.** Computer Use was stopped before the final revision could be exercised in both windows. Repeat the two-way flight, then disconnect one pilot and verify that only its ship disappears and the stationary observer's range to Jita Trade Hub stays steady.
+**Maintainer live verification on `64360ce`.** The maintainer confirmed that each pilot saw the other Ibis move and stop in Overview. When one pilot disconnected, only that ship disappeared. The stationary observer's range to Jita Trade Hub stayed steady.
