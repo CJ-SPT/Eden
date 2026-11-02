@@ -72,7 +72,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         if (result.Remaining.Destroyed)
         {
             var old = pilot.ActiveShip;
-            var items = world.Set<OwnedItem>().Where(i => i.LocationId == shipId).OrderBy(i => i.Id).ToArray();
+            var moduleIds = world.Set<OwnedItem>().Where(i => i.LocationId == shipId && i.OwnerId == pilotId).Select(i => i.Id).ToArray();
+            var items = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && (i.LocationId == shipId || moduleIds.Contains(i.LocationId))).OrderBy(i => i.Id).ToArray();
             string manifest = JsonSerializer.Serialize(items);
             var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
             var capsuleType = catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)

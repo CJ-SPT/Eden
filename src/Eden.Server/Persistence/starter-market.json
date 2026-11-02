@@ -7,6 +7,9 @@
   { "typeId": 483, "name": "Miner I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
   { "typeId": 482, "name": "Miner II", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 },
   { "typeId": 399, "name": "Small Shield Booster I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
+  { "typeId": 561, "name": "75mm Gatling Rail I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
+  { "typeId": 215, "name": "Iron Charge S", "buyPriceCents": null, "sellPriceCents": 100, "demand": 0, "stock": 100000 },
+  { "typeId": 222, "name": "Antimatter Charge S", "buyPriceCents": null, "sellPriceCents": 100, "demand": 0, "stock": 100000 },
   { "typeId": 3416, "name": "Shield Operation", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 },
   { "typeId": 32880, "name": "Venture", "buyPriceCents": null, "sellPriceCents": 1000000, "demand": 0, "stock": 10 }
 ]

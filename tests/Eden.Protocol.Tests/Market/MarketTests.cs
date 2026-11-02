@@ -452,7 +452,7 @@ public sealed class MarketTests
         var removedRow = Assert.IsType<BlueConstructor>(removal.Arguments[0]);
         var removedFields = Assert.IsType<object?[]>(removedRow.Arguments[1]);
         Assert.Equal((long)InventoryLocation.Graveyard, removedFields[(int)InventoryColumn.Location]);
-        Assert.Equal(133, removedFields[(int)InventoryColumn.StackSize]);
+        Assert.Equal(133, removedFields[(int)InventoryColumn.Quantity]);
         Assert.Equal((long)pilot.StationId, Assert.IsType<Dictionary<long, object?>>(removal.Arguments[1])[(int)InventoryColumn.Location]);
         Assert.Single(context.Notifications, n => n.Name == "OnOwnOrdersChanged");
         var now = DateTime.UtcNow;

@@ -121,7 +121,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             // railgun has a built-in charge and shares turret/CPU/grid accounting.
             int group = catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;
             bool booster = group == ShieldBoostDefinitions.Group;
-            if (group != InventoryDefinitions.MiningLaserGroup && !booster &&
+            if (group != InventoryDefinitions.MiningLaserGroup && !booster && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, item.TypeId)) &&
                 item.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             {
                 throw new InvalidDataException("This module family is not supported yet.");

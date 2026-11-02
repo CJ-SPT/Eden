@@ -1,4 +1,5 @@
 using Eden.Protocol;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
@@ -12,10 +13,11 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
-        if (module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun) { return attributes; }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        bool hybrid = CombatDefinitions.IsSupportedHybrid(module.GroupId, attributes);
+        if (!hybrid && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun) { return attributes; }
         int Level(CombatSkill skill) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
         // Pinned effects 414/582, 290, 2847, 587, 287 and 298 apply to this
         // Energy Weapon's Gunnery requirement, not Small Hybrid Turret skills.
@@ -26,10 +28,24 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         attributes[DogmaAttributeId.TrackingSpeed] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.MotionPrediction);
         attributes[DogmaAttributeId.DamageMultiplier] *= 1 + CombatDefinitions.SurgicalStrikeDamageBonus * Level(CombatSkill.SurgicalStrike);
         attributes[DogmaAttributeId.CapacitorNeed] *= 1 - CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.ControlledBursts);
+        if (hybrid)
+        {
+            attributes[DogmaAttributeId.DamageMultiplier] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.SmallHybridTurret);
+            var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+            attributes[DogmaAttributeId.MaxRange] *= 1 + fitting.Attributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus) / 100;
+            if (PilotAmmunitionStore.Contents(world, module.Id) is { } loaded)
+            {
+                var charge = fitting.Attributes(loaded.TypeId);
+                attributes[DogmaAttributeId.MaxRange] *= charge.GetValueOrDefault(DogmaAttributeId.WeaponRangeMultiplier, 1);
+                attributes[DogmaAttributeId.CapacitorNeed] *= 1 + charge.GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus) / 100;
+            }
+            var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
+            attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;
+        }
         return attributes;
     }
 
-    public CombatShot Fire(long pilotId, long moduleId, long targetId, SpacePosition velocity, long now, double roll)
+    public CombatShot Fire(long pilotId, long moduleId, long targetId, SpacePosition velocity, long now, double roll, string? effectName = null)
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1) { throw new InvalidDataException("Invalid weapon accuracy draw."); }
         using WorldDbContext world = new(database.Path);
@@ -38,11 +54,17 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         var npc = world.Set<WorldNpc>().Find(targetId);
+        bool hybrid = module is not null && CombatDefinitions.IsSupportedHybrid(
+            catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId, fitting.Attributes(module.TypeId));
         if (pilot.ActiveShip.Position is not { } position || module is null || module.OwnerId != pilotId || module.LocationId != pilot.ActiveShipId ||
-            module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun || !module.Singleton || !module.Online || !InventoryDefinitions.IsHighSlot(module.FlagId) ||
+            (!hybrid && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun) || !module.Singleton || !module.Online || !InventoryDefinitions.IsHighSlot(module.FlagId) ||
             npc is null || npc.DestroyedAt.HasValue)
         {
-            throw new InvalidDataException("Use an online fitted civilian railgun on a locked NPC while in space.");
+            throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
+        }
+        if (effectName is not null && effectName != (hybrid ? CombatDefinitions.HybridWeaponEffect : CombatDefinitions.CivilianWeaponEffect))
+        {
+            throw new InvalidDataException("Use the weapon's default firing effect.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
@@ -62,13 +84,31 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt) { throw new InvalidDataException("The weapon is still cycling."); }
-        DamageVector damage = new(attributes.GetValueOrDefault(DogmaAttributeId.EmDamage), attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
-            attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage), attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage));
-        CombatWeapon weapon = new(moduleId, module.TypeId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.BuiltInCharge)),
+        var loadedAmmo = hybrid ? PilotAmmunitionStore.Contents(world, moduleId) : null;
+        if (hybrid && loadedAmmo is null)
+        {
+            throw new InvalidDataException("Load ammunition before firing the weapon.");
+        }
+        var damageAttributes = loadedAmmo is null ? attributes : fitting.Attributes(loadedAmmo.TypeId);
+        int rounds = hybrid ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)) : 0;
+        if (hybrid && (rounds <= 0 || rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate) ||
+            loadedAmmo!.Quantity < rounds || damageAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize ||
+            catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId != AmmunitionDefinitions.HybridChargeGroup))
+        {
+            throw new InvalidDataException("Load enough compatible ammunition before firing the weapon.");
+        }
+        if (damageAttributes.Values.Any(v => !double.IsFinite(v)) || new[] { DogmaAttributeId.EmDamage, DogmaAttributeId.ExplosiveDamage,
+            DogmaAttributeId.KineticDamage, DogmaAttributeId.ThermalDamage }.Any(a => damageAttributes.GetValueOrDefault(a) < 0))
+        {
+            throw new InvalidDataException("Invalid ammunition damage attributes.");
+        }
+        DamageVector damage = new(damageAttributes.GetValueOrDefault(DogmaAttributeId.EmDamage), damageAttributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
+            damageAttributes.GetValueOrDefault(DogmaAttributeId.KineticDamage), damageAttributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage));
+        CombatWeapon weapon = new(moduleId, module.TypeId, loadedAmmo?.TypeId ?? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.BuiltInCharge)),
             damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)), attributes[DogmaAttributeId.WeaponCycleTime],
             attributes.GetValueOrDefault(DogmaAttributeId.MaxRange), attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff),
             attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed), attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed));
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed), (int)(hybrid ? DogmaEffect.ProjectileFired : DogmaEffect.CivilianWeapon));
         var target = fitting.Attributes(npc.TypeId);
         var defense = ShipHealth.DefenseFrom(target);
         HullDamage health = new(ChargedResource.Recharged(npc.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
@@ -80,6 +120,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         var result = CombatDamage.Apply(health, defense, weapon.Damage.Scale(quality));
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, weapon.CapacitorNeed, now);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
         npc.ShieldCharge = result.Remaining.Shield;
         npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
@@ -123,10 +164,20 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
                 ReadyAt = checked(now + (long)Math.Ceiling(delay * TimeSpan.TicksPerMillisecond)),
             });
         }
+        Magazine? magazine = null;
+        if (loadedAmmo is not null)
+        {
+            loadedAmmo.Quantity -= rounds;
+            magazine = new(module.Id, module.LocationId, module.FlagId, loadedAmmo.TypeId, loadedAmmo.Quantity, 0);
+            if (loadedAmmo.Quantity == 0)
+            {
+                world.Remove(loadedAmmo);
+            }
+        }
         world.SaveChanges();
         transaction.Commit();
         return new(weapon, result.Applied, quality, new(npc.Id, defense, result.Remaining), capacitor, result.Remaining.Destroyed,
-            reward is null ? null : Read(reward));
+            reward is null ? null : Read(reward), magazine);
     }
 
     private static CombatReward Read(NpcBounty b) => new(b.Id, b.PilotId, b.NpcId, b.TypeId, b.SystemId, b.Time, b.AmountCents, b.BalanceCents);

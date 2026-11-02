@@ -1,3 +1,4 @@
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
@@ -8,7 +9,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -16,16 +17,16 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     [
         ("itemID", 20), ("typeID", 3), ("ownerID", 3), ("locationID", 20),
         ("flagID", 2), ("quantity", 3), ("groupID", 3), ("categoryID", 3),
-        ("customInfo", 129), ("stacksize", 3), ("singleton", 2),
+        ("customInfo", 129),
     ];
 
     internal static BlueConstructor ItemDescriptor() => new("blue.DBRowDescriptor",
-        [s_columns.Select(column => (object?)new object?[] { column.Name, column.Type }).ToArray()]);
+        [s_columns.Select(column => (object?)new object?[] { column.Name, column.Type }).ToArray()], BlueRowDescriptor.InventoryVirtualColumns());
 
     internal static BlueConstructor Item(InventoryItem item) => new("blue.DBRow", [ItemDescriptor(), new object?[]
     {
         item.Id, item.TypeId, item.OwnerId, item.LocationId, item.FlagId, item.Singleton ? InventoryDefinitions.AssembledQuantity : item.Quantity,
-        item.GroupId, item.CategoryId, "", item.Quantity, item.Singleton ? 1 : 0,
+        item.GroupId, item.CategoryId, "",
     }]);
 
     private List<object?> List(DockedPilot pilot, string service, object?[] args)
@@ -80,6 +81,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         int? quantity = quantityValue is long q ? (int)q : null;
         try
         {
+            var previousMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId);
             bool looting = context.Pilot.Position is not null && destination == context.Pilot.ShipId && flag == (int)InventoryFlag.Cargo &&
                 context.Flight.VisibleWrecks.Any(w => w.Id == source);
             if (looting && !context.Flight.CanTarget) { return new PilotCallRouter.Error("Wreck contents cannot be transferred during warp or a system transition."); }
@@ -88,6 +90,9 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsFittedSlot(flag))
                 ? fitting.Fit(context.Pilot.PilotId, ids, source, flag)
                 : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
+            var currentMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId).ToDictionary(m => m.ModuleId);
+            ammunitionHandler.NotifyChanges(context, previousMagazines.Where(m => !currentMagazines.ContainsKey(m.ModuleId))
+                .Select(m => new MagazineChange(m, null)).ToArray());
             foreach (var change in changes)
             {
                 NotifyItemChange(context, change);
@@ -156,9 +161,9 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     {
         object?[] line = kind switch
         {
-            "ship" => [pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.LocationId, pilot.Position is null ? 4 : 0, -1, pilot.ShipGroupId, pilot.ShipCategoryId, "", 1, 1],
-            "pilot" => [pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, -1, 1, 1, "", 1, 1],
-            _ => [pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.SystemId, 0, -1, pilot.Station.GroupId, pilot.Station.CategoryId, "", 1, 1],
+            "ship" => [pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.LocationId, pilot.Position is null ? 4 : 0, -1, pilot.ShipGroupId, pilot.ShipCategoryId, ""],
+            "pilot" => [pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, -1, 1, 1, ""],
+            _ => [pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.SystemId, 0, -1, pilot.Station.GroupId, pilot.Station.CategoryId, ""],
         };
         return new("blue.DBRow", [ItemDescriptor(), line]);
     }
@@ -195,7 +200,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = (module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module) :
-            module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun ? combat.ModuleAttributes(pilot.PilotId, module) :
+            module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun || module.GroupId == CombatDefinitions.HybridWeaponGroup ? combat.ModuleAttributes(pilot.PilotId, module) :
             mining.ModuleAttributes(pilot.PilotId, module)).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[(long)DogmaAttributeId.Damage] = 0d;
@@ -205,7 +210,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             effects[(long)DogmaEffect.Online] = new object?[] { module.Id, pilot.PilotId, pilot.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online, now, InventoryDefinitions.InfiniteEffectDuration, 0 };
         }
         if (miningEffects.ActiveEffect(pilot, module.Id) is { } active) { effects[(long)DogmaEffect.MiningLaser] = active; }
-        if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing) { effects[(long)DogmaEffect.CivilianWeapon] = firing; }
+        if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing) { effects[Convert.ToInt64(firing[6])] = firing; }
         if (shieldEffects.ActiveEffect(pilot, module.Id) is { } boost) { effects[(long)DogmaEffect.ShieldBoosting] = boost; }
         return KeyVal(new()
         {
@@ -235,11 +240,21 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             shipInfo[module.Id] = PrimeModule(pilot, module);
             instances[module.Id] = new object?[] { module.Id, module.Online ? 1 : 0, 0, 0, 0, 0, 0, 0 };
         }
+        var magazines = ammunition.Read(pilot.PilotId, pilot.ShipId);
+        var quantityDescriptor = new BlueConstructor("blue.DBRowDescriptor", [new object?[]
+        {
+            new object?[] { "locationID", 20 }, new object?[] { "flagID", 3 }, new object?[] { "typeID", 3 }, new object?[] { "quantity", 3 },
+        }]);
+        var quantities = magazines.ToDictionary(m => (long)m.FlagId, m => (object?)new BlueConstructor("blue.DBRow",
+            [quantityDescriptor, new object?[] { m.ShipId, m.FlagId, m.TypeId, m.Quantity }]));
+        object info = magazines.Count == 0 ? shipInfo : new BlueDictionary(shipInfo.Select(p => ((object?)p.Key, p.Value))
+            .Concat(magazines.Select(m => ((object?)AmmunitionHandler.Key(m), (object?)ammunitionHandler.Prime(m)))).ToArray());
         return KeyVal(new()
         {
-            ["shipState"] = new object?[] { instances, new Dictionary<long, object?>(), new Dictionary<long, object?>(), new List<object?>() },
+            ["shipState"] = new object?[] { instances, magazines.Count == 0 ? new Dictionary<long, object?>() :
+                new Dictionary<long, object?> { [pilot.ShipId] = quantities }, new Dictionary<long, object?>(), new List<object?>() },
             ["structureInfo"] = null,
-            ["shipInfo"] = shipInfo,
+            ["shipInfo"] = info,
             ["charInfo"] = new object?[] { PrimeItem(pilot, pilot.PilotId, "pilot"), new object?[] { 0, Array.Empty<object?>(), Array.Empty<object?>(), Array.Empty<object?>() } },
             ["shipModifiedCharAttribs"] = null,
             ["systemWideEffectsOnShip"] = null,
@@ -339,8 +354,9 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => Item(pilot, service[1..]),
             ("dogmaIM", "GetAllInfo") => AllInfo(pilot),
             ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(pilot, id),
+            ("dogmaIM", "ItemGetInfo") when args is [object?[] { Length: 3 } key] && key is [long hull, long slot, long type] && hull == pilot.ShipId =>
+                ammunition.Read(pilot.PilotId, hull).FirstOrDefault(m => m.FlagId == slot && m.TypeId == type) is { } magazine ? ammunitionHandler.Prime(magazine) : null,
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => SetOnline(context, ship, module, method == "SetModuleOnline"),
-            ("dogmaIM", "UnloadAmmo") when args is [long ship, long module, ..] && ship == pilot.ShipId && inventory.List(pilot.PilotId, ship).Any(i => i.Id == module && InventoryDefinitions.IsHighSlot(i.FlagId)) => null,
             _ => PilotCallRouter.Unsupported,
         };
     }

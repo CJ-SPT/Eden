@@ -98,12 +98,14 @@ public static class CombatDamage
 
 public enum CombatWeaponType
 {
+    GatlingRailgun75mm = 561,
     CivilianGatlingRailgun = 3638,
 }
 
 public enum CombatSkill
 {
     Gunnery = 3300,
+    SmallHybridTurret = 3301,
     ControlledBursts = 3316,
     RapidFiring = 3310,
     Sharpshooter = 3311,
@@ -115,6 +117,12 @@ public enum CombatSkill
 public static class CombatDefinitions
 {
     public const string CivilianWeaponEffect = "targetAttack";
+    public const string HybridWeaponEffect = "projectileFired";
+    public const int HybridWeaponGroup = 74;
+
+    public static bool IsSupportedHybrid(int group, IReadOnlyDictionary<Docking.DogmaAttributeId, double> attributes) =>
+        group == HybridWeaponGroup && attributes.GetValueOrDefault(Docking.DogmaAttributeId.ChargeSize) == Ammunition.AmmunitionDefinitions.SmallChargeSize &&
+        attributes.GetValueOrDefault(Docking.DogmaAttributeId.TechLevel) == Ammunition.AmmunitionDefinitions.TechOne;
     public const double WreckingChance = 0.01;
     public const double WreckingMultiplier = 3;
     public const double HitQualityOffset = 0.49;

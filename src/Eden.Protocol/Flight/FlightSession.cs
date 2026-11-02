@@ -313,7 +313,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     }
 
     private void WeaponEffect(long shipId, WeaponContact effect, bool active) =>
-        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, effect.Target, effect.ChargeTypeId, "effects.Laser", true, active, active,
+        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, effect.Target, effect.ChargeTypeId, effect.Graphic, true, active, active,
             effect.Duration, 0, effect.StartedAt, 0, null);
 
     private void RefreshWeapons(ShipContact ship, ShipContact? previous)

@@ -112,8 +112,9 @@ public sealed class PilotFittingTests
         Assert.Equal(new[] { "OnItemChange", "OnItemChange", "OnModuleAttributeChanges" }, context.Notifications.Select(n => n.Name));
         var row = Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(context.Notifications[1].Arguments[0]).Arguments[1]);
         Assert.Equal(InventoryDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
-        Assert.Equal(1, row[(int)InventoryColumn.StackSize]);
-        Assert.Equal(1, row[(int)InventoryColumn.Singleton]);
+        Assert.Equal(9, row.Length);
+        var descriptor = Assert.IsType<BlueConstructor>(Assert.IsType<BlueConstructor>(context.Notifications[1].Arguments[0]).Arguments[0]);
+        Assert.True(BlueRowDescriptor.IsInventoryVirtuals(descriptor.State));
         foreach (bool online in new[] { true, false, true })
         {
             context.Notifications.Clear();

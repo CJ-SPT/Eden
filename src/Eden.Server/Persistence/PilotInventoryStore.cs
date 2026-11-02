@@ -43,6 +43,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");
         }
+        var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
+        var magazines = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && unfittedIds.Contains(i.LocationId)).OrderBy(i => i.Id).ToArray();
         if (destinationId == ship.Id)
         {
             double capacity = HoldCapacity(catalog, ship.TypeId, flagId);
@@ -53,6 +55,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             double used = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == flagId)
                 .AsEnumerable().Sum(i => Read(catalog, i).Volume * i.Quantity);
             double added = items.Where(i => i.LocationId != ship.Id || i.FlagId != flagId).Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
+            added += magazines.Sum(i => Read(catalog, i).Volume * i.Quantity);
             if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
             {
                 throw new CargoCapacityException(Math.Max(0, capacity - used), added);
@@ -60,6 +63,15 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         }
 
         List<InventoryChange> changes = [];
+        // Unfitting returns the real loaded rounds as ordinary items in the same
+        // destination, atomically with the module and its capacity check.
+        foreach (var magazine in magazines)
+        {
+            var previous = Read(catalog, magazine);
+            magazine.LocationId = destinationId;
+            magazine.FlagId = flagId;
+            changes.Add(new(Read(catalog, magazine), previous));
+        }
         long nextId = NextId(world);
         foreach (var item in items)
         {

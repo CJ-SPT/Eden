@@ -86,16 +86,17 @@ public sealed class DockedServicesTests
         var row = Assert.IsType<BlueConstructor>(remainder[0]);
         var descriptor = Assert.IsType<BlueConstructor>(row.Arguments[0]);
         var columns = Assert.IsType<object?[]>(descriptor.Arguments[0]).Cast<object?[]>().ToArray();
-        // inventorycommon.const in build 3662168 defines ixStackSize=9 and ixSingleton=10.
-        Assert.Equal("stacksize", columns[9][0]);
-        Assert.Equal("singleton", columns[10][0]);
+        // Godma constructs charge rows with nine physical fields and derives
+        // the seven-field internal header. Stack size/singleton are virtual.
+        Assert.Equal(9, columns.Length);
+        Assert.True(BlueRowDescriptor.IsInventoryVirtuals(descriptor.State));
         var values = Assert.IsType<object?[]>(row.Arguments[1]);
-        Assert.Equal(5, values[9]);
-        Assert.Equal(0, values[10]);
+        Assert.Equal(9, values.Length);
+        Assert.Equal(5, values[5]);
         var created = context.Notifications[1].Arguments;
         var createdChanges = Assert.IsType<Dictionary<long, object?>>(created[1]);
         Assert.Equal(0, createdChanges[9]);
-        Assert.Equal(25, Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(created[0]).Arguments[1])[9]);
+        Assert.Equal(25, Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(created[0]).Arguments[1])[5]);
     }
 
     [Fact]

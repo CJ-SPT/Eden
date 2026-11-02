@@ -18,6 +18,7 @@ internal sealed class ModuleActivationHandler(MiningHandler mining, CombatHandle
         {
             MiningDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
             CombatDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
+            CombatDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
             ShieldBoostDefinitions.EffectName => shields.Call(context, service, method, args),
             InventoryDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallRouter.Unsupported,

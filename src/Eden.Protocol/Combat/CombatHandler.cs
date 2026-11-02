@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
@@ -21,7 +22,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     }
 
     public object?[]? ActiveEffect(DockedPilot pilot, long module) => _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
-        ? [module, pilot.PilotId, pilot.ShipId, cycle.Target, null, Array.Empty<object?>(), (int)DogmaEffect.CivilianWeapon,
+        ? [module, pilot.PilotId, pilot.ShipId, cycle.Target, null, Array.Empty<object?>(), cycle.Weapon.EffectId,
             cycle.StartTime, cycle.Weapon.CycleMilliseconds, cycle.Repeats] : null;
 
     public void Advance(PilotCallContext context)
@@ -42,11 +43,11 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         }
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats)
+    private void Start(PilotCallContext context, long module, long target, long repeats, string? effectName = null)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var result = combat.Fire(context.Pilot.PilotId, module, target, context.Flight.Velocity, now,
-            RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution);
+            RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution, effectName);
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, clock.GetTimestamp(), now, repeats);
         _cycles.Add(module, cycle);
         context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Outgoing(result, target)]));
@@ -64,11 +65,16 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         {
             context.Notifications.Add(("OnAccountChange", ["cash", context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk]));
         }
+        if (result.Magazine is { } magazine)
+        {
+            AmmunitionHandler.NotifyQuantity(context, magazine, magazine.Quantity, now);
+        }
         if (result.Destroyed) { Stop(context, cycle); }
     }
 
     private static WeaponContact Contact(Cycle cycle) => new(cycle.Weapon.ItemId, cycle.Weapon.TypeId, cycle.Weapon.ChargeTypeId,
-        cycle.Target, cycle.StartTime, cycle.Weapon.CycleMilliseconds);
+        cycle.Target, cycle.StartTime, cycle.Weapon.CycleMilliseconds,
+        cycle.Weapon.EffectId == (int)DogmaEffect.ProjectileFired ? "effects.ProjectileFired" : "effects.Laser");
 
     private void Stop(PilotCallContext context, Cycle cycle)
     {
@@ -80,8 +86,8 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(("OnGodmaShipEffect", [cycle.Weapon.ItemId, (int)DogmaEffect.CivilianWeapon, now, active, active,
-            new object?[] { cycle.Weapon.ItemId, context.Pilot.PilotId, cycle.ShipId, cycle.Target, null, Array.Empty<object?>(), (int)DogmaEffect.CivilianWeapon },
+        context.Notifications.Add(("OnGodmaShipEffect", [cycle.Weapon.ItemId, cycle.Weapon.EffectId, now, active, active,
+            new object?[] { cycle.Weapon.ItemId, context.Pilot.PilotId, cycle.ShipId, cycle.Target, null, Array.Empty<object?>(), cycle.Weapon.EffectId },
             cycle.StartTime, cycle.Weapon.CycleMilliseconds, cycle.Repeats, null, active ? null : now]));
     }
 
@@ -94,7 +100,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         try
         {
             if (method == "Activate" && args is [long module, var effect, long target, long repeats] &&
-                BlueMarshal.Text(effect) == CombatDefinitions.CivilianWeaponEffect && repeats is >= 0 and <= int.MaxValue)
+                BlueMarshal.Text(effect) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect && repeats is >= 0 and <= int.MaxValue)
             {
                 if (!context.Flight.CanTarget || !targeting.IsLocked(target) || !context.Flight.VisibleNpcs.Any(n => n.Id == target))
                 {
@@ -104,10 +110,10 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 {
                     return current.Target == target ? null : new PilotCallRouter.Error("The weapon is already active.");
                 }
-                Start(context, module, target, repeats);
+                Start(context, module, target, repeats, BlueMarshal.Text(effect));
                 return null;
             }
-            if (method == "Deactivate" && args is [long item, var effectName] && BlueMarshal.Text(effectName) == CombatDefinitions.CivilianWeaponEffect)
+            if (method == "Deactivate" && args is [long item, var effectName] && BlueMarshal.Text(effectName) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect)
             {
                 // Turret damage is paid at cycle start; stop repeating after the
                 // current cycle. A reconnect cannot bypass the saved cooldown.

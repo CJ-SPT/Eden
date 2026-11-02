@@ -6,7 +6,8 @@ namespace Eden.Protocol.Serialization;
 // Only the inert wire types used by the local session. Class names are data.
 internal sealed record BlueInstance(string Name, object? State);
 // Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
-internal sealed record BlueConstructor(string Name, object?[] Arguments);
+internal sealed record BlueConstructor(string Name, object?[] Arguments, object? State = null);
+internal sealed record BlueGlobal(string Name);
 internal sealed record PaperDollRow(string Name, object?[] Fields);
 internal sealed record BlueStream(byte[] Bytes);
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
@@ -16,7 +17,6 @@ internal sealed record BlueDictionary(IReadOnlyList<(object? Key, object? Value)
 internal static class BlueMarshal
 {
     private const string PaperDollNamespace = "eve.common.script.paperDoll.paperDollDefinitions.";
-    private sealed record BlueGlobal(string Name);
 
     public static byte[] Encode(object? value)
     {
@@ -134,12 +134,12 @@ internal static class BlueMarshal
         {
             // Bounty sets and inventory row descriptors reduce to inert arguments.
             // Interpret only these allowlisted shapes; never execute a global.
-            if (Read(depth + 1) is not object?[] { Length: 2 } pair || pair[0] is not BlueGlobal global ||
+            if (Read(depth + 1) is not object?[] { Length: 2 or 3 } pair || pair[0] is not BlueGlobal global ||
                 pair[1] is not object?[] { Length: 1 } args || reader.ReadByte() != 45 || reader.ReadByte() != 45)
             {
                 throw new InvalidDataException("Unsupported Blue reduction.");
             }
-            if (global.Name is "set" or "__builtin__.set" && args[0] is List<object?> ids && ids.All(id => id is long))
+            if (pair.Length == 2 && global.Name is "set" or "__builtin__.set" && args[0] is List<object?> ids && ids.All(id => id is long))
             {
                 return ids.Cast<long>().ToHashSet();
             }
@@ -157,7 +157,12 @@ internal static class BlueMarshal
                     }
                     fields.Add((text, (BlueColumnType)type));
                 }
-                BlueRowDescriptor descriptor = new(fields);
+                bool inventoryVirtuals = pair.Length == 3;
+                if (inventoryVirtuals && !BlueRowDescriptor.IsInventoryVirtuals(pair[2]))
+                {
+                    throw new InvalidDataException("Unsupported Blue virtual columns.");
+                }
+                BlueRowDescriptor descriptor = new(fields, inventoryVirtuals);
                 _ = descriptor.DataLength;
                 return descriptor;
             }
@@ -359,7 +364,8 @@ internal static class BlueMarshal
                 break;
             case BlueRowDescriptor descriptor:
                 Write(writer, new BlueConstructor("blue.DBRowDescriptor",
-                    [descriptor.Columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()]));
+                    [descriptor.Columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()],
+                    descriptor.InventoryVirtuals ? BlueRowDescriptor.InventoryVirtualColumns() : null));
                 break;
             case BluePackedRow row:
                 BluePackedRow.Validate(row.Packed, row.Descriptor.DataLength);
@@ -372,12 +378,14 @@ internal static class BlueMarshal
                 break;
             case BlueConstructor constructor:
                 writer.Write((byte)34); // Reduce: (callable, arguments), followed by two empty iterators.
-                writer.Write((byte)44);
+                if (constructor.State is null) { writer.Write((byte)44); }
+                else { writer.Write((byte)20); Size(writer, 3); }
                 writer.Write((byte)2);
                 byte[] globalName = Encoding.ASCII.GetBytes(constructor.Name);
                 Size(writer, globalName.Length);
                 writer.Write(globalName);
                 Write(writer, constructor.Arguments);
+                if (constructor.State is not null) { Write(writer, constructor.State); }
                 writer.Write((byte)45);
                 writer.Write((byte)45);
                 break;

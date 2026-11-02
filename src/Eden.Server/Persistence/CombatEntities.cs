@@ -1,11 +1,18 @@
 namespace Eden.Server.Persistence;
 
-// Shared by weapon and shield-booster cycles. The legacy WorldWeaponCooldown
-// table name is retained so existing saves need no migration or clock reset.
+// Shared by paid module cycles and ammunition reloads. Version 25 preserves
+// existing WorldWeaponCooldown deadlines and classifies them as ordinary cycles.
 public sealed class ModuleCooldown
 {
     public long ModuleId { get; set; }
     public long ReadyAt { get; set; }
+    public ModuleCooldownKind Kind { get; set; }
+}
+
+public enum ModuleCooldownKind
+{
+    Cycle = 0,
+    Reload = 1,
 }
 
 public sealed class NpcBounty

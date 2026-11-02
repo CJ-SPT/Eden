@@ -6,7 +6,7 @@ namespace Eden.Protocol.Flight;
 
 internal sealed record FittedSpaceModule(long ItemId, int TypeId, int FlagId);
 internal sealed record MiningContact(long ModuleId, int TypeId, long Target, long StartedAt, double Duration);
-internal sealed record WeaponContact(long ModuleId, int TypeId, int ChargeTypeId, long Target, long StartedAt, double Duration);
+internal sealed record WeaponContact(long ModuleId, int TypeId, int ChargeTypeId, long Target, long StartedAt, double Duration, string Graphic = "effects.Laser");
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0, long FollowTargetId = 0, long? DepartureGate = null, bool Arriving = false, FittedSpaceModule[]? Modules = null, MiningContact[]? Mining = null, ShipHealth? Health = null, WeaponContact[]? Weapons = null, ShieldBoostContact[]? ShieldBoosts = null);
 

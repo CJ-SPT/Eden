@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 23 migrates to version 24 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 24 migrates to version 25 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -280,6 +280,15 @@ The server recomputes damage at payment time and caps the charge at the current 
    In Fitting's expanded **Defense** panel, click the repair-rate selector and choose **Shield boost rate** to see **13.0 HP/s** for one Small Shield Booster I. The default **Passive shield recharge** option reports a different calculation and rounds down to whole HP/s; an Ibis can therefore show **0 HP/s** there while the booster works normally.
 5. Undock and take shield damage from a Rookie using the encounter steps above. Activate the booster on the HUD. It needs no target lock. Watch the shield ring, capacitor, cycling indicator and native shield effect. The unmodified small booster restores up to 26 HP immediately for 20 capacitor, with a 2-second cycle. At full shields it still spends capacitor. Manual deactivation finishes the paid cycle; insufficient capacitor rejects the next cycle without healing.
 6. Warp or dock to end NPC aggression. The shield booster is warp-safe and stops on docking or hull loss. Restart and compare fitting, health and capacitor; no offline boosts are granted. Shield Compensation modifies capacitor cost when trained. Module overheating, ancillary charges and other repair families are separate work.
+
+## Upgrade to an ammunition-fed railgun
+
+1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Buy a **75mm Gatling Rail I** for **1,000 ISK** and small hybrid charges for **1 ISK per round**. Antimatter Charge S and Iron Charge S have separate finite starter stocks. These prices are Eden policy.
+2. Free a high slot if needed, then use **Fit to Active Ship** on the new gun. Keep the previous gun in the hangar. Fitting requires Small Hybrid Turret I, Gunnery I, a turret hardpoint, CPU and power grid.
+3. Drag a charge stack onto the gun in Fitting, or carry it in ordinary cargo and use the gun's HUD ammunition menu. The 75mm railgun holds **200 rounds**. A load or ammo change has a saved **5-second** reload deadline; firing during it is rejected. Changing ammo returns the old rounds to the source container.
+4. Carry reserve charges in cargo, undock and lock a Rookie. Activate the new gun. Check its ammo icon/count, cycle ring, capacitor, native turret effect, damage messages and the target's health. Every paid shot consumes the catalog's charge rate, including misses. A gun with no loaded ammunition cannot deal damage.
+5. Stop the gun and wait for the paid cycle to finish. Use **Unload to Cargo**, reload, or select a different charge. Compare Antimatter's damage/shorter optimal range with Iron's lower damage/longer optimal range and lower capacitor cost. Cargo limits still apply when unloading. Unfitting while docked returns remaining loaded rounds into the same destination as the module.
+6. Restart the host/client on the same save and compare magazine count, reserve stacks, reload deadline and wallet. Reconnecting grants no rounds and cannot finish a reload early. Loaded rounds are included separately in the original hull-loss manifest and its normal survival roll. Weapon banks, other turret families and Tech II charge groups remain unsupported.
 
 ## Check a rejected gameplay action
 

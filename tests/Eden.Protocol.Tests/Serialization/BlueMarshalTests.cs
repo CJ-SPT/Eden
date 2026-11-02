@@ -1,3 +1,4 @@
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -5,6 +6,27 @@ namespace Eden.Protocol.Tests.Serialization;
 
 public sealed class BlueMarshalTests
 {
+    [Fact]
+    public void InventoryVirtualColumnsSurvivePackedRowsWithoutBecomingPhysicalFields()
+    {
+        var header = InventoryHandler.ItemDescriptor();
+        var descriptor = Assert.IsType<BlueRowDescriptor>(BlueMarshal.Decode(BlueMarshal.Encode(header)));
+        Assert.True(descriptor.InventoryVirtuals);
+        Assert.Equal(9, descriptor.Columns.Count);
+        Assert.Equal(7, descriptor.Columns.Count(c => c.Name is not ("quantity" or "customInfo")));
+        Assert.Equal(1, descriptor.ObjectCount);
+        var row = new BluePackedRow(descriptor, [], [""]);
+        byte[] encoded = BlueMarshal.Encode(row);
+        var decoded = Assert.IsType<BluePackedRow>(BlueMarshal.Decode(encoded));
+        Assert.True(decoded.Descriptor.InventoryVirtuals);
+        Assert.Equal(encoded, BlueMarshal.Encode(decoded));
+
+        var getters = BlueRowDescriptor.InventoryVirtualColumns();
+        getters[0] = new object?[] { "stacksize", new BlueGlobal("untrusted.Call") };
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(header with { State = getters })));
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(header with { State = new List<object?>() })));
+    }
+
     [Fact]
     public void ReadsPackedRowsAsInertDataWithDescriptorAndTrailingObjects()
     {

@@ -22,8 +22,21 @@ internal enum BlueColumnType : long
     Timestamp = 135,
 }
 
-internal sealed record BlueRowDescriptor(IReadOnlyList<(string Name, BlueColumnType Type)> Columns)
+internal sealed record BlueRowDescriptor(IReadOnlyList<(string Name, BlueColumnType Type)> Columns, bool InventoryVirtuals = false)
 {
+    private const string StackSizeGetter = "eve.common.script.sys.eveCfg.StackSize";
+    private const string SingletonGetter = "eve.common.script.sys.eveCfg.Singleton";
+
+    // Carbon DBRowDescriptor's reduce state contains virtual (name, getter)
+    // pairs. Keep incoming getters as inert data and allow only this inventory
+    // header; the server never calls client-provided Python globals.
+    internal static List<object?> InventoryVirtualColumns() =>
+        [new object?[] { "stacksize", new BlueGlobal(StackSizeGetter) }, new object?[] { "singleton", new BlueGlobal(SingletonGetter) }];
+
+    internal static bool IsInventoryVirtuals(object? state) => state is List<object?> { Count: 2 } columns &&
+        columns[0] is object?[] { Length: 2 } stack && BlueMarshal.Text(stack[0]) == "stacksize" && stack[1] is BlueGlobal { Name: StackSizeGetter } &&
+        columns[1] is object?[] { Length: 2 } single && BlueMarshal.Text(single[0]) == "singleton" && single[1] is BlueGlobal { Name: SingletonGetter };
+
     public int ObjectCount => Columns.Count(c => IsObject(c.Type));
     public int DataLength => Columns.Sum(c => Size(c.Type)) + (Columns.Count + Columns.Count(c => c.Type == BlueColumnType.Boolean) + 7) / 8;
     private static bool IsObject(BlueColumnType type) => type is BlueColumnType.Bytes or BlueColumnType.String or BlueColumnType.Unicode;

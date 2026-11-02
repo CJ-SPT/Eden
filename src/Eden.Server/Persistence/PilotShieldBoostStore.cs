@@ -66,6 +66,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         saved.ShieldCharge = shield;
         saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(booster.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         world.SaveChanges();
         transaction.Commit();

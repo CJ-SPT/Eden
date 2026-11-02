@@ -260,14 +260,14 @@ public sealed class WreckTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSql($"DELETE FROM WorldItem WHERE LocationId={f.Wreck.Id}");
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; PRAGMA user_version=22");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22");
         }
         _ = new SqliteWorld(f.Db.Path);
         Assert.Empty(f.Store.List(f.Wreck.SystemId, Now));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.NotNull(saved.Set<WorldNpc>().Find(f.Wreck.SourceId)!.DestroyedAt);
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
-        Assert.Equal(24, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]
@@ -288,6 +288,7 @@ public sealed class WreckTests
                 CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
                 CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
                 ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson;
+                ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind;
                 PRAGMA user_version=23;
                 """);
             world.Database.ExecuteSql($"""
@@ -302,6 +303,6 @@ public sealed class WreckTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal("[]", saved.Set<ShipLoss>().Single().DroppedItemIdsJson);
         Assert.Empty(saved.Database.SqlQueryRaw<string>("PRAGMA foreign_key_check").AsEnumerable());
-        Assert.Equal(24, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 }
