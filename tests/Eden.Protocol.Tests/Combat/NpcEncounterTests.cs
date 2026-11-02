@@ -234,7 +234,7 @@ public sealed class NpcEncounterTests
         {
             world.Database.ExecuteSqlRaw("""
                 INSERT INTO WorldShipHealth VALUES (1000000000001,10,20,30,134000000000000000);
-                DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
+                DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=18;
                 """);
         }

@@ -28,7 +28,7 @@ One saved Guristas Rookie waits at each Perimeter belt. Fit an online **Civilian
 
 Losing all structure destroys the active ship and its fitted modules, cargo and mining-hold contents, and places the pilot in a capsule at the same position. A saved loss record retains the original hull and inventory manifest. Wallet, skills, hangar contents and other ships remain intact. NPCs do not shoot capsules in this initial encounter policy. Fly the pod back to a station and use **Board my Corvette** to return to an equipped ship. Wrecks, loot drops, insurance and native killmail records remain separate work.
 
-Ship health is saved per hull, shields recharge across restarts, and the client receives existing armor and structure damage. Mechanics, Hull Upgrades, Shield Management and Shield Operation affect health and recharge.
+Ship health is saved per hull, shields recharge across restarts, and the client receives existing armor and structure damage. Mechanics, Hull Upgrades, Shield Management and Shield Operation affect health and recharge. At a station with **Repair Facilities**, quote owned assembled ships and pay for full or partial armor/hull repairs. Eden charges **1 ISK per rounded damage point**; partial payments repair the same fraction of each selected hull's damage. Payments and wallet journal entries survive restarts. Repairs preserve shields, capacitor, cargo and fitting. Module heat/damage and structure repair services remain future work.
 
 ## Local game data
 

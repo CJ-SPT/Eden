@@ -135,6 +135,7 @@ public enum StationService
 {
     Reprocessing = 5,
     Market = 7,
+    Repair = 13,
     Fitting = 17,
 }
 

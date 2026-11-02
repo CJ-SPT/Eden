@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
@@ -51,7 +52,7 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
 
     public void ReleaseLocationReferences()
     {
-        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc" })
+        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc", "repairSvc" })
         {
             if (_references.Remove(service, out var reference))
             {
@@ -117,7 +118,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
 
     private object? CallSelected(PilotCallContext context, string service, string method, object?[] args, Action<string> report, Dictionary<string, object?>? keywords)
     {
-        if (service is "jumpCloneSvc" or "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce" or "corpStationMgr" or "reprocessingSvc")
+        if (service is "jumpCloneSvc" or "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce" or "corpStationMgr" or "reprocessingSvc" or "repairSvc")
         {
             if (method == "MachoResolveObject")
             {
@@ -126,6 +127,12 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
             if (method == "MachoBindObject" && args.Length == 2)
             {
                 long locationGroup = context.Pilot.Position is null ? 15 : 5;
+                if (service == "repairSvc" && (context.Pilot.Position is not null || args[0] is not object?[] repairBind ||
+                    repairBind is not [long repairStation, long repairLocation, (long)RepairDefinitions.StationGroup] ||
+                    repairStation != context.Pilot.StationId || repairLocation != repairStation))
+                {
+                    return Unsupported;
+                }
                 if (service is "corpStationMgr" or "reprocessingSvc" && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId)))
                 {
                     return Unsupported;

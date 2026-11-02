@@ -28,9 +28,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
 
-    private static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    internal static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
     {
-        var attributes = Attributes(catalog, pilot.ActiveShip.TypeId);
+        ship ??= pilot.ActiveShip;
+        var attributes = Attributes(catalog, ship.TypeId);
         // Catalog corvette role effects multiply the corresponding resonances.
         // A -8 percent bonus means 0.92 times damage, not eight resistance points.
         foreach (var (bonus, resonances) in new[]
@@ -68,7 +69,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         int targetLimit = TargetingDefinitions.BasePilotTargetLimit + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
             + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
         attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets), targetLimit);
-        var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == pilot.ActiveShipId && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
+        var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
         attributes[DogmaAttributeId.CpuLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu));
         attributes[DogmaAttributeId.PowerLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Power));
         attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(0, attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - fitted.Length);

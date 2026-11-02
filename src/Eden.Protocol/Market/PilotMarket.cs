@@ -32,6 +32,7 @@ public enum MarketSkill
 public enum WalletEntryType
 {
     MarketTransaction = 2,
+    RepairBill = 15,
     TransactionTax = 54,
     BountyPrizes = 85,
 }

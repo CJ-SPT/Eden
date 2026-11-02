@@ -463,7 +463,7 @@ public sealed class MiningTests
         Assert.Equal(2.1, attributes[DogmaAttributeId.MiningCriticalBonusYield], 8);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=15");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=15");
         }
         _ = new SqliteWorld(fixture.Db.Path);
         Assert.Equal(149.5, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);

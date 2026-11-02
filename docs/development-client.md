@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 20 migrates to version 21 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 21 migrates to version 22 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -245,6 +245,18 @@ Use an isolated copy of the save when testing destruction. The active ship and e
 5. Restart the host and client on the same save. The destroyed hull and its contents must remain absent, the replacement hull must remain active, and the loss record must not duplicate. Capsules are not NPC targets in this initial policy. Restore **Set Auto-Repeat On** for normal repeated firing when appropriate.
 
 For a faster destructive acceptance fixture, use a separate physical copy of the lab catalog and increase only Guristas Rookie's damage multiplier there. Never edit a hardlink to the normal catalog: that would change the original file. The recorded accelerated run used **100× NPC damage**, leaving player damage unchanged. Stop the host before changing the test catalog and restore normal catalog data afterward. This is a test override, not the normal encounter balance.
+
+## Repair a surviving ship
+
+Use a station with **Repair Facilities**, such as Perimeter II - Moon 1 - Caldari Navy Assembly Plant. Repairs require an owned assembled hull in that station's hangar and a docked active ship. The active hull does not have to be the hull being repaired.
+
+1. Select **Eden Pilot**, open Inventory and verify the active ship. Open **Repair Facilities** from the station panel. Select the damaged ship and request its quote.
+2. Check the damage and price. Eden combines saved armor and hull damage, rounds each selected ship's damage up to a whole point, and charges **1 ISK per point**. Shields and capacitor are not part of the bill. This rate is local emulator policy.
+3. Choose **Repair All** and enter part of the full amount to test a partial repair. The same fraction of armor and hull damage is removed from every selected ship. The refreshed quote must show the remaining damage. Each new quote rounds up again, so splitting a repair can slightly change the final total.
+4. Pay the remaining full quote. The repair list should become empty. Open Fitting and check restored armor/hull; check the wallet and its **Repair Bill** journal entries. Repeating an already completed repair must not charge again.
+5. Restart the host and client on the same save. Compare health, wallet, journal, cargo and fitting. No money, repairs or shield refill are granted by migration or restart.
+
+The server recomputes damage at payment time and caps the charge at the current bill. An insufficient balance rejects the payment without healing. Packaged items, other pilots' property, ships elsewhere, ships in space and stations without repair facilities are rejected. Owned assembled modules currently quote zero damage because Eden does not yet simulate module heat/damage; station structures are outside this service.
 
 ## Check saved ship health
 

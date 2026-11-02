@@ -1,12 +1,13 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPilotCombat combat) : ISelectedPilotCallHandler
+internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPilotCombat combat, IPilotRepair repair) : ISelectedPilotCallHandler
 {
     private static readonly (string Name, BlueColumnType Type)[] s_columns =
     [
@@ -192,6 +193,23 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
                 ["referenceID"] = reward.SystemId,
                 ["amount"] = Isk(reward.AmountCents),
                 ["balance"] = Isk(reward.BalanceCents),
+                ["description"] = null,
+            }));
+        }
+        foreach (var payment in repair.Payments(context.Pilot.PilotId))
+        {
+            var date = DateTime.FromFileTimeUtc(payment.Time);
+            if (recent ? date < clock.GetUtcNow().UtcDateTime.AddDays(-30) : date.Year != (long)year! || date.Month != (long)month!) { continue; }
+            entries.Add(KeyVal(new()
+            {
+                ["transactionID"] = RepairDefinitions.FirstRepairJournalId + payment.Id,
+                ["transactionDate"] = payment.Time,
+                ["entryTypeID"] = (int)WalletEntryType.RepairBill,
+                ["ownerID1"] = payment.PilotId,
+                ["ownerID2"] = payment.StationOwnerId,
+                ["referenceID"] = payment.StationId,
+                ["amount"] = -Isk(payment.AmountCents),
+                ["balance"] = Isk(payment.BalanceCents),
                 ["description"] = null,
             }));
         }
