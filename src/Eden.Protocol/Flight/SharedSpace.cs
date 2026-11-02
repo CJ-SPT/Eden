@@ -3,13 +3,23 @@ using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null);
+internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0);
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class SharedSpace
 {
     // Only immutable samples cross connection boundaries. Each pilot owns its simulation and socket.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
+
+    private long _epoch = long.MinValue;
+
+    // A Destiny stamp in a peer's ball record must refer to the same tick for both clients.
+    public int Stamp(TimeProvider clock)
+    {
+        long now = clock.GetTimestamp();
+        long epoch = Interlocked.CompareExchange(ref _epoch, now, long.MinValue);
+        return epoch == long.MinValue ? 1 : 1 + (int)Math.Max(0, clock.GetElapsedTime(epoch, now).TotalSeconds);
+    }
 
     public void Publish(ShipContact ship) => _ships[ship.Pilot.ShipId] = ship;
     public void Leave(long shipId) => _ships.TryRemove(shipId, out _);

@@ -5,8 +5,9 @@ namespace Eden.Protocol.Flight;
 
 internal static class Ballpark
 {
-    internal static BlueInstance Snapshot(DockedPilot pilot, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
+    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
     {
+        var pilot = own.Pilot;
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE
@@ -32,10 +33,10 @@ internal static class Ballpark
             }
             items.Add(Slim(item));
         }
-        items.Add(WriteShip(writer, pilot, new(0, 0, 0)));
+        items.Add(WriteShip(writer, own, stamp));
         foreach (var peer in peers)
         {
-            items.Add(WriteShip(writer, peer.Pilot, peer.Velocity));
+            items.Add(WriteShip(writer, peer, stamp));
         }
         return new("utillib.KeyVal", new Dictionary<string, object?>
         {
@@ -58,13 +59,18 @@ internal static class Ballpark
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // AddBalls reads the full-state format in partial mode.
         writer.Write(stamp);
-        var slim = WriteShip(writer, ship.Pilot, ship.Velocity);
+        var slim = WriteShip(writer, ship, stamp);
         return [stream.ToArray(), new List<object?> { slim }, new Dictionary<long, object?>()];
     }
 
-    private static BlueInstance WriteShip(BinaryWriter writer, DockedPilot pilot, SpacePosition velocity)
+    private static BlueInstance WriteShip(BinaryWriter writer, ShipContact ship, int stamp)
     {
-        WriteBallHeader(writer, pilot.ShipId, 2, pilot.Flight.ShipRadius, pilot.Position!, 1 | 4 | 8);
+        var pilot = ship.Pilot;
+        var velocity = ship.Velocity;
+        var warpTarget = ship.Warp?.Destination ?? ship.AlignTo;
+        byte mode = warpTarget is not null ? (byte)3 : ship.FollowRange.HasValue ? (byte)1 : ship.Heading is null ? (byte)2 : (byte)0;
+        // Proper warp temporarily clears the massive flag. Aligning ships still collide.
+        WriteBallHeader(writer, pilot.ShipId, mode, pilot.Flight.ShipRadius, pilot.Position!, ship.Warp is null ? (byte)13 : (byte)9);
         writer.Write(pilot.Flight.Mass);
         writer.Write((byte)0); // Uncloaked
         writer.Write(-1L); // Force-field harmonic
@@ -75,8 +81,26 @@ internal static class Ballpark
         writer.Write(velocity.Y);
         writer.Write(velocity.Z);
         writer.Write(pilot.Flight.Agility);
-        writer.Write(0f); // Stopped on entry or reconnect
+        writer.Write((float)ship.SpeedFraction);
         writer.Write((sbyte)-1);
+
+        if (warpTarget is not null)
+        {
+            WritePosition(writer, warpTarget);
+            writer.Write(ship.Warp?.StartStamp ?? -(1 + stamp - ship.AlignStamp));
+            writer.Write(ship.Warp?.Distance ?? 0d);
+            writer.Write(0d); // minRange was already applied when choosing the destination.
+            writer.Write((long)(ship.Warp?.WireFactor ?? ship.WarpFactor));
+        }
+        else if (ship.FollowRange is double range)
+        {
+            writer.Write((long)pilot.StationId);
+            writer.Write((float)range);
+        }
+        else if (ship.Heading is { } heading)
+        {
+            WritePosition(writer, pilot.Position! + heading * 1e17);
+        }
 
         var ibis = Item(pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.ShipGroupId, pilot.ShipCategoryId);
         ibis["name"] = pilot.ShipName;
@@ -84,6 +108,13 @@ internal static class Ballpark
         ibis["corpID"] = pilot.CorpId;
         ibis["modules"] = new List<object?>();
         return Slim(ibis);
+    }
+
+    private static void WritePosition(BinaryWriter writer, SpacePosition position)
+    {
+        writer.Write(position.X);
+        writer.Write(position.Y);
+        writer.Write(position.Z);
     }
 
     private static BlueInstance Slim(Dictionary<string, object?> item) => new("eve.common.script.util.slimItem.SlimItem", item);

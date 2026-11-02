@@ -24,6 +24,20 @@ public sealed record SpacePosition(double X, double Y, double Z)
 {
     public static SpacePosition Zero { get; } = new(0, 0, 0);
 
+    internal double Length => DistanceTo(Zero);
+    internal SpacePosition Unit
+    {
+        get
+        {
+            double length = Length;
+            return length > 0 ? this * (1 / length) : Zero;
+        }
+    }
+    internal double Dot(SpacePosition other) => X * other.X + Y * other.Y + Z * other.Z;
+    public static SpacePosition operator +(SpacePosition a, SpacePosition b) => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+    public static SpacePosition operator -(SpacePosition a, SpacePosition b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+    public static SpacePosition operator *(SpacePosition a, double scale) => new(a.X * scale, a.Y * scale, a.Z * scale);
+
     public double DistanceTo(SpacePosition other)
     {
         double x = X - other.X, y = Y - other.Y, z = Z - other.Z;

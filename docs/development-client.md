@@ -97,3 +97,7 @@ Start both clients in space. The **General** Overview shows stations and stargat
 2. Keep the second pilot at the departure point until the first ship disappears from Overview. Warp the second pilot to the same object at the same range. Check for the first Ibis nearby on arrival.
 3. Fly into open space away from a station or planet. Once the Ibis has accelerated, use **Stop My Ship** (Ctrl+Space). Watch the speed fall and the range continue changing until the ship settles at **0.0 m/s**.
 4. To return home, warp to **Jita IV - Moon 4 - Caldari Navy Assembly Plant** and select **Dock** inside docking range.
+
+For the celestial landing check, warp to zero at **Jita V**, then at **Jita V – Moon 16**. Selected Item should settle near 30,342 km and 5,164 km respectively. Allow a few kilometres for the landing lane and braking. Have the second pilot arrive from another direction and check that both ships share the same area.
+
+For tunnel entry, use a long leg such as the Jita Trade Hub to the Perimeter gate. Watch for **Establishing Warp Vector** while the Ibis turns, then **Warp Drive Active** and the tunnel as it accelerates. Leave the second pilot at the destination and watch the arriving Ibis in Overview.
