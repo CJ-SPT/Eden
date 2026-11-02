@@ -31,16 +31,8 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
     private Dictionary<long, object?> PrimeItem(DockedPilot pilot, long id, string kind)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = new Dictionary<long, object?>();
-        if (kind == "pilot")
-        {
-            foreach (long attribute in new long[] { 164, 165, 166, 167, 168 })
-            {
-                attributes.Add(attribute, 20);
-            }
-        }
-
-        else
+        var attributes = kind == "pilot" ? PilotProfile.TrainingAttributes() : new Dictionary<long, object?>();
+        if (kind != "pilot")
         {
             // Undamaged, fully charged Ibis. The HUD reads these current values from godma.
             attributes[9] = pilot.Hull.Structure;

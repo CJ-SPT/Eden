@@ -1,12 +1,35 @@
 using Eden.Protocol.Docking;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldTests
 {
+    [Fact]
+    public void EachPilotRetainsIndependentSkillProgressAfterReopen()
+    {
+        using TestWorld db = new();
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Set<PilotSkill>().Find(90000002L, 3327)!.Points = 1415;
+            world.SaveChanges();
+        }
+        _ = new SqliteWorld(db.Path);
+        var reader = db.Services.GetRequiredService<IPilotSkillReader>();
+        var pilot = Assert.Single(reader.ReadSkills(90000001));
+        var wing = Assert.Single(reader.ReadSkills(90000002));
+        Assert.Equal(new TrainedSkill(3327, 8000, 1), pilot);
+        Assert.Equal(3, pilot.Level);
+        Assert.Equal(1415, wing.Points);
+        Assert.Equal(2, wing.Level);
+        Assert.Equal(1, (wing with { Points = 1414 }).Level);
+        Assert.Empty(reader.ReadSkills(90000003));
+    }
+
     [Fact]
     public void ReopeningWorldKeepsExactlyOneOwnedActiveShip()
     {

@@ -15,12 +15,27 @@ public interface IDockedWorld : IPilotLookup, IShipPositionStore;
 public sealed record DockedPilot(long PilotId, string Name, int CorpId, long ShipId, int ShipTypeId,
     int ShipGroupId, int ShipCategoryId, int StationId, int StationTypeId, int StationOwnerId,
     int HomeSystemId, int HomeConstellationId, int HomeRegionId, int OperationId, int OrbitId, double X, double Y, double Z, string ShipName, double CargoCapacity, int TurretSlots, FlightProperties Flight,
-    StationIdentity Station, HullProperties Hull, SpacePosition? Position = null, FlightSystem? CurrentSystem = null)
+    StationIdentity Station, HullProperties Hull, AccountProfile Account, PilotProfile Profile, SpacePosition? Position = null, FlightSystem? CurrentSystem = null)
 {
     public int SystemId => CurrentSystem?.Id ?? HomeSystemId;
     public int ConstellationId => CurrentSystem?.ConstellationId ?? HomeConstellationId;
     public int RegionId => CurrentSystem?.RegionId ?? HomeRegionId;
     public int LocationId => Position is null ? StationId : SystemId;
+}
+
+public sealed record AccountProfile(string UserName, long CreatedAt);
+
+public sealed record PilotProfile(int RaceId, int BloodlineId, int GenderId, int AncestryId, int SchoolId, long CreatedAt)
+{
+    // The standard neural map puts 19 points in charisma and 20 in each other attribute.
+    public static Dictionary<long, object?> TrainingAttributes() => new()
+    {
+        [164] = 19,
+        [165] = 20,
+        [166] = 20,
+        [167] = 20,
+        [168] = 20,
+    };
 }
 
 public sealed record FlightSystem(int Id, int ConstellationId, int RegionId);

@@ -56,7 +56,7 @@ public sealed class SqliteWorld : IDockedWorld
     public DockedPilot? FindPilot(long accountId)
     {
         using WorldDbContext world = new(_database.Path);
-        var pilot = world.Pilots.AsNoTracking().Include(p => p.ActiveShip).ThenInclude(s => s.Position)
+        var pilot = world.Pilots.AsNoTracking().Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position)
             .SingleOrDefault(p => p.AccountId == accountId);
         if (pilot is null)
         {
@@ -78,7 +78,8 @@ public sealed class SqliteWorld : IDockedWorld
         return new(pilot.Id, pilot.Name, pilot.CorporationId, ship.Id, ship.TypeId, type.GroupId, type.Group.CategoryId,
             station.Id, station.TypeId, station.OwnerId, system.Id, system.ConstellationId, system.Constellation.RegionId,
             station.OperationId, station.OrbitId, station.X, station.Y, station.Z, ship.Name, type.Capacity!.Value,
-            checked((int)Attribute(102)), flight, identity, hull, ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
+            checked((int)Attribute(102)), flight, identity, hull, new(pilot.Account.UserName, pilot.Account.CreatedAt),
+            new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt), ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
             ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null);
     }
 }

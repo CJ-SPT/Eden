@@ -1,3 +1,5 @@
+using System.Globalization;
+using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 7)
+        if (version is < 0 or > 10)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -36,9 +38,44 @@ internal static class WorldMigration
             // Old positions are relative to the ship's home system (also the null fallback).
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldPosition ADD COLUMN SystemId INTEGER");
         }
-        if (version < 7)
+        if (version is 6 or 7)
         {
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=7");
+            world.Database.ExecuteSqlRaw("""
+                ALTER TABLE WorldAccount ADD COLUMN UserName TEXT NOT NULL DEFAULT 'Eden';
+                ALTER TABLE WorldAccount ADD COLUMN CreatedAt INTEGER NOT NULL DEFAULT 134000000000000000;
+                ALTER TABLE WorldPilot ADD COLUMN CreatedAt INTEGER NOT NULL DEFAULT 134000000000000000;
+                ALTER TABLE WorldPilot ADD COLUMN RaceId INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE WorldPilot ADD COLUMN BloodlineId INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE WorldPilot ADD COLUMN GenderId INTEGER NOT NULL DEFAULT 1;
+                ALTER TABLE WorldPilot ADD COLUMN AncestryId INTEGER NOT NULL DEFAULT 10;
+                ALTER TABLE WorldPilot ADD COLUMN SchoolId INTEGER NOT NULL DEFAULT 19;
+                """);
+        }
+        if (version < 8)
+        {
+            world.Database.ExecuteSqlRaw("UPDATE WorldAccount SET UserName='Eden Wing' WHERE Id=1000002");
+        }
+        if (version is >= 6 and < 9)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldPilotSkill(
+                    PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    TypeId INTEGER NOT NULL,
+                    Points INTEGER NOT NULL CONSTRAINT CK_PilotSkill_Points CHECK (Points >= 0),
+                    PRIMARY KEY(PilotId,TypeId));
+                """);
+        }
+        if (version < 10)
+        {
+            GrantStartingSkills(world, catalog);
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=10");
+        }
+        var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
+        var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
+            t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();
+        if (rankedSkills != skillTypes.Length)
+        {
+            throw new InvalidDataException("Save references an unknown skill or training multiplier.");
         }
         foreach (int type in world.Ships.Select(s => s.TypeId).Distinct())
         {
@@ -62,6 +99,29 @@ internal static class WorldMigration
             }
         }
         transaction.Commit();
+    }
+
+    private static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog)
+    {
+        foreach (var group in world.Pilots.Select(p => new { p.Id, p.RaceId }).ToArray().GroupBy(p => p.RaceId))
+        {
+            var levels = CatalogData.Client.Races.Get(catalog, group.Key).Skills
+                ?? throw new InvalidDataException($"Missing starting skills for race {group.Key}.");
+            foreach (var (key, level) in levels)
+            {
+                int typeId = int.Parse(key, CultureInfo.InvariantCulture);
+                double rank = catalog.Set<TypeAttribute>().Single(a => a.ItemTypeId == typeId && a.AttributeId == 275).Value;
+                long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
+                foreach (var pilot in group)
+                {
+                    // Preserve higher progress in an existing save, including the version 9 development grant.
+                    world.Database.ExecuteSql($"""
+                        INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES ({pilot.Id},{typeId},{points})
+                        ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=MAX(Points,excluded.Points)
+                        """);
+                }
+            }
+        }
     }
 
     private static void CopyLegacy(WorldDbContext world, int version)

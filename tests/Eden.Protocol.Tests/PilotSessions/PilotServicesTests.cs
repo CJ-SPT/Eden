@@ -19,6 +19,7 @@ public sealed class PilotServicesTests
             Assert.Equal(90000001L, fields["characterID"]);
             Assert.Equal("Eden Pilot", BlueMarshal.Text(fields["characterName"]));
             Assert.Equal(601L, fields["shipTypeID"]);
+            Assert.Equal(8000L, fields["skillPoints"]);
         }
     }
 
@@ -48,6 +49,23 @@ public sealed class PilotServicesTests
         Assert.Equal(new object?[] { null, 30000142 }, changes["solarsystemid2"]);
         Assert.DoesNotContain("solarsystemid", changes.Keys);
         Assert.EndsWith(".CallRsp", packets[1].Name);
+    }
+
+    [Fact]
+    public async Task SheetReadsOnlyTheSelectedPilotsProfile()
+    {
+        var packets = await ExchangeAsync(42,
+            Request("charMgr", "GetPublicInfo", [90000001L]),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("charMgr", "GetPublicInfo", [90000002L]),
+            Request("charMgr", "GetPublicInfo", [90000001L]));
+        Assert.EndsWith(".ErrorResponse", packets[0].Name);
+        Assert.EndsWith(".ErrorResponse", packets[3].Name);
+        var fields = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);
+        Assert.Equal(90000001L, fields["characterID"]);
+        Assert.Equal(19L, fields["schoolID"]);
+        Assert.Equal(10L, fields["ancestryID"]);
+        Assert.Equal(134000000000000000L, fields["createDateTime"]);
     }
 
     [Fact]

@@ -16,6 +16,7 @@
 
 ## Services and protocol calls
 
+- Consult the [open-source Carbon engine](https://github.com/carbonengine) when implementing or investigating behavior it owns, such as Blue serialization, transport, or Destiny simulation. Check gameplay service methods and response fields against the pinned client and catalog. Record the relevant source revision and live observations in the protocol notes.
 - Mark service classes with `[Injectable]` and declare dependencies in their public constructor. The server scans the Eden.Server and Eden.Protocol assemblies at startup. Each class is available by its concrete type and its Eden interfaces.
 - Use the default transient lifetime for stateless handlers. Use `[Injectable(InjectionType.Scoped)]` for one instance per client connection and `[Injectable(InjectionType.Singleton)]` for shared infrastructure. Keep service resolution in the host. Pass connection data, such as the authenticated session ID, to the operation that uses it.
 - Add gameplay methods to a feature handler implementing `ISelectedPilotCallHandler`. Use `IPilotCallHandler` for account-level calls available before character selection. Give each service/method pair one owner within its phase. Return `PilotCallRouter.Unsupported` for an unhandled call and `null` for a successful Python None. The router owns bound references and selection gating. The session loop sends replies and notifications.

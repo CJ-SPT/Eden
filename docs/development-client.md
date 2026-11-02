@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 6 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 9 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -108,3 +108,7 @@ For tunnel entry, use a long leg such as the Jita Trade Hub to the Perimeter gat
 2. Watch the **Jumping** message, gate camera and tunnel. On exit, check the **Perimeter** system label, the starfield, and the **Jita** gate about 12 km away in Overview.
 3. Select the Jita gate and click **Jump**. Allow the Ibis to approach before it activates the gate. Verify that the rendered Jita scene and flight controls return after the tunnel.
 4. To check persistence, restart the client and host while stopped in the destination system. The character card and Overview should show that system.
+
+## Check the character sheet
+
+Start a fresh client with `-Login` and select **Eden Pilot**. Open the sheet from the portrait on the left, or use the window restored at login. Under **Character → Home Station**, check the pilot name, birth date, Jita home station, and total SP. Click **Skills → Skill Catalogue**, filter to **My skills**, and select **Spaceship Command**. On a fresh save the Caldari pilot has Spaceship Command III and 384,047 total SP. Reopen the client after restarting the server to compare against the saved pilot.

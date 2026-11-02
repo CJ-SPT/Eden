@@ -37,8 +37,10 @@ public sealed class WorldMigrationTests
         }
     }
 
-    [Fact]
-    public void VersionSixPositionsResumeInTheHomeSystem()
+    [Theory]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void AddsProfilesToExistingWorld(int version)
     {
         using TestWorld db = new();
         var position = new SpacePosition(45, 67, 89);
@@ -46,7 +48,17 @@ public sealed class WorldMigrationTests
         using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
         connection.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "ALTER TABLE WorldPosition DROP COLUMN SystemId; PRAGMA user_version=6";
+        command.CommandText = """
+            DROP TABLE WorldPilotSkill;
+            ALTER TABLE WorldAccount DROP COLUMN UserName;
+            ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
+            ALTER TABLE WorldPilot DROP COLUMN CreatedAt;
+            ALTER TABLE WorldPilot DROP COLUMN RaceId;
+            ALTER TABLE WorldPilot DROP COLUMN BloodlineId;
+            ALTER TABLE WorldPilot DROP COLUMN GenderId;
+            ALTER TABLE WorldPilot DROP COLUMN AncestryId;
+            ALTER TABLE WorldPilot DROP COLUMN SchoolId;
+            """ + (version == 6 ? "ALTER TABLE WorldPosition DROP COLUMN SystemId;" : "") + $"PRAGMA user_version={version}";
         command.ExecuteNonQuery();
 
         var world = new SqliteWorld(db.Path);
@@ -55,7 +67,9 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(7L, command.ExecuteScalar());
+        Assert.Equal(10L, command.ExecuteScalar());
+        Assert.Equal(19, pilot.Profile.SchoolId);
+        Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }
 
     [Fact]

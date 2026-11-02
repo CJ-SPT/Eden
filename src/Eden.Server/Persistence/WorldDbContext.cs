@@ -5,6 +5,8 @@ namespace Eden.Server.Persistence;
 
 public sealed class Account
 {
+    public string UserName { get; set; } = "";
+    public long CreatedAt { get; set; }
     public long Id { get; set; }
 }
 
@@ -15,8 +17,22 @@ public sealed class Pilot
     public Account Account { get; set; } = null!;
     public string Name { get; set; } = "";
     public int CorporationId { get; set; }
+    public int RaceId { get; set; }
+    public int BloodlineId { get; set; }
+    public int GenderId { get; set; } = -1;
+    public int AncestryId { get; set; }
+    public int SchoolId { get; set; }
+    public long CreatedAt { get; set; }
     public long ActiveShipId { get; set; }
     public Ship ActiveShip { get; set; } = null!;
+}
+
+[PrimaryKey(nameof(PilotId), nameof(TypeId))]
+public sealed class PilotSkill
+{
+    public long PilotId { get; set; }
+    public int TypeId { get; set; }
+    public long Points { get; set; }
 }
 
 public sealed class Ship
@@ -52,6 +68,17 @@ public sealed class WorldDbContext(string path) : DbContext
     {
         model.Entity<Account>().ToTable("WorldAccount");
         model.Entity<Pilot>().ToTable("WorldPilot");
+        // Defaults preserve the identities previously returned by character selection.
+        model.Entity<Account>().Property(a => a.UserName).HasDefaultValue("Eden");
+        model.Entity<Account>().Property(a => a.CreatedAt).HasDefaultValue(134000000000000000L);
+        model.Entity<Pilot>().Property(p => p.CreatedAt).HasDefaultValue(134000000000000000L);
+        model.Entity<Pilot>().Property(p => p.RaceId).HasDefaultValue(1);
+        model.Entity<Pilot>().Property(p => p.BloodlineId).HasDefaultValue(1);
+        model.Entity<Pilot>().Property(p => p.GenderId).HasDefaultValue(1).HasSentinel(-1);
+        model.Entity<Pilot>().Property(p => p.AncestryId).HasDefaultValue(10);
+        model.Entity<Pilot>().Property(p => p.SchoolId).HasDefaultValue(19);
+        model.Entity<PilotSkill>().ToTable("WorldPilotSkill", t => t.HasCheckConstraint("CK_PilotSkill_Points", "Points >= 0"));
+        model.Entity<PilotSkill>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model.Entity<Ship>().ToTable("WorldShip");
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
         model.Entity<Pilot>().HasIndex(p => p.AccountId).IsUnique();

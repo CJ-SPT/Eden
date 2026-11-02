@@ -13,6 +13,8 @@ internal static class TestCatalog
             PRAGMA application_id=0x4544454E;
             PRAGMA user_version=1;
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('sde/_sde','"sde"','{{"buildNumber":3662168}}');
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"skills":{{"3327":3}}}}');
+            CREATE VIEW records_client_races AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/races';
             CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber, 'Assembly Plant' AS Operation;
             INSERT INTO Region(Id,Name) VALUES (10000002,'The Forge');
             INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000020,10000002,'Kimotoro');
@@ -24,6 +26,11 @@ internal static class TestCatalog
             INSERT INTO NpcCorporation(Id,Name) VALUES (1000044,'Pilot corporation'),(1000035,'Caldari Navy');
             INSERT INTO DogmaAttribute(Id,Name) VALUES (102,'turretSlotsLeft'),(37,'maxVelocity'),(70,'agility'),(9,'hp'),(482,'capacitorCapacity'),(55,'rechargeRate'),(263,'shieldCapacity'),(265,'armorHP'),(479,'shieldRechargeRate'),(600,'warpSpeedMultiplier'),(1281,'baseWarpSpeed');
             INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (601,102,2),(601,37,295),(601,70,4.5),(601,9,175),(601,482,130),(601,55,65000),(601,263,200),(601,265,125),(601,479,860000),(601,600,3),(601,1281,1);
+            INSERT INTO ItemCategory(Id,Name) VALUES (16,'Skill');
+            INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (257,'Spaceship Command',16);
+            INSERT INTO ItemType(Id,Name,GroupId) VALUES (3327,'Spaceship Command',257);
+            INSERT INTO DogmaAttribute(Id,Name) VALUES (275,'skillTimeConstant');
+            INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3327,275,1);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES (40009087,30000142,52673,8,1620000,0,0,0);
             INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000144,20000020,'Perimeter');
             INSERT INTO ItemCategory(Id,Name) VALUES (2,'Celestial');

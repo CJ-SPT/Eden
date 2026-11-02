@@ -17,6 +17,8 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
             ("account", "GetCashBalance") => 0d,
+            ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") =>
+                KeyVal(new() { ["iskEscrow"] = 0d, ["itemsEscrow"] = 0d }),
             ("keeper", "GetCurrentDungeonForCharacter") => null,
             ("dogmaIM", "GetTargets" or "GetTargeters") => new List<object?>(),
             ("home_station", "get_home_station") => KeyVal(new()
@@ -33,7 +35,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
                 ["needsAttention"] = new List<object?>(),
                 ["inProgress"] = new List<object?>(),
             }),
-            ("@skills", "GetSkillHistory") => new List<object?>(),
             ("bountyProxy", "GetBountiesAndKillRights") => new object?[] { new List<object?>(), new List<object?>() },
             ("bountyProxy", "GetMyKillRights") => new List<object?>(),
             ("monolithTaskTrackerMgr", "HasEverWarped") => false,
@@ -44,7 +45,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("notificationMgr", "GetAllNotifications") => new List<object?>(),
             ("beyonce", "GetFormations") => Array.Empty<object?>(),
             ("charMgr", "SetActivityStatus") => null,
-            ("@skills", "GetSkillQueueAndFreePoints") => new object?[] { new List<object?>(), 0 },
             ("corpRegistry", "GetAggressionSettings") => null,
             ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], [pilot.PilotId, pilot.Name, 1373]),
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new object?[] { 1d, false },
@@ -66,10 +66,10 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
                 }).ToList(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
-            ("shipCosmeticsMgr", "GetEnabledCosmetics") or ("@skills", "GetSkills") => new Dictionary<string, object?>(),
+            ("shipCosmeticsMgr", "GetEnabledCosmetics") => new Dictionary<string, object?>(),
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
-            ("@skills", "GetBoosters" or "GetImplants") or ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => new Dictionary<long, object?>(),
-            ("@skills", "CheckAndSendNotifications") or ("XmppChatMgr", "GetDeprecatedPrefsFallback") => null,
+            ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => new Dictionary<long, object?>(),
+            ("XmppChatMgr", "GetDeprecatedPrefsFallback") => null,
             ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId =>
                 KeyVal(new() { ["characterID"] = id, ["corporationID"] = pilot.CorpId, ["title"] = "", ["roles"] = 0, ["titleMask"] = 0 }),
             ("insuranceSvc", "GetContracts") => new List<object?>(),
@@ -79,6 +79,12 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("crimewatch", "GetClientStates") => new object?[] {
                 Enumerable.Range(0, 5).Select(_ => (object?)new object?[] { null, null }).ToArray(),
                 new Dictionary<string, object?>(), new object?[] { new List<object?>(), new List<object?>() }, 2 }, // Full ship safety is required by the flight HUD.
+            ("jumpCloneSvc", "GetCloneState") => KeyVal(new()
+            {
+                ["clones"] = Rows(["jumpCloneID", "locationID", "cloneName"]),
+                ["implants"] = Rows(["jumpCloneID", "typeID"]),
+                ["timeLastJump"] = null,
+            }),
             ("jumpTimers", "GetTimers") => new object?[] { null, null, null },
             ("air_npe", "get_air_npe_state") => 0,
             ("agentMgr", "GetAgents") => Rows(["agentID", "stationID", "corporationID", "solarsystemID", "agentTypeID", "factionID", "divisionID", "level", "quality", "isLocator"]),
@@ -89,7 +95,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
                 [pilot.StationId, pilot.StationTypeId, pilot.Station.Name, pilot.HomeSystemId,
                  pilot.HomeConstellationId, pilot.HomeRegionId, pilot.StationOwnerId, pilot.StationOwnerId, pilot.OperationId,
                  pilot.OrbitId, pilot.X, pilot.Y, pilot.Z, 0]),
-            ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills"),
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
             ("agentMgr", "GetMyJournalDetails") => new object?[] { new List<object?>(), new List<object?>() },

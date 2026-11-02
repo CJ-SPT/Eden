@@ -1,10 +1,11 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable]
-internal sealed class CharacterSelectionHandler : IPilotCallHandler
+internal sealed class CharacterSelectionHandler(IPilotSkillReader skills) : IPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object? arguments)
     {
@@ -33,14 +34,14 @@ internal sealed class CharacterSelectionHandler : IPilotCallHandler
         args[1] is object?[] { Length: > 1 } call && BlueMarshal.Text(call[0]) == "GetCharacterLoadSlot" &&
         call[1] is object?[] { Length: 1 } ids && Equals(ids[0], pilotId);
 
-    private static object?[] CharacterSelection(DockedPilot docked)
+    private object?[] CharacterSelection(DockedPilot docked)
     {
         BlueInstance account = new("utillib.KeyVal", new Dictionary<string, object?>
         {
-            ["userName"] = "Eden",
+            ["userName"] = docked.Account.UserName,
             ["characterSlots"] = 1,
             ["maxCharacterSlots"] = 1,
-            ["creationDate"] = 134000000000000000L,
+            ["creationDate"] = docked.Account.CreatedAt,
             ["subscriptionEndTime"] = null,
         });
         BlueInstance pilot = new("utillib.KeyVal", new Dictionary<string, object?>
@@ -56,7 +57,7 @@ internal sealed class CharacterSelectionHandler : IPilotCallHandler
             ["factionID"] = null,
             ["balance"] = 0,
             ["balanceChange"] = 0,
-            ["skillPoints"] = 0,
+            ["skillPoints"] = skills.ReadSkills(docked.PilotId).Sum(s => s.Points),
             ["finishedSkills"] = 0,
             ["unreadMailCount"] = 0,
             ["paperdollState"] = 0,
@@ -64,9 +65,9 @@ internal sealed class CharacterSelectionHandler : IPilotCallHandler
             ["deletePrepareDateTime"] = null,
             ["logoffDate"] = 134000000000000000L,
             ["skillTypeID"] = null,
-            ["gender"] = 1,
-            ["bloodlineID"] = 1,
-            ["raceID"] = 1,
+            ["gender"] = docked.Profile.GenderId,
+            ["bloodlineID"] = docked.Profile.BloodlineId,
+            ["raceID"] = docked.Profile.RaceId,
         });
         return [new List<object?> { account }, new object?[] { null, null }, new List<object?> { pilot }, new List<object?>()];
     }

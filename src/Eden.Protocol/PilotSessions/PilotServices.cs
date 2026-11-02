@@ -161,9 +161,9 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             ["solarsystemid2"] = pilot.SystemId,
             ["constellationid"] = pilot.ConstellationId,
             ["regionid"] = pilot.RegionId,
-            ["raceID"] = 1,
-            ["bloodlineID"] = 1,
-            ["genderID"] = 1,
+            ["raceID"] = pilot.Profile.RaceId,
+            ["bloodlineID"] = pilot.Profile.BloodlineId,
+            ["genderID"] = pilot.Profile.GenderId,
         };
     }
 

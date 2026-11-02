@@ -37,7 +37,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         {
             if (ids.Contains(pilot.PilotId))
             {
-                rows.Add(new object?[] { pilot.PilotId, pilot.Name, 1373, 1, null });
+                rows.Add(new object?[] { pilot.PilotId, pilot.Name, 1373, pilot.Profile.GenderId, null });
             }
         }
 
