@@ -21,11 +21,17 @@ internal static class Ballpark
             var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
             if (body.DestinationGateId.HasValue)
             {
-                item["jumps"] = new List<object?> { new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
+                // StargateSetup indexes these pairs even when there is no local insurgency.
+                item["destinationCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
+                item["localCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
+                item["destinationSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
+                item["localSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
+                // Menus read the columns by name. JumpTransitionGate unpacks the same row in order.
+                item["jumps"] = new BlueInstance("eve.common.script.sys.rowset.Rowset", new Dictionary<string, object?>
                 {
-                    ["toCelestialID"] = body.DestinationGateId,
-                    ["locationID"] = body.DestinationSystemId,
-                }) };
+                    ["header"] = new List<object?> { "toCelestialID", "locationID" },
+                    ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
+                });
             }
             if (body.CategoryId == 3)
             {
@@ -94,7 +100,7 @@ internal static class Ballpark
         }
         else if (ship.FollowRange is double range)
         {
-            writer.Write((long)pilot.StationId);
+            writer.Write((long)ship.FollowTargetId);
             writer.Write((float)range);
         }
         else if (ship.Heading is { } heading)

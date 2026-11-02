@@ -32,7 +32,8 @@ internal static class TestCatalog
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (10,'Stargate',2);
             INSERT INTO ItemType(Id,Name,GroupId,Radius) VALUES (16,'Stargate (Caldari System)',10,3532);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
-                (50001249,30000142,16,10,-4067676856320,-710577070080,-3956622581760);
+                (50001249,30000142,16,10,-4067676856320,-710577070080,-3956622581760),
+                (50002185,30000144,16,10,1e10,2e10,3e10);
             INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES (50001249,30000142,50002185),(50002185,30000144,50001249);
             INSERT INTO ItemType(Id,Name,GroupId,Radius) VALUES (30577,'Pulsar',8,10000),(56247,'Disrupted gate',10,4500);
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/solarsystemcontent','30000144',

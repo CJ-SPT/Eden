@@ -28,6 +28,13 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 {
                     await checkpoint;
                     flight.Checkpoint();
+                    var departure = flight.Pilot;
+                    if (flight.CompleteJump())
+                    {
+                        context.ReleaseLocationReferences();
+                        await write(SessionChange(accountId, clientId, flight.Pilot, departure));
+                        report($"Ship {pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
+                    }
                     if (flight.InBallpark)
                     {
                         flight.RefreshPeers();

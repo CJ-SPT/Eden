@@ -14,7 +14,13 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private SpacePosition _lastHeading = new(1, 0, 0);
     private SpacePosition? _direction;
     private SpacePosition _velocity = new(0, 0, 0);
-    private bool _following;
+    private StaticSpaceObject? _followTarget;
+    private sealed record GateTransit(int SourceId, StaticSpaceObject Exit, FlightSystem System, IReadOnlyList<StaticSpaceObject> Objects, int TransferStamp);
+    // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
+    private const int JumpDurationTicks = 10;
+    private GateTransit? _jump;
+    private bool _awaitingArrival;
+    private int? _arrivalStamp;
     private double _followRange;
     private SpacePosition? _warpDestination;
     private int _alignStamp;
@@ -72,10 +78,10 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         }
 
         double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
-        if (_following)
+        if (_followTarget is { } follow)
         {
-            var radial = position - new SpacePosition(Pilot.X, Pilot.Y, Pilot.Z);
-            double error = radial.Length - Pilot.Flight.StationRadius - Pilot.Flight.ShipRadius - _followRange;
+            var radial = position - follow.Position;
+            double error = radial.Length - follow.Radius - Pilot.Flight.ShipRadius - _followRange;
             _direction = radial.Unit * -Math.Sign(error);
             if (cruise > 0 && Math.Abs(error) < cruise)
             {
@@ -114,7 +120,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     }
 
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
-        _following ? _followRange : null, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000));
+        _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
+        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8);
 
     private SpacePosition? FirstContact(SpacePosition start, SpacePosition end)
     {
@@ -163,8 +170,16 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
                 Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
+                if (ship.Arriving)
+                {
+                    ArrivalEffect(ship.Pilot.ShipId);
+                }
                 // The client plays the arrival flash when it loads a ship already in warp.
                 continue;
+            }
+            if (ship.DepartureGate is int departure && previous.DepartureGate != departure)
+            {
+                DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
             }
             if (ship.Warp is not null)
             {
@@ -195,7 +210,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 continue;
             }
             if ((ship.FollowRange is null && ship.Heading != previous.Heading) || ship.SpeedFraction != previous.SpeedFraction ||
-                ship.FollowRange != previous.FollowRange || reconcile)
+                ship.FollowRange != previous.FollowRange || ship.FollowTargetId != previous.FollowTargetId || reconcile)
             {
                 var position = ship.Pilot.Position!;
                 Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
@@ -233,7 +248,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private void SetPosition(SpacePosition? position)
     {
         world.SetPosition(Pilot.ShipId, position);
-        Pilot = Pilot with { Position = position };
+        Pilot = Pilot with { Position = position, CurrentSystem = position is null ? null : Pilot.CurrentSystem };
     }
 
     private double DistanceToStation(SpacePosition position)
@@ -259,9 +274,20 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 }
             }
         }
+        bool entering = !InBallpark;
         InBallpark = true;
+        bool arriving = entering && _awaitingArrival;
+        if (arriving)
+        {
+            _awaitingArrival = false;
+            _arrivalStamp = Stamp;
+        }
         space.Publish(Sample);
         Snapshot(space.Peers(Pilot));
+        if (arriving)
+        {
+            ArrivalEffect(Pilot.ShipId);
+        }
     }
 
     private void Snapshot(ShipContact[] peers)
@@ -293,7 +319,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             if (ship.FollowRange is double range)
             {
-                Update("FollowBall", id, ship.Pilot.StationId, range);
+                Update("FollowBall", id, ship.FollowTargetId, range);
             }
             else
             {
@@ -313,13 +339,65 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private void SetAtRest()
     {
         _direction = null;
-        _following = false;
+        _followTarget = null;
         _velocity = new(0, 0, 0);
         _speedFraction = 0;
     }
 
     private void Update(string method, params object?[] args) =>
         Updates.Add(new object?[] { _simulatedStamp, new object?[] { method, args } });
+
+    public object? StartJump(object?[] args, ISystemObjects systems)
+    {
+        Checkpoint();
+        if (!InBallpark || Pilot.Position is not { } position || _jump is not null || _warp is not null ||
+            _warpDestination is not null || args is not [long sourceId, long exitId, long shipId] || shipId != Pilot.ShipId ||
+            objects.FirstOrDefault(o => o.Id == sourceId) is not { DestinationSystemId: int systemId } source ||
+            source.DestinationGateId != exitId || position.DistanceTo(source.Position) > source.Radius + Pilot.Flight.ShipRadius + 2500)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        var destination = systems.Load(systemId);
+        var exit = destination.FirstOrDefault(o => o.Id == exitId && o.DestinationGateId == source.Id && o.DestinationSystemId == Pilot.SystemId);
+        if (exit is null)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        // Keep the source balls alive while the jump camera turns, fades the UI, and enters the tunnel.
+        _arrivalStamp = null;
+        _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
+        SetAtRest();
+        Update("Stop", Pilot.ShipId);
+        DepartureEffect(Pilot.ShipId, source.Id, systemId);
+        space.Publish(Sample);
+        return null;
+    }
+
+    public bool CompleteJump()
+    {
+        if (_jump is not { } jump || Stamp < jump.TransferStamp)
+        {
+            return false;
+        }
+        var lane = Pilot.ShipId % 2 == 0 ? -1 : 1;
+        var position = jump.Exit.Position + new SpacePosition(lane * (jump.Exit.Radius + Pilot.Flight.ShipRadius + 12_000), 0, 0);
+        world.SetPosition(Pilot.ShipId, position, jump.System.Id);
+        LeaveSpace();
+        objects = jump.Objects;
+        Pilot = Pilot with { Position = position, CurrentSystem = jump.System };
+        _jump = null;
+        _awaitingArrival = true;
+        return true;
+    }
+
+    // SubwayService reads graphicInfo[0] to preload the skybox and attach the destination camera.
+    private void DepartureEffect(long shipId, int gateId, int systemId) =>
+        Update("OnSpecialFX", shipId, null, null, gateId, null, "effects.JumpOut", false, true, false,
+            JumpDurationTicks * 1000, 0, null, 0, new object?[] { systemId });
+
+    // SubwayService completes the gate transition. JumpIn supplies the ship flash.
+    private void ArrivalEffect(long shipId) =>
+        Update("OnSpecialFX", shipId, null, null, null, null, "effects.JumpIn", false, true, false);
 
     private object? StartWarp(long target, double range)
     {
@@ -350,7 +428,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _direction = toward;
         _lastHeading = _direction;
         _speedFraction = 1;
-        _following = false;
+        _followTarget = null;
         ApplyCourse(Sample);
         // WarpLoop prepares the tunnel while aligning, then observes Destiny's positive
         // effect stamp to trigger the camera and acceleration sequence on the client.
@@ -379,7 +457,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             _warpDestination = null;
             WarpEffect(Pilot.ShipId, false);
         }
-        if ((_warp is not null || _warpDestination is not null) && method != "UpdateStateRequest")
+        if ((_jump is not null || _warp is not null || _warpDestination is not null) && method != "UpdateStateRequest")
         {
             return PilotCallRouter.Unsupported;
         }
@@ -398,7 +476,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 {
                     return PilotCallRouter.Unsupported;
                 }
-                _following = false;
+                _followTarget = null;
                 _lastHeading = new(x / length, y / length, z / length);
                 _direction = _lastHeading;
                 if (_speedFraction == 0)
@@ -408,7 +486,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("GotoDirection", Pilot.ShipId, x, y, z);
                 Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
                 return null;
-            case "CmdFollowBall" when arguments is [long target, var distance] && target == Pilot.StationId &&
+            case "CmdFollowBall" when arguments is [long target, var distance] && objects.FirstOrDefault(o => o.Id == target) is { } follow &&
                 distance is double or long:
                 double standOff = Convert.ToDouble(distance);
                 if (standOff is < 0 or > 1_000_000 || !double.IsFinite(standOff))
@@ -416,15 +494,14 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                     return PilotCallRouter.Unsupported;
                 }
                 position = Pilot.Position!;
-                double separation = DistanceToStation(position);
+                double separation = position.DistanceTo(follow.Position);
                 if (separation > 0)
                 {
-                    double radius = Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius + standOff;
+                    double radius = follow.Radius + Pilot.Flight.ShipRadius + standOff;
                     double sign = separation >= radius ? 1 : -1;
-                    _direction = new(sign * (Pilot.X - position.X) / separation, sign * (Pilot.Y - position.Y) / separation,
-                        sign * (Pilot.Z - position.Z) / separation);
+                    _direction = (follow.Position - position) * (sign / separation);
                     _lastHeading = _direction;
-                    _following = true;
+                    _followTarget = follow;
                     _followRange = standOff;
                     _speedFraction = 1;
                     Update("FollowBall", Pilot.ShipId, target, standOff);
@@ -440,7 +517,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 if (_direction is null && fraction > 0)
                 {
                     _direction = _lastHeading;
-                    _following = false;
+                    _followTarget = null;
                     Update("GotoDirection", Pilot.ShipId, _lastHeading.X, _lastHeading.Y, _lastHeading.Z);
                 }
                 _speedFraction = fraction;
@@ -448,11 +525,11 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 return null;
             case "CmdStop":
                 _direction = null;
-                _following = false;
+                _followTarget = null;
                 _speedFraction = 0;
                 Update("Stop", Pilot.ShipId);
                 return null;
-            case "CmdDock" when arguments is [long station, long ship] && station == Pilot.StationId && ship == Pilot.ShipId:
+            case "CmdDock" when arguments is [long station, long ship] && Pilot.SystemId == Pilot.HomeSystemId && station == Pilot.StationId && ship == Pilot.ShipId:
                 position = Pilot.Position!;
                 if (DistanceToStation(position) > Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius + 2500)
                 {
@@ -462,7 +539,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 LeaveSpace();
                 _direction = null;
                 _velocity = new(0, 0, 0);
-                _following = false;
+                _followTarget = null;
                 _speedFraction = 1;
                 _lastHeading = new(1, 0, 0);
                 return null;

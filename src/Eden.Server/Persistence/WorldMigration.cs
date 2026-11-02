@@ -10,11 +10,11 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 6)
+        if (version is < 0 or > 7)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
-        if (version != 6)
+        if (version < 6)
         {
             world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
             world.Database.ExecuteSqlRaw(world.Database.GenerateCreateScript());
@@ -30,7 +30,15 @@ internal static class WorldMigration
             {
                 Seed(world, 1000002, 90000002, 1000000000002, "Eden Wing", "Wing Ibis");
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=6");
+        }
+        if (version == 6)
+        {
+            // Old positions are relative to the ship's home system (also the null fallback).
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPosition ADD COLUMN SystemId INTEGER");
+        }
+        if (version < 7)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=7");
         }
         foreach (int type in world.Ships.Select(s => s.TypeId).Distinct())
         {

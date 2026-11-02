@@ -374,16 +374,64 @@ public sealed class FlightSessionTests
     }
 
     [Fact]
+    public void GateJumpUsesPairedGatesAndRestoresTheDestinationAfterRestart()
+    {
+        using TestWorld db = new();
+        var systems = db.Services.GetRequiredService<ISystemObjects>();
+        var gate = db.Objects.Single(o => o.DestinationGateId.HasValue);
+        var pilot = db.Store.FindPilot(1000001)!;
+        object?[] args = [(long)gate.Id, (long)gate.DestinationGateId!.Value, pilot.ShipId];
+        Clock clock = new();
+        using FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
+        session.Call("ship", "Undock", [pilot.ShipId]);
+        session.Snapshot();
+        Assert.Same(PilotCallRouter.Unsupported, session.StartJump(args, systems));
+        Assert.Null(session.Call("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
+        clock.Seconds += 360;
+        session.Checkpoint();
+        Assert.InRange(session.Pilot.Position!.DistanceTo(gate.Position) - gate.Radius, 0, 2547);
+        Assert.Same(PilotCallRouter.Unsupported, session.StartJump([args[0], args[1], 1L], systems));
+        Assert.Same(PilotCallRouter.Unsupported, session.StartJump([args[0], 1L, args[2]], systems));
+        session.Updates.Clear();
+        Assert.Null(session.StartJump(args, systems));
+        Assert.Equal(new object?[] { pilot.ShipId, null, null, gate.Id, null, "effects.JumpOut", false, true, false,
+            10000, 0, null, 0, new object?[] { gate.DestinationSystemId } },
+            EffectArguments(session).Single());
+        Assert.Same(PilotCallRouter.Unsupported, session.StartJump(args, systems));
+        Assert.False(session.CompleteJump());
+        clock.Seconds += 10;
+        Assert.True(session.CompleteJump());
+        Assert.False(session.InBallpark);
+        Assert.Equal(gate.DestinationSystemId, session.Pilot.SystemId);
+        Assert.Equal(pilot.HomeSystemId, session.Pilot.HomeSystemId);
+        Assert.Equal(session.Pilot, new SqliteWorld(db.Path).FindPilot(1000001));
+        session.Updates.Clear();
+        session.Snapshot();
+        Assert.Equal(new[] { "effects.JumpIn" }, EffectArguments(session).Select(a => a[5]));
+        Assert.Null(session.Call("beyonce", "CmdFollowBall", [args[1], 1000L]));
+        clock.Seconds += 90;
+        session.Checkpoint();
+        Assert.Null(session.StartJump([args[1], args[0], args[2]], systems));
+        clock.Seconds += 10;
+        Assert.True(session.CompleteJump());
+        Assert.Equal(pilot.SystemId, session.Pilot.SystemId);
+        Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
+
+        static IEnumerable<object?[]> EffectArguments(FlightSession flight) => flight.Updates.Cast<object?[]>()
+            .Select(update => (object?[])update[1]!).Where(call => Equals(call[0], "OnSpecialFX")).Select(call => (object?[])call[1]!);
+    }
+
+    [Fact]
     public void StaticObjectsAreScopedToTheSystemAndIncludeClientOnlyBodies()
     {
         using TestWorld db = new();
         var objects = db.Services.GetRequiredService<ISystemObjects>();
         Assert.Equal(new[] { 40009087, 50001249, 60003760 }, objects.Load(30000142).Select(body => body.Id));
         var other = objects.Load(30000144);
-        Assert.Equal(new[] { 40455847, 50016295 }, other.Select(body => body.Id));
-        Assert.Equal(new SpacePosition(1, 2, 3), other[0].Position);
-        Assert.Equal(10000f, other[0].Radius);
-        Assert.Null(other[1].DestinationGateId);
+        Assert.Equal(new[] { 50002185, 40455847, 50016295 }, other.Select(body => body.Id));
+        Assert.Equal(new SpacePosition(1, 2, 3), other[1].Position);
+        Assert.Equal(10000f, other[1].Radius);
+        Assert.Null(other[2].DestinationGateId);
         Assert.Empty(objects.Load(1));
     }
 

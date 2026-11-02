@@ -38,6 +38,27 @@ public sealed class WorldMigrationTests
     }
 
     [Fact]
+    public void VersionSixPositionsResumeInTheHomeSystem()
+    {
+        using TestWorld db = new();
+        var position = new SpacePosition(45, 67, 89);
+        db.Store.SetPosition(1000000000001, position);
+        using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "ALTER TABLE WorldPosition DROP COLUMN SystemId; PRAGMA user_version=6";
+        command.ExecuteNonQuery();
+
+        var world = new SqliteWorld(db.Path);
+        var pilot = world.FindPilot(1000001)!;
+        Assert.Equal(position, pilot.Position);
+        Assert.Equal(30000142, pilot.SystemId);
+        Assert.Null(world.FindPilot(1000002)!.Position);
+        command.CommandText = "PRAGMA user_version";
+        Assert.Equal(7L, command.ExecuteScalar());
+    }
+
+    [Fact]
     public void InvalidCatalogReferenceRollsBackLegacyConversion()
     {
         var directory = Directory.CreateTempSubdirectory("eden-migrate-");

@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 5 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 6 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -101,3 +101,10 @@ Start both clients in space. The **General** Overview shows stations and stargat
 For the celestial landing check, warp to zero at **Jita V**, then at **Jita V – Moon 16**. Selected Item should settle near 30,342 km and 5,164 km respectively. Allow a few kilometres for the landing lane and braking. Have the second pilot arrive from another direction and check that both ships share the same area.
 
 For tunnel entry, use a long leg such as the Jita Trade Hub to the Perimeter gate. Watch for **Establishing Warp Vector** while the Ibis turns, then **Warp Drive Active** and the tunnel as it accelerates. Leave the second pilot at the destination and watch the arriving Ibis in Overview.
+
+## Jump between Jita and Perimeter
+
+1. Select the **Perimeter** stargate in Jita's Overview and warp to zero. Click **Jump** in Selected Item once the Ibis is within 2,500 m of the gate.
+2. Watch the **Jumping** message, gate camera and tunnel. On exit, check the **Perimeter** system label, the starfield, and the **Jita** gate about 12 km away in Overview.
+3. Select the Jita gate and click **Jump**. Allow the Ibis to approach before it activates the gate. Verify that the rendered Jita scene and flight controls return after the tunnel.
+4. To check persistence, restart the client and host while stopped in the destination system. The character card and Overview should show that system.

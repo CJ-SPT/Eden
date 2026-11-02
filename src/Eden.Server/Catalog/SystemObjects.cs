@@ -9,6 +9,16 @@ namespace Eden.Server.Catalog;
 [Injectable]
 internal sealed class SystemObjects(WorldDatabase database) : ISystemObjects
 {
+    internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId) =>
+        catalog.Set<SolarSystem>().Where(s => s.Id == systemId)
+            .Select(s => new FlightSystem(s.Id, s.ConstellationId, s.Constellation.RegionId)).Single();
+
+    public FlightSystem GetSystem(int systemId)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return FindSystem(catalog, systemId);
+    }
+
     public IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);

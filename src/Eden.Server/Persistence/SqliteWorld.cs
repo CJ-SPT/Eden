@@ -31,7 +31,7 @@ public sealed class SqliteWorld : IDockedWorld
     {
     }
 
-    public void SetPosition(long shipId, SpacePosition? position)
+    public void SetPosition(long shipId, SpacePosition? position, int? systemId = null)
     {
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -46,6 +46,7 @@ public sealed class SqliteWorld : IDockedWorld
         else
         {
             saved ??= world.Positions.Add(new FlightPosition { ShipId = shipId }).Entity;
+            saved.SystemId = systemId ?? saved.SystemId;
             (saved.X, saved.Y, saved.Z) = (position.X, position.Y, position.Z);
         }
         world.SaveChanges();
@@ -77,6 +78,7 @@ public sealed class SqliteWorld : IDockedWorld
         return new(pilot.Id, pilot.Name, pilot.CorporationId, ship.Id, ship.TypeId, type.GroupId, type.Group.CategoryId,
             station.Id, station.TypeId, station.OwnerId, system.Id, system.ConstellationId, system.Constellation.RegionId,
             station.OperationId, station.OrbitId, station.X, station.Y, station.Z, ship.Name, type.Capacity!.Value,
-            checked((int)Attribute(102)), flight, identity, hull, ship.Position is { } p ? new(p.X, p.Y, p.Z) : null);
+            checked((int)Attribute(102)), flight, identity, hull, ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
+            ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null);
     }
 }

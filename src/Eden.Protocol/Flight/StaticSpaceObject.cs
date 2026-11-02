@@ -7,5 +7,6 @@ public sealed record StaticSpaceObject(int Id, int TypeId, int GroupId, int Cate
 
 public interface ISystemObjects
 {
+    FlightSystem GetSystem(int systemId);
     IReadOnlyList<StaticSpaceObject> Load(int systemId);
 }

@@ -24,6 +24,19 @@ internal sealed class PilotCallContext(FlightSession flight, long sessionId, obj
     private readonly Dictionary<string, string> _bindings = [];
     private readonly Dictionary<string, BlueObjectReference> _references = [];
 
+    private int _nextSlot = 2;
+
+    public void ReleaseLocationReferences()
+    {
+        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM" })
+        {
+            if (_references.Remove(service, out var reference))
+            {
+                _bindings.Remove(reference.Id);
+            }
+        }
+    }
+
     public string? ResolveReference(object? objectId) =>
         objectId is byte[] or string ? _bindings.GetValueOrDefault(BlueMarshal.Text(objectId)) : null;
 
@@ -31,7 +44,7 @@ internal sealed class PilotCallContext(FlightSession flight, long sessionId, obj
     {
         if (!_references.TryGetValue(service, out var reference))
         {
-            int slot = _references.Count + 2;
+            int slot = _nextSlot++;
             reference = new($"N={PilotLogin.NodeId}:{sessionId}-{slot}", slot);
             _references.Add(service, reference);
             _bindings.Add(reference.Id, service);

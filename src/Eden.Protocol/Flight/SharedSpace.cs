@@ -3,7 +3,7 @@ using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0);
+internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0, int FollowTargetId = 0, int? DepartureGate = null, bool Arriving = false);
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class SharedSpace
