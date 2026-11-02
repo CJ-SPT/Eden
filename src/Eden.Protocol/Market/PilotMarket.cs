@@ -10,6 +10,8 @@ public sealed record MarketTrade(long Id, long PilotId, long OrderId, int Statio
     int TypeId, bool IsBuy, int Quantity, long PriceCents, long TaxCents, long BalanceCents, long Time);
 public sealed record MarketResult(long BalanceCents, IReadOnlyList<MarketTrade> Trades, IReadOnlyList<InventoryChange> Changes);
 public sealed record WalletEntryDefinition(int Id, long NameId, string Name, string Description);
+public sealed record MarketHistoryDay(int TypeId, long Date, long LowPriceCents, long HighPriceCents,
+    decimal AveragePriceCents, long Volume, int Orders);
 
 public interface IPilotMarket
 {
@@ -17,6 +19,7 @@ public interface IPilotMarket
     IReadOnlyList<MarketOrder> Orders(long pilotId);
     IReadOnlyList<MarketTrade> Transactions(long pilotId);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();
+    IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds);
     MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items);
     MarketResult Buy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items);
 }
@@ -51,6 +54,8 @@ public static class MarketDefinitions
     public const decimal MaximumOrderPrice = 9_223_372_036_854m;
     public const long FirstExecutionOrderId = 5_000_000_000_000;
     public const int SccCorporationId = 1000132;
+    public const int PlexTypeId = 44992;
+    public const int HistoryDays = 365;
 
     public static long PriceCents(double price)
     {

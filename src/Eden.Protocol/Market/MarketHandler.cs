@@ -27,6 +27,20 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
     private static BlueConstructor Rows(IEnumerable<MarketOrder> orders) => new("carbon.common.script.sys.crowset.CRowset",
         [Descriptor(s_columns), orders.Select(o => (object?)Row(o)).ToList()]);
 
+    private static BlueConstructor HistoryRows(IEnumerable<MarketHistoryDay> days)
+    {
+        var header = Descriptor([("historyDate", BlueColumnType.Int64), ("lowPrice", BlueColumnType.Float64),
+            ("highPrice", BlueColumnType.Float64), ("avgPrice", BlueColumnType.Float64), ("volume", BlueColumnType.Int64), ("orders", BlueColumnType.Int32)]);
+        return new("carbon.common.script.sys.crowset.CRowset", [header, days.Select(d => (object?)new BlueConstructor("blue.DBRow",
+            [header, new object?[] { d.Date, Isk(d.LowPriceCents), Isk(d.HighPriceCents), (double)d.AveragePriceCents / MarketDefinitions.CentsPerIsk, d.Volume, d.Orders }])).ToList()]);
+    }
+
+    private object?[] HistoryPair(IEnumerable<MarketHistoryDay> days)
+    {
+        long midnight = clock.GetUtcNow().UtcDateTime.Date.ToFileTimeUtc();
+        return [HistoryRows(days.Where(d => d.Date < midnight)), HistoryRows(days.Where(d => d.Date >= midnight))];
+    }
+
     private BlueInstance CachedOrders(object? result) => new("carbon.common.script.net.objectCaching.CachedMethodCallResult",
         new object?[] { new Dictionary<string, object?> { ["versionCheck"] = "always", ["sessionInfo"] = "regionid" },
             BlueMarshal.Encode(result), new object?[] { clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), 0L } });
@@ -83,11 +97,13 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
                 case "GetCorporationOrders":
                 case "GetMarketOrderHistory":
                     return Rows([]);
-                case "GetOldPriceHistory":
-                case "GetNewPriceHistory":
-                    return new BlueConstructor("carbon.common.script.sys.crowset.CRowset", [Descriptor([("historyDate", BlueColumnType.Int64),
-                        ("lowPrice", BlueColumnType.Float64), ("highPrice", BlueColumnType.Float64), ("avgPrice", BlueColumnType.Float64),
-                        ("volume", BlueColumnType.Int64), ("orders", BlueColumnType.Int32)]), new List<object?>()]);
+                case "GetOldPriceHistory" or "GetNewPriceHistory" when args is [long type] && type is > 0 and <= int.MaxValue:
+                    return HistoryPair(market.History(context.Pilot.PilotId, [(int)type]))[method == "GetOldPriceHistory" ? 0 : 1];
+                case "GetHistoryForManyTypeIDs" when args is [HashSet<long> types] && types.All(t => t is > 0 and <= int.MaxValue):
+                    var days = market.History(context.Pilot.PilotId, types.Select(t => (int)t).ToArray());
+                    return types.ToDictionary(t => t, t => (object?)HistoryPair(days.Where(d => d.TypeId == t)));
+                case "GetPlexHistory" when args.Length == 0:
+                    return new Dictionary<long, object?> { [MarketDefinitions.PlexTypeId] = HistoryPair([]) };
                 case "PlaceMultiSellOrder" when args is [List<object?> entries, false, 0L, _]:
                     var sales = entries.Select(Fields).Select(f => new MarketSale(Id(f, "itemID"), Number(f, "stationID"),
                         Number(f, "typeID"), Price(f.GetValueOrDefault("price")), Number(f, "quantity"))).ToArray();

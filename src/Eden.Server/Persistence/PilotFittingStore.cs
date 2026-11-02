@@ -101,18 +101,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             {
                 throw new InvalidDataException("This module family is not supported yet.");
             }
-            var attributes = Attributes(catalog, item.TypeId);
-            foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
-            {
-                int skill = checked((int)attributes.GetValueOrDefault(skillAttribute));
-                if (skill == 0) { continue; }
-                long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
-                double rank = Attributes(catalog, (int)skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
-                if (new TrainedSkill((int)skill, points, rank).Level < attributes.GetValueOrDefault(levelAttribute))
-                {
-                    throw new InvalidDataException("The pilot has not trained the required module skills.");
-                }
-            }
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
             int slot = flagId == (int)InventoryFlag.AutoFit ? Enumerable.Range((int)InventoryFlag.HighSlot0, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
             if (slot < (int)InventoryFlag.HighSlot0 || slot >= (int)InventoryFlag.HighSlot0 + slots || !occupied.Add(slot))
             {

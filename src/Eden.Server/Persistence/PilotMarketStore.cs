@@ -44,11 +44,15 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
 
     private void Seed(WorldDbContext world, CatalogDbContext catalog, Station station)
     {
-        if (world.Set<MarketStation>().Find(station.Id) is not null) { return; }
         // This is Eden's finite starter liquidity, not a Tranquility price feed.
-        // Mark the station even if a future policy has no offers. Never restock
-        // depleted orders or repeat the grant after reopening a save.
-        world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now });
+        // New policy offers may be added to visited stations. Retain every old
+        // order, including empty/expired ones, so no existing stock is replenished.
+        if (world.Set<MarketStation>().Find(station.Id) is null)
+        {
+            world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now });
+        }
+        var seeded = world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id).Select(o => new { o.TypeId, o.Bid })
+            .AsEnumerable().Select(o => (o.TypeId, o.Bid)).ToHashSet();
         foreach (var offer in s_offers)
         {
             if (!catalog.Set<ItemType>().Any(t => t.Id == offer.TypeId)) { continue; }
@@ -56,7 +60,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             {
                 long? price = bid ? offer.BuyPriceCents : offer.SellPriceCents;
                 int quantity = bid ? offer.Demand : offer.Stock;
-                if (!price.HasValue) { continue; }
+                if (!price.HasValue || seeded.Contains((offer.TypeId, bid))) { continue; }
                 if (price <= 0 || quantity <= 0) { throw new InvalidDataException("Invalid starter market price or quantity."); }
                 world.Add(new NpcMarketOrder
                 {
@@ -118,6 +122,32 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         using WorldDbContext world = new(database.Path);
         return world.Set<MarketExecution>().AsNoTracking().Where(t => t.PilotId == pilotId).OrderByDescending(t => t.Id)
             .AsEnumerable().Select(Read).ToArray();
+    }
+
+    public IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = Pilot(world, pilotId);
+        int system = pilot.ActiveShip.Position?.SystemId ?? Station(catalog, pilot.ActiveShip.StationId).SolarSystemId;
+        int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
+        var now = clock.GetUtcNow().UtcDateTime;
+        long end = now.ToFileTimeUtc();
+        long start = now.Date.AddDays(-MarketDefinitions.HistoryDays).ToFileTimeUtc();
+        // The ledger contains one execution per NPC trade. Aggregate actual
+        // regional volume, not the seeded book, personal balances or remote data.
+        var executions = from trade in world.Set<MarketExecution>().AsNoTracking()
+                         join order in world.Set<NpcMarketOrder>() on trade.OrderId equals order.Id
+                         where order.RegionId == region && typeIds.Contains(trade.TypeId) && trade.Time >= start && trade.Time <= end
+                         select trade;
+        return executions.AsEnumerable().GroupBy(t => (t.TypeId, Date: DateTime.FromFileTimeUtc(t.Time).Date))
+            .OrderBy(g => g.Key.TypeId).ThenBy(g => g.Key.Date).Select(g =>
+            {
+                long volume = g.Sum(t => (long)t.Quantity);
+                decimal total = g.Sum(t => (decimal)t.PriceCents * t.Quantity);
+                return new MarketHistoryDay(g.Key.TypeId, g.Key.Date.ToFileTimeUtc(), g.Min(t => t.PriceCents), g.Max(t => t.PriceCents),
+                    total / volume, volume, g.Count());
+            }).ToArray();
     }
 
     private static PilotWallet Wallet(WorldDbContext world, long pilotId) => world.Set<PilotWallet>().Find(pilotId)

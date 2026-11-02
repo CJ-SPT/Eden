@@ -1,7 +1,6 @@
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
-using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,15 +12,12 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         var attributes = fitting.Attributes(module.TypeId).ToDictionary();
-        if (module.TypeId != InventoryDefinitions.CivilianMinerType) { return attributes; }
+        if (module.GroupId != InventoryDefinitions.MiningLaserGroup) { return attributes; }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         int Level(MiningSkill skill)
         {
-            long points = world.Set<PilotSkill>().Find(pilotId, (int)skill)?.Points ?? 0;
-            double rank = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == (int)skill && a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant)
-                .Select(a => (double?)a.Value).SingleOrDefault() ?? 1;
-            return new TrainedSkill((int)skill, points, rank).Level;
+            return PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
         }
         attributes[DogmaAttributeId.MiningAmount] = attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount) *
             (1 + MiningDefinitions.YieldBonusPerSkillLevel * Level(MiningSkill.Mining)) *
@@ -54,12 +50,13 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         var module = inventory.List(pilotId, pilot.ActiveShipId).SingleOrDefault(i => i.Id == moduleId);
         var asteroid = world.Set<WorldAsteroid>().Find(asteroidId);
         if (pilot.ActiveShip.Position is not { } position || module is null || !module.Online || !module.Singleton ||
-            !InventoryDefinitions.IsHighSlot(module.FlagId) || module.TypeId != InventoryDefinitions.CivilianMinerType ||
+            !InventoryDefinitions.IsHighSlot(module.FlagId) || module.GroupId != InventoryDefinitions.MiningLaserGroup ||
             asteroid is null || asteroid.Quantity <= 0)
         {
-            throw new InvalidDataException("Use an online Civilian Miner on an available asteroid while in space.");
+            throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         if (hull.GroupId != MiningDefinitions.CorvetteGroup)
         {

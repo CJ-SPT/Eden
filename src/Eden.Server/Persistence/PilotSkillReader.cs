@@ -1,4 +1,5 @@
 using Eden.Protocol;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,26 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillReader
 {
+    internal static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
+    {
+        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
+        double rank = catalog.Set<TypeAttribute>().Find(skill, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 1;
+        return new TrainedSkill(skill, points, rank).Level;
+    }
+
+    internal static void CheckRequirements(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId)
+    {
+        var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
+        {
+            int skill = checked((int)attributes.GetValueOrDefault(skillAttribute));
+            if (skill != 0 && Level(world, catalog, pilotId, skill) < attributes.GetValueOrDefault(levelAttribute))
+            {
+                throw new InvalidDataException("The pilot has not trained the required module skills.");
+            }
+        }
+    }
+
     public IReadOnlyList<TrainedSkill> ReadSkills(long pilotId)
     {
         using WorldDbContext world = new(database.Path);

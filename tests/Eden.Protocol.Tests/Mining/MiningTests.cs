@@ -3,6 +3,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Catalog;
@@ -44,6 +45,10 @@ public sealed class MiningTests
                     (3651,50,65),(3651,30,2),(3651,182,3386),(3651,277,1),(3651,6,5),(3651,54,10000),(3651,73,10000),(3651,77,6),(3651,5967,0),(3651,5969,2);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (3386,'Mining',257),(3410,'Astrogeology',257),(90727,'Mining Precision',257),(90728,'Mining Exploitation',257),
                     (3417,'Capacitor Systems Operation',257),(3418,'Capacitor Management',257);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54);
+                INSERT INTO SourceRecord VALUES ('client/types','483','{{"volume":5}}'),('client/types','482','{{"volume":5}}');
+                INSERT INTO TypeAttribute VALUES (483,50,60),(483,30,2),(483,182,3386),(483,277,1),(483,6,5),(483,54,10000),(483,73,15000),(483,77,10),(483,5967,0),(483,5969,2),
+                    (482,50,80),(482,30,4),(482,182,3386),(482,277,4),(482,6,18),(482,54,12000),(482,73,15000),(482,77,15),(482,5967,0),(482,5969,2);
                 INSERT INTO TypeAttribute VALUES (3386,275,1),(3410,275,3),(90727,275,2),(90728,275,6),(3417,275,1),(3418,275,3);
                 INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
                 INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
@@ -69,16 +74,22 @@ public sealed class MiningTests
             world.SaveChanges();
         }
 
-        public (PilotCallContext Context, TargetingHandler Targeting, MiningHandler Mining, long Module) Client(long account = 1000001, bool locked = true)
+        public (PilotCallContext Context, TargetingHandler Targeting, MiningHandler Mining, long Module) Client(long account = 1000001, bool locked = true, MiningLaserType laser = MiningLaserType.Civilian)
         {
             var pilot = Db.Store.FindPilot(account)!;
             var fitting = Db.Services.GetRequiredService<IPilotFitting>();
             var item = Assert.Single(Inventory.List(pilot.PilotId, pilot.StationId));
+            if (laser != MiningLaserType.Civilian)
+            {
+                using WorldDbContext world = new(Db.Path);
+                world.Set<OwnedItem>().Find(item.Id)!.TypeId = (int)laser;
+                world.SaveChanges();
+            }
             long module = fitting.Fit(pilot.PilotId, [item.Id], pilot.StationId, (int)InventoryFlag.AutoFit).Last().Item.Id;
             fitting.SetOnline(pilot.PilotId, pilot.ShipId, module, true);
             var objects = Db.Objects.Concat(Db.Services.GetRequiredService<IAsteroidField>().List(pilot.SystemId)).ToArray();
             PilotCallContext context = new(account, pilot.Account, [pilot], selected => new(Db.Store, selected, Clock, Space, objects,
-                [new(module, InventoryDefinitions.CivilianMinerType, (int)InventoryFlag.HighSlot0)]), account, []);
+                [new(module, (int)laser, (int)InventoryFlag.HighSlot0)]), account, []);
             context.Select(pilot);
             _ = context.Flight.Call("ship", "Undock", [pilot.ShipId]);
             context.Flight.Snapshot();
@@ -116,6 +127,56 @@ public sealed class MiningTests
             foreach (var (context, targeting) in _clients) { targeting.Dispose(); context.Dispose(); }
             Db.Dispose();
         }
+    }
+
+    [Fact]
+    public void MinerTwoRequiresMiningFourAtFittingAndActivation()
+    {
+        using Fixture fixture = new();
+        Assert.Throws<InvalidDataException>(() => fixture.Client(laser: MiningLaserType.MinerII));
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Set<PilotSkill>().Find(90000001L, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, 4);
+            world.SaveChanges();
+        }
+        var (context, _, mining, module) = fixture.Client(laser: MiningLaserType.MinerII);
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Set<PilotSkill>().Find(context.Pilot.PilotId, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, 1);
+            world.SaveChanges();
+        }
+        Assert.IsType<PilotCallRouter.Error>(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.False(mining.IsActive(module));
+        Assert.Equal(10000, fixture.Remaining());
+        Assert.Equal(130, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
+    }
+
+    [Theory]
+    [InlineData(MiningLaserType.MinerI, 1, 105, 5)]
+    [InlineData(MiningLaserType.MinerII, 4, 180, 18)]
+    public void BetterLasersUseCatalogCyclesYieldAndCapacitor(MiningLaserType type, int level, int expectedOre, int capacitor)
+    {
+        using Fixture fixture = new();
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Set<PilotSkill>().Find(90000001L, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, level);
+            world.SaveChanges();
+        }
+        var (context, _, mining, module) = fixture.Client(laser: type);
+        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.Equal(130 - capacitor, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 8);
+        Assert.Equal(15000d, mining.ActiveEffect(context.Pilot, module)![8]);
+        fixture.Clock.Milliseconds += 14999;
+        mining.Advance(context);
+        Assert.DoesNotContain(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
+        fixture.Clock.Milliseconds++;
+        mining.Advance(context);
+        var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
+        Assert.Equal(expectedOre, ore.Quantity);
+        Assert.Equal(10000 - expectedOre, fixture.Remaining());
+        Assert.False(mining.IsActive(module));
+        _ = new SqliteWorld(fixture.Db.Path);
+        Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
     [Fact]

@@ -24,6 +24,13 @@ public enum MiningSkill
     Exploitation = 90728,
 }
 
+public enum MiningLaserType
+{
+    MinerII = 482,
+    MinerI = 483,
+    Civilian = 3651,
+}
+
 public static class MiningDefinitions
 {
     public const string EffectName = "miningLaser";
