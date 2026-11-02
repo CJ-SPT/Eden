@@ -49,3 +49,12 @@ To enter character selection from the repository root, keep the server running i
 The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. A single authenticated pilot can be connected at once.
 
 After the source installation finishes downloading, run the preparation command again with the staged client closed. The ready marker checks the pinned binaries and successful copy. The main resource index can still have missing assets if the source was mid-download.
+
+## Fly the Ibis
+
+1. Select **Eden Pilot** and click **Undock** in the station panel. Wait for the ship HUD and the **Jita Trade Hub** entry in Overview.
+2. Double-click open space. Watch the speed readout and the distance to the station change.
+3. Right-click the Ibis and choose **Stop My Ship**. Check that the HUD reads **0.0 m/s** and the station range holds steady.
+4. To check space persistence, note the range, close the client, restart Eden, and launch the client with `-Login`. Select the pilot and compare the range.
+5. Select the station in Overview and click **Dock** in Selected Item. From outside docking range, allow time for the approach. Once inside, open Inventory and check **Ibis (Ibis)**.
+6. Restart Eden and the client again. Select **Eden Pilot** and verify the station label, ship and active inventory entry match the previous session.

@@ -37,9 +37,19 @@ public sealed class SqliteWorld : IDockedWorld
                 """;
             command.ExecuteNonQuery();
         }
-        else if (version is not (0 or 3))
+        else if (version is not (0 or 3 or 4))
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
+        }
+        if (version < 4)
+        {
+            // A ship without a flight row is docked at its station. Existing hangars migrate intact.
+            command.CommandText = """
+                CREATE TABLE flight (ship INTEGER PRIMARY KEY REFERENCES ship(id),
+                    x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL);
+                PRAGMA user_version = 4;
+                """;
+            command.ExecuteNonQuery();
         }
         transaction.Commit();
     }
@@ -51,21 +61,44 @@ public sealed class SqliteWorld : IDockedWorld
         return connection;
     }
 
+    public void SetPosition(long shipId, SpacePosition? position)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.Parameters.AddWithValue("$ship", shipId);
+        if (position is null)
+        {
+            command.CommandText = "DELETE FROM flight WHERE ship=$ship";
+        }
+        else
+        {
+            command.CommandText = """
+                INSERT INTO flight VALUES ($ship,$x,$y,$z)
+                ON CONFLICT(ship) DO UPDATE SET x=excluded.x,y=excluded.y,z=excluded.z
+                """;
+            command.Parameters.AddWithValue("$x", position.X);
+            command.Parameters.AddWithValue("$y", position.Y);
+            command.Parameters.AddWithValue("$z", position.Z);
+        }
+        command.ExecuteNonQuery();
+    }
+
     public DockedPilot? FindPilot(long accountId)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT p.id,p.name,p.corporation,s.id,t.id,t.group_id,t.category,
-                   l.id,l.type,l.owner,l.system,l.constellation,l.region,l.operation,l.orbit,l.x,l.y,l.z,s.name,t.capacity,t.turrets
+                   l.id,l.type,l.owner,l.system,l.constellation,l.region,l.operation,l.orbit,l.x,l.y,l.z,s.name,t.capacity,t.turrets,f.x,f.y,f.z
             FROM pilot p JOIN ship s ON s.id=p.active_ship AND s.owner=p.id
-            JOIN ship_type t ON t.id=s.type JOIN station l ON l.id=s.station WHERE p.account=$account
+            JOIN ship_type t ON t.id=s.type JOIN station l ON l.id=s.station LEFT JOIN flight f ON f.ship=s.id WHERE p.account=$account
             """;
         command.Parameters.AddWithValue("$account", accountId);
         using var row = command.ExecuteReader();
         return row.Read() ? new(row.GetInt64(0), row.GetString(1), row.GetInt32(2), row.GetInt64(3),
             row.GetInt32(4), row.GetInt32(5), row.GetInt32(6), row.GetInt32(7), row.GetInt32(8),
             row.GetInt32(9), row.GetInt32(10), row.GetInt32(11), row.GetInt32(12), row.GetInt32(13),
-            row.GetInt32(14), row.GetDouble(15), row.GetDouble(16), row.GetDouble(17), row.GetString(18), row.GetDouble(19), row.GetInt32(20)) : null;
+            row.GetInt32(14), row.GetDouble(15), row.GetDouble(16), row.GetDouble(17), row.GetString(18), row.GetDouble(19), row.GetInt32(20),
+            row.IsDBNull(21) ? null : new(row.GetDouble(21), row.GetDouble(22), row.GetDouble(23))) : null;
     }
 }

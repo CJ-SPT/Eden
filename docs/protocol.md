@@ -17,10 +17,6 @@ The implementation compares the observed client messages byte for byte. A status
 
 On November 1, 2026, two fresh Windows client processes sent the compatibility reply and queue check to the C# listener after receiving its greeting. Each used the isolated installation with the stock executable and script archive. The tests preserve the matching bytes and check a different build, an unsupported command, short reads, and invalid frame headers.
 
-## Next milestones
-
-**First flight.** Add undocking, a nearby-object snapshot, movement, stopping and docking. Validate motion and state updates against the matching Destiny revision. Verify that a disconnect or restart preserves a consistent ship location. [Build-matched Destiny tests](https://github.com/carbonengine/destiny/tree/27ee40b38a563d29054b32f64c3ebc87fabaec1f/python/destiny/test/ballpark)
-
 ## Encrypted local authentication
 
 The development account uses the client's SSO launch path. After its version reply the client sends a VIP-key request and a pair of RSA-encrypted AES parameters. Eden acknowledges key negotiation, decrypts the local ticket with the session cipher, and validates its signature and expiry. Each side proves receipt of the other's random challenge before the server issues the account session. Two fresh client processes reported `LLV Succeeded` and sent the authenticated `machoNet.GetServiceInfo` call.
@@ -31,7 +27,7 @@ The client uses AES-256-CBC with per-packet padding. Challenge hashes cover a Bl
 
 After authentication Eden returns service information and an initial player session. The client requests `charUnboundMgr.GetCharacterSelectionData`, primes its owner cache, then builds the pilot card. The seeded roster contains one player account and one pilot with ID 90000001, an Ibis, and the Caldari Navy Assembly Plant at Jita IV â€“ Moon 4. The portrait uses the client silhouette.
 
-Selecting the card checks the single-login policy, resolves the population service and its load-slot request, checks character lock status, and sends `SelectCharacterID`. Eden loads the account’s docked pilot from SQLite and validates the selected ID before sending the world-session transition. Unsupported service calls receive a MachoNet error.
+Selecting the card checks the single-login policy, resolves the population service and its load-slot request, checks character lock status, and sends `SelectCharacterID`. Eden loads the accountâ€™s docked pilot from SQLite and validates the selected ID before sending the world-session transition. Unsupported service calls receive a MachoNet error.
 
 ### Live verification
 
@@ -52,10 +48,28 @@ The SQL seed contains extracted values from the staged Windows client build 3662
 | --- | --- | --- |
 | `bin64/staticdata/mapObjects.db` | `npcStations` row 60003760, station type, owner, orbit, operation, system and coordinates | `2E04B4162CB4E80097A6A304DDD471FA1E8ED1E78B4E62F9310810877277467D` |
 | `staticdata/starmapcache.pickle` | Jita 30000142 belongs to constellation 20000020 and region 10000002 | `726B2735F60BC9098CB76D8FA5147A42A146E87188F7896B39B905B33171B4A4` |
-| `staticdata/types.fsdbinary` | Ibis 601, group 237, cargo capacity 125 m³, station type 52678, group 15 | `16D778CBD9ABCF9FEE988DF84DB7B21B00E7D7C578371849351AB2F41B2CBF0A` |
+| `staticdata/types.fsdbinary` | Ibis 601, group 237, cargo capacity 125 mÂ³, station type 52678, group 15 | `16D778CBD9ABCF9FEE988DF84DB7B21B00E7D7C578371849351AB2F41B2CBF0A` |
 | `staticdata/groups.fsdbinary` | Ship category 6 and station category 3 | `9EFD21D6219802B4D980E475A186B0B3C2A3DC56BF6BBBA1EC3314F3295113CA` |
 | `staticdata/typedogma.fsdbinary` | Ibis attribute 102, two turret slots | `39D13BB393A7A28B7C2365319A5CE359EB8B5C61D556B17F321E9ABCE4DAFD93` |
 
 ### Docked acceptance record
 
-The staged client rendered the Ibis inside Jita IV – Moon 4 and opened its native Inventory window. After restarting the server and client, the active inventory entry read **Ibis (Ibis)**. The host reported ship `1000000000001` at station `60003760`. SQLite contained one ship owned by pilot `90000001` and passed its integrity and foreign-key checks. Ancillary services including bookmarks, contracts, and the separate public gateway are incomplete.
+The staged client rendered the Ibis inside Jita IV â€“ Moon 4 and opened its native Inventory window. After restarting the server and client, the active inventory entry read **Ibis (Ibis)**. The host reported ship `1000000000001` at station `60003760`. SQLite contained one ship owned by pilot `90000001` and passed its integrity and foreign-key checks. Ancillary services including bookmarks, contracts, and the separate public gateway are incomplete.
+
+## First flight
+
+Undocking the owned Ibis changes `locationid` from the station to Jita, clears both station fields, and sets `solarsystemid`. Docking reverses those changes. The pilot and ship IDs stay the same. In space the client binds its inventory broker to the system with group 5 and binds `beyonce` to the system ID.
+
+Eden sends `DoDestinyUpdate` after the ballpark bind. Its `SetState` carries a full-state stream with the simulation tick, a rigid station and a free ship, plus the corresponding slim items. Jita's station radius is 100,000 m. The Ibis has a radius of 47 m, mass of 1,163,000 kg, agility of 4.5, and base speed of 295 m/s. These values come from the pinned types and typedogma resources listed above. [Destiny stream implementation](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp) Â· [Destiny motion integration](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+
+A direction or speed command changes the local course. Stop commits the current position and sends the ship's position and zero velocity back to the client. When Dock is selected outside interaction range, the client first follows the station and requests docking on arrival. Eden checks the ship, station and surface distance before accepting the request.
+
+SQLite world version 4 adds a flight row keyed by ship ID. The station on the ship identifies its home port and system. A flight row supplies the active space position. Eden checkpoints moving ships about once a second and removes the row on docking. Login starts the ship at rest at the last committed position.
+
+### First-flight acceptance, November 2, 2026
+
+Using staged Windows build 3662168, Eden Pilot undocked the Ibis and double-clicked open space. In one run the station range increased from 453 m to 1,699 m. After **Stop My Ship** and a restart of both processes, Overview still showed 1,699 m and the HUD showed 0.0 m/s. A separate Dock request from 7,394 m completed the approach and opened the hangar.
+
+On the final build the HUD showed 224 m/s during flight and 0.0 m/s after **Stop My Ship**, with the station 2,254 m away. Selecting **Dock** returned the Ibis to the Caldari Navy Assembly Plant. After another server and client restart, the character card showed the Ibis in Jita. Selecting Eden Pilot opened the station with **Ibis (Ibis)** active in Inventory. The host loaded ship `1000000000001` at station `60003760`. SQLite passed integrity and foreign-key checks.
+
+Automated checks passed separately. Restore and build succeeded without warnings, all 29 tests passed, and formatting verification passed. The tests cover movement with a controlled clock, restart in space and in station, approach, docking range, ship identity and the snapshot layout.

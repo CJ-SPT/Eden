@@ -12,6 +12,8 @@ internal sealed record BlueObjectReference(string Id, int ReferenceId);
 
 internal static class BlueMarshal
 {
+    private sealed record BlueGlobal(string Name);
+
     public static byte[] Encode(object? value)
     {
         using MemoryStream buffer = new();
@@ -83,17 +85,44 @@ internal static class BlueMarshal
             return items;
         }
 
-        Dictionary<string, object?> Map(int depth)
+        object Map(int depth)
         {
             int size = Length();
             Dictionary<string, object?> values = [];
+            Dictionary<long, object?> indexed = [];
             for (int i = 0; i < size; i++)
             {
                 object? value = Read(depth + 1);
-                values.Add(Text(Read(depth + 1)), value);
+                object? key = Read(depth + 1);
+                if (key is long id)
+                {
+                    indexed.Add(id, value);
+                }
+                else
+                {
+                    values.Add(Text(key), value);
+                }
             }
 
-            return values;
+            if (indexed.Count > 0 && values.Count > 0)
+            {
+                throw new InvalidDataException("Mixed dictionary keys.");
+            }
+            return indexed.Count > 0 ? indexed : values;
+        }
+
+        HashSet<long> ReadIdSet(int depth)
+        {
+            // Bounty lookup reduces Python 2's built-in set to a list of owner IDs.
+            // Interpret only that data shape. Never resolve or execute a global.
+            if (Read(depth + 1) is not object?[] { Length: 2 } pair ||
+                pair[0] is not BlueGlobal { Name: "set" or "__builtin__.set" } ||
+                pair[1] is not object?[] { Length: 1 } args || args[0] is not List<object?> ids ||
+                reader.ReadByte() != 45 || reader.ReadByte() != 45 || ids.Any(id => id is not long))
+            {
+                throw new InvalidDataException("Unsupported Blue reduction.");
+            }
+            return ids.Cast<long>().ToHashSet();
         }
 
         object? Read(int depth)
@@ -118,6 +147,7 @@ internal static class BlueMarshal
             object? value = tag switch
             {
                 1 => null,
+                2 => new BlueGlobal(Encoding.ASCII.GetString(reader.ReadBytes(Length()))),
                 3 => reader.ReadInt64(),
                 4 => (long)reader.ReadInt32(),
                 5 => (long)reader.ReadInt16(),
@@ -138,6 +168,7 @@ internal static class BlueMarshal
                 27 => shared.TryGetValue(ReadIndex() - 1, out object? reference) ? reference : throw new InvalidDataException("Unknown shared reference."),
                 31 => true,
                 32 => false,
+                34 => ReadIdSet(depth),
                 36 => Array.Empty<object?>(),
                 37 => Items(1, depth),
                 38 => new List<object?>(),

@@ -1,4 +1,5 @@
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
@@ -10,12 +11,29 @@ internal static class PilotServices
 
     public static async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long clientId, IDockedWorld world, object?[] signedSettings)
     {
-        DockedPilot pilot = world.FindPilot(PilotLogin.UserId) ?? throw new InvalidDataException("Account has no docked pilot.");
+        DockedPilot pilot = world.FindPilot(PilotLogin.UserId) ?? throw new InvalidDataException("Account has no active pilot.");
+        FlightSession flight = new(world, pilot, TimeProvider.System);
         DockedServices? docked = null;
         bool initialStateSent = false;
+        Task? checkpoint = null;
         while (true)
         {
-            if (await read() is not BlueInstance packet)
+            var incoming = read();
+            while (flight.Moving)
+            {
+                checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.WhenAny(incoming, checkpoint);
+                if (checkpoint.IsCompleted)
+                {
+                    flight.Checkpoint();
+                    checkpoint = null;
+                }
+                if (incoming.IsCompleted)
+                {
+                    break;
+                }
+            }
+            if (await incoming is not BlueInstance packet)
             {
                 throw new InvalidDataException("Expected a MachoNet packet.");
             }
@@ -41,7 +59,18 @@ internal static class PilotServices
             object?[] body = PilotLogin.Tuple(state[4], 1);
             object?[] wrapper = PilotLogin.Tuple(body[0], 2);
             byte[] data = wrapper[1] is BlueStream packed ? packed.Bytes : PilotLogin.Bytes(wrapper[1]);
-            object?[] call = PilotLogin.Tuple(BlueMarshal.Decode(data), 4);
+            object?[] call;
+            try
+            {
+                call = PilotLogin.Tuple(BlueMarshal.Decode(data), 4);
+            }
+            catch (InvalidDataException)
+            {
+                // Optional client services send Python containers outside Eden's wire vocabulary.
+                // Reject this isolated RPC without dropping the pilot's authenticated flight.
+                await write(Response(state, "ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" }));
+                continue;
+            }
             if (state[2] is not BlueInstance destination || destination.State is not object?[] route)
             {
                 throw new InvalidDataException("Missing call destination.");
@@ -71,14 +100,15 @@ internal static class PilotServices
 
                 if (docked is null)
                 {
-                    await write(DockedSession(clientId, pilot));
-                    docked = new(pilot, clientId);
+                    await write(SessionChange(clientId, pilot));
+                    docked = new(pilot, clientId, flight);
                 }
                 await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(null) }));
-                report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.StationId} in ship {pilot.ShipId}.");
+                report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
                 continue;
             }
 
+            DockedPilot previous = flight.Pilot;
             object? result = (service, method) switch
             {
                 ("machoNet", "GetServiceInfo") => new Dictionary<string, object?>(),
@@ -111,7 +141,28 @@ internal static class PilotServices
                 continue;
             }
 
+            if (previous.LocationId != flight.Pilot.LocationId)
+            {
+                await write(SessionChange(clientId, flight.Pilot, previous));
+                report($"Ship {pilot.ShipId} moved from {previous.LocationId} to {flight.Pilot.LocationId}.");
+            }
             await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(result) }));
+            if (service == "beyonce" && method == "MachoBindObject" && call[2] is object?[] { Length: 2 } bind && bind[1] is null && flight.Pilot.Position is not null)
+            {
+                flight.Snapshot();
+            }
+            if (flight.Updates.Count > 0)
+            {
+                // Broadcast -> service -> object-call layers each wrap the payload.
+                object?[] update = [1, new object?[] { flight.Updates, false, null }];
+                object?[] payload = [0, BlueMarshal.Encode(new object?[] { 0, update })];
+                await write(new BlueInstance(PacketNamespace + "Notification", new object?[]
+                {
+                    12, Address(1, PilotLogin.NodeId, null, null), Address(4, "DoDestinyUpdate", new List<object?> { clientId }, "clientID"),
+                    PilotLogin.UserId, new object?[] { payload }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
+                }));
+                flight.Updates.Clear();
+            }
             if (!initialStateSent && service == "machoNet" && method == "GetServiceInfo")
             {
                 initialStateSent = true;
@@ -124,16 +175,17 @@ internal static class PilotServices
         }
     }
 
-    private static BlueInstance DockedSession(long clientId, DockedPilot pilot)
+    private static Dictionary<string, object?> SessionFields(DockedPilot pilot)
     {
-        Dictionary<string, object?> fields = new()
+        return new()
         {
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
             ["shipid"] = pilot.ShipId,
-            ["stationid"] = pilot.StationId,
-            ["stationid2"] = pilot.StationId,
-            ["locationid"] = pilot.StationId,
+            ["stationid"] = pilot.Position is null ? pilot.StationId : null,
+            ["solarsystemid"] = pilot.Position is null ? null : pilot.SystemId,
+            ["stationid2"] = pilot.Position is null ? pilot.StationId : null,
+            ["locationid"] = pilot.LocationId,
             ["solarsystemid2"] = pilot.SystemId,
             ["constellationid"] = pilot.ConstellationId,
             ["regionid"] = pilot.RegionId,
@@ -141,7 +193,13 @@ internal static class PilotServices
             ["bloodlineID"] = 1,
             ["genderID"] = 1,
         };
-        var changes = fields.ToDictionary(field => field.Key, field => (object?)new object?[] { null, field.Value });
+    }
+
+    private static BlueInstance SessionChange(long clientId, DockedPilot pilot, DockedPilot? previous = null)
+    {
+        var before = previous is null ? new Dictionary<string, object?>() : SessionFields(previous);
+        var changes = SessionFields(pilot).Where(field => !Equals(before.GetValueOrDefault(field.Key), field.Value))
+            .ToDictionary(field => field.Key, field => (object?)new object?[] { before.GetValueOrDefault(field.Key), field.Value });
         return new(PacketNamespace + "SessionChangeNotification", new object?[]
         {
             16, Address(1, PilotLogin.NodeId, null, null), Address(2, clientId, null, null), PilotLogin.UserId,
@@ -188,7 +246,7 @@ internal static class PilotServices
             ["characterID"] = docked.PilotId,
             ["characterName"] = docked.Name,
             ["name"] = docked.Name,
-            ["stationID"] = docked.StationId,
+            ["stationID"] = docked.Position is null ? docked.StationId : null,
             ["solarSystemID"] = docked.SystemId,
             ["shipTypeID"] = docked.ShipTypeId,
             ["corporationID"] = docked.CorpId,

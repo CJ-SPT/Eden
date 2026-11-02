@@ -1,3 +1,4 @@
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -5,8 +6,9 @@ namespace Eden.Protocol.Docking;
 
 // Bindings live only for this authenticated connection. A nested MachoBindObject call
 // returns both the broker reference and the result of its first method invocation.
-internal sealed class DockedServices(DockedPilot pilot, long sessionId)
+internal sealed class DockedServices(DockedPilot initialPilot, long sessionId, FlightSession? flight = null)
 {
+    private DockedPilot Pilot => flight?.Pilot ?? initialPilot;
     internal static readonly object Unsupported = new();
     private readonly Dictionary<string, string> _bindings = [];
     private readonly Dictionary<string, BlueObjectReference> _references = [];
@@ -44,9 +46,9 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
     {
         object?[] line = kind switch
         {
-            "ship" => [pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.StationId, 4, -1, pilot.ShipGroupId, pilot.ShipCategoryId, "", 1, 1],
-            "pilot" => [pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, -1, 1, 1, "", 1, 1],
-            _ => [pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.SystemId, 0, -1, 15, 3, "", 1, 1],
+            "ship" => [Pilot.ShipId, Pilot.ShipTypeId, Pilot.PilotId, Pilot.LocationId, Pilot.Position is null ? 4 : 0, -1, Pilot.ShipGroupId, Pilot.ShipCategoryId, "", 1, 1],
+            "pilot" => [Pilot.PilotId, 1373, Pilot.PilotId, Pilot.ShipId, 57, -1, 1, 1, "", 1, 1],
+            _ => [Pilot.StationId, Pilot.StationTypeId, Pilot.StationOwnerId, Pilot.SystemId, 0, -1, 15, 3, "", 1, 1],
         };
         return new("blue.DBRow", [ItemDescriptor(), line]);
     }
@@ -65,7 +67,17 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
 
         else
         {
-            attributes[38] = pilot.CargoCapacity;
+            // Undamaged, fully charged Ibis. The HUD reads these current values from godma.
+            attributes[9] = 175;
+            attributes[18] = 130;
+            attributes[37] = (double)Ballpark.MaxSpeed;
+            attributes[38] = Pilot.CargoCapacity;
+            attributes[55] = 65000;
+            attributes[263] = 200;
+            attributes[264] = 200;
+            attributes[265] = 125;
+            attributes[479] = 860000;
+            attributes[482] = 130;
         }
         return new()
         {
@@ -83,12 +95,21 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
 
     public object? Call(string service, string method, object?[] args, Action<string> report)
     {
-        if (service is "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc")
+        if (service is "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce")
         {
             if (method == "MachoResolveObject") { return PilotLogin.NodeId; }
             if (method == "MachoBindObject" && args.Length == 2)
             {
-                if (service == "invbroker" && (args[0] is not object?[] bind || bind is not [long station, 15L] || station != pilot.StationId)) { return Unsupported; }
+                long locationGroup = Pilot.Position is null ? 15 : 5;
+                if (service is "invbroker" or "ship" && args[0] is not null &&
+                    (args[0] is not object?[] bind || bind is not [long location, long group] || location != Pilot.LocationId || group != locationGroup))
+                {
+                    return Unsupported;
+                }
+                if (service == "beyonce" && (Pilot.Position is null || !Equals(args[0], (long)Pilot.SystemId)))
+                {
+                    return Unsupported;
+                }
                 object? result = null;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
@@ -102,14 +123,42 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
         }
         return (service, method) switch
         {
+            ("account", "GetCashBalance") => 0d,
+            ("keeper", "GetCurrentDungeonForCharacter") => null,
+            ("dogmaIM", "GetTargets" or "GetTargeters") => new List<object?>(),
+            ("home_station", "get_home_station") => KeyVal(new()
+            {
+                ["id"] = Pilot.StationId,
+                ["type_id"] = Pilot.StationTypeId,
+                ["solar_system_id"] = Pilot.SystemId,
+                ["is_fallback"] = false,
+            }),
+            ("scanMgr", "SignalTrackerRegister") => null,
+            ("contractProxy", "GetLoginInfo") => KeyVal(new()
+            {
+                ["assignedToMe"] = new List<object?>(),
+                ["needsAttention"] = new List<object?>(),
+                ["inProgress"] = new List<object?>(),
+            }),
+            ("@skills", "GetSkillHistory") => new List<object?>(),
+            ("bountyProxy", "GetBountiesAndKillRights") => new object?[] { new List<object?>(), new List<object?>() },
+            ("bountyProxy", "GetMyKillRights") => new List<object?>(),
+            ("monolithTaskTrackerMgr", "HasEverWarped") => false,
+            ("essMgr", "GetDataForClientSolarSystem") => null,
+            ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new object?[] { Pilot.SystemId, null },
+            ("monolithTaskTrackerMgr", "UpdateClientAchievmentsAndCounters") => null,
+            ("crimewatch", "GetMySecurityStatus") => 0d,
+            ("notificationMgr", "GetAllNotifications") => new List<object?>(),
+            ("beyonce", "GetFormations") => Array.Empty<object?>(),
+            ("charMgr", "SetActivityStatus") => null,
             ("@skills", "GetSkillQueueAndFreePoints") => new object?[] { new List<object?>(), 0 },
             ("corpRegistry", "GetAggressionSettings") => null,
-            ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], [pilot.PilotId, pilot.Name, 1373]),
+            ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], [Pilot.PilotId, Pilot.Name, 1373]),
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new object?[] { 1d, false },
             ("ProjectDiscovery", "is_enabled") => false,
             ("clientStatLogger", "LogString") => null,
             ("onlineStatus", "GetInitialState") => Rows(["contactID", "online"]),
-            ("ship", "GetDirtTimestamp") when args.Length == 1 && Equals(args[0], pilot.ShipId) => DateTime.UtcNow.ToFileTimeUtc(),
+            ("ship", "GetDirtTimestamp") when args.Length == 1 && Equals(args[0], Pilot.ShipId) => DateTime.UtcNow.ToFileTimeUtc(),
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => new Dictionary<string, object?>(),
             ("charMgr", "GetContactList") => KeyVal(new() { ["addresses"] = new List<object?>(), ["blocked"] = new List<object?>() }),
@@ -117,55 +166,64 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
             ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new object?[]
             {
                 new object?[] { "locationID", "locationName", "solarSystemID", "x", "y", "z", "locationNameID" },
-                ids.Contains(pilot.ShipId) ? new List<object?> { new object?[] { pilot.ShipId, pilot.ShipName, pilot.SystemId,
-                    pilot.X, pilot.Y, pilot.Z, null } } : new List<object?>(),
+                ids.Contains(Pilot.ShipId) ? new List<object?> { new object?[] { Pilot.ShipId, Pilot.ShipName, Pilot.SystemId,
+                    Pilot.Position?.X ?? Pilot.X, Pilot.Position?.Y ?? Pilot.Y, Pilot.Position?.Z ?? Pilot.Z, null } } : new List<object?>(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") or ("@skills", "GetSkills") => new Dictionary<string, object?>(),
-            ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
+            ("@ship", "GetAvailableTurretSlots") => Pilot.TurretSlots,
             ("@skills", "GetBoosters" or "GetImplants") or ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => new Dictionary<long, object?>(),
             ("@skills", "CheckAndSendNotifications") or ("XmppChatMgr", "GetDeprecatedPrefsFallback") => null,
-            ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId =>
-                KeyVal(new() { ["characterID"] = id, ["corporationID"] = pilot.CorpId, ["title"] = "", ["roles"] = 0, ["titleMask"] = 0 }),
+            ("corpRegistry", "GetMember") when args is [long id] && id == Pilot.PilotId =>
+                KeyVal(new() { ["characterID"] = id, ["corporationID"] = Pilot.CorpId, ["title"] = "", ["roles"] = 0, ["titleMask"] = 0 }),
             ("insuranceSvc", "GetContracts") => new List<object?>(),
-            ("stationSvc", "GetStationItemBits") => new object?[] { pilot.StationOwnerId, pilot.StationId, pilot.OperationId, pilot.StationTypeId },
-            ("station", "GetGuests") => new List<object?> { new object?[] { pilot.PilotId, pilot.CorpId, null, null } },
+            ("stationSvc", "GetStationItemBits") => new object?[] { Pilot.StationOwnerId, Pilot.StationId, Pilot.OperationId, Pilot.StationTypeId },
+            ("station", "GetGuests") => new List<object?> { new object?[] { Pilot.PilotId, Pilot.CorpId, null, null } },
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => new Dictionary<string, object?>(),
             ("crimewatch", "GetClientStates") => new object?[] {
                 Enumerable.Range(0, 5).Select(_ => (object?)new object?[] { null, null }).ToArray(),
-                new Dictionary<string, object?>(), new object?[] { new List<object?>(), new List<object?>() }, null },
+                new Dictionary<string, object?>(), new object?[] { new List<object?>(), new List<object?>() }, 2 }, // Full ship safety is required by the flight HUD.
             ("jumpTimers", "GetTimers") => new object?[] { null, null, null },
             ("air_npe", "get_air_npe_state") => 0,
             ("agentMgr", "GetAgents") => Rows(["agentID", "stationID", "corporationID", "solarsystemID", "agentTypeID", "factionID", "divisionID", "level", "quality", "isLocator"]),
             ("fighterMgr", "GetFightersForShip") => new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() },
             ("map", "GetStationInfo") => Rows(["stationID", "stationTypeID", "stationName", "solarSystemID", "constellationID",
                 "regionID", "corporationID", "ownerID", "operationID", "orbitID", "x", "y", "z", "serviceMask"],
-                [pilot.StationId, pilot.StationTypeId, "Jita IV - Moon 4 - Caldari Navy Assembly Plant", pilot.SystemId,
-                 pilot.ConstellationId, pilot.RegionId, pilot.StationOwnerId, pilot.StationOwnerId, pilot.OperationId,
-                 pilot.OrbitId, pilot.X, pilot.Y, pilot.Z, 0]),
-            ("invbroker", "GetInventory") when args is [10004L, ..] => Reference("@hangar"),
-            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.ShipId) => Reference("@ship"),
-            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => Reference("@pilot"),
-            ("@hangar", "List") => args.Length == 0 || args[0] is null or 4L ? new List<object?> { Item("ship") } : new List<object?>(),
+                [Pilot.StationId, Pilot.StationTypeId, "Jita IV - Moon 4 - Caldari Navy Assembly Plant", Pilot.SystemId,
+                 Pilot.ConstellationId, Pilot.RegionId, Pilot.StationOwnerId, Pilot.StationOwnerId, Pilot.OperationId,
+                 Pilot.OrbitId, Pilot.X, Pilot.Y, Pilot.Z, 0]),
+            ("invbroker", "GetInventory") when Pilot.Position is null && args is [10004L, ..] => Reference("@hangar"),
+            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], Pilot.ShipId) => Reference("@ship"),
+            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], Pilot.PilotId) => Reference("@pilot"),
+            ("@hangar", "List") => Pilot.Position is null && (args.Length == 0 || args[0] is null or 4L) ? new List<object?> { Item("ship") } : new List<object?>(),
             ("@ship" or "@pilot", "List") => new List<object?>(),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => Item(service[1..]),
             ("skillMgr2", "GetMySkillHandler") => Reference("@skills"),
             ("dogmaIM", "GetAllInfo") => KeyVal(new()
             {
-                ["shipState"] = new object?[] { new Dictionary<long, object?>(), new Dictionary<long, object?>(), new Dictionary<long, object?>(), new List<object?>() },
+                // Instance rows follow dgmAttributesByIdx: online, damage, charge, SP, armor damage, shield, incapacitated.
+                ["shipState"] = new object?[] { new Dictionary<long, object?>
+                {
+                    [Pilot.PilotId] = new object?[] { Pilot.PilotId, 0, 0, 0, 0, 0, 0, 0 },
+                    [Pilot.ShipId] = new object?[] { Pilot.ShipId, 0, 0, 130, 0, 0, 200, 0 },
+                }, new Dictionary<long, object?>(), new Dictionary<long, object?>(), new List<object?>() },
                 ["structureInfo"] = null,
-                ["shipInfo"] = PrimeItem(pilot.ShipId, "ship"),
-                ["charInfo"] = new object?[] { PrimeItem(pilot.PilotId, "pilot"), null },
+                ["shipInfo"] = PrimeItem(Pilot.ShipId, "ship"),
+                ["charInfo"] = new object?[] { PrimeItem(Pilot.PilotId, "pilot"), new object?[] { 0, Array.Empty<object?>(), Array.Empty<object?>(), Array.Empty<object?>() } },
                 ["shipModifiedCharAttribs"] = null,
                 ["systemWideEffectsOnShip"] = null,
             }),
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
             ("agentMgr", "GetMyJournalDetails") => new object?[] { new List<object?>(), new List<object?>() },
-            ("accessGroupBookmarkMgr", "GetMyActiveBookmarks") => new object?[] { new List<object?>(), new List<object?>(), new List<object?>() },
+            ("accessGroupBookmarkMgr", "GetMyActiveBookmarks") => new object?[] { new List<object?> { KeyVal(new()
+            {
+                ["folderID"] = 1, ["folderName"] = "Personal Locations", ["isPersonal"] = true, ["creatorID"] = Pilot.PilotId,
+                ["ownerID"] = Pilot.PilotId, ["isActive"] = true, ["description"] = "",
+            }) }, new List<object?>(), new List<object?>() },
             ("monolithTaskTrackerMgr", "GetCompletedAchievementsAndClientEventCount") => new Dictionary<string, object?>
             { ["completedDict"] = new Dictionary<string, object?>(), ["eventDict"] = new Dictionary<string, object?>() },
-            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new object?[] { pilot.SystemId, null },
+            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new object?[] { Pilot.SystemId, null },
             ("seasonManager", "get_season_data_for_character") or ("eventLog", "LogClientStats") or
             ("ProjectDiscovery", "initialize_tutorial_status") or ("milestoneMgr", "ProcessCharacterLogon") => null,
             ("standingMgr", "GetCharStandings" or "GetCorpStandings") or ("charMgr", "GetCharacterSettings") or
@@ -173,7 +231,7 @@ internal sealed class DockedServices(DockedPilot pilot, long sessionId)
             ("structureDirectory", "GetMyDockableStructures") or
             ("officeManager", "GetMyCorporationsOffices") or ("insurgencySolarsystem", "GetAllVisibleCampaigns") or
             ("calendarProxy", "GetEventList") => new List<object?>(),
-            _ => Unsupported,
+            _ => flight is null ? Unsupported : flight.Call(service, method, args),
         };
     }
 }

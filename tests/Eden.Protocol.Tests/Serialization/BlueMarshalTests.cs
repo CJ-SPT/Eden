@@ -21,6 +21,14 @@ public sealed class BlueMarshalTests
         Assert.Equal("ab", BlueMarshal.Text(tuple[1]));
     }
 
+    [Fact]
+    public void ReadsOwnerIdSetWithoutInvokingPythonConstructors()
+    {
+        var set = new BlueConstructor("__builtin__.set", [new List<object?> { 1000044 }]);
+        Assert.Equal(1000044L, Assert.Single(Assert.IsType<HashSet<long>>(BlueMarshal.Decode(BlueMarshal.Encode(set)))));
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(set with { Name = "unknown" })));
+    }
+
     [Theory]
     [InlineData("7E0000000016FFFFFFFFFF")]
     [InlineData("7E010000002C530261621B0102000000")]

@@ -4,7 +4,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Th
 
 ## Current status
 
-The Windows client can authenticate to Eden, display **Eden Pilot** in an Ibis at Jita IV – Moon 4, and select the pilot. Reconnecting creates a fresh session for the same account. Eden listens on `127.0.0.1:26000`. The next milestone is loading the station hangar, inventory, and persistent ship state.
+On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. A restart restores the same ship in its hangar or at its last saved position in space.
 
 ## Build and run
 
@@ -18,15 +18,15 @@ dotnet format --verify-no-changes --no-restore
 dotnet run --no-build --project src/Eden.Server
 ```
 
-The tests use fixtures and loopback sockets. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and the next milestones.
+The tests use fixtures and loopback sockets. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and first-flight acceptance results.
 
 ## Projects and conventions
 
 | Project | Responsibility |
 | --- | --- |
 | `src/Eden.Server` | Host the loopback session and own the SQLite world. |
-| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve the picker, station transition, and docked inventory. |
-| `tests/Eden.Protocol.Tests` | Verify wire bytes, malformed input, and a complete status exchange. |
+| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve character selection, inventory, and first flight. |
+| `tests/Eden.Protocol.Tests` | Verify wire formats, login, ship movement, docking, and SQLite persistence. |
 
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).
 
