@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 13)
+        if (version is < 0 or > 14)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -109,6 +109,14 @@ internal static class WorldMigration
                 PilotInventoryStore.GrantStarterEquipment(world, pilot.Id, pilot.StationId);
             }
             world.Database.ExecuteSqlRaw("PRAGMA user_version=13");
+        }
+        if (version is >= 6 and < 14)
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem ADD COLUMN Singleton INTEGER NOT NULL DEFAULT 0; ALTER TABLE WorldItem ADD COLUMN Online INTEGER NOT NULL DEFAULT 0");
+        }
+        if (version < 14)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=14");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&

@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 12 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 13 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -80,6 +80,17 @@ To check cargo before departure, select **Eden Pilot**, open **Inventory** and v
 4. To check space persistence, note the range, close the client, restart Eden, and launch the client with `-Login`. Select the pilot and compare the range.
 5. Select the station in Overview and click **Dock** in Selected Item. From outside docking range, allow time for the approach. Once inside, open Inventory and check **Ibis (Ibis)**.
 6. Restart Eden and the client again. Select **Eden Pilot** and verify the station label, ship and active inventory entry match the previous session.
+
+## Fit a mining laser
+
+While docked, select **Eden Pilot**, open **Inventory**, and verify **Ibis (Ibis)** is active. Open **Fitting** using the circled ship icon at the far right of the station panel's top service row, or press Alt+F.
+
+1. Drag a **Civilian Miner** from Item Hangar or cargo onto an empty high slot in Fitting. One unit leaves its stack and appears in the slot. The client brings it online automatically when resources allow.
+2. Right-click the module and choose **Put Offline**. The module dims and its CPU and power grid return to the ship. Choose **Put Online** and compare the resource totals. Eden Pilot's starting Ibis has 162 CPU and 27.6 power grid after its fitting skills; one online Civilian Miner leaves 97 CPU and 25.6 power grid.
+3. Choose **Unfit**. The slot clears and the assembled miner appears in Item Hangar. Drag it back onto the empty slot.
+4. Restart the host and client. Open Fitting and check that the same module and its online state return.
+
+World version 14 adds assembled and online state to owned items without repeating the starter grant. This milestone supports mining lasers fitted or unfitted while docked; other module families, saved fitting templates, in-space online changes and mining activation remain separate work.
 
 ## Fly two pilots in Jita
 

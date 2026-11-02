@@ -10,6 +10,28 @@ namespace Eden.Protocol.Tests.Docking;
 public sealed class DockedServicesTests
 {
     [Fact]
+    public void FittingServiceRequiresTheCurrentStationAndExpiresOnDeparture()
+    {
+        using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using var scope = db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        context.Select(pilot);
+        object?[] standingCheck = ["DoStandingCheckForStationService", new object?[] { (long)StationService.Fitting }];
+        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "corpStationMgr", "MachoBindObject",
+            new object?[] { (long)pilot.StationId + 1, standingCheck }, _ => { }));
+        var binding = Assert.IsType<object?[]>(router.Call(context, "corpStationMgr", "MachoBindObject",
+            new object?[] { (long)pilot.StationId, standingCheck }, _ => { }));
+        var reference = Assert.IsType<BlueObjectReference>(binding[0]);
+        Assert.Null(binding[1]);
+        Assert.Equal("corpStationMgr", context.ResolveReference(reference.Id));
+        context.ReleaseLocationReferences();
+        Assert.Null(context.ResolveReference(reference.Id));
+    }
+
+    [Fact]
     public void PartialStackChangesUseThePinnedClientsStackSizeColumn()
     {
         using TestWorld db = new();

@@ -82,6 +82,8 @@ public sealed class FlightPosition
 
 public sealed class OwnedItem
 {
+    public bool Singleton { get; set; }
+    public bool Online { get; set; }
     public long Id { get; set; }
     public long OwnerId { get; set; }
     public int TypeId { get; set; }
@@ -102,6 +104,8 @@ public sealed class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
+        model.Entity<OwnedItem>().Property(i => i.Singleton).HasDefaultValue(false);
+        model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);
         model.Entity<OwnedItem>().HasOne<Pilot>().WithMany().HasForeignKey(i => i.OwnerId);
         model.Entity<OwnedItem>().HasIndex(i => new { i.OwnerId, i.LocationId });
         model.Entity<Account>().ToTable("WorldAccount");

@@ -12,6 +12,7 @@
 - Start each namespace with the owning project name (`Eden.Protocol`, `Eden.Server`, or `Eden.Protocol.Tests`). Use that namespace for types at the project root. When grouping related types in a feature folder, append the folder name to the namespace. For example, types in an `Inventory` folder under `Eden.Protocol` would use `Eden.Protocol.Inventory`.
 - Use two spaces in project (`.csproj`), solution (`.slnx`), `.props`, and JSON files. Save files as UTF-8 with a final newline and trim trailing whitespace.
 - Choose names that describe a value's role. Comment on non-obvious wire constants and client quirks so the next contributor can tell why the code handles them that way.
+- Avoid magic numbers in code. Use enums for related protocol or gameplay values, such as inventory flags, dogma attributes and service identifiers, where appropriate. Use descriptive named constants for other fixed IDs, limits and wire values. Keep numeric conversions at serialization or persistence boundaries, and document build-specific values and their source instead of scattering unexplained integers through behavior.
 - Use the SDK pinned in [global.json](global.json). Follow the [shared build settings](Directory.Build.props), which enable nullable reference types, enforce code style during builds, and treat warnings as errors.
 
 ## Services and protocol calls

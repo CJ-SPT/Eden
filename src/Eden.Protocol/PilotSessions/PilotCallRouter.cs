@@ -37,7 +37,7 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
 
     public void ReleaseLocationReferences()
     {
-        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc" })
+        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr" })
         {
             if (_references.Remove(service, out var reference))
             {
@@ -103,7 +103,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
 
     private object? CallSelected(PilotCallContext context, string service, string method, object?[] args, Action<string> report, Dictionary<string, object?>? keywords)
     {
-        if (service is "jumpCloneSvc" or "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce")
+        if (service is "jumpCloneSvc" or "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce" or "corpStationMgr")
         {
             if (method == "MachoResolveObject")
             {
@@ -112,6 +112,10 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
             if (method == "MachoBindObject" && args.Length == 2)
             {
                 long locationGroup = context.Pilot.Position is null ? 15 : 5;
+                if (service == "corpStationMgr" && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId)))
+                {
+                    return Unsupported;
+                }
                 if (service is "invbroker" or "ship" or "jumpCloneSvc" && args[0] is not null &&
                     (args[0] is not object?[] bind || bind is not [long location, long group] || location != context.Pilot.LocationId || group != locationGroup))
                 {
