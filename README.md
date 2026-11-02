@@ -22,6 +22,8 @@ Mining income can buy a **Venture** for 10,000 ISK at the starter market. Assemb
 
 The Character Sheet opens for Eden Pilot and shows the Jita home station. Each local pilot has a saved account profile, pilot identity, and the starting skills for their race from the pinned catalog. Character selection and the Skill Catalogue show 384,047 SP for the seeded Caldari pilots. Pilots can queue injected skills, pause, resume, and retain training progress across a restart. The local gateway answers the personal plan list and tracked-plan lookup. See the [character-sheet service roadmap](docs/protocol.md#character-sheet-service-roadmap).
 
+Combat groundwork now includes tested turret range/tracking accuracy and resistance-aware damage through shield, armor and structure. This calculation layer does not yet enable weapons or NPC encounters in the client.
+
 ## Local game data
 
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions, item stacks in cargo or station hangars, asteroid fields, wallets, market orders and trade records. Both files are generated locally.
