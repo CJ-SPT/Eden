@@ -11,7 +11,8 @@ namespace Eden.Server.Persistence;
 public sealed class WorldWreck
 {
     public long Id { get; set; }
-    public long NpcId { get; set; }
+    public long? NpcId { get; set; }
+    public long? ShipId { get; set; }
     public long OwnerId { get; set; }
     public int CorporationId { get; set; }
     public int TypeId { get; set; }
@@ -62,6 +63,51 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         });
     }
 
+    internal static void CreatePlayer(WorldDbContext world, CatalogDbContext catalog, Ship ship, Pilot pilot, int systemId, long now,
+        IReadOnlyList<OwnedItem> items, IReadOnlySet<long> survivors)
+    {
+        var definition = catalog.Set<SourceRecord>().Find("client/types", ship.TypeId.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
+        var type = definition?.WreckTypeID is long wreckType
+            ? catalog.Set<ItemType>().SingleOrDefault(t => t.Id == wreckType && t.GroupId == WreckDefinitions.Group) : null;
+        if (type is null)
+        {
+            throw new InvalidDataException("The lost ship has no supported catalog wreck.");
+        }
+        var position = ship.Position ?? throw new InvalidDataException("A destroyed ship must be in space.");
+        var wreck = world.Set<WorldWreck>().Add(new()
+        {
+            Id = checked(WreckDefinitions.FirstPlayerWreckId + ship.Id),
+            ShipId = ship.Id,
+            OwnerId = pilot.Id,
+            CorporationId = pilot.CorporationId,
+            TypeId = type.Id,
+            SystemId = systemId,
+            Name = ship.Name + " " + type.Name,
+            X = position.X,
+            Y = position.Y,
+            Z = position.Z,
+            CreatedAt = now,
+            ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+        }).Entity;
+        // Surviving modules retain their singleton identity but are loose,
+        // offline cargo. The old hull's cooldowns must not follow them.
+        var ids = items.Select(i => i.Id).ToArray();
+        world.Set<WeaponCooldown>().Where(c => ids.Contains(c.ModuleId)).ExecuteDelete();
+        foreach (var item in items)
+        {
+            if (survivors.Contains(item.Id))
+            {
+                item.LocationId = wreck.Id;
+                item.FlagId = (int)InventoryFlag.Cargo;
+                item.Online = false;
+            }
+            else
+            {
+                world.Remove(item);
+            }
+        }
+    }
+
     public IReadOnlyList<WreckContact> List(int systemId, long now)
     {
         using WorldDbContext world = new(database.Path);
@@ -73,7 +119,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         return wrecks.Select(w =>
         {
             var type = catalog.Set<ItemType>().Single(t => t.Id == w.TypeId);
-            return new WreckContact(w.Id, w.NpcId, w.OwnerId, w.CorporationId, w.TypeId, w.Name, w.SystemId, new(w.X, w.Y, w.Z),
+            return new WreckContact(w.Id, w.NpcId ?? w.ShipId!.Value, w.OwnerId, w.CorporationId, w.TypeId, w.Name, w.SystemId, new(w.X, w.Y, w.Z),
                 type.Mass ?? 0, (float)(type.Radius ?? 0), !occupied.Contains(w.Id));
         }).ToArray();
     }

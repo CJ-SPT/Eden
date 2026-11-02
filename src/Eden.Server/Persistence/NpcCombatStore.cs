@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitting, SqliteWorld lookup) : INpcCombat
+internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitting, SqliteWorld lookup, IShipLootRoll lootRoll) : INpcCombat
 {
     public IReadOnlyList<long> Aggressors(long shipId)
     {
@@ -73,6 +73,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         {
             var old = pilot.ActiveShip;
             var items = world.Set<OwnedItem>().Where(i => i.LocationId == shipId).OrderBy(i => i.Id).ToArray();
+            string manifest = JsonSerializer.Serialize(items);
+            var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
             var capsuleType = catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
                 ?? throw new InvalidDataException("The catalog has no supported capsule.");
             var capsule = world.Ships.Add(new()
@@ -94,17 +96,18 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
                 SystemId = system,
                 Time = now,
                 Name = old.Name,
-                ItemsJson = JsonSerializer.Serialize(items),
+                ItemsJson = manifest,
+                DroppedItemIdsJson = JsonSerializer.Serialize(survivors.Order()),
                 X = position.X,
                 Y = position.Y,
                 Z = position.Z,
             });
+            WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
             pilot.ActiveShip = capsule;
             pilot.ActiveShipId = capsule.Id;
             // Satisfy the active-ship FK before deleting the old hull. Both saves
             // belong to this transaction: a failed capsule/loss cannot consume it.
             world.SaveChanges();
-            world.RemoveRange(items);
             world.Remove(old);
         }
         world.SaveChanges();

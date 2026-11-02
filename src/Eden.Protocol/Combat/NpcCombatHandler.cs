@@ -67,6 +67,9 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
                 context.Flight.BeginShipLoss();
                 mining.Cancel(context);
                 weapons.Cancel(context);
+                // Wreck.Prepare links launcherID to the still-loaded hull for
+                // rotation and explosion timing before its terminal removal.
+                context.Flight.RefreshWrecks();
                 context.ReplaceDestroyedShip(capsule);
                 Clear();
                 _shipId = capsule.ShipId;

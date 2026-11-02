@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 23)
+        if (version is < 0 or > 24)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -243,6 +243,29 @@ internal static class WorldMigration
                 """);
         }
         if (version < 23) { world.Database.ExecuteSqlRaw("PRAGMA user_version=23"); }
+        if (version is >= 6 and < 24)
+        {
+            // Retain every existing NPC wreck and its item identities. Locations
+            // are polymorphic inventory IDs, so no item FK needs rebuilding.
+            world.Database.ExecuteSqlRaw("""
+                ALTER TABLE WorldShipLoss ADD COLUMN DroppedItemIdsJson TEXT NOT NULL DEFAULT '[]';
+                CREATE TABLE WorldWreckNew(Id INTEGER PRIMARY KEY,
+                    NpcId INTEGER REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
+                    ShipId INTEGER REFERENCES WorldShipLoss(ShipId) ON DELETE RESTRICT,
+                    OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, CorporationId INTEGER NOT NULL,
+                    TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Name TEXT NOT NULL,
+                    X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, CreatedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL,
+                    CONSTRAINT CK_Wreck_Source CHECK ((NpcId IS NOT NULL AND ShipId IS NULL) OR (NpcId IS NULL AND ShipId IS NOT NULL)));
+                INSERT INTO WorldWreckNew(Id,NpcId,OwnerId,CorporationId,TypeId,SystemId,Name,X,Y,Z,CreatedAt,ExpiresAt)
+                    SELECT Id,NpcId,OwnerId,CorporationId,TypeId,SystemId,Name,X,Y,Z,CreatedAt,ExpiresAt FROM WorldWreck;
+                DROP TABLE WorldWreck;
+                ALTER TABLE WorldWreckNew RENAME TO WorldWreck;
+                CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
+                CREATE UNIQUE INDEX IX_WorldWreck_ShipId ON WorldWreck(ShipId);
+                CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
+                """);
+        }
+        if (version < 24) { world.Database.ExecuteSqlRaw("PRAGMA user_version=24"); }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

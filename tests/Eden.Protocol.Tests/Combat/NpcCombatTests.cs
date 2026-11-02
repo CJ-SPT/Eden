@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -31,7 +32,8 @@ public sealed class NpcCombatTests
         public const long ShipId = 1000000000001;
         public TestWorld Db { get; } = new();
         public Clock Clock { get; } = new();
-        public INpcCombat Combat => Db.Services.GetRequiredService<INpcCombat>();
+        public IShipLootRoll LootRoll { get; set; } = new FixedLootRoll(true);
+        public INpcCombat Combat => new NpcCombatStore(new(Db.Path), Db.Services.GetRequiredService<IPilotFitting>(), Db.Store, LootRoll);
         public IPilotCombat Weapons => Db.Services.GetRequiredService<IPilotCombat>();
         public IPilotHealth Health => Db.Services.GetRequiredService<IPilotHealth>();
         public NpcContact Npc { get; }
@@ -52,6 +54,9 @@ public sealed class NpcCombatTests
                     INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
                     INSERT OR REPLACE INTO TypeAttribute VALUES (670,9,150),(670,263,63),(670,265,156),(670,482,125),
                         (670,55,187500),(670,479,625000),(670,102,0),(670,14,0),(670,37,150),(670,70,2),(670,600,4),(670,552,25);
+                    INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (26510,'Caldari Rookie ship Wreck',186,27500,10000,14);
+                    INSERT INTO SourceRecord VALUES ('client/types','26510','{{"volume":27500}}');
+                    UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
                     """);
             }
             Npc = Db.Services.GetRequiredService<INpcEncounters>().List(30000144, Clock.Now)[0];
@@ -73,6 +78,17 @@ public sealed class NpcCombatTests
             world.SaveChanges();
         }
         public void Dispose() => Db.Dispose();
+    }
+
+    private sealed class FixedLootRoll(bool survives) : IShipLootRoll
+    {
+        public bool Survives() => survives;
+    }
+
+    private sealed class AlternatingLootRoll : IShipLootRoll
+    {
+        private int _rolls;
+        public bool Survives() => _rolls++ % 2 == 0;
     }
 
     [Fact]
@@ -129,7 +145,7 @@ public sealed class NpcCombatTests
     }
 
     [Fact]
-    public async Task FatalDamageAtomicallyRecordsLossCreatesOneCapsuleAndConsumesTheLostHullContents()
+    public async Task FatalDamageAtomicallyRecordsLossCreatesOneCapsuleAndRecoverableWreck()
     {
         using Fixture f = new();
         f.Aggress();
@@ -170,6 +186,15 @@ public sealed class NpcCombatTests
             var items = JsonSerializer.Deserialize<OwnedItem[]>(loss.ItemsJson)!;
             Assert.Contains(items, i => i.Id == f.Module && i.Singleton && i.Online);
             Assert.Contains(items, i => i.TypeId == 34 && i.Quantity == 123);
+            var wreck = Assert.Single(saved.Set<WorldWreck>());
+            Assert.Equal(Fixture.ShipId, wreck.ShipId);
+            Assert.Null(wreck.NpcId);
+            Assert.Equal(26510, wreck.TypeId);
+            Assert.Equal(Fixture.PilotId, wreck.OwnerId);
+            var contents = saved.Set<OwnedItem>().Where(i => i.LocationId == wreck.Id).OrderBy(i => i.Id).ToArray();
+            Assert.Equal(items.Select(i => i.Id), contents.Select(i => i.Id));
+            Assert.Equal(items.Select(i => i.Id), JsonSerializer.Deserialize<long[]>(loss.DroppedItemIdsJson));
+            Assert.All(contents, i => { Assert.False(i.Online); Assert.Equal((int)InventoryFlag.Cargo, i.FlagId); });
         }
         _ = new SqliteWorld(f.Db.Path);
         Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
@@ -178,6 +203,20 @@ public sealed class NpcCombatTests
         Assert.Equal(FleetDefinitions.CorvetteGroup, recovery.Pilot.ShipGroupId);
         Assert.Equal(3, recovery.Changes.Count);
         Assert.NotEqual(Fixture.ShipId, recovery.Pilot.ShipId);
+        // Return in the recovery hull and recover the original singleton, not a
+        // new module grant. A restart never rolls the loss contents again.
+        f.Db.Store.SetPosition(recovery.Pilot.ShipId, capsule.Position, capsule.SystemId);
+        var wrecks = f.Db.Services.GetRequiredService<IWrecks>();
+        var contact = Assert.Single(wrecks.List(capsule.SystemId, f.Clock.Now));
+        var loot = wrecks.Read(Fixture.PilotId, contact.Id, f.Clock.Now).Items;
+        wrecks.Take(Fixture.PilotId, recovery.Pilot.ShipId, contact.Id, loot.Select(i => i.Id).ToArray(), null, f.Clock.Now);
+        _ = new SqliteWorld(f.Db.Path);
+        using WorldDbContext restored = new(f.Db.Path);
+        var module = restored.Set<OwnedItem>().Find(f.Module)!;
+        Assert.Equal(recovery.Pilot.ShipId, module.LocationId);
+        Assert.True(module.Singleton);
+        Assert.False(module.Online);
+        Assert.True(Assert.Single(wrecks.List(capsule.SystemId, f.Clock.Now)).Empty);
     }
 
     [Fact]
@@ -202,6 +241,103 @@ public sealed class NpcCombatTests
     }
 
     [Fact]
+    public void MixedDropsPreserveOriginalManifestAndMoveOnlySurvivingItemsOffline()
+    {
+        using Fixture f = new();
+        f.LootRoll = new AlternatingLootRoll();
+        f.Aggress();
+        f.AlmostLost();
+        f.Clock.Milliseconds = 7500;
+        long cargo;
+        long mining;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            cargo = PilotInventoryStore.NextId(world);
+            mining = cargo + 1;
+            world.AddRange(new OwnedItem
+            {
+                Id = cargo,
+                OwnerId = Fixture.PilotId,
+                TypeId = 34,
+                LocationId = Fixture.ShipId,
+                FlagId = (int)InventoryFlag.Cargo,
+                Quantity = 23
+            },
+                new OwnedItem
+                {
+                    Id = mining,
+                    OwnerId = Fixture.PilotId,
+                    TypeId = 34,
+                    LocationId = Fixture.ShipId,
+                    FlagId = (int)InventoryFlag.GeneralMiningHold,
+                    Quantity = 37
+                });
+            world.SaveChanges();
+        }
+        Assert.NotNull(f.Fire()!.Capsule);
+        using WorldDbContext saved = new(f.Db.Path);
+        var loss = Assert.Single(saved.Set<ShipLoss>());
+        var original = JsonSerializer.Deserialize<OwnedItem[]>(loss.ItemsJson)!;
+        Assert.Equal(3, original.Length);
+        Assert.Equal((int)InventoryFlag.GeneralMiningHold, original.Single(i => i.Id == mining).FlagId);
+        Assert.True(original.Single(i => i.Id == f.Module).Online);
+        Assert.Equal(new[] { f.Module, mining }, JsonSerializer.Deserialize<long[]>(loss.DroppedItemIdsJson));
+        var wreck = Assert.Single(saved.Set<WorldWreck>());
+        Assert.Null(saved.Set<OwnedItem>().Find(cargo));
+        var gun = saved.Set<OwnedItem>().Find(f.Module)!;
+        Assert.Equal(wreck.Id, gun.LocationId);
+        Assert.True(gun.Singleton);
+        Assert.False(gun.Online);
+        Assert.Equal(37, saved.Set<OwnedItem>().Find(mining)!.Quantity);
+        Assert.Empty(saved.Set<WeaponCooldown>());
+        var wrecks = f.Db.Services.GetRequiredService<IWrecks>();
+        var contents = wrecks.Read(Fixture.PilotId, wreck.Id, f.Clock.Now).Items;
+        Assert.Equal(2, contents.Count);
+        Assert.Throws<CargoCapacityException>(() => wrecks.Take(Fixture.PilotId, f.Pilot.ShipId, wreck.Id, [f.Module], null, f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() => wrecks.Read(90000002, wreck.Id, f.Clock.Now));
+    }
+
+    [Fact]
+    public void NoSurvivorsStillLeavesAnEmptyCatalogWreckAndNeverRerollsOnRestart()
+    {
+        using Fixture f = new();
+        f.LootRoll = new FixedLootRoll(false);
+        f.Aggress();
+        f.AlmostLost();
+        f.Clock.Milliseconds = 7500;
+        Assert.NotNull(f.Fire()!.Capsule);
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.Null(f.Fire());
+        var contact = Assert.Single(f.Db.Services.GetRequiredService<IWrecks>().List(f.Npc.SystemId, f.Clock.Now));
+        Assert.True(contact.Empty);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Null(saved.Set<OwnedItem>().Find(f.Module));
+        Assert.Equal("[]", saved.Set<ShipLoss>().Single().DroppedItemIdsJson);
+        Assert.Single(saved.Set<ShipLoss>());
+    }
+
+    [Fact]
+    public void MissingPlayerWreckDefinitionRollsBackTheEntireFatalShot()
+    {
+        using Fixture f = new();
+        f.Aggress();
+        f.AlmostLost();
+        f.Clock.Milliseconds = 7500;
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{}}' WHERE Dataset='client/types' AND Key='601'");
+        }
+        Assert.Throws<InvalidDataException>(() => f.Fire());
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
+        Assert.Empty(saved.Set<WorldWreck>());
+        Assert.Empty(saved.Set<ShipLoss>());
+        Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);
+        Assert.True(saved.Set<OwnedItem>().Find(f.Module)!.Online);
+        Assert.Null(saved.Set<NpcAggression>().Single().LastShotAt);
+    }
+
+    [Fact]
     public void VersionTwentyUpgradePreservesShipsItemsHealthResourcesAndWalletWithoutStartingFights()
     {
         using Fixture f = new();
@@ -214,7 +350,7 @@ public sealed class NpcCombatTests
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(23, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(24, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
         Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);
@@ -281,7 +417,7 @@ public sealed class NpcCombatTests
         CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
         using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons);
         using PilotCallContext context = new(1000001, f.Pilot.Account, [f.Pilot],
-            p => new(f.Db.Store, p, f.Clock, space, [], health: f.Health, encounters: encounters), 42, []);
+            p => new(f.Db.Store, p, f.Clock, space, [], health: f.Health, encounters: encounters, wrecks: f.Db.Services.GetRequiredService<IWrecks>()), 42, []);
         context.Select(f.Pilot);
         context.Flight.Snapshot();
         npcCombat.Enter(context);
@@ -294,7 +430,8 @@ public sealed class NpcCombatTests
         Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otheradd"));
         var wing = f.Db.Store.FindPilot(1000002)!;
         f.Db.Store.SetPosition(wing.ShipId, f.Pilot.Position! + new SpacePosition(100, 0, 0), f.Npc.SystemId);
-        using FlightSession observer = new(f.Db.Store, f.Db.Store.FindPilot(1000002)!, f.Clock, space, [], health: f.Health, encounters: encounters);
+        using FlightSession observer = new(f.Db.Store, f.Db.Store.FindPilot(1000002)!, f.Clock, space, [], health: f.Health, encounters: encounters,
+            wrecks: f.Db.Services.GetRequiredService<IWrecks>());
         observer.Snapshot();
         context.Notifications.Clear();
         context.NotificationsBeforeFlight.Clear();
@@ -304,6 +441,7 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         npcCombat.Advance(context);
         targeting.Advance(context);
+        observer.RefreshWrecks();
         observer.RefreshPeers();
         Assert.Equal(FleetDefinitions.CapsuleType, context.Pilot.ShipTypeId);
         Assert.Contains(context.Notifications, n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[0], f.Module) && Equals(n.Arguments[3], false));
@@ -320,11 +458,19 @@ public sealed class NpcCombatTests
         int added = ownActions.FindIndex(a => Equals(a[0], "AddBalls"));
         int removed = ownActions.FindIndex(a => Equals(a[0], "RemoveBall"));
         Assert.True(added >= 0 && removed > added);
+        Assert.Equal(2, ownActions.Take(removed).Count(a => Equals(a[0], "AddBalls")));
+        var ownWreck = Assert.Single(context.Flight.VisibleWrecks);
+        Assert.Equal(Fixture.ShipId, ownWreck.SourceId);
+        var wreckPayload = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<object?[]>(ownActions[added][1])));
+        var slim = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(wreckPayload[1]))).State);
+        Assert.Equal(Fixture.ShipId, slim["launcherID"]);
         Assert.Equal(new object?[] { Fixture.ShipId, true }, ownActions[removed][1]);
         Assert.DoesNotContain(ownActions, a => Equals(a[0], "SetState"));
         var peerActions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(peerActions, a => Equals(a[0], "RemoveBall") && Equals(((object?[])a[1]!)[0], Fixture.ShipId) && Equals(((object?[])a[1]!)[1], true));
         Assert.Contains(peerActions, a => Equals(a[0], "AddBalls"));
+        Assert.Equal("AddBalls", peerActions[0][0]);
+        Assert.Single(observer.VisibleWrecks);
     }
 
     [Theory]
