@@ -86,7 +86,7 @@ public sealed class FlightSessionTests
         clock.Seconds = 1000;
         session.Checkpoint();
         Assert.False(session.Moving);
-        Assert.Equal(pilot.X + Ballpark.StationRadius + Ballpark.ShipRadius, session.Pilot.Position!.X);
+        Assert.Equal(pilot.X + pilot.Flight.StationRadius + pilot.Flight.ShipRadius, session.Pilot.Position!.X);
         Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
     }
 

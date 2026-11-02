@@ -31,9 +31,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         double seconds = now - _sampleTime;
         _sampleTime = now;
         // Integrate Destiny's linear drag towards cruise velocity (mass * agility / friction).
-        double tau = Ballpark.Mass * Ballpark.Agility / 1_000_000d;
+        double tau = Pilot.Flight.Mass * Pilot.Flight.Agility / 1_000_000d;
         double decay = Math.Exp(-seconds / tau);
-        double cruise = Ballpark.MaxSpeed * _speedFraction;
+        double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
         double transient = tau * (1 - decay);
         SpacePosition next = new(position.X + direction.X * cruise * (seconds - transient) + _velocity.X * transient,
             position.Y + direction.Y * cruise * (seconds - transient) + _velocity.Y * transient,
@@ -70,7 +70,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             return null;
         }
-        const double radius = Ballpark.StationRadius + Ballpark.ShipRadius;
+        double radius = Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius;
         double lengthSquared = dx * dx + dy * dy + dz * dz;
         double clearance = Math.Max(0, x * x + y * y + z * z - radius * radius);
         double discriminant = along * along - lengthSquared * clearance;
@@ -160,7 +160,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         var position = Pilot.Position!;
         double separation = DistanceToStation(position);
-        const double surface = Ballpark.StationRadius + Ballpark.ShipRadius;
+        double surface = Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius;
         if (separation < surface - 0.01)
         {
             // Older worlds could save a ship inside the station. Recover just outside its hull.
@@ -232,7 +232,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             // Separate the two local launch lanes even on simultaneous undocks.
             double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
-            SetPosition(new(Pilot.X + Ballpark.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
+            SetPosition(new(Pilot.X + Pilot.Flight.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
             return null;
         }
         if (service != "beyonce" || Pilot.Position is not { } position)
@@ -274,7 +274,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 double separation = DistanceToStation(position);
                 if (separation > 0)
                 {
-                    double radius = Ballpark.StationRadius + Ballpark.ShipRadius + standOff;
+                    double radius = Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius + standOff;
                     double sign = separation >= radius ? 1 : -1;
                     _direction = new(sign * (Pilot.X - position.X) / separation, sign * (Pilot.Y - position.Y) / separation,
                         sign * (Pilot.Z - position.Z) / separation);
@@ -312,7 +312,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             case "CmdDock" when arguments is [long station, long ship] && station == Pilot.StationId && ship == Pilot.ShipId:
                 Checkpoint();
                 position = Pilot.Position!;
-                if (DistanceToStation(position) > Ballpark.StationRadius + Ballpark.ShipRadius + 2500)
+                if (DistanceToStation(position) > Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius + 2500)
                 {
                     return PilotCallRouter.Unsupported;
                 }

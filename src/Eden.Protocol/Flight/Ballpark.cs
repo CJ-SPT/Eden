@@ -5,21 +5,15 @@ namespace Eden.Protocol.Flight;
 
 internal static class Ballpark
 {
-    internal const float StationRadius = 100000;
-    internal const float ShipRadius = 47;
-    internal const double Mass = 1163000;
-    internal const float Agility = 4.5f;
-    internal const float MaxSpeed = 295;
-
     internal static BlueInstance Snapshot(DockedPilot pilot, int stamp, params ShipContact[] peers)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE
         writer.Write(stamp);
-        WriteBallHeader(writer, pilot.StationId, 11, StationRadius, new(pilot.X, pilot.Y, pilot.Z), 2 | 4);
+        WriteBallHeader(writer, pilot.StationId, 11, pilot.Flight.StationRadius, new(pilot.X, pilot.Y, pilot.Z), 2 | 4);
         writer.Write((sbyte)-1); // Rigid balls have only a formation ID after the flags.
-        var station = Item(pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, 15, 3);
+        var station = Item(pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.Station.GroupId, pilot.Station.CategoryId);
         station["corpID"] = pilot.StationOwnerId;
         List<object?> items = [Slim(station), WriteShip(writer, pilot, new(0, 0, 0))];
         foreach (var peer in peers)
@@ -53,17 +47,17 @@ internal static class Ballpark
 
     private static BlueInstance WriteShip(BinaryWriter writer, DockedPilot pilot, SpacePosition velocity)
     {
-        WriteBallHeader(writer, pilot.ShipId, 2, ShipRadius, pilot.Position!, 1 | 4 | 8);
-        writer.Write(Mass);
+        WriteBallHeader(writer, pilot.ShipId, 2, pilot.Flight.ShipRadius, pilot.Position!, 1 | 4 | 8);
+        writer.Write(pilot.Flight.Mass);
         writer.Write((byte)0); // Uncloaked
         writer.Write(-1L); // Force-field harmonic
         writer.Write(pilot.CorpId);
         writer.Write(-1);
-        writer.Write(MaxSpeed);
+        writer.Write(pilot.Flight.MaxSpeed);
         writer.Write(velocity.X);
         writer.Write(velocity.Y);
         writer.Write(velocity.Z);
-        writer.Write(Agility); // Agility
+        writer.Write(pilot.Flight.Agility);
         writer.Write(0f); // Stopped on entry or reconnect
         writer.Write((sbyte)-1);
 

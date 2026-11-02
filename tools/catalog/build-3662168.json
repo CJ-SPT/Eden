@@ -1,0 +1,2654 @@
+{
+  "client/accountingentrytypes": {
+    "source": "res:/staticdata/accountingentrytypes.fsdbinary",
+    "sha256": "2a7bb5d4ae63febee2ead510e357fe83916229e1e618b245825b76fbae4a25f2",
+    "records": 218,
+    "keysSha256": "2e46c64f84d6445e91f722616cf4a90792ce4431026795c1611311fd440476c0"
+  },
+  "client/accountingkeys": {
+    "source": "res:/staticdata/accountingkeys.fsdbinary",
+    "sha256": "354bbf705ac39dddaacb2e417744e109a83f764dea456cb59c5096421bf1fc6c",
+    "records": 19,
+    "keysSha256": "e740dcd464a0b4de5c454edd1be6fc31e9ec5234581c335ec0c58e962220bfd5"
+  },
+  "client/achievementevents": {
+    "source": "res:/staticdata/achievementevents.fsdbinary",
+    "sha256": "e34564b08dfa72e83494309de86e3cc89ef4120447380f4d6afc83089105ece8",
+    "records": 131,
+    "keysSha256": "5938e9670a56fcff3fbf5c729501c748f8254baf44f6142d823666fd27074fa2"
+  },
+  "client/achievements": {
+    "source": "res:/staticdata/achievements.static",
+    "sha256": "ad57bb7d8a4e159847de73b65a8de90264a6ae2b592ab367c8c7ab0205ade3de",
+    "records": 68,
+    "keysSha256": "1f764e8cbd42f22a50c240330a84b54efae69bdbc7a339723110a6a1b25309cd"
+  },
+  "client/agencyhelpvideogroups": {
+    "source": "res:/staticdata/agencyhelpvideogroups.fsdbinary",
+    "sha256": "9c14b582633a8241b6ac6d1a3f01d67442d54b3566d90c409066d81b0159be3a",
+    "records": 6,
+    "keysSha256": "85b02af03ad136e3eea3b452540b52568caac4971ae87d9a316440a704eaec79"
+  },
+  "client/agencyhelpvideos": {
+    "source": "res:/staticdata/agencyhelpvideos.fsdbinary",
+    "sha256": "4e403efc87cf49dbd1ad74e03dac478d2d64e635c6beb451a8aafd0546219535",
+    "records": 36,
+    "keysSha256": "f6b2d27863e726e8a66e3b8b821d50b3ce4eee2661ccfb8bb7b96571a46bac40"
+  },
+  "client/agentsinspace": {
+    "source": "res:/staticdata/agentsinspace.fsdbinary",
+    "sha256": "45f46cdbdd6b83c72ca11e1b920aad8e8aefaa27dad6a90b18886cb7d0c40842",
+    "records": 360,
+    "keysSha256": "11b5550fe0010c3e6614dace86f77ed973e1ef5cadc4b6c65a4f408fbd55ee64"
+  },
+  "client/agenttypes": {
+    "source": "res:/staticdata/agenttypes.fsdbinary",
+    "sha256": "5ab05e1ad60eff0739851c0d9dfae2a1de2a901a868495db15c30847d31f59b4",
+    "records": 13,
+    "keysSha256": "773ee57133e87195946c033541ecb1228398a3935ebfb9b9a078286ab24f7827"
+  },
+  "client/ancestries": {
+    "source": "res:/staticdata/ancestries.fsdbinary",
+    "sha256": "859edad2b9fd0a1384fcd26e35f324a496bb4e4ed174e805f6f45a2c98fa050b",
+    "records": 43,
+    "keysSha256": "a7861e2d246e9695bdfbff6388e0e65bf19430c39efe8c5f101b4004f0ce2e5e"
+  },
+  "client/archetypes": {
+    "source": "res:/staticdata/archetypes.fsdbinary",
+    "sha256": "570f3b38e3d9fa3b840f4e16c7a796c8b9471102605527045b9b04ce5928f5dd",
+    "records": 71,
+    "keysSha256": "bd29932591016b9e00354d2e2cc7baaa3023a8a6afa160c68256f4a36ed60c57"
+  },
+  "client/asteroidcountbytypeidbeltid": {
+    "source": "res:/staticdata/asteroidcountbytypeidbeltid.static",
+    "sha256": "74f806cf931de135e2ef4fe1ad2edd2795948bafb4438b815320fb2f8990f520",
+    "records": 40928,
+    "keysSha256": "70db6542100b9ec3048224cb42e1ee61539cfd09f3e048c06a15db64ba0aec20"
+  },
+  "client/asteroidcountbytypeidroomiddungeonid": {
+    "source": "res:/staticdata/asteroidcountbytypeidroomiddungeonid.static",
+    "sha256": "ff18a434a63f23b8fed0b7ca473c50c51ac8ea5a5c0c6b966caf20721b225445",
+    "records": 1221,
+    "keysSha256": "ec39761cadcaebeab187fc5a4d9db457bbb48f7913db495fcf0074817f51054d"
+  },
+  "client/asteroidtypesbysolarsystemid": {
+    "source": "res:/staticdata/asteroidtypesbysolarsystemid.pickle",
+    "sha256": "bde1facdba461a0f0c5753c948dd36a1d9e4e29bc3115bfa4369a94fff16dd7f",
+    "records": 3974,
+    "keysSha256": "0e89a7cbcb1fb1f74953e9da53a07029fffe2a1b9cc87d355f484947eac1457c"
+  },
+  "client/atoms": {
+    "source": "res:/staticdata/atoms.fsdbinary",
+    "sha256": "b42c1e6bb759977e5c15afe4e277441745311ec582fd79000f6c21b8a510bf53",
+    "records": 583,
+    "keysSha256": "53c8281f866abceac606acb089652d31f89359ce87d034715f1f25a814d41a0d"
+  },
+  "client/audiometadata": {
+    "source": "res:/staticdata/audiometadata.fsdbinary",
+    "sha256": "61f90994143050f00d01289b8db1aade9cbecab2ce0761bfeb0d841a6e6dfa3a",
+    "records": 1,
+    "keysSha256": "235bf5dbbd86cd5d637625f81fe3a6a4f389a915a3323fce5bb4989996886fcf"
+  },
+  "client/billboards": {
+    "source": "res:/staticdata/billboards.fsdbinary",
+    "sha256": "6acdf98ec773ec1e6b910870f33b3c50b22137e38ac3feb931bd075ae48c94c9",
+    "records": 2,
+    "keysSha256": "9ce7edeca0ea8c748609c28adcb37b2ecee14f1d0961467df2163e5792baee53"
+  },
+  "client/billtypes": {
+    "source": "res:/staticdata/billtypes.fsdbinary",
+    "sha256": "8900b3e68f6a7203e7cf9b83cac622530c8a9b8fd86a3be8607a07c7607dc914",
+    "records": 7,
+    "keysSha256": "2338c8517a3e79838da1c02cf77a2c87be47f0275d34cb551661b4ef68c07a63"
+  },
+  "client/bloodlines": {
+    "source": "res:/staticdata/bloodlines.fsdbinary",
+    "sha256": "2164d72208c530cd04435ad37940ce05086ddeff322e36a1e1dc22d9bbd9d905",
+    "records": 18,
+    "keysSha256": "d3eb5b835577e1ea5d2966dee717cd916b337742bd18e8a84583e4dfe626bed5"
+  },
+  "client/blueprints": {
+    "source": "res:/staticdata/blueprints.static",
+    "sha256": "686734d0148a375e4477a5159eefb983ee2de30cc8f150c63b0f77efb7e180fb",
+    "records": 5100,
+    "keysSha256": "f6930752f5d1b7587b255629d18ccb66c0a2a91770bd6556963feebd1012501a"
+  },
+  "client/blueprintsbymaterialtypeids": {
+    "source": "res:/staticdata/blueprintsbymaterialtypeids.pickle",
+    "sha256": "23939e426aa758e4ee54ea31ede08270c92b350cb75d7a0c1aabcb3e3ef04370",
+    "records": 1715,
+    "keysSha256": "411f5ff25ee5559f6d0e63c766f0a978009fbb3abd1d0bf835e1786e24e5adfe"
+  },
+  "client/brackets": {
+    "source": "res:/staticdata/brackets.static",
+    "sha256": "855f5fe014d37aa84d2773943f7fce6d3bea5a5f0ea0c6f38e41a6b321013bb6",
+    "records": 166,
+    "keysSha256": "1ffac75805cf08695262d5b4277b78881321db0065f74630979074163f32970a"
+  },
+  "client/bracketsbycategory": {
+    "source": "res:/staticdata/bracketsbycategory.static",
+    "sha256": "1225d8b799157f7bc7b39db43131ba5f59e3bed62cd84aae2a72f3370148fd03",
+    "records": 7,
+    "keysSha256": "1f94399b5135858a3dafcdcae43cd48ffd2a41cf2972664cd811a234cf183a80"
+  },
+  "client/bracketsbygroup": {
+    "source": "res:/staticdata/bracketsbygroup.static",
+    "sha256": "812c7c217d02e08a9f409cf78b9275ce311dad282a48f6bed255a011a4c61b16",
+    "records": 547,
+    "keysSha256": "dec47a462a485be5a2bdf6ae262c389b1eaa32f70400965a1c08e1a5a1ad6023"
+  },
+  "client/bracketsbytype": {
+    "source": "res:/staticdata/bracketsbytype.static",
+    "sha256": "9e75dedd08b22eb1a0841ef2a1a47261ebe31cca91dae67b54d9a302627704a1",
+    "records": 1221,
+    "keysSha256": "699e222b96ecc8bcfd17d51c104c75cbf932792db64208ca8cfd7253de39ba15"
+  },
+  "client/careerpaths": {
+    "source": "res:/staticdata/careerpaths.fsdbinary",
+    "sha256": "df26e783d0822dd94fec2816f028a4d451ea9dceb1a912f8c2ec2109ff62d5fd",
+    "records": 4,
+    "keysSha256": "1a423f0f53726d142437eb522d0cec5b28d5d8fd9dbb57c1dec30a0a09bedcc9"
+  },
+  "client/categories": {
+    "source": "res:/staticdata/categories.fsdbinary",
+    "sha256": "604d7d0bef0a800e5b764a6c05fdeec771db85e2a918d05c6c09a697bd7a1092",
+    "records": 48,
+    "keysSha256": "37c6020cf82848a5451abea72b985d177fa05466b64745b7a904eb343e0dadfe"
+  },
+  "client/certificates": {
+    "source": "res:/staticdata/certificates.static",
+    "sha256": "eab9cd0abeb8400e1777e889988fd1e9ce546ef882e99fa21de86a8a84e39fed",
+    "records": 1,
+    "keysSha256": "235bf5dbbd86cd5d637625f81fe3a6a4f389a915a3323fce5bb4989996886fcf"
+  },
+  "client/challengeconditions": {
+    "source": "res:/staticdata/challengeconditions.fsdbinary",
+    "sha256": "3fca39ed175ccedcfb2fc38711dd938dc335eafdb2c03804e06425fa96a65cfc",
+    "records": 33,
+    "keysSha256": "532ca126bae05598c19510c70f7a947a772a4fee8cb7bfb4735dd5b5262c2966"
+  },
+  "client/challengeevents": {
+    "source": "res:/staticdata/challengeevents.fsdbinary",
+    "sha256": "acca056be445de590a907705cbaaf0cc142413d02d323bdcff1961d9ab16e1fa",
+    "records": 35,
+    "keysSha256": "d9b530fbe17d7cf662ff62e804a693472acf93a4894c7216a29a5eaae5f3ad51"
+  },
+  "client/challenges": {
+    "source": "res:/staticdata/challenges.fsdbinary",
+    "sha256": "540068fd03767c0e19782d605131c7fdd7d4403dfd4cfe4ae2fc909488d3e753",
+    "records": 1210,
+    "keysSha256": "afd251e8cabebd97b9697d65a12fa8279865e40bee8711549fb06ac3333d5d2a"
+  },
+  "client/character_avatarbehaviors": {
+    "source": "res:/staticdata/character_avatarbehaviors.fsdbinary",
+    "sha256": "5dd3462ad3d341c95cb706b0a3b88e4485da7ab8ba08d87b376c8603439b12a1",
+    "records": 1,
+    "keysSha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  "client/character_colorlocations": {
+    "source": "res:/staticdata/character_colorlocations.fsdbinary",
+    "sha256": "0310650d5129ff9bdca2fbbdfd0c9a858a1e20ddda891614493c073c11391fdf",
+    "records": 55,
+    "keysSha256": "7ea758b9d5d0e2e5ac7869b0031085621631957cd124a04e879bd577884822e6"
+  },
+  "client/character_colornames": {
+    "source": "res:/staticdata/character_colornames.fsdbinary",
+    "sha256": "eced6d39f9fc9bebf2391e5537ed878b96ba2f21d6fdc1d30001ca30a58d2751",
+    "records": 387,
+    "keysSha256": "0b2cacb717ff4d772abb966d2564d094cad8acf7c91e8888bd903c65d9f8eb90"
+  },
+  "client/character_modifierlocations": {
+    "source": "res:/staticdata/character_modifierlocations.fsdbinary",
+    "sha256": "7056a85bf6b8a60ecbafad989895204c615c8c0bcfbe9e0b1cbcd63f626b9689",
+    "records": 46,
+    "keysSha256": "06f930ff83b41f808f145fb395ecbaf7ed8b197b74c44eafae8382b268725eb3"
+  },
+  "client/character_portraitresources": {
+    "source": "res:/staticdata/character_portraitresources.fsdbinary",
+    "sha256": "6e4a17f3e543faa90200ebc69ecedad192fbbd96e70190285d6932c51e2ff872",
+    "records": 106,
+    "keysSha256": "cda2867287c69aa05b0a4777853011fae358cfa0d5d04f5f6f6c48313ebd3605"
+  },
+  "client/character_resources": {
+    "source": "res:/staticdata/character_resources.fsdbinary",
+    "sha256": "e366e035b205510d33f75090762b9160212a80d1b5241159bff06b314159c1e8",
+    "records": 2514,
+    "keysSha256": "821cceca4753d4ebb905a86f599cb7e78feb38ac0f19ec8c65665fec3a65338d"
+  },
+  "client/character_sculptinglocations": {
+    "source": "res:/staticdata/character_sculptinglocations.fsdbinary",
+    "sha256": "da4f98f2faa557ac08d7dc7acf6f52ed8ccc54b0a53edc1bad1bfed8cf6cf715",
+    "records": 215,
+    "keysSha256": "f6c0666a0b474a8756ab61685068338ac5e181989939b1ad57c33c045867e2c8"
+  },
+  "client/checkpoints": {
+    "source": "res:/staticdata/checkpoints.fsdbinary",
+    "sha256": "08c8d68cf35c69499cfa29453bb3533fafd2c4f41a90c6c52c4730cd0f3b8dc8",
+    "records": 78,
+    "keysSha256": "a437c8c6c2a6bb723a7085c78f0817ea7174391a31baba3265a862c474b35f4a"
+  },
+  "client/clientlocationlists": {
+    "source": "res:/staticdata/clientlocationlists.fsdbinary",
+    "sha256": "4c9a54a414c495494f2fb33e9b8afb127d7c1a5f491119f5dac0e15c9a5f53a8",
+    "records": 6,
+    "keysSha256": "29d1511d48c746292c8c1daacbf7ef785b987afbcad792dcef18d510c6c8fdbe"
+  },
+  "client/clonegrades": {
+    "source": "res:/staticdata/clonegrades.static",
+    "sha256": "069779f3e12ebb79328bddbcad200cc455472256048c83d57bdeb0cf534640c4",
+    "records": 4,
+    "keysSha256": "a194e2833c7279a148b8a2db015837ff1f35a8fa1ba3a8701f6de5ec19fd0917"
+  },
+  "client/commandsets": {
+    "source": "res:/staticdata/commandsets.fsdbinary",
+    "sha256": "15398e9c87f844ac0c306ec04e65b7e465c63b2a147781d90651e95384686e8c",
+    "records": 12,
+    "keysSha256": "ee9f3605c72331aeb227434846c0b80fd043339e05c8bc335b0ef616116a4445"
+  },
+  "client/community_track_templates": {
+    "source": "res:/staticdata/community_track_templates.fsdbinary",
+    "sha256": "d8de47787e3f67fa28f9ac81e168f0b4825567140fb22316c371b48816fd0060",
+    "records": 1,
+    "keysSha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  "client/compressibletypes": {
+    "source": "res:/staticdata/compressibletypes.fsdbinary",
+    "sha256": "90f23321a25fb1ee0a63a9b73d0bec6afe737ea1acb62ecbb7ec9b3ab92ec468",
+    "records": 212,
+    "keysSha256": "7d7e846c3c6d3682b6712ea5e9961936e1964213551046b2bbec1b49c482e786"
+  },
+  "client/constellations": {
+    "source": "res:/staticdata/constellations.static",
+    "sha256": "e7993c909f76fd29f15824bf2a3d0738ed3a7163343a8fe63470c58b5f2dc796",
+    "records": 1184,
+    "keysSha256": "017f63d92762c6097e897125d04c67bf90352747d81cd933faa5afdecb84571b"
+  },
+  "client/contenttags": {
+    "source": "res:/staticdata/contenttags.fsdbinary",
+    "sha256": "264c4099157423bb283ae7b6e0f43be8b201adea10714365a2613116a5715bcc",
+    "records": 50,
+    "keysSha256": "aca9b095aa5d5b3fda83a7c41f229981fb61fde6e5163b69c36d161289909d1c"
+  },
+  "client/contenttagtypes": {
+    "source": "res:/staticdata/contenttagtypes.fsdbinary",
+    "sha256": "bdfcf26516e7d8483bfd2a6d8806913ed3816e961e8e508d63cf6a59a79cf4a8",
+    "records": 3,
+    "keysSha256": "9c5d85862042e7047223ed32239de1ce2b20e1986505f8a8bd841a056f87fc9f"
+  },
+  "client/contrabandtypes": {
+    "source": "res:/staticdata/contrabandtypes.fsdbinary",
+    "sha256": "386dd285cbc570198c21aa4b71cccad2bb2b12caf6afb43edfbe5eda537dd40a",
+    "records": 8,
+    "keysSha256": "751a32c3923c6ca229fb6d72f17a96222fe32d485dca507f7035cf505e874543"
+  },
+  "client/contributionmethods": {
+    "source": "res:/staticdata/contributionmethods.fsdbinary",
+    "sha256": "c5a8bb61ae89955337ae48a22b1709d30d06e9c9c274b51ed10a1352a2fad320",
+    "records": 22,
+    "keysSha256": "5fc5630cedc1fe809d73cd708facaae1870a615e61e8c6582295dfb0ab42fb53"
+  },
+  "client/controltowerresources": {
+    "source": "res:/staticdata/controltowerresources.fsdbinary",
+    "sha256": "64025b99f0b8ddf689016ebe63316dcd252f770ddd7fe5e185edb0a3a9009aa5",
+    "records": 44,
+    "keysSha256": "bcf06ffee817509b64d84da499f41cc5167c8f3933e092294fe36160d33fd738"
+  },
+  "client/conversationagents": {
+    "source": "res:/staticdata/conversationagents.fsdbinary",
+    "sha256": "b66f08dbc75019c52ae68bf3e6c6ff085167ddb2f6decdd7d4c69f472fb25613",
+    "records": 44,
+    "keysSha256": "3631177c18862214f9914b8daca137a7b310835ab94369f27f3390de394d9c8b"
+  },
+  "client/conversations": {
+    "source": "res:/staticdata/conversations.fsdbinary",
+    "sha256": "e9af24f4c0466a1fc7b81d5eaae6f2cd2d2b90f75304dbd6af5ba35f4d2cf94b",
+    "records": 1275,
+    "keysSha256": "d95070ca509a8714ae3b917a974b7f89db34f01e3a1b47885b26a120f512e569"
+  },
+  "client/corporationactivities": {
+    "source": "res:/staticdata/corporationactivities.fsdbinary",
+    "sha256": "d66ac4290ec45ff41001308309af3a9a6729cbd941d6e3c751e277b1d4a13419",
+    "records": 20,
+    "keysSha256": "5bb493af7a5aea217d7ad6367078ad58e4f95e38c029b238165597be39c42719"
+  },
+  "client/corporationrolegroups": {
+    "source": "res:/staticdata/corporationrolegroups.fsdbinary",
+    "sha256": "e262a0ad8c6f761c12b64fca0e20004d10d9b0377ea962c21e9b69135242d75e",
+    "records": 9,
+    "keysSha256": "90cdaf13f564e4d2e76706f84226a554a2bbdb2542c2e48764d16bffd17bb38a"
+  },
+  "client/corporationroles": {
+    "source": "res:/staticdata/corporationroles.fsdbinary",
+    "sha256": "4b9618c9abfc87959a0e49900e4f4fe95bcdad057a80130952a51b97aebc4afe",
+    "records": 55,
+    "keysSha256": "d182a68b625ad312d636fdd5e1433e491cfdb0a5b3fe0f9a713c949fa3ca1199"
+  },
+  "client/crates": {
+    "source": "res:/staticdata/crates.fsdbinary",
+    "sha256": "b161ab1a2d12f2eee07e0767d59cea53058eea3b922b1a1d438d9b806f8e6bff",
+    "records": 637,
+    "keysSha256": "40e168f879f4db8d88a8319ead51ea9a8b453552f059ae96e752b1810e027f59"
+  },
+  "client/currencybuckets": {
+    "source": "res:/staticdata/currencybuckets.fsdbinary",
+    "sha256": "0d8d7f416a66e013c4e5576888dc9759b825611e67b27ab8efe19c572395473b",
+    "records": 11,
+    "keysSha256": "5d1498838f000e5bf49f7597b6078a70b2020d7cc1024adaaac61cb9629cc8b7"
+  },
+  "client/dbuffcollections": {
+    "source": "res:/staticdata/dbuffcollections.static",
+    "sha256": "68ebf43dab31ed099577b5bd449b7f1502ebb945734fd376a320278695758cab",
+    "records": 277,
+    "keysSha256": "484e102f38a30051769bb2fa21aa9c41231adb9a3c0a5895721b97830a33ed49"
+  },
+  "client/defaultoverviews": {
+    "source": "res:/staticdata/defaultoverviews.fsdbinary",
+    "sha256": "33c7470bc3a29cc4da0e596a797a0860d9a0e4c35adb34bba914955f894a40eb",
+    "records": 7,
+    "keysSha256": "95309b3cfe3970698f201abe02333716ddf258c5dff5e5c1eaae8457f92611e3"
+  },
+  "client/depletionParameters": {
+    "source": "res/planetResources.pickle",
+    "sha256": "b8826871df0c8fac0c561a1279466bb818b57c46bc709edd9b97cd034eea4000",
+    "records": 3,
+    "keysSha256": "3491a1497c493609304fe8eaab046ecf28ed96b1ad6c7e84cca95da7b6909fff"
+  },
+  "client/depletionTemplates": {
+    "source": "res/planetResources.pickle",
+    "sha256": "b8826871df0c8fac0c561a1279466bb818b57c46bc709edd9b97cd034eea4000",
+    "records": 56,
+    "keysSha256": "b4e0222ccaffc195664bc594eb2dc716503337bb3796eba8e5446c99894bcc8c"
+  },
+  "client/dialogs": {
+    "source": "res:/staticdata/dialogs.static",
+    "sha256": "d9d346bf7bfbd3be28e0eeee383295f1250a878a0d8bf09d4f2c2521ce5509fa",
+    "records": 4223,
+    "keysSha256": "bc73cc8899dd7cd8323c636279b19be2f1a68935b4b39767efd6fc8f2d921ed4"
+  },
+  "client/dogmaattributecategories": {
+    "source": "res:/staticdata/dogmaattributecategories.fsdbinary",
+    "sha256": "1f344e6ad5318f112e01685eaa9867beeb8a5ffad8c4f2cdef415e3849ac35b6",
+    "records": 37,
+    "keysSha256": "697f7cbe275ad57a938bd897004fd338a9dcf39e0c9c09f050e7dbfb4282598a"
+  },
+  "client/dogmaattributes": {
+    "source": "res:/staticdata/dogmaattributes.fsdbinary",
+    "sha256": "41fc720b932ea07942ca27ba4681f8c4e357cc3145bdd88d332cc53ffd4ff99c",
+    "records": 2872,
+    "keysSha256": "0ccc4380e6e4808ba73c1a45eaab6da098469305105a1361bec8acf09789a35f"
+  },
+  "client/dogmaeffects": {
+    "source": "res:/staticdata/dogmaeffects.fsdbinary",
+    "sha256": "096a99711df79ec7ee1b48a12db1fcb1ca7b5826cacba11343d12c66a44499a8",
+    "records": 3431,
+    "keysSha256": "5fd8bbd47edcfa108d4d23a9f1cb4fea308cbfabb351ea6a158528809967731e"
+  },
+  "client/dogmaunits": {
+    "source": "res:/staticdata/dogmaunits.fsdbinary",
+    "sha256": "95e0ad49bb4545f63fc4a47a758449945d5190ffd4beae44af2a5e7a2979598c",
+    "records": 60,
+    "keysSha256": "bc6fbbb69ed2d73dbc04a8ecb27716291274dc1057446098bb8e7a2a6e14b5ad"
+  },
+  "client/dungeonenvironmenttemplates": {
+    "source": "res:/staticdata/dungeonenvironmenttemplates.fsdbinary",
+    "sha256": "4b9cb7539d342de6f9204f764b56894ee7ea1af0824024ff01a0a8d0451495de",
+    "records": 114,
+    "keysSha256": "1e311b87187d402d1140eaaee54f0954d6a6501c5143ff317059d03769ea713b"
+  },
+  "client/dungeonobjectives": {
+    "source": "res:/staticdata/dungeonobjectives.fsdbinary",
+    "sha256": "9dad88052082d90f0e073abf5767f103b1b569304732da4cd2ad20e89c86cc94",
+    "records": 85,
+    "keysSha256": "abb550e73f503c7dfb2ac47f001dbf719457c714dddd34f15a7751c26d9cee9a"
+  },
+  "client/dungeons": {
+    "source": "res:/staticdata/dungeons.fsdbinary",
+    "sha256": "d0f9de6837f335593633254273eb17ab30c321ce4a81f5f92dc041759f309307",
+    "records": 5516,
+    "keysSha256": "22628c586f8f298a88ba08540552faf51df5590f0a0b19508fb2fb50fcfb5f31"
+  },
+  "client/dusticons": {
+    "source": "res:/staticdata/dusticons.static",
+    "sha256": "623375bbb187568f83e78a9e9b1e6fa4a7a78ba9712a4419d56b290ad53fd35e",
+    "records": 2036,
+    "keysSha256": "ffa74eb7dc1c41ded0258836f0706bd8c8d89acc22bc3abefba51c79baeac032"
+  },
+  "client/dynamicitemattributes": {
+    "source": "res:/staticdata/dynamicitemattributes.fsdbinary",
+    "sha256": "de00d8cfb3022a291343cf94b4ac6ae311253ea2bf57e716248b28e074344471",
+    "records": 441,
+    "keysSha256": "3c0358febeef3ebf4db71cb4ea6b3c9448a650a4cb19ad498fc0a07de2b0c2d5"
+  },
+  "client/effects": {
+    "source": "res:/staticdata/effects.fsdbinary",
+    "sha256": "ed29ce5282a5ef5d5cf7acadae3cf9765f26af6c2d0eb83bb977bf304c84b73e",
+    "records": 213,
+    "keysSha256": "71d8a2517dfc00e60cb1a5db299a697f4bfb9122466718ce9042fdbfb685d59e"
+  },
+  "client/effectsequences": {
+    "source": "res:/staticdata/effectsequences.fsdbinary",
+    "sha256": "83f9a60a288ab79aca1ca3ae61509abc0eb2584797c3475589f1943ac2ddee83",
+    "records": 1,
+    "keysSha256": "5aef7624d1f02d03febdb3661a450e82b27c570bd600ec51b569ac09a418bf7e"
+  },
+  "client/empireselection": {
+    "source": "res:/staticdata/empireselection.static",
+    "sha256": "cb041597c9b537c47e58d647413b157ba1282f1324db3a01f3cc741966e5ae84",
+    "records": 4,
+    "keysSha256": "3726e64f89d2ccc672049f8a8eead54f0d9ef868a1b27fb4438a1997aa1d9ac4"
+  },
+  "client/empiretechnologies": {
+    "source": "res:/staticdata/empiretechnologies.static",
+    "sha256": "780dd00132c1df83595bf1aa814913557cb5c5bcf8ffaf7881d6a1334eb6304f",
+    "records": 4,
+    "keysSha256": "d90ec2f3b419f92f8c0693bd95ed7b9d0ea2f3eb79a5e4de67d4bdadb696fd7b"
+  },
+  "client/environmenttemplateanchorcategoryids": {
+    "source": "res:/staticdata/environmenttemplateanchorcategoryids.fsdbinary",
+    "sha256": "53f3da2a985542bcfc31b035b12001c176a897ea7687b3449d56aaa232d7ffbf",
+    "records": 1,
+    "keysSha256": "64aeb9975f234becd55bb4635e6e2f2da7a6b7bf0a896f0c07763bdfbfb31420"
+  },
+  "client/environmenttemplateanchorgroupids": {
+    "source": "res:/staticdata/environmenttemplateanchorgroupids.fsdbinary",
+    "sha256": "d6a5698d2380c47dcdca93fc93ad54078e0537e1779dee5ed7a02364ddc3d24b",
+    "records": 2,
+    "keysSha256": "489876754e4172af40a53b9b341c628d11513ec217112e01f79703c721440448"
+  },
+  "client/environmenttemplateanchortypeids": {
+    "source": "res:/staticdata/environmenttemplateanchortypeids.fsdbinary",
+    "sha256": "76a753200e5676cfebbd21d451fb682837e0445963b5c89af37704742da7f8de",
+    "records": 246,
+    "keysSha256": "61e2d9f7c17bf292e7219ae20cfc19288115a62ba08afb6fe35512ae6b79bfb3"
+  },
+  "client/environmenttemplates": {
+    "source": "res:/staticdata/environmenttemplates.fsdbinary",
+    "sha256": "58190f135a1f55405355f229a83ca31ec5b9530a39c14706251d8dd136aba62e",
+    "records": 188,
+    "keysSha256": "d1d1ec0a2dec01f5abe6e34532a67365df37fb57f66df7591885ddf68c374afd"
+  },
+  "client/epicarcs": {
+    "source": "res:/staticdata/epicarcs.fsdbinary",
+    "sha256": "c6bc2c80c330c8cce00ded046e051da1a1ba00db608a07ecebe34dd5ee6d985b",
+    "records": 21,
+    "keysSha256": "be5caec280b416d233cfd3083cd7aecbc1222b4dcc1feb6b13df0c1d2113e354"
+  },
+  "client/essreservekeys": {
+    "source": "res:/staticdata/essreservekeys.fsdbinary",
+    "sha256": "900c113873cc804e04fba8518c6958a0116fd2dd9d05e95dad144d3673d4b64a",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "client/eventmessagetypes": {
+    "source": "res:/staticdata/eventmessagetypes.static",
+    "sha256": "f0be7314ffe947d618f6645f65297b86484c3160d6313a1fe9e75bcd6eaf3e1c",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "client/eventtypes": {
+    "source": "res:/staticdata/eventtypes.static",
+    "sha256": "bd77650057dae7da1835a705dac1d917d73926f9f5d12bbe8ea77c43a678b28b",
+    "records": 72,
+    "keysSha256": "0b8ee7eabab1acd5fa8c1ad28dc03bec0b78953372f03c4107cc52b79acb0411"
+  },
+  "client/expertsystems": {
+    "source": "res:/staticdata/expertsystems.fsdbinary",
+    "sha256": "0490654de18044fd35633f1d4761696225c159afc16b6fdf3c8bf33bf1f11b66",
+    "records": 59,
+    "keysSha256": "375c9ba0b3a6161617a4dc2eaf7f55d8039ddf9d1128f2a391bc537f6df3dd4c"
+  },
+  "client/explosionbucketids": {
+    "source": "res:/staticdata/explosionbucketids.fsdbinary",
+    "sha256": "55321b266dd69a02a89f28acd18e5fb7263eb681b156a4790ba7e821557a7508",
+    "records": 87,
+    "keysSha256": "4e25d20ad33a7d20e8bad3d801756b012fb5d734dc427626f56566c47d91baad"
+  },
+  "client/explosionids": {
+    "source": "res:/staticdata/explosionids.fsdbinary",
+    "sha256": "dd268d9e78938690fc2d8290052656e40df11588c2b5cf9458c8bd7430346c10",
+    "records": 55,
+    "keysSha256": "f7ab6d02e334e2dea91427b4a77d56df05dbbff7ee41db1ff67a9cbd7d1dcadd"
+  },
+  "client/factions": {
+    "source": "res:/staticdata/factions.fsdbinary",
+    "sha256": "43fd274f2f85f8a221dff3f21dcd30dcfc6d8939b2f6124a1a145f68c52f8dfb",
+    "records": 27,
+    "keysSha256": "3c82640f7edcbf319df87f04f2454b3c40bcb777cfe5f97f3181dd4fea3718c1"
+  },
+  "client/factionsowningsolarsystems": {
+    "source": "res:/staticdata/factionsowningsolarsystems.static",
+    "sha256": "7747211ab515611f2486f33787ebd6631dae593a497b6623240e355512ebe61f",
+    "records": 22,
+    "keysSha256": "439d6e3069652eb0b2deff7d536b1e77ac09d512ca7d61f543612517a4e47459"
+  },
+  "client/fighterabilities": {
+    "source": "res:/staticdata/fighterabilities.static",
+    "sha256": "3b4490a5a333589c78b3b64b7c017cf3da566116ee054c5953a2740fed0e918e",
+    "records": 36,
+    "keysSha256": "4cdf6c299c901dde65ab08b118376871b8aeb20d89671abd47898845bbcd3326"
+  },
+  "client/fighterabilitiesbytype": {
+    "source": "res:/staticdata/fighterabilitiesbytype.static",
+    "sha256": "258f70c55fcdb54a2dd8f7577fcbdfb2c39cd5d1fae38de4f6dc9c07fda73e35",
+    "records": 94,
+    "keysSha256": "b0cc6d2df58a7492bca5b181c1fb7d563a314efa1014644f577c1e18d25ce960"
+  },
+  "client/gastypesbydungeonid": {
+    "source": "res:/staticdata/gastypesbydungeonid.static",
+    "sha256": "b4ffbae5ab32793a4e06c98a115239da0853d5bc15fdbb290be15b33e2a2ec06",
+    "records": 83,
+    "keysSha256": "e3719ca556acb121da5a9598500ed2361bf3802f80a88d89f81fc6cda2d92636"
+  },
+  "client/globaltypes": {
+    "source": "res:/staticdata/globaltypes.fsdbinary",
+    "sha256": "c2cb574b57a4aa42b055074294bccefaa3585266b915d8c8628d6cdd4608f4b5",
+    "records": 8,
+    "keysSha256": "fe6ed7b8aad89ebab9fbacc3b386196f948fef20f8cdfc3e462ce98189dfd873"
+  },
+  "client/goals": {
+    "source": "res:/staticdata/goals.fsdbinary",
+    "sha256": "f904153e604f677b9318620e6c8ec4dea59697fd6eaf3e2b555a7e3f16ece804",
+    "records": 2,
+    "keysSha256": "8391e9ff91c3c6402f9596a8c9e82d4ceaa7815687f5854f7e1a23b194be4968"
+  },
+  "client/graphicids": {
+    "source": "res:/staticdata/graphicids.fsdbinary",
+    "sha256": "638437a5dd937c096e1a2858c1b840232f5dad364e5bd52f6ee75ff90933a13d",
+    "records": 6161,
+    "keysSha256": "78456e7a7d56575e25c8ab6ec08228a31ed7e6e41660d14eba43628ca8c9de37"
+  },
+  "client/graphiclocations": {
+    "source": "res:/staticdata/graphiclocations.fsdbinary",
+    "sha256": "14086e332bae98ed1733bd01e9ae5320438278fef4d287f979b7ddf8f05d2877",
+    "records": 68,
+    "keysSha256": "45eeb6ace9153778eeed44557e90aab7ed3d8cd1a23608a070194fb19bb7e875"
+  },
+  "client/graphicmaterialsets": {
+    "source": "res:/staticdata/graphicmaterialsets.fsdbinary",
+    "sha256": "501d8ef50f110b46e905e3356090cdae5642599a68ebfd3cdc31c67d43bdd3e9",
+    "records": 956,
+    "keysSha256": "e8231ef6aa494528c5f01a3e70314cc454af9bd04ba8b968bd05f487dc4fe53b"
+  },
+  "client/groupgraphics": {
+    "source": "res:/staticdata/groupgraphics.fsdbinary",
+    "sha256": "e35319af5a449a0bcacb77da194cace60f40830f80029b52011e873c4f58c7ee",
+    "records": 79,
+    "keysSha256": "9cf04062a9b81067043486010c1219909035a30652bd1e1b4ec87ada70f552a9"
+  },
+  "client/grouprewards": {
+    "source": "res:/staticdata/grouprewards.fsdbinary",
+    "sha256": "27daab354a556682da710c2209be3b2c9f0e6d8e7d2e1b5aa2f5c887f8299906",
+    "records": 161,
+    "keysSha256": "8419c52329c47ec4f20ae464e593e3f9907d900b77ec4cc73b096a9dbc0be53f"
+  },
+  "client/groups": {
+    "source": "res:/staticdata/groups.fsdbinary",
+    "sha256": "9efd21d6219802b4d980e475a186b0b3c2a3dc56bf6bbba1ec3314f3295113ca",
+    "records": 1611,
+    "keysSha256": "7fc1473433681e92c285816810c0c6c1938b7a9e19f7c174d9e321730753058f"
+  },
+  "client/huecategories": {
+    "source": "res:/staticdata/huecategories.fsdbinary",
+    "sha256": "f85da87037f1daea849ece249220361af3f2378328ec4a45a98b21264a087100",
+    "records": 25,
+    "keysSha256": "0c3c9738c22416d57c84d7e4bdeb16fbaa7f67a8731c5ffaf2eaf412c69d8900"
+  },
+  "client/icetypesbydungeonid": {
+    "source": "res:/staticdata/icetypesbydungeonid.static",
+    "sha256": "9852f7d2f0304111bda8a05e141d92c9a6866ca6a37e085e40a73d145074c4af",
+    "records": 21,
+    "keysSha256": "1ccc3483466a2170cd327bd02024d6859622397edeea284fdc6cd4d89932ff5b"
+  },
+  "client/iconids": {
+    "source": "res:/staticdata/iconids.fsdbinary",
+    "sha256": "a97eb26b4a9fdbcef6bc1170533f69d4f2d0fbf7fff5cb7fd78bddd87051f130",
+    "records": 4806,
+    "keysSha256": "1869d391eae2945ecfcc051f881723cb9a105d57eee29c991e4256ef971d43d9"
+  },
+  "client/industry_activities": {
+    "source": "res:/staticdata/industry_activities.static",
+    "sha256": "61d4a257d72bfeaca83bc8f16659cbfe4f44c84bee5bb31885b86d38d20814cd",
+    "records": 6,
+    "keysSha256": "7c8924e6c77012389ffb8fb8a63a9b0e4d19ecbc0976df71d537e075918f6574"
+  },
+  "client/industry_activity_modifier_sources": {
+    "source": "res:/staticdata/industry_activity_modifier_sources.static",
+    "sha256": "a588d4019863dc085883702f881de98001a91dc4c0040c683398633331ac4e35",
+    "records": 220,
+    "keysSha256": "a9ff50c6b8950897f1e2bf0c6b628f3455f747e5268bc4c711d1ee0a3bfb8399"
+  },
+  "client/industry_activity_target_filters": {
+    "source": "res:/staticdata/industry_activity_target_filters.static",
+    "sha256": "320e9ea7c0d69d9030b6253bce378ff0e862b45c3d0c37f1e4edf59f781196af",
+    "records": 18,
+    "keysSha256": "cce0df02b3f1f7c8fe3b22e3cb6f3a22e6fde26a51c77c0aed5bebcb3f1782d9"
+  },
+  "client/industry_assembly_lines": {
+    "source": "res:/staticdata/industry_assembly_lines.static",
+    "sha256": "244eac5ce78164eb7e0e3a3e8db46ac3fbf497993cb03335d90b60b142b0e75c",
+    "records": 146,
+    "keysSha256": "77f2df400a5327a89b6b5cd6f87c73eaa941bab1767825a55ac8b51117bd29f8"
+  },
+  "client/industry_installation_types": {
+    "source": "res:/staticdata/industry_installation_types.static",
+    "sha256": "abdbd13d5628d2fdfb47523ece70df0f0485b000d31d2d55cc4de26c40e83b79",
+    "records": 102,
+    "keysSha256": "7cf815b5f181582b91e7ece839d58fb2562f1f33b634a42de45bd925b955b017"
+  },
+  "client/infobubbles": {
+    "source": "res:/staticdata/infobubbles.static",
+    "sha256": "99bf29ecf83f15bada7e11ff7e65e256811707896aa58e22b2a122fc0bde4eb5",
+    "records": 5,
+    "keysSha256": "9f8f7cc4d09e4fb8c000b9a5e2469cf7f7e8e58ccd9653f82bc8de3aa682a71d"
+  },
+  "client/itemtraderrecipes": {
+    "source": "res:/staticdata/itemtraderrecipes.fsdbinary",
+    "sha256": "1c89aed23bb1d5898b9871ec97ee6b52c16a26889c1aa77f4c6b0dd5da516468",
+    "records": 544,
+    "keysSha256": "228e8fc8b66bba499ccea172a747371b9e45f6736e2c64fb6a0b5141b84655b0"
+  },
+  "client/jumps": {
+    "source": "res:/staticdata/jumps.static",
+    "sha256": "8f0468dceb4b66f7ff780986ec2787268057837247feeb680aac9af7187c2ac9",
+    "records": 6989,
+    "keysSha256": "73c8718a455c11b19625e6472a2dad25950947e93e531c8679b21e45db9ff114"
+  },
+  "client/landmarks": {
+    "source": "res:/staticdata/landmarks.static",
+    "sha256": "1273169806350b1f62e1b3ea6e897a07223547dabc3278d9e502bd9a7a66957c",
+    "records": 45,
+    "keysSha256": "ff2090fe6671cd50ed0ed191f8611bfa9ab74b0355b1ad3edaea901d60c36ccc"
+  },
+  "client/localization_fsd_de": {
+    "source": "res:/localizationfsd/localization_fsd_de.pickle",
+    "sha256": "044b117fb4ab05380a476368ea8319c2b52617b0e3272d098a117438e1cc4bc8",
+    "records": 305235,
+    "keysSha256": "4d9323dab867e6e3eefdd85d529bc63014dba48dbbe24c79c1bec73784a2c187"
+  },
+  "client/localization_fsd_en-us": {
+    "source": "res:/localizationfsd/localization_fsd_en-us.pickle",
+    "sha256": "3dc0ccb9687058354e40af268a0383891e12698bbb948a8f2613e636896dce10",
+    "records": 308721,
+    "keysSha256": "409d49403d3169d8a35b7ffcf7d896fd332ba9c9f267b236f3e5b5e2bb4daab7"
+  },
+  "client/localization_fsd_es": {
+    "source": "res:/localizationfsd/localization_fsd_es.pickle",
+    "sha256": "d03943b7f3848e837c08fa6960fa87701325bee780e060dcca96eaa374677f1a",
+    "records": 305233,
+    "keysSha256": "8832922c47a64ac9f71a59274585709318f567ed54ca8edd7361feea1bd51766"
+  },
+  "client/localization_fsd_fr": {
+    "source": "res:/localizationfsd/localization_fsd_fr.pickle",
+    "sha256": "a7e69e0b11ea22b92438516e80970ac8c599969238499f1a091bb4a0cfcd30ff",
+    "records": 305238,
+    "keysSha256": "0b296bcd665b44eaeb7092b7dd15b75fde3d3fc68275ae785b32cde0f2865e38"
+  },
+  "client/localization_fsd_it": {
+    "source": "res:/localizationfsd/localization_fsd_it.pickle",
+    "sha256": "727a3d5b4e42d33f20303d1a21016e314d91f5d2791108b8738c9cd71a5bb6a0",
+    "records": 7447,
+    "keysSha256": "c997b39b41edb227a2a5e12934e13989706f2227ddcd3ec9547f5a33871bd37f"
+  },
+  "client/localization_fsd_ja": {
+    "source": "res:/localizationfsd/localization_fsd_ja.pickle",
+    "sha256": "631ea0f7d1028e6feb78242336f5d0a3e96378f4d41056f9cf5b3d35ebb77bdd",
+    "records": 305238,
+    "keysSha256": "0b296bcd665b44eaeb7092b7dd15b75fde3d3fc68275ae785b32cde0f2865e38"
+  },
+  "client/localization_fsd_ko": {
+    "source": "res:/localizationfsd/localization_fsd_ko.pickle",
+    "sha256": "c452ea7ec3235225ca0a849b590cb93bcae8151d8b11d7570d498c8e8aa941fa",
+    "records": 305235,
+    "keysSha256": "38fe72ee489153e4575a62cbde903806805ab6e8170ee7331f44b88eaeded44d"
+  },
+  "client/localization_fsd_main": {
+    "source": "res:/localizationfsd/localization_fsd_main.pickle",
+    "sha256": "61f854588cc2fb75b7ff663b541ee388979b74470b51fa9e4d3e6b8ab6807837",
+    "records": 4,
+    "keysSha256": "d0ead56f96b8095860de61855a5fe2bf188fcfe0cf87bfd000f5d59499244bd0"
+  },
+  "client/localization_fsd_ru": {
+    "source": "res:/localizationfsd/localization_fsd_ru.pickle",
+    "sha256": "80e027f19e7f3f91f3c9ec83ee20bf7b5b21b337100d2babee0f27b344430797",
+    "records": 305237,
+    "keysSha256": "28c05284c8fee65898f2ff77c16ce1836e5dfc0fa2cb6aa5f8d655ade693cc68"
+  },
+  "client/localization_fsd_zh": {
+    "source": "res:/localizationfsd/localization_fsd_zh.pickle",
+    "sha256": "b144955b9cef71c20b0fc5f1948879ca2d33cc4a864ba53656ed2c7ec3e5ffb3",
+    "records": 305240,
+    "keysSha256": "3dfcf7f34265ca9ef77647dd7a91d9f7090f27463885220f93878a1035800397"
+  },
+  "client/locationcache": {
+    "source": "res:/staticdata/locationcache.static",
+    "sha256": "791effacabeda858705390b9ef87f3bf43aac247f28beb2fffcda48e71c284fe",
+    "records": 481068,
+    "keysSha256": "0d778ffcaea12797c87a2d602b6c994d4238af798b1233216dadd4e4ad97e141"
+  },
+  "client/manufacturableitems": {
+    "source": "res:/staticdata/manufacturableitems.fsdbinary",
+    "sha256": "0ceabdca409c440441a490ab88e0b9b842f16950277d72f7e6feec982318c5ff",
+    "records": 1,
+    "keysSha256": "6a5dbbcfe19795065edc9aaafe2b9daf5957470dc8c001b59299e0b637fd6190"
+  },
+  "client/marketgroups": {
+    "source": "res:/staticdata/marketgroups.fsdbinary",
+    "sha256": "923b87ab906973b83762eaa8a5db000c79e5a9d15c16442f2c5388da2a6a3dd7",
+    "records": 2114,
+    "keysSha256": "0979bbfaa9fcb00bfb651672277fdeecab020d92969ca1ced6d046009f747ad7"
+  },
+  "client/menuhighlights": {
+    "source": "res:/staticdata/menuhighlights.fsdbinary",
+    "sha256": "431b0a72d9d98f8702af8a87d3a22d1c3ccb098586876b517bfea8948f210d15",
+    "records": 24,
+    "keysSha256": "1dc609ad725c1a232592bb2c60af151ef48187ebd92d6bc12160c27d09819a53"
+  },
+  "client/metagroups": {
+    "source": "res:/staticdata/metagroups.fsdbinary",
+    "sha256": "a2d9c1f36dc8e9367ddff203099d36f9cbd0a1383712680d9298a9ac971c6176",
+    "records": 13,
+    "keysSha256": "8e811797a95755b7bebb4404bfdb61626e183111f0a68a431b4ecdc04d0dcf65"
+  },
+  "client/missions": {
+    "source": "res:/staticdata/missions.fsdbinary",
+    "sha256": "74f45cc5b752364add1071e756a73a0d5c0508aec3342f1fffa3b219b8d3eaa3",
+    "records": 2892,
+    "keysSha256": "bd1d9392a1a99045735617a0e79ef88f9cd67a28acd286e2a61906b3ade17399"
+  },
+  "client/musictriggers": {
+    "source": "res:/staticdata/musictriggers.fsdbinary",
+    "sha256": "d6653e170a16e0db73d3365c682cce337391cde8938843e582077a1df5301589",
+    "records": 392,
+    "keysSha256": "9e4d0e4dd63c5b1a4a313ed30988953cb00d04ccf67c9db27454b2c1bdc423b0"
+  },
+  "client/newactivities": {
+    "source": "res:/staticdata/newactivities.fsdbinary",
+    "sha256": "0fce95a50b55cf086dfcd2d61201c3e23684fe19d0be76b06bd04d210cfc1d09",
+    "records": 46,
+    "keysSha256": "e58052796b4079afafc67331b3d7e2ddbd3ca79a123021aab9d53ef1ae4b1eca"
+  },
+  "client/newfeatures": {
+    "source": "res:/staticdata/newfeatures.fsdbinary",
+    "sha256": "2781ecd31ca1a4fc2ec9b4738a6ced2dad65a7439f57742407abe0c781556702",
+    "records": 198,
+    "keysSha256": "b7cede1692df757180c553656099b2609f0bddf6257ea92a0eb7885352e49b87"
+  },
+  "client/nodegraphs": {
+    "source": "res:/staticdata/nodegraphs.fsdbinary",
+    "sha256": "0bae57ae75123303ddf6053febefeb00b2047027ca85131618a82629284157fd",
+    "records": 584,
+    "keysSha256": "1afcd7328abfba371093d097488a0041f5699fbb6e4161787b16278bfc909e0d"
+  },
+  "client/nodetypes": {
+    "source": "res:/staticdata/nodetypes.fsdbinary",
+    "sha256": "3964de2c4dd809231868f2ea855b03394ed4e3b9648323e94cc9b8a4dc5ff5e2",
+    "records": 45,
+    "keysSha256": "556c84ce279eb30316ca62f0166452770c4a0839910c608c7981a8bee4261ee5"
+  },
+  "client/npccharacters": {
+    "source": "res:/staticdata/npccharacters.fsdbinary",
+    "sha256": "5ec4b6982ee14d88d6380cc25ec556bfc226599779b0b281fccee7d71b6a0a30",
+    "records": 11424,
+    "keysSha256": "9c86426482caaac9753522097d67cc8697bb4df2a3c92f41047e6fe2d6d9dc16"
+  },
+  "client/npccorporationdivisions": {
+    "source": "res:/staticdata/npccorporationdivisions.fsdbinary",
+    "sha256": "2646d6132375ef399e5b4500f996b2ef7706e9866961eb1192cf3d63c1762d5e",
+    "records": 10,
+    "keysSha256": "f68678c485043725fff4242a012161e3ef4e959346676a205927cb9d6e728d34"
+  },
+  "client/npccorporations": {
+    "source": "res:/staticdata/npccorporations.fsdbinary",
+    "sha256": "cb834edf101e38f15d1e69152e41c52deac03ef76afdffad08e937871b2f560e",
+    "records": 283,
+    "keysSha256": "e9587894cbced9ddfad264ba1f983d986c8a599466fe588b3a88a08b20b4a549"
+  },
+  "client/npcstationtaxmodifier": {
+    "source": "res:/staticdata/npcstationtaxmodifier.fsdbinary",
+    "sha256": "871f87395d26b9df285fae2b621203eab82b6fd8b46d6d35b2a3ce8bc198b1f4",
+    "records": 1,
+    "keysSha256": "10ea2992e5844411e988b64ff25581d01f99618e25279826a70f28978ac12bf3"
+  },
+  "client/npcstructuresettings": {
+    "source": "res:/staticdata/npcstructuresettings.fsdbinary",
+    "sha256": "cd71b65ab1662f0606d56a874c47180108bfc7b3af7c5248482a040069ad7b76",
+    "records": 2,
+    "keysSha256": "54b00abe120f90a47eacd10de59ec669fca0bd6e8d25605dd91e266ceaed3d73"
+  },
+  "client/objectivechains": {
+    "source": "res:/staticdata/objectivechains.fsdbinary",
+    "sha256": "80dc81489a941c02a4b715723f2abc496e81724dab2edccafadddd654088f95e",
+    "records": 111,
+    "keysSha256": "c2db99ca83dd7a524c5509bf47b35781f139e9041f96ff4621962805128a3f1f"
+  },
+  "client/objectives": {
+    "source": "res:/staticdata/objectives.fsdbinary",
+    "sha256": "7b25e181d3fcd5ef6c0094ad06c30c418575d44a783c853bee18f3d986d4b181",
+    "records": 8,
+    "keysSha256": "89adcd63b654a02add0586b92456738d6b9686b24b826facc7e50d251061b6d6"
+  },
+  "client/objectivetasktypes": {
+    "source": "res:/staticdata/objectivetasktypes.fsdbinary",
+    "sha256": "d645e2f7c0d3141abc8ab9b8a15fe6f914447e30b6180428414437d6a34f7184",
+    "records": 53,
+    "keysSha256": "18eaf4b2ae469d3da7fc4156c97adbc5baf45cd24a0d7ec793d1b808d466b163"
+  },
+  "client/objectivetypes": {
+    "source": "res:/staticdata/objectivetypes.fsdbinary",
+    "sha256": "ba44636644f0cb64db695326fa81e09ebe9860a6bfc418112220f20ce6e7cae0",
+    "records": 95,
+    "keysSha256": "76dac89ab3048ce08d5b31286e629c4da1f60cb6f15559680eab702d846d0ff2"
+  },
+  "client/operationcategories": {
+    "source": "res:/staticdata/operationcategories.fsdbinary",
+    "sha256": "3227ceb4d6655a6ca13959064e655292323c8b1508b8a0d00d7b58fca6e121af",
+    "records": 8,
+    "keysSha256": "a0da5fa20f5ff5b8583ac3c70c3213aa76d190b66e8d982a0e788c12bef6b55f"
+  },
+  "client/operations": {
+    "source": "res:/staticdata/operations.fsdbinary",
+    "sha256": "bcc685aab6792b9bdf28241ea0bd6fe3d05827ab951eed9c9286a4b523275fd4",
+    "records": 325,
+    "keysSha256": "9075c36b8fcc9462a17ac7fb4c8bcc1e9adea70c1995fbdfa0635d11914d63aa"
+  },
+  "client/operationsites": {
+    "source": "res:/staticdata/operationsites.fsdbinary",
+    "sha256": "46d97149e849201931631c83243734e916ae3b95917d3c215444223073dcd7a4",
+    "records": 21,
+    "keysSha256": "0125104648f7912956bdb44d79f18e2584dbb2f9b7f491ddab17bae4c284e0af"
+  },
+  "client/operationtasks": {
+    "source": "res:/staticdata/operationtasks.fsdbinary",
+    "sha256": "9179d4beea00e25c54f5252f2810c737da5c83427de77df06bcd6226085f2c49",
+    "records": 397,
+    "keysSha256": "7e045c662d308b5368b967681e34a9a913bc60d3eda8b36ddacf70b5747a8812"
+  },
+  "client/operationtreestructures": {
+    "source": "res:/staticdata/operationtreestructures.fsdbinary",
+    "sha256": "e61d2b43ef60aa9635f68f45acc208163b43093e58692ad7daa4f00894829400",
+    "records": 28,
+    "keysSha256": "6d786ffc9ea33240ca6ac87a6eb93c40e9211f171f040a20bd11e0005d7bc7b1"
+  },
+  "client/oretypesbydungeonid": {
+    "source": "res:/staticdata/oretypesbydungeonid.static",
+    "sha256": "7056a4b5c22e7956e042184eee3d8b60af0e7d862a8008da76a6aa7b076e2d75",
+    "records": 1120,
+    "keysSha256": "cd65754b2db6f4ec3c57599ac908be32b739bef032aa90fe1c621254cf31bbb3"
+  },
+  "client/overriddenCoordinates": {
+    "source": "bin64/packages/evemap/overriddenCoordinates.json",
+    "sha256": "dc7f5b504c65e24b5349d95baa9cfdbea54a0fdde633a646e6ecfdd4fb58be07",
+    "records": 5485,
+    "keysSha256": "83b290454fa4fce4f38fe4a0c7a065e98373a24c960e00c73f0cb4ee2d8f2481"
+  },
+  "client/paints": {
+    "source": "res:/staticdata/paints.fsdbinary",
+    "sha256": "9785cdb828d93f536994abc6b024e7051de658939d2284989df3db0d3d3a721f",
+    "records": 96,
+    "keysSha256": "a1fb8755a4de4a43117d54f94f89f1021e48851dc4588e42c7a72daf93121f4e"
+  },
+  "client/paperdollcache": {
+    "source": "res:/graphics/character/paperdollcache.pickle",
+    "sha256": "064c3b73f572cfdfd3f15df3bfdcd09b8156f6e986ff98d7ed27fb25cca476f3",
+    "records": 12150,
+    "keysSha256": "408a431a653238ebad0ce3c08c630d74846ff7b7140277fe68e5fc055a6da32a"
+  },
+  "client/paperdolls": {
+    "source": "res:/staticdata/paperdolls.fsdbinary",
+    "sha256": "146f5cd382b0563762f4a9bb5d030258f6f7760bb409d96eb18466d2f52a575a",
+    "records": 11291,
+    "keysSha256": "5753b6b31c3b8793dfdd2f9e8233d08a47b2ba9166adfc13ad72eda6ad26e50c"
+  },
+  "client/petitionevents": {
+    "source": "res:/staticdata/petitionevents.fsdbinary",
+    "sha256": "7e5c490b40b0edf0530ac3b96ee8f758ee885bcb508e7c1792e1a73104a6635e",
+    "records": 21,
+    "keysSha256": "ea2f69f69f2097f945628c0ae899a516616c1434eb9e4faabdf5d0e23c79c54e"
+  },
+  "client/petitionproperties": {
+    "source": "res:/staticdata/petitionproperties.fsdbinary",
+    "sha256": "e265e648712497b766613d77a474a75e0040a08d6e0cefefa606f56b2a092003",
+    "records": 12,
+    "keysSha256": "ae67ab55f6feb304b7ea4f85099b94632a3d194c696f56c729011aab829a5a93"
+  },
+  "client/podguide": {
+    "source": "res:/staticdata/podguide.static",
+    "sha256": "62bb31d71db0bc93e2a4b5738be56d4f1006784641046f0f5799afe97502dfa8",
+    "records": 44,
+    "keysSha256": "53ac011896e629e9298a08d6fa506227536da880d3b8bb84a984bb8a5b9162a1"
+  },
+  "client/podguidegroups": {
+    "source": "res:/staticdata/podguidegroups.static",
+    "sha256": "bbdd5d9a23edfff7fdbb63f1261fad866249fb58b5b37508d8ba405747e92671",
+    "records": 14,
+    "keysSha256": "67a1edb7aa8266e02153ca627a8f8c26ec9f19aeae9e6f95706005d7f8dea937"
+  },
+  "client/pvpfilamenteventdates": {
+    "source": "res:/staticdata/pvpfilamenteventdates.fsdbinary",
+    "sha256": "23a52fb2542bb80db0ea0d8ea37fd8b194f7311890d78e928ba4434b25adb449",
+    "records": 118,
+    "keysSha256": "b9972335dfe6d341006194fb7f621f36855ae551b052cc1337942a9990033d02"
+  },
+  "client/pvpfilamentmatchtypes": {
+    "source": "res:/staticdata/pvpfilamentmatchtypes.fsdbinary",
+    "sha256": "45573a326f325019629ef396224ca8db0f5b236c3665131fe8a80efbd063799a",
+    "records": 86,
+    "keysSha256": "bf4f9f97ea36366be509126ba78f1d51dbc7b65d262aa1a692c1080a20d65515"
+  },
+  "client/races": {
+    "source": "res:/staticdata/races.fsdbinary",
+    "sha256": "c227576ff6951e9ef943d76fe6ee1454fad102b523bb7f0e1119d64cb5aedce5",
+    "records": 11,
+    "keysSha256": "bb8d90e600defbae81ca58dfb6a5da4d98da31af2c7b2731a0526601bc37e242"
+  },
+  "client/recruitmentgroups": {
+    "source": "res:/staticdata/recruitmentgroups.fsdbinary",
+    "sha256": "bcea597cb1ecd9e37dcecb5b9d286740acc86490ba550cbc4232398a8fa8bf98",
+    "records": 8,
+    "keysSha256": "d8a2f86699372c9e10cee09a72705e3ce0d74aa56dbcaafb551e67b64be4ce05"
+  },
+  "client/recruitmenttypes": {
+    "source": "res:/staticdata/recruitmenttypes.fsdbinary",
+    "sha256": "195dfdc8aa3c9a009b25fbb77ab9b4559dcc25c4e87d83dbc448b72d7d19585f",
+    "records": 45,
+    "keysSha256": "382a32f74b771f4f8f4977091249ff80d8ed81e3db5f6368895f43967a522965"
+  },
+  "client/regions": {
+    "source": "res:/staticdata/regions.static",
+    "sha256": "6b881152af25f3781d268f9d32bde082c270dc94af05657b8f148bb801b92392",
+    "records": 114,
+    "keysSha256": "d5cb3260074f398a33b98931f2223065b490168e3a5045c82f28bc64c0b96ee3"
+  },
+  "client/requiredskillsfortypes": {
+    "source": "res:/staticdata/requiredskillsfortypes.fsdbinary",
+    "sha256": "3fa059daa7a912ffcf793cf318373d063f1e3642fab9e2012a0dbc63db4fec33",
+    "records": 9575,
+    "keysSha256": "4cdd9177282c325df30ea647b8d07c4d28e2e23de038794fd049358874cb1d36"
+  },
+  "client/requiredskillsindex": {
+    "source": "res:/staticdata/requiredskillsindex.fsdbinary",
+    "sha256": "ef497ff4cc8a2729d2bbaaad1009d4be697a6b47fdd39577fa7b184073c96db3",
+    "records": 421,
+    "keysSha256": "f451386a6951017523777881e0e58f737b21eb0972efab5a42a9456b5af76f10"
+  },
+  "client/schematics": {
+    "source": "res:/staticdata/schematics.fsdbinary",
+    "sha256": "9ce5a1d1bc87c1b7a4889ed853185c92d7c2df781e9261671d2c54f2cafbd93f",
+    "records": 68,
+    "keysSha256": "a7d35825ec9a830345d4aa87114b222119bd790ca6b107b940d980868334f321"
+  },
+  "client/schoolmap": {
+    "source": "res:/staticdata/schoolmap.fsdbinary",
+    "sha256": "71c7af5d9d5af1ce75b25be2e6e4a587035a16670075c27c1e814e0e4636d6f2",
+    "records": 12,
+    "keysSha256": "aa6aba41b0ecab8a55e5fcf1ac771c2df962b87e376e3873a4c7bc991e120fc5"
+  },
+  "client/schools": {
+    "source": "res:/staticdata/schools.fsdbinary",
+    "sha256": "5cca4145e6987ba129b0e352f9a1816471db9bc7b740a443acbab0c21dc6b898",
+    "records": 23,
+    "keysSha256": "2ba66720f0c93f9e36916e4532890c30cc1f5d916df21e16de3762210c8e0787"
+  },
+  "client/seasonalcampaignsloginrewards": {
+    "source": "res:/staticdata/seasonalcampaignsloginrewards.fsdbinary",
+    "sha256": "04561918e9eecea63c71007ad6a980bb94fe6d2a413a799fa26060b33f4bb70e",
+    "records": 131,
+    "keysSha256": "26cc1a3ad98215b69fc9fd7640f12c0acb185a12f4b2c3c002bc967b66a81e72"
+  },
+  "client/seasonselection": {
+    "source": "res:/staticdata/seasonselection.fsdbinary",
+    "sha256": "8f3ad6fc878a804abc0be4c126de2cb54016f2223df218b1b22ecbeaab45f64e",
+    "records": 1,
+    "keysSha256": "235bf5dbbd86cd5d637625f81fe3a6a4f389a915a3323fce5bb4989996886fcf"
+  },
+  "client/selectiongroups": {
+    "source": "res:/staticdata/selectiongroups.static",
+    "sha256": "19a86d869318fe498c2862d549b388c09176894badad3605677dbd38a3a7d7be",
+    "records": 66,
+    "keysSha256": "404f9dd250a02eca467f3065c852e2728be40c290a875bd0e0f798a222d99f3c"
+  },
+  "client/ship_cosmetic_slot_categories": {
+    "source": "res:/staticdata/ship_cosmetic_slot_categories.fsdbinary",
+    "sha256": "e85cda9eeb29dc0dd90ac54975ff5df16c01ed46ca45786d6ec9ca71d9e01e01",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "client/ship_cosmetic_slot_configurations": {
+    "source": "res:/staticdata/ship_cosmetic_slot_configurations.fsdbinary",
+    "sha256": "8d9594f7183a5425f690f5b4c5443a6f9ac4feb0bf358e03ae4d32af9065d388",
+    "records": 4,
+    "keysSha256": "2b5ed661451760198bd77d4e42e993b91170df0f0ab75c7af5210be39cbe923e"
+  },
+  "client/ship_cosmetic_slot_names": {
+    "source": "res:/staticdata/ship_cosmetic_slot_names.fsdbinary",
+    "sha256": "535abf8985179a81668808db375dc9fe42dfe5475268dba49fa12c1c8e610ef3",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "client/ship_cosmetic_slots": {
+    "source": "res:/staticdata/ship_cosmetic_slots.fsdbinary",
+    "sha256": "54e17a05c07fe0b8c090937de25bde3ad2f1ada34d1c4a6c5e2369b0d63471ef",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "client/ship_skin_design_component_categories": {
+    "source": "res:/staticdata/ship_skin_design_component_categories.fsdbinary",
+    "sha256": "afcdce4ce49ef831117c28bdfc3c10d60f8113bc01f4f1ce0a0df309b31e5601",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "client/ship_skin_design_component_point_values": {
+    "source": "res:/staticdata/ship_skin_design_component_point_values.fsdbinary",
+    "sha256": "fe8e6fe792c40fdd170f97d54d6885792b83b4aeb56bd96c2f0b74a63eeb2b95",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "client/ship_skin_design_component_rarities": {
+    "source": "res:/staticdata/ship_skin_design_component_rarities.fsdbinary",
+    "sha256": "8938f8c27fea0534ffe6784e14b785466cad7c6acbce23c2e6459b17a5b2b168",
+    "records": 6,
+    "keysSha256": "c5d161527c5f9d09a2ed9cd76c4063481472f14da4dda40d19468bbfab4421a7"
+  },
+  "client/ship_skin_design_components": {
+    "source": "res:/staticdata/ship_skin_design_components.fsdbinary",
+    "sha256": "c5fb9a805542f9214144113319c705425af8cc2f3fc4e05a6fd75256bb7eb33f",
+    "records": 613,
+    "keysSha256": "cdcb686f0b03b6e80f6c55193cd68b7e55ca2f7ea656da7adca5d2a2b504532e"
+  },
+  "client/ship_skin_design_components_post_process": {
+    "source": "res:/staticdata/ship_skin_design_components_post_process.fsdbinary",
+    "sha256": "a6393ed6415936435c838a47911d301e59bcebb681b534022f727f66217613f6",
+    "records": 613,
+    "keysSha256": "cdcb686f0b03b6e80f6c55193cd68b7e55ca2f7ea656da7adca5d2a2b504532e"
+  },
+  "client/ship_skin_design_tier_thresholds": {
+    "source": "res:/staticdata/ship_skin_design_tier_thresholds.fsdbinary",
+    "sha256": "b7292e05647aad772b9684d85c0701aba3befcd6a75c77475a8705c37d6004ef",
+    "records": 49,
+    "keysSha256": "5d3c895da3133759ecde6900b80226978afaa4324e6e91010e9f4d25ff930b59"
+  },
+  "client/shipcosmeticlicenses": {
+    "source": "res:/staticdata/shipcosmeticlicenses.fsdbinary",
+    "sha256": "c2f7dcb8fd0b71c883c3fa976fcadfb0fa9cdb743af215fb3798893ac6a85907",
+    "records": 830,
+    "keysSha256": "578f90f80b50c1c4c2ccd863135b988242243cdd8daf4659cab4a3d3c95b3c63"
+  },
+  "client/skillplans": {
+    "source": "res:/staticdata/skillplans.fsdbinary",
+    "sha256": "babe1f2ab089a637e64bf0b43579236923ba9db9e9711c22d6fec42f2b1f80b0",
+    "records": 40,
+    "keysSha256": "b44bf45d909ef7e32e9cb5f53d0e60a4c8ef76dee06db2fba345e27b9f07772e"
+  },
+  "client/skilltags": {
+    "source": "res:/staticdata/skilltags.static",
+    "sha256": "f7b6fdbb73ad648ade6457b60671d82cf3032edb4a93e4119bd56d18151daaac",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "client/skilltreegroups": {
+    "source": "res:/staticdata/skilltreegroups.fsdbinary",
+    "sha256": "5aff18c4c8212c37d3becf424d69e8240729466afa422646149af9959c3e1418",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "client/skinlicenses": {
+    "source": "res:/staticdata/skinlicenses.static",
+    "sha256": "f896ba6e0f6c0947ad40e9a2364e9ccbe09f2baea5a53b674e201d5040c9e899",
+    "records": 11879,
+    "keysSha256": "3853b727c5ae8c0bf0d4b215d75780b995b892a637a82885e2f790912d5e9256"
+  },
+  "client/skinmaterials": {
+    "source": "res:/staticdata/skinmaterials.static",
+    "sha256": "3cacae26416dd92a6873a683b99d4dc4cb4df7049b95cce079fbe42cb3495e98",
+    "records": 876,
+    "keysSha256": "493b46d9e2756d5e0b8df0484f33e1ad280024c4f8be8a8cb0b689613fae444f"
+  },
+  "client/skins": {
+    "source": "res:/staticdata/skins.static",
+    "sha256": "e2104c6256a4620542998fb1cc55031d24a699c8b4fc4ef5191dabd09478ef1a",
+    "records": 7050,
+    "keysSha256": "8a2ecfe4a4b544b8fe1308e0d1f63377108a740fc23c93e33cc996894e0f9fd3"
+  },
+  "client/skyboxeffects": {
+    "source": "res:/staticdata/skyboxeffects.fsdbinary",
+    "sha256": "b2a859cdfbad150e26282b200391ccb032fe83f59b720d262627f68e1b16880b",
+    "records": 6,
+    "keysSha256": "c5d161527c5f9d09a2ed9cd76c4063481472f14da4dda40d19468bbfab4421a7"
+  },
+  "client/solarsystemcontent": {
+    "source": "res:/staticdata/solarsystemcontent.static",
+    "sha256": "164d379f46e87f0544050f9b1e4bcca3757827b800f5c72a35023fb23f9d62ad",
+    "records": 8490,
+    "keysSha256": "83ac4de2db3766aeec893ecd7017479402b52ed41a6a158e9e4526dfa0214b18"
+  },
+  "client/soundids": {
+    "source": "res:/staticdata/soundids.fsdbinary",
+    "sha256": "e58393eab3c95d9e12ec8d880040556fc8cd078b736c5d46dfa4085f46155da8",
+    "records": 1470,
+    "keysSha256": "adc955cce5c57122c102fc530264d6ca72ba2a53e6f6ae31715b8dd3c436e049"
+  },
+  "client/spacecomponentsbytype": {
+    "source": "res:/staticdata/spacecomponentsbytype.fsdbinary",
+    "sha256": "c69848594e6846f98d2345f449a78d1d0ab654f2bf69cc48a5ea07c76755e5e9",
+    "records": 11238,
+    "keysSha256": "80a29508b554661b0ed12fa4107141f6b828078fa902042b42325031606f38e0"
+  },
+  "client/spaceobjecthighlights": {
+    "source": "res:/staticdata/spaceobjecthighlights.fsdbinary",
+    "sha256": "6bdd3cc9829315267384c7f3ab9e99c76df8267b183c9161aa0dfb2f5f233c99",
+    "records": 46,
+    "keysSha256": "819dff555491c472e18022a230961d3ac900277d0cfe972b9c06e576ee190acc"
+  },
+  "client/starmapcache": {
+    "source": "res:/staticdata/starmapcache.pickle",
+    "sha256": "726b2735f60bc9098cb76d8fa5147a42a146e87188f7896b39b905b33171b4a4",
+    "records": 4,
+    "keysSha256": "0ec99a41d9871879d4bf27eff267833b01d9fcbbbba4a49e96a5baa578d820ed"
+  },
+  "client/stationoperations": {
+    "source": "res:/staticdata/stationoperations.fsdbinary",
+    "sha256": "716264638dd525ee7f4c3224a6919d6112285516a08f26c086e2410e57a81317",
+    "records": 69,
+    "keysSha256": "09ce707931fa1fb379825e44ac29e7dc9b2279d6bd432d0f0c9a6d078cc9e92d"
+  },
+  "client/stationservices": {
+    "source": "res:/staticdata/stationservices.fsdbinary",
+    "sha256": "171061d4f76717154711cb174d892308389b79daf650ff1a22f4905bb22b5840",
+    "records": 27,
+    "keysSha256": "e6df3b4334d361ac682616f128fcd929257b82f2a54a673986e49d75936db3fd"
+  },
+  "client/stationstandingsrestrictions": {
+    "source": "res:/staticdata/stationstandingsrestrictions.fsdbinary",
+    "sha256": "f613d2df00c0556aa9eba23d7f99c1f49cadea100e33cbf7c3eca5d38b2b341f",
+    "records": 2,
+    "keysSha256": "394d3b64545dde3db5c1a7b8a81e990783b9eb9a82a8c9883d0a50b8bb92c37d"
+  },
+  "client/surveys": {
+    "source": "res:/staticdata/surveys.fsdbinary",
+    "sha256": "3a5a27ff4d09ea6b51de20e1b0569450b75002c59b1ff07eaaaad293dbaa91fb",
+    "records": 1,
+    "keysSha256": "9961d158a7e0e2f990765971a9e490af826c0743b7d603020f34cc8944319fcb"
+  },
+  "client/systems": {
+    "source": "res:/staticdata/systems.static",
+    "sha256": "bf987be4acb65756ec9dc9c090b59b4ecd019eab5c134581407188dcad84daed",
+    "records": 8490,
+    "keysSha256": "83ac4de2db3766aeec893ecd7017479402b52ed41a6a158e9e4526dfa0214b18"
+  },
+  "client/tags": {
+    "source": "res:/staticdata/tags.fsdbinary",
+    "sha256": "e04039d9ca94c117499f6a3063c06cad6e7714cbaaeaba9ec29d1780216e5f59",
+    "records": 49,
+    "keysSha256": "b012963c6624e3aa91f048710b989d3bb809381f0a7f32e8ad0e6a514415297c"
+  },
+  "client/traveleffects": {
+    "source": "res:/staticdata/traveleffects.fsdbinary",
+    "sha256": "bb026ea3a838905fbabb642b0d8eb8b0ab143a9380f61dedb755bf18e3b41c6f",
+    "records": 8,
+    "keysSha256": "3047803caf0d382b89997770fff5ebe298dfc202a52729d407f625f84813bc39"
+  },
+  "client/triggertypes": {
+    "source": "res:/staticdata/triggertypes.static",
+    "sha256": "dae9fad0765d989a1ca256fdccac7bc02487cbdcaf12d12c9bf5a06ad9bd7e5d",
+    "records": 51,
+    "keysSha256": "9443a9f034e327cd528bed2b0aeb7d537b13791cafdc5b67e7fab4b58a9f7b6a"
+  },
+  "client/typedogma": {
+    "source": "res:/staticdata/typedogma.fsdbinary",
+    "sha256": "39d13bb393a7a28b7c2365319a5ce359eb8b5c61d556b17f321e9abce4dafd93",
+    "records": 27162,
+    "keysSha256": "726d52e9555554359d1eba9e26da7a56706335e543bd2f77d86096ef6f3e5bb6"
+  },
+  "client/typelist": {
+    "source": "res:/staticdata/typelist.fsdbinary",
+    "sha256": "e4589cf2ce36cb4b765900fe53ea62be8e75453866e7d82d53a006bc74163bad",
+    "records": 472,
+    "keysSha256": "bca339314cc6985892cb7f94ca418856bc76c62c0a233a3ae624467b88600488"
+  },
+  "client/typematerials": {
+    "source": "res:/staticdata/typematerials.fsdbinary",
+    "sha256": "7fc7ab6938283b9864268572f7754e8d99fdb231d5d695651e03a428cc2589ef",
+    "records": 9868,
+    "keysSha256": "a1d18b00345cfab95f5229b3f01aae3ae7f0f6dc5919fdd202af36b4a571e1c3"
+  },
+  "client/types": {
+    "source": "res:/staticdata/types.fsdbinary",
+    "sha256": "16d778cbd9abcf9fee988df84db7b21b00e7d7c578371849351ab2f41b2cbf0a",
+    "records": 53299,
+    "keysSha256": "30e00e20fc1055b343179e1ec21dd4d23e9f791fbd4f730b2f6cffc3b5e16bb4"
+  },
+  "client/uiblinks": {
+    "source": "res:/staticdata/uiblinks.fsdbinary",
+    "sha256": "86ecb445111f044da23a7e74297ff14e8019dc0fb79c7560a40332c30bab608b",
+    "records": 38,
+    "keysSha256": "a7730429c618c2788a947eea3e74490d19ab44ce5635c64de2bf967274be13e0"
+  },
+  "client/uielementtypes": {
+    "source": "res:/staticdata/uielementtypes.fsdbinary",
+    "sha256": "4489fdf4f04b02cea60f0d34a53b2655d21383ee1221432b2dbe53d906424dd3",
+    "records": 27,
+    "keysSha256": "ec53f2999facfa4b533f75e92eab7f74b74cd7b40b859ee34b0e1f9083a4edee"
+  },
+  "client/uihelppointers": {
+    "source": "res:/staticdata/uihelppointers.fsdbinary",
+    "sha256": "3034363bc7444d435f5136adebcee8c4a6b03b037922a9997676373eb5bdc3c8",
+    "records": 193,
+    "keysSha256": "50c15140e66001fa8a5e26dac20831900baa7e4a92e8818f7a8408dadcc9e3cf"
+  },
+  "client/uihidingtemplates": {
+    "source": "res:/staticdata/uihidingtemplates.fsdbinary",
+    "sha256": "b06917a526c1e7f28b221894f6634aed82b43b839ca0855e3688fbf57a36f5a3",
+    "records": 13,
+    "keysSha256": "14f666f84d76614cdb0a78fb9495d48afce988f7933ddf44d0d6b8feeea21d07"
+  },
+  "client/uihighlights": {
+    "source": "res:/staticdata/uihighlights.fsdbinary",
+    "sha256": "a72e48ea2afd2598401ae6f7a9e1ab5b09d07c5874555129e2851a3abeb3080a",
+    "records": 160,
+    "keysSha256": "002b40962dc96916d16bc1c426979bf21eb7992e04ec89eb194af259df87ecef"
+  },
+  "client/voidspaceencounters": {
+    "source": "res:/staticdata/voidspaceencounters.fsdbinary",
+    "sha256": "0793db1bbfeadb0debf67c607ff616ae9fbc473876f3b92427fcda52484affcd",
+    "records": 8,
+    "keysSha256": "9affd5615661bb25d7ec8f34eb8c6e859192f3f44e43211a77ed31dbc2bc5479"
+  },
+  "client/warzonespositiondata": {
+    "source": "res:/staticdata/warzonespositiondata.fsdbinary",
+    "sha256": "25dafbbc0158f4e7df4bac990e531f3780731c6d55f5e6adf4f72c38a08c3aa8",
+    "records": 2,
+    "keysSha256": "a6e2b7a040683432de03a18fd8a1939a2fdf82585b364bfc874bdd4095c4cae1"
+  },
+  "client/wrecks": {
+    "source": "res:/staticdata/wrecks.static",
+    "sha256": "43cbc7dbccc17a6eaf157768ae49995b9bd2fb8ab892b78f20ca415c042cdd9d",
+    "records": 294,
+    "keysSha256": "2e98c1288e23f7cf7654c68cfbc5fe9520b61e218dacfc4010fdf93f3acea7ff"
+  },
+  "exoplanet/6JOFbbCRMSQpFhYx10NrOLoopt4Qige3": {
+    "source": "bin64/exoplanets/sampledata/6JOFbbCRMSQpFhYx10NrOLoopt4Qige3.tab",
+    "sha256": "d12413a5cffccb54f1415ef315dd91fc5e36fdbf79ef90f63358f4f4c2f06460",
+    "records": 4739,
+    "keysSha256": "0233d44ec21c7e190f0ea8421bbaa0c01c6a61a814a4c58c52c26270da6ec327"
+  },
+  "exoplanet/6StZPUdDUS2ErkZSt3N2rKlBWcXY2WVY": {
+    "source": "bin64/exoplanets/sampledata/6StZPUdDUS2ErkZSt3N2rKlBWcXY2WVY.tab",
+    "sha256": "fd5b5b4f0945d0575117cb336562241a3e4d9102cb69add7c64c7ad48f093795",
+    "records": 3948,
+    "keysSha256": "1d7c92914a69909b36086691c8e1b50a6b2c1579a825812954ecf72f7a8ec4db"
+  },
+  "exoplanet/BMicuND85mkns2Um25QHDSOpUhunwh1Y": {
+    "source": "bin64/exoplanets/sampledata/BMicuND85mkns2Um25QHDSOpUhunwh1Y.tab",
+    "sha256": "15153a69c54a261eee54a789c54699ea63bcff67e3d62bbcb13e7094a72b1ecc",
+    "records": 4741,
+    "keysSha256": "19ba50171409237961aa1c27a3dd09c02025a2577bc9de97f0985b04e3400b70"
+  },
+  "exoplanet/CZuwEep8qYGzMlFqF6peIryIg1E5bbjI": {
+    "source": "bin64/exoplanets/sampledata/CZuwEep8qYGzMlFqF6peIryIg1E5bbjI.tab",
+    "sha256": "f0158ee4dbfc490c6ee580c611d31fbc92a04a1706aaf43f64180fdde6c96e9a",
+    "records": 4391,
+    "keysSha256": "7c75cf0a0d3cee48e9baae128ee10bc4342e381e1346e746b9e4a4bc9c9d65ee"
+  },
+  "exoplanet/N5JC1Z84MrcDPGnVMLo1CGMffgEge6kg": {
+    "source": "bin64/exoplanets/sampledata/N5JC1Z84MrcDPGnVMLo1CGMffgEge6kg.tab",
+    "sha256": "a9ca44212de2701f6551bf70b81721dbf87c17151321779c7ea17c004232bb79",
+    "records": 4877,
+    "keysSha256": "05605811dd1764865cbd67b2235b771b438889693066b3b8908b20808aefc870"
+  },
+  "exoplanet/NHbD32ISL19D2vPk0BkLN92AiYimmeMU": {
+    "source": "bin64/exoplanets/sampledata/NHbD32ISL19D2vPk0BkLN92AiYimmeMU.tab",
+    "sha256": "77a5a8dad2ca5ff43a7bdbf75933d0bb798e8a5fea90c6c7b1fe1de8830f4805",
+    "records": 4739,
+    "keysSha256": "0233d44ec21c7e190f0ea8421bbaa0c01c6a61a814a4c58c52c26270da6ec327"
+  },
+  "exoplanet/YV3On1anMCyAejIpVRbAwtpZ0XTCv0jo": {
+    "source": "bin64/exoplanets/sampledata/YV3On1anMCyAejIpVRbAwtpZ0XTCv0jo.tab",
+    "sha256": "dbaa47bb778bcac118e2336adf566719f21b9c489ec6e57f136b358dfef5a2b7",
+    "records": 4741,
+    "keysSha256": "19ba50171409237961aa1c27a3dd09c02025a2577bc9de97f0985b04e3400b70"
+  },
+  "exoplanet/iO6XNMJzQlVJrjLugxIH8unGxWHfnMfH": {
+    "source": "bin64/exoplanets/sampledata/iO6XNMJzQlVJrjLugxIH8unGxWHfnMfH.tab",
+    "sha256": "7b5ef60b912e488148c8f4e992064329488f138fc32371a29cad30442d1c4cfc",
+    "records": 4876,
+    "keysSha256": "66fc1d43cce7bcd76d91d1a0ec0df431935afa25a335bc1ea3b67609b0ec3f71"
+  },
+  "exoplanet/jbT94HaYOUfJnNmpjmMZgR9cRvWyrK5R": {
+    "source": "bin64/exoplanets/sampledata/jbT94HaYOUfJnNmpjmMZgR9cRvWyrK5R.tab",
+    "sha256": "1b5ad6037754bfa779c0b6116ad7a54382f67efcd1837023a2b50ce25d9e793a",
+    "records": 4739,
+    "keysSha256": "0233d44ec21c7e190f0ea8421bbaa0c01c6a61a814a4c58c52c26270da6ec327"
+  },
+  "exoplanet/usld2BNsWSGAyCC250tnaWSlAjKkFlPF": {
+    "source": "bin64/exoplanets/sampledata/usld2BNsWSGAyCC250tnaWSlAjKkFlPF.tab",
+    "sha256": "ca48700ec5ae9bb5f8cc6ff8e103502623079a9baad5060ab686bba0b2ea1977",
+    "records": 4390,
+    "keysSha256": "f16f3643a0945edab84c477499afa3ef13e53650bb467dacaa23f56b83182c93"
+  },
+  "index/blueprints": {
+    "source": "res:/staticdata/blueprints.static",
+    "sha256": "686734d0148a375e4477a5159eefb983ee2de30cc8f150c63b0f77efb7e180fb",
+    "records": 6348,
+    "keysSha256": "4a647d4f3ddc007b760bbd0db8d60fc62e9d187decc06db869f1ba5ea8f24137"
+  },
+  "index/clonegrades": {
+    "source": "res:/staticdata/clonegrades.static",
+    "sha256": "069779f3e12ebb79328bddbcad200cc455472256048c83d57bdeb0cf534640c4",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/dbuffcollections": {
+    "source": "res:/staticdata/dbuffcollections.static",
+    "sha256": "68ebf43dab31ed099577b5bd449b7f1502ebb945734fd376a320278695758cab",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/fighterabilities": {
+    "source": "res:/staticdata/fighterabilities.static",
+    "sha256": "3b4490a5a333589c78b3b64b7c017cf3da566116ee054c5953a2740fed0e918e",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/fighterabilitiesbytype": {
+    "source": "res:/staticdata/fighterabilitiesbytype.static",
+    "sha256": "258f70c55fcdb54a2dd8f7577fcbdfb2c39cd5d1fae38de4f6dc9c07fda73e35",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/industry_activities": {
+    "source": "res:/staticdata/industry_activities.static",
+    "sha256": "61d4a257d72bfeaca83bc8f16659cbfe4f44c84bee5bb31885b86d38d20814cd",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/industry_activity_modifier_sources": {
+    "source": "res:/staticdata/industry_activity_modifier_sources.static",
+    "sha256": "a588d4019863dc085883702f881de98001a91dc4c0040c683398633331ac4e35",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/industry_activity_target_filters": {
+    "source": "res:/staticdata/industry_activity_target_filters.static",
+    "sha256": "320e9ea7c0d69d9030b6253bce378ff0e862b45c3d0c37f1e4edf59f781196af",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/industry_assembly_lines": {
+    "source": "res:/staticdata/industry_assembly_lines.static",
+    "sha256": "244eac5ce78164eb7e0e3a3e8db46ac3fbf497993cb03335d90b60b142b0e75c",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/industry_installation_types": {
+    "source": "res:/staticdata/industry_installation_types.static",
+    "sha256": "abdbd13d5628d2fdfb47523ece70df0f0485b000d31d2d55cc4de26c40e83b79",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/infobubbles": {
+    "source": "res:/staticdata/infobubbles.static",
+    "sha256": "99bf29ecf83f15bada7e11ff7e65e256811707896aa58e22b2a122fc0bde4eb5",
+    "records": 0,
+    "keysSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "index/skinlicenses": {
+    "source": "res:/staticdata/skinlicenses.static",
+    "sha256": "f896ba6e0f6c0947ad40e9a2364e9ccbe09f2baea5a53b674e201d5040c9e899",
+    "records": 11879,
+    "keysSha256": "1e3a75c99256e1a97110c72192f65565d1bee0740deb12c0019be31e0180aa55"
+  },
+  "index/skinmaterials": {
+    "source": "res:/staticdata/skinmaterials.static",
+    "sha256": "3cacae26416dd92a6873a683b99d4dc4cb4df7049b95cce079fbe42cb3495e98",
+    "records": 876,
+    "keysSha256": "7a792ca13a335df341faadb3ea17c6c3d12e35202c06cd4c13741f91283480b0"
+  },
+  "index/skins": {
+    "source": "res:/staticdata/skins.static",
+    "sha256": "e2104c6256a4620542998fb1cc55031d24a699c8b4fc4ef5191dabd09478ef1a",
+    "records": 36375,
+    "keysSha256": "297d2eee3658817094084b928f0991316fdb25bc44a9ebf4bf278f2b66e8758d"
+  },
+  "map/celestials": {
+    "source": "bin64/staticdata/mapObjects.db#celestials",
+    "sha256": "2e04b4162cb4e80097a6a304ddd471fa1e8ed1e78b4e62f9310810877277467d",
+    "records": 475859,
+    "keysSha256": "7e215db98a53c33694cc4de883aa00d1b242209a676e936acf5983332e4d040b"
+  },
+  "map/npcStations": {
+    "source": "bin64/staticdata/mapObjects.db#npcStations",
+    "sha256": "2e04b4162cb4e80097a6a304ddd471fa1e8ed1e78b4e62f9310810877277467d",
+    "records": 5210,
+    "keysSha256": "d6b40dd5d7adbbe1c5dc8dd3a95e0fc67d61717bab161015a77dae296542f809"
+  },
+  "planet/10000001": {
+    "source": "res:/planetattributes/10000001.region",
+    "sha256": "1cc162c881cd82c6c2dfec48a4b0ceff546e92e0a40754a50590d96873474523",
+    "records": 6421,
+    "keysSha256": "d92c554ab9d7a64b02104a648cb57dcb15eb8640eb55bd7116f84e3205f85d3f"
+  },
+  "planet/10000002": {
+    "source": "res:/planetattributes/10000002.region",
+    "sha256": "84cee0a1a06f75229494f2e54e86a13d4ac8e783b171e79912f2a73e880a18c1",
+    "records": 4572,
+    "keysSha256": "aa9a8fbb58017b13e5999f43b269af3d8bde6520982392a5d9e18e6c26c4ec4f"
+  },
+  "planet/10000003": {
+    "source": "res:/planetattributes/10000003.region",
+    "sha256": "db0a3baf368e151087078f15cebe71f82e8ee17bc89ae4d6029ced56f1b724cf",
+    "records": 5982,
+    "keysSha256": "bba9d3f04e74ceeb5fcc69b9f3535c37982f108e3d5c333f0ad68d0d9a2974fb"
+  },
+  "planet/10000004": {
+    "source": "res:/planetattributes/10000004.region",
+    "sha256": "6d459964eafacfedb417fae6c65cbb46c0e54195fbcac1b075817c0242ecfbb9",
+    "records": 5322,
+    "keysSha256": "121344001fb4a45d9036b72723585c7d63698b58cee6874b091e67af6c2ff806"
+  },
+  "planet/10000005": {
+    "source": "res:/planetattributes/10000005.region",
+    "sha256": "630abbef8c9a546e17bbf408784df6d3cdebc44ec810007e8af57ac4ac11a0a1",
+    "records": 5043,
+    "keysSha256": "a65db45cf4a942c87dbb8d89226096443be8f859fbeb1d125d4468c5995be57c"
+  },
+  "planet/10000006": {
+    "source": "res:/planetattributes/10000006.region",
+    "sha256": "9eb8e8b79547a14d3d5222bd38094c222fd81e66911172650d508a9854935071",
+    "records": 4228,
+    "keysSha256": "268d406f09e751c602c23f709dc1487f66bb4581a369e2e45120d57cb40d3f17"
+  },
+  "planet/10000007": {
+    "source": "res:/planetattributes/10000007.region",
+    "sha256": "04780e403dc0e5def59fe6409cc8a586938d3dc8e605f1646da4812a1baa7e5e",
+    "records": 2492,
+    "keysSha256": "84c2aae49d25724bd1bb9c1bb3d5c573b026e8f823c26ae62983640ad7409fd9"
+  },
+  "planet/10000008": {
+    "source": "res:/planetattributes/10000008.region",
+    "sha256": "f1111b53443d2388f6734d77ebb97960d0ae04453d4abc4bce7f1cd3cc0e4e9c",
+    "records": 4153,
+    "keysSha256": "bb36ce7a8e2ab512c7590fa236d40854ee7987ba26bd434c9d3b17102ad00ed8"
+  },
+  "planet/10000009": {
+    "source": "res:/planetattributes/10000009.region",
+    "sha256": "c6bda6f7cb05989b0a8a2af2bdb35898b46b9e8092eb865e546a21eff3b0c549",
+    "records": 5931,
+    "keysSha256": "c7cacbe943319066772f7c9d2af512480d0ab20600158a2b616da14089192c9e"
+  },
+  "planet/10000010": {
+    "source": "res:/planetattributes/10000010.region",
+    "sha256": "b48cc45e6ed90f66a95132519a60bf301a436f8648c7c1a4a2ee950ba62a5eb7",
+    "records": 3208,
+    "keysSha256": "05a1c057c6122bfe52dcfe730ae40988cf288fca48b8e82bd0cb166b7a246eda"
+  },
+  "planet/10000011": {
+    "source": "res:/planetattributes/10000011.region",
+    "sha256": "7cecc6825dbfe3e311324b7ed8940765a97b9e980e428510560e430509395958",
+    "records": 4978,
+    "keysSha256": "08664670208ade9559c9a8217a4a4b2b8cb4e83291dea178d765617aa1bbb7c8"
+  },
+  "planet/10000012": {
+    "source": "res:/planetattributes/10000012.region",
+    "sha256": "1edd57f9fe97d6bd329818ceb9b4e5bf61729cad47e00145153e93925fe20a44",
+    "records": 2761,
+    "keysSha256": "9d5d16481159ad5aa07fd6c82cc2933825390c53d3df348868c0fcb66e22e993"
+  },
+  "planet/10000013": {
+    "source": "res:/planetattributes/10000013.region",
+    "sha256": "9cf3e43543e9d646b0fc941cae40733d9ac3c08197a2583e26bdbd168195d3e4",
+    "records": 5310,
+    "keysSha256": "310a3f7547b0238fbc869924856262c08827801e7acbdd2c558ad2718857eb55"
+  },
+  "planet/10000014": {
+    "source": "res:/planetattributes/10000014.region",
+    "sha256": "367b88a26ff08ba190a0a917953f18849cf39bc647e069a0b9fe5f9949cb8017",
+    "records": 5640,
+    "keysSha256": "e98ad1108be0532cc1e13dcb8e95cddd777c39b2027dd79d712c8760abd8ac9e"
+  },
+  "planet/10000015": {
+    "source": "res:/planetattributes/10000015.region",
+    "sha256": "84ee10740e4264f104e64b73dad470cfeb4b710db6c5788cb820169277beb9b7",
+    "records": 5081,
+    "keysSha256": "db1eff9655e714721174b998e99f691e14d704dbfcf6a2c2a0f22cf6756c4a52"
+  },
+  "planet/10000016": {
+    "source": "res:/planetattributes/10000016.region",
+    "sha256": "592e3d84dbf03fc60cd552749fac80dd040664526a9acd0a4dae4458159ef691",
+    "records": 4982,
+    "keysSha256": "c0cb775322e1ce1d3b314e8884e8d51444c46b654cb55f485ea52aee4565ec90"
+  },
+  "planet/10000017": {
+    "source": "res:/planetattributes/10000017.region",
+    "sha256": "90d2ff763f57d507668073f59a57662defe8d877dec21207702ec4c7c6ced1be",
+    "records": 3958,
+    "keysSha256": "74c30467027f12e5b6db86d213b2f9e6ac511dc7189778cd6368e7835d16cae0"
+  },
+  "planet/10000018": {
+    "source": "res:/planetattributes/10000018.region",
+    "sha256": "47d5882fe65249e3e88e9deb883386b5125cbf252b885c0090a35e2f9bccae92",
+    "records": 3883,
+    "keysSha256": "3f4a4c37b63e5ec2d5305f6f6747fd0d9e6140f7421880223a34f8a2bb6ee0a0"
+  },
+  "planet/10000019": {
+    "source": "res:/planetattributes/10000019.region",
+    "sha256": "b8d1e1a0bb1453e7d1762def859888ad1d524bd4f08a55c4c8a50e0b10207cea",
+    "records": 2269,
+    "keysSha256": "f679951a3cb0a4e5ef46e1c977470d1c6a9b0073f10a3509a33b2cf099336f70"
+  },
+  "planet/10000020": {
+    "source": "res:/planetattributes/10000020.region",
+    "sha256": "5008d38093ebe7ddb6d7cf62b3944d7fbe4fb2aefb782fff6f7d00f9e7dc289a",
+    "records": 5427,
+    "keysSha256": "c19bf5a9c5843590158e78abbc4ed2118362c7c7371723def0aa588eaa9263d6"
+  },
+  "planet/10000021": {
+    "source": "res:/planetattributes/10000021.region",
+    "sha256": "ceb9fadf253725ef23ae622030ea29e96691837da861d547f0a88060f05892f2",
+    "records": 4889,
+    "keysSha256": "404c6566188954cab4361786c93e6dadf4aff23172426efb33cdae43766ab2b3"
+  },
+  "planet/10000022": {
+    "source": "res:/planetattributes/10000022.region",
+    "sha256": "2f6a32a071aa32c5b81ac47d72586b8f4eddec8496eeedefe2f42b7e42f78f6b",
+    "records": 6777,
+    "keysSha256": "657ddd00fc64d6d4dcafe5c168f03ef86414ebb8d72094df5cd24f39b38eb9b2"
+  },
+  "planet/10000023": {
+    "source": "res:/planetattributes/10000023.region",
+    "sha256": "d53abedd0838a746a459630e6c09bc48b01ef70deaaacb0b5bb070d7fb09a072",
+    "records": 4433,
+    "keysSha256": "4cee9d39f66886aa10bd728d1ddacd07a06b2b41118317d17016d738acaf6618"
+  },
+  "planet/10000025": {
+    "source": "res:/planetattributes/10000025.region",
+    "sha256": "983b61216e6716fc69b37dfbbde5ea302c60ae8f4bf1c8329836c32353cd3ba1",
+    "records": 4298,
+    "keysSha256": "8700a023113d4d45202e71c3591d03bbb2cfb53e83be8226e0c6b75573fc4f41"
+  },
+  "planet/10000027": {
+    "source": "res:/planetattributes/10000027.region",
+    "sha256": "52bd20e83bc84851b685d8a7eb99b00f10d1c61fcfaa0d3fae863ea3392d6576",
+    "records": 5068,
+    "keysSha256": "8254ca5a687656d6529c62a57c5756229818cc4058c6896da0cadc1428da365e"
+  },
+  "planet/10000028": {
+    "source": "res:/planetattributes/10000028.region",
+    "sha256": "d65933d4500c9332598026886222c1d1753d10203f815f9e5f9544456aadf364",
+    "records": 1960,
+    "keysSha256": "4091509dd75e45d6ecb6711202b824d5bb17639412b3dbf71340ee6dd91051be"
+  },
+  "planet/10000029": {
+    "source": "res:/planetattributes/10000029.region",
+    "sha256": "5aa97d610e5ac46c7a827bf14dbc7599bcf05099fb5517da5c8495b355feb122",
+    "records": 4307,
+    "keysSha256": "9a9a9e34b6195eac2d44d1f2ef127205dbaa53aef5672015efc824578e1c9518"
+  },
+  "planet/10000030": {
+    "source": "res:/planetattributes/10000030.region",
+    "sha256": "3592c0ab5e440530c2f1c0e7e038b1f6d40c2fde44ded6adf6636727da69c000",
+    "records": 4459,
+    "keysSha256": "678d67d1e883140c1ae94a21784541cc01503e6409cb16923f25e2fa0429c477"
+  },
+  "planet/10000031": {
+    "source": "res:/planetattributes/10000031.region",
+    "sha256": "e0a86aa3f89d8c416b494d291cf65dabf84f8f73559b64dbdbbd8f24a49f0b6e",
+    "records": 2749,
+    "keysSha256": "d95764699ee74add02139dd30178c29e44e06e5c8030d2366d56e6fc4dbc32fe"
+  },
+  "planet/10000032": {
+    "source": "res:/planetattributes/10000032.region",
+    "sha256": "104f3b7fde74991f8346322800be6b0c03304e72450e8a09c36361fffe6c1854",
+    "records": 5030,
+    "keysSha256": "ed60597482095be9bd6145a6c896e54dff05417217e23d06e22383f093d49ff4"
+  },
+  "planet/10000033": {
+    "source": "res:/planetattributes/10000033.region",
+    "sha256": "37fad77adda4c1b464ade1d53ed9687090d43096e6a7f35df6617970f290c314",
+    "records": 4267,
+    "keysSha256": "e4552da35ba7c10a7cf7ab6b16f50fe82f0f4b1cc93c862b94bb6681f07612c5"
+  },
+  "planet/10000034": {
+    "source": "res:/planetattributes/10000034.region",
+    "sha256": "275433ea6d24b3b0fe39a35fda4a3e3f8bbd448a307dfa7babfea93ef3152f6f",
+    "records": 3630,
+    "keysSha256": "932efaf35baafe8c97f4e7ffefd1a5aeb9373c2fbecda715a34c0061b09ce482"
+  },
+  "planet/10000035": {
+    "source": "res:/planetattributes/10000035.region",
+    "sha256": "f911fb8d2a500d9fe4639ef50fb11f8089ab85278cb97739a032eae727f6d8f3",
+    "records": 3610,
+    "keysSha256": "6e4847e4e1dcafdb2d0a5daa132cb2dff73a37cb520a750c5a9b571badb54d88"
+  },
+  "planet/10000036": {
+    "source": "res:/planetattributes/10000036.region",
+    "sha256": "2633a53a61aff396644a651a30d44683e1c308788d280494cd8ac5052822e18c",
+    "records": 2716,
+    "keysSha256": "a9c5c98327e5070ab6b5db3027663b67ed271897bc34f7594db0d943829f92b4"
+  },
+  "planet/10000037": {
+    "source": "res:/planetattributes/10000037.region",
+    "sha256": "4b290a603c6954120e64f221e09b4cb11879fecba05b5094cf8aeb74742c564d",
+    "records": 3012,
+    "keysSha256": "3ffa33f0fcdb74e14a9665ca5ad98da44b84faf61c4f0a3b032f97854936342b"
+  },
+  "planet/10000038": {
+    "source": "res:/planetattributes/10000038.region",
+    "sha256": "f3d85d9e41a0359909eb58c04a8d2da1adacb906306740036f2635f80e4b619c",
+    "records": 1761,
+    "keysSha256": "346998789e9857f952b3a8b6b1b4e7a638e6a5a855c1897654efed0eb40fe9fa"
+  },
+  "planet/10000039": {
+    "source": "res:/planetattributes/10000039.region",
+    "sha256": "73ec9855bdb09d14d1bfce2f36f9219b59bafd2d6fcbb9ee156d59318dbc28ac",
+    "records": 4191,
+    "keysSha256": "c54f9765b3ed3487a24b094b0ab95e64e5953827e0b36d034b6d07e2e1b79e4f"
+  },
+  "planet/10000040": {
+    "source": "res:/planetattributes/10000040.region",
+    "sha256": "a7272f19a9829162b4eb714cf91f68e9a253da98cf35be731be72b8cf581c12c",
+    "records": 4518,
+    "keysSha256": "67389245d228858fd7f1142af8708c9eb635e74c5b8dce692b0bf2bdde880193"
+  },
+  "planet/10000041": {
+    "source": "res:/planetattributes/10000041.region",
+    "sha256": "4b8851d5974970840e81fdf1866357114093f237cc6d5561fc76bc44ad0ad72e",
+    "records": 5472,
+    "keysSha256": "2f5abc0c1249c9af82290934db9c6ef13f93d14b0ccfb31d13dfc8feaa6fd2d9"
+  },
+  "planet/10000042": {
+    "source": "res:/planetattributes/10000042.region",
+    "sha256": "a02bded5bf02f6c4f4539b5de63e944314c3791a0c923986f187b272340cdaef",
+    "records": 8177,
+    "keysSha256": "076d796c0f4b599cc18ba741db49d77b67aa6643e6bc716826b20f0648d81b33"
+  },
+  "planet/10000043": {
+    "source": "res:/planetattributes/10000043.region",
+    "sha256": "7b0e051ab3bd69c8242e02058146706e38cdf6086ce1295200c392b4d29d1233",
+    "records": 10172,
+    "keysSha256": "fb0fc03e4df2ccf3aca3f181baa79fcbc509240b68150f83f47008af405fb82b"
+  },
+  "planet/10000044": {
+    "source": "res:/planetattributes/10000044.region",
+    "sha256": "ed512782191e5003939f1aed682cb67c4ee265574747bb3cc010f17b37b0f11a",
+    "records": 2209,
+    "keysSha256": "8c6ebf4982deaa63f82a1fb88010fadb39cd7443404de3e66c1123dede5ff041"
+  },
+  "planet/10000045": {
+    "source": "res:/planetattributes/10000045.region",
+    "sha256": "6838215bba620b1ac49723eceec646029d66cc8aa1cc862c1d2d231f73d5ac43",
+    "records": 3050,
+    "keysSha256": "157c61359455ef2149d31627f1466d74a135d74b0285a65ee5600f3e4e18aee6"
+  },
+  "planet/10000046": {
+    "source": "res:/planetattributes/10000046.region",
+    "sha256": "1afecdeca0afe3a39b2f5b014588e13d6a68233475ba67387da5cc76fc7415b6",
+    "records": 1337,
+    "keysSha256": "9b617f06c7d9d4ac13f5fb06286b965bbaf6fcca1a5d35a1c9adf93ae53c3efb"
+  },
+  "planet/10000047": {
+    "source": "res:/planetattributes/10000047.region",
+    "sha256": "e218607852e342b26b86e180fec56072f54e1fa77c01ea13e4fa4e2be17da666",
+    "records": 4430,
+    "keysSha256": "e6604144e3cb4e18faf708bd58bb86daeba4a127e094682172b5cf964ee5647c"
+  },
+  "planet/10000048": {
+    "source": "res:/planetattributes/10000048.region",
+    "sha256": "d6037ab4e3fe24e58233aa15966bac27ffc9b7e1d99a05f0d6170628932d35ef",
+    "records": 3404,
+    "keysSha256": "9e8ae7276bf132a306584f0bddf8ce0bf047aae43c537dcd7e5817b22d2f1976"
+  },
+  "planet/10000049": {
+    "source": "res:/planetattributes/10000049.region",
+    "sha256": "0cef465ecb05dbfe024c2e3e32bd825adc878c006f8e0590c48489aaa5024d9b",
+    "records": 4466,
+    "keysSha256": "98a38cec18f08d014172828fe3756f2e9bf13253db98e8e5ff14b23fde0a1d26"
+  },
+  "planet/10000050": {
+    "source": "res:/planetattributes/10000050.region",
+    "sha256": "1b377f5b52791343c83b0350ff7ce52226363d4b416b576e7d756c3b2a997470",
+    "records": 5038,
+    "keysSha256": "143a80e0338f02ffe2f6312581f24b3ebf3c79e2804ff63d3d9fe2fd9e010fde"
+  },
+  "planet/10000051": {
+    "source": "res:/planetattributes/10000051.region",
+    "sha256": "b67d3a43813a0d4ea1777ba9ec16134275e4ae1deec98a1fdb3be0289feaaa17",
+    "records": 2118,
+    "keysSha256": "4fc1dcadb51500baa3ae07de739abcfe06626fa05ab1af08167ca4d50986b1a1"
+  },
+  "planet/10000052": {
+    "source": "res:/planetattributes/10000052.region",
+    "sha256": "81734b4cf75a403bf182533bd6396d6b6b4026c6b758591817374c254f1dafc5",
+    "records": 4512,
+    "keysSha256": "b3a8336681f0fe16705a1fc9f527f594669cc8a724cd0d2698765dbe9466a3c8"
+  },
+  "planet/10000053": {
+    "source": "res:/planetattributes/10000053.region",
+    "sha256": "65029176993a45ccd024eb33d7a5e7807728fc5f7cb109b9e54a294ee9167a10",
+    "records": 3350,
+    "keysSha256": "73074ceb7af816b6769bf4f9455988051c5b1cb54bfa5534e76af2dcc15f51d5"
+  },
+  "planet/10000054": {
+    "source": "res:/planetattributes/10000054.region",
+    "sha256": "316f61dfb5bffb2b178e75f3b92cc42c8de642d9a5d451d43adcb199d4694cb2",
+    "records": 4122,
+    "keysSha256": "b5372f056d4ed31663b2fe86f6b3e9b7c7ea01c41c2f46296a01e912b4da4415"
+  },
+  "planet/10000055": {
+    "source": "res:/planetattributes/10000055.region",
+    "sha256": "a3c0da38c6d50f573ee0db96d6579b23c3bdd761a1976c5b31d40bfce95fd6d1",
+    "records": 4527,
+    "keysSha256": "f0d3d32a6ee94dedf8f5802fad46ee8c9413049d8afff1a0215def4cff537fff"
+  },
+  "planet/10000056": {
+    "source": "res:/planetattributes/10000056.region",
+    "sha256": "5bd921e7009421ace531634e04844eca564a94851171876c4942ad4abcfd9831",
+    "records": 4732,
+    "keysSha256": "9262add9b511670f022987d618c5cfc47d61963d5c8f88f59ce18f754f9085ce"
+  },
+  "planet/10000057": {
+    "source": "res:/planetattributes/10000057.region",
+    "sha256": "4a9c6331ee8784e454cd688737f28e8be00368ee9c7f660761f5fad53a757f5d",
+    "records": 2895,
+    "keysSha256": "a7b978ded5169783e54aee05799efdd28872f4b038e2cf43974d5309dbd7f018"
+  },
+  "planet/10000058": {
+    "source": "res:/planetattributes/10000058.region",
+    "sha256": "273732aecdb5969f7eab6fed11fbaa4a0d8069865646ddbe60cf933f1fba4429",
+    "records": 5834,
+    "keysSha256": "749eda88f597115f7ab8031732a120dc2a8590b22193798fd14e8a75594a534d"
+  },
+  "planet/10000059": {
+    "source": "res:/planetattributes/10000059.region",
+    "sha256": "bc198464bfd5a644c6af43d23409b78670b2ff705bb06d16477dc06fde0d46cd",
+    "records": 2244,
+    "keysSha256": "f654abe3ac04053356e7cca9867f00ad32d69dcca561cb51d816b8266bbb3129"
+  },
+  "planet/10000060": {
+    "source": "res:/planetattributes/10000060.region",
+    "sha256": "aa926748f47a190de783bc95a65b7aa021e53d77650312ee9762c5e337cfa5e6",
+    "records": 5149,
+    "keysSha256": "b75be1b1f54cc64bd30987a797b370ff6c95d1fb972a100028b52afb9a58756b"
+  },
+  "planet/10000061": {
+    "source": "res:/planetattributes/10000061.region",
+    "sha256": "8469b39defbbd702e058990e47e1a00d428c9b31ca423453525bcc156eb3020b",
+    "records": 4473,
+    "keysSha256": "664c32e48c871c584d1669724669b941e2f731b6b93165e3c44cf76763e84a7f"
+  },
+  "planet/10000062": {
+    "source": "res:/planetattributes/10000062.region",
+    "sha256": "b13f3b57462f8c942487241d584034fac774db1bf969d561e894a231ca68283d",
+    "records": 2283,
+    "keysSha256": "6d7bc170483dac22c364b20a5d918c3eb82e4ae6d9eee106dafeee3dd1c1590f"
+  },
+  "planet/10000063": {
+    "source": "res:/planetattributes/10000063.region",
+    "sha256": "9e5fc8034ce6cc4d30f065f580a3bd25f9eeba46028dbde3e0b665c322a35255",
+    "records": 1969,
+    "keysSha256": "763a5b613cbc4fdec18a0954ab007cc1cc8d28a198494ff006c17213b4daffae"
+  },
+  "planet/10000064": {
+    "source": "res:/planetattributes/10000064.region",
+    "sha256": "9d69a087b1e7867d96ea13a2af977e053f51df9039209203fa87a218b57b1482",
+    "records": 3505,
+    "keysSha256": "bc09d3a8e7df470f30d50bd4043997f1d6e433cb3fb78a110149558731836d33"
+  },
+  "planet/10000065": {
+    "source": "res:/planetattributes/10000065.region",
+    "sha256": "7f6f1e881f91745099d6c3609b10786e562ddbf188c4e6df14cbd1c1c123c507",
+    "records": 2902,
+    "keysSha256": "3bc436f7c366e090bd0cb6c0998d514d7287fa7fae7987ac140eb6aa5f1bdf49"
+  },
+  "planet/10000066": {
+    "source": "res:/planetattributes/10000066.region",
+    "sha256": "0e8d32c5b0274cbe43dd054883b341dac1759482a76d5f90dc176cbb9217c6a5",
+    "records": 5249,
+    "keysSha256": "b0c686391be25c496940d09e48f580b13083257f3f9013608e9044c2df33c9fb"
+  },
+  "planet/10000067": {
+    "source": "res:/planetattributes/10000067.region",
+    "sha256": "5039af4e3055206681812c419e147726ffbe7fe16faf17acdaf7bef69d757166",
+    "records": 5187,
+    "keysSha256": "8f4168506edfcfcefeaf13bc95352311a4b575b1c1e071c8e7cb6b5d73df7c7f"
+  },
+  "planet/10000068": {
+    "source": "res:/planetattributes/10000068.region",
+    "sha256": "60a14d09cd7eb95e1ce66bae26a808690422ba6ee651ca12198bcaf076d44496",
+    "records": 2410,
+    "keysSha256": "60af291c342d3bc312a21f388ebe8f89eae79d5aecdb04159cbf7606baed583a"
+  },
+  "planet/10000069": {
+    "source": "res:/planetattributes/10000069.region",
+    "sha256": "9097a118b73c1cdb671f9fc444dfe9f301d663c6e7b61c16b62a992840c65a02",
+    "records": 2291,
+    "keysSha256": "61acb64f89585d0099e62da5f0ca08fc6972b6c3fbea282b84a7bd860bfc3748"
+  },
+  "planet/11000001": {
+    "source": "res:/planetattributes/11000001.region",
+    "sha256": "987179f60ea90da41e291978f3ae633d59edc3c43cb175932f207ab600b68afd",
+    "records": 7208,
+    "keysSha256": "51e251e6b9bc778ecd73f8ddf7b5fdd68d33d1a46c5f48af731fe9e1354705e4"
+  },
+  "planet/11000002": {
+    "source": "res:/planetattributes/11000002.region",
+    "sha256": "9a3727a501592a87d3b7c29963fd450fef355080e0953b19744086b8fc96fad4",
+    "records": 7900,
+    "keysSha256": "d8263608e44ebf19dd28822c3b72fbe3287c486ac098dcea4068b4ffdfca2e19"
+  },
+  "planet/11000003": {
+    "source": "res:/planetattributes/11000003.region",
+    "sha256": "cde85b614bc1f8ea1a0d070bc2864bec397b0c0f2e55291968053da6ee3ad5f8",
+    "records": 3005,
+    "keysSha256": "7aa0d0dae043aa76c4d13b5fc4d6438230f708f7d63d81077c9c46b18435820e"
+  },
+  "planet/11000004": {
+    "source": "res:/planetattributes/11000004.region",
+    "sha256": "99a9267911041ae900771597cc5653bf15944391d3b20a89c5ad4ccac66fd88c",
+    "records": 5308,
+    "keysSha256": "df71fd63708ffa578a8eedad63c618f27cd7914baca654c57cac2fa9e1099151"
+  },
+  "planet/11000005": {
+    "source": "res:/planetattributes/11000005.region",
+    "sha256": "de15025e7ab47495359541d6c7003e7f8a63db82da2e0de5d2e66eed1b08c476",
+    "records": 5466,
+    "keysSha256": "7118d8180ac251aed089ebd00ad9da2fbe6cecd1737ee1f4a00e5f359850335e"
+  },
+  "planet/11000006": {
+    "source": "res:/planetattributes/11000006.region",
+    "sha256": "0b3d09eba8edeb8a5eab9208e511da19a7f3dfd68d82ec744f079c0274e072fe",
+    "records": 7195,
+    "keysSha256": "495d394dbb2f54c1e73603eefbdcf756762a46bcb15dc31fe2866ae4a50ef32d"
+  },
+  "planet/11000007": {
+    "source": "res:/planetattributes/11000007.region",
+    "sha256": "b4e8fb49e735a96f97d6508998c7cd574c98e61ac04370e48d2291a1b1490664",
+    "records": 2851,
+    "keysSha256": "66b2725e06d11feba72ff0028c52bb6c679cb83b7a9f35d7aacb5593108f70e8"
+  },
+  "planet/11000008": {
+    "source": "res:/planetattributes/11000008.region",
+    "sha256": "c8e6d91f37542b37242413e6426c89b425f8f4ba2fab088d95cc36e9ad2c703d",
+    "records": 6780,
+    "keysSha256": "15479650a516e3620f51863a78f9162d646045e2d225375befd92e1d4765bd71"
+  },
+  "planet/11000009": {
+    "source": "res:/planetattributes/11000009.region",
+    "sha256": "c0d70e2e3cab4e7da205a6da4c37ad5beb7a5df9963d6384b255285586d80d71",
+    "records": 2940,
+    "keysSha256": "71c19cb8b473adbbc04fe731f8b699142f7461ec43349ed498634527c8eef253"
+  },
+  "planet/11000010": {
+    "source": "res:/planetattributes/11000010.region",
+    "sha256": "9bcbf244272cf4e7bc7ea400838768dca805732e37ca07341947f7cf1d8ddb34",
+    "records": 2468,
+    "keysSha256": "d1cec73c655590fd0aa31872d36bafed25f095ee502142e7d213f5962f7fb4e7"
+  },
+  "planet/11000011": {
+    "source": "res:/planetattributes/11000011.region",
+    "sha256": "193c85782962647e7f6baf1ee98e7f2e650a7c736b622e3a8d8009904357632b",
+    "records": 4274,
+    "keysSha256": "ca08e29f6bfd578eef7366809dae899447dced0bceb618a5d708908466f6a33f"
+  },
+  "planet/11000012": {
+    "source": "res:/planetattributes/11000012.region",
+    "sha256": "e8bf03d6dac480bbcc417b8d313835bd9da7e4440c7d5c5d69c34e4d3bba5d66",
+    "records": 5398,
+    "keysSha256": "4ff751a2eb7e95b36437c77677d2553fb297fa3d29bdbd0d15a1ae9a69b42821"
+  },
+  "planet/11000013": {
+    "source": "res:/planetattributes/11000013.region",
+    "sha256": "f4cf5b01b72f3f73588f1ec9528f47bf8ff6714eeed407ff42740e3c06e3be0a",
+    "records": 2225,
+    "keysSha256": "dc9b7e8af273076c6c4cf113c7733e9454600686ed843a3ad971f45a8f679da1"
+  },
+  "planet/11000014": {
+    "source": "res:/planetattributes/11000014.region",
+    "sha256": "7aaa16ddbeb4431ecbc51192811f0e741163ad28a4c2657c506802339078b791",
+    "records": 4862,
+    "keysSha256": "d4ceb420f1fd48236e47699b2d971e9133d3d74a60d2218564076632db0ccbe4"
+  },
+  "planet/11000015": {
+    "source": "res:/planetattributes/11000015.region",
+    "sha256": "3c2e6ac240a83f49a81b2303b937c30295091e22096a4b668d6a525bbbd7bc0f",
+    "records": 3062,
+    "keysSha256": "db81c2931c33c4ca56f62b6020c457fc2216bac47dfbc973719d3764a18aa2d2"
+  },
+  "planet/11000016": {
+    "source": "res:/planetattributes/11000016.region",
+    "sha256": "9d35f3687af493f1c46c8f659830c9fe0dac1e4218db54d6b7ccfb612166d03e",
+    "records": 2969,
+    "keysSha256": "389c8c23e0eafa92e486ce91d758ddbe87e7618ab25cbd57e5419c15993cfde4"
+  },
+  "planet/11000017": {
+    "source": "res:/planetattributes/11000017.region",
+    "sha256": "f4add932b058dddd0dd12645326c7dbbd1156014507ee521935296eaab0e748f",
+    "records": 1465,
+    "keysSha256": "5475c1c10311a92ee9b4dce53708d09534cbd0a7fbeed2a68061f145da53b2a6"
+  },
+  "planet/11000018": {
+    "source": "res:/planetattributes/11000018.region",
+    "sha256": "624e3a6cd4f9081bf28fb1b1c1f8bc9727e7a70988d2078ab85aaf2913e35a42",
+    "records": 2221,
+    "keysSha256": "efe5c66abee2ab9d4309b039992661762a429535582ed6f31280baad29948819"
+  },
+  "planet/11000019": {
+    "source": "res:/planetattributes/11000019.region",
+    "sha256": "7796f1b792dcf0a9720fa3844d1380152ce8099cc498fb6785e8027cb7a8400e",
+    "records": 4690,
+    "keysSha256": "ceeae03e785e6b49bb255f41e86253a77e82a789a9a8dc4fd4c3452b09fe7d82"
+  },
+  "planet/11000020": {
+    "source": "res:/planetattributes/11000020.region",
+    "sha256": "0148e3b7228041570ed97e48123dd1f132730931985b658f15035043cfe1a058",
+    "records": 2526,
+    "keysSha256": "ec098cb5afe72cb1191c545c0db479c7ab93ccf02a6d3c3c2e128dd17090387d"
+  },
+  "planet/11000021": {
+    "source": "res:/planetattributes/11000021.region",
+    "sha256": "814b0357767a4101b71d05f27c25c43b65e19b6e0ebc4a9b34127d334ce97b4b",
+    "records": 5785,
+    "keysSha256": "dc93641464f15fd84d60f8773370b96bd2899bde47b76d49302edd4522b52be2"
+  },
+  "planet/11000022": {
+    "source": "res:/planetattributes/11000022.region",
+    "sha256": "20091522a30dc400a679a942ee0620afa1316386ecf8bc7ed11360c635f2a009",
+    "records": 4313,
+    "keysSha256": "cd46ad9bf0bfede39262102d417e55958906d7e6a45852334f196b932b27906a"
+  },
+  "planet/11000023": {
+    "source": "res:/planetattributes/11000023.region",
+    "sha256": "2c6a6fffd8fa12175932bdff8b0d88310096e9c0f26d110d387eac58b961891a",
+    "records": 1436,
+    "keysSha256": "35d0eef1773f59bcc876b73365e1c5a50ed6ea8b0d0d32ee46cd3d28e3ec7eb1"
+  },
+  "planet/11000024": {
+    "source": "res:/planetattributes/11000024.region",
+    "sha256": "8ba959e42fda24ad284aa0bb1500bc88954960de2e808f99bc0d0c28173e9763",
+    "records": 4584,
+    "keysSha256": "c58dd1c7bd69665a3b57b5dde1d4c5eb9879df383999e0d9b3266ed056a00af0"
+  },
+  "planet/11000025": {
+    "source": "res:/planetattributes/11000025.region",
+    "sha256": "06a937f0070a616347ab48e666e9a9c5ec96fb883899c1b251232275c2411ea3",
+    "records": 5282,
+    "keysSha256": "54f73ede94696552d3784db96845577886ea0f635c16ac28f58844c5a6119dba"
+  },
+  "planet/11000026": {
+    "source": "res:/planetattributes/11000026.region",
+    "sha256": "f89087061b308021b9f7692389a6dccf983cd67c6ac6a867cf7e052d0a29036a",
+    "records": 3701,
+    "keysSha256": "614f36128c3d6175a9e5f52fcfd8ee71343866214fa62fb3595ec9e70c22fe0c"
+  },
+  "planet/11000027": {
+    "source": "res:/planetattributes/11000027.region",
+    "sha256": "c8e3d1c2f87c99f32c71bc3d7ed7df1ecae1169b1f503c216dec97c9c4d3136e",
+    "records": 3787,
+    "keysSha256": "fc20aacf3778b7ae4bcd5b4b82cfac8ba631d9fa825586d4ddca2357012aa99f"
+  },
+  "planet/11000028": {
+    "source": "res:/planetattributes/11000028.region",
+    "sha256": "ee7eb213e0c1332160be27b04cc5f8ab52a509ed4c1c0f09ae4388e4032cac96",
+    "records": 4963,
+    "keysSha256": "e653ad5a7b728d8686c7d2fbf748a20265cc230ff815eb16ac361b4dd63b256f"
+  },
+  "planet/11000029": {
+    "source": "res:/planetattributes/11000029.region",
+    "sha256": "0f5befd24fdbd34f0a086540620a71c43bf63ef2d57c0ee2e0bf6f1b4a8f17a8",
+    "records": 4347,
+    "keysSha256": "12948b43cef348651f7c3f3d4730016950ca6b4ca319884dc4394d918b3a2ed3"
+  },
+  "planet/11000030": {
+    "source": "res:/planetattributes/11000030.region",
+    "sha256": "c12d0cf065c1cf18682ae6b4247c896dc40ae072c8189b4197f883dc03406dcf",
+    "records": 5589,
+    "keysSha256": "78357fad00cfa31ee26c657b807cd76283c601653d8c40ce32bef889913f01e9"
+  },
+  "schema/constellations": {
+    "source": "res:/staticdata/constellations.schema",
+    "sha256": "6fd5c4cd02a2c2fef6a993fa27678bbc63cfbe00014aca108108143fa65382b4",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "schema/dialogs": {
+    "source": "res:/staticdata/dialogs.schema",
+    "sha256": "7db2dd9d9fbb2b5562e928d825a5d595c154821f16f7d9e30e94e5fb22bedae2",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "schema/factionsowningsolarsystems": {
+    "source": "res:/staticdata/factionsowningsolarsystems.schema",
+    "sha256": "2cea8b430429579cb90f4d8123ee227e2cf93f180c4934eeae61dbe06fde7f33",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "schema/jumps": {
+    "source": "res:/staticdata/jumps.schema",
+    "sha256": "4acc846f6bb59a03eff1caebc3cad27b4b11b0573402dfe2e9f441b3101ec0a2",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "schema/regions": {
+    "source": "res:/staticdata/regions.schema",
+    "sha256": "5401dd94123cb7804a2cfe6fd51614c31c49e8c12b736fb1f018c36ee17da00e",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "schema/systems": {
+    "source": "res:/staticdata/systems.schema",
+    "sha256": "7805a05bc31e2a3bede42d9660f9a88927b13fa7c09686dcdad9f8ff265f942b",
+    "records": 1,
+    "keysSha256": "8562225f054beae7bd100f5d69c95df64241910e3de4f6d888ec8a1736adcbb4"
+  },
+  "sde/_sde": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#_sde.jsonl",
+    "sha256": "26113de86865e78b38d06d25a7398088101e8aad37b2d755a8e43b1cce7bb805",
+    "records": 1,
+    "keysSha256": "6248e033a8a855484f3d13d8e1451fc4b8e2ccceb4e152910805db69dd4f3ec1"
+  },
+  "sde/accountingEntryTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#accountingEntryTypes.jsonl",
+    "sha256": "8cd1c274feb4fdefefe0f54ae2e12caac885ab3023abc9057606c7dc40508e72",
+    "records": 177,
+    "keysSha256": "538ecd8e9e09fdec48db4de56b33a95eb4e94988440838fd78cee0bb5a1b8722"
+  },
+  "sde/agentTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#agentTypes.jsonl",
+    "sha256": "0f9df5a9ac267bac48cf2f8b3a41118177ee7c723900e6687f95b0d59539a429",
+    "records": 13,
+    "keysSha256": "773ee57133e87195946c033541ecb1228398a3935ebfb9b9a078286ab24f7827"
+  },
+  "sde/agentsInSpace": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#agentsInSpace.jsonl",
+    "sha256": "ca02a67a1df30a409be92a776436a16e5c8102e895004b62826634716e93b79a",
+    "records": 360,
+    "keysSha256": "11b5550fe0010c3e6614dace86f77ed973e1ef5cadc4b6c65a4f408fbd55ee64"
+  },
+  "sde/ancestries": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#ancestries.jsonl",
+    "sha256": "75af31a07eb98d7fa88ecb2e347d5b3b21c9f9542c223bf6308e28a287e1c359",
+    "records": 43,
+    "keysSha256": "a7861e2d246e9695bdfbff6388e0e65bf19430c39efe8c5f101b4004f0ce2e5e"
+  },
+  "sde/appliedProximityEffects": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#appliedProximityEffects.jsonl",
+    "sha256": "9316730a650cf62d2ee5a8810df4eb9a93c3ea6ef16b4ed2ca26afd984bd0da3",
+    "records": 119,
+    "keysSha256": "7d99251020cdcd7025c0f864a631204c26d3ccddcd23f2c6e3a81b9aca59e906"
+  },
+  "sde/archetypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#archetypes.jsonl",
+    "sha256": "f7f1f43ed5232fa40ac6f5d2189eff22125f65cee07d49fbfcb9500960d09366",
+    "records": 34,
+    "keysSha256": "7d09720c58c3e0c8389a68af1bed3cb5fdf8a765f0708dc84eda1eee844c783c"
+  },
+  "sde/bloodlines": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#bloodlines.jsonl",
+    "sha256": "e7db5172c0676d42664f7dad8f2f5eaaf36ea927131141ebd02db292be4ede57",
+    "records": 18,
+    "keysSha256": "d3eb5b835577e1ea5d2966dee717cd916b337742bd18e8a84583e4dfe626bed5"
+  },
+  "sde/blueprints": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#blueprints.jsonl",
+    "sha256": "94653d3e7d126f79d228357881beec0734fc377b1ebe3cebbec95890e475617f",
+    "records": 5100,
+    "keysSha256": "3b65ea4a832609e87a39fd8bcb095bbc921627976714ed5f811f1a63a8b59a30"
+  },
+  "sde/categories": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#categories.jsonl",
+    "sha256": "1280acd333a7e06bdadd3de12359c65efe4e54878a8a719d389585dd60751898",
+    "records": 48,
+    "keysSha256": "37c6020cf82848a5451abea72b985d177fa05466b64745b7a904eb343e0dadfe"
+  },
+  "sde/certificates": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#certificates.jsonl",
+    "sha256": "5255cdcb584e73d80d03ba7dd1ad8a6b7cc70ea066ef72a2718f5eda7c5f03ae",
+    "records": 139,
+    "keysSha256": "037b31f4db0a6d3fc5bf5e3025de2fc83eee8f91d7de0a61df80216361c3cb90"
+  },
+  "sde/characterAttributes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#characterAttributes.jsonl",
+    "sha256": "8f41495d2103da6d986fd22b778fed2c0ff33077fdf6574cf9f61475800c85cd",
+    "records": 5,
+    "keysSha256": "f6b49467f595b1a44e442c198b3df4d221e88efcaabc26254f8e0ad4f79b6242"
+  },
+  "sde/characterTitles": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#characterTitles.jsonl",
+    "sha256": "d135983684cd4b719f8fcc4325e9e76011dbfd05b9551a648cac214630fd00d9",
+    "records": 45,
+    "keysSha256": "e83d3e33386834e8e2389d8de04fa5425e18be3b7d73208eeca5fa7ad2147787"
+  },
+  "sde/cloneGrades": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#cloneGrades.jsonl",
+    "sha256": "d6fc0bc247b95cda187427e870ea694a3583e865ad2e123d2e46b78d99776201",
+    "records": 4,
+    "keysSha256": "3726e64f89d2ccc672049f8a8eead54f0d9ef868a1b27fb4438a1997aa1d9ac4"
+  },
+  "sde/compressibleTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#compressibleTypes.jsonl",
+    "sha256": "79927b147d7881bd58c0ed54815cc462743382f8782baaf0f46f3a9d6ec047ef",
+    "records": 212,
+    "keysSha256": "7d7e846c3c6d3682b6712ea5e9961936e1964213551046b2bbec1b49c482e786"
+  },
+  "sde/contrabandTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#contrabandTypes.jsonl",
+    "sha256": "d0e9137f1e73c25f4cbd55ffacb624a6ed92ad8ae1b6b415697117d3af208cff",
+    "records": 8,
+    "keysSha256": "751a32c3923c6ca229fb6d72f17a96222fe32d485dca507f7035cf505e874543"
+  },
+  "sde/controlTowerResources": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#controlTowerResources.jsonl",
+    "sha256": "0ed96cb40a41f628e3aa58bfe7ab9b2867439661d64adc705bd89618e12a31b0",
+    "records": 44,
+    "keysSha256": "bcf06ffee817509b64d84da499f41cc5167c8f3933e092294fe36160d33fd738"
+  },
+  "sde/corporationActivities": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#corporationActivities.jsonl",
+    "sha256": "332c32bff384b165b72d017edf8f66c1f4b5a0ca82f44294b7c8dbb82f8958ff",
+    "records": 20,
+    "keysSha256": "5bb493af7a5aea217d7ad6367078ad58e4f95e38c029b238165597be39c42719"
+  },
+  "sde/corporationRoleGroups": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#corporationRoleGroups.jsonl",
+    "sha256": "8d55bd144ffc67a2c447213076fd0a12397533e6a73eaf7da0dd83428ed331db",
+    "records": 9,
+    "keysSha256": "90cdaf13f564e4d2e76706f84226a554a2bbdb2542c2e48764d16bffd17bb38a"
+  },
+  "sde/corporationRoles": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#corporationRoles.jsonl",
+    "sha256": "7710ef51d129cd14c6483fd21c8f8b5340c2ffd9ac962a899d0d5c31d74a7f7e",
+    "records": 55,
+    "keysSha256": "d182a68b625ad312d636fdd5e1433e491cfdb0a5b3fe0f9a713c949fa3ca1199"
+  },
+  "sde/dbuffCollections": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dbuffCollections.jsonl",
+    "sha256": "2080571f94cc1bbc7bef775d77959a3d2a52d90b00ec30de14ae92106ec7db35",
+    "records": 277,
+    "keysSha256": "09fd1f38d40bf6c295ac179ac69f9a0555d1c57febdd15ff6f394273b91846fb"
+  },
+  "sde/dogmaAttributeCategories": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dogmaAttributeCategories.jsonl",
+    "sha256": "075f077fa939e0a55d05884a2aaca9f1124d8a8bbccd39a338910f3d6fcfc9d8",
+    "records": 37,
+    "keysSha256": "697f7cbe275ad57a938bd897004fd338a9dcf39e0c9c09f050e7dbfb4282598a"
+  },
+  "sde/dogmaAttributes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dogmaAttributes.jsonl",
+    "sha256": "b035d04eee8f9ab51161d6223bf43a1b284366bd8451e563f7fa3742d56b207a",
+    "records": 2872,
+    "keysSha256": "0ccc4380e6e4808ba73c1a45eaab6da098469305105a1361bec8acf09789a35f"
+  },
+  "sde/dogmaEffects": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dogmaEffects.jsonl",
+    "sha256": "edf16e5c08aaaaa10116a68239a32993c68cca1b78c0a068ec297831a168ac98",
+    "records": 3431,
+    "keysSha256": "5fd8bbd47edcfa108d4d23a9f1cb4fea308cbfabb351ea6a158528809967731e"
+  },
+  "sde/dogmaUnits": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dogmaUnits.jsonl",
+    "sha256": "0f450b3e37603e891ab6c53907f664860ff4260c6e9c80a5f5fab9edad21277d",
+    "records": 60,
+    "keysSha256": "bc6fbbb69ed2d73dbc04a8ecb27716291274dc1057446098bb8e7a2a6e14b5ad"
+  },
+  "sde/dungeons": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dungeons.jsonl",
+    "sha256": "1db870b67760c4f106b8c8e7cc490e152c2fe9d140708035b0061f18f5653287",
+    "records": 1416,
+    "keysSha256": "0fe5a386778d912c0d0402117c9d121dd8342897c4aecab3c7fae510ab613d11"
+  },
+  "sde/dynamicItemAttributes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#dynamicItemAttributes.jsonl",
+    "sha256": "7f5a17eef923d17d069e7fb79e47b1fc79016ba960ffe1d57f88be6f45da78b5",
+    "records": 441,
+    "keysSha256": "3c0358febeef3ebf4db71cb4ea6b3c9448a650a4cb19ad498fc0a07de2b0c2d5"
+  },
+  "sde/epicArcs": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#epicArcs.jsonl",
+    "sha256": "8f0d8b0652a791b4d1e48d525221d9d575dacb5dcd0ed6446926dede833116a6",
+    "records": 21,
+    "keysSha256": "be5caec280b416d233cfd3083cd7aecbc1222b4dcc1feb6b13df0c1d2113e354"
+  },
+  "sde/expertSystems": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#expertSystems.jsonl",
+    "sha256": "304cfe44d7734c1600485556078cb72096271c16d2817d99d9cffec9e736c488",
+    "records": 59,
+    "keysSha256": "375c9ba0b3a6161617a4dc2eaf7f55d8039ddf9d1128f2a391bc537f6df3dd4c"
+  },
+  "sde/factions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#factions.jsonl",
+    "sha256": "a1d554548477d2546ad23e884b3eb60be6bf0d37b20062c1d4e4d1f73501a1a9",
+    "records": 27,
+    "keysSha256": "3c82640f7edcbf319df87f04f2454b3c40bcb777cfe5f97f3181dd4fea3718c1"
+  },
+  "sde/fighterAbilities": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#fighterAbilities.jsonl",
+    "sha256": "db5ba06a1704cb0c313ef6f34bd6f9d70bfb3fd77c2a587a320ba2dee0ceb2c1",
+    "records": 36,
+    "keysSha256": "b2f0000c86eb7ca8a8abc5dfe8450d8e4d1b37c4448898a7cd5f5a8faf9a565e"
+  },
+  "sde/fighterAbilitiesByType": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#fighterAbilitiesByType.jsonl",
+    "sha256": "766a21d7dade2dac5bff5415f2b362610bca2c0ad8f8a09cb0bff0b84490bf05",
+    "records": 94,
+    "keysSha256": "f2981b28b09337a596d2383a3498caffef03a73e5961b71073fcbf3e6d442131"
+  },
+  "sde/freelanceJobSchemas": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#freelanceJobSchemas.jsonl",
+    "sha256": "62d789576dd309d1b964adef5a247f920ed2341f46298b1141c01034604790db",
+    "records": 1,
+    "keysSha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  "sde/graphicMaterialSets": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#graphicMaterialSets.jsonl",
+    "sha256": "e9d7ecd17952f58eacf8d8c0628fb91ebc9a11092f2162a403bd8c114bceb34d",
+    "records": 956,
+    "keysSha256": "e8231ef6aa494528c5f01a3e70314cc454af9bd04ba8b968bd05f487dc4fe53b"
+  },
+  "sde/graphics": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#graphics.jsonl",
+    "sha256": "e03f49bacd859eb067b35624c18a7b1b86a70af794a48d10a5bb585f9a8f507f",
+    "records": 6074,
+    "keysSha256": "6791f3ed927d52d455ef9bb9a7821439f70811a7e0035b349bc9bb58e54f42ea"
+  },
+  "sde/groups": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#groups.jsonl",
+    "sha256": "4b3ca8cbd48c521e635eb88095f2654d262ca4fbb5948a02e1d0f83b9c43a48a",
+    "records": 1611,
+    "keysSha256": "7fc1473433681e92c285816810c0c6c1938b7a9e19f7c174d9e321730753058f"
+  },
+  "sde/icons": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#icons.jsonl",
+    "sha256": "84e7f766bc3d1fa6bd5c0083735aa04b0bbf208028567c34bc1beb087e67e394",
+    "records": 4806,
+    "keysSha256": "1869d391eae2945ecfcc051f881723cb9a105d57eee29c991e4256ef971d43d9"
+  },
+  "sde/industryActivities": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#industryActivities.jsonl",
+    "sha256": "e1495bde48592daa515c1270a18ef7e749a058a7a85aada692b06cea73bb8bf0",
+    "records": 6,
+    "keysSha256": "03707755aa783c30834b6ede6cca8cc06d4952b59653ec0a6233a21e51a4b7b5"
+  },
+  "sde/industryAssemblyLines": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#industryAssemblyLines.jsonl",
+    "sha256": "6034b5132b1918481a6dc84676d30ca7452ed1bc6a5266b47557785eba4472a6",
+    "records": 146,
+    "keysSha256": "8532d61a591724b99ac5a0b8009f07486b8f448bf615f37bf73e60d096a3d863"
+  },
+  "sde/industryInstallationTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#industryInstallationTypes.jsonl",
+    "sha256": "2f84815b5bc163c24a27fa28071e37a74c8d77e68006936ab884e216c99127f6",
+    "records": 102,
+    "keysSha256": "4fea9a96a4b0ef3535546d917d83b08e1e4e46c35d45574edda2fc1857ea61d0"
+  },
+  "sde/industryModifierSources": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#industryModifierSources.jsonl",
+    "sha256": "73bcc42e08404fe6c8b6eece355094bbc5932841af0ab5aadee6a68b50e28a9b",
+    "records": 220,
+    "keysSha256": "ba2bccb0e5f8a3c1fc46495fa68ef8161ce20275de7cfc601e0d66870bcd1b20"
+  },
+  "sde/industryTargetFilters": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#industryTargetFilters.jsonl",
+    "sha256": "daa27eac84f90e26e6a2d0ad8e35a973f081e225b9db63485d1d843241ecf316",
+    "records": 18,
+    "keysSha256": "6537c37fbb82ca3dcbe35e9169e6d2824d6646a171bd497280ba2db822e053da"
+  },
+  "sde/landmarks": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#landmarks.jsonl",
+    "sha256": "85c34cff4d89dc70a4f0e6a856c2436470cdd02588d25ea6ef2ec2ed35eac9d9",
+    "records": 45,
+    "keysSha256": "ff2090fe6671cd50ed0ed191f8611bfa9ab74b0355b1ad3edaea901d60c36ccc"
+  },
+  "sde/linkWithShip": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#linkWithShip.jsonl",
+    "sha256": "12d7e81ac595b68399cadc1fc4f43b6eb30bbbfbcec8a7481f6b065fe851e58f",
+    "records": 3,
+    "keysSha256": "ddee4954ced40889bb7890db4e53b64b7972df8d45d183dbc657b3528a054475"
+  },
+  "sde/mapAsteroidBelts": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapAsteroidBelts.jsonl",
+    "sha256": "b76052b122124b89cf9ceee13948b8dde0412e411a39b59dae48f39af114663f",
+    "records": 40928,
+    "keysSha256": "70db6542100b9ec3048224cb42e1ee61539cfd09f3e048c06a15db64ba0aec20"
+  },
+  "sde/mapConstellations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapConstellations.jsonl",
+    "sha256": "1885eaf5ab3764a5af1628ee3fc603ca26b33ad2259d9dd1cada05beffbfa70d",
+    "records": 1184,
+    "keysSha256": "017f63d92762c6097e897125d04c67bf90352747d81cd933faa5afdecb84571b"
+  },
+  "sde/mapMoons": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapMoons.jsonl",
+    "sha256": "dfa244b97409d06036606ef5d1c3cc54bd45509dbf565590795d00d36146a08f",
+    "records": 344457,
+    "keysSha256": "03410ccd280354e5425ac166971482c5dda939ae3715d9fb907058628bdd2a0c"
+  },
+  "sde/mapPlanets": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapPlanets.jsonl",
+    "sha256": "56e9c2790990164357b079f1e42f75df4d073c35a885e45c37b7b8cc021d9e39",
+    "records": 68407,
+    "keysSha256": "6c28ea1664742169ace8cd405f8a66aaad6ff00a2c8f0fc191b2dcaa09cd723d"
+  },
+  "sde/mapRegions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapRegions.jsonl",
+    "sha256": "2df459ce14921cf3e4ead93d97e0badcabe64cdd09bc0358265648e7ecdb3069",
+    "records": 114,
+    "keysSha256": "d5cb3260074f398a33b98931f2223065b490168e3a5045c82f28bc64c0b96ee3"
+  },
+  "sde/mapSecondarySuns": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapSecondarySuns.jsonl",
+    "sha256": "9b7565178a64313c5301b9a691e579af0991bd212684de8729e5d73c5110da70",
+    "records": 1038,
+    "keysSha256": "dc8495cdb36ef25a3e4c87a3508a9e6e6745960c0913cc8d6c542ace5aaa17da"
+  },
+  "sde/mapSolarSystems": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapSolarSystems.jsonl",
+    "sha256": "d2ea980c977a4818938bf3d9238608660e6685149d28139aa7749841e80ed7c7",
+    "records": 8490,
+    "keysSha256": "83ac4de2db3766aeec893ecd7017479402b52ed41a6a158e9e4526dfa0214b18"
+  },
+  "sde/mapStargates": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapStargates.jsonl",
+    "sha256": "2e1185669643d7a4454cd0a88be394dd67b9d8a3d95d028638350a8d78d16d5b",
+    "records": 13978,
+    "keysSha256": "fa0ed5686a8190bbb993837a58d21f77fe8f459ea3851822bbb9daac28a736f5"
+  },
+  "sde/mapStars": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mapStars.jsonl",
+    "sha256": "d2af8a722b5fa39bd22d10a3c84d3ecb8c3970bc2a664919ade9d8018d2ede80",
+    "records": 8089,
+    "keysSha256": "6b682338c04a8f734fced5e5bc92c991b96dd2371dc444245359ac41cd95b83b"
+  },
+  "sde/marketGroups": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#marketGroups.jsonl",
+    "sha256": "627a0cb1e47e6146b6929be9a0c2e57aedec6199e7a10bb35299312472fb0712",
+    "records": 2114,
+    "keysSha256": "0979bbfaa9fcb00bfb651672277fdeecab020d92969ca1ced6d046009f747ad7"
+  },
+  "sde/masteries": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#masteries.jsonl",
+    "sha256": "e18ff485e13324ddb9fc9df27937bfaf987bbf80c697fd0b95669d6a77facea3",
+    "records": 479,
+    "keysSha256": "ba636c8629de78aeff16343bd49da642daf27803465cdf89078df765f6c03104"
+  },
+  "sde/mercenaryTacticalOperations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#mercenaryTacticalOperations.jsonl",
+    "sha256": "67b16e586d7a27efa8198836b04ade51dba0a2a8caaf053b35fd4f93cb8a93ab",
+    "records": 3,
+    "keysSha256": "0c919459718dcf926924d4fd3992f99204994c5e242d90004c875727a3e8c9f9"
+  },
+  "sde/metaGroups": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#metaGroups.jsonl",
+    "sha256": "74ab4d3432be6dc36aa6a072f2ea914aa9588fc4efe9dee9d8005f49d7bc6485",
+    "records": 13,
+    "keysSha256": "8e811797a95755b7bebb4404bfdb61626e183111f0a68a431b4ecdc04d0dcf65"
+  },
+  "sde/metenoxMoonDrill": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#metenoxMoonDrill.jsonl",
+    "sha256": "1aadaf0bd57186e7e54adeca6fe3364fe8c04988f293f5c29ab810dd1b68d0a9",
+    "records": 1,
+    "keysSha256": "db7a84befd604002697984704c68936f4f9b05450ad0c19a405eadad05c504b9"
+  },
+  "sde/militaryCampaignObjectives": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#militaryCampaignObjectives.jsonl",
+    "sha256": "455047a75df141c72ff1214e979712edc2a9f3d1dbd32ae9b042afeaa2878632",
+    "records": 176,
+    "keysSha256": "3a75d41af2fb66e8e03c22e9b6c233f75c190c1b5560647c2eec4e5d22bf27fa"
+  },
+  "sde/militaryCampaigns": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#militaryCampaigns.jsonl",
+    "sha256": "f24e634832411ed313147f0f02d0fd58731c2955dedc8ffebee51ab7f63466ab",
+    "records": 4,
+    "keysSha256": "ba4debc7294686cdc53b3989f4d666dfd520656f896b0b4d11ded6f8a497e9f5"
+  },
+  "sde/missions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#missions.jsonl",
+    "sha256": "342e86d43bf25e2bc4e87729b9e9cf63c81eef8a6717f9dc71a166a10b0fb4c9",
+    "records": 2892,
+    "keysSha256": "bd1d9392a1a99045735617a0e79ef88f9cd67a28acd286e2a61906b3ade17399"
+  },
+  "sde/notificationTypes": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#notificationTypes.jsonl",
+    "sha256": "d40fd6f7111807501ff2293a738d745a147e22d39ceb267ad07ac0482ea347d4",
+    "records": 297,
+    "keysSha256": "2a6a9f9ce5479e3107d9b92d4a2769ae6ffe39f75b14a91682291ba212794e04"
+  },
+  "sde/npcCharacters": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#npcCharacters.jsonl",
+    "sha256": "adb6d55ec8db5570acc17b0a95f18f222cf932930cc8265e7bd64a6edbf7de36",
+    "records": 11393,
+    "keysSha256": "15d427a59b3d4f98b16116379a29ffbf42217a345bd1d18167d98fad256e1a82"
+  },
+  "sde/npcCorporationDivisions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#npcCorporationDivisions.jsonl",
+    "sha256": "2392456015abb1853fbf2812aa3c1c6078a400e72a8cb133a420165efb3c8b9f",
+    "records": 10,
+    "keysSha256": "f68678c485043725fff4242a012161e3ef4e959346676a205927cb9d6e728d34"
+  },
+  "sde/npcCorporations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#npcCorporations.jsonl",
+    "sha256": "f4968a72cf58654541f11db9e8900b50f4487c5baedf48ad6c1ddfb7dff6a0f7",
+    "records": 283,
+    "keysSha256": "e9587894cbced9ddfad264ba1f983d986c8a599466fe588b3a88a08b20b4a549"
+  },
+  "sde/npcStations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#npcStations.jsonl",
+    "sha256": "2a1005135ded4a066184c989882e883f5e792a06a86637cb89e680ff77bc30aa",
+    "records": 5210,
+    "keysSha256": "d6b40dd5d7adbbe1c5dc8dd3a95e0fc67d61717bab161015a77dae296542f809"
+  },
+  "sde/planetResources": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#planetResources.jsonl",
+    "sha256": "672c142ca9651e0fb000de8eda9c3217d042b3e7e6a987d9fbee718e12021fef",
+    "records": 25798,
+    "keysSha256": "dd636b97b5f38c4f06191658e75eb81913b9d046ccd57819f847a23ec5c27603"
+  },
+  "sde/planetSchematics": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#planetSchematics.jsonl",
+    "sha256": "938dcc38471e1fb6f2bcc22d66da214ecf66fd32392256376d161627152fcf4f",
+    "records": 68,
+    "keysSha256": "a7d35825ec9a830345d4aa87114b222119bd790ca6b107b940d980868334f321"
+  },
+  "sde/proximityTrap": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#proximityTrap.jsonl",
+    "sha256": "8ffe0d77fe8944b2671bd11f2b522a5b1dadfd8d572047b232f62bfa602ecad6",
+    "records": 24,
+    "keysSha256": "533ccf43b36186c7face64e10401e12afdd687268d7ec60cfccb47dc29aa6620"
+  },
+  "sde/races": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#races.jsonl",
+    "sha256": "1a5149d66b1a618285a3170752e27c9cd9aad9394a710e8d5ffec7e6f174a875",
+    "records": 11,
+    "keysSha256": "bb8d90e600defbae81ca58dfb6a5da4d98da31af2c7b2731a0526601bc37e242"
+  },
+  "sde/schoolMap": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#schoolMap.jsonl",
+    "sha256": "992a0f3c6c3149988c279e36660e985e89cc1bed0c1a1376f0263ef10b7dcbab",
+    "records": 12,
+    "keysSha256": "aa6aba41b0ecab8a55e5fcf1ac771c2df962b87e376e3873a4c7bc991e120fc5"
+  },
+  "sde/schools": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#schools.jsonl",
+    "sha256": "e20d0e654b462efebeadd74ed61afdda40c953f36c02b1a5bfd28e77af09cbaf",
+    "records": 23,
+    "keysSha256": "2ba66720f0c93f9e36916e4532890c30cc1f5d916df21e16de3762210c8e0787"
+  },
+  "sde/shipTreeElements": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#shipTreeElements.jsonl",
+    "sha256": "aa35873f908801acfa8690de33e8d79e659ece5715202acfdf60825f7d64a236",
+    "records": 30,
+    "keysSha256": "d30455c2890ba56548e37e6849ff4ab550ced5a3c7e3bdd162399e6cb1ec2c76"
+  },
+  "sde/shipTreeFactions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#shipTreeFactions.jsonl",
+    "sha256": "5eca6e448056e576ac6dee8f2043cbd0312c04aa374ce731d434a28934264509",
+    "records": 17,
+    "keysSha256": "6c595925730782592ce5b35540ec98c2ca00df4bd8cbd9a3f36ab6b6315eb76c"
+  },
+  "sde/shipTreeGroups": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#shipTreeGroups.jsonl",
+    "sha256": "aeedc6701bb39437c4d3e8cffb43253205e234b7ce9335c31fc34920f9a7a368",
+    "records": 52,
+    "keysSha256": "df4ce3b9051f283e9ceb76c43e58f18b434b9fbeea1501e8fdda310f38ec5a23"
+  },
+  "sde/skillPlans": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skillPlans.jsonl",
+    "sha256": "b59547d86d759bf74815ecfbdc85e735750b566b17a8e0b4576824b24d236f32",
+    "records": 40,
+    "keysSha256": "b44bf45d909ef7e32e9cb5f53d0e60a4c8ef76dee06db2fba345e27b9f07772e"
+  },
+  "sde/skinLicenses": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinLicenses.jsonl",
+    "sha256": "9e20ce7dea1c6fe8a028fdcfbf544b243d8fec17f27359dc94dee789e5745fc9",
+    "records": 11879,
+    "keysSha256": "5e40c0c3c8b790b8eb196ae480f0762a49e6f37302d461c4dc6fce2ce6faa371"
+  },
+  "sde/skinMaterials": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinMaterials.jsonl",
+    "sha256": "bb7780006103f1b36837f39e06b47f8eece7d4f892c29494de91d5d1074c8bcd",
+    "records": 876,
+    "keysSha256": "f10520587b1366fd2432c113be7655570c3d60a4379b3c30d1be8639300ccd98"
+  },
+  "sde/skinrComponentCategories": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrComponentCategories.jsonl",
+    "sha256": "e2c38d6ae26480457c782bea483581bbb9ce645a996d3ef4b0fb52d8655eb51b",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "sde/skinrComponentPointValues": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrComponentPointValues.jsonl",
+    "sha256": "fb4581554660e83c1fc9c9fc546c87e8bae0766831f1c9ea3b4cc71ce5cc440a",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "sde/skinrComponentRarities": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrComponentRarities.jsonl",
+    "sha256": "6f41e555b0652a4eaa2a36e446cf9d7d601171c44821e3ed35cdf147c00bef0e",
+    "records": 6,
+    "keysSha256": "c5d161527c5f9d09a2ed9cd76c4063481472f14da4dda40d19468bbfab4421a7"
+  },
+  "sde/skinrComponents": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrComponents.jsonl",
+    "sha256": "65ca07790908246fb5848612531a6727cc387ad0dcfc09413dc7c72b7fc82d82",
+    "records": 613,
+    "keysSha256": "cdcb686f0b03b6e80f6c55193cd68b7e55ca2f7ea656da7adca5d2a2b504532e"
+  },
+  "sde/skinrSlotCategories": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrSlotCategories.jsonl",
+    "sha256": "94b3b6a51665e6d3b07c44bd4f064d355c2eaf2ca746f2080a1a19839902a177",
+    "records": 3,
+    "keysSha256": "14c5e74c4b96ccef41cd94db73a9ec3348038ac094feca4fd897cecffa07cdae"
+  },
+  "sde/skinrSlotConfigurations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrSlotConfigurations.jsonl",
+    "sha256": "022ff10b6891a8edd1463855dc242fa14bfcc0df5651df6f22bb3d782e15875e",
+    "records": 4,
+    "keysSha256": "2b5ed661451760198bd77d4e42e993b91170df0f0ab75c7af5210be39cbe923e"
+  },
+  "sde/skinrSlotNames": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrSlotNames.jsonl",
+    "sha256": "80704047ffafbdb0b72c148dd49a1fe514df83ad97bca946b70feb80196ee6cc",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "sde/skinrSlots": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrSlots.jsonl",
+    "sha256": "8e58361450e86b26d736f483030b3a07ac2ab64e7d716af63b2a81ca73e82f4e",
+    "records": 8,
+    "keysSha256": "fa39f85dc698e8c03824b0af3de7bc534da1cdf3905d1e8a585352854f5a7767"
+  },
+  "sde/skinrSlotsToMaterials": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrSlotsToMaterials.jsonl",
+    "sha256": "a32acc01e9c1ff9fb4214d2f79dbf7040f3177d158d15ef494bc08a6ce304d1e",
+    "records": 16,
+    "keysSha256": "e9931f9c0a1cfde902a78655c7c85bebabf5f06a3ebb198dd429dced2b403d8e"
+  },
+  "sde/skinrTierThresholds": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skinrTierThresholds.jsonl",
+    "sha256": "ffda80855db3e2ae0d974b45b213ce6732504d441b2a906df67504ee660c3307",
+    "records": 49,
+    "keysSha256": "5d3c895da3133759ecde6900b80226978afaa4324e6e91010e9f4d25ff930b59"
+  },
+  "sde/skins": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#skins.jsonl",
+    "sha256": "44508e02ff51d45178c1815bb6b423518d26750b7c0b968e0d11456f58b49001",
+    "records": 7050,
+    "keysSha256": "e64f58cc12929866604b17caad0db33053199b503a625d2e973b268cb1c9ac14"
+  },
+  "sde/sovereigntyUpgrades": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#sovereigntyUpgrades.jsonl",
+    "sha256": "674cb3ac2142c26e3859f4906b75e7d760fec6b6b08081cf2877bfa5a0c6ad63",
+    "records": 49,
+    "keysSha256": "01094b5d7ad57b8904a47ce772fd20d57974a37740a82c243a87352c149749a0"
+  },
+  "sde/stationOperations": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#stationOperations.jsonl",
+    "sha256": "01a3067023fed5d0b6e64101ab183acf3165ee6ef08915bc87b18a4da06517c2",
+    "records": 69,
+    "keysSha256": "09ce707931fa1fb379825e44ac29e7dc9b2279d6bd432d0f0c9a6d078cc9e92d"
+  },
+  "sde/stationServices": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#stationServices.jsonl",
+    "sha256": "b1f67240d0dcb766c01f385fde3222d35be2f07a7ef431704855cc782ad4041c",
+    "records": 27,
+    "keysSha256": "e6df3b4334d361ac682616f128fcd929257b82f2a54a673986e49d75936db3fd"
+  },
+  "sde/stationStandingsRestrictions": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#stationStandingsRestrictions.jsonl",
+    "sha256": "4533b5647cd18d764e1e299d8fafd59d757583def9dd325a17cb7175934f9b90",
+    "records": 1,
+    "keysSha256": "553f56137b33a1c4a96fdc2a75502c07362451f39dc542e5c61c11b7c7789b08"
+  },
+  "sde/systemDbuffEmitters": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#systemDbuffEmitters.jsonl",
+    "sha256": "fa23334abd53928b5cf17f25ef5bd673d52977518b55b4c2fb398cd53cb1f9fd",
+    "records": 1,
+    "keysSha256": "195270e14f3c11a6ac15da85f9c126b37a5e964a27a134f9e03474a35a0004d4"
+  },
+  "sde/systemWideEffects": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#systemWideEffects.jsonl",
+    "sha256": "22dbe053c7ca07e49cc8639ab9165572dfdbf86e1331f86244948fb74683a40a",
+    "records": 95,
+    "keysSha256": "99f076a847d12d8444d8f0cd2219cedb514a006e0f80752450186f33a04b17d6"
+  },
+  "sde/translationLanguages": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#translationLanguages.jsonl",
+    "sha256": "922715e07dae7877cfa881a21b1e424ae0a03f3d19809a27eca3aee232c2cb1d",
+    "records": 8,
+    "keysSha256": "a6900bab3816d83b228cc4cedda26cbbfef2a0fc58ea46fb3fb64d1a027f6c94"
+  },
+  "sde/typeBonus": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#typeBonus.jsonl",
+    "sha256": "931773e27302e0008caf57c6c41902b23e7fd1c662a4bce108fb353c0388c1ff",
+    "records": 655,
+    "keysSha256": "cbd239733b3a15440b5dd923eeeba95677a475cb7284110d31694ff5c0d57edf"
+  },
+  "sde/typeDogma": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#typeDogma.jsonl",
+    "sha256": "983fd5c7ce1dc0e80f1404fbd70e42745784b9fbbe6c2d09898bb3f9a6b1b52d",
+    "records": 26929,
+    "keysSha256": "17a245539b0ea5ba7ff58178e1c7a119621e44b0ae813c2566b91a0a6ce8e362"
+  },
+  "sde/typeElements": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#typeElements.jsonl",
+    "sha256": "fd7859494ef01d84e0645a004813d8fe6c8bb512792da4b140be996a7c6fbc6a",
+    "records": 426,
+    "keysSha256": "457259112db694f6b04cbf3fe8a85f9facab2f08cdbe68f8a06bf71fbe595cf2"
+  },
+  "sde/typeLists": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#typeLists.jsonl",
+    "sha256": "93b0f76305f15ad9e9c02b82711b031113e7961ccc19fe817cef6731c24b0e3e",
+    "records": 472,
+    "keysSha256": "bca339314cc6985892cb7f94ca418856bc76c62c0a233a3ae624467b88600488"
+  },
+  "sde/typeMaterials": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#typeMaterials.jsonl",
+    "sha256": "bf40f35a1dd7a3540f7a6c6fd2df6332defb3f627487d8228233611d941db61b",
+    "records": 9568,
+    "keysSha256": "0c185a52642472da23f2c12886cd98d44a82a29d889984d71b334a5b9836d90c"
+  },
+  "sde/types": {
+    "source": "https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip#types.jsonl",
+    "sha256": "a7abd7b841a6dfb43b381b78f3a41adbb71f3317ce99ea84d2573d8f96224f7f",
+    "records": 53299,
+    "keysSha256": "30e00e20fc1055b343179e1ec21dd4d23e9f791fbd4f730b2f6cffc3b5e16bb4"
+  }
+}

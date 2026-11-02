@@ -85,7 +85,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("fighterMgr", "GetFightersForShip") => new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() },
             ("map", "GetStationInfo") => Rows(["stationID", "stationTypeID", "stationName", "solarSystemID", "constellationID",
                 "regionID", "corporationID", "ownerID", "operationID", "orbitID", "x", "y", "z", "serviceMask"],
-                [pilot.StationId, pilot.StationTypeId, "Jita IV - Moon 4 - Caldari Navy Assembly Plant", pilot.SystemId,
+                [pilot.StationId, pilot.StationTypeId, pilot.Station.Name, pilot.SystemId,
                  pilot.ConstellationId, pilot.RegionId, pilot.StationOwnerId, pilot.StationOwnerId, pilot.OperationId,
                  pilot.OrbitId, pilot.X, pilot.Y, pilot.Z, 0]),
             ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills"),

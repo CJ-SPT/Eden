@@ -1,4 +1,3 @@
-using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -24,7 +23,7 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
         {
             "ship" => [pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.LocationId, pilot.Position is null ? 4 : 0, -1, pilot.ShipGroupId, pilot.ShipCategoryId, "", 1, 1],
             "pilot" => [pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, -1, 1, 1, "", 1, 1],
-            _ => [pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.SystemId, 0, -1, 15, 3, "", 1, 1],
+            _ => [pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.SystemId, 0, -1, pilot.Station.GroupId, pilot.Station.CategoryId, "", 1, 1],
         };
         return new("blue.DBRow", [ItemDescriptor(), line]);
     }
@@ -44,16 +43,16 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
         else
         {
             // Undamaged, fully charged Ibis. The HUD reads these current values from godma.
-            attributes[9] = 175;
-            attributes[18] = 130;
-            attributes[37] = (double)Ballpark.MaxSpeed;
+            attributes[9] = pilot.Hull.Structure;
+            attributes[18] = pilot.Hull.Capacitor;
+            attributes[37] = (double)pilot.Flight.MaxSpeed;
             attributes[38] = pilot.CargoCapacity;
-            attributes[55] = 65000;
-            attributes[263] = 200;
-            attributes[264] = 200;
-            attributes[265] = 125;
-            attributes[479] = 860000;
-            attributes[482] = 130;
+            attributes[55] = pilot.Hull.RechargeTime;
+            attributes[263] = pilot.Hull.Shield;
+            attributes[264] = pilot.Hull.Shield;
+            attributes[265] = pilot.Hull.Armor;
+            attributes[479] = pilot.Hull.ShieldRechargeTime;
+            attributes[482] = pilot.Hull.Capacitor;
         }
         return new()
         {
@@ -89,7 +88,7 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
                 ["shipState"] = new object?[] { new Dictionary<long, object?>
                 {
                     [pilot.PilotId] = new object?[] { pilot.PilotId, 0, 0, 0, 0, 0, 0, 0 },
-                    [pilot.ShipId] = new object?[] { pilot.ShipId, 0, 0, 130, 0, 0, 200, 0 },
+                    [pilot.ShipId] = new object?[] { pilot.ShipId, 0, 0, pilot.Hull.Capacitor, 0, 0, pilot.Hull.Shield, 0 },
                 }, new Dictionary<long, object?>(), new Dictionary<long, object?>(), new List<object?>() },
                 ["structureInfo"] = null,
                 ["shipInfo"] = PrimeItem(pilot, pilot.ShipId, "ship"),

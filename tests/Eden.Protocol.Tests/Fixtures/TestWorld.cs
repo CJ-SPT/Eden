@@ -6,11 +6,13 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal sealed class TestWorld : IDisposable
 {
-    public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"eden-{Guid.NewGuid():N}.sqlite");
+    private readonly string _directory = Directory.CreateTempSubdirectory("eden-world-").FullName;
+    public string Path => System.IO.Path.Combine(_directory, "world.sqlite");
     public SqliteWorld Store { get; }
     public ServiceProvider Services { get; }
     public TestWorld()
     {
+        TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
         Services = ServerServices.Build(new WorldDatabase(Path));
         Store = Services.GetRequiredService<SqliteWorld>();
     }
@@ -18,6 +20,6 @@ internal sealed class TestWorld : IDisposable
     public void Dispose()
     {
         Services.Dispose();
-        File.Delete(Path);
+        Directory.Delete(_directory, recursive: true);
     }
 }

@@ -6,6 +6,19 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. **Eden Wing** has a separate account and Ibis at the same station. Each pilot can see the other ship move and stop in Overview. A restart restores each ship in its hangar or at its last saved position in space.
 
+## Local game data
+
+Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilots, owned ships, and their positions. Both files are generated locally.
+
+On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage the matching client and resource cache, then run the setup command from the repository root.
+
+```powershell
+.\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
+.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'
+```
+
+Setup downloads and verifies CCP's exact-build export on the first run, decodes the staged client, and checks the replacement catalog before installing it. Normal play uses the installed catalog and save offline. See the [Windows client guide](docs/development-client.md#creating-and-recreating-the-databases) for offline setup, save migration, and verification.
+
 ## Build and run
 
 Install the .NET SDK version in `global.json`. Run these commands from the repository root.

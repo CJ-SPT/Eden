@@ -8,6 +8,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <ProjectReference Include="../../src/Eden.Protocol/Eden.Protocol.csproj" />
     <ProjectReference Include="../../src/Eden.Server/Eden.Server.csproj" />
+    <EmbeddedResource Include="Fixtures/LegacyWorldV3.sql" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>
