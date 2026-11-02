@@ -6,6 +6,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +84,26 @@ public sealed class MarketTests
         using WorldDbContext world = new(f.Db.Path);
         Assert.Single(world.Set<MarketStation>());
         Assert.Equal(7, world.Set<NpcMarketOrder>().Count());
+    }
+
+    [Fact]
+    public void DockedMiningHoldOreCanBeSoldWithoutMovingOrdinaryCargo()
+    {
+        using Fixture f = new();
+        PilotFleetTests.AddVenture(f.Db);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(f.Pilot.ShipId)!.TypeId = (int)StarterShipType.Venture;
+            world.SaveChanges();
+        }
+        var pilot = f.Pilot;
+        f.Inventory.Move(pilot.PilotId, [OreId], pilot.StationId, pilot.ShipId, (int)InventoryFlag.GeneralMiningHold, null);
+        var result = f.Sell(f.Sale(quantity: 33));
+        Assert.Equal(15262, result.BalanceCents);
+        var saved = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.ShipId));
+        Assert.Equal((int)InventoryFlag.GeneralMiningHold, saved.FlagId);
+        Assert.Equal(100, saved.Quantity);
+        Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
     }
 
     [Fact]

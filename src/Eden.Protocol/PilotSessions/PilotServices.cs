@@ -134,11 +134,13 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
-            if (previous is not null && previous.LocationId != context.Pilot.LocationId)
+            if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
             {
-                context.ReleaseLocationReferences();
+                if (previous.LocationId != context.Pilot.LocationId) { context.ReleaseLocationReferences(); }
                 await write(SessionChange(accountId, clientId, context.Pilot, previous));
-                report($"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
+                report(previous.ShipId != context.Pilot.ShipId
+                    ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} from {previous.ShipId} at {context.Pilot.LocationId}."
+                    : $"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
             }
             await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(result) }));
             if (service == "beyonce" && method == "MachoBindObject" && call[2] is object?[] { Length: 2 } bind && bind[1] is null && context.ActiveFlight?.Pilot.Position is not null)

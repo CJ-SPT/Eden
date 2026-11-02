@@ -26,7 +26,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         var ship = pilot.ActiveShip;
         if (ship.Position is not null ||
             !((sourceId == ship.Id && destinationId == ship.StationId && flagId == (int)InventoryFlag.Hangar) ||
-              ((sourceId == ship.StationId || sourceId == ship.Id) && destinationId == ship.Id && flagId == (int)InventoryFlag.Cargo)) ||
+              ((sourceId == ship.StationId || sourceId == ship.Id) && destinationId == ship.Id &&
+                flagId is (int)InventoryFlag.Cargo or (int)InventoryFlag.GeneralMiningHold)) ||
             itemIds.Count == 0 || itemIds.Distinct().Count() != itemIds.Count ||
             quantity is <= 0 || (quantity.HasValue && itemIds.Count != 1))
         {
@@ -35,7 +36,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
 
         using CatalogDbContext catalog = new(database.CatalogPath);
         var items = world.Set<OwnedItem>().Where(i => itemIds.Contains(i.Id) && i.OwnerId == pilotId &&
-            i.LocationId == sourceId && (sourceId == ship.Id ? i.FlagId == (int)InventoryFlag.Cargo ||
+            i.LocationId == sourceId && (sourceId == ship.Id ? i.FlagId == (int)InventoryFlag.Cargo || i.FlagId == (int)InventoryFlag.GeneralMiningHold ||
                 (i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7) : i.FlagId == (int)InventoryFlag.Hangar)).OrderBy(i => i.Id).ToArray();
         if (items.Length != itemIds.Count || items.Any(i => quantity > i.Quantity))
         {
@@ -43,10 +44,14 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         }
         if (destinationId == ship.Id)
         {
-            double capacity = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId).Capacity ?? 0;
-            double used = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo)
+            double capacity = HoldCapacity(catalog, ship.TypeId, flagId);
+            if (flagId == (int)InventoryFlag.GeneralMiningHold && (capacity <= 0 || items.Any(i => Read(catalog, i).CategoryId != (int)InventoryCategory.Asteroid)))
+            {
+                throw new InvalidDataException("Only mined ore can enter this ship's mining hold.");
+            }
+            double used = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == flagId)
                 .AsEnumerable().Sum(i => Read(catalog, i).Volume * i.Quantity);
-            double added = items.Where(i => i.LocationId != ship.Id || i.FlagId != (int)InventoryFlag.Cargo).Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
+            double added = items.Where(i => i.LocationId != ship.Id || i.FlagId != flagId).Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
             if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
             {
                 throw new CargoCapacityException(Math.Max(0, capacity - used), added);
@@ -95,6 +100,10 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             type.GroupId, type.Group.CategoryId, Volume(catalog, item.TypeId), item.Singleton, item.Online);
     }
 
+    internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId) => flagId == (int)InventoryFlag.GeneralMiningHold
+        ? catalog.Set<TypeAttribute>().Find(typeId, (int)DogmaAttributeId.GeneralMiningHoldCapacity)?.Value ?? 0
+        : catalog.Set<ItemType>().Single(t => t.Id == typeId).Capacity ?? 0;
+
     internal static double Volume(CatalogDbContext catalog, int typeId)
     {
         double volume = catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture))
@@ -108,9 +117,9 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
 
     internal static long NextId(WorldDbContext world)
     {
-        // MAX(Id) can reuse a consumed stack's ID. WorldItem already uses
-        // AUTOINCREMENT; its SQLite sequence retains deleted IDs across restarts.
-        long last = world.Database.SqlQueryRaw<long>("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='WorldItem'),0) AS Value")
+        // Packaged items become assembled ships without changing identity. Both
+        // AUTOINCREMENT sequences retain their high-water IDs after deletion.
+        long last = world.Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name IN ('WorldItem','WorldShip')")
             .AsEnumerable().Single();
         return checked(Math.Max(last, InventoryDefinitions.FirstOwnedItemId) + 1);
     }

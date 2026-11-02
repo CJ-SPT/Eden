@@ -153,7 +153,7 @@ public sealed class DockedServicesTests
         var keys = columns.Cast<object?[]>().Select(pair => (string)pair[0]!).ToList();
         var values = Assert.IsType<object?[]>(item.Arguments[1]);
         Assert.Equal(pilot.ShipId, values[keys.IndexOf("itemID")]);
-        Assert.Equal(pilot.StationId, values[keys.IndexOf("locationID")]);
+        Assert.Equal((long)pilot.StationId, values[keys.IndexOf("locationID")]);
         Assert.Equal(pilot.PilotId, values[keys.IndexOf("ownerID")]);
         Assert.Null(new PilotCallContext(1000001, pilot.Account, [pilot], _ => throw new NotSupportedException(), 11, []).ResolveReference(handle.Id));
         Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "invbroker", "MachoBindObject",

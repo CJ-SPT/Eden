@@ -22,6 +22,15 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         attributes[DogmaAttributeId.MiningAmount] = attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount) *
             (1 + MiningDefinitions.YieldBonusPerSkillLevel * Level(MiningSkill.Mining)) *
             (1 + MiningDefinitions.YieldBonusPerSkillLevel * Level(MiningSkill.Astrogeology));
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        if (pilot.ActiveShip.TypeId == (int)StarterShipType.Venture)
+        {
+            // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
+            // 207, then apply attribute 1842 percent for each Mining Frigate level.
+            var hull = fitting.Attributes(pilot.ActiveShip.TypeId);
+            attributes[DogmaAttributeId.MiningAmount] *= hull.GetValueOrDefault(DogmaAttributeId.MiningRoleYieldMultiplier, 1) *
+                (1 + hull.GetValueOrDefault(DogmaAttributeId.MiningFrigateYieldBonus) * Level(MiningSkill.Frigate) / 100);
+        }
         attributes[DogmaAttributeId.MiningCriticalChance] = attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance) *
             (1 + MiningDefinitions.CriticalChanceBonusPerSkillLevel * Level(MiningSkill.Precision));
         attributes[DogmaAttributeId.MiningCriticalBonusYield] = attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield) *
@@ -58,9 +67,9 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         using CatalogDbContext catalog = new(database.CatalogPath);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        if (hull.GroupId != MiningDefinitions.CorvetteGroup)
+        if (hull.GroupId != MiningDefinitions.CorvetteGroup && hull.Id != (int)StarterShipType.Venture)
         {
-            throw new InvalidDataException("Mining activation currently supports corvettes.");
+            throw new InvalidDataException("Mining activation currently supports corvettes and the Venture.");
         }
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         var attributes = ModuleAttributes(pilotId, module);
@@ -81,8 +90,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         return (pilot, asteroid, laser);
     }
 
-    private double Available(long pilotId, long shipId, double capacity) => Math.Max(0, capacity -
-        inventory.List(pilotId, shipId).Where(i => i.FlagId == (int)InventoryFlag.Cargo).Sum(i => i.Volume * i.Quantity));
+    private static InventoryFlag OreHold(CatalogDbContext catalog, int hull) =>
+        PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GeneralMiningHold) > 0 ? InventoryFlag.GeneralMiningHold : InventoryFlag.Cargo;
+
+    private double Available(long pilotId, long shipId, double capacity, InventoryFlag hold) => Math.Max(0, capacity -
+        inventory.List(pilotId, shipId).Where(i => i.FlagId == (int)hold).Sum(i => i.Volume * i.Quantity));
 
     public MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now)
     {
@@ -90,9 +102,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         using var transaction = world.Database.BeginTransaction();
         var (pilot, asteroid, laser) = Validate(world, pilotId, moduleId, asteroidId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        double capacity = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Capacity ?? 0;
+        var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
+        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
-        double available = Available(pilotId, pilot.ActiveShipId, capacity);
+        double available = Available(pilotId, pilot.ActiveShipId, capacity, hold);
         if (available + InventoryDefinitions.ResourceTolerance < volume)
         {
             throw new CargoCapacityException(available, volume);
@@ -121,10 +134,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         using var transaction = world.Database.BeginTransaction();
         var (pilot, asteroid, _) = Validate(world, pilotId, moduleId, asteroidId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        double capacity = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Capacity ?? 0;
+        var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
+        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         if (!(oreVolume > 0)) { throw new InvalidDataException("Invalid ore volume."); }
-        int free = (int)Math.Min(int.MaxValue, Math.Floor((Available(pilotId, pilot.ActiveShipId, capacity) + InventoryDefinitions.ResourceTolerance) / oreVolume));
+        int free = (int)Math.Min(int.MaxValue, Math.Floor((Available(pilotId, pilot.ActiveShipId, capacity, hold) + InventoryDefinitions.ResourceTolerance) / oreVolume));
         int extracted = (int)Math.Min(Math.Min(asteroid.Quantity, free), Math.Floor((volume + InventoryDefinitions.ResourceTolerance) / oreVolume));
         // Critical successes add bonus ore without reducing the remaining deposit.
         int bonus = (int)Math.Min(free - extracted, Math.Floor(extracted * criticalBonusYield));
@@ -132,7 +146,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         if (extracted + bonus > 0)
         {
             var stack = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId &&
-                i.FlagId == (int)InventoryFlag.Cargo && i.TypeId == asteroid.TypeId && !i.Singleton).OrderBy(i => i.Id).FirstOrDefault();
+                i.FlagId == (int)hold && i.TypeId == asteroid.TypeId && !i.Singleton).OrderBy(i => i.Id).FirstOrDefault();
             var previous = stack is null ? null : PilotInventoryStore.Read(catalog, stack);
             stack ??= world.Set<OwnedItem>().Add(new()
             {
@@ -140,7 +154,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
                 OwnerId = pilotId,
                 LocationId = pilot.ActiveShipId,
                 TypeId = asteroid.TypeId,
-                FlagId = (int)InventoryFlag.Cargo,
+                FlagId = (int)hold,
             }).Entity;
             stack.Quantity = checked(stack.Quantity + extracted + bonus);
             asteroid.Quantity -= extracted;

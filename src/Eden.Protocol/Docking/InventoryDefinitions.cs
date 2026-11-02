@@ -16,6 +16,7 @@ public enum InventoryFlag
     Cargo = 5,
     HighSlot0 = 27,
     HighSlot7 = 34,
+    GeneralMiningHold = 134,
 }
 
 public enum InventoryLocation
@@ -49,6 +50,7 @@ public enum DogmaAttributeId
     RequiredSkill2 = 183,
     RequiredSkill3 = 184,
     MaxLockedTargets = 192,
+    MiningRoleYieldMultiplier = 207,
     ShieldCapacity = 263,
     ShieldCharge = 264,
     ArmorHitPoints = 265,
@@ -68,6 +70,8 @@ public enum DogmaAttributeId
     RequiredSkill6Level = 1288,
     RequiredSkill5 = 1289,
     RequiredSkill6 = 1290,
+    GeneralMiningHoldCapacity = 1556,
+    MiningFrigateYieldBonus = 1842,
     MiningCriticalChance = 5967,
     MiningCriticalBonusYield = 5969,
 }

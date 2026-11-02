@@ -5,6 +5,7 @@ using Eden.Protocol.Reprocessing;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -161,12 +162,21 @@ public sealed class ReprocessingTests
         Assert.Throws<InvalidDataException>(() => f.Run());
     }
 
-    [Fact]
-    public void CargoCapacityAccountsForConsumedOreAndRejectsOverflowWithoutConsumingInput()
+    [Theory]
+    [InlineData(InventoryFlag.Cargo)]
+    [InlineData(InventoryFlag.GeneralMiningHold)]
+    public void CargoCapacityAccountsForConsumedOreAndRejectsOverflowWithoutConsumingInput(InventoryFlag inputHold)
     {
         using Fixture f = new(100);
+        if (inputHold == InventoryFlag.GeneralMiningHold)
+        {
+            PilotFleetTests.AddVenture(f.Db);
+            using WorldDbContext world = new(f.Db.Path);
+            world.Ships.Find(f.Pilot.ShipId)!.TypeId = (int)StarterShipType.Venture;
+            world.SaveChanges();
+        }
         var pilot = f.Pilot;
-        f.Inventory.Move(pilot.PilotId, [OreId], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null);
+        f.Inventory.Move(pilot.PilotId, [OreId], pilot.StationId, pilot.ShipId, (int)inputHold, null);
         var result = f.Store.Reprocess(pilot.PilotId, pilot.StationId, [OreId], pilot.ShipId, null, pilot.ShipId, (int)InventoryFlag.Cargo);
         Assert.Equal(130, result.Output.Values.Sum());
         using (WorldDbContext world = new(f.Db.Path))

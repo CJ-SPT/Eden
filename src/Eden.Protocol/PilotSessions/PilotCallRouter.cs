@@ -23,6 +23,12 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
     public FlightSession? ActiveFlight { get; private set; }
     public FlightSession Flight => ActiveFlight ?? throw new InvalidOperationException("Select a pilot before entering flight.");
     public void Select(DockedPilot pilot) => ActiveFlight = startFlight(pilot);
+    public void ChangeShip(DockedPilot pilot)
+    {
+        ActiveFlight?.Dispose();
+        ActiveFlight = startFlight(pilot);
+        Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
+    }
     public void Dispose() => ActiveFlight?.Dispose();
     public DockedPilot Pilot => Flight.Pilot;
     public object?[] SignedSettings { get; } = signedSettings;

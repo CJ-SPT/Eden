@@ -119,6 +119,9 @@ public sealed class FlightSessionTests
         var commands = pilot.Updates.Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToArray();
         Assert.Equal(new[] { "SetSpeedFraction", "SetBallVelocity", "WarpTo", "OnSpecialFX" }, commands.Select(call => call[0]));
         Assert.Equal(3000, ((object?[])commands[2][1]!)[5]);
+        int initialUpdates = pilot.Updates.Count;
+        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
+        Assert.Equal(initialUpdates, pilot.Updates.Count);
         clock.Seconds += 4;
         pilot.Checkpoint();
         Assert.NotEqual(departure, pilot.Pilot.Position);
@@ -126,6 +129,9 @@ public sealed class FlightSessionTests
         clock.Seconds += 5;
         pilot.Checkpoint();
         Assert.Empty(pilot.Updates);
+        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
+        Assert.Empty(pilot.Updates);
+        Assert.Same(PilotCallRouter.Unsupported, pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 0L }));
         Assert.Same(PilotCallRouter.Unsupported, pilot.Call("beyonce", "CmdStop", []));
         clock.Seconds += 15;
         pilot.Checkpoint();

@@ -22,6 +22,7 @@ public enum MiningSkill
     Astrogeology = 3410,
     Precision = 90727,
     Exploitation = 90728,
+    Frigate = 32918,
 }
 
 public enum MiningLaserType

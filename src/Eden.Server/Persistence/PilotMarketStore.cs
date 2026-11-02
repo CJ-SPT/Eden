@@ -195,7 +195,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             var item = world.Set<OwnedItem>().Find(request.ItemId);
             if (item is null || item.OwnerId != pilotId || item.TypeId != request.TypeId || item.Singleton || request.Quantity > item.Quantity ||
                 !((item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar) ||
-                  (item.LocationId == pilot.ActiveShipId && item.FlagId == (int)InventoryFlag.Cargo)))
+                  (item.LocationId == pilot.ActiveShipId && (item.FlagId == (int)InventoryFlag.Cargo || item.FlagId == (int)InventoryFlag.GeneralMiningHold))))
             {
                 throw new InvalidDataException("The selected stack or quantity is unavailable in your hangar or cargo.");
             }

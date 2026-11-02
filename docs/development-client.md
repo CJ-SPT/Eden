@@ -160,7 +160,7 @@ Fit an online **Civilian Miner** to the Ibis while docked, then visit a belt as 
 4. Warp to a station, dock, and drag the ore from Ibis cargo into **Item Hangar**. Compare the quantity and used cargo space before and after unloading. During automated input checks, select the stack and wait for its selection to appear before dragging.
 5. Restart the host and client. Check that the ore remains in its saved cargo or hangar location. A depleted asteroid should remain absent when returning to its belt.
 
-World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation supports regular mining lasers on corvettes, including Civilian Miner, Miner I and Miner II. Strip/deep-core miners, crystals, other hulls, boosts, specialized mining holds and survey scans remain separate work.
+World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation supports regular mining lasers on corvettes and the Venture, including Civilian Miner, Miner I and Miner II. Strip/deep-core miners, crystals, other hulls, boosts and survey scans remain separate work.
 
 To upgrade, sell mined ore and buy **Miner I** through Regional Market. Search for `miner`, expand **Ship Equipment**, select Miner I and double-click the local station offer. Open Fitting with the **circled ship** button, unfit a civilian laser if both high slots are occupied, then use **Fit to Active Ship** on the purchase. Miner I requires Mining I and has a 10 km range, 15-second cycle, 10 m³ base yield and 5 GJ activation cost. Miner II requires Mining IV and has a 12 km range, 15-second cycle, 15 m³ base yield and 18 GJ cost. With Mining III and no other yield bonuses, a noncritical full Miner I cycle produces 115 Veldspar. Fitting tooltips currently show base yield; compare actual cargo gains to check the server's skill bonuses.
 
@@ -191,10 +191,21 @@ Eden seeds finite starter offers at visited market stations. These local prices 
 | Civilian Miner | — | 100.00 ISK |
 | Miner I | — | 1,000.00 ISK |
 | Miner II | — | 5,000.00 ISK |
+| Venture | — | 10,000.00 ISK |
 
-Each buyback order starts with demand for one million units. Mineral offers start with 100,000 units; each laser offer starts with 100. Orders last one year and depleted stock does not regenerate after a restart. A later policy can add missing offers to a visited station while retaining its existing quantities, prices and expiry dates. No initial ISK grant is added to existing or new pilots.
+Each buyback order starts with demand for one million units. Mineral offers start with 100,000 units; each laser offer starts with 100 and Venture offers start with 10. Orders last one year and depleted stock does not regenerate after a restart. A later policy can add missing offers to a visited station while retaining its existing quantities, prices and expiry dates. No initial ISK grant is added to existing or new pilots.
 
 Sales tax is currently pinned to the staged client's observed **7.5%** runtime flag, reduced by **11% per Accounting level**. Its packaged fallback is 8%; external flag changes are not yet hosted by Eden. Immediate trades have no broker fee. A half-cent sales tax is rounded to cents before crediting proceeds; the native preview can display a net amount one cent higher because it rounds the unrounded net independently. Regional history comes from actual saved executions, grouped by UTC day with volume-weighted average prices. Open **Price History**, then **Show Table**, to compare quantities and prices. Before an item's first local trade, the client's fallback average can trigger large price warnings even for these documented prices. This history does not supply the separate adjusted prices used for reprocessing fees. Reopen market details or transaction panels to refresh their displayed rows. Trading supports personal immediate orders at the docked station. Player listings and corporation/remote trading remain separate work.
+
+## Upgrade to a Venture
+
+1. Dock at a market station with sufficient ISK and Mining Frigate I trained. Select **Eden Pilot** and check the current ship in Inventory. Search Regional Market for `venture`, expand **Ships**, select Venture, and buy one from the current station's offer.
+2. Open **Ship Hangar**, right-click the packaged Venture and choose **Assemble Ship**. Confirm a name or use **Later** for the default. Double-click the assembled ship to board it. Check that Inventory names the Venture as active and the previous ship remains in Ship Hangar.
+3. Compare the Venture's **50 m³** cargo and **5,000 m³ Mining Hold**. Only asteroid ore can enter the mining hold. Open the previous ship's cargo to check its saved contents, then board it to check its saved fitting. Return to the Venture and fit an online mining laser from Item Hangar using **Fit to Active Ship**.
+4. Undock, warp to a Perimeter belt, lock a nearby asteroid and activate the laser. Ore should accumulate in Mining Hold while ordinary cargo remains separate. With Mining III and Mining Frigate I, a noncritical full Miner I cycle yields 241 Veldspar; a civilian laser yields 144 per full cycle. The calculation floors whole ore units after applying yield bonuses.
+5. Dock and drag ore from Mining Hold into Item Hangar to sell it, or reprocess directly from the hold with **Item Hangar** selected for output. The pinned client does not offer Sell This Item from Mining Hold. Minerals belong in ordinary cargo or Item Hangar. Restart the host and client and compare ship names, active hull, fitting, hold contents and wallet.
+
+Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Venture assembly is the first supported purchased hull. Repackaging, assembled-ship sales and boarding in space remain unavailable.
 
 ## Check the character sheet
 

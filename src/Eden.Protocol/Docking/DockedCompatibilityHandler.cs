@@ -4,7 +4,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet fleet) : ISelectedPilotCallHandler
 {
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
     private static BlueInstance Rows(string[] header, params object?[][] lines) => new("eve.common.script.sys.rowset.Rowset",
@@ -69,7 +69,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
                 {
                     owner.ShipId, owner.ShipName, owner.SystemId, owner.Position?.X ?? owner.X,
                     owner.Position?.Y ?? owner.Y, owner.Position?.Z ?? owner.Z, null,
-                }).ToList(),
+                }).Concat(ids.OfType<long>().Except(context.Flight.VisiblePilots().Select(p => p.ShipId)).Select(id => fleet.Find(pilot.PilotId, id))
+                    .OfType<InventoryItem>().Where(ship => pilot.Position is null && ship.LocationId == pilot.StationId)
+                    .Select(ship => (object?)new object?[] { ship.Id, fleet.Name(pilot.PilotId, ship.Id), pilot.SystemId, pilot.X, pilot.Y, pilot.Z, null })).ToList(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => new Dictionary<string, object?>(),

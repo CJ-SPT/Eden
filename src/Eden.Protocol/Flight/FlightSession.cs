@@ -27,6 +27,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private int? _arrivalStamp;
     private double _followRange;
     private SpacePosition? _warpDestination;
+    private (long Target, double Range)? _warpOrder;
     private int _alignStamp;
     private WarpCourse? _warp;
     private double _speedFraction;
@@ -488,6 +489,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             return PilotCallRouter.Unsupported;
         }
         _warpDestination = end;
+        _warpOrder = (target, range);
         _alignStamp = _simulatedStamp;
         _direction = toward;
         _lastHeading = _direction;
@@ -523,6 +525,13 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         }
         if ((_jump is not null || _warp is not null || _warpDestination is not null) && method != "UpdateStateRequest")
         {
+            // The native docking navigator retries its warp order on a timer.
+            // Acknowledge the same destination without restarting the active course.
+            if (_jump is null && method == "CmdWarpToStuff" && arguments is [string or byte[], long retryTarget] &&
+                BlueMarshal.Text(arguments[0]) == "item" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long)
+            {
+                return _warpOrder == (retryTarget, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)) ? null : PilotCallRouter.Unsupported;
+            }
             return PilotCallRouter.Unsupported;
         }
         switch (method)

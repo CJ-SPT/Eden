@@ -5,8 +5,9 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet) : IPilotCallHandler, ISelectedPilotCallHandler
 {
+    private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
     private static readonly (string Name, int Type)[] s_columns =
     [
@@ -31,15 +32,18 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         {
             return result;
         }
-        long location = service == "@hangar" ? pilot.StationId : pilot.ShipId;
+        long location = service == "@hangar" ? pilot.StationId : ShipContainer(service, pilot);
         var flag = args.FirstOrDefault() as long?;
         if (service == "@hangar" && (flag is null or (long)InventoryFlag.Hangar))
         {
-            result.Add(Item(pilot, "ship"));
+            result.AddRange(fleet.Ships(pilot.PilotId, pilot.StationId).Select(Item));
         }
         result.AddRange(inventory.List(pilot.PilotId, location).Where(i => flag is null || i.FlagId == flag).Select(Item));
         return result;
     }
+
+    private static long ShipContainer(string service, DockedPilot pilot) => service == "@ship" ? pilot.ShipId :
+        service.StartsWith(ShipInventoryPrefix, StringComparison.Ordinal) && long.TryParse(service.AsSpan(ShipInventoryPrefix.Length), out long id) ? id : 0;
 
     private object? Move(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords)
     {
@@ -201,7 +205,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         });
     }
 
-    private BlueInstance AllInfo(DockedPilot pilot)
+    internal BlueInstance AllInfo(DockedPilot pilot)
     {
         var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).ToArray();
         var shipInfo = PrimeItem(pilot, pilot.ShipId, "ship");
@@ -267,13 +271,35 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
         var pilot = context.Pilot;
+        long container = ShipContainer(service, pilot);
+        if (container != 0)
+        {
+            var ship = fleet.Find(pilot.PilotId, container);
+            if (ship is null || (container != pilot.ShipId && (pilot.Position is not null || ship.LocationId != pilot.StationId)))
+            {
+                return new PilotCallRouter.Error("The ship inventory is unavailable at your current location.");
+            }
+            if (method == "List") { return List(pilot, service, args); }
+            if (method == "ListByFlags" && args.Length == 0 && keywords?.GetValueOrDefault("flags") is List<object?> flags && flags.All(f => f is long))
+            {
+                return inventory.List(pilot.PilotId, container).Where(i => flags.Contains((long)i.FlagId)).Select(i => (object?)Item(i)).ToList();
+            }
+            if (method == "GetSelfInvItem") { return container == pilot.ShipId ? Item(pilot, "ship") : Item(ship); }
+            if (method == "GetAvailableTurretSlots") { return checked((int)fitting.Attributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)); }
+            if (method is "Add" or "MultiAdd")
+            {
+                return container == pilot.ShipId ? Move(context, "@ship", method, args, keywords) :
+                    new PilotCallRouter.Error("Activate the ship before changing its cargo or fitting.");
+            }
+        }
         return (service, method) switch
         {
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] => null,
             ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") or ("charFittingMgr", "GetFittings") => new Dictionary<long, object?>(),
             ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId => new Dictionary<long, object?>(),
             ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference("@hangar"),
-            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.ShipId) => context.Reference("@ship"),
+            ("invbroker", "GetInventoryFromId") when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship &&
+                (id == pilot.ShipId || (pilot.Position is null && ship.LocationId == pilot.StationId)) => context.Reference($"{ShipInventoryPrefix}{id}"),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference("@pilot"),
             ("@hangar" or "@ship", "List") => List(pilot, service, args),
             ("@pilot", "List") => new List<object?>(),

@@ -64,7 +64,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         }
         string shipName = catalog.Set<ItemType>().Single(t => t.Id == hull).Name;
         long pilotId = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
-        long shipId = (world.Ships.Max(s => (long?)s.Id) ?? 1000000000000) + 1;
+        long shipId = PilotInventoryStore.NextId(world);
         long created = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         // The pilot and active ship reference each other. Check both links at commit.
         world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");

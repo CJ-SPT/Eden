@@ -5,5 +5,6 @@
   { "typeId": 1228, "name": "Scordite", "buyPriceCents": 500, "sellPriceCents": null, "demand": 1000000, "stock": 0 },
   { "typeId": 3651, "name": "Civilian Miner", "buyPriceCents": null, "sellPriceCents": 10000, "demand": 0, "stock": 100 },
   { "typeId": 483, "name": "Miner I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 482, "name": "Miner II", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 }
+  { "typeId": 482, "name": "Miner II", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 },
+  { "typeId": 32880, "name": "Venture", "buyPriceCents": null, "sellPriceCents": 1000000, "demand": 0, "stock": 10 }
 ]

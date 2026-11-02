@@ -49,7 +49,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
         var ship = pilot.ActiveShip;
         var items = world.Set<OwnedItem>().Where(i => ids.Contains(i.Id) && i.OwnerId == pilot.Id &&
             ((i.LocationId == ship.StationId && i.FlagId == (int)InventoryFlag.Hangar) ||
-             (i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo))).OrderBy(i => i.Id).ToArray();
+             (i.LocationId == ship.Id && (i.FlagId == (int)InventoryFlag.Cargo || i.FlagId == (int)InventoryFlag.GeneralMiningHold)))).OrderBy(i => i.Id).ToArray();
         if (items.Length != ids.Count || items.Any(i => i.Singleton || (sourceId.HasValue && i.LocationId != sourceId)))
         {
             throw new InvalidDataException("The selected stacks are unavailable in your cargo or station hangar.");

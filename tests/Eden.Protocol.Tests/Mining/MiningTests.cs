@@ -6,6 +6,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -130,6 +131,39 @@ public sealed class MiningTests
     }
 
     [Fact]
+    public void VentureBonusesApplyAndMinedOreUsesItsHoldWhenCargoIsFull()
+    {
+        using Fixture fixture = new();
+        PilotFleetTests.AddVenture(fixture.Db);
+        var (context, _, mining, module) = fixture.Client();
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Ships.Find(context.Pilot.ShipId)!.TypeId = (int)StarterShipType.Venture;
+            world.Add(new OwnedItem
+            {
+                Id = module + 100,
+                OwnerId = context.Pilot.PilotId,
+                TypeId = InventoryDefinitions.CivilianMinerType,
+                LocationId = context.Pilot.ShipId,
+                FlagId = (int)InventoryFlag.Cargo,
+                Quantity = 10
+            });
+            world.SaveChanges();
+        }
+        context.ChangeShip(fixture.Db.Store.FindPilot(context.AccountId)!);
+        context.Flight.Snapshot();
+        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, MiningDefinitions.EffectName, Fixture.Asteroid, 0L]));
+        fixture.Clock.Milliseconds += 10000;
+        mining.Advance(context);
+        var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
+        Assert.Equal((int)InventoryFlag.GeneralMiningHold, ore.FlagId);
+        Assert.Equal(132, ore.Quantity);
+        Assert.Equal(9868, fixture.Remaining());
+        _ = new SqliteWorld(fixture.Db.Path);
+        Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
+    }
+
+    [Fact]
     public void MinerTwoRequiresMiningFourAtFittingAndActivation()
     {
         using Fixture fixture = new();
@@ -187,7 +221,8 @@ public sealed class MiningTests
         object? Activate() => mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]);
         Assert.Null(Activate());
         Assert.True(mining.IsActive(module));
-        var inventoryHandler = new InventoryHandler(fixture.Clock, fixture.Inventory, fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Store, mining);
+        var inventoryHandler = new InventoryHandler(fixture.Clock, fixture.Inventory, fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Store, mining,
+            fixture.Db.Services.GetRequiredService<IPilotFleet>());
         var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
