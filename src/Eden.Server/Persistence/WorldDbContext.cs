@@ -80,6 +80,16 @@ public sealed class FlightPosition
     public double Z { get; set; }
 }
 
+public sealed class OwnedItem
+{
+    public long Id { get; set; }
+    public long OwnerId { get; set; }
+    public int TypeId { get; set; }
+    public long LocationId { get; set; }
+    public int FlagId { get; set; }
+    public int Quantity { get; set; }
+}
+
 public sealed class WorldDbContext(string path) : DbContext
 {
     public DbSet<Pilot> Pilots => Set<Pilot>();
@@ -91,6 +101,9 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
+        model.Entity<OwnedItem>().HasOne<Pilot>().WithMany().HasForeignKey(i => i.OwnerId);
+        model.Entity<OwnedItem>().HasIndex(i => new { i.OwnerId, i.LocationId });
         model.Entity<Account>().ToTable("WorldAccount");
         model.Entity<Pilot>().ToTable("WorldPilot");
         // Defaults preserve the identities previously returned by character selection.

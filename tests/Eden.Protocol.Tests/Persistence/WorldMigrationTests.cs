@@ -55,6 +55,7 @@ public sealed class WorldMigrationTests
             DROP TABLE WorldSkillQueue;
             DROP TABLE WorldSkillHistory;
             DROP TABLE WorldPilotSkill;
+            DROP TABLE WorldItem;
             ALTER TABLE WorldAccount DROP COLUMN UserName;
             ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
             ALTER TABLE WorldPilot DROP COLUMN CreatedAt;
@@ -72,7 +73,7 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(12L, command.ExecuteScalar());
+        Assert.Equal(13L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }
@@ -94,6 +95,7 @@ public sealed class WorldMigrationTests
             ALTER TABLE WorldPilot DROP COLUMN Appearance;
             ALTER TABLE WorldPilot DROP COLUMN Portrait;
             UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
+            DROP TABLE WorldItem;
             PRAGMA user_version=11;
             """;
         command.ExecuteNonQuery();

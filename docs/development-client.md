@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 11 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 12 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -71,6 +71,8 @@ Launch with `-Login`, choose **Add Character**, and complete the origin, portrai
 To test an existing save separately, stop the host, copy `world.sqlite` into a test directory beside a matching `catalog.sqlite`, and launch the host with `dotnet run --no-build --project src/Eden.Server -- --world "C:\path\to\test\world.sqlite"`. The usual client launch command connects to that host.
 
 ## Fly the Ibis
+
+To check cargo before departure, select **Eden Pilot**, open **Inventory** and verify **Ibis (Ibis)** is active. Open **Item Hangar** and drag the **Civilian Miner** onto **Ibis (Ibis)** in the inventory tree. The item should disappear from the hangar and appear in cargo with **5.0/125.0 m³** used. Drag it back onto Item Hangar to unload, then load it again. Restart the host and client and verify the same single miner remains in cargo. The one-time starter grant is made for existing pilots when upgrading to world version 13 and for newly created pilots at their starting station. Carrying a miner does not fit or activate it.
 
 1. Select **Eden Pilot** and click **Undock** in the station panel. Wait for the ship HUD and the **Jita Trade Hub** entry in Overview.
 2. Double-click open space. Watch the speed readout and the distance to the station change.

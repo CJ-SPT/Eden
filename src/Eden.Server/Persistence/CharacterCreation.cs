@@ -76,6 +76,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             """);
         world.Database.ExecuteSql($"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({shipId},{pilotId},{hull},{station},{shipName})");
         WorldMigration.GrantStartingSkills(world, catalog, pilotId, character.RaceId);
+        PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
         transaction.Commit();
         return pilotId;
 

@@ -4,7 +4,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
     private static readonly (string Name, int Type)[] s_columns =
@@ -16,6 +16,91 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
 
     internal static BlueConstructor ItemDescriptor() => new("blue.DBRowDescriptor",
         [s_columns.Select(column => (object?)new object?[] { column.Name, column.Type }).ToArray()]);
+
+    internal static BlueConstructor Item(InventoryItem item) => new("blue.DBRow", [ItemDescriptor(), new object?[]
+    {
+        item.Id, item.TypeId, item.OwnerId, item.LocationId, item.FlagId, item.Quantity,
+        item.GroupId, item.CategoryId, "", 0, item.Quantity,
+    }]);
+
+    private List<object?> List(DockedPilot pilot, string service, object?[] args)
+    {
+        List<object?> result = [];
+        if (service == "@hangar" && pilot.Position is not null)
+        {
+            return result;
+        }
+        long location = service == "@hangar" ? pilot.StationId : pilot.ShipId;
+        var flag = args.FirstOrDefault() as long?;
+        if (service == "@hangar" && (flag is null or 4))
+        {
+            result.Add(Item(pilot, "ship"));
+        }
+        result.AddRange(inventory.List(pilot.PilotId, location).Where(i => flag is null || i.FlagId == flag).Select(Item));
+        return result;
+    }
+
+    private object? Move(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (args.Length != 2 || args[1] is not long source)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        long[] ids;
+        if (method == "Add" && args[0] is long id)
+        {
+            ids = [id];
+        }
+        else if (method == "MultiAdd" && args[0] is List<object?> list && list.All(i => i is long))
+        {
+            ids = list.Cast<long>().ToArray();
+        }
+        else
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
+        object? flagValue = keywords?.GetValueOrDefault("flag");
+        object? quantityValue = keywords?.GetValueOrDefault("qty");
+        if ((flagValue is not null && flagValue is not long) || (quantityValue is not null && quantityValue is not long) ||
+            (flagValue is long flagNumber && (flagNumber < 0 || flagNumber > int.MaxValue)) ||
+            (quantityValue is long quantityNumber && (quantityNumber <= 0 || quantityNumber > int.MaxValue)))
+        {
+            return new PilotCallRouter.Error("Invalid cargo flag or quantity.");
+        }
+        int flag = flagValue is long f ? (int)f : service == "@hangar" ? 4 : 5;
+        int? quantity = quantityValue is long q ? (int)q : null;
+        try
+        {
+            var changes = inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
+            foreach (var change in changes)
+            {
+                // OnItemChange keys index the inventory DBRow, and values describe the old row.
+                Dictionary<long, object?> old = [];
+                if (change.Previous is not { } previous)
+                {
+                    old[5] = 0;
+                    old[10] = 0;
+                }
+                else
+                {
+                    if (previous.LocationId != change.Item.LocationId) { old[3] = previous.LocationId; }
+                    if (previous.FlagId != change.Item.FlagId) { old[4] = previous.FlagId; }
+                    if (previous.Quantity != change.Item.Quantity)
+                    {
+                        old[5] = previous.Quantity;
+                        old[10] = previous.Quantity;
+                    }
+                }
+                context.Notifications.Add(("OnItemChange", [Item(change.Item), old, null]));
+            }
+            return null;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallRouter.Error(error.Message);
+        }
+    }
 
     private BlueConstructor Item(DockedPilot pilot, string kind)
     {
@@ -68,11 +153,13 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
         var pilot = context.Pilot;
         return (service, method) switch
         {
+            ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId => new Dictionary<long, object?>(),
             ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference("@hangar"),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.ShipId) => context.Reference("@ship"),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference("@pilot"),
-            ("@hangar", "List") => pilot.Position is null && (args.Length == 0 || args[0] is null or 4L) ? new List<object?> { Item(pilot, "ship") } : new List<object?>(),
-            ("@ship" or "@pilot", "List") => new List<object?>(),
+            ("@hangar" or "@ship", "List") => List(pilot, service, args),
+            ("@pilot", "List") => new List<object?>(),
+            ("@hangar" or "@ship", "Add" or "MultiAdd") => Move(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => Item(pilot, service[1..]),
             ("dogmaIM", "GetAllInfo") => KeyVal(new()
             {

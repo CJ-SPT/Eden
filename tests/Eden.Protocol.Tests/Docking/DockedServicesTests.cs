@@ -9,6 +9,37 @@ namespace Eden.Protocol.Tests.Docking;
 public sealed class DockedServicesTests
 {
     [Fact]
+    public void CargoTransferSendsOldLocationAndFlagAndRejectsUnavailableItems()
+    {
+        using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using var scope = db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
+        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        context.Select(pilot);
+        Assert.Null(router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { },
+            new() { ["flag"] = 5L }));
+        var notification = Assert.Single(context.Notifications);
+        Assert.Equal("OnItemChange", notification.Name);
+        var changes = Assert.IsType<Dictionary<long, object?>>(notification.Arguments[1]);
+        Assert.Equal((long)pilot.StationId, changes[3]);
+        Assert.Equal(4, changes[4]);
+        Assert.IsType<BlueConstructor>(notification.Arguments[0]);
+        // The receive codec deliberately rejects DBRow reductions; the client owns decoding those.
+        Assert.NotEmpty(BlueMarshal.Encode(notification.Arguments));
+        Assert.Single(Assert.IsType<List<object?>>(router.Call(context, "@ship", "List", new object?[] { 5L }, _ => { })));
+        Assert.IsType<PilotCallRouter.Error>(router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { }));
+        Assert.Single(context.Notifications);
+        context.Notifications.Clear();
+        Assert.Null(router.Call(context, "@hangar", "MultiAdd", new object?[] { new List<object?> { item.Id }, pilot.ShipId }, _ => { }));
+        Assert.Single(context.Notifications);
+        Assert.Empty(inventory.List(pilot.PilotId, pilot.ShipId));
+    }
+
+    [Fact]
     public void StationBindingListsOwnedShipAndExpiresBetweenSessions()
     {
         using TestWorld db = new();
@@ -24,7 +55,8 @@ public sealed class DockedServicesTests
         var handle = Assert.IsType<BlueObjectReference>(bind[1]);
         string boundService = Assert.IsType<string>(context.ResolveReference(handle.Id));
         var items = Assert.IsType<List<object?>>(router.Call(context, boundService, "List", new object?[] { 4L }, _ => { }));
-        var item = Assert.IsType<BlueConstructor>(Assert.Single(items));
+        var item = Assert.IsType<BlueConstructor>(items[0]);
+        Assert.Equal(2, items.Count);
         Assert.Equal("blue.DBRow", item.Name);
         var descriptor = Assert.IsType<BlueConstructor>(item.Arguments[0]);
         var columns = Assert.IsType<object?[]>(descriptor.Arguments[0]);

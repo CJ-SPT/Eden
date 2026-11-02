@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 12)
+        if (version is < 0 or > 13)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -92,9 +92,23 @@ internal static class WorldMigration
                 ALTER TABLE WorldPilot ADD COLUMN Portrait BLOB;
                 """);
         }
-        if (version < 12)
+        if (version is >= 6 and < 13)
         {
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=12");
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldItem(
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT, OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    TypeId INTEGER NOT NULL, LocationId INTEGER NOT NULL, FlagId INTEGER NOT NULL,
+                    Quantity INTEGER NOT NULL CONSTRAINT CK_Item_Quantity CHECK (Quantity > 0));
+                CREATE INDEX IX_WorldItem_OwnerId_LocationId ON WorldItem(OwnerId,LocationId);
+                """);
+        }
+        if (version < 13)
+        {
+            foreach (var pilot in world.Pilots.Select(p => new { p.Id, p.ActiveShip.StationId }).ToArray())
+            {
+                PilotInventoryStore.GrantStarterEquipment(world, pilot.Id, pilot.StationId);
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=13");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&

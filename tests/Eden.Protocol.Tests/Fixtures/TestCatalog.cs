@@ -57,6 +57,10 @@ internal static class TestCatalog
             INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000020,10000002,'Kimotoro');
             INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000142,20000020,'Jita');
             INSERT INTO ItemCategory(Id,Name) VALUES (6,'Ship'),(3,'Station');
+            INSERT INTO ItemCategory(Id,Name) VALUES (7,'Module');
+            INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (54,'Mining Laser',7);
+            INSERT INTO ItemType(Id,Name,GroupId) VALUES (3651,'Civilian Miner',54);
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3651','{{"volume":5.0}}');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (237,'Corvette',6),(15,'Station',3);
             INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES
                 (601,'Ibis',237,125,1163000,47),(52678,'Station',15,0,0,100000);
