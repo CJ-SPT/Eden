@@ -16,7 +16,7 @@ public static class CompatibilityHandshake
     private static readonly byte[] s_clientVersion = MakeVersionTuple(isServer: false);
     private static readonly byte[] s_greeting = MakeVersionTuple(isServer: true);
 
-    public static async Task ServeAsync(Stream stream, Action<string> report, CancellationToken cancellationToken)
+    public static async Task ServeAsync(Stream stream, Action<string> report, CancellationToken cancellationToken, Func<byte[], CancellationToken, Task>? login = null)
     {
         await PacketStream.WriteAsync(stream, s_greeting, cancellationToken);
         report("Sent server greeting.");
@@ -30,6 +30,12 @@ public static class CompatibilityHandshake
         byte[] command = await PacketStream.ReadAsync(stream, cancellationToken);
         if (!command.AsSpan().SequenceEqual(s_queueCheck))
         {
+            if (login is not null)
+            {
+                await login(command, cancellationToken);
+                return;
+            }
+
             throw new InvalidDataException($"Unsupported post-version request ({command.Length} bytes).");
         }
 

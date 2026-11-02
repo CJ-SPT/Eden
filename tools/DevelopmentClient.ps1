@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory)][string] $DevelopmentRoot,
     [string] $PrepareFrom,
+    [switch] $Login,
     [switch] $Hidden
 )
 
@@ -59,5 +60,18 @@ $cache = Join-Path $root 'ResFiles'
 if (!(Test-Path -LiteralPath $cache -PathType Container)) { throw 'Missing staged resource cache.' }
 $bin = Join-Path $clientRoot 'bin64'
 $launchArgs = @('/noconsole', '/server:127.0.0.1', ('"/remotefilecachefolder=' + $cache + '"'), '/settingsprofile=Eden', '/triPlatform=dx11')
-$style = if ($Hidden) { 'Hidden' } else { 'Normal' }
-Start-Process -FilePath (Join-Path $bin 'exefile.exe') -WorkingDirectory $bin -ArgumentList $launchArgs -WindowStyle $style -PassThru
+$start = [Diagnostics.ProcessStartInfo]::new((Join-Path $bin 'exefile.exe'))
+$start.WorkingDirectory = $bin
+$start.UseShellExecute = $false
+$start.WindowStyle = if ($Hidden) { 'Hidden' } else { 'Normal' }
+if ($Login) {
+    $project = Join-Path $PSScriptRoot '../src/Eden.Server'
+    $ticket = & dotnet run --no-build --project $project -- --prepare-login $root
+    if ($LASTEXITCODE -or $ticket -notmatch '^eden1\.[0-9]+\.[A-F0-9]+\.[A-F0-9]+$') {
+        throw 'Could not provision the development login. Build the solution first.'
+    }
+    $launchArgs += "/ssoToken=$ticket"
+    $start.Environment['EVE_PUBLIC_GATEWAY_ADDRESS'] = '127.0.0.1:26001'
+}
+$start.Arguments = $launchArgs -join ' '
+[Diagnostics.Process]::Start($start)
