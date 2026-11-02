@@ -20,9 +20,21 @@ public sealed record DockedPilot(long PilotId, string Name, int CorpId, long Shi
     public int LocationId => Position is null ? StationId : SystemId;
 }
 
-public sealed record SpacePosition(double X, double Y, double Z);
+public sealed record SpacePosition(double X, double Y, double Z)
+{
+    public static SpacePosition Zero { get; } = new(0, 0, 0);
 
-public sealed record FlightProperties(float StationRadius, float ShipRadius, double Mass, float Agility, float MaxSpeed);
+    public double DistanceTo(SpacePosition other)
+    {
+        double x = X - other.X, y = Y - other.Y, z = Z - other.Z;
+        return Math.Sqrt(x * x + y * y + z * z);
+    }
+}
+
+public sealed record FlightProperties(float StationRadius, float ShipRadius, double Mass, float Agility, float MaxSpeed, double WarpSpeed)
+{
+    public double InertiaTime => Mass * Agility / 1_000_000;
+}
 
 public sealed record StationIdentity(string Name, int GroupId, int CategoryId);
 

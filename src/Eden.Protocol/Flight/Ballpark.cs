@@ -5,17 +5,34 @@ namespace Eden.Protocol.Flight;
 
 internal static class Ballpark
 {
-    internal static BlueInstance Snapshot(DockedPilot pilot, int stamp, params ShipContact[] peers)
+    internal static BlueInstance Snapshot(DockedPilot pilot, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE
         writer.Write(stamp);
-        WriteBallHeader(writer, pilot.StationId, 11, pilot.Flight.StationRadius, new(pilot.X, pilot.Y, pilot.Z), 2 | 4);
-        writer.Write((sbyte)-1); // Rigid balls have only a formation ID after the flags.
-        var station = Item(pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, pilot.Station.GroupId, pilot.Station.CategoryId);
-        station["corpID"] = pilot.StationOwnerId;
-        List<object?> items = [Slim(station), WriteShip(writer, pilot, new(0, 0, 0))];
+        List<object?> items = [];
+        foreach (var body in objects)
+        {
+            // Global rigid balls stay selectable across the system. Only the formation ID follows the flags.
+            WriteBallHeader(writer, body.Id, 11, body.Radius, body.Position, 2 | 4);
+            writer.Write((sbyte)-1);
+            var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
+            if (body.DestinationGateId.HasValue)
+            {
+                item["jumps"] = new List<object?> { new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
+                {
+                    ["toCelestialID"] = body.DestinationGateId,
+                    ["locationID"] = body.DestinationSystemId,
+                }) };
+            }
+            if (body.CategoryId == 3)
+            {
+                item["corpID"] = body.OwnerId;
+            }
+            items.Add(Slim(item));
+        }
+        items.Add(WriteShip(writer, pilot, new(0, 0, 0)));
         foreach (var peer in peers)
         {
             items.Add(WriteShip(writer, peer.Pilot, peer.Velocity));

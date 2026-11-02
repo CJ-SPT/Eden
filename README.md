@@ -4,7 +4,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
-On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. **Eden Wing** has a separate account and Ibis at the same station. Each pilot can see the other ship move and stop in Overview. A restart restores each ship in its hangar or at its last saved position in space.
+On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. **Eden Wing** has a separate account and Ibis at the same station. Both pilots can warp to catalog objects within Jita, see each other leave and arrive in Overview, and coast to a stop under the Ibis�s inertia. Jita contains 18 stations, seven stargates, eight planets, 33 moons, and one star. A restart restores each ship in its hangar or at its last saved position in space.
 
 ## Local game data
 

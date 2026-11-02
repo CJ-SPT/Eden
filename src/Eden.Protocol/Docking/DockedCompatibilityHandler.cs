@@ -10,7 +10,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
     private static BlueInstance Rows(string[] header, params object?[][] lines) => new("eve.common.script.sys.rowset.Rowset",
         new Dictionary<string, object?> { ["header"] = header.Cast<object?>().ToList(), ["lines"] = lines.Cast<object?>().ToList() });
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args)
+    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
         var pilot = context.Pilot;
         return (service, method) switch
@@ -104,7 +104,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("ProjectDiscovery", "initialize_tutorial_status") or ("milestoneMgr", "ProcessCharacterLogon") => null,
             ("standingMgr", "GetCharStandings" or "GetCorpStandings") or ("charMgr", "GetCharacterSettings") or
             ("securityMgr", "get_modified_systems") => new Dictionary<string, object?>(),
-            ("structureDirectory", "GetMyDockableStructures") or
+            ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData") or
             ("officeManager", "GetMyCorporationsOffices") or ("insurgencySolarsystem", "GetAllVisibleCampaigns") or
             ("calendarProxy", "GetEventList") => new List<object?>(),
             _ => PilotCallRouter.Unsupported,

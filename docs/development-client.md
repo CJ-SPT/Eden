@@ -88,3 +88,12 @@ Select **Eden Pilot** in the first client and **Eden Wing** in the second. Each 
 2. Leave Wing stopped. Fly Pilot into open space, switch to Wing, and watch Pilot's velocity and range. Stop Pilot and check that Wing sees zero velocity.
 3. Reverse the roles. Keep Pilot stationary while Wing flies, then stop Wing and compare the final range.
 4. Close one client or dock its ship. The other pilot should remain in space and the departed ship should disappear from Overview.
+
+## Warp within Jita and verify braking
+
+Start both clients in space. The **General** Overview shows stations and stargates. Use **All** to include planets and moons.
+
+1. Select a distant object such as the Perimeter stargate or Jita IV. Use **Warp to Within** in Selected Item. Watch the Ibis turn and gain speed, then watch the tunnel and the range to the destination during **Warp Drive Active**.
+2. Keep the second pilot at the departure point until the first ship disappears from Overview. Warp the second pilot to the same object at the same range. Check for the first Ibis nearby on arrival.
+3. Fly into open space away from a station or planet. Once the Ibis has accelerated, use **Stop My Ship** (Ctrl+Space). Watch the speed fall and the range continue changing until the ship settles at **0.0 m/s**.
+4. To return home, warp to **Jita IV - Moon 4 - Caldari Navy Assembly Plant** and select **Dock** inside docking range.

@@ -127,3 +127,13 @@ World schema version 6 stores each owned ship's catalog type and home station by
 **Automated checks.** Restore, build, and formatting verification passed with zero build warnings or errors. All 41 .NET tests and all three catalog setup tests passed. The documented setup command built and activated the local catalog after its verifier read all 4,913,627 records through their typed mappings.
 
 **Live client.** Eden Pilot and Eden Wing each saw the other Ibis in Overview. Pilot docked at the Caldari Navy Assembly Plant, where Inventory showed **Ibis (Ibis)** with 125 m³ capacity. After undocking, Overview showed the station at 453 m. The maintainer confirmed the final restart check with Pilot docked and Wing in space.
+
+## Within-system warp and braking, November 2, 2026
+
+Each ballpark snapshot includes the current system's catalog celestials and NPC stations. Each active gate carries its destination system and gate IDs. System content supplies secondary suns and disrupted gates in systems that have them. Build 3662168 has 67 static objects in Jita, comprising one star, eight planets, 33 moons, seven gates, and 18 NPC stations. General and All Overview tabs apply the client's own type filters.
+
+The bound flight call is `CmdWarpToStuff("item", itemID, minRange=metres)`. The host resolves the target in the current system, aligns the ship and sends Destiny's `WarpTo` with the catalog warp speed in milli-AU/s. A separate `OnSpecialFX` toggle drives the warp tunnel. Nearby clients receive the course, then lose or acquire the moving ship as it crosses the 8,000 km visibility radius. The host saves positions during flight. A stop command releases thrust, and hull mass and agility determine the remaining drift.
+
+**Staged client observations.** On the tunnel revision, Eden Pilot accelerated to 189 m/s leaving the Perimeter gate. During the return to Jita Trade Hub the blue tunnel and **Warp Drive Active** appeared with the station still 26.2 AU away. Wing followed and saw Pilot's Ibis at 906 m from its own ship, with the station at 1,500 m. The All tab showed Jita IV as a gas planet and listed the nearby moons. Selecting the planet exposed an unsupported structure-directory call. The handler now returns the empty player-structure list for the local world.
+
+**Automated checks on the braking revision.** Restore and build passed with zero warnings or errors. All 44 tests passed and formatting verification passed. Tests cover the system object list, packet order for warp entry, range validation, return to docking range, persisted position, and progressive braking without a final position correction. Live confirmation of the reported stop lurch and planet selection on this revision is pending.

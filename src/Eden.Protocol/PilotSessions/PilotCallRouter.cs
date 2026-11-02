@@ -11,7 +11,7 @@ internal interface IPilotCallHandler
 
 internal interface ISelectedPilotCallHandler
 {
-    object? Call(PilotCallContext context, string service, string method, object?[] args);
+    object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null);
 }
 
 internal sealed class PilotCallContext(FlightSession flight, long sessionId, object?[] signedSettings)
@@ -65,7 +65,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
         return name.StartsWith('@') ? "unknown binding" : name;
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object? arguments, Action<string> report)
+    public object? Call(PilotCallContext context, string service, string method, object? arguments, Action<string> report, Dictionary<string, object?>? keywords = null)
     {
         foreach (var handler in accountHandlers)
         {
@@ -75,10 +75,10 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 return result;
             }
         }
-        return context.Selected && arguments is object?[] args ? CallSelected(context, service, method, args, report) : Unsupported;
+        return context.Selected && arguments is object?[] args ? CallSelected(context, service, method, args, report, keywords) : Unsupported;
     }
 
-    private object? CallSelected(PilotCallContext context, string service, string method, object?[] args, Action<string> report)
+    private object? CallSelected(PilotCallContext context, string service, string method, object?[] args, Action<string> report, Dictionary<string, object?>? keywords)
     {
         if (service is "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce")
         {
@@ -103,7 +103,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 {
                     string innerMethod = BlueMarshal.Text(first[0]);
                     report($"Bound call {service}.{innerMethod}.");
-                    result = CallSelected(context, service, innerMethod, innerArgs, report);
+                    result = CallSelected(context, service, innerMethod, innerArgs, report, first.ElementAtOrDefault(2) as Dictionary<string, object?>);
                 }
                 else if (args[1] is not null)
                 {
@@ -114,7 +114,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
         }
         foreach (var handler in selectedHandlers)
         {
-            object? result = handler.Call(context, service, method, args);
+            object? result = handler.Call(context, service, method, args, keywords);
             if (!ReferenceEquals(result, Unsupported))
             {
                 return result;

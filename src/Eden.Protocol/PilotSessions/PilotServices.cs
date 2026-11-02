@@ -5,7 +5,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -13,7 +13,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
     public async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long accountId, long clientId, object?[] signedSettings, CancellationToken cancellationToken)
     {
         DockedPilot pilot = pilots.FindPilot(accountId) ?? throw new InvalidDataException("Account has no active pilot.");
-        using FlightSession flight = new(positions, pilot, clock, space);
+        using FlightSession flight = new(positions, pilot, clock, space, objects.Load(pilot.SystemId));
         PilotCallContext context = new(flight, clientId, signedSettings);
         bool initialStateSent = false;
         Task? checkpoint = null;
@@ -88,7 +88,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             report($"Call {service}.{method}.");
             bool selected = context.Selected;
             DockedPilot previous = flight.Pilot;
-            object? result = router.Call(context, service, method, call[2], report);
+            object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
             if (result is PilotCallRouter.Error || ReferenceEquals(result, PilotCallRouter.Unsupported))
             {
                 string message = (result as PilotCallRouter.Error)?.Message ?? $"Unsupported local call {service}.{method}";

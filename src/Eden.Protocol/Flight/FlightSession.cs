@@ -1,9 +1,10 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space) : IDisposable
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects) : IDisposable
 {
     private ShipContact[] _peers = [];
     private int _lastPeerSync;
@@ -16,22 +17,57 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private SpacePosition _velocity = new(0, 0, 0);
     private SpacePosition? _approachPoint;
     private double _followRange;
+    private SpacePosition? _warpDestination;
+    private double _warpLaunchTime;
+    private WarpCourse? _warp;
     private double _speedFraction = 1;
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<object?> Updates { get; } = [];
-    public bool Moving => _direction is not null;
+    public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
 
     public void Checkpoint()
     {
-        if (_direction is not { } direction || Pilot.Position is not { } position)
+        if (_warpDestination is { } end && Elapsed >= _warpLaunchTime)
+        {
+            var origin = Pilot.Position!;
+            double distance = origin.DistanceTo(end);
+            // Seed the aligned velocity at handoff. Contact with a station hull can otherwise
+            // hold the client below Destiny's 75% entry threshold while the server advances.
+            double scale = Pilot.Flight.MaxSpeed * 0.8 / distance;
+            _velocity = new((end.X - origin.X) * scale, (end.Y - origin.Y) * scale, (end.Z - origin.Z) * scale);
+            _direction = null;
+            _warpDestination = null;
+            _warp = new(origin, end, Elapsed, Pilot.Flight);
+            ApplyCourse(Sample);
+            return;
+        }
+        if (_warp is { } warp)
+        {
+            var sample = warp.Sample(Elapsed);
+            if (sample != Pilot.Position)
+            {
+                SetPosition(sample);
+            }
+            if (Elapsed < warp.ExitTime)
+            {
+                return;
+            }
+            _warp = null;
+            WarpEffect(Pilot.ShipId, false);
+            _velocity = warp.ExitVelocity;
+            _sampleTime = warp.ExitTime;
+            // Destiny exits warp and brakes locally. A timed velocity or position override can cut the tunnel short.
+        }
+        if (!Moving || Pilot.Position is not { } position)
         {
             return;
         }
+        var direction = _direction ?? SpacePosition.Zero;
         double now = Elapsed;
         double seconds = now - _sampleTime;
         _sampleTime = now;
         // Integrate Destiny's linear drag towards cruise velocity (mass * agility / friction).
-        double tau = Pilot.Flight.Mass * Pilot.Flight.Agility / 1_000_000d;
+        double tau = Pilot.Flight.InertiaTime;
         double decay = Math.Exp(-seconds / tau);
         double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
         double transient = tau * (1 - decay);
@@ -51,14 +87,27 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         if (StationContact(position, next) is { } contact)
         {
             SetPosition(contact);
-            Stop();
+            if (_warpDestination is null)
+            {
+                if (_direction is not null)
+                {
+                    Update("Stop", Pilot.ShipId);
+                }
+                SetAtRest();
+            }
             return;
+        }
+        if ((_direction is null || _speedFraction == 0) && _velocity.DistanceTo(SpacePosition.Zero) < 0.05)
+        {
+            // Save the asymptote without moving or rotating a client that is already braking.
+            next = new(next.X + _velocity.X * tau, next.Y + _velocity.Y * tau, next.Z + _velocity.Z * tau);
+            SetAtRest();
         }
         SetPosition(next);
     }
 
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
-        _approachPoint is null ? null : _followRange);
+        _approachPoint is null ? null : _followRange, _warp);
 
     // Clip the complete checkpoint segment so even a delayed tick cannot cross the station.
     private SpacePosition? StationContact(SpacePosition start, SpacePosition end)
@@ -99,15 +148,34 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
                 Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
-                if (ship.Heading is not null)
+                if (ship.Heading is not null || ship.Warp is not null)
                 {
                     ApplyCourse(ship);
                 }
                 continue;
             }
+            if (ship.Warp is not null)
+            {
+                if (ship.Warp != previous.Warp)
+                {
+                    ApplyCourse(ship);
+                }
+                continue;
+            }
+            if (ship.Heading is null)
+            {
+                if (previous.Warp is not null)
+                {
+                    WarpEffect(ship.Pilot.ShipId, false);
+                }
+                else if (previous.Heading is not null)
+                {
+                    Update("Stop", ship.Pilot.ShipId);
+                }
+                continue;
+            }
             if (ship.Heading != previous.Heading || ship.SpeedFraction != previous.SpeedFraction ||
-                ship.FollowRange != previous.FollowRange || (reconcile && ship.Heading is not null) ||
-                (ship.Heading is null && ship.Pilot.Position != previous.Pilot.Position))
+                ship.FollowRange != previous.FollowRange || reconcile)
             {
                 var position = ship.Pilot.Position!;
                 Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
@@ -178,12 +246,12 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         _peers = peers;
         int stamp = Stamp;
-        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Pilot, stamp, peers) } } });
+        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Pilot, stamp, objects, peers) } } });
         if (Moving)
         {
             ApplyCourse(Sample);
         }
-        foreach (var peer in peers.Where(ship => ship.Heading is not null))
+        foreach (var peer in peers.Where(ship => ship.Heading is not null || ship.Warp is not null))
         {
             ApplyCourse(peer);
         }
@@ -192,6 +260,15 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private void ApplyCourse(ShipContact ship)
     {
         long id = ship.Pilot.ShipId;
+        if (ship.Warp is { } warp)
+        {
+            var end = warp.Destination;
+            Update("SetSpeedFraction", id, 1d);
+            Update("SetBallVelocity", id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z);
+            Update("WarpTo", id, end.X, end.Y, end.Z, 0d, warp.WireFactor);
+            WarpEffect(id, true);
+            return;
+        }
         if (ship.Heading is null)
         {
             Update("Stop", id);
@@ -211,21 +288,66 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         Update("SetBallVelocity", id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z);
     }
 
-    private void Stop()
+    private void WarpEffect(long id, bool start)
+    {
+        // The simulation command moves the ball. This separate toggle drives the pilot's tunnel and peer flash.
+        Update("OnSpecialFX", id, null, null, null, null, "effects.Warping", false, start, true);
+    }
+
+    private void SetAtRest()
     {
         _direction = null;
         _approachPoint = null;
         _velocity = new(0, 0, 0);
-        var position = Pilot.Position!;
-        Update("Stop", Pilot.ShipId);
-        Update("SetBallPosition", Pilot.ShipId, position.X, position.Y, position.Z);
-        Update("SetBallVelocity", Pilot.ShipId, 0d, 0d, 0d);
+        _speedFraction = 0;
     }
 
     private void Update(string method, params object?[] args) =>
         Updates.Add(new object?[] { Stamp, new object?[] { method, args } });
 
-    public object? Call(string service, string method, object?[] arguments)
+    private object? StartWarp(long target, double range)
+    {
+        var body = objects.FirstOrDefault(item => item.Id == target);
+        if (body is null)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        var center = body.Position;
+        double radius = body.Radius;
+        if (!InBallpark || !double.IsFinite(range) || range is < 0 or > 100_000)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        Checkpoint();
+        var origin = Pilot.Position!;
+        double distance = origin.DistanceTo(center);
+        if (distance - radius - Pilot.Flight.ShipRadius < 150_000)
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        // Separate the two landing lanes to keep stopped ships from occupying the same ball.
+        double offset = (range + radius + Pilot.Flight.ShipRadius + (Pilot.ShipId % 2 == 0 ? 1500 : 500)) / distance;
+        SpacePosition end = new(center.X + (origin.X - center.X) * offset,
+            center.Y + (origin.Y - center.Y) * offset, center.Z + (origin.Z - center.Z) * offset);
+        if (origin.DistanceTo(end) < 101_000)
+        {
+            // Destiny substitutes sublight approach for warp legs below 100 km.
+            return PilotCallRouter.Unsupported;
+        }
+        double alignTime = Math.Log(4) * Pilot.Flight.InertiaTime;
+        _warpDestination = end;
+        _warpLaunchTime = Elapsed + alignTime;
+        _direction = new((center.X - origin.X) / distance, (center.Y - origin.Y) / distance, (center.Z - origin.Z) / distance);
+        _lastHeading = _direction;
+        _speedFraction = 1;
+        _sampleTime = Elapsed;
+        _approachPoint = null;
+        ApplyCourse(Sample);
+        space.Publish(Sample);
+        return null;
+    }
+
+    public object? Call(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
     {
         if (service == "ship" && method == "Undock" && Pilot.Position is null &&
             arguments is [long id, ..] && id == Pilot.ShipId)
@@ -239,8 +361,20 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             return PilotCallRouter.Unsupported;
         }
+        if (_warpDestination is not null && method == "CmdStop")
+        {
+            _warpDestination = null;
+        }
+        if ((_warp is not null || _warpDestination is not null) && method != "UpdateStateRequest")
+        {
+            return PilotCallRouter.Unsupported;
+        }
         switch (method)
         {
+            case "CmdWarpToStuff" when arguments is [string or byte[], long targetId] &&
+                BlueMarshal.Text(arguments[0]) == "item":
+                var range = keywords?.GetValueOrDefault("minRange") ?? 0L;
+                return range is double or long ? StartWarp(targetId, Convert.ToDouble(range)) : PilotCallRouter.Unsupported;
             case "UpdateStateRequest":
                 Snapshot();
                 return null;
@@ -307,7 +441,11 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 return null;
             case "CmdStop":
                 Checkpoint();
-                Stop();
+                _direction = null;
+                _approachPoint = null;
+                _speedFraction = 0;
+                _sampleTime = Elapsed;
+                Update("Stop", Pilot.ShipId);
                 return null;
             case "CmdDock" when arguments is [long station, long ship] && station == Pilot.StationId && ship == Pilot.ShipId:
                 Checkpoint();

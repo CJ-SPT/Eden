@@ -71,7 +71,7 @@ internal sealed class InventoryHandler(TimeProvider clock) : IPilotCallHandler, 
     public object? Call(PilotCallContext context, string service, string method, object? arguments)
         => (service, method) == ("invbroker", "GetItemDescriptor") ? ItemDescriptor() : PilotCallRouter.Unsupported;
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args)
+    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
         var pilot = context.Pilot;
         return (service, method) switch
