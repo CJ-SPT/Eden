@@ -31,6 +31,21 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     private static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         var attributes = Attributes(catalog, pilot.ActiveShip.TypeId);
+        // Catalog corvette role effects multiply the corresponding resonances.
+        // A -8 percent bonus means 0.92 times damage, not eight resistance points.
+        foreach (var (bonus, resonances) in new[]
+        {
+            (DogmaAttributeId.RookieShieldResistanceBonus, new[] { DogmaAttributeId.ShieldEmResonance, DogmaAttributeId.ShieldExplosiveResonance,
+                DogmaAttributeId.ShieldKineticResonance, DogmaAttributeId.ShieldThermalResonance }),
+            (DogmaAttributeId.RookieArmorResistanceBonus, new[] { DogmaAttributeId.ArmorEmResonance, DogmaAttributeId.ArmorExplosiveResonance,
+                DogmaAttributeId.ArmorKineticResonance, DogmaAttributeId.ArmorThermalResonance }),
+        })
+        {
+            foreach (var resonance in resonances)
+            {
+                attributes[resonance] = attributes.GetValueOrDefault(resonance, 1) * (1 + attributes.GetValueOrDefault(bonus) / 100);
+            }
+        }
         // These skills each grant five percent per trained level to their hull attribute.
         foreach (var (skill, output) in new[]
         {

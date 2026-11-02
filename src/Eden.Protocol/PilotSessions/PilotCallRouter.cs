@@ -29,6 +29,11 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
         ActiveFlight = startFlight(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
+    public void ReplaceDestroyedShip(DockedPilot pilot)
+    {
+        Flight.ReplaceDestroyedShip(pilot);
+        Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
+    }
     public void Dispose() => ActiveFlight?.Dispose();
     public DockedPilot Pilot => Flight.Pilot;
     public object?[] SignedSettings { get; } = signedSettings;

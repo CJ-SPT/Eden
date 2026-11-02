@@ -8,6 +8,8 @@ public static class FleetDefinitions
     // Build 3662168's native ship-name prompt permits 32 characters.
     public const int MaximumShipNameLength = 32;
     public const int CorvetteGroup = 237;
+    public const int CapsuleGroup = 29;
+    public const int CapsuleType = 670;
 }
 
 public interface IPilotFleet

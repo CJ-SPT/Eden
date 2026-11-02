@@ -14,6 +14,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
     private NpcContact[] _npcs = [];
+    private bool _destroying;
     private int _lastPeerSync;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
@@ -37,7 +38,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<object?> Updates { get; } = [];
     public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
-    public bool CanTarget => InBallpark && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+    public bool CanTarget => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
     public SpacePosition Velocity => _velocity;
 
     public TargetContact? FindTarget(long id)
@@ -74,20 +75,67 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         var current = ReadNpcs();
         foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
+            if (departed.Weapon is { } weapon) { NpcWeaponEffect(departed.Id, weapon, false); }
             Update("RemoveBall", departed.Id, encounters?.WasDestroyed(departed.Id) == true);
         }
+        var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
+        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]); }
         foreach (var npc in current)
         {
             var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
+            if (previous?.Weapon != npc.Weapon)
+            {
+                if (previous?.Weapon is { } stopped) { NpcWeaponEffect(npc.Id, stopped, false); }
+                if (npc.Weapon is { } started) { NpcWeaponEffect(npc.Id, started, true); }
+            }
             if (previous is not null && (npc.Health.Remaining.Armor != previous.Health.Remaining.Armor ||
                 npc.Health.Remaining.Structure != previous.Health.Remaining.Structure || npc.Health.Remaining.Shield < previous.Health.Remaining.Shield))
             {
                 NotifyHealth(npc.Health);
             }
         }
-        var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
-        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]); }
         _npcs = current;
+    }
+
+    private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active) =>
+        Update("OnSpecialFX", npcId, npcId, weapon.TurretTypeId, weapon.TargetId, null, "effects.Laser", true, active, active,
+            weapon.Duration, 0, weapon.StartedAt, 0, null);
+
+    public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
+    {
+        if (_npcs.FirstOrDefault(n => n.Id == npcId)?.Weapon is { } previous) { NpcWeaponEffect(npcId, previous, false); }
+        NpcWeaponEffect(npcId, weapon, true);
+        _npcs = _npcs.Select(n => n.Id == npcId ? n with { Weapon = weapon } : n).ToArray();
+    }
+
+    public void BeginShipLoss()
+    {
+        _destroying = true;
+        space.Leave(Pilot.ShipId);
+    }
+
+    public void ReplaceDestroyedShip(DockedPilot capsule)
+    {
+        long destroyed = Pilot.ShipId;
+        foreach (var npc in _npcs.Where(n => n.Weapon?.TargetId == destroyed)) { NpcWeaponEffect(npc.Id, npc.Weapon!, false); }
+        _npcs = _npcs.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToArray();
+        Pilot = capsule;
+        modules = [];
+        _velocity = SpacePosition.Zero;
+        _direction = null;
+        _speedFraction = 0;
+        _followTarget = null;
+        _warp = null;
+        _warpDestination = null;
+        _warpOrder = null;
+        _mining = [];
+        _weapons = [];
+        _destroying = false;
+        // The client can adopt an already loaded capsule as ego during the ship
+        // session delta. Keep the old hull until the capsule ball has arrived.
+        Update("AddBalls", [Ballpark.AddShip(Sample, Stamp)]);
+        Update("RemoveBall", destroyed, true);
+        space.Publish(Sample);
     }
 
     public void NotifyHealth(ShipHealth current)
@@ -208,7 +256,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         _mining = _mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
         MiningEffect(Pilot.ShipId, effect, active);
-        if (InBallpark) { space.Publish(Sample); }
+        if (InBallpark && !_destroying) { space.Publish(Sample); }
     }
 
     public void RefreshModules(IReadOnlyList<InventoryItem> items) => modules = items.Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
@@ -228,7 +276,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         _weapons = _weapons.Where(w => w.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<WeaponContact>()).ToArray();
         WeaponEffect(Pilot.ShipId, effect, active);
-        if (InBallpark) { space.Publish(Sample); }
+        if (InBallpark && !_destroying) { space.Publish(Sample); }
     }
 
     private void WeaponEffect(long shipId, WeaponContact effect, bool active) =>
@@ -277,7 +325,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         }
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
-            Update("RemoveBall", departed.Pilot.ShipId, false);
+            Update("RemoveBall", departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true);
         }
         // Destiny integrates the same course between changes. Occasionally reconcile drift.
         bool reconcile = Stamp - _lastPeerSync >= 10;
@@ -299,6 +347,12 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             }
             RefreshMining(ship, previous);
             RefreshWeapons(ship, previous);
+            if (ship.Health is { } currentHealth && previous.Health is { } previousHealth &&
+                (currentHealth.Remaining.Armor != previousHealth.Remaining.Armor || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure ||
+                currentHealth.Remaining.Shield < previousHealth.Remaining.Shield))
+            {
+                NotifyHealth(currentHealth);
+            }
             if (ship.DepartureGate is long departure && previous.DepartureGate != departure)
             {
                 DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
@@ -424,6 +478,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _npcs = ReadNpcs();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
         Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs) } } });
+        foreach (var npc in _npcs.Where(n => n.Weapon is not null)) { NpcWeaponEffect(npc.Id, npc.Weapon!, true); }
         foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
         foreach (var effect in _weapons) { WeaponEffect(Pilot.ShipId, effect, true); }
         foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); }

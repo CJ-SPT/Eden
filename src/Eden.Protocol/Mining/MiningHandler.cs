@@ -13,6 +13,11 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     private readonly Dictionary<long, Cycle> _cycles = [];
     private const int ProbabilityResolution = 1_000_000;
 
+    public void Cancel(PilotCallContext context)
+    {
+        foreach (var cycle in _cycles.Values.ToArray()) { Stop(context, cycle); }
+    }
+
     public bool IsActive(long module) => _cycles.ContainsKey(module);
 
     public object?[]? ActiveEffect(DockedPilot pilot, long module) => _cycles.TryGetValue(module, out var cycle)

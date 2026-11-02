@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 20)
+        if (version is < 0 or > 21)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -205,6 +205,20 @@ internal static class WorldMigration
             }
             world.Database.ExecuteSqlRaw("PRAGMA user_version=20");
         }
+        if (version is >= 6 and < 21)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldNpcAggression(NpcId INTEGER PRIMARY KEY REFERENCES WorldNpc(Id) ON DELETE CASCADE,
+                    TargetShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE, ReadyAt INTEGER NOT NULL, LastShotAt INTEGER);
+                CREATE INDEX IX_WorldNpcAggression_TargetShipId ON WorldNpcAggression(TargetShipId);
+                CREATE TABLE WorldShipLoss(ShipId INTEGER PRIMARY KEY, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE RESTRICT, CapsuleId INTEGER NOT NULL,
+                    TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Time INTEGER NOT NULL, Name TEXT NOT NULL, ItemsJson TEXT NOT NULL,
+                    X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL);
+                CREATE INDEX IX_WorldShipLoss_PilotId_Time ON WorldShipLoss(PilotId,Time);
+                """);
+        }
+        if (version < 21) { world.Database.ExecuteSqlRaw("PRAGMA user_version=21"); }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

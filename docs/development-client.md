@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 19 migrates to version 20 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 20 migrates to version 21 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -216,13 +216,13 @@ Ship switching preserves each hull's items and capacitor. The server requires ow
 3. Open Fitting with the **circled ship** button. Check that a **Civilian Miner** and **Civilian Gatling Railgun** are fitted and online. The recovery kit costs no ISK and grants no skills. It uses the pilot's race hull, but currently supplies the same civilian railgun to every race.
 4. Board the previous ship again and compare its cargo, mining hold and fitting. Repeat **Board my Corvette**: Eden should reuse the ready recovery hull without adding another kit. Restart both host and client and verify the active hull, fitted modules, previous ship and wallet remain.
 
-Eden reuses a corvette at the current station only when its armor and structure are undamaged and both recovery modules occupy their expected online high slots. It does not repair, refill or strip another ship. Otherwise it creates a new equipped hull in one world transaction. Requests require the current ship, station, ownership and catalog skills. Repeated or competing requests for the same previous hull cannot create duplicate kits. The button is disabled while already aboard a corvette. This is an explicit local recovery policy; ship destruction and capsule escape are still separate work. No world-schema migration is needed beyond version 20.
+Eden reuses a corvette at the current station only when its armor and structure are undamaged and both recovery modules occupy their expected online high slots. It does not repair, refill or strip another ship. Otherwise it creates a new equipped hull in one world transaction. Requests require the current ship, station, ownership and catalog skills. Repeated or competing requests for the same previous hull cannot create duplicate kits. The button is disabled while already aboard a corvette. This is an explicit local recovery policy. Recovery itself needs no schema change beyond version 20; version 21 adds NPC retaliation and saved ship losses.
 
 ## Check belt NPCs
 
 Select **Eden Pilot**, check the active ship in Inventory, undock and warp to **Perimeter II – Asteroid Belt 1**. The local encounter policy places one Guristas Rookie 3,500 m from each Perimeter belt anchor. It should appear as a red NPC in an Overview preset that includes **Minor Threat**. The existing Mining preset also showed it during acceptance. Right-click it and choose **Lock Target**; after the normal scan delay, its portrait and health rings should appear. **Look at** should render its native ship model. **Approach** should move toward it. Restart the host and client at the belt and verify the same NPC appears without a duplicate.
 
-NPCs remain stationary and do not aggress arriving miners. Positions and health are saved. The following firing check verifies player attacks and bounty payments; NPC retaliation and player losses remain separate work.
+NPCs remain stationary and do not aggress arriving miners. Attacking one within its 3,125 m attack range starts retaliation after 7.5 seconds. Positions and health are saved. The following checks cover firing, bounty payments and capsule recovery.
 
 ## Fire a civilian railgun and earn a bounty
 
@@ -232,7 +232,19 @@ NPCs remain stationary and do not aggress arriving miners. Positions and health 
 4. Watch for native combat messages showing the damage amount, target, weapon and hit quality, while the target's shield, armor and structure rings decline. Misses are possible outside optimal range or with angular motion. When the Rookie is destroyed, it disappears from Overview, the gun stops, and the personal wallet increases by **3,000 ISK**. Under **My Wallet → Transactions**, check **Bounty Prizes**, the resulting balance and the Perimeter description.
 5. Restart both client and host using the same save. Verify the active hull, fitted gun, bounty balance and journal entry remain. The defeated NPC must not reappear early or pay again on reconnect. After ten minutes a replacement may appear at the same belt with a new identity. Dead rows and the paid bounty remain saved.
 
-Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, NPC retaliation, player loss, capsule escape, loot or wreck yet. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, loot or wreck yet. NPC retaliation and player loss are covered below. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+
+## Take NPC fire and recover from a loss
+
+Use an isolated copy of the save when testing destruction. The active ship and everything inside it are lost; station hangars, other hulls, wallet and skills are retained.
+
+1. Select **Eden Pilot**, open Inventory and verify the active equipped ship. Undock and warp to a Perimeter belt. Lock its Rookie and use **Keep at Range → 1,000 m**. A nearby Rookie does not attack until fired upon.
+2. To leave the NPC alive during the test, right-click the civilian railgun on the HUD and choose **Set Auto-Repeat Off**. Press its shortcut once. After the reaction delay, look for the NPC's incoming beams, red damage amounts naming **Guristas Rookie**, the targeted indicator and declining health rings. The server uses the catalog's damage, tracking, range and resistances.
+3. Warp away or dock to end the fight. Reconnecting also clears aggression; it does not simulate missed offline shots. For destruction, remain in range until all structure is lost. The old ship should disappear, Inventory should change to **Capsule (Capsule)** with no cargo or modules, and both the NPC portrait lock and its targeted indicator should clear.
+4. Use the capsule's normal flight controls to warp and dock at a station. **Board my Corvette** should provide a flyable recovery hull with an online miner and civilian gun. Check the previous surviving ships and their cargo in Inventory, and compare the wallet.
+5. Restart the host and client on the same save. The destroyed hull and its contents must remain absent, the replacement hull must remain active, and the loss record must not duplicate. Capsules are not NPC targets in this initial policy. Restore **Set Auto-Repeat On** for normal repeated firing when appropriate.
+
+For a faster destructive acceptance fixture, use a separate physical copy of the lab catalog and increase only Guristas Rookie's damage multiplier there. Never edit a hardlink to the normal catalog: that would change the original file. The recorded accelerated run used **100× NPC damage**, leaving player damage unchanged. Stop the host before changing the test catalog and restore normal catalog data afterward. This is a test override, not the normal encounter balance.
 
 ## Check saved ship health
 

@@ -19,6 +19,10 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         if (!context.Selected) { return; }
         if (_shipId != 0 && _shipId != context.Pilot.ShipId)
         {
+            // Changing hulls clears both directions in the client's target UI.
+            // Removing shared edges alone leaves portraits and targeted markers.
+            foreach (long id in _pending.Keys.Concat(_locked).Distinct()) { Notify(context, "lost", id); }
+            foreach (long id in _targeters) { Notify(context, "otherlost", id); }
             shared.RemoveShip(_shipId);
             _pending.Clear();
             _locked.Clear();

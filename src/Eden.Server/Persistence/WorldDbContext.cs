@@ -123,6 +123,15 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<NpcAggression>().ToTable("WorldNpcAggression").HasKey(a => a.NpcId);
+        model.Entity<NpcAggression>().HasOne<WorldNpc>().WithMany().HasForeignKey(a => a.NpcId);
+        model.Entity<NpcAggression>().HasOne<Ship>().WithMany().HasForeignKey(a => a.TargetShipId);
+        model.Entity<NpcAggression>().HasIndex(a => a.TargetShipId);
+        model.Entity<ShipLoss>().ToTable("WorldShipLoss").HasKey(l => l.ShipId);
+        model.Entity<ShipLoss>().Property(l => l.ShipId).ValueGeneratedNever();
+        model.Entity<ShipLoss>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId);
+        model.Entity<ShipLoss>().HasOne<WorldNpc>().WithMany().HasForeignKey(l => l.NpcId).OnDelete(DeleteBehavior.Restrict);
+        model.Entity<ShipLoss>().HasIndex(l => new { l.PilotId, l.Time });
         model.Entity<WeaponCooldown>().ToTable("WorldWeaponCooldown").HasKey(w => w.ModuleId);
         model.Entity<WeaponCooldown>().HasOne<OwnedItem>().WithMany().HasForeignKey(w => w.ModuleId);
         model.Entity<NpcBounty>().ToTable("WorldNpcBounty", t =>

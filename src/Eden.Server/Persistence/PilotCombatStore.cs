@@ -86,8 +86,10 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         npc.StructureDamage = defense.Structure - result.Remaining.Structure;
         npc.UpdatedAt = Math.Max(now, npc.UpdatedAt);
         NpcBounty? reward = null;
+        var aggression = world.Set<NpcAggression>().Find(npc.Id);
         if (result.Remaining.Destroyed)
         {
+            if (aggression is not null) { world.Remove(aggression); }
             npc.DestroyedAt = now;
             double bounty = target.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);
             if (!double.IsFinite(bounty) || bounty < 0) { throw new InvalidDataException("Invalid NPC bounty."); }
@@ -107,6 +109,18 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
                     BalanceCents = wallet.Cents,
                 }).Entity;
             }
+        }
+        else if (aggression is null && target.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
+        {
+            // Eden's initial AI retaliates against the first attacker, using the
+            // catalog's minimum reaction delay. Arrival alone does not aggress.
+            if (!double.IsFinite(delay) || delay < 0) { throw new InvalidDataException("Invalid NPC reaction delay."); }
+            world.Set<NpcAggression>().Add(new()
+            {
+                NpcId = npc.Id,
+                TargetShipId = pilot.ActiveShipId,
+                ReadyAt = checked(now + (long)Math.Ceiling(delay * TimeSpan.TicksPerMillisecond)),
+            });
         }
         world.SaveChanges();
         transaction.Commit();

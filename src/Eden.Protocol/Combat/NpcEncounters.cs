@@ -3,7 +3,7 @@ using Eden.Protocol.Docking;
 namespace Eden.Protocol.Combat;
 
 public sealed record NpcContact(long Id, int TypeId, int GroupId, int CategoryId, int CorporationId, string Name, int SystemId,
-    SpacePosition Position, double Mass, float Radius, float MaxSpeed, float Agility, ShipHealth Health);
+    SpacePosition Position, double Mass, float Radius, float MaxSpeed, float Agility, ShipHealth Health, NpcWeaponContact? Weapon = null);
 
 public interface INpcEncounters
 {

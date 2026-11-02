@@ -416,7 +416,7 @@ public sealed class PilotCombatTests
             world.Add(new ShipHealthState { ShipId = 1000000000001, ShieldCharge = 10, ArmorDamage = 20, StructureDamage = 30, UpdatedAt = f.Clock.Now });
             world.SaveChanges();
             world.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).ExecuteDelete();
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19");
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);

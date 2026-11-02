@@ -17,6 +17,12 @@ public sealed class ShipHealthState
 [Injectable]
 internal sealed class PilotHealthStore(WorldDatabase database, IPilotFitting fitting) : IPilotHealth
 {
+    public bool WasDestroyed(long shipId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world.Set<ShipLoss>().Any(l => l.ShipId == shipId);
+    }
+
     public ShipHealth Read(long pilotId, long now)
     {
         using WorldDbContext world = new(database.Path);

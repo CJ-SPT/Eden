@@ -59,6 +59,14 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
             });
         }
         world.SaveChanges();
+        var aggression = world.Set<NpcAggression>().AsNoTracking().ToDictionary(a => a.NpcId);
+        NpcWeaponContact? Weapon(long npcId)
+        {
+            double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
+            return aggression.TryGetValue(npcId, out var active) && active.LastShotAt is long started && now >= started &&
+                now - started < duration * TimeSpan.TicksPerMillisecond
+                ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration) : null;
+        }
         var contacts = world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id)
             .AsEnumerable().Select(n => n.TypeId != type.Id ? throw new InvalidDataException($"Unsupported saved NPC type {n.TypeId}.") :
                 new NpcContact(n.Id, n.TypeId, type.GroupId, type.Group.CategoryId, NpcEncounterDefinitions.GuristasCorporation,
@@ -66,7 +74,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                 (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity), (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility, NpcEncounterDefinitions.StationaryAgility),
                 new(n.Id, defense, new(ChargedResource.Recharged(n.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
                     Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)),
-                    Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))))).ToArray();
+                    Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))), Weapon(n.Id))).ToArray();
         transaction.Commit();
         return contacts;
     }

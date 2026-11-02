@@ -29,6 +29,7 @@ public sealed record ShipHealth(long ShipId, HullDefense Defense, HullDamage Rem
 public interface IPilotHealth
 {
     ShipHealth Read(long pilotId, long now);
+    bool WasDestroyed(long shipId);
 }
 
 public enum DefenseSkill

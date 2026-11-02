@@ -9,7 +9,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters, CombatHandler combat) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters, CombatHandler combat, NpcCombatHandler npcCombat) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -54,6 +54,10 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     targeting.Advance(context);
                     mining.Advance(context);
                     combat.Advance(context);
+                    var beforeAttack = context.Pilot;
+                    npcCombat.Advance(context);
+                    targeting.Advance(context);
+                    if (beforeAttack.ShipId != context.Pilot.ShipId) { await AnnounceTransitionAsync(beforeAttack); }
                     await FlushFlightUpdatesAsync();
                     await FlushNotificationsAsync();
                     checkpoint = null;
@@ -113,9 +117,18 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             bool selected = context.Selected;
             DockedPilot? previous = context.ActiveFlight?.Pilot;
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
+            if (!selected && context.Selected) { npcCombat.Enter(context); }
             targeting.Advance(context);
             mining.Advance(context);
             combat.Advance(context);
+            npcCombat.Advance(context);
+            targeting.Advance(context);
+            // A timer-driven loss can happen while rejecting an unrelated RPC.
+            // Its durable capsule transition still has to reach the client.
+            if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
+            {
+                await AnnounceTransitionAsync(previous);
+            }
             if (result is PilotCallRouter.UserError userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
@@ -138,17 +151,6 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
-            if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
-            {
-                // HangarView resolves a newly boarded hull from its inventory cache during
-                // ProcessActiveShipChanged. Announce new items before changing shipid.
-                if (previous.ShipId != context.Pilot.ShipId) { await FlushNotificationsAsync(); }
-                if (previous.LocationId != context.Pilot.LocationId) { context.ReleaseLocationReferences(); }
-                await write(SessionChange(accountId, clientId, context.Pilot, previous));
-                report(previous.ShipId != context.Pilot.ShipId
-                    ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} from {previous.ShipId} at {context.Pilot.LocationId}."
-                    : $"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
-            }
             await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(result) }));
             if (service == "beyonce" && method == "MachoBindObject" && call[2] is object?[] { Length: 2 } bind && bind[1] is null && context.ActiveFlight?.Pilot.Position is not null)
             {
@@ -165,6 +167,22 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     new object?[] { clientId, 5, PilotLogin.AccountState(accountId) }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
                 }));
             }
+        }
+
+        async Task AnnounceTransitionAsync(DockedPilot previous)
+        {
+            if (previous.ShipId != context.Pilot.ShipId)
+            {
+                // HangarView needs new inventory rows before its ship delta. In
+                // space, load the capsule ball before the client adopts its ego.
+                await FlushNotificationsAsync();
+                if (previous.Position is not null) { await FlushFlightUpdatesAsync(); }
+            }
+            if (previous.LocationId != context.Pilot.LocationId) { context.ReleaseLocationReferences(); }
+            await write(SessionChange(accountId, clientId, context.Pilot, previous));
+            report(previous.ShipId != context.Pilot.ShipId
+                ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} from {previous.ShipId} at {context.Pilot.LocationId}."
+                : $"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
         }
 
         async Task FlushFlightUpdatesAsync()
