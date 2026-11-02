@@ -24,8 +24,8 @@ The tests use fixtures and loopback sockets. To try the real client, follow the 
 
 | Project | Responsibility |
 | --- | --- |
-| `src/Eden.Server` | Listen on loopback, apply connection timeouts, and report handshake progress. |
-| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve the character picker. |
+| `src/Eden.Server` | Host the loopback session and own the SQLite world. |
+| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve the picker, station transition, and docked inventory. |
 | `tests/Eden.Protocol.Tests` | Verify wire bytes, malformed input, and a complete status exchange. |
 
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).

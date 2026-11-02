@@ -19,3 +19,7 @@
 1. For code changes, run the restore, build, test, and formatting checks from the repository root in the order given in the [README build instructions](README.md#build-and-run).
 2. For changes that affect what the pilot sees or can do, **use the Computer Use skill**. Follow the Windows client guide to launch the staged client against the local Eden server. Perform the affected action in the game window and verify the visible result. For an inventory change, select **Eden Pilot**, open **Inventory**, and verify that it shows the expected active ship.
 3. Report automated check results separately from live client observations. For live acceptance, record the action taken and what appeared in the client. If the check is blocked, identify the blocker and the specific behavior that still needs verification.
+
+## Milestones
+
+After verifying a milestone, commit its code, tests, and documentation together and push the commit to GitHub. Confirm the commit is on the remote branch before reporting the milestone complete or starting the next one.

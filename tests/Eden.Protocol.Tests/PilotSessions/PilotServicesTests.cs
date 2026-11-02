@@ -1,5 +1,6 @@
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Fixtures;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
@@ -26,7 +27,26 @@ public sealed class PilotServicesTests
     public async Task AcceptsOnlyOwnedCharacter(int characterId, bool expected)
     {
         var packets = await ExchangeAsync("charUnboundMgr", "SelectCharacterID", [characterId, null, false], 42);
-        Assert.EndsWith(expected ? ".CallRsp" : ".ErrorResponse", packets.Single().Name);
+        if (!expected)
+        {
+            Assert.EndsWith(".ErrorResponse", Assert.Single(packets).Name);
+            return;
+        }
+
+        Assert.Equal(2, packets.Count);
+        Assert.EndsWith(".SessionChangeNotification", packets[0].Name);
+        var envelope = PilotLogin.Tuple(packets[0].State, 14);
+        Assert.Equal(16, envelope[0]);
+        var body = PilotLogin.Tuple(envelope[4], 3);
+        Assert.Equal(42L, body[0]);
+        var delta = PilotLogin.Tuple(body[1], 2);
+        var changes = PilotLogin.Fields(delta[1]);
+        Assert.Equal(new object?[] { null, 90000001L }, changes["charid"]);
+        Assert.Equal(new object?[] { null, 1000000000001L }, changes["shipid"]);
+        Assert.Equal(new object?[] { null, 60003760 }, changes["stationid"]);
+        Assert.Equal(new object?[] { null, 30000142 }, changes["solarsystemid2"]);
+        Assert.DoesNotContain("solarsystemid", changes.Keys);
+        Assert.EndsWith(".CallRsp", packets[1].Name);
     }
 
     [Fact]
@@ -52,6 +72,7 @@ public sealed class PilotServicesTests
             new BlueInstance(address, new object?[] { 8L, service, null }), null,
             new object?[] { new object?[] { 0L, call } }, null, null, null, null, null, null, null, null, null,
         });
+        using TestWorld world = new();
         Queue<object?> input = new([request]);
         List<BlueInstance> output = [];
         await Assert.ThrowsAsync<EndOfStreamException>(() => PilotServices.RunAsync(
@@ -61,7 +82,7 @@ public sealed class PilotServicesTests
                 output.Add(Assert.IsType<BlueInstance>(packet));
                 return Task.CompletedTask;
             },
-            _ => { }, sessionId));
+            _ => { }, sessionId, world.Store, []));
         return output;
     }
 }

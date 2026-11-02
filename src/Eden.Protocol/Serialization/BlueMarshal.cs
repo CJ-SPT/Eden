@@ -5,6 +5,8 @@ namespace Eden.Protocol.Serialization;
 
 // Only the inert wire types used by the local session. Class names are data.
 internal sealed record BlueInstance(string Name, object? State);
+// Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
+internal sealed record BlueConstructor(string Name, object?[] Arguments);
 internal sealed record BlueStream(byte[] Bytes);
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
 
@@ -143,7 +145,7 @@ internal static class BlueMarshal
                 43 => new BlueStream(reader.ReadBytes(Length())),
                 44 => Items(2, depth),
                 46 => Encoding.UTF8.GetString(reader.ReadBytes(Length())),
-                47 => new BigInteger(reader.ReadBytes(Length())),
+                47 => ReadInteger(reader.ReadBytes(Length())),
                 _ => throw new InvalidDataException($"Unsupported Blue tag 0x{tag:X2} at {stream.Position - 1}."),
             };
             if (slot >= 0)
@@ -159,6 +161,13 @@ internal static class BlueMarshal
             byte index = reader.ReadByte();
             return index == 255 ? reader.ReadInt32() : index;
         }
+    }
+
+    private static object ReadInteger(byte[] bytes)
+    {
+        BigInteger value = new(bytes);
+        if (value >= long.MinValue && value <= long.MaxValue) { return (long)value; }
+        return value;
     }
 
     public static string Text(object? value) => value switch
@@ -239,6 +248,26 @@ internal static class BlueMarshal
                 }
 
                 writer.Write(bytes);
+                break;
+            case BlueConstructor constructor:
+                writer.Write((byte)34); // Reduce: (callable, arguments), followed by two empty iterators.
+                writer.Write((byte)44);
+                writer.Write((byte)2);
+                byte[] globalName = Encoding.ASCII.GetBytes(constructor.Name);
+                Size(writer, globalName.Length);
+                writer.Write(globalName);
+                Write(writer, constructor.Arguments);
+                writer.Write((byte)45);
+                writer.Write((byte)45);
+                break;
+            case Dictionary<long, object?> indexed:
+                writer.Write((byte)22);
+                Size(writer, indexed.Count);
+                foreach (var (id, item) in indexed)
+                {
+                    Write(writer, item);
+                    Write(writer, id);
+                }
                 break;
             case BlueObjectReference reference:
                 writer.Write((byte)25);

@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Transport;
 using Eden.Server.Authentication;
+using Eden.Server.Persistence;
 
 namespace Eden.Server;
 
@@ -18,6 +20,9 @@ internal static class Program
             return;
         }
 
+        string worldDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
+        Directory.CreateDirectory(worldDirectory);
+        SqliteWorld world = new(Path.Combine(worldDirectory, "world.sqlite"));
         using CancellationTokenSource shutdown = new();
         Console.CancelKeyPress += (_, args) =>
         {
@@ -43,7 +48,7 @@ internal static class Program
                 }
 
                 TcpClient client = await listener.AcceptTcpClientAsync(shutdown.Token);
-                clients.Add(ServeAsync(client, identity, pilotSlot, shutdown.Token));
+                clients.Add(ServeAsync(client, identity, world, pilotSlot, shutdown.Token));
             }
         }
         catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
@@ -57,7 +62,7 @@ internal static class Program
         }
     }
 
-    private static async Task ServeAsync(TcpClient client, RSA? identity, SemaphoreSlim pilotSlot, CancellationToken shutdown)
+    private static async Task ServeAsync(TcpClient client, RSA? identity, IDockedWorld world, SemaphoreSlim pilotSlot, CancellationToken shutdown)
     {
         using (client)
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown))
@@ -76,7 +81,7 @@ internal static class Program
 
                     try
                     {
-                        PilotLogin login = new(identity, ticket => DevelopmentIdentity.Validate(identity, ticket));
+                        PilotLogin login = new(identity, ticket => DevelopmentIdentity.Validate(identity, ticket), world);
                         await login.RunAsync(stream, command, Console.WriteLine, token, () => timeout.CancelAfter(Timeout.InfiniteTimeSpan));
                     }
                     finally

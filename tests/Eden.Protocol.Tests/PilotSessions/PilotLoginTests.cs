@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -24,7 +25,8 @@ public sealed class PilotLoginTests
         using TcpClient server = await listener.AcceptTcpClientAsync(timeout.Token);
         NetworkStream wire = client.GetStream();
         List<string> messages = [];
-        PilotLogin login = new(key, ticket => ticket == "fixture");
+        using TestWorld world = new();
+        PilotLogin login = new(key, ticket => ticket == "fixture", world.Store);
         byte[] request = BlueMarshal.Encode(new object?[] { null, "VK", Array.Empty<byte>() });
         Task exchange = login.RunAsync(server.GetStream(), request, messages.Add, timeout.Token);
         Dictionary<string, object?> keys = new()

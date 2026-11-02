@@ -1,14 +1,14 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 
 namespace Eden.Protocol.PilotSessions;
 
-public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket)
+public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket, IDockedWorld world)
 {
     internal const int UserId = 1000001;
-    internal const int PilotId = 90000001;
     private static long s_nextClientId = DateTime.UtcNow.Ticks;
     internal const long PlayerRole = 1L << 61;
     internal const int NodeId = 10001;
@@ -97,7 +97,12 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket)
         authenticated?.Invoke();
         report("Authenticated local pilot account; session established.");
 
-        await PilotServices.RunAsync(ReadAsync, WriteAsync, report, clientId);
+        // Build 3662168 expects a signed Python 2.7 function body for its optional settings statistics.
+        // marshal.dumps((lambda: {}).__code__) returns no settings and captures no client data.
+        byte[] settingsCode = BlueMarshal.Encode(Convert.FromHexString(
+            "630000000000000000010000004300000073040000006900005328010000004E280000000028000000002800000000280000000074080000003C737472696E673E74080000003C6C616D6264613E010000007300000000"));
+        byte[] settingsSignature = key.SignData(HashArgument(settingsCode), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        await PilotServices.RunAsync(ReadAsync, WriteAsync, report, clientId, world, [settingsCode, settingsSignature]);
     }
 
     internal static Dictionary<string, object?> AccountState() => new()

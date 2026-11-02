@@ -46,4 +46,6 @@ To enter character selection from the repository root, keep the server running i
 .\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login
 ```
 
-The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it and check the server for `Accepted selection of Eden Pilot (90000001) for this session.` The client then waits for the station transition. Close and relaunch the staged client to return to the picker. A single authenticated pilot can be connected at once.
+The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. A single authenticated pilot can be connected at once.
+
+After the source installation finishes downloading, run the preparation command again with the staged client closed. The ready marker checks the pinned binaries and successful copy. The main resource index can still have missing assets if the source was mid-download.
