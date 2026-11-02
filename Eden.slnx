@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Eden.Protocol/Eden.Protocol.csproj" />
+    <Project Path="src/Eden.Server/Eden.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Eden.Protocol.Tests/Eden.Protocol.Tests.csproj" />
+  </Folder>
+</Solution>
