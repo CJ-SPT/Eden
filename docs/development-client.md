@@ -209,6 +209,15 @@ Sales tax is currently pinned to the staged client's observed **7.5%** runtime f
 
 Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Venture assembly is the first supported purchased hull. Repackaging, assembled-ship sales and boarding in space remain unavailable.
 
+## Board a recovery corvette
+
+1. Dock while aboard a supported ship other than a corvette, such as the Venture. Select **Eden Pilot**, open **Inventory**, and note the active hull and its cargo or Mining Hold contents.
+2. Press **Board my Corvette** below Undock in the station panel. Confirm the native prompt to leave the active ship. Inventory should show the race's corvette as active and retain the previous ship in **Ship Hangar**. The hangar model should also change.
+3. Open Fitting with the **circled ship** button. Check that a **Civilian Miner** and **Civilian Gatling Railgun** are fitted and online. The recovery kit costs no ISK and grants no skills. It uses the pilot's race hull, but currently supplies the same civilian railgun to every race.
+4. Board the previous ship again and compare its cargo, mining hold and fitting. Repeat **Board my Corvette**: Eden should reuse the ready recovery hull without adding another kit. Restart both host and client and verify the active hull, fitted modules, previous ship and wallet remain.
+
+Eden reuses a corvette at the current station only when its armor and structure are undamaged and both recovery modules occupy their expected online high slots. It does not repair, refill or strip another ship. Otherwise it creates a new equipped hull in one world transaction. Requests require the current ship, station, ownership and catalog skills. Repeated or competing requests for the same previous hull cannot create duplicate kits. The button is disabled while already aboard a corvette. This is an explicit local recovery policy; ship destruction and capsule escape are still separate work. No world-schema migration is needed beyond version 20.
+
 ## Check belt NPCs
 
 Select **Eden Pilot**, check the active ship in Inventory, undock and warp to **Perimeter II – Asteroid Belt 1**. The local encounter policy places one Guristas Rookie 3,500 m from each Perimeter belt anchor. It should appear as a red NPC in an Overview preset that includes **Minor Threat**. The existing Mining preset also showed it during acceptance. Right-click it and choose **Lock Target**; after the normal scan delay, its portrait and health rings should appear. **Look at** should render its native ship model. **Approach** should move toward it. Restart the host and client at the belt and verify the same NPC appears without a duplicate.
@@ -223,7 +232,7 @@ NPCs remain stationary and do not aggress arriving miners. Positions and health 
 4. Watch for native combat messages showing the damage amount, target, weapon and hit quality, while the target's shield, armor and structure rings decline. Misses are possible outside optimal range or with angular motion. When the Rookie is destroyed, it disappears from Overview, the gun stops, and the personal wallet increases by **3,000 ISK**. Under **My Wallet → Transactions**, check **Bounty Prizes**, the resulting balance and the Perimeter description.
 5. Restart both client and host using the same save. Verify the active hull, fitted gun, bounty balance and journal entry remain. The defeated NPC must not reappear early or pay again on reconnect. After ten minutes a replacement may appear at the same belt with a new identity. Dead rows and the paid bounty remain saved.
 
-Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, NPC retaliation, player loss/recovery, loot or wreck yet. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, NPC retaliation, player loss, capsule escape, loot or wreck yet. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
 
 ## Check saved ship health
 

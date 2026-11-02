@@ -125,7 +125,9 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             // updates capacity but does not insert an unknown item in invCache.
             old[(long)InventoryColumn.Location] = 0L;
             old[(long)InventoryColumn.Flag] = 0;
-            old[(long)InventoryColumn.Quantity] = 0;
+            // Assembled rows encode quantity as -1. invCache rejects a quantity
+            // change on that row; stacksize still describes its prior absence.
+            if (!item.Singleton) { old[(long)InventoryColumn.Quantity] = 0; }
             old[(long)InventoryColumn.StackSize] = 0;
         }
         else

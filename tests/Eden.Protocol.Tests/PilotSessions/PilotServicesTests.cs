@@ -2,13 +2,46 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Catalog;
 using Eden.Server.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {
+    [Fact]
+    public async Task RecoveryAnnouncesTheNewHullBeforeTheHangarProcessesItsShipChange()
+    {
+        using TestWorld world = new();
+        Persistence.PilotFleetTests.AddVenture(world);
+        using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("INSERT OR REPLACE INTO TypeAttribute VALUES (601,14,2)");
+        }
+        using (WorldDbContext saved = new(world.Path))
+        {
+            saved.Ships.Single(s => s.Id == 1000000000001L).TypeId = (int)StarterShipType.Venture;
+            saved.SaveChanges();
+        }
+        var packets = await ExchangeAsync(world, 42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("dogmaIM", "CreateNewbieShip", [1000000000001L, 60003760L]));
+        Assert.Equal(new[] { "SessionChangeNotification", "CallRsp", "Notification", "Notification", "Notification",
+            "SessionChangeNotification", "CallRsp" }, packets.Select(p => p.Name.Split('.')[^1]));
+        foreach (var packet in packets.Skip(2).Take(3))
+        {
+            var envelope = PilotLogin.Tuple(packet.State, 14);
+            var destination = Assert.IsType<BlueInstance>(envelope[2]);
+            Assert.Equal("OnItemChange", PilotLogin.Tuple(destination.State, 4)[1]);
+        }
+        var sessionBody = PilotLogin.Tuple(PilotLogin.Tuple(packets[5].State, 14)[4], 3);
+        var delta = PilotLogin.Fields(PilotLogin.Tuple(sessionBody[1], 2)[1]);
+        Assert.Equal(new object?[] { 1000000000001L, world.Store.FindPilot(1000001)!.ShipId }, delta["shipid"]);
+        Assert.Null(Result(packets[^1]));
+    }
+
     [Fact]
     public async Task CargoCapacityErrorWrapsAUserErrorForTheClientsQuantityRetry()
     {

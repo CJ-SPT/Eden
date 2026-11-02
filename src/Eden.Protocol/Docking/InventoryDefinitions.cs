@@ -15,6 +15,7 @@ public enum InventoryFlag
     Hangar = 4,
     Cargo = 5,
     HighSlot0 = 27,
+    HighSlot1 = 28,
     HighSlot7 = 34,
     GeneralMiningHold = 134,
 }

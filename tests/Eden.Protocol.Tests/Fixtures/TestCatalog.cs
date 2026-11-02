@@ -46,7 +46,7 @@ internal static class TestCatalog
             PRAGMA application_id=0x4544454E;
             PRAGMA user_version=1;
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('sde/_sde','"sde"','{{"buildNumber":3662168}}');
-            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"skills":{{"3327":3}}}}');
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"shipTypeID":601,"skills":{{"3327":3}}}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/clonegrades','"1"','{{"skills":[{{"typeID":3327,"level":4}}]}}');
             CREATE VIEW records_client_clonegrades AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/clonegrades';
             CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/requiredskillsfortypes';

@@ -8,9 +8,17 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
 {
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
-        if (service != "ship" || method is not ("AssembleShip" or "Board")) { return PilotCallRouter.Unsupported; }
+        if (!(service == "ship" && method is "AssembleShip" or "Board") &&
+            !(service == "dogmaIM" && method == "CreateNewbieShip")) { return PilotCallRouter.Unsupported; }
         try
         {
+            if (service == "dogmaIM" && args is [long previousShip, long station])
+            {
+                var recovery = fleet.RecoverCorvette(context.Pilot.PilotId, previousShip, station);
+                context.ChangeShip(recovery.Pilot);
+                foreach (var change in recovery.Changes) { InventoryHandler.NotifyItemChange(context, change); }
+                return null;
+            }
             if (method == "AssembleShip" && args is [List<object?> items] && items.All(i => i is long) &&
                 keywords?.GetValueOrDefault("subSystems") is null)
             {

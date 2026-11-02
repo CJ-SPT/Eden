@@ -35,7 +35,7 @@ public enum MiningLaserType
 public static class MiningDefinitions
 {
     public const string EffectName = "miningLaser";
-    public const int CorvetteGroup = 237;
+    public const int CorvetteGroup = FleetDefinitions.CorvetteGroup;
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;
     public const double CriticalYieldBonusPerSkillLevel = 0.05;

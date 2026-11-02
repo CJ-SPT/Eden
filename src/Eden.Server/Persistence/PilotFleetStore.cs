@@ -1,4 +1,5 @@
 using Eden.Protocol;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,12 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup) : IPilotFleet
 {
+    private static readonly (int TypeId, InventoryFlag Slot)[] s_recoveryEquipment =
+    [
+        (InventoryDefinitions.CivilianMinerType, InventoryFlag.HighSlot0),
+        ((int)CombatWeaponType.CivilianGatlingRailgun, InventoryFlag.HighSlot1),
+    ];
+
     private static InventoryItem Read(CatalogDbContext catalog, Ship ship)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == ship.TypeId);
@@ -116,5 +123,91 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         world.SaveChanges();
         transaction.Commit();
         return lookup.FindPilot(pilot.AccountId, pilotId)!;
+    }
+
+    public ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var active = pilot.ActiveShip;
+        if (active.Position is not null || active.StationId != stationId)
+        {
+            throw new InvalidDataException("Board your recovery corvette while docked at your current station.");
+        }
+        int activeGroup = catalog.Set<ItemType>().Single(t => t.Id == active.TypeId).GroupId;
+        if (pilot.ActiveShipId != previousShipId)
+        {
+            // A repeated request for the previous hull cannot create another kit.
+            if (activeGroup == FleetDefinitions.CorvetteGroup && world.Ships.Any(s => s.Id == previousShipId &&
+                s.OwnerId == pilotId && s.StationId == stationId && s.Position == null))
+            {
+                return new(lookup.FindPilot(pilot.AccountId, pilotId)!, []);
+            }
+            throw new InvalidDataException("The active ship changed before recovery.");
+        }
+        if (activeGroup == FleetDefinitions.CorvetteGroup)
+        {
+            throw new InvalidDataException("You are already aboard a corvette.");
+        }
+        int typeId = checked((int)(CatalogData.Client.Races.Get(catalog, pilot.RaceId).ShipTypeID ??
+            throw new InvalidDataException("The pilot's race has no starter corvette.")));
+        var type = catalog.Set<ItemType>().Single(t => t.Id == typeId && t.GroupId == FleetDefinitions.CorvetteGroup);
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
+        foreach (var equipment in s_recoveryEquipment) { PilotSkillReader.CheckRequirements(world, catalog, pilotId, equipment.TypeId); }
+
+        var candidates = world.Ships.Include(s => s.Position).Where(s => s.OwnerId == pilotId && s.TypeId == typeId &&
+            s.StationId == stationId && s.Position == null).OrderBy(s => s.Id).ToArray();
+        // Eden reuses an undamaged, equipped recovery hull at this station.
+        // Stripped/damaged hulls and ships elsewhere remain untouched.
+        var recovered = candidates.FirstOrDefault(s =>
+            !world.Set<ShipHealthState>().Any(h => h.ShipId == s.Id && (h.ArmorDamage > 0 || h.StructureDamage > 0)) &&
+            s_recoveryEquipment.All(e => world.Set<OwnedItem>().Any(i => i.OwnerId == pilotId && i.LocationId == s.Id &&
+                i.TypeId == e.TypeId && i.FlagId == (int)e.Slot && i.Singleton && i.Online)));
+        List<InventoryChange> changes = [];
+        if (recovered is null)
+        {
+            var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId)
+                .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+            double Load(DogmaAttributeId attribute) => s_recoveryEquipment.Sum(e => catalog.Set<TypeAttribute>()
+                .Where(a => a.ItemTypeId == e.TypeId && a.AttributeId == (int)attribute).Select(a => a.Value).SingleOrDefault());
+            if (attributes.GetValueOrDefault(DogmaAttributeId.HighSlots) < s_recoveryEquipment.Length ||
+                attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) < s_recoveryEquipment.Length ||
+                Load(DogmaAttributeId.Cpu) > attributes.GetValueOrDefault(DogmaAttributeId.CpuOutput) ||
+                Load(DogmaAttributeId.Power) > attributes.GetValueOrDefault(DogmaAttributeId.PowerOutput))
+            {
+                throw new InvalidDataException("The catalog's corvette cannot support the recovery equipment.");
+            }
+            long nextId = PilotInventoryStore.NextId(world);
+            recovered = world.Ships.Add(new()
+            {
+                Id = nextId++,
+                OwnerId = pilotId,
+                TypeId = typeId,
+                StationId = active.StationId,
+                Name = type.Name,
+            }).Entity;
+            changes.Add(new(Read(catalog, recovered), null));
+            foreach (var equipment in s_recoveryEquipment)
+            {
+                var module = world.Set<OwnedItem>().Add(new()
+                {
+                    Id = nextId++,
+                    OwnerId = pilotId,
+                    TypeId = equipment.TypeId,
+                    LocationId = recovered.Id,
+                    FlagId = (int)equipment.Slot,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                }).Entity;
+                changes.Add(new(PilotInventoryStore.Read(catalog, module), null));
+            }
+        }
+        pilot.ActiveShipId = recovered.Id;
+        world.SaveChanges();
+        transaction.Commit();
+        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
     }
 }

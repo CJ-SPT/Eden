@@ -140,6 +140,9 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
             if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
             {
+                // HangarView resolves a newly boarded hull from its inventory cache during
+                // ProcessActiveShipChanged. Announce new items before changing shipid.
+                if (previous.ShipId != context.Pilot.ShipId) { await FlushNotificationsAsync(); }
                 if (previous.LocationId != context.Pilot.LocationId) { context.ReleaseLocationReferences(); }
                 await write(SessionChange(accountId, clientId, context.Pilot, previous));
                 report(previous.ShipId != context.Pilot.ShipId
