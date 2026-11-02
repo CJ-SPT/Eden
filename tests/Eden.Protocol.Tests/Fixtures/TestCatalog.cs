@@ -14,6 +14,9 @@ internal static class TestCatalog
             PRAGMA user_version=1;
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('sde/_sde','"sde"','{{"buildNumber":3662168}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"skills":{{"3327":3}}}}');
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/clonegrades','"1"','{{"skills":[{{"typeID":3327,"level":4}}]}}');
+            CREATE VIEW records_client_clonegrades AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/clonegrades';
+            CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/requiredskillsfortypes';
             CREATE VIEW records_client_races AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/races';
             CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber, 'Assembly Plant' AS Operation;
             INSERT INTO Region(Id,Name) VALUES (10000002,'The Forge');
@@ -29,8 +32,8 @@ internal static class TestCatalog
             INSERT INTO ItemCategory(Id,Name) VALUES (16,'Skill');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (257,'Spaceship Command',16);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3327,'Spaceship Command',257);
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (275,'skillTimeConstant');
-            INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3327,275,1);
+            INSERT INTO DogmaAttribute(Id,Name) VALUES (275,'skillTimeConstant'),(180,'primaryAttribute'),(181,'secondaryAttribute');
+            INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3327,275,1),(3327,180,167),(3327,181,168);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES (40009087,30000142,52673,8,1620000,0,0,0);
             INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000144,20000020,'Perimeter');
             INSERT INTO ItemCategory(Id,Name) VALUES (2,'Celestial');

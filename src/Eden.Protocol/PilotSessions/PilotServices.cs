@@ -1,11 +1,12 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -20,13 +21,18 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
         while (true)
         {
             var incoming = read();
-            while (flight.Moving || flight.InBallpark)
+            while (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue)
             {
                 checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);
                 await Task.WhenAny(incoming, checkpoint);
                 if (checkpoint.IsCompleted)
                 {
                     await checkpoint;
+                    if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    {
+                        skills.Advance(context);
+                        await FlushNotificationsAsync();
+                    }
                     flight.Checkpoint();
                     var departure = flight.Pilot;
                     if (flight.CompleteJump())
@@ -104,6 +110,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             }
             if (!selected && context.Selected)
             {
+                skills.Advance(context);
                 await write(SessionChange(accountId, clientId, pilot));
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
@@ -119,6 +126,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 flight.Snapshot();
             }
             await FlushFlightUpdatesAsync();
+            await FlushNotificationsAsync();
             if (!initialStateSent && service == "machoNet" && method == "GetServiceInfo")
             {
                 initialStateSent = true;
@@ -134,16 +142,30 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
         {
             if (flight.Updates.Count > 0)
             {
-                // Broadcast -> service -> object-call layers each wrap the payload.
-                object?[] update = [1, new object?[] { flight.Updates, false, null }];
-                object?[] payload = [0, BlueMarshal.Encode(new object?[] { 0, update })];
-                await write(new BlueInstance(PacketNamespace + "Notification", new object?[]
-                {
-                    12, Address(1, PilotLogin.NodeId, null, null), Address(4, "DoDestinyUpdate", new List<object?> { clientId }, "clientID"),
-                    accountId, new object?[] { payload }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
-                }));
+                await SendNotificationAsync("DoDestinyUpdate", [flight.Updates, false, null]);
                 flight.Updates.Clear();
             }
+        }
+
+        async Task FlushNotificationsAsync()
+        {
+            foreach (var (name, arguments) in context.Notifications)
+            {
+                await SendNotificationAsync(name, arguments);
+            }
+            context.Notifications.Clear();
+        }
+
+        Task SendNotificationAsync(string name, object?[] arguments)
+        {
+            // Broadcast -> service -> object-call layers each wrap the payload.
+            object?[] update = [1, arguments];
+            object?[] payload = [0, BlueMarshal.Encode(new object?[] { 0, update })];
+            return write(new BlueInstance(PacketNamespace + "Notification", new object?[]
+            {
+                12, Address(1, PilotLogin.NodeId, null, null), Address(4, name, new List<object?> { clientId }, "clientID"),
+                accountId, new object?[] { payload }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
+            }));
         }
     }
 

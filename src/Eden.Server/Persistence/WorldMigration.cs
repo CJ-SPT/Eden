@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 10)
+        if (version is < 0 or > 11)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -68,7 +68,23 @@ internal static class WorldMigration
         if (version < 10)
         {
             GrantStartingSkills(world, catalog);
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=10");
+        }
+        if (version is >= 6 and < 11)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldSkillQueue(
+                    PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, Position INTEGER NOT NULL,
+                    TypeId INTEGER NOT NULL, Level INTEGER NOT NULL, StartPoints INTEGER NOT NULL, EndPoints INTEGER NOT NULL,
+                    StartTime INTEGER, EndTime INTEGER, PRIMARY KEY(PilotId,Position));
+                CREATE TABLE WorldSkillHistory(
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    Time INTEGER NOT NULL, TypeId INTEGER NOT NULL, Points INTEGER NOT NULL, EventId INTEGER NOT NULL);
+                CREATE INDEX IX_WorldSkillHistory_PilotId_Time ON WorldSkillHistory(PilotId,Time);
+                """);
+        }
+        if (version < 11)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=11");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&

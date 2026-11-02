@@ -185,3 +185,13 @@ For wire behavior, Carbon Blue's reduce reader resolves the outbound callable an
 5. **Pilot's Services, Personalization and plans.** Separate account entitlements from pilot-owned unlocks. Trace the individual features' gateway or MachoNet requests before implementing PLEX, SKINs, emblems, expert systems and skill plans. Verify each feature through its own tab.
 
 Keep build-specific definitions in the catalog and mutable progress in the world save. Expose each new service through a narrow persistence interface keyed by the authenticated account or selected pilot. Add a separate public lookup when other pilots need to view shareable fields.
+
+## Skill training queue, November 2, 2026
+
+The stock Skill Catalogue calls the selected pilot's bound `SaveNewQueue` with a dictionary mapping zero-based positions to (skill type, target level) and an `activate` keyword. Pause calls `AbortTraining`. The server validates injected skills, sequential levels, queued prerequisites, the 150-entry limit, time horizon and Alpha training restrictions. It calculates UTC start and end times from the catalog's rank and primary and secondary attributes. Saving the same active head preserves its timestamps. Replacing or pausing it banks earned whole SP. The world advances elapsed levels in one SQLite transaction on login or while connected. Each completed level produces one history row. [CCP skill training](https://support.eveonline.com/hc/en-us/articles/203217062-Skill-Training)
+
+The client's lower Training Time estimate uses whole SP. Its `_UpdateTrainingTimeLabelThread` samples every 500 ms, `GetTrainingLengthOfQueue` totals durations from remaining points, and `get_skill_points_trained_at_sample_time` truncates to an integer. With 20 perception and 20 willpower an Alpha pilot earns 15 SP/minute, so the lower estimate changes every four seconds. The queue entry uses its finish timestamp.
+
+**Live Windows client.** In the Skill Catalogue, Eden Pilot added Amarr Frigate I. The queue showed one of 150 slots, a 500-SP target, and approximately 33 minutes 20 seconds. Pausing showed **Paused**, 488 points remaining and 384,059 total SP. Resuming started the countdown from the remaining points. After restarting the host and client, the queue still showed Amarr Frigate I with 28 minutes remaining and the catalogue showed 384,121 SP.
+
+**Automated checks.** Restore, build, 61 tests and formatting verification passed. A controlled clock verifies partial SP on pause, identical timestamps on retry, multiple levels completed during an offline interval, isolated pilots and exactly-once history. An invalid edit rolls back the entire mutation without disturbing ongoing training.

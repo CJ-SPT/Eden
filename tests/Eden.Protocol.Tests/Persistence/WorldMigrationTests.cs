@@ -49,6 +49,8 @@ public sealed class WorldMigrationTests
         connection.Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
+            DROP TABLE WorldSkillQueue;
+            DROP TABLE WorldSkillHistory;
             DROP TABLE WorldPilotSkill;
             ALTER TABLE WorldAccount DROP COLUMN UserName;
             ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
@@ -67,7 +69,7 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(10L, command.ExecuteScalar());
+        Assert.Equal(11L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }

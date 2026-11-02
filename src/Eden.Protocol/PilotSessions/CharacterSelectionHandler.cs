@@ -5,7 +5,7 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable]
-internal sealed class CharacterSelectionHandler(IPilotSkillReader skills) : IPilotCallHandler
+internal sealed class CharacterSelectionHandler(IPilotSkillReader skills, IPilotTraining training, TimeProvider clock) : IPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object? arguments)
     {
@@ -36,6 +36,9 @@ internal sealed class CharacterSelectionHandler(IPilotSkillReader skills) : IPil
 
     private object?[] CharacterSelection(DockedPilot docked)
     {
+        var queue = training.Advance(docked.PilotId).Queue;
+        var head = queue.FirstOrDefault();
+        var active = head?.StartTime is not null ? head : null;
         BlueInstance account = new("utillib.KeyVal", new Dictionary<string, object?>
         {
             ["userName"] = docked.Account.UserName,
@@ -57,14 +60,21 @@ internal sealed class CharacterSelectionHandler(IPilotSkillReader skills) : IPil
             ["factionID"] = null,
             ["balance"] = 0,
             ["balanceChange"] = 0,
-            ["skillPoints"] = skills.ReadSkills(docked.PilotId).Sum(s => s.Points),
+            ["skillPoints"] = skills.ReadSkills(docked.PilotId).Sum(s => s.Points)
+                + (active is null ? 0 : active.PointsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) - active.StartPoints),
             ["finishedSkills"] = 0,
             ["unreadMailCount"] = 0,
             ["paperdollState"] = 0,
             ["lockTypeID"] = null,
             ["deletePrepareDateTime"] = null,
             ["logoffDate"] = 134000000000000000L,
-            ["skillTypeID"] = null,
+            ["skillTypeID"] = active?.Target.TypeId,
+            ["toLevel"] = active?.Target.Level,
+            ["trainingStartTime"] = active?.StartTime,
+            ["trainingEndTime"] = active?.EndTime,
+            ["queueEndTime"] = queue.LastOrDefault()?.EndTime,
+            ["finishSP"] = active?.EndPoints,
+            ["trainedSP"] = active?.StartPoints,
             ["gender"] = docked.Profile.GenderId,
             ["bloodlineID"] = docked.Profile.BloodlineId,
             ["raceID"] = docked.Profile.RaceId,

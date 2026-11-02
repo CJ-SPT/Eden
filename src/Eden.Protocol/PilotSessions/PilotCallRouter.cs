@@ -20,6 +20,8 @@ internal sealed class PilotCallContext(FlightSession flight, long sessionId, obj
     public DockedPilot Pilot => Flight.Pilot;
     public object?[] SignedSettings { get; } = signedSettings;
     public bool Selected { get; set; }
+    public long? NextSkillCompletion { get; set; }
+    public List<(string Name, object?[] Arguments)> Notifications { get; } = [];
 
     private readonly Dictionary<string, string> _bindings = [];
     private readonly Dictionary<string, BlueObjectReference> _references = [];

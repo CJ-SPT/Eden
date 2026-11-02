@@ -35,6 +35,29 @@ public sealed class PilotSkill
     public long Points { get; set; }
 }
 
+[PrimaryKey(nameof(PilotId), nameof(Position))]
+public sealed class QueuedLevel
+{
+    public long PilotId { get; set; }
+    public int Position { get; set; }
+    public int TypeId { get; set; }
+    public int Level { get; set; }
+    public long StartPoints { get; set; }
+    public long EndPoints { get; set; }
+    public long? StartTime { get; set; }
+    public long? EndTime { get; set; }
+}
+
+public sealed class TrainingLog
+{
+    public long Id { get; set; }
+    public long PilotId { get; set; }
+    public long Time { get; set; }
+    public int TypeId { get; set; }
+    public long Points { get; set; }
+    public int EventId { get; set; }
+}
+
 public sealed class Ship
 {
     public long Id { get; set; }
@@ -79,6 +102,9 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<Pilot>().Property(p => p.SchoolId).HasDefaultValue(19);
         model.Entity<PilotSkill>().ToTable("WorldPilotSkill", t => t.HasCheckConstraint("CK_PilotSkill_Points", "Points >= 0"));
         model.Entity<PilotSkill>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
+        model.Entity<QueuedLevel>().ToTable("WorldSkillQueue").HasOne<Pilot>().WithMany().HasForeignKey(e => e.PilotId);
+        model.Entity<TrainingLog>().ToTable("WorldSkillHistory").HasOne<Pilot>().WithMany().HasForeignKey(e => e.PilotId);
+        model.Entity<TrainingLog>().HasIndex(e => new { e.PilotId, e.Time });
         model.Entity<Ship>().ToTable("WorldShip");
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
         model.Entity<Pilot>().HasIndex(p => p.AccountId).IsUnique();
