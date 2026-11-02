@@ -20,7 +20,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") =>
                 KeyVal(new() { ["iskEscrow"] = 0d, ["itemsEscrow"] = 0d }),
             ("keeper", "GetCurrentDungeonForCharacter") => null,
-            ("dogmaIM", "GetTargets" or "GetTargeters") => new List<object?>(),
             ("home_station", "get_home_station") => KeyVal(new()
             {
                 ["id"] = pilot.StationId,
@@ -36,6 +35,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
                 ["inProgress"] = new List<object?>(),
             }),
             ("bountyProxy", "GetBountiesAndKillRights") => new object?[] { new List<object?>(), new List<object?>() },
+            ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => owners.Order()
+                .Select(owner => (object?)new object?[] { owner, KeyVal(new() { ["targetID"] = owner, ["bounty"] = 0d }) }).ToList(),
+            ("bountyProxy", "GetMyKillRights") when args.Length == 0 => new List<object?>(),
             ("bountyProxy", "GetMyKillRights") => new List<object?>(),
             ("monolithTaskTrackerMgr", "HasEverWarped") => false,
             ("essMgr", "GetDataForClientSolarSystem") => null,

@@ -2,11 +2,12 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -45,6 +46,8 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                         flight.RefreshPeers();
                         await FlushFlightUpdatesAsync();
                     }
+                    targeting.Advance(context);
+                    await FlushNotificationsAsync();
                     checkpoint = null;
                 }
                 if (incoming.IsCompleted)
@@ -102,6 +105,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             bool selected = context.Selected;
             DockedPilot? previous = context.ActiveFlight?.Pilot;
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
+            targeting.Advance(context);
             if (result is PilotCallRouter.UserError userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an

@@ -1,6 +1,7 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
@@ -29,6 +30,21 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<object?> Updates { get; } = [];
     public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
+    public bool CanTarget => InBallpark && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+
+    public TargetContact? FindTarget(long id)
+    {
+        if (!CanTarget)
+        {
+            return null;
+        }
+        if (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is { } ship)
+        {
+            return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
+        }
+        return objects.FirstOrDefault(o => o.Id == id && o.CategoryId == TargetingDefinitions.AsteroidCategory) is { } asteroid
+            ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius) : null;
+    }
 
     public void Checkpoint()
     {

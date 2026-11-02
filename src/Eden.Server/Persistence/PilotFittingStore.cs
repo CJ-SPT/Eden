@@ -1,6 +1,7 @@
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Targeting;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,18 +22,32 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     private static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         var attributes = Attributes(catalog, pilot.ActiveShip.TypeId);
-        // CPU Management and Power Grid Management grant five percent output per trained level.
-        foreach (var (skill, output) in new[] { (FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput), (FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput) })
+        // These four skills each grant five percent per trained level to their hull attribute.
+        foreach (var (skill, output) in new[]
         {
-            long points = world.Set<PilotSkill>().Find(pilot.Id, (int)skill)?.Points ?? 0;
-            double rank = Attributes(catalog, (int)skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
-            attributes[output] = attributes.GetValueOrDefault(output) * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * new TrainedSkill((int)skill, points, rank).Level);
+            ((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput),
+            ((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput),
+            ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
+            ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),
+        })
+        {
+            attributes[output] = attributes.GetValueOrDefault(output) * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, skill));
         }
+        int targetLimit = TargetingDefinitions.BasePilotTargetLimit + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
+            + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
+        attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets), targetLimit);
         var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == pilot.ActiveShipId && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
         attributes[DogmaAttributeId.CpuLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu));
         attributes[DogmaAttributeId.PowerLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Power));
         attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(0, attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - fitted.Length);
         return attributes;
+    }
+
+    private static int SkillLevel(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
+    {
+        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
+        double rank = Attributes(catalog, skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
+        return new TrainedSkill(skill, points, rank).Level;
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)

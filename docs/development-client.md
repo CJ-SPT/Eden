@@ -108,6 +108,17 @@ Select **Eden Pilot** in the first client and **Eden Wing** in the second. Each 
 3. Reverse the roles. Keep Pilot stationary while Wing flies, then stop Wing and compare the final range.
 4. Close one client or dock its ship. The other pilot should remain in space and the departed ship should disappear from Overview.
 
+## Lock and unlock another pilot
+
+Start the two clients as above and undock both Ibises at the same station. On **Eden Pilot**, open Inventory and verify **Ibis (Ibis)** is active.
+
+1. Right-click **Eden Wing** in Overview and choose **Lock Target**. A targeting countdown should run, then Wing's target portrait should appear with its name, ship and distance.
+2. Switch to Wing. Pilot's Overview entry should have the yellow targeted indicator.
+3. On Pilot, choose **Unlock Target** from Wing's menu. The target portrait should disappear and Wing's indicator should clear.
+4. Lock Wing again, wait for completion, then dock Wing. Pilot should lose both Wing's Overview entry and target portrait while remaining in space.
+
+Eden checks range and target slots on the server, including pending locks. Long Range Targeting and Signature Analysis modify the hull's range and scan resolution. Target Management and Advanced Target Management increase the pilot's limit, capped by the hull. Locks are temporary connection state and do not survive logout. Mining cycles and weapon activation remain separate milestones.
+
 ## Warp within Jita and verify braking
 
 Start both clients in space. The **General** Overview shows stations and stargates. Use **All** to include planets and moons.

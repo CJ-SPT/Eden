@@ -10,6 +10,30 @@ namespace Eden.Protocol.Tests.Docking;
 public sealed class DockedServicesTests
 {
     [Fact]
+    public void SelectingAnotherPilotCachesZeroBountiesAndNoKillRights()
+    {
+        using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using var scope = db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        context.Select(pilot);
+        HashSet<long> owners = [90000002, 1000044];
+        var response = Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetBounties", new object?[] { owners }, _ => { }));
+        Assert.Equal(owners.Count, response.Count);
+        foreach (var value in response)
+        {
+            var pair = Assert.IsType<object?[]>(value);
+            var bounty = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(pair[1]).State);
+            Assert.Contains(Assert.IsType<long>(pair[0]), owners);
+            Assert.Equal(pair[0], bounty["targetID"]);
+            Assert.Equal(0d, bounty["bounty"]);
+        }
+        Assert.Empty(Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { })));
+    }
+
+    [Fact]
     public void FittingServiceRequiresTheCurrentStationAndExpiresOnDeparture()
     {
         using TestWorld db = new();
