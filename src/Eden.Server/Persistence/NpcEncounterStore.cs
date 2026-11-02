@@ -21,6 +21,11 @@ public sealed class WorldNpc
     public double StructureDamage { get; set; }
     public long UpdatedAt { get; set; }
     public long? DestroyedAt { get; set; }
+    public double VelocityX { get; set; }
+    public double VelocityY { get; set; }
+    public double VelocityZ { get; set; }
+    public long MotionAt { get; set; }
+    public NpcNavigationState Navigation { get; set; }
 }
 
 [Injectable]
@@ -67,14 +72,25 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                 now - started < duration * TimeSpan.TicksPerMillisecond
                 ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration) : null;
         }
-        var contacts = world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id)
-            .AsEnumerable().Select(n => n.TypeId != type.Id ? throw new InvalidDataException($"Unsupported saved NPC type {n.TypeId}.") :
+        var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id).ToArray();
+        foreach (var npc in npcs)
+        {
+            if (npc.Navigation == NpcNavigationState.Pursuing && !aggression.ContainsKey(npc.Id)) { NpcMotion.Return(npc); }
+            if (npc.Navigation == NpcNavigationState.Returning)
+            {
+                NpcMotion.Advance(npc, NpcMotion.Home(belts.Single(b => b.Id == npc.BeltId)), type, attributes, now, returning: true);
+            }
+        }
+        world.SaveChanges();
+        var contacts = npcs.Select(n => n.TypeId != type.Id ? throw new InvalidDataException($"Unsupported saved NPC type {n.TypeId}.") :
                 new NpcContact(n.Id, n.TypeId, type.GroupId, type.Group.CategoryId, NpcEncounterDefinitions.GuristasCorporation,
                 type.Name, systemId, new(n.X, n.Y, n.Z), type.Mass ?? 0, (float)(type.Radius ?? 0),
-                (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity), (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility, NpcEncounterDefinitions.StationaryAgility),
+                (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity), NpcMotion.Agility(attributes),
                 new(n.Id, defense, new(ChargedResource.Recharged(n.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
                     Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)),
-                    Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))), Weapon(n.Id))).ToArray();
+                    Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))), Weapon(n.Id),
+                NpcMotion.Contact(n, attributes, aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
+                    NpcMotion.Home(belts.Single(b => b.Id == n.BeltId))))).ToArray();
         transaction.Commit();
         return contacts;
     }

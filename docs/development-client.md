@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 24 migrates to version 25 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 25 migrates to version 26 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -222,7 +222,7 @@ Eden reuses a corvette at the current station only when its armor and structure 
 
 Select **Eden Pilot**, check the active ship in Inventory, undock and warp to **Perimeter II – Asteroid Belt 1**. The local encounter policy places one Guristas Rookie 3,500 m from each Perimeter belt anchor. It should appear as a red NPC in an Overview preset that includes **Minor Threat**. The existing Mining preset also showed it during acceptance. Right-click it and choose **Lock Target**; after the normal scan delay, its portrait and health rings should appear. **Look at** should render its native ship model. **Approach** should move toward it. Restart the host and client at the belt and verify the same NPC appears without a duplicate.
 
-NPCs remain stationary and do not aggress arriving miners. Attacking one within its 3,125 m attack range starts retaliation after 7.5 seconds. Positions and health are saved. The following checks cover firing, bounty payments and capsule recovery.
+Rookies wait at their belt until attacked. After the 7.5-second reaction delay they pursue the first attacker at the catalog's 220 m/s cruise speed, aiming for 1,250 m surface stand-off and firing within 3,125 m. Leaving weapon range no longer ends pursuit. Warp, dock, disconnect or leave the local 50 km belt leash to disengage. The same damaged NPC then returns toward its belt anchor and stops within 25 m at low speed. Movement retains its identity and health, and restarting does not simulate a missed journey. The following checks cover firing, pursuit, bounty payments and capsule recovery.
 
 ## Fire a civilian railgun and earn a bounty
 
@@ -232,11 +232,18 @@ NPCs remain stationary and do not aggress arriving miners. Attacking one within 
 4. Watch for native combat messages showing the damage amount, target, weapon and hit quality, while the target's shield, armor and structure rings decline. Misses are possible outside optimal range or with angular motion. When the Rookie is destroyed, it disappears from Overview, the gun stops, and the personal wallet increases by **3,000 ISK**. Under **My Wallet → Transactions**, check **Bounty Prizes**, the resulting balance and the Perimeter description.
 5. Restart both client and host using the same save. Verify the active hull, fitted gun, bounty balance and journal entry remain. The defeated NPC must not reappear early or pay again on reconnect. After ten minutes a replacement may appear at the same belt with a new identity. Dead rows and the paid bounty remain saved.
 
-Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. Fleet splits and bounty tax remain unavailable. Loot, NPC retaliation and player loss are covered below. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. Fleet splits and bounty tax remain unavailable. Loot, NPC retaliation and player loss are covered below. Small Tech I hybrids and their ammunition are covered under [Upgrade to an ammunition-fed railgun](#upgrade-to-an-ammunition-fed-railgun); other civilian guns and weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+
+## Check NPC pursuit and return
+
+1. Select **Eden Pilot**, verify the active fitted ship in Inventory, and warp to a Perimeter belt. Arrival alone must leave the Rookie idle. Disable the gun's auto-repeat and fire one shot from outside the Rookie's 3,125 m attack range while remaining within your gun's range.
+2. After 7.5 seconds, watch its distance and velocity in Overview. It should approach toward 1,250 m stand-off, reach about 220 m/s while travelling, and begin normal retaliation once inside weapon range. The target lock remains while it moves; player Approach uses the NPC's current position. Movement affects both turrets' relative angular velocity.
+3. Warp to a station and dock. This must stop its aggression and incoming effects. Return to the belt and check that the same NPC is moving home or waiting near its original anchor with retained damage. Returning does not grant a bounty or replace its identity. Arrival must not restart aggression.
+4. Restart the host and client on the same save and compare the NPC identity, position, damage, inventory and wallet. Movement advances at most one shared tick after a gap, without an offline chase or return journey. Schema 26 adds navigation state, velocity and a movement timestamp; migration grants no items, ISK or health. Autonomous aggression, orbiting and collision avoidance remain separate work.
 
 ## Loot a defeated Rookie
 
-1. Select **Eden Pilot** and verify the active equipped ship in Inventory. Undock, warp to a Perimeter belt, lock the Rookie and defeat it. Staying outside its 3,125 m retaliation range avoids taking fire.
+1. Select **Eden Pilot** and verify the active equipped ship in Inventory. Undock, warp to a Perimeter belt, lock the Rookie and defeat it. Expect it to approach after the reaction delay; keep shields and capacitor available for retaliation.
 2. Look for the new **Guristas Rookie Frigate Wreck**. Use the **General** or **All** Overview tab if the Mining preset hides wrecks. The wreck type comes from the NPC's pinned catalog definition.
 3. Choose **Open Cargo**. The native controls approach automatically when needed. Transfer requires the active ship to be in the same system, outside warp and within **2,500 m of the wreck's surface**. Only the pilot credited with the kill has loot rights in this first implementation.
 4. The wreck contains **100 Tritanium / 1 m³**, an explicit Eden starter loot rule. Drag some or all into the active ship's ordinary cargo, or press **Loot All**. Check the cargo quantity and remaining contents. Capacity failures must leave the untransferred items in the wreck; a partial move can use the quantity picker.

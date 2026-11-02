@@ -222,11 +222,11 @@ public sealed class AmmunitionTests
             world.Add(new ModuleCooldown { ModuleId = f.Gun, ReadyAt = deadline });
             world.SaveChanges();
             items = world.Set<OwnedItem>().Count();
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=24");
+            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=24");
         }
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(ModuleCooldownKind.Cycle, saved.Set<ModuleCooldown>().Single().Kind);
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, saved.Set<OwnedItem>().Count());

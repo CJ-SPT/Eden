@@ -20,6 +20,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private WreckContact[] _wrecks = [];
     private bool _destroying;
     private int _lastPeerSync;
+    private int _lastNpcSync;
+    private const int NpcReconciliationTicks = 10;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
     private int Stamp => space.Stamp(clock);
@@ -112,9 +114,26 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         }
         var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
         if (added.Length > 0) { Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]); }
+        bool reconcile = Stamp - _lastNpcSync >= NpcReconciliationTicks;
         foreach (var npc in current)
         {
             var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
+            if (previous is not null && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null))
+            {
+                Update("SetBallPosition", npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z);
+                if (npc.Navigation is { } course)
+                {
+                    if (course.TargetId != 0) { Update("FollowBall", npc.Id, course.TargetId, course.FollowRange); }
+                    else if (course.Destination is { } destination) { Update("GotoPoint", npc.Id, destination.X, destination.Y, destination.Z); }
+                    Update("SetSpeedFraction", npc.Id, course.SpeedFraction);
+                    Update("SetBallVelocity", npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z);
+                }
+                else
+                {
+                    Update("Stop", npc.Id);
+                    Update("SetBallVelocity", npc.Id, 0d, 0d, 0d);
+                }
+            }
             if (previous?.Weapon != npc.Weapon)
             {
                 if (previous?.Weapon is { } stopped) { NpcWeaponEffect(npc.Id, stopped, false); }
@@ -126,6 +145,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 NotifyHealth(npc.Health);
             }
         }
+        if (reconcile) { _lastNpcSync = Stamp; }
         _npcs = current;
     }
 
@@ -241,6 +261,11 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
         if (_followTarget is { } follow)
         {
+            if (_npcs.FirstOrDefault(n => n.Id == follow.Id) is { } npc)
+            {
+                follow = follow with { Position = npc.Position };
+                _followTarget = follow;
+            }
             var radial = position - follow.Position;
             double error = radial.Length - follow.Radius - Pilot.Flight.ShipRadius - _followRange;
             _direction = radial.Unit * -Math.Sign(error);

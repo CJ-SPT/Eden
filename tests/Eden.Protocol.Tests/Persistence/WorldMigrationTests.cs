@@ -74,7 +74,7 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(25L, command.ExecuteScalar());
+        Assert.Equal(26L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }

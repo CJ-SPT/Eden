@@ -147,9 +147,11 @@ internal static class Ballpark
 
     private static BlueInstance WriteNpc(BinaryWriter writer, NpcContact npc)
     {
-        // Local, free, stationary entity ships use the same free-ball layout as
-        // player ships. EntityShip fits its graphics turret from the type catalog.
-        WriteBallHeader(writer, npc.Id, (byte)DestinyBallMode.Stop, npc.Radius, npc.Position,
+        // Entity ships share the free-ball movement layout with player ships.
+        // EntityShip fits its graphics turret from the type catalog.
+        var course = npc.Navigation;
+        var mode = course is null ? DestinyBallMode.Stop : course.TargetId != 0 ? DestinyBallMode.Follow : DestinyBallMode.Goto;
+        WriteBallHeader(writer, npc.Id, (byte)mode, npc.Radius, npc.Position,
             (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive));
         writer.Write(npc.Mass);
         writer.Write((byte)0);
@@ -157,10 +159,19 @@ internal static class Ballpark
         writer.Write(npc.CorporationId);
         writer.Write(-1);
         writer.Write(npc.MaxSpeed);
-        WritePosition(writer, SpacePosition.Zero);
+        WritePosition(writer, course?.Velocity ?? SpacePosition.Zero);
         writer.Write(npc.Agility);
-        writer.Write(0f);
+        writer.Write((float)(course?.SpeedFraction ?? 0));
         writer.Write((sbyte)-1);
+        if (course?.TargetId is > 0)
+        {
+            writer.Write(course.TargetId);
+            writer.Write((float)course.FollowRange);
+        }
+        else if (course?.Destination is { } destination)
+        {
+            WritePosition(writer, destination);
+        }
         var item = Item(npc.Id, npc.TypeId, npc.CorporationId, npc.GroupId, npc.CategoryId);
         item["name"] = npc.Name;
         item["corpID"] = npc.CorporationId;

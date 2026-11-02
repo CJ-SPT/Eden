@@ -7,6 +7,14 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal sealed class TestWorld : IDisposable
 {
+    // Historical migrations reconstruct the original WorldNpc schema first.
+    internal const string DropNpcNavigationColumns = """
+        ALTER TABLE WorldNpc DROP COLUMN VelocityX;
+        ALTER TABLE WorldNpc DROP COLUMN VelocityY;
+        ALTER TABLE WorldNpc DROP COLUMN VelocityZ;
+        ALTER TABLE WorldNpc DROP COLUMN MotionAt;
+        ALTER TABLE WorldNpc DROP COLUMN Navigation;
+        """;
     private readonly string _directory = Directory.CreateTempSubdirectory("eden-world-").FullName;
     public string Path => System.IO.Path.Combine(_directory, "world.sqlite");
     public SqliteWorld Store { get; }

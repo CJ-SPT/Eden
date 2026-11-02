@@ -19,7 +19,13 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
     public void Disengage(long shipId, long? npcId = null)
     {
         using WorldDbContext world = new(database.Path);
-        world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId && (npcId == null || a.NpcId == npcId)).ExecuteDelete();
+        using var transaction = world.Database.BeginTransaction();
+        var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId && (npcId == null || a.NpcId == npcId)).ToArray();
+        var ids = aggression.Select(a => a.NpcId).ToArray();
+        foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null)) { NpcMotion.Return(npc); }
+        world.RemoveRange(aggression);
+        world.SaveChanges();
+        transaction.Commit();
     }
 
     public NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll)
@@ -40,17 +46,36 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         var attributes = npc is null ? new Dictionary<DogmaAttributeId, double>() : fitting.Attributes(npc.TypeId);
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
-        var separation = npc is null || position is null ? SpacePosition.Zero : new(position.X - npc.X, position.Y - npc.Y, position.Z - npc.Z);
-        double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source?.Radius ?? 0));
         if (pilot.ActiveShipId != shipId || position is null || hull.GroupId == FleetDefinitions.CapsuleGroup ||
-            npc is null || npc.DestroyedAt.HasValue || npc.SystemId != system || range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange))
+            npc is null || npc.DestroyedAt.HasValue || npc.SystemId != system)
         {
+            if (npc is not null && !npc.DestroyedAt.HasValue) { NpcMotion.Return(npc); }
             world.Remove(aggression);
             world.SaveChanges();
             transaction.Commit();
             return null;
         }
-        if (now < aggression.ReadyAt) { return null; }
+        var home = NpcMotion.Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+        var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
+        if (targetPosition.DistanceTo(home) > NpcEncounterDefinitions.ChaseLeash ||
+            NpcMotion.Position(npc).DistanceTo(home) > NpcEncounterDefinitions.ChaseLeash)
+        {
+            NpcMotion.Return(npc);
+            world.Remove(aggression);
+            world.SaveChanges();
+            transaction.Commit();
+            return null;
+        }
+        if (npc.Navigation != NpcNavigationState.Pursuing && now < aggression.ReadyAt) { return null; }
+        NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now);
+        var separation = targetPosition - NpcMotion.Position(npc);
+        double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
+        if (range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange) || now < aggression.ReadyAt)
+        {
+            world.SaveChanges();
+            transaction.Commit();
+            return null;
+        }
         double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
         if (attributes.Values.Any(v => !double.IsFinite(v)) || duration <= 0)
         {
@@ -61,7 +86,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         DamageVector damage = new(attributes.GetValueOrDefault(DogmaAttributeId.EmDamage), attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage), attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage));
         damage = damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier));
-        double chance = CombatDamage.HitChance(range, CombatDamage.AngularVelocity(separation, velocity), target.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+        double chance = CombatDamage.HitChance(range, CombatDamage.AngularVelocity(separation, velocity - NpcMotion.Velocity(npc)), target.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
             attributes.GetValueOrDefault(DogmaAttributeId.MaxRange), attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff),
             attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed), attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution));
         double quality = CombatDamage.ShotQuality(chance, roll);

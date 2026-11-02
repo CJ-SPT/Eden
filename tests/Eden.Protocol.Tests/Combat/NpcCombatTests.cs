@@ -17,7 +17,7 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcCombatTests
 {
-    private sealed class Clock : TimeProvider
+    internal sealed class Clock : TimeProvider
     {
         public long Milliseconds { get; set; }
         public override long TimestampFrequency => 1000;
@@ -26,7 +26,7 @@ public sealed class NpcCombatTests
         public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         public const long PilotId = 90000001;
         public const long ShipId = 1000000000001;
@@ -133,11 +133,11 @@ public sealed class NpcCombatTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void LeavingAttackRangeOrDockingEndsTheFight(bool dock)
+    public void LeavingTheBeltLeashOrDockingEndsTheFight(bool dock)
     {
         using Fixture f = new();
         f.Aggress();
-        f.Db.Store.SetPosition(Fixture.ShipId, dock ? null : f.Npc.Position + new SpacePosition(5000, 0, 0), f.Npc.SystemId);
+        f.Db.Store.SetPosition(Fixture.ShipId, dock ? null : f.Npc.Position + new SpacePosition(NpcEncounterDefinitions.ChaseLeash + 1, 0, 0), f.Npc.SystemId);
         Assert.Null(f.Fire());
         Assert.Empty(f.Combat.Aggressors(Fixture.ShipId));
         using WorldDbContext world = new(f.Db.Path);
@@ -345,12 +345,12 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20");
+            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20");
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
         Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);

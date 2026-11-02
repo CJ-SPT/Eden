@@ -260,14 +260,14 @@ public sealed class WreckTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSql($"DELETE FROM WorldItem WHERE LocationId={f.Wreck.Id}");
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22");
+            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22");
         }
         _ = new SqliteWorld(f.Db.Path);
         Assert.Empty(f.Store.List(f.Wreck.SystemId, Now));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.NotNull(saved.Set<WorldNpc>().Find(f.Wreck.SourceId)!.DestroyedAt);
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
-        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public sealed class WreckTests
         long itemId = f.Item;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + """
                 CREATE TABLE LegacyWreck(Id INTEGER PRIMARY KEY, NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
                     OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, CorporationId INTEGER NOT NULL,
                     TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Name TEXT NOT NULL, X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL,
@@ -303,6 +303,6 @@ public sealed class WreckTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal("[]", saved.Set<ShipLoss>().Single().DroppedItemIdsJson);
         Assert.Empty(saved.Database.SqlQueryRaw<string>("PRAGMA foreign_key_check").AsEnumerable());
-        Assert.Equal(25, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 }

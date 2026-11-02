@@ -111,7 +111,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         HullDamage health = new(ChargedResource.Recharged(npc.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
             Math.Max(0, (now - npc.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)),
             Math.Max(0, defense.Armor - npc.ArmorDamage), Math.Max(0, defense.Structure - npc.StructureDamage));
-        double chance = CombatDamage.HitChance(distance, CombatDamage.AngularVelocity(separation, velocity), target.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+        double chance = CombatDamage.HitChance(distance, CombatDamage.AngularVelocity(separation, velocity - NpcMotion.Velocity(npc)), target.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
             weapon.Optimal, weapon.Falloff, weapon.Tracking, weapon.SignatureResolution);
         double quality = CombatDamage.ShotQuality(chance, roll);
         var result = CombatDamage.Apply(health, defense, weapon.Damage.Scale(quality));
