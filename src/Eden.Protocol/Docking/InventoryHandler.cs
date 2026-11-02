@@ -5,11 +5,12 @@ using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler, PilotBrain brain) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -255,7 +256,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 new Dictionary<long, object?> { [pilot.ShipId] = quantities }, new Dictionary<long, object?>(), new List<object?>() },
             ["structureInfo"] = null,
             ["shipInfo"] = info,
-            ["charInfo"] = new object?[] { PrimeItem(pilot, pilot.PilotId, "pilot"), new object?[] { 0, Array.Empty<object?>(), Array.Empty<object?>(), Array.Empty<object?>() } },
+            ["charInfo"] = new object?[] { PrimeItem(pilot, pilot.PilotId, "pilot"), brain.Read(pilot.PilotId, pilot.ShipId) },
             ["shipModifiedCharAttribs"] = null,
             ["systemWideEffectsOnShip"] = null,
         });

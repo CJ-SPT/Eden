@@ -314,6 +314,9 @@ public sealed class AmmunitionTests
         using var scope = f.Db.Services.CreateScope();
         var inventory = scope.ServiceProvider.GetRequiredService<InventoryHandler>();
         var all = Assert.IsType<Dictionary<string, object?>>(inventory.AllInfo(f.Pilot).State);
+        var character = Assert.IsType<object?[]>(all["charInfo"]);
+        var brain = Assert.IsType<object?[]>(character[1]);
+        Assert.Equal(3, Assert.IsType<List<object?>>(brain[2]).Count);
         var info = Assert.IsType<BlueDictionary>(all["shipInfo"]);
         Assert.Single(info.Entries, entry => entry.Key is object?[]);
         var state = Assert.IsType<object?[]>(all["shipState"]);

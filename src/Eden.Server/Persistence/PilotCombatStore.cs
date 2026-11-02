@@ -21,16 +21,13 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         int Level(CombatSkill skill) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
         // Pinned effects 414/582, 290, 2847, 587, 287 and 298 apply to this
         // Energy Weapon's Gunnery requirement, not Small Hybrid Turret skills.
-        attributes[DogmaAttributeId.WeaponCycleTime] *= (1 - CombatDefinitions.GunneryCycleReduction * Level(CombatSkill.Gunnery)) *
-            (1 - CombatDefinitions.RapidFiringCycleReduction * Level(CombatSkill.RapidFiring));
-        attributes[DogmaAttributeId.MaxRange] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.Sharpshooter);
-        attributes[DogmaAttributeId.AccuracyFalloff] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.TrajectoryAnalysis);
-        attributes[DogmaAttributeId.TrackingSpeed] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.MotionPrediction);
-        attributes[DogmaAttributeId.DamageMultiplier] *= 1 + CombatDefinitions.SurgicalStrikeDamageBonus * Level(CombatSkill.SurgicalStrike);
-        attributes[DogmaAttributeId.CapacitorNeed] *= 1 - CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.ControlledBursts);
+        foreach (var modifier in CombatDefinitions.SkillModifiers.Where(m =>
+            (hybrid || m.RequiredSkill == CombatSkill.Gunnery) && (m.GroupId is null || m.GroupId == module.GroupId)))
+        {
+            attributes[modifier.Attribute] *= 1 + modifier.PerLevel * Level(modifier.Skill);
+        }
         if (hybrid)
         {
-            attributes[DogmaAttributeId.DamageMultiplier] *= 1 + CombatDefinitions.WeaponSkillBonus * Level(CombatSkill.SmallHybridTurret);
             var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
             attributes[DogmaAttributeId.MaxRange] *= 1 + fitting.Attributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus) / 100;
             if (PilotAmmunitionStore.Contents(world, module.Id) is { } loaded)

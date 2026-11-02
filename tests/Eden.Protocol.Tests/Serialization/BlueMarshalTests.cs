@@ -96,6 +96,22 @@ public sealed class BlueMarshalTests
     }
 
     [Fact]
+    public void NewStyleBrainObjectsCarryStateWithoutExecutingIncomingGlobals()
+    {
+        BlueNewObject value = new(BlueNewObject.BrainEffectClass, new Dictionary<string, object?> { ["value"] = 5d });
+        byte[] encoded = BlueMarshal.Encode(value);
+        Assert.Equal(35, encoded[5]);
+        var decoded = Assert.IsType<BlueNewObject>(BlueMarshal.Decode(encoded));
+        Assert.Equal(value.Name, decoded.Name);
+        Assert.Equal(5d, Assert.IsType<Dictionary<string, object?>>(decoded.State)["value"]);
+        Assert.Equal(encoded, BlueMarshal.Encode(decoded));
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(value with { Name = "untrusted.Call" })));
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(BlueMarshal.Encode(value with { State = null })));
+        encoded[^1] = 36;
+        Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(encoded));
+    }
+
+    [Fact]
     public void EncodesNestedSessionFieldsAsBlueValues()
     {
         var value = new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["userid"] = 1000001 });

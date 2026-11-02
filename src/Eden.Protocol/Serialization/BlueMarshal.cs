@@ -8,6 +8,10 @@ internal sealed record BlueInstance(string Name, object? State);
 // Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
 internal sealed record BlueConstructor(string Name, object?[] Arguments, object? State = null);
 internal sealed record BlueGlobal(string Name);
+internal sealed record BlueNewObject(string Name, object? State)
+{
+    internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
+}
 internal sealed record PaperDollRow(string Name, object?[] Fields);
 internal sealed record BlueStream(byte[] Bytes);
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
@@ -169,27 +173,36 @@ internal static class BlueMarshal
             throw new InvalidDataException("Unsupported Blue reduction.");
         }
 
+        object ReadNewObject(int depth)
+        {
+            // Carbon NEWOBJ (35) stores ((class,), state) and empty iterators.
+            // Retain only the known brain value as inert data; never allocate a
+            // Python class or invoke a client-provided __new__ implementation.
+            if (Read(depth + 1) is not object?[] { Length: 1 or 2 } parts ||
+                parts[0] is not object?[] { Length: >= 1 } args || args[0] is not BlueGlobal name ||
+                reader.ReadByte() != 45 || reader.ReadByte() != 45)
+            {
+                throw new InvalidDataException("Unsupported Blue new-style object.");
+            }
+            if (parts.Length == 2 && args.Length == 1 && name.Name == BlueNewObject.BrainEffectClass && parts[1] is Dictionary<string, object?> state)
+            {
+                return new BlueNewObject(name.Name, state);
+            }
+            if (parts.Length == 1 && args.Length >= 2 && name.Name.StartsWith(PaperDollNamespace, StringComparison.Ordinal) &&
+                name.Name[PaperDollNamespace.Length..] is "AppearanceRow" or "ColorSelectionRow" or "ModifierRow" or "SculptingRow" &&
+                args.Skip(1).All(field => field is null or long or double))
+            {
+                return new PaperDollRow(name.Name, args[1..]);
+            }
+            throw new InvalidDataException("Unsupported Blue new-style object.");
+        }
+
         BluePackedRow ReadPackedRow(int depth)
         {
             if (Read(depth + 1) is not BlueRowDescriptor descriptor) { throw new InvalidDataException("Expected a Blue row descriptor."); }
             byte[] packed = reader.ReadBytes(Length());
             BluePackedRow.Validate(packed, descriptor.DataLength);
             return new(descriptor, packed, Items(descriptor.ObjectCount, depth));
-        }
-
-        PaperDollRow ReadPaperDollRow(int depth)
-        {
-            // Carbon NEWOBJ stores (class, fields...) in a one-element tuple, then two empty iterators.
-            // The creator uses named tuples. Never resolve an incoming Python global as a callable.
-            if (Read(depth + 1) is not object?[] { Length: 1 } wrapper || wrapper[0] is not object?[] { Length: >= 2 } args ||
-                args[0] is not BlueGlobal type || !type.Name.StartsWith(PaperDollNamespace, StringComparison.Ordinal) ||
-                type.Name[PaperDollNamespace.Length..] is not ("AppearanceRow" or "ColorSelectionRow" or "ModifierRow" or "SculptingRow") ||
-                args.Skip(1).Any(field => field is not (null or long or double)) ||
-                reader.ReadByte() != 45 || reader.ReadByte() != 45)
-            {
-                throw new InvalidDataException("Unsupported Blue new-style object.");
-            }
-            return new(type.Name, args[1..]);
         }
 
         object? Read(int depth)
@@ -236,7 +249,7 @@ internal static class BlueMarshal
                 31 => true,
                 32 => false,
                 34 => ReadReduction(depth),
-                35 => ReadPaperDollRow(depth),
+                35 => ReadNewObject(depth),
                 36 => Array.Empty<object?>(),
                 37 => Items(1, depth),
                 38 => new List<object?>(),
@@ -420,6 +433,12 @@ internal static class BlueMarshal
                 writer.Write((byte)23);
                 Write(writer, instance.Name);
                 Write(writer, instance.State);
+                break;
+            case BlueNewObject instance:
+                writer.Write((byte)35); // Carbon's protocol-2 __newobj__ special case.
+                Write(writer, new object?[] { new object?[] { new BlueGlobal(instance.Name) }, instance.State });
+                writer.Write((byte)45);
+                writer.Write((byte)45);
                 break;
             case object?[] tuple:
                 writer.Write((byte)(tuple.Length switch { 0 => 36, 1 => 37, 2 => 44, _ => 20 }));

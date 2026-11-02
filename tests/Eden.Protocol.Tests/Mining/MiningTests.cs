@@ -229,7 +229,8 @@ public sealed class MiningTests
             new Eden.Protocol.Repair.ShieldBoostHandler(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
             new Eden.Protocol.Ammunition.AmmunitionHandler(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
-                fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(), fixture.Inventory));
+                fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(), fixture.Inventory),
+            fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>());
         var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);

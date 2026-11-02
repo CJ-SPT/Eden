@@ -114,10 +114,14 @@ public enum CombatSkill
     TrajectoryAnalysis = 3317,
 }
 
+public sealed record WeaponSkillModifier(CombatSkill Skill, Docking.DogmaAttributeId Attribute, double PerLevel,
+    CombatSkill RequiredSkill = CombatSkill.Gunnery, int? GroupId = null);
+
 public static class CombatDefinitions
 {
     public const string CivilianWeaponEffect = "targetAttack";
     public const string HybridWeaponEffect = "projectileFired";
+    public const int EnergyWeaponGroup = 53;
     public const int HybridWeaponGroup = 74;
 
     public static bool IsSupportedHybrid(int group, IReadOnlyDictionary<Docking.DogmaAttributeId, double> attributes) =>
@@ -134,6 +138,20 @@ public static class CombatDefinitions
     public const double RapidFiringCycleReduction = 0.04;
     public const double SurgicalStrikeDamageBonus = 0.03;
     public const double WeaponSkillBonus = 0.05;
+    // The native pilot brain and authoritative shot calculation share these
+    // pinned skill effects, including their required-skill or group targets.
+    public static IReadOnlyList<WeaponSkillModifier> SkillModifiers { get; } = new WeaponSkillModifier[]
+    {
+        new(CombatSkill.Gunnery, Docking.DogmaAttributeId.WeaponCycleTime, -GunneryCycleReduction),
+        new(CombatSkill.RapidFiring, Docking.DogmaAttributeId.WeaponCycleTime, -RapidFiringCycleReduction),
+        new(CombatSkill.Sharpshooter, Docking.DogmaAttributeId.MaxRange, WeaponSkillBonus),
+        new(CombatSkill.TrajectoryAnalysis, Docking.DogmaAttributeId.AccuracyFalloff, WeaponSkillBonus),
+        new(CombatSkill.MotionPrediction, Docking.DogmaAttributeId.TrackingSpeed, WeaponSkillBonus),
+        new(CombatSkill.SurgicalStrike, Docking.DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: EnergyWeaponGroup),
+        new(CombatSkill.SurgicalStrike, Docking.DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: HybridWeaponGroup),
+        new(CombatSkill.ControlledBursts, Docking.DogmaAttributeId.CapacitorNeed, -WeaponSkillBonus),
+        new(CombatSkill.SmallHybridTurret, Docking.DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.SmallHybridTurret),
+    };
     public const int ConcordCorporation = 1000125;
     public const long FirstBountyJournalId = 6_000_000_000_000;
 }

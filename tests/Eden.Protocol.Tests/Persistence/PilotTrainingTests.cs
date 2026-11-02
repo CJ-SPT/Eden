@@ -1,3 +1,6 @@
+using Eden.Protocol.Docking;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
@@ -61,5 +64,35 @@ public sealed class PilotTrainingTests
         Assert.Equal(initial.Queue, store.Advance(pilot).Queue);
         Assert.Single(store.History(pilot, 10));
         Assert.Equal(8000, Assert.Single(db.Services.GetRequiredService<IPilotSkillReader>().ReadSkills(pilot)).Points);
+    }
+
+    [Fact]
+    public void CompletedTrainingSendsOneVersionedBrainUpdateAndRetainsEarnedPoints()
+    {
+        using TestWorld db = new();
+        Clock clock = new();
+        var training = new PilotTrainingStore(new(db.Path), clock);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var skills = db.Services.GetRequiredService<IPilotSkillReader>();
+        SkillHandler handler = new(skills, training, db.Services.GetRequiredService<IPilotSkillBooks>(), clock, new(skills, clock));
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Set<PilotSkill>().Find(pilot.PilotId, 3327)!.Points = 0;
+            world.SaveChanges();
+        }
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(db.Store, p, clock, new(), []), 7, []);
+        context.Select(pilot);
+        training.Save(pilot.PilotId, [new(3327, 1)], true);
+        clock.Now = clock.Now.AddSeconds(1000);
+        Assert.Empty(handler.Advance(context));
+        Assert.Equal(new[] { "OnServerSkillsChanged", "OnServerBrainUpdated", "OnNewSkillQueueSaved" }, context.Notifications.Select(n => n.Name));
+        var notification = Assert.Single(context.Notifications, n => n.Name == "OnServerBrainUpdated");
+        var update = Assert.IsType<object?[]>(Assert.Single(notification.Arguments));
+        Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), update[0]);
+        Assert.Equal(3, Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(update[1]))).Length);
+        Assert.Equal(250, Assert.Single(skills.ReadSkills(pilot.PilotId)).Points);
+        context.Notifications.Clear();
+        Assert.Empty(handler.Advance(context));
+        Assert.Empty(context.Notifications);
     }
 }

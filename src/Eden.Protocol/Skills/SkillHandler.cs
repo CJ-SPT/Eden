@@ -5,7 +5,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Skills;
 
 [Injectable]
-internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock, PilotBrain brain) : ISelectedPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
@@ -111,6 +111,7 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
         {
             var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
             context.Notifications.Add(("OnServerSkillsChanged", [updates, null, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()]));
+            context.Notifications.Add(("OnServerBrainUpdated", [brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)]));
         }
         var rows = state.Queue.Select((e, index) => (object?)new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
         {
