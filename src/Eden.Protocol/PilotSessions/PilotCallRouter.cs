@@ -68,6 +68,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
     // A successful MachoNet method can return Python None.
     public static readonly object Unsupported = new();
     internal sealed record Error(string Message);
+    internal sealed record UserError(string Name, Dictionary<string, object?> Values);
 
     public string ResolveService(PilotCallContext context, object?[] route, object? objectId)
     {

@@ -102,6 +102,14 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             bool selected = context.Selected;
             DockedPilot? previous = context.ActiveFlight?.Pilot;
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
+            if (result is PilotCallRouter.UserError userError)
+            {
+                // ErrorResponse params are original command, code and payload. Code 2 wraps an
+                // exception stream; inventory catches this UserError to offer a smaller quantity.
+                byte[] exception = BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [userError.Name, userError.Values]));
+                await write(Response(state, "ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } }));
+                continue;
+            }
             if (result is PilotCallRouter.Error || ReferenceEquals(result, PilotCallRouter.Unsupported))
             {
                 string message = (result as PilotCallRouter.Error)?.Message ?? $"Unsupported local call {service}.{method}";

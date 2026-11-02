@@ -61,7 +61,7 @@ public sealed class PilotInventoryTests
             world.Database.ExecuteSql($"UPDATE WorldItem SET Quantity=30 WHERE OwnerId={pilot.PilotId}");
         }
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId));
-        Assert.Throws<InvalidDataException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, null));
+        Assert.Throws<CargoCapacityException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, null));
         Assert.Equal(item, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)));
         var changes = inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, 25);
         Assert.Equal(2, changes.Count);
@@ -69,7 +69,7 @@ public sealed class PilotInventoryTests
         Assert.Equal(25, cargo.Quantity);
         Assert.NotEqual(item.Id, cargo.Id);
         Assert.Equal(5, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Quantity);
-        Assert.Throws<InvalidDataException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, 1));
+        Assert.Throws<CargoCapacityException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, 1));
         Assert.Equal(30, inventory.List(pilot.PilotId, pilot.StationId).Concat(inventory.List(pilot.PilotId, pilot.ShipId)).Sum(i => i.Quantity));
     }
 

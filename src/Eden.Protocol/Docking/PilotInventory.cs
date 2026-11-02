@@ -5,6 +5,12 @@ public sealed record InventoryItem(long Id, int TypeId, long OwnerId, long Locat
 
 public sealed record InventoryChange(InventoryItem Item, InventoryItem? Previous);
 
+public sealed class CargoCapacityException(double available, double required) : Exception("The ship does not have enough cargo space.")
+{
+    public double Available { get; } = available;
+    public double Required { get; } = required;
+}
+
 public interface IPilotInventory
 {
     IReadOnlyList<InventoryItem> List(long pilotId, long locationId);

@@ -9,6 +9,32 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class PilotServicesTests
 {
     [Fact]
+    public async Task CargoCapacityErrorWrapsAUserErrorForTheClientsQuantityRetry()
+    {
+        using TestWorld world = new();
+        long itemId;
+        using (WorldDbContext saved = new(world.Path))
+        {
+            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == 90000001);
+            item.Quantity = 30;
+            itemId = item.Id;
+            saved.SaveChanges();
+        }
+        var packets = await ExchangeAsync(world, 42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("invbroker", "GetInventoryFromId", [1000000000001L]),
+            Request(null, "Add", [itemId, 60003760L], "N=10001:42-2", new() { ["flag"] = 5L }));
+        var packet = packets[^1];
+        Assert.EndsWith(".ErrorResponse", packet.Name);
+        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
+        Assert.Equal(6, body[0]);
+        Assert.Equal(2, body[1]);
+        byte[] exception = PilotLogin.Bytes(Assert.Single(PilotLogin.Tuple(body[2], 1)));
+        Assert.Equal(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", ["NotEnoughCargoSpace",
+            new Dictionary<string, object?> { ["available"] = 125d, ["volume"] = 150d }])), exception);
+    }
+
+    [Fact]
     public async Task ListsSameOwnedPilotOnFreshSessions()
     {
         foreach (long sessionId in new long[] { 41, 42 })

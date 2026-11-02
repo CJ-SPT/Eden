@@ -48,7 +48,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             double added = items.Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
             if (added > capacity - used + 1e-9)
             {
-                throw new InvalidDataException("The ship does not have enough cargo space.");
+                throw new CargoCapacityException(Math.Max(0, capacity - used), added);
             }
         }
 

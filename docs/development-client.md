@@ -72,7 +72,7 @@ To test an existing save separately, stop the host, copy `world.sqlite` into a t
 
 ## Fly the Ibis
 
-To check cargo before departure, select **Eden Pilot**, open **Inventory** and verify **Ibis (Ibis)** is active. Open **Item Hangar** and drag the **Civilian Miner** onto **Ibis (Ibis)** in the inventory tree. The item should disappear from the hangar and appear in cargo with **5.0/125.0 m³** used. Drag it back onto Item Hangar to unload, then load it again. Restart the host and client and verify the same single miner remains in cargo. The one-time starter grant is made for existing pilots when upgrading to world version 13 and for newly created pilots at their starting station. Carrying a miner does not fit or activate it.
+To check cargo before departure, select **Eden Pilot**, open **Inventory** and verify **Ibis (Ibis)** is active. Open **Item Hangar** and drag the **Civilian Miner** onto **Ibis (Ibis)** in the inventory tree. The item should disappear from the hangar and appear in cargo with **5.0/125.0 m³** used. Drag it back onto Item Hangar to unload, then load it again. Restart the host and client and verify the same single miner remains in cargo. The one-time starter grant is made for existing pilots when upgrading to world version 13 and for newly created pilots at their starting station. Carrying a miner does not fit or activate it. When moving a stack larger than the free cargo space, the client opens Set Quantity with the maximum that fits; accepting it leaves the remainder in the hangar.
 
 1. Select **Eden Pilot** and click **Undock** in the station panel. Wait for the ship HUD and the **Jita Trade Hub** entry in Overview.
 2. Double-click open space. Watch the speed readout and the distance to the station change.

@@ -11,7 +11,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     [
         ("itemID", 20), ("typeID", 3), ("ownerID", 3), ("locationID", 20),
         ("flagID", 2), ("quantity", 3), ("groupID", 3), ("categoryID", 3),
-        ("customInfo", 129), ("singleton", 2), ("stacksize", 3),
+        ("customInfo", 129), ("stacksize", 3), ("singleton", 2),
     ];
 
     internal static BlueConstructor ItemDescriptor() => new("blue.DBRowDescriptor",
@@ -20,7 +20,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     internal static BlueConstructor Item(InventoryItem item) => new("blue.DBRow", [ItemDescriptor(), new object?[]
     {
         item.Id, item.TypeId, item.OwnerId, item.LocationId, item.FlagId, item.Quantity,
-        item.GroupId, item.CategoryId, "", 0, item.Quantity,
+        item.GroupId, item.CategoryId, "", item.Quantity, 0,
     }]);
 
     private List<object?> List(DockedPilot pilot, string service, object?[] args)
@@ -80,7 +80,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 if (change.Previous is not { } previous)
                 {
                     old[5] = 0;
-                    old[10] = 0;
+                    old[9] = 0;
                 }
                 else
                 {
@@ -89,12 +89,20 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                     if (previous.Quantity != change.Item.Quantity)
                     {
                         old[5] = previous.Quantity;
-                        old[10] = previous.Quantity;
+                        old[9] = previous.Quantity;
                     }
                 }
                 context.Notifications.Add(("OnItemChange", [Item(change.Item), old, null]));
             }
             return null;
+        }
+        catch (CargoCapacityException error)
+        {
+            return new PilotCallRouter.UserError("NotEnoughCargoSpace", new()
+            {
+                ["available"] = error.Available,
+                ["volume"] = error.Required,
+            });
         }
         catch (InvalidDataException error)
         {

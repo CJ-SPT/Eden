@@ -2,12 +2,56 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Docking;
 
 public sealed class DockedServicesTests
 {
+    [Fact]
+    public void PartialStackChangesUseThePinnedClientsStackSizeColumn()
+    {
+        using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using (WorldDbContext saved = new(db.Path))
+        {
+            var item = saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId);
+            item.Quantity = 30;
+            saved.SaveChanges();
+        }
+        using var scope = db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
+        long id = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).Id;
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        context.Select(pilot);
+        Assert.Null(router.Call(context, "@ship", "Add", new object?[] { id, (long)pilot.StationId }, _ => { },
+            new() { ["flag"] = 5L, ["qty"] = 25L }));
+        Assert.Equal(2, context.Notifications.Count);
+        var remainder = context.Notifications[0].Arguments;
+        Assert.Equal(3, remainder.Length);
+        Assert.Null(remainder[2]);
+        var changes = Assert.IsType<Dictionary<long, object?>>(remainder[1]);
+        Assert.Equal(30, changes[5]);
+        Assert.Equal(30, changes[9]);
+        Assert.False(changes.ContainsKey(10));
+        var row = Assert.IsType<BlueConstructor>(remainder[0]);
+        var descriptor = Assert.IsType<BlueConstructor>(row.Arguments[0]);
+        var columns = Assert.IsType<object?[]>(descriptor.Arguments[0]).Cast<object?[]>().ToArray();
+        // inventorycommon.const in build 3662168 defines ixStackSize=9 and ixSingleton=10.
+        Assert.Equal("stacksize", columns[9][0]);
+        Assert.Equal("singleton", columns[10][0]);
+        var values = Assert.IsType<object?[]>(row.Arguments[1]);
+        Assert.Equal(5, values[9]);
+        Assert.Equal(0, values[10]);
+        var created = context.Notifications[1].Arguments;
+        var createdChanges = Assert.IsType<Dictionary<long, object?>>(created[1]);
+        Assert.Equal(0, createdChanges[9]);
+        Assert.Equal(25, Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(created[0]).Arguments[1])[9]);
+    }
+
     [Fact]
     public void CargoTransferSendsOldLocationAndFlagAndRejectsUnavailableItems()
     {
