@@ -1,4 +1,7 @@
-namespace Eden.Protocol.Tests;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+
+namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {

@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 
-namespace Eden.Protocol;
+namespace Eden.Protocol.Transport;
 
 public static class PacketStream
 {

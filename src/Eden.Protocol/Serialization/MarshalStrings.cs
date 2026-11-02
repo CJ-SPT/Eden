@@ -1,4 +1,4 @@
-namespace Eden.Protocol;
+namespace Eden.Protocol.Serialization;
 
 // Carbon Blue, commit af0d65b. See docs/carbon-license.md.
 internal static class MarshalStrings

@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Sockets;
+using Eden.Protocol.Transport;
 
-namespace Eden.Protocol.Tests;
+namespace Eden.Protocol.Tests.Transport;
 
 public sealed class CompatibilityHandshakeTests
 {

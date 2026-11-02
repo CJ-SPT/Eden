@@ -1,7 +1,7 @@
 using System.Numerics;
 using System.Text;
 
-namespace Eden.Protocol;
+namespace Eden.Protocol.Serialization;
 
 // Only the inert wire types used by the local session. Class names are data.
 internal sealed record BlueInstance(string Name, object? State);

@@ -1,8 +1,11 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Transport;
 
-namespace Eden.Protocol.Tests;
+namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotLoginTests
 {

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Eden.Protocol;
+namespace Eden.Protocol.Transport;
 
 public static class CompatibilityHandshake
 {

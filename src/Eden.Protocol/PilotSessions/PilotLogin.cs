@@ -1,7 +1,9 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Transport;
 
-namespace Eden.Protocol;
+namespace Eden.Protocol.PilotSessions;
 
 public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket)
 {

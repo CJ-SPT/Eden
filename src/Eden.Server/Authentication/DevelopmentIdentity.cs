@@ -2,7 +2,7 @@ using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Eden.Server;
+namespace Eden.Server.Authentication;
 
 internal static class DevelopmentIdentity
 {

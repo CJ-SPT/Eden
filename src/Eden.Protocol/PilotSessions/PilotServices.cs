@@ -1,4 +1,6 @@
-namespace Eden.Protocol;
+using Eden.Protocol.Serialization;
+
+namespace Eden.Protocol.PilotSessions;
 
 internal static class PilotServices
 {

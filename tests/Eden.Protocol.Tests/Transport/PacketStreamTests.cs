@@ -1,4 +1,6 @@
-namespace Eden.Protocol.Tests;
+using Eden.Protocol.Transport;
+
+namespace Eden.Protocol.Tests.Transport;
 
 public sealed class PacketStreamTests
 {

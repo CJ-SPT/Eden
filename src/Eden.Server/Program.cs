@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
-using Eden.Protocol;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Transport;
+using Eden.Server.Authentication;
 
 namespace Eden.Server;
 
