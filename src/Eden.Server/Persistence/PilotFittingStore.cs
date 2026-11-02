@@ -91,7 +91,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         var hull = Attributes(catalog, ship.TypeId);
         var occupied = world.Set<OwnedItem>().Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).Select(i => i.FlagId).ToHashSet();
         int slots = Math.Min((int)InventoryFlag.HighSlot7 - (int)InventoryFlag.HighSlot0 + 1, checked((int)Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft))));
-        long nextId = (world.Set<OwnedItem>().Max(i => (long?)i.Id) ?? InventoryDefinitions.FirstOwnedItemId) + 1;
+        long nextId = PilotInventoryStore.NextId(world);
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
         {

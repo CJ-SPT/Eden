@@ -18,6 +18,11 @@ public enum InventoryFlag
     HighSlot7 = 34,
 }
 
+public enum InventoryLocation
+{
+    Graveyard = 8,
+}
+
 public enum DogmaAttributeId
 {
     IsOnline = 2,
@@ -93,6 +98,7 @@ public enum DogmaEffect
 public enum StationService
 {
     Reprocessing = 5,
+    Market = 7,
     Fitting = 17,
 }
 

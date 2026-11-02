@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 16)
+        if (version is < 0 or > 17)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -142,6 +142,28 @@ internal static class WorldMigration
                 """);
         }
         if (version < 16) { world.Database.ExecuteSqlRaw("PRAGMA user_version=16"); }
+        if (version is >= 6 and < 17)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldWallet(PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    Cents INTEGER NOT NULL CONSTRAINT CK_Wallet_Cents CHECK(Cents >= 0));
+                CREATE TABLE WorldMarketStation(StationId INTEGER PRIMARY KEY, CreatedAt INTEGER NOT NULL);
+                CREATE TABLE WorldMarketOrder(Id INTEGER PRIMARY KEY AUTOINCREMENT, StationId INTEGER NOT NULL,
+                    SystemId INTEGER NOT NULL, RegionId INTEGER NOT NULL, OwnerId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
+                    Bid INTEGER NOT NULL, PriceCents INTEGER NOT NULL CONSTRAINT CK_MarketOrder_Price CHECK(PriceCents > 0),
+                    Remaining INTEGER NOT NULL, Entered INTEGER NOT NULL, Issued INTEGER NOT NULL,
+                    CONSTRAINT CK_MarketOrder_Quantity CHECK(Remaining >= 0 AND Entered > 0 AND Remaining <= Entered));
+                CREATE UNIQUE INDEX IX_WorldMarketOrder_StationId_TypeId_Bid ON WorldMarketOrder(StationId,TypeId,Bid);
+                CREATE INDEX IX_WorldMarketOrder_RegionId ON WorldMarketOrder(RegionId);
+                CREATE TABLE WorldMarketTrade(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    OrderId INTEGER NOT NULL, StationId INTEGER NOT NULL, CounterpartyId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
+                    IsBuy INTEGER NOT NULL, Quantity INTEGER NOT NULL, PriceCents INTEGER NOT NULL, TaxCents INTEGER NOT NULL,
+                    BalanceCents INTEGER NOT NULL, Time INTEGER NOT NULL,
+                    CONSTRAINT CK_MarketTrade_Amounts CHECK(PriceCents > 0 AND Quantity > 0 AND TaxCents >= 0 AND BalanceCents >= 0));
+                CREATE INDEX IX_WorldMarketTrade_PilotId_Time ON WorldMarketTrade(PilotId,Time);
+                """);
+        }
+        if (version < 17) { world.Database.ExecuteSqlRaw("PRAGMA user_version=17"); }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

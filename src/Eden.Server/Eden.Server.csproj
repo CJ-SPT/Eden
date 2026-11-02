@@ -10,6 +10,7 @@
     <ProjectReference Include="../Eden.Protocol/Eden.Protocol.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Persistence/starter-market.json" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />

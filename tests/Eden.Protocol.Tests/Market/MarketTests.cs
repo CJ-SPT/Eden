@@ -1,0 +1,324 @@
+using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Market;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
+using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Catalog;
+using Eden.Server.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Eden.Protocol.Tests.Market;
+
+public sealed class MarketTests
+{
+    private const int Scordite = 1228;
+    private const int Tritanium = 34;
+    private const long OreId = InventoryDefinitions.FirstOwnedItemId + 100;
+
+    private sealed class Fixture : IDisposable
+    {
+        public TestWorld Db { get; } = new();
+        public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
+        public IPilotMarket Store => Db.Services.GetRequiredService<IPilotMarket>();
+        public IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
+        public Fixture()
+        {
+            using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
+            catalog.Database.ExecuteSqlRaw("""
+                INSERT INTO ItemCategory VALUES (25,'Asteroid'),(4,'Material');
+                INSERT INTO ItemGroup VALUES (460,'Scordite',25),(18,'Mineral',4),(462,'Veldspar',25);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (1228,'Scordite',460),(1230,'Veldspar',462),(34,'Tritanium',18),(35,'Pyerite',18),(16622,'Accounting',257);
+                INSERT INTO SourceRecord VALUES ('client/types','1228','{{"volume":0.15}}'),('client/types','1230','{{"volume":0.1}}'),
+                    ('client/types','34','{{"volume":0.01}}'),('client/types','35','{{"volume":0.01}}'),
+                    ('client/stationoperations','14','{{"services":[5,7,17]}}');
+                INSERT INTO SourceRecord VALUES ('client/accountingentrytypes','2','{{"entryTypeNameID":59794,"name":"Market Transaction"}}'),
+                    ('client/accountingentrytypes','54','{{"entryTypeNameID":59846,"name":"Transaction Tax"}}');
+                INSERT INTO TypeAttribute VALUES (16622,275,3);
+                """);
+            using WorldDbContext world = new(Db.Path);
+            world.Add(new OwnedItem
+            {
+                Id = OreId,
+                OwnerId = Pilot.PilotId,
+                TypeId = Scordite,
+                LocationId = Pilot.StationId,
+                FlagId = (int)InventoryFlag.Hangar,
+                Quantity = 133
+            });
+            world.SaveChanges();
+        }
+        public MarketSale Sale(long id = OreId, int quantity = 133, long limit = 500) => new(id, Pilot.StationId, Scordite, limit, quantity);
+        public MarketResult Sell(params MarketSale[] sales) => Store.Sell(Pilot.PilotId, sales.Length == 0 ? [Sale()] : sales);
+        public MarketResult Buy(int type = InventoryDefinitions.CivilianMinerType, int quantity = 1, long limit = 10000) =>
+            Store.Buy(Pilot.PilotId, Pilot.StationId, [new(type, limit, quantity)]);
+        public void Dispose() => Db.Dispose();
+    }
+
+    [Fact]
+    public void MiningProceedsCanBuyEquipmentAndBothSidesPersistWithoutRepeatingSeed()
+    {
+        using Fixture f = new();
+        Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(7, f.Store.Orders(f.Pilot.PilotId).Count);
+        var sale = f.Sell();
+        Assert.Equal(61512, sale.BalanceCents);
+        Assert.Equal(4988, Assert.Single(sale.Trades).TaxCents);
+        Assert.Equal(0, Assert.Single(sale.Changes).Item.Quantity);
+        Assert.Throws<InvalidDataException>(() => f.Sell());
+        var purchase = f.Buy(quantity: 2);
+        Assert.Equal(41512, purchase.BalanceCents);
+        Assert.Equal(2, Assert.Single(purchase.Trades).Quantity);
+        Assert.Equal(3, Assert.Single(purchase.Changes).Item.Quantity);
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.Equal(41512, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(3, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId)).Quantity);
+        var book = f.Store.Orders(f.Pilot.PilotId);
+        Assert.Equal(98, Assert.Single(book, o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Equal(999867, Assert.Single(book, o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(2, f.Store.Transactions(f.Pilot.PilotId).Count);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Single(world.Set<MarketStation>());
+        Assert.Equal(7, world.Set<NpcMarketOrder>().Count());
+    }
+
+    [Fact]
+    public void PurchasesNeverReuseConsumedItemIdsEvenAfterRestart()
+    {
+        using Fixture f = new();
+        f.Sell();
+        var first = Assert.Single(f.Buy(Tritanium, 1, 240).Changes).Item;
+        Assert.True(first.Id > OreId);
+        MarketSale sale = new(first.Id, f.Pilot.StationId, Tritanium, 200, 1);
+        f.Sell(sale);
+        _ = new SqliteWorld(f.Db.Path);
+        var second = Assert.Single(f.Buy(Tritanium, 1, 240).Changes).Item;
+        Assert.True(second.Id > first.Id);
+        Assert.Throws<InvalidDataException>(() => f.Sell(sale));
+        Assert.Equal(1, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Single(i => i.Id == second.Id).Quantity);
+    }
+
+    [Fact]
+    public void ExecutionUsesSavedPricesAndAccountingRatherThanUntrustedClientTotals()
+    {
+        using Fixture f = new();
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = (int)MarketSkill.Accounting, Points = TrainedSkill.PointsForLevel(3, 5) });
+            world.SaveChanges();
+        }
+        var sale = f.Sell(f.Sale(limit: 1));
+        Assert.Equal(500, Assert.Single(sale.Trades).PriceCents);
+        Assert.Equal(2244, sale.Trades[0].TaxCents);
+        Assert.Equal(64256, sale.BalanceCents);
+        Assert.Equal(10000, Assert.Single(f.Buy(limit: 1000000).Trades).PriceCents);
+    }
+
+    [Fact]
+    public void MissingFundsBadLimitsAndInvalidBatchRollBackWalletStockAndInventory()
+    {
+        using Fixture f = new();
+        var before = f.Store.Orders(f.Pilot.PilotId);
+        Assert.Throws<InvalidDataException>(() => f.Buy());
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(limit: 501)));
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 134)));
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 0)));
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(), f.Sale()));
+        var foreign = Assert.Single(f.Inventory.List(90000002, f.Pilot.StationId));
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale(quantity: 10), f.Sale(foreign.Id, 1)));
+        Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Empty(f.Store.Transactions(f.Pilot.PilotId));
+        Assert.Equal(before, f.Store.Orders(f.Pilot.PilotId));
+        Assert.Equal(133, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Single(i => i.Id == OreId).Quantity);
+        f.Sell();
+        var balance = f.Store.Balance(f.Pilot.PilotId);
+        Assert.Throws<InvalidDataException>(() => f.Store.Buy(f.Pilot.PilotId, f.Pilot.StationId,
+            [new(InventoryDefinitions.CivilianMinerType, 10000, 1), new(Tritanium, 240, 100000)]));
+        Assert.Equal(balance, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(100, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+    }
+
+    [Fact]
+    public void OverflowRollsBackMoneyStockAndItems()
+    {
+        using Fixture f = new();
+        f.Sell();
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<OwnedItem>().Single(i => i.OwnerId == f.Pilot.PilotId && i.TypeId == InventoryDefinitions.CivilianMinerType && !i.Singleton).Quantity = int.MaxValue;
+            world.SaveChanges();
+        }
+        Assert.Throws<OverflowException>(() => f.Buy());
+        Assert.Equal(61512, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(100, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Single(f.Store.Transactions(f.Pilot.PilotId));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<PilotWallet>().Find(f.Pilot.PilotId)!.Cents = long.MaxValue;
+            world.Add(new OwnedItem
+            {
+                Id = OreId,
+                OwnerId = f.Pilot.PilotId,
+                TypeId = Scordite,
+                LocationId = f.Pilot.StationId,
+                FlagId = (int)InventoryFlag.Hangar,
+                Quantity = 1
+            });
+            world.SaveChanges();
+        }
+        Assert.Throws<OverflowException>(() => f.Sell(f.Sale(quantity: 1)));
+        Assert.Equal(long.MaxValue, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(999867, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(1, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Single(i => i.Id == OreId).Quantity);
+        Assert.Single(f.Store.Transactions(f.Pilot.PilotId));
+    }
+
+    [Fact]
+    public void StationAndSourceValidationPreventsRemoteFittedAssembledAndSpaceSales()
+    {
+        using Fixture f = new();
+        Assert.Throws<InvalidDataException>(() => f.Sell(f.Sale() with { StationId = f.Pilot.StationId + 1 }));
+        Assert.Throws<InvalidDataException>(() => f.Store.Buy(f.Pilot.PilotId, f.Pilot.StationId + 1, [new(Tritanium, 240, 1)]));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<OwnedItem>().Find(OreId)!.Singleton = true;
+            world.SaveChanges();
+        }
+        Assert.Throws<InvalidDataException>(() => f.Sell());
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var item = world.Set<OwnedItem>().Find(OreId)!;
+            item.Singleton = false;
+            item.LocationId = f.Pilot.ShipId;
+            item.FlagId = (int)InventoryFlag.HighSlot0;
+            world.SaveChanges();
+        }
+        Assert.Throws<InvalidDataException>(() => f.Sell());
+        f.Db.Store.SetPosition(f.Pilot.ShipId, SpacePosition.Zero);
+        Assert.Throws<InvalidDataException>(() => f.Sell());
+        Assert.Throws<InvalidDataException>(() => f.Buy());
+        Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
+    }
+
+    [Fact]
+    public void DepletedOrExpiredOrdersDoNotRegenerateAndImmediateFillsCanBePartial()
+    {
+        using Fixture f = new();
+        f.Sell();
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining = 1;
+            world.SaveChanges();
+        }
+        var bought = f.Buy(quantity: 5);
+        Assert.Equal(1, Assert.Single(bought.Trades).Quantity);
+        Assert.Equal(51512, bought.BalanceCents);
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.DoesNotContain(f.Store.Orders(f.Pilot.PilotId), o => o.TypeId == InventoryDefinitions.CivilianMinerType);
+        Assert.Throws<InvalidDataException>(() => f.Buy());
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<NpcMarketOrder>().Single(o => o.TypeId == Tritanium && !o.Bid).Issued = DateTime.UtcNow.AddDays(-366).ToFileTimeUtc();
+            world.SaveChanges();
+        }
+        Assert.Throws<InvalidDataException>(() => f.Buy(Tritanium, 1, 240));
+    }
+
+    [Fact]
+    public async Task CompetingPilotsCannotOversellTheSameFiniteNpcDemand()
+    {
+        using Fixture f = new();
+        f.Store.Orders(f.Pilot.PilotId);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<OwnedItem>().Find(OreId)!.Quantity = 80;
+            world.Add(new OwnedItem
+            {
+                Id = OreId + 1,
+                OwnerId = 90000002,
+                TypeId = Scordite,
+                LocationId = f.Pilot.StationId,
+                FlagId = (int)InventoryFlag.Hangar,
+                Quantity = 80
+            });
+            world.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite).Remaining = 100;
+            world.SaveChanges();
+        }
+        var results = await Task.WhenAll(Task.Run(() => f.Sell(f.Sale(quantity: 80))),
+            Task.Run(() => f.Store.Sell(90000002, [new(OreId + 1, f.Pilot.StationId, Scordite, 500, 80)])));
+        Assert.Equal(100, results.Sum(r => Assert.Single(r.Trades).Quantity));
+        Assert.Equal(46250, results.Sum(r => r.BalanceCents));
+        Assert.Equal(60, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Concat(f.Inventory.List(90000002, f.Pilot.StationId))
+            .Where(i => i.TypeId == Scordite).Sum(i => i.Quantity));
+    }
+
+    [Fact]
+    public void UpgradeFromVersionSixteenPreservesOreAndDoesNotGrantMoney()
+    {
+        using Fixture f = new();
+        var pilot = f.Pilot;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; PRAGMA user_version=16");
+        }
+        _ = new SqliteWorld(f.Db.Path);
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.Equal(pilot, f.Pilot);
+        Assert.Equal(0, f.Store.Balance(pilot.PilotId));
+        Assert.Equal(133, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId).Quantity);
+        Assert.Equal(7, f.Store.Orders(pilot.PilotId).Count);
+    }
+
+    [Fact]
+    public void NativeCallsReturnVersionedBooksAndNotifyWalletAndInventoryTogether()
+    {
+        using Fixture f = new();
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var pilot = f.Pilot;
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects), 1, []);
+        object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
+        Assert.Same(PilotCallRouter.Unsupported, Call("marketProxy", "GetOrders", (long)Scordite));
+        context.Select(pilot);
+        Assert.Null(Call("charMgr", "GetPrivateInfoOnCorpChange", pilot.PilotId));
+        Assert.Empty(Assert.IsType<List<object?>>(Call("LPSvc", "GetAllMyCharacterWalletLPBalances")));
+        Assert.Equal(2, Assert.IsType<List<object?>>(Call("account", "GetEntryTypes")).Count);
+        var cached = Assert.IsType<BlueInstance>(Call("marketProxy", "GetOrders", (long)Scordite));
+        var state = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(cached)) is BlueInstance decoded ? decoded.State : null);
+        Assert.Equal("always", BlueMarshal.Text(Assert.IsType<Dictionary<string, object?>>(state[0])["versionCheck"]));
+        Assert.NotEmpty(Assert.IsType<byte[]>(state[1]));
+        var item = new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
+        {
+            ["itemID"] = OreId,
+            ["stationID"] = (long)pilot.StationId,
+            ["typeID"] = (long)Scordite,
+            ["quantity"] = 133L,
+            ["price"] = 5d
+        });
+        Assert.Equal(true, Call("marketProxy", "PlaceMultiSellOrder", new List<object?> { item }, false, 0L, null));
+        Assert.Equal(615.12, Call("account", "GetCashBalance", 0L));
+        Assert.Equal(new object?[] { "cash", pilot.PilotId, 615.12 }, Assert.Single(context.Notifications, n => n.Name == "OnAccountChange").Arguments);
+        var removal = Assert.Single(context.Notifications, n => n.Name == "OnItemChange");
+        var removedRow = Assert.IsType<BlueConstructor>(removal.Arguments[0]);
+        var removedFields = Assert.IsType<object?[]>(removedRow.Arguments[1]);
+        Assert.Equal((long)InventoryLocation.Graveyard, removedFields[(int)InventoryColumn.Location]);
+        Assert.Equal(133, removedFields[(int)InventoryColumn.StackSize]);
+        Assert.Equal((long)pilot.StationId, Assert.IsType<Dictionary<long, object?>>(removal.Arguments[1])[(int)InventoryColumn.Location]);
+        Assert.Single(context.Notifications, n => n.Name == "OnOwnOrdersChanged");
+        var now = DateTime.UtcNow;
+        Assert.Equal(2, Assert.IsType<List<object?>>(Call("account", "GetTransactions", (long)WalletAccountKey.Cash, (long)now.Year, (long)now.Month, false)).Count);
+        Assert.Equal(2, Assert.IsType<List<object?>>(Call("account", "GetTransactions", (long)WalletAccountKey.Cash, null, null, false)).Count);
+        Assert.Single(Assert.IsType<List<object?>>(Call("marketProxy", "CharGetTransactions", (object?)null)));
+        Assert.IsType<PilotCallRouter.Error>(Call("marketProxy", "PlaceBuyOrder", (long)pilot.StationId, 3651L, 100d, 1L, -1L, 1L, 1L, false, null));
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(-1d)]
+    [InlineData(0d)]
+    [InlineData(0.001d)]
+    public void RejectsInvalidMarketMoney(double value) => Assert.Throws<InvalidDataException>(() => MarketDefinitions.PriceCents(value));
+}

@@ -1,0 +1,7 @@
+[
+  { "typeId": 34, "name": "Tritanium", "buyPriceCents": 200, "sellPriceCents": 240, "demand": 1000000, "stock": 100000 },
+  { "typeId": 35, "name": "Pyerite", "buyPriceCents": 800, "sellPriceCents": 960, "demand": 1000000, "stock": 100000 },
+  { "typeId": 1230, "name": "Veldspar", "buyPriceCents": 300, "sellPriceCents": null, "demand": 1000000, "stock": 0 },
+  { "typeId": 1228, "name": "Scordite", "buyPriceCents": 500, "sellPriceCents": null, "demand": 1000000, "stock": 0 },
+  { "typeId": 3651, "name": "Civilian Miner", "buyPriceCents": null, "sellPriceCents": 10000, "demand": 0, "stock": 100 }
+]

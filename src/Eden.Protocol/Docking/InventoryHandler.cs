@@ -106,6 +106,13 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     internal static void NotifyItemChange(PilotCallContext context, InventoryChange change)
     {
         // OnItemChange keys index the inventory DBRow; values describe the old row.
+        // Build 3662168 removes exhausted stacks through a junk-location change.
+        // Keep the detached stack's last quantity: the UI reconstructs the old
+        // row's quantity but reads its separate stacksize when deciding to remove
+        // a tile. A zero stacksize makes both the old and new rows appear absent.
+        var item = change.Item.Quantity == 0
+            ? change.Item with { LocationId = (int)InventoryLocation.Graveyard, FlagId = (int)InventoryFlag.AutoFit, Online = false, Quantity = change.Previous?.Quantity ?? 0 }
+            : change.Item;
         Dictionary<long, object?> old = [];
         if (change.Previous is not { } previous)
         {
@@ -118,16 +125,16 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         }
         else
         {
-            if (previous.LocationId != change.Item.LocationId) { old[(long)InventoryColumn.Location] = previous.LocationId; }
-            if (previous.FlagId != change.Item.FlagId) { old[(long)InventoryColumn.Flag] = previous.FlagId; }
-            if (previous.Singleton != change.Item.Singleton) { old[(long)InventoryColumn.Singleton] = previous.Singleton ? 1 : 0; }
-            if (previous.Quantity != change.Item.Quantity)
+            if (previous.LocationId != item.LocationId) { old[(long)InventoryColumn.Location] = previous.LocationId; }
+            if (previous.FlagId != item.FlagId) { old[(long)InventoryColumn.Flag] = previous.FlagId; }
+            if (previous.Singleton != item.Singleton) { old[(long)InventoryColumn.Singleton] = previous.Singleton ? 1 : 0; }
+            if (previous.Quantity != item.Quantity)
             {
                 old[(long)InventoryColumn.Quantity] = previous.Quantity;
                 old[(long)InventoryColumn.StackSize] = previous.Quantity;
             }
         }
-        context.Notifications.Add(("OnItemChange", [Item(change.Item), old, null]));
+        context.Notifications.Add(("OnItemChange", [Item(item), old, null]));
     }
 
     private BlueConstructor Item(DockedPilot pilot, string kind)

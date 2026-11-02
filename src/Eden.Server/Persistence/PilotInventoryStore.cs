@@ -106,7 +106,14 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         return volume;
     }
 
-    internal static long NextId(WorldDbContext world) => (world.Set<OwnedItem>().Max(i => (long?)i.Id) ?? InventoryDefinitions.FirstOwnedItemId) + 1;
+    internal static long NextId(WorldDbContext world)
+    {
+        // MAX(Id) can reuse a consumed stack's ID. WorldItem already uses
+        // AUTOINCREMENT; its SQLite sequence retains deleted IDs across restarts.
+        long last = world.Database.SqlQueryRaw<long>("SELECT COALESCE((SELECT seq FROM sqlite_sequence WHERE name='WorldItem'),0) AS Value")
+            .AsEnumerable().Single();
+        return checked(Math.Max(last, InventoryDefinitions.FirstOwnedItemId) + 1);
+    }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)
     {

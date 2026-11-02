@@ -16,7 +16,11 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            ("account", "GetCashBalance") => 0d,
+            // The native wallet asks even for NPC-corporation pilots. No private
+            // player-corporation membership record exists; None disables EM donation.
+            ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => null,
+            // No loyalty points or EverMarks have been earned in Eden yet.
+            ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => new List<object?>(),
             ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") =>
                 KeyVal(new() { ["iskEscrow"] = 0d, ["itemsEscrow"] = 0d }),
             ("keeper", "GetCurrentDungeonForCharacter") => null,

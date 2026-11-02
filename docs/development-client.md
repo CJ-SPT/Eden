@@ -160,7 +160,7 @@ Fit an online **Civilian Miner** to the Ibis while docked, then visit a belt as 
 4. Warp to a station, dock, and drag the ore from Ibis cargo into **Item Hangar**. Compare the quantity and used cargo space before and after unloading. During automated input checks, select the stack and wait for its selection to appear before dragging.
 5. Restart the host and client. Check that the ore remains in its saved cargo or hangar location. A depleted asteroid should remain absent when returning to its belt.
 
-World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation currently supports the Civilian Miner on corvettes. Other miners, boosts, specialized mining holds, survey scans and selling ore remain separate work.
+World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation currently supports the Civilian Miner on corvettes. Other miners, boosts, specialized mining holds, survey scans remain separate work.
 
 ## Reprocess mined ore
 
@@ -169,7 +169,28 @@ World version 16 saves capacitor charge and its recharge timestamp. Charge regen
 3. Choose Item Hangar or cargo as the output destination and press **Reprocess**. Complete batches become minerals; remaining ore stays in its original stack. Output must fit if sent to cargo. Reopen Inventory and check the mineral and leftover quantities.
 4. Restart the host and client and check that the same stacks remain. A repeated request cannot process the incomplete remainder again.
 
-The catalog supplies station efficiency, ore recipes, batch sizes and skill bonuses. This milestone supports fixed ore outputs and personal cargo/hangars. It does not recycle equipment or process randomized recipes. The fee display currently reads zero because Eden has no adjusted market prices or wallet economy; this follows the pinned client's missing-price behavior. Mineral losses reflect station efficiency and trained skills, rather than withholding minerals as a station tax.
+The catalog supplies station efficiency, ore recipes, batch sizes and skill bonuses. This milestone supports fixed ore outputs and personal cargo/hangars. It does not recycle equipment or process randomized recipes. The fee display currently reads zero because Eden has no adjusted market-price feed; this follows the pinned client's missing-price behavior. Mineral losses reflect station efficiency and trained skills, rather than withholding minerals as a station tax.
+
+## Sell minerals and buy equipment
+
+1. Select **Eden Pilot**, open **Inventory**, and verify **Ibis (Ibis)**. At a market station, right-click ore or minerals in Item Hangar or cargo and choose **Sell This Item**.
+2. Select **Immediate**, review the quantity, price and tax, then complete the native sale confirmation. The sold quantity leaves Inventory and the personal ISK balance increases by the net proceeds.
+3. Right-click a Civilian Miner and choose **Buy This Type**. Buy one at the station. It arrives in Item Hangar; the price is deducted from the same saved wallet. Fit it through the station's circled ship button.
+4. Open Wallet to compare the balance and transaction records. Restart the host and client, then compare wallet balance, owned items and remaining NPC order quantities.
+
+Eden seeds finite starter orders once per visited market station. These local prices are emulator policy:
+
+| Item | Pilot sells for | Pilot buys for |
+| --- | ---: | ---: |
+| Veldspar | 3.00 ISK | — |
+| Scordite | 5.00 ISK | — |
+| Tritanium | 2.00 ISK | 2.40 ISK |
+| Pyerite | 8.00 ISK | 9.60 ISK |
+| Civilian Miner | — | 100.00 ISK |
+
+Each buyback order starts with demand for one million units. Mineral offers start with 100,000 units; Civilian Miner offers start with 100. Orders last one year and depleted stock does not regenerate after a restart. The embedded starter policy applies only when a station is first seeded. No initial ISK grant is added to existing or new pilots.
+
+Sales tax is currently pinned to the staged client's observed **7.5%** runtime flag, reduced by **11% per Accounting level**. Its packaged fallback is 8%; external flag changes are not yet hosted by Eden. Immediate trades have no broker fee. A half-cent sales tax is rounded to cents before crediting proceeds; the native preview can display a net amount one cent higher because it rounds the unrounded net independently. There is no regional history feed yet, so the native buy/sell windows can display regional-average price warnings even for the documented Eden prices. Trading supports personal immediate orders at the docked station. Player listings, corporation/remote trading and history graphs remain separate work.
 
 ## Check the character sheet
 
