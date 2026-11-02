@@ -53,6 +53,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         Effect(context, cycle, true);
         context.Flight.SetWeaponEffect(Contact(cycle), true);
         context.Flight.NotifyHealth(result.Health);
+        context.Flight.RefreshWrecks();
         context.Flight.RefreshNpcs();
         context.Notifications.Add(("OnModuleAttributeChanges", [new List<object?>
         {

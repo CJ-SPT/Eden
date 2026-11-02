@@ -91,6 +91,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         {
             if (aggression is not null) { world.Remove(aggression); }
             npc.DestroyedAt = now;
+            WreckStore.Create(world, catalog, npc, pilot, now);
             double bounty = target.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);
             if (!double.IsFinite(bounty) || bounty < 0) { throw new InvalidDataException("Invalid NPC bounty."); }
             long cents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));

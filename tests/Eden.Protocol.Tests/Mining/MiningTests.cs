@@ -224,7 +224,8 @@ public sealed class MiningTests
         var inventoryHandler = new InventoryHandler(fixture.Clock, fixture.Inventory, fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Store, mining,
             fixture.Db.Services.GetRequiredService<IPilotFleet>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotHealth>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
-            new Eden.Protocol.Combat.CombatHandler(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(), targeting));
+            new Eden.Protocol.Combat.CombatHandler(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(), targeting),
+            fixture.Db.Services.GetRequiredService<Eden.Protocol.Loot.IWrecks>());
         var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
@@ -463,7 +464,7 @@ public sealed class MiningTests
         Assert.Equal(2.1, attributes[DogmaAttributeId.MiningCriticalBonusYield], 8);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=15");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=15");
         }
         _ = new SqliteWorld(fixture.Db.Path);
         Assert.Equal(149.5, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);

@@ -1,0 +1,30 @@
+using Eden.Protocol.Docking;
+
+namespace Eden.Protocol.Loot;
+
+public sealed record WreckContact(long Id, long SourceId, long OwnerId, int CorporationId, int TypeId, string Name,
+    int SystemId, SpacePosition Position, double Mass, float Radius, bool Empty);
+public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);
+
+public interface IWrecks
+{
+    IReadOnlyList<WreckContact> List(int systemId, long now);
+    WreckInventory Read(long pilotId, long wreckId, long now);
+    IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, long wreckId, IReadOnlyList<long> itemIds, int? quantity, long now);
+}
+
+public static class WreckDefinitions
+{
+    public const int Group = 186;
+    public const int Category = 2;
+    public const string BindingPrefix = "@wreck:";
+    public const long FirstWreckId = 8_000_000_000_000;
+    // Pinned appConst.maxCargoContainerTransferDistance. Visibility follows
+    // Eden's local grid policy; the two-hour lifetime and loot are Eden policy.
+    public const double TransferRange = 2500;
+    public const double VisibilityRange = 250_000;
+    public const int LifetimeSeconds = 7200;
+    public const float StationaryAgility = 1;
+    public const int StarterLootType = 34; // Catalog Tritanium.
+    public const int StarterLootQuantity = 100;
+}

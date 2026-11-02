@@ -27,6 +27,11 @@ public sealed class NpcEncounterTests
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw("""
+            INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (4,'Material');
+            INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (186,'Wreck',2),(18,'Mineral',4);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (26557,'Frigate Wreck',186,10000,14,27500),(34,'Tritanium',18,0,1,0);
+            INSERT INTO SourceRecord VALUES ('client/types','30380','{{"wreckTypeID":26557}}'),
+                ('client/types','26557','{{"volume":27500}}'),('client/types','34','{{"volume":0.01}}');
             INSERT INTO ItemCategory(Id,Name) VALUES (11,'Entity');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (286,'Minor Threat',11),(9,'Asteroid Belt',2);
             INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius) VALUES (30380,'Guristas Rookie',286,1500100,50),(15,'Belt',9,0,1);
@@ -234,7 +239,7 @@ public sealed class NpcEncounterTests
         {
             world.Database.ExecuteSqlRaw("""
                 INSERT INTO WorldShipHealth VALUES (1000000000001,10,20,30,134000000000000000);
-                DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
+                DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=18;
                 """);
         }

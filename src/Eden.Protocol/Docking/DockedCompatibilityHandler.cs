@@ -75,6 +75,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                     .Concat(context.Flight.VisibleNpcs.Where(n => ids.Contains(n.Id)).Select(n => (object?)new object?[]
                     {
                         n.Id, n.Name, n.SystemId, n.Position.X, n.Position.Y, n.Position.Z, null,
+                    })).Concat(context.Flight.VisibleWrecks.Where(w => ids.Contains(w.Id)).Select(w => (object?)new object?[]
+                    {
+                        w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z, null,
                     })).ToList(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",

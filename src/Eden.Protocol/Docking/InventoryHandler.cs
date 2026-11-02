@@ -1,4 +1,5 @@
 using Eden.Protocol.Combat;
+using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -6,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -78,13 +79,19 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         int? quantity = quantityValue is long q ? (int)q : null;
         try
         {
-            var changes = destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsHighSlot(flag))
+            bool looting = context.Pilot.Position is not null && destination == context.Pilot.ShipId && flag == (int)InventoryFlag.Cargo &&
+                context.Flight.VisibleWrecks.Any(w => w.Id == source);
+            if (looting && !context.Flight.CanTarget) { return new PilotCallRouter.Error("Wreck contents cannot be transferred during warp or a system transition."); }
+            if (looting) { context.Flight.Checkpoint(); }
+            var changes = looting ? wrecks.Take(context.Pilot.PilotId, context.Pilot.ShipId, source, ids, quantity, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) :
+                destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsHighSlot(flag))
                 ? fitting.Fit(context.Pilot.PilotId, ids, source, flag)
                 : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
             foreach (var change in changes)
             {
                 NotifyItemChange(context, change);
             }
+            if (looting) { context.Flight.RefreshWrecks(); }
             if (changes.Any(c => InventoryDefinitions.IsHighSlot(c.Item.FlagId) || (c.Previous is not null && InventoryDefinitions.IsHighSlot(c.Previous.FlagId))))
             {
                 // Let OnItemChange fetch the module through ItemGetInfo. A live

@@ -1,6 +1,7 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Loot;
 using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -90,7 +91,7 @@ public sealed class PilotCombatTests
         {
             var pilot = Db.Store.FindPilot(1000001)!;
             PilotCallContext context = new(1000001, pilot.Account, [pilot],
-                p => new(Db.Store, p, Clock, new(), [], encounters: Encounters), 10, []);
+                p => new(Db.Store, p, Clock, new(), [], encounters: Encounters, wrecks: Db.Services.GetRequiredService<IWrecks>()), 10, []);
             context.Select(pilot);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, Fitting, new());
@@ -160,6 +161,8 @@ public sealed class PilotCombatTests
         Assert.Empty(saved.Set<ShipEnergy>());
         Assert.Empty(saved.Set<WeaponCooldown>());
         Assert.Empty(saved.Set<NpcBounty>());
+        Assert.Empty(saved.Set<WorldWreck>());
+        Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
         Assert.Equal(long.MaxValue, saved.Set<PilotWallet>().Single().Cents);
     }
 
@@ -181,6 +184,9 @@ public sealed class PilotCombatTests
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<NpcBounty>());
+        var wreck = Assert.Single(saved.Set<WorldWreck>());
+        Assert.Equal(kill.Reward.PilotId, wreck.OwnerId);
+        Assert.Equal(100, Assert.Single(saved.Set<OwnedItem>().Where(i => i.LocationId == wreck.Id)).Quantity);
         Assert.Equal(300000, saved.Set<PilotWallet>().Sum(w => w.Cents));
         Assert.Single(saved.Set<WeaponCooldown>());
         Assert.Single(saved.Set<ShipEnergy>());
@@ -238,6 +244,9 @@ public sealed class PilotCombatTests
         Assert.Equal(f.Npc.Id, feedback["target"]);
         Assert.True(Assert.IsType<double>(feedback["damage"]) > 0);
         var removal = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).Single(m => Equals(m[0], "RemoveBall"));
+        var actions = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
+        Assert.True(actions.FindIndex(a => Equals(a[0], "AddBalls")) < actions.IndexOf(removal));
+        Assert.Single(context.Flight.VisibleWrecks);
         Assert.Equal(new object?[] { f.Npc.Id, true }, Assert.IsType<object?[]>(removal[1]));
         Assert.Contains(context.Notifications, n => n.Name == "OnAccountChange" && Equals(n.Arguments[2], 3000d));
         using var scope = f.Db.Services.CreateScope();
@@ -416,7 +425,7 @@ public sealed class PilotCombatTests
             world.Add(new ShipHealthState { ShipId = 1000000000001, ShieldCharge = 10, ArmorDamage = 20, StructureDamage = 30, UpdatedAt = f.Clock.Now });
             world.SaveChanges();
             world.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).ExecuteDelete();
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19");
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);

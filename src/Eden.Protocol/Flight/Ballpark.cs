@@ -1,5 +1,6 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Serialization;
 
@@ -10,7 +11,7 @@ internal static class Ballpark
     internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
         => Snapshot(own, stamp, objects, peers, []);
 
-    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, ShipContact[] peers, IReadOnlyList<NpcContact> npcs)
+    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, ShipContact[] peers, IReadOnlyList<NpcContact> npcs, IReadOnlyList<WreckContact>? wrecks = null)
     {
         var pilot = own.Pilot;
         using MemoryStream stream = new();
@@ -28,6 +29,7 @@ internal static class Ballpark
             items.Add(WriteShip(writer, peer, stamp));
         }
         foreach (var npc in npcs) { items.Add(WriteNpc(writer, npc)); }
+        foreach (var wreck in wrecks ?? []) { items.Add(WriteWreck(writer, wreck)); }
         var damage = peers.Prepend(own).Where(s => s.Health is not null).Select(s => s.Health!).Concat(npcs.Select(n => n.Health))
             .ToDictionary(s => s.ShipId, s => (object?)s.DamageState());
         return new("utillib.KeyVal", new Dictionary<string, object?>
@@ -103,6 +105,44 @@ internal static class Ballpark
         var contacts = npcs.ToArray();
         var slims = contacts.Select(n => (object?)WriteNpc(writer, n)).ToList();
         return [stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => (object?)n.Health.DamageState())];
+    }
+
+    internal static object?[] AddWrecks(IEnumerable<WreckContact> wrecks, int stamp)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+        writer.Write((byte)0);
+        writer.Write(stamp);
+        var slims = wrecks.Select(w => (object?)WriteWreck(writer, w)).ToList();
+        return [stream.ToArray(), slims, new Dictionary<long, object?>()];
+    }
+
+    private static BlueInstance WriteWreck(BinaryWriter writer, WreckContact wreck)
+    {
+        WriteBallHeader(writer, wreck.Id, (byte)DestinyBallMode.Stop, wreck.Radius, wreck.Position, (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive));
+        writer.Write(wreck.Mass);
+        writer.Write((byte)0);
+        writer.Write(-1L);
+        writer.Write(wreck.CorporationId);
+        writer.Write(-1);
+        writer.Write(0f);
+        WritePosition(writer, SpacePosition.Zero);
+        writer.Write(WreckDefinitions.StationaryAgility);
+        writer.Write(0f);
+        writer.Write((sbyte)-1);
+        return WreckSlim(wreck);
+    }
+
+    internal static BlueInstance WreckSlim(WreckContact wreck)
+    {
+        var item = Item(wreck.Id, wreck.TypeId, wreck.OwnerId, WreckDefinitions.Group, WreckDefinitions.Category);
+        item["name"] = wreck.Name;
+        item["corpID"] = wreck.CorporationId;
+        item["charID"] = null;
+        item["launcherID"] = wreck.SourceId;
+        item["isEmpty"] = wreck.Empty;
+        item["lootRights"] = new object?[] { wreck.OwnerId, wreck.CorporationId, null, false };
+        return Slim(item);
     }
 
     private static BlueInstance WriteNpc(BinaryWriter writer, NpcContact npc)

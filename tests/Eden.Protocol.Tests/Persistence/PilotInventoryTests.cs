@@ -84,7 +84,7 @@ public sealed class PilotInventoryTests
         var pilot = db.Store.FindPilot(1000001);
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; PRAGMA user_version=12");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; PRAGMA user_version=12");
         }
         _ = new SqliteWorld(db.Path);
         _ = new SqliteWorld(db.Path);

@@ -56,7 +56,7 @@ public sealed class WorldMigrationTests
             DROP TABLE WorldSkillHistory;
             DROP TABLE WorldPilotSkill;
             DROP TABLE WorldItem;
-            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
+            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
             ALTER TABLE WorldAccount DROP COLUMN UserName;
             ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
             ALTER TABLE WorldPilot DROP COLUMN CreatedAt;
@@ -74,7 +74,7 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(22L, command.ExecuteScalar());
+        Assert.Equal(23L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }
@@ -97,7 +97,7 @@ public sealed class WorldMigrationTests
             ALTER TABLE WorldPilot DROP COLUMN Portrait;
             UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
             DROP TABLE WorldItem;
-            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
+            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
             PRAGMA user_version=11;
             """;
         command.ExecuteNonQuery();

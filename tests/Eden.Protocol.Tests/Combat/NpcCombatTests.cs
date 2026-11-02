@@ -209,12 +209,12 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; PRAGMA user_version=20");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; PRAGMA user_version=20");
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(22, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(23, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
         Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);

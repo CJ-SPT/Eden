@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 21 migrates to version 22 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 22 migrates to version 23 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -233,6 +233,16 @@ NPCs remain stationary and do not aggress arriving miners. Attacking one within 
 5. Restart both client and host using the same save. Verify the active hull, fitted gun, bounty balance and journal entry remain. The defeated NPC must not reappear early or pay again on reconnect. After ten minutes a replacement may appear at the same belt with a new identity. Dead rows and the paid bounty remain saved.
 
 Player turret accuracy and shot-quality randomness are Eden's initial model; the client does not expose Tranquility's server RNG. Immediate individual bounty payments and the ten-minute respawn delay are local encounter policy. There is no fleet split, bounty tax, loot or wreck yet. NPC retaliation and player loss are covered below. Other civilian guns, ordinary ammunition and other weapon families remain unavailable. Reopen transaction panels to refresh their rows.
+
+## Loot a defeated Rookie
+
+1. Select **Eden Pilot** and verify the active equipped ship in Inventory. Undock, warp to a Perimeter belt, lock the Rookie and defeat it. Staying outside its 3,125 m retaliation range avoids taking fire.
+2. Look for the new **Guristas Rookie Frigate Wreck**. Use the **General** or **All** Overview tab if the Mining preset hides wrecks. The wreck type comes from the NPC's pinned catalog definition.
+3. Choose **Open Cargo**. The native controls approach automatically when needed. Transfer requires the active ship to be in the same system, outside warp and within **2,500 m of the wreck's surface**. Only the pilot credited with the kill has loot rights in this first implementation.
+4. The wreck contains **100 Tritanium / 1 m³**, an explicit Eden starter loot rule. Drag some or all into the active ship's ordinary cargo, or press **Loot All**. Check the cargo quantity and remaining contents. Capacity failures must leave the untransferred items in the wreck; a partial move can use the quantity picker.
+5. The empty wreck should use the native empty-wreck marker. It remains until its two-hour lifetime ends. Restart the host and client on the same save: collected cargo stays collected, and reopening the wreck must not grant another stack. Uncollected contents expire with the wreck. Take the minerals to a station to unload or sell through the existing market.
+
+Migration does not create wrecks or loot for kills from earlier versions. Wreck pickup, bounty and NPC respawn have separate durable identities. This milestone covers Rookie wrecks; player-loss item drops, theft, fleet rights, wreck combat, salvaging and randomized NPC loot tables remain separate work.
 
 ## Take NPC fire and recover from a loss
 

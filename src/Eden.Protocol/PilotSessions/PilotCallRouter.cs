@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Loot;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
@@ -52,7 +53,8 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
 
     public void ReleaseLocationReferences()
     {
-        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc", "repairSvc" })
+        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc", "repairSvc" }
+            .Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray()))
         {
             if (_references.Remove(service, out var reference))
             {
