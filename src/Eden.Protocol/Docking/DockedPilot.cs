@@ -1,10 +1,16 @@
 namespace Eden.Protocol.Docking;
 
-public interface IDockedWorld
+public interface IPilotLookup
 {
     DockedPilot? FindPilot(long accountId);
+}
+
+public interface IShipPositionStore
+{
     void SetPosition(long shipId, SpacePosition? position);
 }
+
+public interface IDockedWorld : IPilotLookup, IShipPositionStore;
 
 public sealed record DockedPilot(long PilotId, string Name, int CorpId, long ShipId, int ShipTypeId,
     int ShipGroupId, int ShipCategoryId, int StationId, int StationTypeId, int StationOwnerId,

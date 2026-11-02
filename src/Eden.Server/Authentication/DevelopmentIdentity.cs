@@ -1,13 +1,20 @@
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using Eden.Protocol;
+using Eden.Protocol.PilotSessions;
 
 namespace Eden.Server.Authentication;
 
-internal static class DevelopmentIdentity
+[Injectable(InjectionType.Singleton)]
+internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, IDisposable
 {
     private const string KeyName = "Eden.LocalLogin.3662168";
     private const string ManifestHash = "895B2827174D7BDDC54870763E9D5AEA056066C01E3D56F0DDF76927DCD3AA26";
+
+    private RSA? _key = OperatingSystem.IsWindows() ? Open() : null;
+    public RSA Key => _key ?? throw new InvalidDataException("The local pilot session is unavailable.");
+    public void Dispose() => Interlocked.Exchange(ref _key, null)?.Dispose();
 
     [SupportedOSPlatform("windows")]
     internal static RSACng Open()
@@ -17,7 +24,7 @@ internal static class DevelopmentIdentity
         return new RSACng(key);
     }
 
-    internal static string Prepare(string root, RSA key)
+    internal string Prepare(string root)
     {
         if (!File.Exists(Path.Combine(root, ".eden-client-ready")))
         {
@@ -37,10 +44,10 @@ internal static class DevelopmentIdentity
         using MemoryStream buffer = new();
         using BinaryWriter writer = new(buffer);
         writer.Write(original, 0, prefixLength);
-        byte[] pem = Encoding.ASCII.GetBytes(key.ExportSubjectPublicKeyInfoPem() + "\n");
+        byte[] pem = Encoding.ASCII.GetBytes(Key.ExportSubjectPublicKeyInfoPem() + "\n");
         writer.Write(pem.Length);
         writer.Write(pem);
-        byte[] signature = key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        byte[] signature = Key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         writer.Write(signature.Length);
         writer.Write(signature);
         byte[] local = buffer.ToArray();
@@ -56,21 +63,21 @@ internal static class DevelopmentIdentity
             File.Move(temporary, path, overwrite: true);
         }
 
-        string claim = $"eden1.{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
-        return claim + "." + Convert.ToHexString(key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        string claim = $"eden1.{clock.GetUtcNow().ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
+        return claim + "." + Convert.ToHexString(Key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
-    internal static bool Validate(RSA key, string ticket)
+    public bool ValidateTicket(string ticket)
     {
         string[] parts = ticket.Split('.');
         if (parts.Length != 4 || parts[0] != "eden1" || !long.TryParse(parts[1], out long timestamp) ||
-            timestamp < DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 180 || timestamp > DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 5 ||
-            parts[2].Length != 32 || parts[3].Length != key.KeySize / 4 || !parts[3].All(Uri.IsHexDigit))
+            timestamp < clock.GetUtcNow().ToUnixTimeSeconds() - 180 || timestamp > clock.GetUtcNow().ToUnixTimeSeconds() + 5 ||
+            parts[2].Length != 32 || parts[3].Length != Key.KeySize / 4 || !parts[3].All(Uri.IsHexDigit))
         {
             return false;
         }
 
-        return key.VerifyData(Encoding.ASCII.GetBytes(string.Join('.', parts[..3])), Convert.FromHexString(parts[3]),
+        return Key.VerifyData(Encoding.ASCII.GetBytes(string.Join('.', parts[..3])), Convert.FromHexString(parts[3]),
             HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     }
 }

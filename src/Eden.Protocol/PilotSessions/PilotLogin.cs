@@ -1,12 +1,11 @@
-using System.IO.Compression;
 using System.Security.Cryptography;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 
 namespace Eden.Protocol.PilotSessions;
 
-public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket, IDockedWorld world)
+[Injectable(InjectionType.Scoped)]
+public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
 {
     internal const int UserId = 1000001;
     private static long s_nextClientId = DateTime.UtcNow.Ticks;
@@ -23,41 +22,22 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket, IDocked
 
         object?[] exchange = Tuple(BlueMarshal.Decode(await PacketStream.ReadAsync(stream, cancellationToken)), 2);
         var keys = Fields(exchange[1]);
+        RSA key = identity.Key;
         using Aes aes = Aes.Create();
         aes.Key = key.Decrypt(Bytes(keys["crypting_sessionkey"]), RSAEncryptionPadding.Pkcs1);
         aes.IV = key.Decrypt(Bytes(keys["crypting_sessioniv"]), RSAEncryptionPadding.Pkcs1);
         await PacketStream.WriteAsync(stream, BlueMarshal.Encode("OK CC"), cancellationToken);
         report("Negotiated encrypted login transport.");
 
-        async Task<object?> ReadAsync()
-        {
-            byte[] ciphertext = await PacketStream.ReadAsync(stream, cancellationToken);
-            byte[] plain = aes.DecryptCbc(ciphertext, aes.IV);
-            if (plain.Length > 0 && plain[0] == 0x78)
-            {
-                using ZLibStream inflater = new(new MemoryStream(plain), CompressionMode.Decompress);
-                byte[] decoded = new byte[65537];
-                int length = inflater.ReadAtLeast(decoded, decoded.Length, throwOnEndOfStream: false);
-                if (length == decoded.Length) { throw new InvalidDataException("Oversized compressed packet."); }
-                plain = decoded[..length];
-            }
-            return BlueMarshal.Decode(plain);
-        }
-
-        async Task WriteAsync(object? value)
-        {
-            byte[] ciphertext = aes.EncryptCbc(BlueMarshal.Encode(value), aes.IV);
-            await PacketStream.WriteAsync(stream, ciphertext, cancellationToken);
-        }
-
-        object?[] credentials = Tuple(await ReadAsync(), 2);
+        EncryptedPackets packets = new(stream, aes, cancellationToken);
+        object?[] credentials = Tuple(await packets.ReadAsync(), 2);
         var fields = Fields(credentials[1]);
-        if (!acceptTicket(BlueMarshal.Text(fields["user_sso_token"])))
+        if (!identity.ValidateTicket(BlueMarshal.Text(fields["user_sso_token"])))
         {
             throw new InvalidDataException("Invalid or expired local login ticket.");
         }
 
-        await WriteAsync(2);
+        await packets.WriteAsync(2);
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
         // Python 2 marshal string containing the fixed expression "{}". The client verifies
         // the local signature, evaluates it, and returns the empty dictionary as its result.
@@ -76,15 +56,15 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket, IDocked
             ["user_logonqueueposition"] = 0,
             ["config_vals"] = new Dictionary<string, object?>(),
         };
-        await WriteAsync(new object?[] { challenge, new object?[] { expression, signature }, new Dictionary<string, object?>(), response });
-        object?[] proof = Tuple(await ReadAsync(), 3);
+        await packets.WriteAsync(new object?[] { challenge, new object?[] { expression, signature }, new Dictionary<string, object?>(), response });
+        object?[] proof = Tuple(await packets.ReadAsync(), 3);
         if (!CryptographicOperations.FixedTimeEquals(Bytes(proof[0]), HashArgument(challenge)))
         {
             throw new InvalidDataException("Client challenge response mismatch.");
         }
 
         long clientId = Interlocked.Increment(ref s_nextClientId);
-        await WriteAsync(new Dictionary<string, object?>
+        await packets.WriteAsync(new Dictionary<string, object?>
         {
             ["session_init"] = AccountState(),
             ["session_id"] = clientId,
@@ -102,7 +82,7 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket, IDocked
         byte[] settingsCode = BlueMarshal.Encode(Convert.FromHexString(
             "630000000000000000010000004300000073040000006900005328010000004E280000000028000000002800000000280000000074080000003C737472696E673E74080000003C6C616D6264613E010000007300000000"));
         byte[] settingsSignature = key.SignData(HashArgument(settingsCode), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        await PilotServices.RunAsync(ReadAsync, WriteAsync, report, clientId, world, [settingsCode, settingsSignature]);
+        await session.RunAsync(packets.ReadAsync, packets.WriteAsync, report, clientId, [settingsCode, settingsSignature], cancellationToken);
     }
 
     internal static Dictionary<string, object?> AccountState() => new()

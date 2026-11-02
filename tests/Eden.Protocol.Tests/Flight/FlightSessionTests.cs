@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
@@ -84,12 +85,12 @@ public sealed class FlightSessionTests
         session.Call("ship", "Undock", [pilot.ShipId]);
         session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
         clock.Seconds = 60;
-        Assert.Same(DockedServices.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Null(session.Call("beyonce", "CmdFollowBall", [(long)pilot.StationId, 0d]));
         clock.Seconds = 180;
         session.Checkpoint();
         Assert.False(session.Moving);
-        Assert.Same(DockedServices.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId + 1]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId + 1]));
         Assert.Null(session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
     }
@@ -101,13 +102,13 @@ public sealed class FlightSessionTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         FlightSession session = new(db.Store, pilot, clock);
-        Assert.Same(DockedServices.Unsupported, session.Call("ship", "Undock", [pilot.ShipId + 1]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("ship", "Undock", [pilot.ShipId + 1]));
         Assert.Null(session.Call("ship", "Undock", [pilot.ShipId]));
-        Assert.Same(DockedServices.Unsupported, session.Call("beyonce", "CmdGotoDirection", [double.NaN, 0d, 0d]));
-        Assert.Same(DockedServices.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId + 1, pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdGotoDirection", [double.NaN, 0d, 0d]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId + 1, pilot.ShipId]));
         Assert.Null(session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
         clock.Seconds = 60;
-        Assert.Same(DockedServices.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot.SystemId, db.Store.FindPilot(1000001)!.LocationId);
     }
 }

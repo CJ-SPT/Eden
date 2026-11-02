@@ -1,8 +1,9 @@
 using Eden.Protocol.Docking;
+using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeProvider clock)
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock)
 {
     private readonly long _start = clock.GetTimestamp();
     private double Elapsed => clock.GetElapsedTime(_start).TotalSeconds;
@@ -93,7 +94,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
         }
         if (service != "beyonce" || Pilot.Position is not { } position)
         {
-            return DockedServices.Unsupported;
+            return PilotCallRouter.Unsupported;
         }
         switch (method)
         {
@@ -104,7 +105,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
                 double length = Math.Sqrt(x * x + y * y + z * z);
                 if (!(length > 0) || !double.IsFinite(length))
                 {
-                    return DockedServices.Unsupported;
+                    return PilotCallRouter.Unsupported;
                 }
                 Checkpoint();
                 _approachPoint = null;
@@ -123,7 +124,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
                 double standOff = Convert.ToDouble(distance);
                 if (standOff is < 0 or > 1_000_000 || !double.IsFinite(standOff))
                 {
-                    return DockedServices.Unsupported;
+                    return PilotCallRouter.Unsupported;
                 }
                 Checkpoint();
                 position = Pilot.Position!;
@@ -148,7 +149,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
                 double fraction = Convert.ToDouble(speed);
                 if (!(fraction >= 0 && fraction <= 1))
                 {
-                    return DockedServices.Unsupported;
+                    return PilotCallRouter.Unsupported;
                 }
                 Checkpoint();
                 if (_direction is null && fraction > 0)
@@ -176,7 +177,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
                 position = Pilot.Position!;
                 if (DistanceToStation(position) > Ballpark.StationRadius + Ballpark.ShipRadius + 2500)
                 {
-                    return DockedServices.Unsupported;
+                    return PilotCallRouter.Unsupported;
                 }
                 SetPosition(null);
                 _direction = null;
@@ -186,7 +187,7 @@ internal sealed class FlightSession(IDockedWorld world, DockedPilot pilot, TimeP
                 _lastHeading = new(1, 0, 0);
                 return null;
             default:
-                return DockedServices.Unsupported;
+                return PilotCallRouter.Unsupported;
         }
     }
 }

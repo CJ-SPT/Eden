@@ -1,6 +1,7 @@
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
@@ -62,27 +63,59 @@ public sealed class PilotServicesTests
         return BlueMarshal.Decode(PilotLogin.Bytes(PilotLogin.Tuple(state[4], 1)[0]));
     }
 
-    private static async Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId)
+    [Fact]
+    public async Task RoutesBoundInventoryAndOrdersFlightNotifications()
+    {
+        const long ship = 1000000000001L;
+        var packets = await ExchangeAsync(42,
+            Request("ship", "Undock", [ship]),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("invbroker", "GetInventory", [10004L]),
+            Request(null, "List", [4L], "N=10001:42-2"),
+            Request("ship", "Undock", [ship]),
+            Request("beyonce", "MachoBindObject", [30000142L, null]));
+        Assert.Equal(new[] { "ErrorResponse", "SessionChangeNotification", "CallRsp", "CallRsp", "CallRsp",
+            "SessionChangeNotification", "CallRsp", "CallRsp", "Notification" }, packets.Select(packet => packet.Name.Split('.')[^1]));
+        // DBRow uses a client-only constructor. Compare the actual bound List payload with the owned ship ID on the wire.
+        var state = PilotLogin.Tuple(packets[4].State, 14);
+        var payload = PilotLogin.Bytes(PilotLogin.Tuple(state[4], 1)[0]);
+        Assert.True(payload.AsSpan().IndexOf(BitConverter.GetBytes(ship)) >= 0);
+        Assert.Null(Result(packets[6]));
+        var notification = PilotLogin.Tuple(packets[8].State, 14);
+        var destination = Assert.IsType<BlueInstance>(notification[2]);
+        Assert.Equal("DoDestinyUpdate", PilotLogin.Tuple(destination.State, 4)[1]);
+    }
+
+    private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId)
+        => ExchangeAsync(sessionId, Request(service, method, args));
+
+    private static BlueInstance Request(string? service, string method, object?[] args, object? objectId = null)
     {
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
-        byte[] call = BlueMarshal.Encode(new object?[] { 1, method, args, new Dictionary<string, object?>() });
-        BlueInstance request = new("carbon.common.script.net.machoNetPacket.CallReq", new object?[]
+        byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, new Dictionary<string, object?>() });
+        return new("carbon.common.script.net.machoNetPacket.CallReq", new object?[]
         {
             6L, new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
-            new BlueInstance(address, new object?[] { 8L, service, null }), null,
+            new BlueInstance(address, service is null ? new object?[] { 1L, (long)PilotLogin.NodeId, null, null } : new object?[] { 8L, service, null }), null,
             new object?[] { new object?[] { 0L, call } }, null, null, null, null, null, null, null, null, null,
         });
+    }
+
+    private static async Task<List<BlueInstance>> ExchangeAsync(long sessionId, params BlueInstance[] requests)
+    {
         using TestWorld world = new();
-        Queue<object?> input = new([request]);
+        using var scope = world.Services.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
+        Queue<object?> input = new(requests);
         List<BlueInstance> output = [];
-        await Assert.ThrowsAsync<EndOfStreamException>(() => PilotServices.RunAsync(
+        await Assert.ThrowsAsync<EndOfStreamException>(() => session.RunAsync(
             () => input.TryDequeue(out object? packet) ? Task.FromResult(packet) : throw new EndOfStreamException(),
             packet =>
             {
                 output.Add(Assert.IsType<BlueInstance>(packet));
                 return Task.CompletedTask;
             },
-            _ => { }, sessionId, world.Store, []));
+            _ => { }, sessionId, [], CancellationToken.None));
         return output;
     }
 }

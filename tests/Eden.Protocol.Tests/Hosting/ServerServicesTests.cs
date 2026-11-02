@@ -1,0 +1,58 @@
+using System.Net;
+using System.Net.Sockets;
+using Eden.Protocol.Docking;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Transport;
+using Eden.Server;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Eden.Protocol.Tests.Hosting;
+
+public sealed class ServerServicesTests
+{
+    [Fact]
+    public void SharesWorldAndGateButIsolatesPilotSessions()
+    {
+        using TestWorld world = new();
+        using var first = world.Services.CreateScope();
+        using var second = world.Services.CreateScope();
+        var session = first.ServiceProvider.GetRequiredService<IPilotSession>();
+        Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
+        Assert.NotSame(session, second.ServiceProvider.GetRequiredService<IPilotSession>());
+        Assert.Same(world.Store, first.ServiceProvider.GetRequiredService<IPilotLookup>());
+        Assert.Same(world.Store, second.ServiceProvider.GetRequiredService<IShipPositionStore>());
+        Assert.Same(first.ServiceProvider.GetRequiredService<PilotGate>(), second.ServiceProvider.GetRequiredService<PilotGate>());
+        Assert.Throws<InvalidOperationException>(() => world.Services.GetRequiredService<ClientConnection>());
+    }
+
+    [Fact]
+    public async Task MalformedLoginReleasesOccupiedPilotSlot()
+    {
+        using TestWorld world = new();
+        using var scope = world.Services.CreateScope();
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
+        using TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        using TcpClient client = new();
+        await client.ConnectAsync((IPEndPoint)listener.LocalEndpoint, timeout.Token);
+        using TcpClient accepted = await listener.AcceptTcpClientAsync(timeout.Token);
+        Task serving = scope.ServiceProvider.GetRequiredService<ClientConnection>().ServeAsync(accepted, timeout.Token);
+        var wire = client.GetStream();
+        await PacketStream.ReadAsync(wire, timeout.Token);
+        await PacketStream.WriteAsync(wire, Convert.FromHexString(
+            "7E00000000140604E899020005F001080AC3F5285C8F0238400458E13700130A5632342E303140636370"), timeout.Token);
+        // A valid VK starts login and holds the gate while Eden waits for the key exchange.
+        await PacketStream.WriteAsync(wire, BlueMarshal.Encode(new object?[] { null, "VK", null }), timeout.Token);
+        var gate = world.Services.GetRequiredService<PilotGate>();
+        while (!gate.IsOccupied)
+        {
+            await Task.Delay(10, timeout.Token);
+        }
+        await PacketStream.WriteAsync(wire, BlueMarshal.Encode(null), timeout.Token);
+        await serving;
+        Assert.True(gate.TryEnter());
+        gate.Leave();
+    }
+}

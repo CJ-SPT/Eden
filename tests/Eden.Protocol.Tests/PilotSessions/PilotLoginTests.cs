@@ -5,11 +5,18 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotLoginTests
 {
+    private sealed class FixtureIdentity(RSA key) : ILoginIdentity
+    {
+        public RSA Key => key;
+        public bool ValidateTicket(string ticket) => ticket == "fixture";
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -26,7 +33,8 @@ public sealed class PilotLoginTests
         NetworkStream wire = client.GetStream();
         List<string> messages = [];
         using TestWorld world = new();
-        PilotLogin login = new(key, ticket => ticket == "fixture", world.Store);
+        using var scope = world.Services.CreateScope();
+        PilotLogin login = new(new FixtureIdentity(key), scope.ServiceProvider.GetRequiredService<IPilotSession>());
         byte[] request = BlueMarshal.Encode(new object?[] { null, "VK", Array.Empty<byte>() });
         Task exchange = login.RunAsync(server.GetStream(), request, messages.Add, timeout.Token);
         Dictionary<string, object?> keys = new()

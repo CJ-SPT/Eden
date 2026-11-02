@@ -14,6 +14,13 @@
 - Choose names that describe a value's role. Comment on non-obvious wire constants and client quirks so the next contributor can tell why the code handles them that way.
 - Use the SDK pinned in [global.json](global.json). Follow the [shared build settings](Directory.Build.props), which enable nullable reference types, enforce code style during builds, and treat warnings as errors.
 
+## Services and protocol calls
+
+- Mark service classes with `[Injectable]` and declare dependencies in their public constructor. The server scans the Eden.Server and Eden.Protocol assemblies at startup. Each class is available by its concrete type and its Eden interfaces.
+- Use the default transient lifetime for stateless handlers. Use `[Injectable(InjectionType.Scoped)]` for one instance per client connection and `[Injectable(InjectionType.Singleton)]` for shared infrastructure. Keep service resolution in the host. Pass connection data, such as the authenticated session ID, to the operation that uses it.
+- Add gameplay methods to a feature handler implementing `ISelectedPilotCallHandler`. Use `IPilotCallHandler` for account-level calls available before character selection. Give each service/method pair one owner within its phase. Return `PilotCallRouter.Unsupported` for an unhandled call and `null` for a successful Python None. The router owns bound references and selection gating. The session loop sends replies and notifications.
+- Keep pure codecs and packet builders independent of the DI container. Protocol services depend on narrow persistence interfaces implemented by the server.
+
 ## Testing
 
 1. For code changes, run the restore, build, test, and formatting checks from the repository root in the order given in the [README build instructions](README.md#build-and-run).

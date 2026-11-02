@@ -28,6 +28,8 @@ The tests use fixtures and loopback sockets. To try the real client, follow the 
 | `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve character selection, inventory, and first flight. |
 | `tests/Eden.Protocol.Tests` | Verify wire formats, login, ship movement, docking, and SQLite persistence. |
 
+The server uses Microsoft DI to discover services marked with `[Injectable]` and creates one scope per client connection. The [contributor guide](AGENTS.md#services-and-protocol-calls) explains service lifetimes and how to add a protocol handler.
+
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).
 
 Eden's original source and documentation are available under the [MIT License](LICENSE). Supply the EVE client and its resource cache separately.

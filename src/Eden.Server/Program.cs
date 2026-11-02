@@ -1,11 +1,6 @@
-using System.Net;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using Eden.Protocol.Docking;
-using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Transport;
 using Eden.Server.Authentication;
 using Eden.Server.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
 
@@ -13,91 +8,15 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
-        using RSA? identity = OperatingSystem.IsWindows() ? DevelopmentIdentity.Open() : null;
+        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
+        using var services = ServerServices.Build(new WorldDatabase(Path.Combine(directory, "world.sqlite")));
         if (args is ["--prepare-login", string root] && OperatingSystem.IsWindows())
         {
-            Console.WriteLine(DevelopmentIdentity.Prepare(root, identity!));
+            Console.WriteLine(services.GetRequiredService<DevelopmentIdentity>().Prepare(root));
             return;
         }
-
-        string worldDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
-        Directory.CreateDirectory(worldDirectory);
-        SqliteWorld world = new(Path.Combine(worldDirectory, "world.sqlite"));
-        using CancellationTokenSource shutdown = new();
-        Console.CancelKeyPress += (_, args) =>
-        {
-            args.Cancel = true;
-            shutdown.Cancel();
-        };
-
-        using TcpListener listener = new(IPAddress.Loopback, 26000);
-        listener.Start();
-        Console.WriteLine($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
-        List<Task> clients = [];
-        using SemaphoreSlim pilotSlot = new(1);
-        try
-        {
-            while (!shutdown.IsCancellationRequested)
-            {
-                clients.RemoveAll(task => task.IsCompletedSuccessfully);
-                if (clients.Count >= 8)
-                {
-                    Task completed = await Task.WhenAny(clients);
-                    await completed;
-                    clients.Remove(completed);
-                }
-
-                TcpClient client = await listener.AcceptTcpClientAsync(shutdown.Token);
-                clients.Add(ServeAsync(client, identity, world, pilotSlot, shutdown.Token));
-            }
-        }
-        catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
-        {
-            // Ctrl+C stops the listener and active connections.
-        }
-        finally
-        {
-            shutdown.Cancel();
-            await Task.WhenAll(clients);
-        }
-    }
-
-    private static async Task ServeAsync(TcpClient client, RSA? identity, IDockedWorld world, SemaphoreSlim pilotSlot, CancellationToken shutdown)
-    {
-        using (client)
-        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown))
-        {
-            timeout.CancelAfter(TimeSpan.FromSeconds(30));
-            Console.WriteLine($"{DateTimeOffset.Now:O} Accepted {client.Client.RemoteEndPoint}.");
-            try
-            {
-                NetworkStream stream = client.GetStream();
-                await CompatibilityHandshake.ServeAsync(stream, Console.WriteLine, timeout.Token, async (command, token) =>
-                {
-                    if (identity is null || !pilotSlot.Wait(0))
-                    {
-                        throw new InvalidDataException("The local pilot session is unavailable.");
-                    }
-
-                    try
-                    {
-                        PilotLogin login = new(identity, ticket => DevelopmentIdentity.Validate(identity, ticket), world);
-                        await login.RunAsync(stream, command, Console.WriteLine, token, () => timeout.CancelAfter(Timeout.InfiniteTimeSpan));
-                    }
-                    finally
-                    {
-                        pilotSlot.Release();
-                    }
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine(shutdown.IsCancellationRequested ? "Session closed." : "Login timed out.");
-            }
-            catch (Exception exception) when (exception is IOException or InvalidDataException or SocketException or CryptographicException or KeyNotFoundException or ArgumentException)
-            {
-                Console.WriteLine(exception.Message);
-            }
-        }
+        Directory.CreateDirectory(directory);
+        services.GetRequiredService<SqliteWorld>();
+        await services.GetRequiredService<LoopbackServer>().RunAsync();
     }
 }

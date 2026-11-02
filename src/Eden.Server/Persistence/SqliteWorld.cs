@@ -1,11 +1,19 @@
+using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Microsoft.Data.Sqlite;
 
 namespace Eden.Server.Persistence;
 
+public sealed record WorldDatabase(string Path);
+
+[Injectable(InjectionType.Singleton)]
 public sealed class SqliteWorld : IDockedWorld
 {
     private readonly string _connectionString;
+
+    public SqliteWorld(WorldDatabase database) : this(database.Path)
+    {
+    }
 
     public SqliteWorld(string path)
     {
