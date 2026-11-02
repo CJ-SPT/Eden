@@ -1,3 +1,5 @@
+using Eden.Protocol.Mining;
+
 namespace Eden.Protocol.Targeting;
 
 public enum TargetingSkill
@@ -11,7 +13,7 @@ public enum TargetingSkill
 public static class TargetingDefinitions
 {
     public const int BasePilotTargetLimit = 2;
-    public const int AsteroidCategory = 25;
+    public const int AsteroidCategory = AsteroidDefinitions.Category;
 
     // CCP's useful-formulae guide: seconds = 40000 / (scan resolution * asinh(signature radius)^2).
     private const double LockTimeScale = 40_000;

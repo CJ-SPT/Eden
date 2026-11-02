@@ -10,13 +10,15 @@ Each account has three character slots. Choose **Add Character** to create a pil
 
 Pilots can lock and unlock nearby ships using the stock target controls. Locks take time based on scan resolution and the target's signature, obey the hull and pilot's target limit, and clear when a ship leaves range, warps, docks, jumps or disconnects. The other pilot sees the targeted indicator in Overview.
 
+Perimeter's three asteroid belts contain saved Veldspar and Scordite fields, including their ore variants. Warp to a belt to see nearby rocks in space and in the Mining overview, then lock an asteroid. Belt locations, ore types and counts come from the pinned catalog; Eden generates and saves individual rock positions and quantities. Fields load and unload as the ship travels, and the same rocks return after a restart. Mining cycles and ore collection are the next part of this loop.
+
 Pilots receive one Civilian Miner in their station's Item Hangar. Drag it into the active ship's cargo and back while docked. Owned item stacks and cargo locations survive restarts; the server checks ownership, quantity and the hull's cargo capacity. A stack too large for the hold opens the client's quantity picker so you can load only what fits. Open Fitting with the station panel's circled ship button to fit mining lasers, take them offline or online, and unfit them. Fitted modules and online state survive restarts. The server checks slots, required skills, CPU and power grid. Other module families, mining cycles and combat remain to be implemented.
 
 The Character Sheet opens for Eden Pilot and shows the Jita home station. Each local pilot has a saved account profile, pilot identity, and the starting skills for their race from the pinned catalog. Character selection and the Skill Catalogue show 384,047 SP for the seeded Caldari pilots. Pilots can queue injected skills, pause, resume, and retain training progress across a restart. The local gateway answers the personal plan list and tracked-plan lookup. See the [character-sheet service roadmap](docs/protocol.md#character-sheet-service-roadmap).
 
 ## Local game data
 
-Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions, and item stacks in cargo or station hangars. Both files are generated locally.
+Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions, item stacks in cargo or station hangars, and asteroid fields. Both files are generated locally.
 
 On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage the matching client and resource cache, then run the setup command from the repository root.
 

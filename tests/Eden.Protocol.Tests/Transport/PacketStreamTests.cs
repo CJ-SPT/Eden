@@ -32,6 +32,16 @@ public sealed class PacketStreamTests
     }
 
     [Fact]
+    public async Task SessionRejectsOversizedAndFlaggedHeadersBeforeReadingPayload()
+    {
+        foreach (uint header in new[] { (uint)PacketStream.MaxSessionBytes + 1, 0x20000001u })
+        {
+            using MemoryStream stream = new(BitConverter.GetBytes(header));
+            await Assert.ThrowsAsync<InvalidDataException>(() => PacketStream.ReadAsync(stream, default, PacketStream.MaxSessionBytes));
+        }
+    }
+
+    [Fact]
     public async Task WritesPlainLittleEndianLength()
     {
         using MemoryStream stream = new();

@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Mining;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
@@ -7,7 +8,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -43,6 +44,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     }
                     if (flight.InBallpark)
                     {
+                        flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
                         flight.RefreshPeers();
                         await FlushFlightUpdatesAsync();
                     }

@@ -426,9 +426,9 @@ public sealed class FlightSessionTests
     {
         using TestWorld db = new();
         var objects = db.Services.GetRequiredService<ISystemObjects>();
-        Assert.Equal(new[] { 40009087, 50001249, 60003760 }, objects.Load(30000142).Select(body => body.Id));
+        Assert.Equal(new long[] { 40009087, 50001249, 60003760 }, objects.Load(30000142).Select(body => body.Id));
         var other = objects.Load(30000144);
-        Assert.Equal(new[] { 50002185, 40455847, 50016295 }, other.Select(body => body.Id));
+        Assert.Equal(new long[] { 50002185, 40455847, 50016295 }, other.Select(body => body.Id));
         Assert.Equal(new SpacePosition(1, 2, 3), other[1].Position);
         Assert.Equal(10000f, other[1].Radius);
         Assert.Null(other[2].DestinationGateId);

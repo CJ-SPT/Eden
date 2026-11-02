@@ -80,7 +80,7 @@ public sealed class PilotInventoryTests
         var pilot = db.Store.FindPilot(1000001);
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldItem; PRAGMA user_version=12");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldItem; DROP TABLE WorldAsteroid; PRAGMA user_version=12");
         }
         _ = new SqliteWorld(db.Path);
         _ = new SqliteWorld(db.Path);

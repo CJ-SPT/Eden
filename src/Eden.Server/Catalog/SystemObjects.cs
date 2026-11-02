@@ -2,12 +2,13 @@ using System.Globalization;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Mining;
 using Eden.Server.Persistence;
 
 namespace Eden.Server.Catalog;
 
 [Injectable]
-internal sealed class SystemObjects(WorldDatabase database) : ISystemObjects
+internal sealed class SystemObjects(WorldDatabase database, IAsteroidField asteroids) : ISystemObjects
 {
     internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId) =>
         catalog.Set<SolarSystem>().Where(s => s.Id == systemId)
@@ -54,6 +55,7 @@ internal sealed class SystemObjects(WorldDatabase database) : ISystemObjects
                 AddSystemObject(int.Parse(key, CultureInfo.InvariantCulture), gate.TypeID, gate.Position);
             }
         }
+        objects.AddRange(asteroids.List(systemId));
         return objects;
 
         void AddSystemObject(int id, long? typeId, ClientConstellationsCenter? point)

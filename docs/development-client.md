@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 13 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 14 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -138,6 +138,17 @@ For tunnel entry, use a long leg such as the Jita Trade Hub to the Perimeter gat
 2. Watch the **Jumping** message, gate camera and tunnel. On exit, check the **Perimeter** system label, the starfield, and the **Jita** gate about 12 km away in Overview.
 3. Select the Jita gate and click **Jump**. Allow the Ibis to approach before it activates the gate. Verify that the rendered Jita scene and flight controls return after the tunnel.
 4. To check persistence, restart the client and host while stopped in the destination system. The character card and Overview should show that system.
+
+## Visit an asteroid field
+
+Jita has no asteroid belts in the pinned catalog. Jump to Perimeter as above and select **Eden Pilot**. Open Inventory and verify **Ibis (Ibis)** is active.
+
+1. Use the **Mining** overview tab to find an asteroid belt. Right-click its marker and choose **Warp to Within → 0 m**.
+2. After arrival, check that rocks render around the Ibis and the Mining overview lists nearby Veldspar, Scordite and their grade variants. Right-click an asteroid within targeting range and choose **Lock Target**. Its portrait, ore name and distance should appear after the countdown.
+3. Warp to a different belt. The previous target should clear, and the new field should appear without disconnecting the client. Use the Mining tab again to inspect its rocks.
+4. Stop near the second belt, restart the host and client, then compare the field, ore types and distances. The rocks retain their saved IDs, positions and quantities.
+
+World version 15 adds saved asteroid fields. The catalog supplies belt anchors and per-type counts; Eden generates the individual rocks on first use and saves them. Rocks within 250 km load into the local ballpark. Depleted rows remain saved so reopening a belt cannot replenish it. Mining-laser activation and collecting ore remain unimplemented.
 
 ## Check the character sheet
 

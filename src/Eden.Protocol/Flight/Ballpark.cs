@@ -1,4 +1,5 @@
 using Eden.Protocol.Docking;
+using Eden.Protocol.Mining;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
@@ -15,29 +16,7 @@ internal static class Ballpark
         List<object?> items = [];
         foreach (var body in objects)
         {
-            // Global rigid balls stay selectable across the system. Only the formation ID follows the flags.
-            WriteBallHeader(writer, body.Id, 11, body.Radius, body.Position, 2 | 4);
-            writer.Write((sbyte)-1);
-            var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
-            if (body.DestinationGateId.HasValue)
-            {
-                // StargateSetup indexes these pairs even when there is no local insurgency.
-                item["destinationCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
-                item["localCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
-                item["destinationSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
-                item["localSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
-                // Menus read the columns by name. JumpTransitionGate unpacks the same row in order.
-                item["jumps"] = new BlueInstance("eve.common.script.sys.rowset.Rowset", new Dictionary<string, object?>
-                {
-                    ["header"] = new List<object?> { "toCelestialID", "locationID" },
-                    ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
-                });
-            }
-            if (body.CategoryId == 3)
-            {
-                item["corpID"] = body.OwnerId;
-            }
-            items.Add(Slim(item));
+            items.Add(WriteObject(writer, body));
         }
         items.Add(WriteShip(writer, own, stamp));
         foreach (var peer in peers)
@@ -59,6 +38,42 @@ internal static class Ballpark
         });
     }
 
+    private static BlueInstance WriteObject(BinaryWriter writer, StaticSpaceObject body)
+    {
+        // Rigid balls have only the formation ID after the common header. Asteroids
+        // use local coordinates; global celestials remain selectable system-wide.
+        var flags = DestinyBallFlags.Massive | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
+        WriteBallHeader(writer, body.Id, (byte)DestinyBallMode.Rigid, body.Radius, body.Position, (byte)flags);
+        writer.Write((sbyte)-1);
+        var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
+        if (body.DestinationGateId.HasValue)
+        {
+            // StargateSetup indexes these pairs even when there is no local insurgency.
+            item["destinationCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
+            item["localCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
+            item["destinationSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
+            item["localSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
+            // Menus read the columns by name. JumpTransitionGate unpacks the same row in order.
+            item["jumps"] = new BlueInstance("eve.common.script.sys.rowset.Rowset", new Dictionary<string, object?>
+            {
+                ["header"] = new List<object?> { "toCelestialID", "locationID" },
+                ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
+            });
+        }
+        if (body.CategoryId == 3) { item["corpID"] = body.OwnerId; }
+        return Slim(item);
+    }
+
+    internal static object?[] AddObjects(IEnumerable<StaticSpaceObject> objects, int stamp)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+        writer.Write((byte)0); // DESTINY_FULLSTATE, consumed by AddBalls in partial mode.
+        writer.Write(stamp);
+        var slims = objects.Select(body => (object?)WriteObject(writer, body)).ToList();
+        return [stream.ToArray(), slims, new Dictionary<long, object?>()];
+    }
+
     internal static object?[] AddShip(ShipContact ship, int stamp)
     {
         using MemoryStream stream = new();
@@ -74,9 +89,10 @@ internal static class Ballpark
         var pilot = ship.Pilot;
         var velocity = ship.Velocity;
         var warpTarget = ship.Warp?.Destination ?? ship.AlignTo;
-        byte mode = warpTarget is not null ? (byte)3 : ship.FollowRange.HasValue ? (byte)1 : ship.Heading is null ? (byte)2 : (byte)0;
+        var mode = warpTarget is not null ? DestinyBallMode.Warp : ship.FollowRange.HasValue ? DestinyBallMode.Follow : ship.Heading is null ? DestinyBallMode.Stop : DestinyBallMode.Goto;
         // Proper warp temporarily clears the massive flag. Aligning ships still collide.
-        WriteBallHeader(writer, pilot.ShipId, mode, pilot.Flight.ShipRadius, pilot.Position!, ship.Warp is null ? (byte)13 : (byte)9);
+        var flags = DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);
+        WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);
         writer.Write(pilot.Flight.Mass);
         writer.Write((byte)0); // Uncloaked
         writer.Write(-1L); // Force-field harmonic

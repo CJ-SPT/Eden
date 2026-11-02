@@ -80,6 +80,19 @@ public sealed class FlightPosition
     public double Z { get; set; }
 }
 
+public sealed class WorldAsteroid
+{
+    public long Id { get; set; }
+    public int BeltId { get; set; }
+    public int SystemId { get; set; }
+    public int TypeId { get; set; }
+    public long Quantity { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Z { get; set; }
+    public float Radius { get; set; }
+}
+
 public sealed class OwnedItem
 {
     public bool Singleton { get; set; }
@@ -103,6 +116,10 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WorldAsteroid>().ToTable("WorldAsteroid", t => t.HasCheckConstraint("CK_Asteroid_Quantity", "Quantity >= 0"));
+        model.Entity<WorldAsteroid>().Property(a => a.Id).ValueGeneratedNever();
+        model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);
+        model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
         model.Entity<OwnedItem>().Property(i => i.Singleton).HasDefaultValue(false);
         model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);

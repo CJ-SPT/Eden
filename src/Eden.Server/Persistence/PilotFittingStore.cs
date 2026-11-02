@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
@@ -13,7 +14,14 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Attributes(catalog, typeId);
+        var attributes = Attributes(catalog, typeId);
+        if (!attributes.ContainsKey(DogmaAttributeId.SignatureRadius) &&
+            catalog.Set<SourceRecord>().Find("client/dogmaattributes", ((int)DogmaAttributeId.SignatureRadius).ToString(CultureInfo.InvariantCulture))
+                ?.Read<ClientDogmaattributes>().DefaultValue is double signature)
+        {
+            attributes[DogmaAttributeId.SignatureRadius] = signature;
+        }
+        return attributes;
     }
 
     private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>

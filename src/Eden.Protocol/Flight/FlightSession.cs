@@ -1,4 +1,5 @@
 using Eden.Protocol.Docking;
+using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
@@ -8,6 +9,7 @@ namespace Eden.Protocol.Flight;
 internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects) : IDisposable
 {
     private ShipContact[] _peers = [];
+    private StaticSpaceObject[] _visibleAsteroids = [];
     private int _lastPeerSync;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
@@ -16,7 +18,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private SpacePosition? _direction;
     private SpacePosition _velocity = new(0, 0, 0);
     private StaticSpaceObject? _followTarget;
-    private sealed record GateTransit(int SourceId, StaticSpaceObject Exit, FlightSystem System, IReadOnlyList<StaticSpaceObject> Objects, int TransferStamp);
+    private sealed record GateTransit(long SourceId, StaticSpaceObject Exit, FlightSystem System, IReadOnlyList<StaticSpaceObject> Objects, int TransferStamp);
     // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
     private const int JumpDurationTicks = 10;
     private GateTransit? _jump;
@@ -42,8 +44,25 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
-        return objects.FirstOrDefault(o => o.Id == id && o.CategoryId == TargetingDefinitions.AsteroidCategory) is { } asteroid
+        return VisibleObjects().FirstOrDefault(o => o.Id == id && o.CategoryId == AsteroidDefinitions.Category) is { } asteroid
             ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius) : null;
+    }
+
+    private StaticSpaceObject[] VisibleObjects() => objects.Where(o => o.CategoryId != AsteroidDefinitions.Category ||
+        (Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)).ToArray();
+
+    public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
+    {
+        objects = objects.Where(o => o.CategoryId != AsteroidDefinitions.Category).Concat(asteroids).ToArray();
+        if (!InBallpark) { return; }
+        var current = VisibleObjects().Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
+        foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
+        {
+            Update("RemoveBall", departed.Id, false);
+        }
+        var added = current.ExceptBy(_visibleAsteroids.Select(o => o.Id), o => o.Id).ToArray();
+        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddObjects(added, Stamp)]); }
+        _visibleAsteroids = current;
     }
 
     public void Checkpoint()
@@ -193,7 +212,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 // The client plays the arrival flash when it loads a ship already in warp.
                 continue;
             }
-            if (ship.DepartureGate is int departure && previous.DepartureGate != departure)
+            if (ship.DepartureGate is long departure && previous.DepartureGate != departure)
             {
                 DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
             }
@@ -246,6 +265,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         InBallpark = false;
         _peers = [];
+        _visibleAsteroids = [];
         space.Leave(Pilot.ShipId);
     }
 
@@ -310,7 +330,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         _peers = peers;
         int stamp = Stamp;
-        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, objects, peers) } } });
+        var visible = VisibleObjects();
+        _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
+        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers) } } });
         if (_warp is not null || _warpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);
@@ -407,7 +429,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     }
 
     // SubwayService reads graphicInfo[0] to preload the skybox and attach the destination camera.
-    private void DepartureEffect(long shipId, int gateId, int systemId) =>
+    private void DepartureEffect(long shipId, long gateId, int systemId) =>
         Update("OnSpecialFX", shipId, null, null, gateId, null, "effects.JumpOut", false, true, false,
             JumpDurationTicks * 1000, 0, null, 0, new object?[] { systemId });
 
