@@ -7,10 +7,11 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket)
 {
     internal const int UserId = 1000001;
     internal const int PilotId = 90000001;
-    internal const long ClientId = 1000000001L;
+    private static long s_nextClientId = DateTime.UtcNow.Ticks;
+    internal const long PlayerRole = 1L << 61;
     internal const int NodeId = 10001;
 
-    public async Task RunAsync(Stream stream, byte[] firstCommand, Action<string> report, CancellationToken cancellationToken)
+    public async Task RunAsync(Stream stream, byte[] firstCommand, Action<string> report, CancellationToken cancellationToken, Action? authenticated = null)
     {
         object?[] vk = Tuple(BlueMarshal.Decode(firstCommand), 3);
         if (vk[0] is not null || BlueMarshal.Text(vk[1]) != "VK")
@@ -80,27 +81,30 @@ public sealed class PilotLogin(RSA key, Func<string, bool> acceptTicket)
             throw new InvalidDataException("Client challenge response mismatch.");
         }
 
-        Dictionary<string, object?> session = new()
-        {
-            ["userid"] = UserId,
-            ["role"] = 1,
-            ["languageID"] = "EN",
-            ["userType"] = 1,
-        };
+        long clientId = Interlocked.Increment(ref s_nextClientId);
         await WriteAsync(new Dictionary<string, object?>
         {
-            ["session_init"] = session,
-            ["session_id"] = ClientId,
-            ["sessionID"] = ClientId,
-            ["clientID"] = ClientId,
+            ["session_init"] = AccountState(),
+            ["session_id"] = clientId,
+            ["sessionID"] = clientId,
+            ["clientID"] = clientId,
             ["access_token"] = "",
             ["computer_hash"] = "",
             ["client_hash"] = "Unknown",
         });
+        authenticated?.Invoke();
         report("Authenticated local pilot account; session established.");
 
-        await PilotServices.RunAsync(ReadAsync, WriteAsync, report);
+        await PilotServices.RunAsync(ReadAsync, WriteAsync, report, clientId);
     }
+
+    internal static Dictionary<string, object?> AccountState() => new()
+    {
+        ["userid"] = UserId,
+        ["role"] = PlayerRole,
+        ["languageID"] = "EN",
+        ["userType"] = 1,
+    };
 
     internal static byte[] Bytes(object? value) => value as byte[] ?? throw new InvalidDataException("Expected bytes.");
     internal static Dictionary<string, object?> Fields(object? value) => value as Dictionary<string, object?> ?? throw new InvalidDataException("Expected fields.");

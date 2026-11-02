@@ -4,7 +4,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Th
 
 ## Current status
 
-Two independent launches of the unmodified client completed the local version and queue-status exchange. Eden listens on `127.0.0.1:26000`, sends its greeting, checks the client build, answers the queue check, and closes the probe connection. The next milestone is a local authenticated session and character selection.
+The Windows client can authenticate to Eden, display **Eden Pilot** in an Ibis at Jita IV – Moon 4, and select the pilot. Reconnecting creates a fresh session for the same account. Eden listens on `127.0.0.1:26000`. The next milestone is loading the station hangar, inventory, and persistent ship state.
 
 ## Build and run
 
@@ -25,7 +25,7 @@ The tests use fixtures and loopback sockets. To try the real client, follow the 
 | Project | Responsibility |
 | --- | --- |
 | `src/Eden.Server` | Listen on loopback, apply connection timeouts, and report handshake progress. |
-| `src/Eden.Protocol` | Frame startup packets and handle the pinned client compatibility exchange. |
+| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve the character picker. |
 | `tests/Eden.Protocol.Tests` | Verify wire bytes, malformed input, and a complete status exchange. |
 
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).

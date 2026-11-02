@@ -6,6 +6,7 @@ namespace Eden.Protocol;
 // Only the inert wire types used by the local session. Class names are data.
 internal sealed record BlueInstance(string Name, object? State);
 internal sealed record BlueStream(byte[] Bytes);
+internal sealed record BlueObjectReference(string Id, int ReferenceId);
 
 internal static class BlueMarshal
 {
@@ -195,11 +196,25 @@ internal static class BlueMarshal
             case long number:
                 switch (number)
                 {
-                    case -1 or 0 or 1: writer.Write((byte)(8 + number)); break;
-                    case >= sbyte.MinValue and <= sbyte.MaxValue: writer.Write((byte)6); writer.Write((sbyte)number); break;
-                    case >= short.MinValue and <= short.MaxValue: writer.Write((byte)5); writer.Write((short)number); break;
-                    case >= int.MinValue and <= int.MaxValue: writer.Write((byte)4); writer.Write((int)number); break;
-                    default: writer.Write((byte)3); writer.Write(number); break;
+                    case -1 or 0 or 1:
+                        writer.Write((byte)(8 + number));
+                        break;
+                    case >= sbyte.MinValue and <= sbyte.MaxValue:
+                        writer.Write((byte)6);
+                        writer.Write((sbyte)number);
+                        break;
+                    case >= short.MinValue and <= short.MaxValue:
+                        writer.Write((byte)5);
+                        writer.Write((short)number);
+                        break;
+                    case >= int.MinValue and <= int.MaxValue:
+                        writer.Write((byte)4);
+                        writer.Write((int)number);
+                        break;
+                    default:
+                        writer.Write((byte)3);
+                        writer.Write(number);
+                        break;
                 }
 
                 break;
@@ -224,6 +239,10 @@ internal static class BlueMarshal
                 }
 
                 writer.Write(bytes);
+                break;
+            case BlueObjectReference reference:
+                writer.Write((byte)25);
+                Write(writer, Encode(new object?[] { reference.Id, reference.ReferenceId }));
                 break;
             case BlueStream stream:
                 writer.Write((byte)43);

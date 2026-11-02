@@ -26,36 +26,71 @@ internal static class Program
         using TcpListener listener = new(IPAddress.Loopback, 26000);
         listener.Start();
         Console.WriteLine($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
+        List<Task> clients = [];
+        using SemaphoreSlim pilotSlot = new(1);
         try
         {
             while (!shutdown.IsCancellationRequested)
             {
-                using TcpClient client = await listener.AcceptTcpClientAsync(shutdown.Token);
-                using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token);
-                timeout.CancelAfter(TimeSpan.FromSeconds(120));
-                Console.WriteLine($"{DateTimeOffset.Now:O} Accepted {client.Client.RemoteEndPoint}.");
-                try
+                clients.RemoveAll(task => task.IsCompletedSuccessfully);
+                if (clients.Count >= 8)
                 {
-                    await CompatibilityHandshake.ServeAsync(client.GetStream(), Console.WriteLine, timeout.Token, async (command, token) =>
-                    {
-                        if (!OperatingSystem.IsWindows() || identity is null) { throw new InvalidDataException("Local login requires Windows."); }
-                        PilotLogin login = new(identity, ticket => DevelopmentIdentity.Validate(identity, ticket));
-                        await login.RunAsync(client.GetStream(), command, Console.WriteLine, token);
-                    });
+                    Task completed = await Task.WhenAny(clients);
+                    await completed;
+                    clients.Remove(completed);
                 }
-                catch (OperationCanceledException) when (!shutdown.IsCancellationRequested)
-                {
-                    Console.WriteLine("Startup exchange timed out.");
-                }
-                catch (Exception exception) when (exception is IOException or InvalidDataException or SocketException or CryptographicException or KeyNotFoundException or ArgumentException)
-                {
-                    Console.WriteLine(exception.Message);
-                }
+
+                TcpClient client = await listener.AcceptTcpClientAsync(shutdown.Token);
+                clients.Add(ServeAsync(client, identity, pilotSlot, shutdown.Token));
             }
         }
         catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
         {
-            // Ctrl+C interrupts both accept and an active read.
+            // Ctrl+C stops the listener and active connections.
+        }
+        finally
+        {
+            shutdown.Cancel();
+            await Task.WhenAll(clients);
+        }
+    }
+
+    private static async Task ServeAsync(TcpClient client, RSA? identity, SemaphoreSlim pilotSlot, CancellationToken shutdown)
+    {
+        using (client)
+        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown))
+        {
+            timeout.CancelAfter(TimeSpan.FromSeconds(30));
+            Console.WriteLine($"{DateTimeOffset.Now:O} Accepted {client.Client.RemoteEndPoint}.");
+            try
+            {
+                NetworkStream stream = client.GetStream();
+                await CompatibilityHandshake.ServeAsync(stream, Console.WriteLine, timeout.Token, async (command, token) =>
+                {
+                    if (identity is null || !pilotSlot.Wait(0))
+                    {
+                        throw new InvalidDataException("The local pilot session is unavailable.");
+                    }
+
+                    try
+                    {
+                        PilotLogin login = new(identity, ticket => DevelopmentIdentity.Validate(identity, ticket));
+                        await login.RunAsync(stream, command, Console.WriteLine, token, () => timeout.CancelAfter(Timeout.InfiniteTimeSpan));
+                    }
+                    finally
+                    {
+                        pilotSlot.Release();
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine(shutdown.IsCancellationRequested ? "Session closed." : "Login timed out.");
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or SocketException or CryptographicException or KeyNotFoundException or ArgumentException)
+            {
+                Console.WriteLine(exception.Message);
+            }
         }
     }
 }

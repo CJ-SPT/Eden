@@ -39,3 +39,11 @@ If hashes differ, identify the client build before changing the profile. If Eden
 On Windows with PowerShell 7, build the solution, start Eden, then add `-Login` to the client launch command. The launcher signs a short-lived local account ticket and switches the staged manifest to the current Windows user's Eden key. This preserves the stock file entries, executable, script archive, encrypted transport and challenge verification. The client process receives a loopback address for its separate public gateway. The private key stays in the Windows key store.
 
 To restore the stock manifest, copy `tq/manifest.dat` from the pinned installation into the staged copy while the client is closed. Successful authentication prints `Authenticated local pilot account; session established.` in the server terminal.
+
+To enter character selection from the repository root, keep the server running in the first terminal and use the following command in the second.
+
+```powershell
+.\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login
+```
+
+The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it and check the server for `Accepted selection of Eden Pilot (90000001) for this session.` The client then waits for the station transition. Close and relaunch the staged client to return to the picker. A single authenticated pilot can be connected at once.
