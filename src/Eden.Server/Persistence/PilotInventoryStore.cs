@@ -38,7 +38,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         using CatalogDbContext catalog = new(database.CatalogPath);
         var items = world.Set<OwnedItem>().Where(i => itemIds.Contains(i.Id) && i.OwnerId == pilotId &&
             i.LocationId == sourceId && (sourceId == ship.Id ? i.FlagId == (int)InventoryFlag.Cargo || i.FlagId == (int)InventoryFlag.GeneralMiningHold ||
-                (i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7) : i.FlagId == (int)InventoryFlag.Hangar)).OrderBy(i => i.Id).ToArray();
+                (i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7) : i.FlagId == (int)InventoryFlag.Hangar)).OrderBy(i => i.Id).ToArray();
         if (items.Length != itemIds.Count || items.Any(i => quantity > i.Quantity))
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");

@@ -390,6 +390,36 @@ public sealed class MarketTests
     }
 
     [Fact]
+    public void StationMarketButtonChecksTheCurrentServiceWithoutCreatingOrdersOrMovingMoney()
+    {
+        using Fixture f = new();
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var pilot = f.Pilot;
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects), 1, []);
+        object?[] bind = [(long)pilot.StationId, new object?[] { "DoStandingCheckForStationService", new object?[] { (long)StationService.Market }, new Dictionary<string, object?>() }];
+        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        context.Select(pilot);
+        var result = Assert.IsType<object?[]>(router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        Assert.IsType<BlueObjectReference>(result[0]);
+        Assert.Null(result[1]);
+        using (WorldDbContext saved = new(f.Db.Path))
+        {
+            Assert.Empty(saved.Set<NpcMarketOrder>());
+            Assert.Empty(saved.Set<MarketExecution>());
+            Assert.Empty(context.Notifications);
+        }
+        Assert.Throws<InvalidDataException>(() => f.Store.CheckStation(pilot.PilotId, pilot.StationId + 1));
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{\"services\":[]}}' WHERE Dataset='client/stationoperations'");
+        }
+        Assert.IsType<PilotCallRouter.Error>(router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        f.Db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
+        Assert.Throws<InvalidDataException>(() => f.Store.CheckStation(pilot.PilotId, pilot.StationId));
+    }
+
+    [Fact]
     public void NativeCallsReturnVersionedBooksAndNotifyWalletAndInventoryTogether()
     {
         using Fixture f = new();

@@ -92,7 +92,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         // Surviving modules retain their singleton identity but are loose,
         // offline cargo. The old hull's cooldowns must not follow them.
         var ids = items.Select(i => i.Id).ToArray();
-        world.Set<WeaponCooldown>().Where(c => ids.Contains(c.ModuleId)).ExecuteDelete();
+        world.Set<ModuleCooldown>().Where(c => ids.Contains(c.ModuleId)).ExecuteDelete();
         foreach (var item in items)
         {
             if (survivors.Contains(item.Id))

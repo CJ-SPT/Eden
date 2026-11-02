@@ -12,6 +12,20 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class PilotServicesTests
 {
     [Fact]
+    public async Task FailedBoundMarketCheckReturnsAnErrorAndKeepsTheSessionUsable()
+    {
+        using TestWorld world = new();
+        var packets = await ExchangeAsync(world, 42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("corpStationMgr", "MachoBindObject", [60003760L,
+                new object?[] { "DoStandingCheckForStationService", new object?[] { (long)StationService.Market }, new Dictionary<string, object?>() }]),
+            Request("account", "GetCashBalance", [0L]));
+        Assert.EndsWith(".ErrorResponse", packets[^2].Name);
+        Assert.EndsWith(".CallRsp", packets[^1].Name);
+        Assert.Equal(0d, Result(packets[^1]));
+    }
+
+    [Fact]
     public async Task RecoveryAnnouncesTheNewHullBeforeTheHangarProcessesItsShipChange()
     {
         using TestWorld world = new();

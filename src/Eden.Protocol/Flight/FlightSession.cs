@@ -3,6 +3,7 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 
@@ -14,6 +15,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private StaticSpaceObject[] _visibleAsteroids = [];
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
+    private ShieldBoostContact[] _shieldBoosts = [];
     private NpcContact[] _npcs = [];
     private WreckContact[] _wrecks = [];
     private bool _destroying;
@@ -41,6 +43,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public List<object?> Updates { get; } = [];
     public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
     public bool CanTarget => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+    // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
+    // the terminal hull transition still prevent local module activations.
+    public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null;
     public SpacePosition Velocity => _velocity;
 
     public TargetContact? FindTarget(long id)
@@ -157,6 +162,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _warpOrder = null;
         _mining = [];
         _weapons = [];
+        _shieldBoosts = [];
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -277,7 +283,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
         _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
         _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining,
-        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons);
+        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts);
 
     public void SetMiningEffect(MiningContact effect, bool active)
     {
@@ -314,6 +320,32 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         foreach (var effect in (previous?.Weapons ?? []).Except(ship.Weapons ?? [])) { WeaponEffect(ship.Pilot.ShipId, effect, false); }
         foreach (var effect in (ship.Weapons ?? []).Except(previous?.Weapons ?? [])) { WeaponEffect(ship.Pilot.ShipId, effect, true); }
+    }
+
+    public void SetShieldBoostEffect(ShieldBoostContact effect, bool active)
+    {
+        _shieldBoosts = _shieldBoosts.Where(b => b.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<ShieldBoostContact>()).ToArray();
+        ShieldBoostEffect(Pilot.ShipId, effect, active);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(Sample);
+        }
+    }
+
+    private void ShieldBoostEffect(long shipId, ShieldBoostContact effect, bool active) =>
+        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, shipId, null, ShieldBoostDefinitions.EffectGraphic, false, active, active,
+            effect.Duration, 0, effect.StartedAt, 0, null);
+
+    private void RefreshShieldBoosts(ShipContact ship, ShipContact? previous)
+    {
+        foreach (var effect in (previous?.ShieldBoosts ?? []).Except(ship.ShieldBoosts ?? []))
+        {
+            ShieldBoostEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.ShieldBoosts ?? []).Except(previous?.ShieldBoosts ?? []))
+        {
+            ShieldBoostEffect(ship.Pilot.ShipId, effect, true);
+        }
     }
 
     private SpacePosition? FirstContact(SpacePosition start, SpacePosition end)
@@ -365,6 +397,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
                 RefreshMining(ship, null);
                 RefreshWeapons(ship, null);
+                RefreshShieldBoosts(ship, null);
                 if (ship.Arriving)
                 {
                     ArrivalEffect(ship.Pilot.ShipId);
@@ -374,9 +407,10 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             }
             RefreshMining(ship, previous);
             RefreshWeapons(ship, previous);
+            RefreshShieldBoosts(ship, previous);
             if (ship.Health is { } currentHealth && previous.Health is { } previousHealth &&
                 (currentHealth.Remaining.Armor != previousHealth.Remaining.Armor || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure ||
-                currentHealth.Remaining.Shield < previousHealth.Remaining.Shield))
+                currentHealth.Remaining.Shield != previousHealth.Remaining.Shield))
             {
                 NotifyHealth(currentHealth);
             }
@@ -437,6 +471,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _mining = [];
         _weapons = [];
         _npcs = [];
+        _shieldBoosts = [];
         _wrecks = [];
         space.Leave(Pilot.ShipId);
     }
@@ -510,7 +545,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         foreach (var npc in _npcs.Where(n => n.Weapon is not null)) { NpcWeaponEffect(npc.Id, npc.Weapon!, true); }
         foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
         foreach (var effect in _weapons) { WeaponEffect(Pilot.ShipId, effect, true); }
-        foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); }
+        foreach (var effect in _shieldBoosts) { ShieldBoostEffect(Pilot.ShipId, effect, true); }
+        foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); RefreshShieldBoosts(peer, null); }
         if (_warp is not null || _warpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);

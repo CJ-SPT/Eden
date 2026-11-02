@@ -5,6 +5,7 @@ public enum InventoryCategory
     Station = 3,
     Ship = 6,
     Module = 7,
+    Skill = 16,
     Asteroid = 25,
 }
 
@@ -14,6 +15,8 @@ public enum InventoryFlag
     AutoFit = 0,
     Hangar = 4,
     Cargo = 5,
+    MediumSlot0 = 19,
+    MediumSlot7 = 26,
     HighSlot0 = 27,
     HighSlot1 = 28,
     HighSlot7 = 34,
@@ -32,6 +35,7 @@ public enum DogmaAttributeId
     CapacitorNeed = 6,
     StructureHitPoints = 9,
     PowerOutput = 11,
+    MediumSlots = 13,
     HighSlots = 14,
     PowerLoad = 15,
     CapacitorCharge = 18,
@@ -45,6 +49,7 @@ public enum DogmaAttributeId
     MaxRange = 54,
     CapacitorRechargeTime = 55,
     DamageMultiplier = 64,
+    ShieldBonus = 68,
     Agility = 70,
     Duration = 73,
     MaxTargetRange = 76,
@@ -93,6 +98,7 @@ public enum DogmaAttributeId
     ScanResolution = 564,
     WeaponSignatureResolution = 620,
     ReprocessingSkillType = 790,
+    ShieldBoostCapacitorBonus = 851,
     RequiredSkill4 = 1285,
     RequiredSkill4Level = 1286,
     RequiredSkill5Level = 1287,
@@ -126,6 +132,7 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    ShieldBoosting = 4,
     CivilianWeapon = 10,
     Online = 16,
     MiningLaser = 67,
@@ -148,7 +155,10 @@ public static class InventoryDefinitions
     public const int AssembledQuantity = -1;
     public const int InfiniteEffectDuration = -1;
     public const long FirstOwnedItemId = 2000000000000;
+    public const int SlotsPerRack = 8; // Pinned inventory flags reserve eight slots per rack.
     public static bool IsHighSlot(int flag) => flag is >= (int)InventoryFlag.HighSlot0 and <= (int)InventoryFlag.HighSlot7;
+    public static bool IsMediumSlot(int flag) => flag is >= (int)InventoryFlag.MediumSlot0 and <= (int)InventoryFlag.MediumSlot7;
+    public static bool IsFittedSlot(int flag) => IsHighSlot(flag) || IsMediumSlot(flag);
     public static readonly (DogmaAttributeId Skill, DogmaAttributeId Level)[] RequiredSkills =
     [
         (DogmaAttributeId.RequiredSkill1, DogmaAttributeId.RequiredSkill1Level),

@@ -2,13 +2,14 @@ using System.Security.Cryptography;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
 internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, SharedTargetLocks locks,
-    MiningHandler mining, CombatHandler weapons) : IDisposable
+    MiningHandler mining, CombatHandler weapons, ShieldBoostHandler shields) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
     private long _shipId;
@@ -67,6 +68,7 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
                 context.Flight.BeginShipLoss();
                 mining.Cancel(context);
                 weapons.Cancel(context);
+                shields.Cancel(context);
                 // Wreck.Prepare links launcherID to the still-loaded hull for
                 // rotation and explosion timing before its terminal removal.
                 context.Flight.RefreshWrecks();

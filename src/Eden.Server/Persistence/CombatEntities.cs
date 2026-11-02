@@ -1,6 +1,8 @@
 namespace Eden.Server.Persistence;
 
-public sealed class WeaponCooldown
+// Shared by weapon and shield-booster cycles. The legacy WorldWeaponCooldown
+// table name is retained so existing saves need no migration or clock reset.
+public sealed class ModuleCooldown
 {
     public long ModuleId { get; set; }
     public long ReadyAt { get; set; }

@@ -79,9 +79,15 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
         if (service == "account") { return Account(context, method, args); }
-        if (service != "marketProxy") { return PilotCallRouter.Unsupported; }
+        bool check = service == "corpStationMgr" && method == "DoStandingCheckForStationService" && args is [(long)StationService.Market];
+        if (service != "marketProxy" && !check) { return PilotCallRouter.Unsupported; }
         try
         {
+            if (check)
+            {
+                market.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
+                return null;
+            }
             switch (method)
             {
                 case "StartupCheck":

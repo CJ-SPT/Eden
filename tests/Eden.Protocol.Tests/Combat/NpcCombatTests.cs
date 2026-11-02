@@ -176,7 +176,7 @@ public sealed class NpcCombatTests
         {
             Assert.Null(saved.Ships.Find(Fixture.ShipId));
             Assert.Empty(saved.Set<OwnedItem>().Where(i => i.LocationId == Fixture.ShipId));
-            Assert.Empty(saved.Set<WeaponCooldown>());
+            Assert.Empty(saved.Set<ModuleCooldown>());
             Assert.Empty(saved.Set<ShipHealthState>());
             Assert.Empty(saved.Set<NpcAggression>());
             Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
@@ -289,7 +289,7 @@ public sealed class NpcCombatTests
         Assert.True(gun.Singleton);
         Assert.False(gun.Online);
         Assert.Equal(37, saved.Set<OwnedItem>().Find(mining)!.Quantity);
-        Assert.Empty(saved.Set<WeaponCooldown>());
+        Assert.Empty(saved.Set<ModuleCooldown>());
         var wrecks = f.Db.Services.GetRequiredService<IWrecks>();
         var contents = wrecks.Read(Fixture.PilotId, wreck.Id, f.Clock.Now).Items;
         Assert.Equal(2, contents.Count);
@@ -356,7 +356,7 @@ public sealed class NpcCombatTests
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);
         Assert.Equal(130, saved.Set<ShipEnergy>().Single().Charge);
         Assert.NotNull(saved.Set<OwnedItem>().Find(f.Module));
-        Assert.Single(saved.Set<WeaponCooldown>());
+        Assert.Single(saved.Set<ModuleCooldown>());
         Assert.Equal(19.01, saved.Set<WorldNpc>().Single(n => n.Id == f.Npc.Id).ShieldCharge, 8);
         Assert.Empty(saved.Set<NpcAggression>());
         Assert.Empty(saved.Set<ShipLoss>());
@@ -415,7 +415,7 @@ public sealed class NpcCombatTests
         using TargetingHandler targeting = new(f.Clock, fitting, locks);
         MiningHandler mining = new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting);
         CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
-        using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons);
+        using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()));
         using PilotCallContext context = new(1000001, f.Pilot.Account, [f.Pilot],
             p => new(f.Db.Store, p, f.Clock, space, [], health: f.Health, encounters: encounters, wrecks: f.Db.Services.GetRequiredService<IWrecks>()), 42, []);
         context.Select(f.Pilot);

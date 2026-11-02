@@ -15,6 +15,7 @@ public sealed record MarketHistoryDay(int TypeId, long Date, long LowPriceCents,
 
 public interface IPilotMarket
 {
+    void CheckStation(long pilotId, int stationId);
     long Balance(long pilotId);
     IReadOnlyList<MarketOrder> Orders(long pilotId);
     IReadOnlyList<MarketTrade> Transactions(long pilotId);

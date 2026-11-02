@@ -1,6 +1,7 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
@@ -8,7 +9,7 @@ namespace Eden.Protocol.Docking;
 // One selected-pilot owner for the activation RPCs; feature controllers retain
 // their own cycle state and are also advanced by the session's clock.
 [Injectable]
-internal sealed class ModuleActivationHandler(MiningHandler mining, CombatHandler combat) : ISelectedPilotCallHandler
+internal sealed class ModuleActivationHandler(MiningHandler mining, CombatHandler combat, ShieldBoostHandler shields) : ISelectedPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
@@ -17,6 +18,7 @@ internal sealed class ModuleActivationHandler(MiningHandler mining, CombatHandle
         {
             MiningDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
             CombatDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
+            ShieldBoostDefinitions.EffectName => shields.Call(context, service, method, args),
             _ => PilotCallRouter.Unsupported,
         };
     }

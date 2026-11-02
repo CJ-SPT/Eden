@@ -60,7 +60,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         {
             throw new InvalidDataException("Invalid weapon cycle attributes.");
         }
-        var cooldown = world.Set<WeaponCooldown>().Find(moduleId);
+        var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt) { throw new InvalidDataException("The weapon is still cycling."); }
         DamageVector damage = new(attributes.GetValueOrDefault(DogmaAttributeId.EmDamage), attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage), attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage));
@@ -79,7 +79,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         double quality = CombatDamage.ShotQuality(chance, roll);
         var result = CombatDamage.Apply(health, defense, weapon.Damage.Scale(quality));
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, weapon.CapacitorNeed, now);
-        cooldown ??= world.Set<WeaponCooldown>().Add(new() { ModuleId = moduleId }).Entity;
+        cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
         npc.ShieldCharge = result.Remaining.Shield;
         npc.ArmorDamage = defense.Armor - result.Remaining.Armor;

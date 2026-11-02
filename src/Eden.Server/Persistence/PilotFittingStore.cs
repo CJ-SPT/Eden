@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.Server.Catalog;
@@ -69,10 +70,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         int targetLimit = TargetingDefinitions.BasePilotTargetLimit + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
             + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
         attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets), targetLimit);
-        var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
+        var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
         attributes[DogmaAttributeId.CpuLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu));
         attributes[DogmaAttributeId.PowerLoad] = fitted.Where(i => i.Online).Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Power));
-        attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(0, attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - fitted.Length);
+        attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(0, attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - fitted.Count(i => InventoryDefinitions.IsHighSlot(i.FlagId)));
         return attributes;
     }
 
@@ -99,7 +100,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         var ship = pilot.ActiveShip;
         if (ship.Position is not null || (sourceId != ship.Id && sourceId != ship.StationId) ||
             itemIds.Count == 0 || itemIds.Distinct().Count() != itemIds.Count ||
-            (flagId != (int)InventoryFlag.AutoFit && (!InventoryDefinitions.IsHighSlot(flagId) || itemIds.Count != 1)))
+            (flagId != (int)InventoryFlag.AutoFit && (!InventoryDefinitions.IsFittedSlot(flagId) || itemIds.Count != 1)))
         {
             throw new InvalidDataException("Fit equipment from your cargo or current hangar while docked.");
         }
@@ -111,24 +112,28 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         }
         var before = inventory.List(pilotId, sourceId).ToDictionary(i => i.Id);
         var hull = Attributes(catalog, ship.TypeId);
-        var occupied = world.Set<OwnedItem>().Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).Select(i => i.FlagId).ToHashSet();
-        int slots = Math.Min((int)InventoryFlag.HighSlot7 - (int)InventoryFlag.HighSlot0 + 1, checked((int)Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft))));
+        var occupied = world.Set<OwnedItem>().Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).Select(i => i.FlagId).ToHashSet();
         long nextId = PilotInventoryStore.NextId(world);
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
         {
             // Regular weapons need ammunition and additional effects; the civilian
             // railgun has a built-in charge and shares turret/CPU/grid accounting.
-            if (catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId != InventoryDefinitions.MiningLaserGroup &&
+            int group = catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;
+            bool booster = group == ShieldBoostDefinitions.Group;
+            if (group != InventoryDefinitions.MiningLaserGroup && !booster &&
                 item.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             {
                 throw new InvalidDataException("This module family is not supported yet.");
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
-            int slot = flagId == (int)InventoryFlag.AutoFit ? Enumerable.Range((int)InventoryFlag.HighSlot0, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
-            if (slot < (int)InventoryFlag.HighSlot0 || slot >= (int)InventoryFlag.HighSlot0 + slots || !occupied.Add(slot))
+            int first = (int)(booster ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
+            int slots = Math.Clamp(checked((int)(booster ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots) :
+                Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)))), 0, InventoryDefinitions.SlotsPerRack);
+            int slot = flagId == (int)InventoryFlag.AutoFit ? Enumerable.Range(first, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
+            if (slot < first || slot >= first + slots || !occupied.Add(slot))
             {
-                throw new InvalidDataException("No compatible turret slot is available.");
+                throw new InvalidDataException("No compatible module slot is available.");
             }
             var previous = before[item.Id];
             OwnedItem fitted = item;
@@ -166,7 +171,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var item = world.Set<OwnedItem>().SingleOrDefault(i => i.Id == itemId && i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7);
+        var item = world.Set<OwnedItem>().SingleOrDefault(i => i.Id == itemId && i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7);
         if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null)
         {
             throw new InvalidDataException("Change module online state on your docked active ship.");

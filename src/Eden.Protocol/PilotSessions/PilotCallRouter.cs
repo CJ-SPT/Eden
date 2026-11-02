@@ -167,7 +167,10 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 {
                     return Unsupported;
                 }
-                return ReferenceEquals(result, Unsupported) ? Unsupported : new object?[] { context.Reference(service), result };
+                // A failed first call is an RPC failure, not a value to embed in
+                // the successful (bound reference, result) tuple.
+                return result is Error or UserError || ReferenceEquals(result, Unsupported)
+                    ? result : new object?[] { context.Reference(service), result };
             }
         }
         foreach (var handler in selectedHandlers)

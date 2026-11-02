@@ -2,12 +2,13 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -84,7 +85,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             if (looting && !context.Flight.CanTarget) { return new PilotCallRouter.Error("Wreck contents cannot be transferred during warp or a system transition."); }
             if (looting) { context.Flight.Checkpoint(); }
             var changes = looting ? wrecks.Take(context.Pilot.PilotId, context.Pilot.ShipId, source, ids, quantity, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) :
-                destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsHighSlot(flag))
+                destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsFittedSlot(flag))
                 ? fitting.Fit(context.Pilot.PilotId, ids, source, flag)
                 : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
             foreach (var change in changes)
@@ -92,7 +93,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 NotifyItemChange(context, change);
             }
             if (looting) { context.Flight.RefreshWrecks(); }
-            if (changes.Any(c => InventoryDefinitions.IsHighSlot(c.Item.FlagId) || (c.Previous is not null && InventoryDefinitions.IsHighSlot(c.Previous.FlagId))))
+            if (changes.Any(c => InventoryDefinitions.IsFittedSlot(c.Item.FlagId) || (c.Previous is not null && InventoryDefinitions.IsFittedSlot(c.Previous.FlagId))))
             {
                 // Let OnItemChange fetch the module through ItemGetInfo. A live
                 // OnGodmaPrimeItem replaces its inventory row with an incompatible
@@ -193,7 +194,8 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     private BlueInstance PrimeModule(DockedPilot pilot, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = (module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun ? combat.ModuleAttributes(pilot.PilotId, module) :
+        var attributes = (module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module) :
+            module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun ? combat.ModuleAttributes(pilot.PilotId, module) :
             mining.ModuleAttributes(pilot.PilotId, module)).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[(long)DogmaAttributeId.Damage] = 0d;
@@ -204,6 +206,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         }
         if (miningEffects.ActiveEffect(pilot, module.Id) is { } active) { effects[(long)DogmaEffect.MiningLaser] = active; }
         if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing) { effects[(long)DogmaEffect.CivilianWeapon] = firing; }
+        if (shieldEffects.ActiveEffect(pilot, module.Id) is { } boost) { effects[(long)DogmaEffect.ShieldBoosting] = boost; }
         return KeyVal(new()
         {
             ["itemID"] = module.Id,
@@ -217,7 +220,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
 
     internal BlueInstance AllInfo(DockedPilot pilot)
     {
-        var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).ToArray();
+        var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
         var shipInfo = PrimeItem(pilot, pilot.ShipId, "ship");
         var current = health.Read(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Dictionary<long, object?> instances = new()
@@ -274,7 +277,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     {
         if (id == pilot.ShipId) { return PrimeItem(pilot, id, "ship")[id]; }
         if (id == pilot.PilotId) { return PrimeItem(pilot, id, "pilot")[id]; }
-        var module = inventory.List(pilot.PilotId, pilot.ShipId).FirstOrDefault(i => i.Id == id && InventoryDefinitions.IsHighSlot(i.FlagId));
+        var module = inventory.List(pilot.PilotId, pilot.ShipId).FirstOrDefault(i => i.Id == id && InventoryDefinitions.IsFittedSlot(i.FlagId));
         return module is null ? PilotCallRouter.Unsupported : PrimeModule(pilot, module);
     }
 

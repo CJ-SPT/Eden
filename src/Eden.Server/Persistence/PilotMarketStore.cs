@@ -80,6 +80,13 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         world.SaveChanges();
     }
 
+    public void CheckStation(long pilotId, int stationId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        _ = TradeStation(catalog, Pilot(world, pilotId), stationId);
+    }
+
     public long Balance(long pilotId)
     {
         using WorldDbContext world = new(database.Path);

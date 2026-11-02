@@ -5,7 +5,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Skills;
 
 [Injectable]
-internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock) : ISelectedPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
@@ -15,6 +15,7 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
             return (service, method) switch
             {
                 ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills"),
+                ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
                 ("expertSystemMgr", "GetMyExpertSystems") => new Dictionary<long, object?>(),
                 ("@skills", "GetAttributes") => PilotProfile.TrainingAttributes(),
@@ -32,6 +33,26 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
         {
             return new PilotCallRouter.Error(error.Message);
         }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallRouter.Error(error.Message);
+        }
+    }
+
+    private object? Inject(PilotCallContext context, object?[] args)
+    {
+        if (args is not [List<object?> items] || items.Any(i => i is not long))
+        {
+            return PilotCallRouter.Unsupported;
+        }
+        var result = books.Inject(context.Pilot.PilotId, items.Cast<long>().ToArray());
+        foreach (var change in result.Changes)
+        {
+            InventoryHandler.NotifyItemChange(context, change);
+        }
+        var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)));
+        context.Notifications.Add(("OnServerSkillsChanged", [updates, null, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()]));
+        return null;
     }
 
     public List<object?> Advance(PilotCallContext context)

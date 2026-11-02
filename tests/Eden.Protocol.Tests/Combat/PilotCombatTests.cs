@@ -124,7 +124,7 @@ public sealed class PilotCombatTests
         Assert.Equal(129, world.Set<ShipEnergy>().Single().Charge);
         Assert.Equal(14.06, world.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge, 8);
         Assert.Empty(world.Set<NpcBounty>());
-        Assert.Equal(f.Clock.Now + 1960 * TimeSpan.TicksPerMillisecond, world.Set<WeaponCooldown>().Single().ReadyAt);
+        Assert.Equal(f.Clock.Now + 1960 * TimeSpan.TicksPerMillisecond, world.Set<ModuleCooldown>().Single().ReadyAt);
         f.Clock.Milliseconds += 1960;
         Assert.True(f.Fire().Applied > 0);
     }
@@ -159,7 +159,7 @@ public sealed class PilotCombatTests
         Assert.Null(saved.Set<WorldNpc>().Find(f.Npc.Id)!.DestroyedAt);
         Assert.Equal(19, saved.Set<WorldNpc>().Find(f.Npc.Id)!.StructureDamage);
         Assert.Empty(saved.Set<ShipEnergy>());
-        Assert.Empty(saved.Set<WeaponCooldown>());
+        Assert.Empty(saved.Set<ModuleCooldown>());
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<WorldWreck>());
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
@@ -188,7 +188,7 @@ public sealed class PilotCombatTests
         Assert.Equal(kill.Reward.PilotId, wreck.OwnerId);
         Assert.Equal(100, Assert.Single(saved.Set<OwnedItem>().Where(i => i.LocationId == wreck.Id)).Quantity);
         Assert.Equal(300000, saved.Set<PilotWallet>().Sum(w => w.Cents));
-        Assert.Single(saved.Set<WeaponCooldown>());
+        Assert.Single(saved.Set<ModuleCooldown>());
         Assert.Single(saved.Set<ShipEnergy>());
         Assert.Throws<InvalidDataException>(() => f.Fire());
     }
@@ -200,7 +200,7 @@ public sealed class PilotCombatTests
         var (context, targeting, combat) = f.Client();
         using var owned = context;
         using var locks = targeting;
-        ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting), combat);
+        ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting), combat, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()));
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());
         using WorldDbContext saved = new(f.Db.Path);
@@ -384,7 +384,7 @@ public sealed class PilotCombatTests
         Assert.Throws<InvalidDataException>(() => f.Fire());
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(20, saved.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge);
-        Assert.Empty(saved.Set<WeaponCooldown>());
+        Assert.Empty(saved.Set<ModuleCooldown>());
         Assert.Equal(0, saved.Set<ShipEnergy>().Single().Charge);
     }
 
@@ -439,7 +439,7 @@ public sealed class PilotCombatTests
         Assert.Equal(20, migrated.Set<ShipHealthState>().Single().ArmorDamage);
         Assert.Equal(2, migrated.Set<WorldNpc>().Count());
         Assert.Empty(migrated.Set<NpcBounty>());
-        Assert.Empty(migrated.Set<WeaponCooldown>());
+        Assert.Empty(migrated.Set<ModuleCooldown>());
     }
 
     [Fact]
@@ -474,7 +474,7 @@ public sealed class PilotCombatTests
         Assert.Throws<InvalidDataException>(() => f.Fire());
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Empty(saved.Set<ShipEnergy>());
-        Assert.Empty(saved.Set<WeaponCooldown>());
+        Assert.Empty(saved.Set<ModuleCooldown>());
         Assert.Equal(20, saved.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge);
     }
 }

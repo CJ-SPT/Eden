@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 22 migrates to version 23 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 23 migrates to version 24 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -270,6 +270,15 @@ Use a station with **Repair Facilities**, such as Perimeter II - Moon 1 - Caldar
 5. Restart the host and client on the same save. Compare health, wallet, journal, cargo and fitting. No money, repairs or shield refill are granted by migration or restart.
 
 The server recomputes damage at payment time and caps the charge at the current bill. An insufficient balance rejects the payment without healing. Packaged items, other pilots' property, ships elsewhere, ships in space and stations without repair facilities are rejected. Owned assembled modules currently quote zero damage because Eden does not yet simulate module heat/damage; station structures are outside this service.
+
+## Train and use a shield booster
+
+1. Dock at a station with a market and fitting service. Select **Eden Pilot**, open Inventory and verify the active ship. The starter market sells a **Shield Operation** skillbook for **5,000 ISK** and **Small Shield Booster I** for **1,000 ISK**. These prices and finite stocks are Eden policy.
+2. Buy the skillbook and find it in Item Hangar. Right-click **Inject Skill**. One book should disappear and Shield Operation should appear in the Skill Catalogue at level zero. A stack retains its unused books. Injection grants no SP, and an already injected skill cannot consume another book. Current-ship ordinary cargo also supports injection; remote hangars and specialized holds do not.
+3. Add Shield Operation I to the training queue and start it. Training uses the saved Alpha rate and requires Power Grid Management I. Wait for level I; restarting retains the queue and offline progress. Direct skill purchases from the Skill Catalogue are separate work: use the physical book path.
+4. Buy the booster. Use **Fit to Active Ship** or the station's circled ship **Fitting** button, then verify it is online in a medium slot. The existing high-slot miner and civilian gun must remain fitted. CPU and power grid include all online supported modules; the booster uses no turret hardpoint.
+5. Undock and take shield damage from a Rookie using the encounter steps above. Activate the booster on the HUD. It needs no target lock. Watch the shield ring, capacitor, cycling indicator and native shield effect. The unmodified small booster restores up to 26 HP immediately for 20 capacitor, with a 2-second cycle. At full shields it still spends capacitor. Manual deactivation finishes the paid cycle; insufficient capacitor rejects the next cycle without healing.
+6. Warp or dock to end NPC aggression. The shield booster is warp-safe and stops on docking or hull loss. Restart and compare fitting, health and capacitor; no offline boosts are granted. Shield Compensation modifies capacitor cost when trained. Module overheating, ancillary charges and other repair families are separate work.
 
 ## Check saved ship health
 
