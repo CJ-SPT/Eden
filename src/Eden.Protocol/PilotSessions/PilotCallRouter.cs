@@ -23,16 +23,23 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
     public AccountProfile Account { get; } = account;
     public IReadOnlyList<DockedPilot> Roster { get; set; } = roster;
     public FlightSession? ActiveFlight { get; private set; }
+    public DockedPilot? DestroyedShip { get; private set; }
     public FlightSession Flight => ActiveFlight ?? throw new InvalidOperationException("Select a pilot before entering flight.");
-    public void Select(DockedPilot pilot) => ActiveFlight = startFlight(pilot);
+    public void Select(DockedPilot pilot)
+    {
+        DestroyedShip = null;
+        ActiveFlight = startFlight(pilot);
+    }
     public void ChangeShip(DockedPilot pilot)
     {
+        DestroyedShip = null;
         ActiveFlight?.Dispose();
         ActiveFlight = startFlight(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
     public void ReplaceDestroyedShip(DockedPilot pilot)
     {
+        DestroyedShip = Pilot;
         Flight.ReplaceDestroyedShip(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
@@ -53,6 +60,7 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
 
     public void ReleaseLocationReferences()
     {
+        DestroyedShip = null;
         foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc", "repairSvc" }
             .Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray()))
         {

@@ -287,6 +287,20 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         long container = ShipContainer(service, pilot);
         if (container != 0)
         {
+            if (context.DestroyedShip is { } lost && lost.ShipId == container)
+            {
+                // During capsule adoption, holdTracker.OnCapacityChange can
+                // rebind the old cargo after invCache has discarded it. Supply
+                // an empty read for this session's just-lost hull, never assets
+                // or a writable inventory. Departure/boarding expires it.
+                return method switch
+                {
+                    "List" or "ListByFlags" => new List<object?>(),
+                    "GetSelfInvItem" => Item(new InventoryItem(lost.ShipId, lost.ShipTypeId, lost.PilotId,
+                        (long)InventoryLocation.Graveyard, (int)InventoryFlag.AutoFit, 1, lost.ShipGroupId, lost.ShipCategoryId, 0, true)),
+                    _ => new PilotCallRouter.Error("The ship was destroyed and its inventory is read-only."),
+                };
+            }
             var ship = fleet.Find(pilot.PilotId, container);
             if (ship is null || (container != pilot.ShipId && (pilot.Position is not null || ship.LocationId != pilot.StationId)))
             {
@@ -313,6 +327,8 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference("@hangar"),
             ("invbroker", "GetInventoryFromId") when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship &&
                 (id == pilot.ShipId || (pilot.Position is null && ship.LocationId == pilot.StationId)) => context.Reference($"{ShipInventoryPrefix}{id}"),
+            ("invbroker", "GetInventoryFromId") when args is [long id, ..] && context.DestroyedShip?.ShipId == id =>
+                context.Reference($"{ShipInventoryPrefix}{id}"),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference("@pilot"),
             ("@hangar" or "@ship", "List") => List(pilot, service, args),
             ("@pilot", "List") => new List<object?>(),

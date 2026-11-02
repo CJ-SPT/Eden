@@ -476,6 +476,59 @@ public sealed class NpcCombatTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void OldCargoRefreshDuringEjectionReadsAnEmptyInventoryAndNeverRestoresAssets(bool depart)
+    {
+        using Fixture f = new();
+        var old = f.Pilot;
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(1000001, old.Account, [old], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
+        context.Select(old);
+        object? Call(string service, string method, object?[] args) => router.Call(context, service, method, args, _ => { });
+        var previous = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
+        f.Aggress();
+        f.AlmostLost();
+        f.Clock.Milliseconds = 7500;
+        var capsule = f.Fire()!.Capsule!;
+        context.ReplaceDestroyedShip(capsule);
+        // The pinned holdTracker rebinds via this nested MachoBindObject call
+        // after session.shipid has changed but before its old controller retires.
+        var bound = Assert.IsType<object?[]>(Call("invbroker", "MachoBindObject",
+            [new object?[] { (long)capsule.SystemId, 5L }, new object?[] { "GetInventoryFromId", new object?[] { old.ShipId, 0L }, new Dictionary<string, object?>() }]));
+        var inventory = Assert.IsType<BlueObjectReference>(bound[1]);
+        Assert.Equal(previous, inventory);
+        string service = context.ResolveReference(inventory.Id)!;
+        Assert.Empty(Assert.IsType<List<object?>>(Call(service, "List", [(long)InventoryFlag.Cargo])));
+        Assert.Empty(Assert.IsType<List<object?>>(Call(service, "ListByFlags", [])));
+        var row = Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(Call(service, "GetSelfInvItem", [])).Arguments[1]);
+        Assert.Equal(old.ShipId, row[0]);
+        Assert.Equal((long)InventoryLocation.Graveyard, row[(int)InventoryColumn.Location]);
+        Assert.Equal(InventoryDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
+        Assert.IsType<PilotCallRouter.Error>(Call(service, "Add", [f.Module, capsule.ShipId]));
+        Assert.IsType<PilotCallRouter.Error>(Call(service, "MultiAdd", [new List<object?> { f.Module }, capsule.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, Call("invbroker", "GetInventoryFromId", [1000000000002L, 0L]));
+        if (depart)
+        {
+            context.ReleaseLocationReferences();
+        }
+        else
+        {
+            context.ChangeShip(capsule);
+        }
+        Assert.Null(context.DestroyedShip);
+        Assert.IsType<PilotCallRouter.Error>(Call(service, "List", []));
+        Assert.Same(PilotCallRouter.Unsupported, Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Null(saved.Ships.Find(old.ShipId));
+        Assert.Empty(saved.Set<OwnedItem>().Where(i => i.LocationId == old.ShipId));
+        Assert.Single(saved.Set<ShipLoss>());
+        Assert.Single(saved.Set<WorldWreck>());
+        Assert.Equal(capsule.ShipId, saved.Pilots.Find(old.PilotId)!.ActiveShipId);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall)
     {
         using Fixture f = new();
