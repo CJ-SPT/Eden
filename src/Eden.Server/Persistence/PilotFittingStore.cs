@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Protocol;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
@@ -38,12 +39,17 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity),
             ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
             ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),
+            ((int)DefenseSkill.Mechanics, DogmaAttributeId.StructureHitPoints),
+            ((int)DefenseSkill.HullUpgrades, DogmaAttributeId.ArmorHitPoints),
+            ((int)DefenseSkill.ShieldManagement, DogmaAttributeId.ShieldCapacity),
         })
         {
             attributes[output] = attributes.GetValueOrDefault(output) * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, skill));
         }
         attributes[DogmaAttributeId.CapacitorRechargeTime] = attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime) *
             (1 - InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, (int)FittingSkill.CapacitorSystemsOperation));
+        attributes[DogmaAttributeId.ShieldRechargeTime] = attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime) *
+            (1 - InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, (int)DefenseSkill.ShieldOperation));
         int targetLimit = TargetingDefinitions.BasePilotTargetLimit + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
             + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
         attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets), targetLimit);

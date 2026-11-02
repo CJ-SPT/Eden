@@ -30,7 +30,8 @@ internal static class Ballpark
             ["slims"] = items,
             ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
             ["droneState"] = new List<object?>(),
-            ["damageState"] = new Dictionary<long, object?>(),
+            ["damageState"] = peers.Prepend(own).Where(s => s.Health is not null)
+                .ToDictionary(s => s.Pilot.ShipId, s => (object?)s.Health!.DamageState()),
             ["effectStates"] = new List<object?>(),
             ["dbuffState"] = new Dictionary<long, object?>(),
             ["industryLevel"] = 0,
@@ -81,7 +82,9 @@ internal static class Ballpark
         writer.Write((byte)0); // AddBalls reads the full-state format in partial mode.
         writer.Write(stamp);
         var slim = WriteShip(writer, ship, stamp);
-        return [stream.ToArray(), new List<object?> { slim }, new Dictionary<long, object?>()];
+        var damage = new Dictionary<long, object?>();
+        if (ship.Health is not null) { damage[ship.Pilot.ShipId] = ship.Health.DamageState(); }
+        return [stream.ToArray(), new List<object?> { slim }, damage];
     }
 
     private static BlueInstance WriteShip(BinaryWriter writer, ShipContact ship, int stamp)

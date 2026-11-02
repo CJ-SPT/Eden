@@ -67,6 +67,7 @@ public enum DogmaAttributeId
     ShieldCapacity = 263,
     ShieldCharge = 264,
     ArmorHitPoints = 265,
+    ArmorDamage = 266,
     ArmorEmResonance = 267,
     ArmorExplosiveResonance = 268,
     ArmorKineticResonance = 269,

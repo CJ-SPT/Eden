@@ -222,7 +222,7 @@ public sealed class MiningTests
         Assert.Null(Activate());
         Assert.True(mining.IsActive(module));
         var inventoryHandler = new InventoryHandler(fixture.Clock, fixture.Inventory, fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Store, mining,
-            fixture.Db.Services.GetRequiredService<IPilotFleet>());
+            fixture.Db.Services.GetRequiredService<IPilotFleet>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotHealth>());
         var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
@@ -437,8 +437,8 @@ public sealed class MiningTests
     [Fact]
     public void CapacitorCurveAndSavedChargeUseCatalogSkillsAndSurviveMigration()
     {
-        Assert.Equal(25, MiningDefinitions.Recharged(25, 100, 10000, 0), 8);
-        Assert.InRange(MiningDefinitions.Recharged(0, 100, 10000, 10000), 98, 100);
+        Assert.Equal(25, ChargedResource.Recharged(25, 100, 10000, 0), 8);
+        Assert.InRange(ChargedResource.Recharged(0, 100, 10000, 10000), 98, 100);
         using Fixture fixture = new();
         var (context, _, _, module) = fixture.Client();
         long now = fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -461,7 +461,7 @@ public sealed class MiningTests
         Assert.Equal(2.1, attributes[DogmaAttributeId.MiningCriticalBonusYield], 8);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; PRAGMA user_version=15");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; PRAGMA user_version=15");
         }
         _ = new SqliteWorld(fixture.Db.Path);
         Assert.Equal(149.5, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);

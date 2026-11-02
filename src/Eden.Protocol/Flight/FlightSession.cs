@@ -1,3 +1,4 @@
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,7 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null) : IDisposable
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null, IPilotHealth? health = null) : IDisposable
 {
     private ShipContact[] _peers = [];
     private StaticSpaceObject[] _visibleAsteroids = [];
@@ -158,7 +159,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
         _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
-        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining);
+        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining,
+        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
 
     public void SetMiningEffect(MiningContact effect, bool active)
     {

@@ -39,16 +39,4 @@ public static class MiningDefinitions
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;
     public const double CriticalYieldBonusPerSkillLevel = 0.05;
-    // godma.CreateChargedAttribute divides recharge time by five; GetChargeValue
-    // evaluates this curve using elapsed milliseconds (build 3662168).
-    private const double RechargeTimeScale = 5;
-
-    public static double Recharged(double charge, double capacity, double rechargeMilliseconds, double elapsedMilliseconds)
-    {
-        if (capacity <= 0) { return 0; }
-        if (rechargeMilliseconds <= 0) { return capacity; }
-        double fraction = Math.Clamp(charge / capacity, 0, 1);
-        double root = 1 + (Math.Sqrt(fraction) - 1) * Math.Exp(-Math.Max(0, elapsedMilliseconds) * RechargeTimeScale / rechargeMilliseconds);
-        return capacity * root * root;
-    }
 }

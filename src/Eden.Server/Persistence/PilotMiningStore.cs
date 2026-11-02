@@ -48,7 +48,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
     private static double Charge(ShipEnergy? saved, IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now)
     {
         double capacity = attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity);
-        return saved is null ? capacity : MiningDefinitions.Recharged(saved.Charge, capacity,
+        return saved is null ? capacity : ChargedResource.Recharged(saved.Charge, capacity,
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime),
             Math.Max(0, (now - saved.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond));
     }

@@ -1,3 +1,4 @@
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
@@ -8,7 +9,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -17,7 +18,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
     {
         using PilotCallContext context = new(accountId, pilots.ReadAccount(accountId), pilots.ListPilots(accountId),
             pilot => new FlightSession(positions, pilot, clock, space, objects.Load(pilot.SystemId), inventory.List(pilot.PilotId, pilot.ShipId)
-                .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId)).ToArray(), docking), clientId, signedSettings);
+                .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId)).ToArray(), docking, health), clientId, signedSettings);
         bool initialStateSent = false;
         Task? checkpoint = null;
         while (true)

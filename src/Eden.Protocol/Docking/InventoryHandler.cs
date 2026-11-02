@@ -1,3 +1,4 @@
+using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -5,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -158,15 +159,13 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         var attributes = kind == "pilot" ? PilotProfile.TrainingAttributes() : fitting.ShipAttributes(pilot.PilotId).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         if (kind != "pilot")
         {
-            // The hull is undamaged; capacitor charge is saved and recharges over time.
-            attributes[(long)DogmaAttributeId.StructureHitPoints] = pilot.Hull.Structure;
+            var current = health.Read(pilot.PilotId, now);
+            attributes[(long)DogmaAttributeId.Damage] = current.Defense.Structure - current.Remaining.Structure;
+            attributes[(long)DogmaAttributeId.ArmorDamage] = current.Defense.Armor - current.Remaining.Armor;
             attributes[(long)DogmaAttributeId.CapacitorCharge] = mining.Capacitor(pilot.PilotId, now);
             attributes[(long)DogmaAttributeId.MaxVelocity] = (double)pilot.Flight.MaxSpeed;
             attributes[(long)DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
-            attributes[(long)DogmaAttributeId.ShieldCapacity] = pilot.Hull.Shield;
-            attributes[(long)DogmaAttributeId.ShieldCharge] = pilot.Hull.Shield;
-            attributes[(long)DogmaAttributeId.ArmorHitPoints] = pilot.Hull.Armor;
-            attributes[(long)DogmaAttributeId.ShieldRechargeTime] = pilot.Hull.ShieldRechargeTime;
+            attributes[(long)DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
         }
         return new()
         {
@@ -209,10 +208,13 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     {
         var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).ToArray();
         var shipInfo = PrimeItem(pilot, pilot.ShipId, "ship");
+        var current = health.Read(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Dictionary<long, object?> instances = new()
         {
             [pilot.PilotId] = new object?[] { pilot.PilotId, 0, 0, 0, 0, 0, 0, 0 },
-            [pilot.ShipId] = new object?[] { pilot.ShipId, 0, 0, mining.Capacitor(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 0, 0, pilot.Hull.Shield, 0 },
+            [pilot.ShipId] = new object?[] { pilot.ShipId, 0, current.Defense.Structure - current.Remaining.Structure,
+                mining.Capacitor(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 0,
+                current.Defense.Armor - current.Remaining.Armor, current.Remaining.Shield, 0 },
         };
         foreach (var module in modules)
         {

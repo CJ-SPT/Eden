@@ -207,6 +207,12 @@ Sales tax is currently pinned to the staged client's observed **7.5%** runtime f
 
 Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Venture assembly is the first supported purchased hull. Repackaging, assembled-ship sales and boarding in space remain unavailable.
 
+## Check saved ship health
+
+Combat encounters are still being integrated. For an isolated health acceptance fixture, start with a copy of the verified Venture save and let the server migrate it to world version 18. With the client stopped, add a `WorldShipHealth` row for the active Venture with `ShieldCharge=75`, `ArmorDamage=100`, `StructureDamage=100` and `UpdatedAt` set to the current Windows FILETIME. This is test damage, not damage earned through a working encounter. Keep the normal gameplay save separate.
+
+Select **Eden Pilot**, verify **prospector (Venture)** and its saved ore in Inventory, and open Fitting with the circled ship button. Expand Defense to check the trained maximum health values. Undock and hover over the three health rings. On the existing fixture (Mechanics III, Hull Upgrades II and Shield Management II), the client rounds the maximum values to 248 shield, 193 armor and 230 structure; the saved damage leaves 93 armor (48%) and 130 structure (57%). Shield charge should rise over time. Restart both host and client and compare the health rings again. Switching to another hull must retain damage on the original hull; that path also has automated coverage. There is no public damage RPC or repair service in this milestone.
+
 ## Check the character sheet
 
 Start a fresh client with `-Login` and select **Eden Pilot**. Open the sheet from the portrait on the left, or use the window restored at login. Under **Character → Home Station**, check the pilot name, birth date, Jita home station, and total SP. Click **Skills → Skill Catalogue**, filter to **My skills**, and select **Spaceship Command**. On a fresh save the Caldari pilot has Spaceship Command III and 384,047 total SP. Reopen the client after restarting the server to compare against the saved pilot.
