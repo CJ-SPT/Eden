@@ -1,6 +1,7 @@
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -75,6 +76,30 @@ public sealed class PilotServicesTests
         Assert.EndsWith(".ErrorResponse", packets.Single().Name);
     }
 
+    [Fact]
+    public async Task CreatorCanSelectItsNewCharacterByKeywordAndReadBackTheAvatar()
+    {
+        using TestWorld world = new();
+        TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 22, 8, 7, 30005305, 60015161, 606);
+        BlueInstance appearance = new("utillib.KeyVal", new Dictionary<string, object?>
+        {
+            ["appearance"] = new PaperDollRow("eve.common.script.paperDoll.paperDollDefinitions.AppearanceRow", [1L]),
+        });
+        BlueInstance portrait = new("utillib.KeyVal", new Dictionary<string, object?> { ["lightID"] = 15 });
+        var replies = await ExchangeAsync(world, 42,
+            Request("charUnboundMgr", "CreateCharacterWithDoll", ["New Pilot", 8, 7, 1, 64, appearance, portrait, 22, null, null]),
+            Request("charUnboundMgr", "SelectCharacterID", [], keywords: new() { ["charID"] = 90000003L, ["skipTutorial"] = true }),
+            Request("paperDollServer", "GetPaperDollData", [90000003L]),
+            Request("home_station", "get_home_station", []));
+        Assert.Equal(90000003L, Result(replies[0]));
+        Assert.EndsWith(".SessionChangeNotification", replies[1].Name);
+        Assert.Null(Result(replies[2]));
+        Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(Result(replies[3])));
+        var home = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
+        Assert.Equal(60015161L, home["id"]);
+        Assert.Equal(30005305L, home["solar_system_id"]);
+    }
+
     private static object? Result(BlueInstance packet)
     {
         var state = PilotLogin.Tuple(packet.State, 14);
@@ -107,10 +132,10 @@ public sealed class PilotServicesTests
     private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId)
         => ExchangeAsync(sessionId, Request(service, method, args));
 
-    private static BlueInstance Request(string? service, string method, object?[] args, object? objectId = null)
+    private static BlueInstance Request(string? service, string method, object?[] args, object? objectId = null, Dictionary<string, object?>? keywords = null)
     {
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
-        byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, new Dictionary<string, object?>() });
+        byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, keywords ?? new Dictionary<string, object?>() });
         return new("carbon.common.script.net.machoNetPacket.CallReq", new object?[]
         {
             6L, new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
@@ -122,6 +147,11 @@ public sealed class PilotServicesTests
     private static async Task<List<BlueInstance>> ExchangeAsync(long sessionId, params BlueInstance[] requests)
     {
         using TestWorld world = new();
+        return await ExchangeAsync(world, sessionId, requests);
+    }
+
+    private static async Task<List<BlueInstance>> ExchangeAsync(TestWorld world, long sessionId, params BlueInstance[] requests)
+    {
         using var scope = world.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         Queue<object?> input = new(requests);

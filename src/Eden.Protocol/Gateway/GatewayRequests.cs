@@ -18,6 +18,13 @@ public sealed class GatewayRequests(TimeProvider clock)
             // The stock client compares the untracked plan to UUID(int=0).
             PersonalPlans + "GetActiveRequest" => new GetActiveResponse { SkillPlan = new Identifier { Uuid = ByteString.CopyFrom(new byte[16]) } },
             PersonalPlans + "GetAllRequest" => new GetAllResponse(),
+            // Location Info reads the local corruption stage before drawing even a high-security system.
+            "eve_public.pirate.corruption.api.GetSystemInfoRequest" => new Corruption.GetSystemInfoResponse
+            {
+                TotalProgress = new Fraction { Denominator = 1 },
+                EveContribution = new Fraction { Denominator = 1 },
+                VanguardContribution = new Fraction { Denominator = 1 },
+            },
             _ => null,
         };
         var response = new Response

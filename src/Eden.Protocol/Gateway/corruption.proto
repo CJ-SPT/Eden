@@ -1,0 +1,12 @@
+syntax = "proto3";
+package eve_public.pirate.corruption.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Corruption";
+
+import "fraction.proto";
+
+message GetSystemInfoResponse {
+  eve_public.math.Fraction total_progress = 1;
+  eve_public.math.Fraction eve_contribution = 2;
+  eve_public.math.Fraction vanguard_contribution = 3;
+  uint32 stage = 4;
+}

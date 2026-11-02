@@ -7,11 +7,13 @@ namespace Eden.Protocol.Serialization;
 internal sealed record BlueInstance(string Name, object? State);
 // Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
 internal sealed record BlueConstructor(string Name, object?[] Arguments);
+internal sealed record PaperDollRow(string Name, object?[] Fields);
 internal sealed record BlueStream(byte[] Bytes);
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
 
 internal static class BlueMarshal
 {
+    private const string PaperDollNamespace = "eve.common.script.paperDoll.paperDollDefinitions.";
     private sealed record BlueGlobal(string Name);
 
     public static byte[] Encode(object? value)
@@ -125,6 +127,21 @@ internal static class BlueMarshal
             return ids.Cast<long>().ToHashSet();
         }
 
+        PaperDollRow ReadPaperDollRow(int depth)
+        {
+            // Carbon NEWOBJ stores (class, fields...) in a one-element tuple, then two empty iterators.
+            // The creator uses named tuples. Never resolve an incoming Python global as a callable.
+            if (Read(depth + 1) is not object?[] { Length: 1 } wrapper || wrapper[0] is not object?[] { Length: >= 2 } args ||
+                args[0] is not BlueGlobal type || !type.Name.StartsWith(PaperDollNamespace, StringComparison.Ordinal) ||
+                type.Name[PaperDollNamespace.Length..] is not ("AppearanceRow" or "ColorSelectionRow" or "ModifierRow" or "SculptingRow") ||
+                args.Skip(1).Any(field => field is not (null or long or double)) ||
+                reader.ReadByte() != 45 || reader.ReadByte() != 45)
+            {
+                throw new InvalidDataException("Unsupported Blue new-style object.");
+            }
+            return new(type.Name, args[1..]);
+        }
+
         object? Read(int depth)
         {
             if (depth > 32 || stream.Position >= end)
@@ -169,6 +186,7 @@ internal static class BlueMarshal
                 31 => true,
                 32 => false,
                 34 => ReadIdSet(depth),
+                35 => ReadPaperDollRow(depth),
                 36 => Array.Empty<object?>(),
                 37 => Items(1, depth),
                 38 => new List<object?>(),
@@ -279,6 +297,19 @@ internal static class BlueMarshal
                 }
 
                 writer.Write(bytes);
+                break;
+            case PaperDollRow row:
+                writer.Write((byte)35);
+                writer.Write((byte)37);
+                Write(writer, (object?[])[new BlueGlobal(row.Name), .. row.Fields]);
+                writer.Write((byte)45);
+                writer.Write((byte)45);
+                break;
+            case BlueGlobal global:
+                writer.Write((byte)2);
+                byte[] name = Encoding.ASCII.GetBytes(global.Name);
+                Size(writer, name.Length);
+                writer.Write(name);
                 break;
             case BlueConstructor constructor:
                 writer.Write((byte)34); // Reduce: (callable, arguments), followed by two empty iterators.

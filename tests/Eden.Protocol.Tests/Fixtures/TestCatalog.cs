@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,6 +6,38 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal static class TestCatalog
 {
+    public static void AddSchool(string path, int schoolId, int raceId, int bloodlineId, int systemId, int stationId, int hull, bool starterSpace = false)
+    {
+        using CatalogDbContext db = new(path, writable: true);
+        db.Database.ExecuteSqlRaw("CREATE VIEW IF NOT EXISTS records_client_schoolmap AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/schoolmap'");
+        db.Database.ExecuteSql($"INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES ({systemId},20000020,'School system')");
+        db.Database.ExecuteSql($"INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z) VALUES ({stationId},52678,1000035,{systemId},14,40009087,1,2,3)");
+        if (hull != 601)
+        {
+            db.Database.ExecuteSql($"INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES ({hull},'Starter ship',237,125,1163000,47)");
+            db.Database.ExecuteSql($"INSERT INTO TypeAttribute SELECT {hull},AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601");
+        }
+        Add("client/races", raceId, new { shipTypeID = hull, skills = new Dictionary<string, int> { ["3327"] = 3 } });
+        Add("client/bloodlines", bloodlineId, new { raceID = raceId });
+        // The first station in the list is deliberately in the wrong system.
+        Add("client/schools", schoolId, new
+        {
+            raceID = raceId,
+            corporationID = 1000044,
+            is_starter_space_school = starterSpace ? 1 : 0,
+            startingStations = starterSpace ? new[] { stationId } : new[] { 60003760, stationId }
+        });
+        if (!starterSpace)
+        {
+            Add("client/schoolmap", schoolId - 10, new { schoolID = schoolId, solarSystemID = systemId });
+        }
+
+        void Add(string dataset, int key, object value)
+        {
+            db.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord(Dataset,Key,Data) VALUES ({dataset},{key},{JsonSerializer.Serialize(value)})");
+        }
+    }
+
     public static void Create(string path)
     {
         using CatalogDbContext db = new(path, writable: true);
@@ -18,7 +51,8 @@ internal static class TestCatalog
             CREATE VIEW records_client_clonegrades AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/clonegrades';
             CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/requiredskillsfortypes';
             CREATE VIEW records_client_races AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/races';
-            CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber, 'Assembly Plant' AS Operation;
+            CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber, 'Assembly Plant' AS Operation
+                UNION ALL SELECT Id,NULL,1,NULL,NULL FROM Station WHERE Id <> 60003760;
             INSERT INTO Region(Id,Name) VALUES (10000002,'The Forge');
             INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000020,10000002,'Kimotoro');
             INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000142,20000020,'Jita');

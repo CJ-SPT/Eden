@@ -6,14 +6,17 @@ namespace Eden.Protocol.PilotSessions;
 [Injectable]
 internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCallHandler
 {
-    public object? Call(PilotCallContext context, string service, string method, object? arguments)
+    public object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords)
     {
         return (service, method) switch
         {
             ("machoNet", "GetServiceInfo") => new Dictionary<string, object?>(),
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.Flight.VisiblePilots()),
-            ("config", "GetMultiCorpTickerNamesEx") => new object?[] { new object?[] { "corporationID", "tickerName" }, new List<object?> { new object?[] { 1000044, "SWA" } } },
+            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.ActiveFlight?.VisiblePilots() ?? context.Roster),
+            ("config", "GetMultiCorpTickerNamesEx") when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids
+                => new object?[] { new object?[] { "corporationID", "tickerName" },
+                    (context.ActiveFlight?.VisiblePilots() ?? context.Roster).DistinctBy(p => p.CorpId)
+                        .Where(p => ids.Contains((long)p.CorpId)).Select(p => (object?)new object?[] { p.CorpId, p.CorporationTicker }).ToList() },
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => new List<object?>(),
             ("config", "GetAverageMarketPrices") => new Dictionary<long, object?>(),
             ("air_npe", "is_air_npe_enabled") => false,

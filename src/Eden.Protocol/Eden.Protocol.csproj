@@ -2,7 +2,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
     <PackageReference Include="Grpc.Tools" Version="2.85.0" PrivateAssets="all" />
-    <Protobuf Include="Gateway/envelope.proto;Gateway/plans.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/envelope.proto;Gateway/plans.proto;Gateway/fraction.proto;Gateway/corruption.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
   </ItemGroup>
 </Project>

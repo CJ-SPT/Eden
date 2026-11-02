@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Server.Catalog;
@@ -53,11 +54,24 @@ public sealed class SqliteWorld : IDockedWorld
         transaction.Commit();
     }
 
-    public DockedPilot? FindPilot(long accountId)
+    public AccountProfile ReadAccount(long accountId)
+    {
+        using WorldDbContext world = new(_database.Path);
+        return world.Set<Account>().Where(a => a.Id == accountId).Select(a => new AccountProfile(a.UserName, a.CreatedAt)).Single();
+    }
+
+    public IReadOnlyList<DockedPilot> ListPilots(long accountId)
+    {
+        using WorldDbContext world = new(_database.Path);
+        return world.Pilots.Where(p => p.AccountId == accountId).OrderBy(p => p.Id).Select(p => p.Id)
+            .ToArray().Select(id => FindPilot(accountId, id)!).ToArray();
+    }
+
+    public DockedPilot? FindPilot(long accountId, long? pilotId = null)
     {
         using WorldDbContext world = new(_database.Path);
         var pilot = world.Pilots.AsNoTracking().Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position)
-            .SingleOrDefault(p => p.AccountId == accountId);
+            .Where(p => p.AccountId == accountId && (pilotId == null || p.Id == pilotId)).OrderBy(p => p.Id).FirstOrDefault();
         if (pilot is null)
         {
             return null;
@@ -80,6 +94,10 @@ public sealed class SqliteWorld : IDockedWorld
             station.OperationId, station.OrbitId, station.X, station.Y, station.Z, ship.Name, type.Capacity!.Value,
             checked((int)Attribute(102)), flight, identity, hull, new(pilot.Account.UserName, pilot.Account.CreatedAt),
             new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt), ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
-            ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null);
+            ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null)
+        {
+            CorporationTicker = catalog.Set<SourceRecord>().Find("client/npccorporations", pilot.CorporationId.ToString(CultureInfo.InvariantCulture))
+                ?.Read<ClientNpccorporations>().TickerName ?? "",
+        };
     }
 }

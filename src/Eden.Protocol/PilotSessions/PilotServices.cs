@@ -13,15 +13,14 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
     public async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long accountId, long clientId, object?[] signedSettings, CancellationToken cancellationToken)
     {
-        DockedPilot pilot = pilots.FindPilot(accountId) ?? throw new InvalidDataException("Account has no active pilot.");
-        using FlightSession flight = new(positions, pilot, clock, space, objects.Load(pilot.SystemId));
-        PilotCallContext context = new(flight, clientId, signedSettings);
+        using PilotCallContext context = new(accountId, pilots.ReadAccount(accountId), pilots.ListPilots(accountId),
+            pilot => new FlightSession(positions, pilot, clock, space, objects.Load(pilot.SystemId)), clientId, signedSettings);
         bool initialStateSent = false;
         Task? checkpoint = null;
         while (true)
         {
             var incoming = read();
-            while (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue)
+            while (context.ActiveFlight is { } flight && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue))
             {
                 checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);
                 await Task.WhenAny(incoming, checkpoint);
@@ -39,7 +38,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     {
                         context.ReleaseLocationReferences();
                         await write(SessionChange(accountId, clientId, flight.Pilot, departure));
-                        report($"Ship {pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
+                        report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
                     }
                     if (flight.InBallpark)
                     {
@@ -84,8 +83,9 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             {
                 call = PilotLogin.Tuple(BlueMarshal.Decode(data), 4);
             }
-            catch (InvalidDataException)
+            catch (InvalidDataException error)
             {
+                report(error.Message);
                 // Optional client services send Python containers outside Eden's wire vocabulary.
                 // Reject this isolated RPC without dropping the pilot's authenticated flight.
                 await write(Response(state, "ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" }));
@@ -100,7 +100,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             string method = BlueMarshal.Text(call[1]);
             report($"Call {service}.{method}.");
             bool selected = context.Selected;
-            DockedPilot previous = flight.Pilot;
+            DockedPilot? previous = context.ActiveFlight?.Pilot;
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
             if (result is PilotCallRouter.Error || ReferenceEquals(result, PilotCallRouter.Unsupported))
             {
@@ -110,20 +110,21 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             }
             if (!selected && context.Selected)
             {
+                var pilot = context.Pilot;
                 skills.Advance(context);
                 await write(SessionChange(accountId, clientId, pilot));
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
-            if (previous.LocationId != flight.Pilot.LocationId)
+            if (previous is not null && previous.LocationId != context.Pilot.LocationId)
             {
-                await write(SessionChange(accountId, clientId, flight.Pilot, previous));
-                report($"Ship {pilot.ShipId} moved from {previous.LocationId} to {flight.Pilot.LocationId}.");
+                await write(SessionChange(accountId, clientId, context.Pilot, previous));
+                report($"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
             }
             await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(result) }));
-            if (service == "beyonce" && method == "MachoBindObject" && call[2] is object?[] { Length: 2 } bind && bind[1] is null && flight.Pilot.Position is not null)
+            if (service == "beyonce" && method == "MachoBindObject" && call[2] is object?[] { Length: 2 } bind && bind[1] is null && context.ActiveFlight?.Pilot.Position is not null)
             {
-                flight.Snapshot();
+                context.Flight.Snapshot();
             }
             await FlushFlightUpdatesAsync();
             await FlushNotificationsAsync();
@@ -140,7 +141,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
         async Task FlushFlightUpdatesAsync()
         {
-            if (flight.Updates.Count > 0)
+            if (context.ActiveFlight is { Updates.Count: > 0 } flight)
             {
                 await SendNotificationAsync("DoDestinyUpdate", [flight.Updates, false, null]);
                 flight.Updates.Clear();

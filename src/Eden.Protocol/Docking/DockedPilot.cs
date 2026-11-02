@@ -2,7 +2,8 @@ namespace Eden.Protocol.Docking;
 
 public interface IPilotLookup
 {
-    DockedPilot? FindPilot(long accountId);
+    AccountProfile ReadAccount(long accountId);
+    IReadOnlyList<DockedPilot> ListPilots(long accountId);
 }
 
 public interface IShipPositionStore
@@ -17,6 +18,7 @@ public sealed record DockedPilot(long PilotId, string Name, int CorpId, long Shi
     int HomeSystemId, int HomeConstellationId, int HomeRegionId, int OperationId, int OrbitId, double X, double Y, double Z, string ShipName, double CargoCapacity, int TurretSlots, FlightProperties Flight,
     StationIdentity Station, HullProperties Hull, AccountProfile Account, PilotProfile Profile, SpacePosition? Position = null, FlightSystem? CurrentSystem = null)
 {
+    public string CorporationTicker { get; init; } = "";
     public int SystemId => CurrentSystem?.Id ?? HomeSystemId;
     public int ConstellationId => CurrentSystem?.ConstellationId ?? HomeConstellationId;
     public int RegionId => CurrentSystem?.RegionId ?? HomeRegionId;

@@ -23,6 +23,8 @@ public sealed class Pilot
     public int AncestryId { get; set; }
     public int SchoolId { get; set; }
     public long CreatedAt { get; set; }
+    public byte[]? Appearance { get; set; }
+    public byte[]? Portrait { get; set; }
     public long ActiveShipId { get; set; }
     public Ship ActiveShip { get; set; } = null!;
 }
@@ -107,7 +109,9 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<TrainingLog>().HasIndex(e => new { e.PilotId, e.Time });
         model.Entity<Ship>().ToTable("WorldShip");
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
-        model.Entity<Pilot>().HasIndex(p => p.AccountId).IsUnique();
+        model.Entity<Pilot>().HasIndex(p => p.AccountId);
+        model.Entity<Pilot>().Property(p => p.Name).UseCollation("NOCASE");
+        model.Entity<Pilot>().HasIndex(p => p.Name).IsUnique();
         model.Entity<Pilot>().HasOne(p => p.ActiveShip).WithMany()
             .HasForeignKey(p => new { p.ActiveShipId, p.Id }).HasPrincipalKey(s => new { s.Id, s.OwnerId })
             .OnDelete(DeleteBehavior.Restrict);

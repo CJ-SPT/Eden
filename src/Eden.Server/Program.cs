@@ -41,7 +41,8 @@ internal static class Program
             return;
         }
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
-        using var services = ServerServices.Build(new WorldDatabase(Path.Combine(directory, "world.sqlite")));
+        string worldPath = args is ["--world", var save] ? Path.GetFullPath(save) : Path.Combine(directory, "world.sqlite");
+        using var services = ServerServices.Build(new WorldDatabase(worldPath));
         if (args is ["--prepare-login", ..] && OperatingSystem.IsWindows())
         {
             long accountId = args switch

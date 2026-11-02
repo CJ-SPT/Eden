@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 10 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 11 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -63,6 +63,12 @@ To enter character selection from the repository root, keep the server running i
 The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. Each local account can have one authenticated session at a time.
 
 After the source installation finishes downloading, run the preparation command again with the staged client closed. The ready marker checks the pinned binaries and successful copy. The main resource index can still have missing assets if the source was mid-download.
+
+## Create a pilot and check the first spawn
+
+Launch with `-Login`, choose **Add Character**, and complete the origin, portrait and name steps. Enter the game and skip the tutorial if offered. Check the location panel in the upper left, then compare the active ship in **Inventory** and the home station in **Character Sheet → Character → Home Station**. A Science & Trade Institute pilot starts in Amsen with an Ibis. A Federal Navy Academy pilot starts in Duripant with a Velator. After restarting the client and server, select the same character card and compare the location and ship.
+
+To test an existing save separately, stop the host, copy `world.sqlite` into a test directory beside a matching `catalog.sqlite`, and launch the host with `dotnet run --no-build --project src/Eden.Server -- --world "C:\path\to\test\world.sqlite"`. The usual client launch command connects to that host.
 
 ## Fly the Ibis
 

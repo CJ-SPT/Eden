@@ -6,7 +6,7 @@ namespace Eden.Protocol.PilotSessions;
 
 internal interface IPilotCallHandler
 {
-    object? Call(PilotCallContext context, string service, string method, object? arguments);
+    object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords);
 }
 
 internal interface ISelectedPilotCallHandler
@@ -14,12 +14,19 @@ internal interface ISelectedPilotCallHandler
     object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null);
 }
 
-internal sealed class PilotCallContext(FlightSession flight, long sessionId, object?[] signedSettings)
+internal sealed class PilotCallContext(long accountId, AccountProfile account, IReadOnlyList<DockedPilot> roster,
+    Func<DockedPilot, FlightSession> startFlight, long sessionId, object?[] signedSettings) : IDisposable
 {
-    public FlightSession Flight { get; } = flight;
+    public long AccountId { get; } = accountId;
+    public AccountProfile Account { get; } = account;
+    public IReadOnlyList<DockedPilot> Roster { get; set; } = roster;
+    public FlightSession? ActiveFlight { get; private set; }
+    public FlightSession Flight => ActiveFlight ?? throw new InvalidOperationException("Select a pilot before entering flight.");
+    public void Select(DockedPilot pilot) => ActiveFlight = startFlight(pilot);
+    public void Dispose() => ActiveFlight?.Dispose();
     public DockedPilot Pilot => Flight.Pilot;
     public object?[] SignedSettings { get; } = signedSettings;
-    public bool Selected { get; set; }
+    public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
     public List<(string Name, object?[] Arguments)> Notifications { get; } = [];
 
@@ -84,7 +91,7 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
     {
         foreach (var handler in accountHandlers)
         {
-            object? result = handler.Call(context, service, method, arguments);
+            object? result = handler.Call(context, service, method, arguments, keywords);
             if (!ReferenceEquals(result, Unsupported))
             {
                 return result;

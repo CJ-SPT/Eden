@@ -49,6 +49,9 @@ public sealed class WorldMigrationTests
         connection.Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
+            DROP INDEX IX_WorldPilot_Name;
+            ALTER TABLE WorldPilot DROP COLUMN Appearance;
+            ALTER TABLE WorldPilot DROP COLUMN Portrait;
             DROP TABLE WorldSkillQueue;
             DROP TABLE WorldSkillHistory;
             DROP TABLE WorldPilotSkill;
@@ -69,9 +72,38 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(11L, command.ExecuteScalar());
+        Assert.Equal(12L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
+    }
+
+    [Fact]
+    public void VersionElevenPreservesBothPilotsAndTheirProgressWhenOpeningExtraSlots()
+    {
+        using TestWorld db = new();
+        db.Store.SetPosition(1000000000001, new(5, 6, 7));
+        var pilot = db.Store.FindPilot(1000001);
+        var wing = db.Store.FindPilot(1000002);
+        using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            DROP INDEX IX_WorldPilot_Name;
+            DROP INDEX IX_WorldPilot_AccountId;
+            CREATE UNIQUE INDEX IX_WorldPilot_AccountId ON WorldPilot(AccountId);
+            ALTER TABLE WorldPilot DROP COLUMN Appearance;
+            ALTER TABLE WorldPilot DROP COLUMN Portrait;
+            UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
+            PRAGMA user_version=11;
+            """;
+        command.ExecuteNonQuery();
+        var migrated = new SqliteWorld(db.Path);
+        Assert.Equal(pilot, Assert.Single(migrated.ListPilots(1000001)));
+        Assert.Equal(wing, Assert.Single(migrated.ListPilots(1000002)));
+        command.CommandText = "SELECT Points FROM WorldPilotSkill WHERE PilotId=90000001";
+        Assert.Equal(12345L, command.ExecuteScalar());
+        command.CommandText = "SELECT [unique] FROM pragma_index_list('WorldPilot') WHERE name='IX_WorldPilot_AccountId'";
+        Assert.Equal(0L, command.ExecuteScalar());
     }
 
     [Fact]

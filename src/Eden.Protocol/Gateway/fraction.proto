@@ -1,0 +1,8 @@
+syntax = "proto3";
+package eve_public.math;
+option csharp_namespace = "Eden.Protocol.Gateway";
+
+message Fraction {
+  uint64 numerator = 1;
+  uint64 denominator = 2;
+}

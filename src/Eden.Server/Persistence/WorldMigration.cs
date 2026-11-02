@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 11)
+        if (version is < 0 or > 12)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -82,9 +82,19 @@ internal static class WorldMigration
                 CREATE INDEX IX_WorldSkillHistory_PilotId_Time ON WorldSkillHistory(PilotId,Time);
                 """);
         }
-        if (version < 11)
+        if (version is >= 6 and < 12)
         {
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=11");
+            world.Database.ExecuteSqlRaw("""
+                DROP INDEX IX_WorldPilot_AccountId;
+                CREATE INDEX IX_WorldPilot_AccountId ON WorldPilot(AccountId);
+                CREATE UNIQUE INDEX IX_WorldPilot_Name ON WorldPilot(Name COLLATE NOCASE);
+                ALTER TABLE WorldPilot ADD COLUMN Appearance BLOB;
+                ALTER TABLE WorldPilot ADD COLUMN Portrait BLOB;
+                """);
+        }
+        if (version < 12)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=12");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
@@ -121,22 +131,26 @@ internal static class WorldMigration
     {
         foreach (var group in world.Pilots.Select(p => new { p.Id, p.RaceId }).ToArray().GroupBy(p => p.RaceId))
         {
-            var levels = CatalogData.Client.Races.Get(catalog, group.Key).Skills
-                ?? throw new InvalidDataException($"Missing starting skills for race {group.Key}.");
-            foreach (var (key, level) in levels)
+            foreach (var pilot in group)
             {
-                int typeId = int.Parse(key, CultureInfo.InvariantCulture);
-                double rank = catalog.Set<TypeAttribute>().Single(a => a.ItemTypeId == typeId && a.AttributeId == 275).Value;
-                long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
-                foreach (var pilot in group)
-                {
-                    // Preserve higher progress in an existing save, including the version 9 development grant.
-                    world.Database.ExecuteSql($"""
-                        INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES ({pilot.Id},{typeId},{points})
-                        ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=MAX(Points,excluded.Points)
-                        """);
-                }
+                GrantStartingSkills(world, catalog, pilot.Id, group.Key);
             }
+        }
+    }
+
+    internal static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog, long pilotId, int raceId)
+    {
+        var levels = CatalogData.Client.Races.Get(catalog, raceId).Skills
+            ?? throw new InvalidDataException($"Missing starting skills for race {raceId}.");
+        foreach (var (key, level) in levels)
+        {
+            int typeId = int.Parse(key, CultureInfo.InvariantCulture);
+            double rank = catalog.Set<TypeAttribute>().Single(a => a.ItemTypeId == typeId && a.AttributeId == 275).Value;
+            long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
+            world.Database.ExecuteSql($"""
+                INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES ({pilotId},{typeId},{points})
+                ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=MAX(Points,excluded.Points)
+                """);
         }
     }
 
