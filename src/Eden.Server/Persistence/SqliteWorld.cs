@@ -12,7 +12,7 @@ public sealed record WorldDatabase(string Path)
 }
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SqliteWorld : IDockedWorld
+public sealed class SqliteWorld : IDockedWorld, IStationDocking
 {
     private readonly WorldDatabase _database;
 
@@ -58,6 +58,31 @@ public sealed class SqliteWorld : IDockedWorld
     {
         using WorldDbContext world = new(_database.Path);
         return world.Set<Account>().Where(a => a.Id == accountId).Select(a => new AccountProfile(a.UserName, a.CreatedAt)).Single();
+    }
+
+    public DockedPilot Dock(long pilotId, long shipId, int stationId)
+    {
+        using WorldDbContext world = new(_database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(_database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var destination = catalog.Set<Station>().Include(s => s.Type).SingleOrDefault(s => s.Id == stationId);
+        if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)
+        {
+            throw new InvalidDataException("Dock your active ship at an available station.");
+        }
+        int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        double shipRadius = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Radius ?? 0;
+        if (destination.SolarSystemId != system || new SpacePosition(position.X, position.Y, position.Z).DistanceTo(
+            new(destination.X, destination.Y, destination.Z)) > (destination.Type.Radius ?? 0) + shipRadius + DockingDefinitions.MaximumRange)
+        {
+            throw new InvalidDataException("The station is outside docking range.");
+        }
+        pilot.ActiveShip.StationId = stationId;
+        world.Positions.Remove(position);
+        world.SaveChanges();
+        transaction.Commit();
+        return FindPilot(pilot.AccountId, pilotId)!;
     }
 
     public IReadOnlyList<DockedPilot> ListPilots(long accountId)

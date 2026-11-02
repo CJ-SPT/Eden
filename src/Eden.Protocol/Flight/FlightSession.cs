@@ -6,10 +6,11 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects) : IDisposable
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null) : IDisposable
 {
     private ShipContact[] _peers = [];
     private StaticSpaceObject[] _visibleAsteroids = [];
+    private MiningContact[] _mining = [];
     private int _lastPeerSync;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
@@ -156,7 +157,27 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
         _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
-        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8);
+        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining);
+
+    public void SetMiningEffect(MiningContact effect, bool active)
+    {
+        _mining = _mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
+        MiningEffect(Pilot.ShipId, effect, active);
+        if (InBallpark) { space.Publish(Sample); }
+    }
+
+    public void RefreshModules(IReadOnlyList<InventoryItem> items) => modules = items.Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
+        .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId)).ToArray();
+
+    private void MiningEffect(long shipId, MiningContact effect, bool active) =>
+        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, effect.Target, null, "effects.Laser", false, active, active,
+            effect.Duration, 0, effect.StartedAt, 0, null);
+
+    private void RefreshMining(ShipContact ship, ShipContact? previous)
+    {
+        foreach (var effect in (previous?.Mining ?? []).Except(ship.Mining ?? [])) { MiningEffect(ship.Pilot.ShipId, effect, false); }
+        foreach (var effect in (ship.Mining ?? []).Except(previous?.Mining ?? [])) { MiningEffect(ship.Pilot.ShipId, effect, true); }
+    }
 
     private SpacePosition? FirstContact(SpacePosition start, SpacePosition end)
     {
@@ -205,6 +226,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
                 Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
+                RefreshMining(ship, null);
                 if (ship.Arriving)
                 {
                     ArrivalEffect(ship.Pilot.ShipId);
@@ -212,6 +234,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 // The client plays the arrival flash when it loads a ship already in warp.
                 continue;
             }
+            RefreshMining(ship, previous);
             if (ship.DepartureGate is long departure && previous.DepartureGate != departure)
             {
                 DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
@@ -266,6 +289,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         InBallpark = false;
         _peers = [];
         _visibleAsteroids = [];
+        _mining = [];
         space.Leave(Pilot.ShipId);
     }
 
@@ -333,6 +357,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         var visible = VisibleObjects();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
         Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers) } } });
+        foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
+        foreach (var peer in peers) { RefreshMining(peer, null); }
         if (_warp is not null || _warpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);
@@ -567,13 +593,16 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 _speedFraction = 0;
                 Update("Stop", Pilot.ShipId);
                 return null;
-            case "CmdDock" when arguments is [long station, long ship] && Pilot.SystemId == Pilot.HomeSystemId && station == Pilot.StationId && ship == Pilot.ShipId:
+            case "CmdDock" when arguments is [long station, long ship] && ship == Pilot.ShipId && station is > 0 and <= int.MaxValue &&
+                objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
                 position = Pilot.Position!;
-                if (DistanceToStation(position) > Pilot.Flight.StationRadius + Pilot.Flight.ShipRadius + 2500)
+                if (position.DistanceTo(destination.Position) > destination.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange ||
+                    (docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId)))
                 {
                     return PilotCallRouter.Unsupported;
                 }
-                SetPosition(null);
+                if (docking is not null) { Pilot = docking.Dock(Pilot.PilotId, ship, (int)station); }
+                else { SetPosition(null); }
                 LeaveSpace();
                 _direction = null;
                 _velocity = new(0, 0, 0);

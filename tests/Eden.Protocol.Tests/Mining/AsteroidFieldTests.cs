@@ -177,7 +177,7 @@ public sealed class AsteroidFieldTests
         var cargo = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)).Item;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldAsteroid; PRAGMA user_version=14");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; PRAGMA user_version=14");
         }
         _ = new SqliteWorld(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));

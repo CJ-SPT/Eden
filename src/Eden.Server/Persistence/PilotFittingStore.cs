@@ -30,17 +30,20 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     private static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         var attributes = Attributes(catalog, pilot.ActiveShip.TypeId);
-        // These four skills each grant five percent per trained level to their hull attribute.
+        // These skills each grant five percent per trained level to their hull attribute.
         foreach (var (skill, output) in new[]
         {
             ((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput),
             ((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput),
+            ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity),
             ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
             ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),
         })
         {
             attributes[output] = attributes.GetValueOrDefault(output) * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, skill));
         }
+        attributes[DogmaAttributeId.CapacitorRechargeTime] = attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime) *
+            (1 - InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, (int)FittingSkill.CapacitorSystemsOperation));
         int targetLimit = TargetingDefinitions.BasePilotTargetLimit + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
             + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
         attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets), targetLimit);

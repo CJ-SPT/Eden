@@ -88,20 +88,25 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         return changes;
     }
 
-    private static InventoryItem Read(CatalogDbContext catalog, OwnedItem item)
+    internal static InventoryItem Read(CatalogDbContext catalog, OwnedItem item)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
-        double volume = catalog.Set<SourceRecord>().Find("client/types", item.TypeId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientTypes>().Volume ?? throw new InvalidDataException($"Missing volume for item type {item.TypeId}.");
-        if (!double.IsFinite(volume) || volume < 0)
-        {
-            throw new InvalidDataException($"Invalid volume for item type {item.TypeId}.");
-        }
         return new(item.Id, item.TypeId, item.OwnerId, item.LocationId, item.FlagId, item.Quantity,
-            type.GroupId, type.Group.CategoryId, volume, item.Singleton, item.Online);
+            type.GroupId, type.Group.CategoryId, Volume(catalog, item.TypeId), item.Singleton, item.Online);
     }
 
-    private static long NextId(WorldDbContext world) => (world.Set<OwnedItem>().Max(i => (long?)i.Id) ?? InventoryDefinitions.FirstOwnedItemId) + 1;
+    internal static double Volume(CatalogDbContext catalog, int typeId)
+    {
+        double volume = catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture))
+            ?.Read<ClientTypes>().Volume ?? throw new InvalidDataException($"Missing volume for item type {typeId}.");
+        if (!double.IsFinite(volume) || volume < 0)
+        {
+            throw new InvalidDataException($"Invalid volume for item type {typeId}.");
+        }
+        return volume;
+    }
+
+    internal static long NextId(WorldDbContext world) => (world.Set<OwnedItem>().Max(i => (long?)i.Id) ?? InventoryDefinitions.FirstOwnedItemId) + 1;
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)
     {

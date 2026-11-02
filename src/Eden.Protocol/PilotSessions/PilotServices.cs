@@ -8,7 +8,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -16,7 +16,8 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
     public async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long accountId, long clientId, object?[] signedSettings, CancellationToken cancellationToken)
     {
         using PilotCallContext context = new(accountId, pilots.ReadAccount(accountId), pilots.ListPilots(accountId),
-            pilot => new FlightSession(positions, pilot, clock, space, objects.Load(pilot.SystemId)), clientId, signedSettings);
+            pilot => new FlightSession(positions, pilot, clock, space, objects.Load(pilot.SystemId), inventory.List(pilot.PilotId, pilot.ShipId)
+                .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId)).Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId)).ToArray(), docking), clientId, signedSettings);
         bool initialStateSent = false;
         Task? checkpoint = null;
         while (true)
@@ -49,6 +50,8 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                         await FlushFlightUpdatesAsync();
                     }
                     targeting.Advance(context);
+                    mining.Advance(context);
+                    await FlushFlightUpdatesAsync();
                     await FlushNotificationsAsync();
                     checkpoint = null;
                 }
@@ -108,6 +111,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             DockedPilot? previous = context.ActiveFlight?.Pilot;
             object? result = router.Call(context, service, method, call[2], report, call[3] as Dictionary<string, object?>);
             targeting.Advance(context);
+            mining.Advance(context);
             if (result is PilotCallRouter.UserError userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
@@ -132,6 +136,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
 
             if (previous is not null && previous.LocationId != context.Pilot.LocationId)
             {
+                context.ReleaseLocationReferences();
                 await write(SessionChange(accountId, clientId, context.Pilot, previous));
                 report($"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}.");
             }

@@ -1,5 +1,13 @@
 namespace Eden.Protocol.Docking;
 
+public enum InventoryCategory
+{
+    Station = 3,
+    Ship = 6,
+    Module = 7,
+    Asteroid = 25,
+}
+
 // Build 3662168: inventorycommon.const and dogma data in the pinned catalog.
 public enum InventoryFlag
 {
@@ -14,6 +22,7 @@ public enum DogmaAttributeId
 {
     IsOnline = 2,
     Damage = 3,
+    CapacitorNeed = 6,
     StructureHitPoints = 9,
     PowerOutput = 11,
     HighSlots = 14,
@@ -25,8 +34,11 @@ public enum DogmaAttributeId
     CpuOutput = 48,
     CpuLoad = 49,
     Cpu = 50,
+    MaxRange = 54,
     CapacitorRechargeTime = 55,
+    Duration = 73,
     MaxTargetRange = 76,
+    MiningAmount = 77,
     TurretSlotsLeft = 102,
     RequiredSkill1 = 182,
     RequiredSkill2 = 183,
@@ -49,6 +61,8 @@ public enum DogmaAttributeId
     RequiredSkill6Level = 1288,
     RequiredSkill5 = 1289,
     RequiredSkill6 = 1290,
+    MiningCriticalChance = 5967,
+    MiningCriticalBonusYield = 5969,
 }
 
 public enum InventoryColumn
@@ -63,12 +77,15 @@ public enum InventoryColumn
 public enum FittingSkill
 {
     PowerGridManagement = 3413,
+    CapacitorSystemsOperation = 3417,
+    CapacitorManagement = 3418,
     CpuManagement = 3426,
 }
 
 public enum DogmaEffect
 {
     Online = 16,
+    MiningLaser = 67,
 }
 
 public enum StationService

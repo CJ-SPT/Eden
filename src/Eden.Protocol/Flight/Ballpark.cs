@@ -128,7 +128,7 @@ internal static class Ballpark
         ibis["name"] = pilot.ShipName;
         ibis["charID"] = pilot.PilotId;
         ibis["corpID"] = pilot.CorpId;
-        ibis["modules"] = new List<object?>();
+        ibis["modules"] = (ship.Modules ?? []).Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId }).ToList();
         return Slim(ibis);
     }
 

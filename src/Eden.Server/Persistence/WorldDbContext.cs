@@ -80,6 +80,13 @@ public sealed class FlightPosition
     public double Z { get; set; }
 }
 
+public sealed class ShipEnergy
+{
+    public long ShipId { get; set; }
+    public double Charge { get; set; }
+    public long UpdatedAt { get; set; }
+}
+
 public sealed class WorldAsteroid
 {
     public long Id { get; set; }
@@ -116,6 +123,8 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<ShipEnergy>().ToTable("WorldShipEnergy", t => t.HasCheckConstraint("CK_ShipEnergy_Charge", "Charge >= 0")).HasKey(e => e.ShipId);
+        model.Entity<ShipEnergy>().HasOne<Ship>().WithMany().HasForeignKey(e => e.ShipId);
         model.Entity<WorldAsteroid>().ToTable("WorldAsteroid", t => t.HasCheckConstraint("CK_Asteroid_Quantity", "Quantity >= 0"));
         model.Entity<WorldAsteroid>().Property(a => a.Id).ValueGeneratedNever();
         model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);

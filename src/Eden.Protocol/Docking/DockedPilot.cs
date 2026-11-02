@@ -13,6 +13,16 @@ public interface IShipPositionStore
 
 public interface IDockedWorld : IPilotLookup, IShipPositionStore;
 
+public interface IStationDocking
+{
+    DockedPilot Dock(long pilotId, long shipId, int stationId);
+}
+
+public static class DockingDefinitions
+{
+    public const double MaximumRange = 2500;
+}
+
 public sealed record DockedPilot(long PilotId, string Name, int CorpId, long ShipId, int ShipTypeId,
     int ShipGroupId, int ShipCategoryId, int StationId, int StationTypeId, int StationOwnerId,
     int HomeSystemId, int HomeConstellationId, int HomeRegionId, int OperationId, int OrbitId, double X, double Y, double Z, string ShipName, double CargoCapacity, int TurretSlots, FlightProperties Flight,

@@ -148,7 +148,7 @@ public sealed class PilotFittingTests
         var moved = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)).Item;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE WorldAsteroid; PRAGMA user_version=13");
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; PRAGMA user_version=13");
         }
         _ = new SqliteWorld(db.Path);
         _ = new SqliteWorld(db.Path);

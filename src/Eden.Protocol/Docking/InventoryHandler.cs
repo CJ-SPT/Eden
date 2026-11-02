@@ -1,10 +1,11 @@
+using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
     private static readonly (string Name, int Type)[] s_columns =
@@ -77,25 +78,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
             foreach (var change in changes)
             {
-                // OnItemChange keys index the inventory DBRow, and values describe the old row.
-                Dictionary<long, object?> old = [];
-                if (change.Previous is not { } previous)
-                {
-                    old[(long)InventoryColumn.Quantity] = 0;
-                    old[(long)InventoryColumn.StackSize] = 0;
-                }
-                else
-                {
-                    if (previous.LocationId != change.Item.LocationId) { old[(long)InventoryColumn.Location] = previous.LocationId; }
-                    if (previous.FlagId != change.Item.FlagId) { old[(long)InventoryColumn.Flag] = previous.FlagId; }
-                    if (previous.Singleton != change.Item.Singleton) { old[(long)InventoryColumn.Singleton] = previous.Singleton ? 1 : 0; }
-                    if (previous.Quantity != change.Item.Quantity)
-                    {
-                        old[(long)InventoryColumn.Quantity] = previous.Quantity;
-                        old[(long)InventoryColumn.StackSize] = previous.Quantity;
-                    }
-                }
-                context.Notifications.Add(("OnItemChange", [Item(change.Item), old, null]));
+                NotifyItemChange(context, change);
             }
             if (changes.Any(c => InventoryDefinitions.IsHighSlot(c.Item.FlagId) || (c.Previous is not null && InventoryDefinitions.IsHighSlot(c.Previous.FlagId))))
             {
@@ -120,6 +103,33 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         }
     }
 
+    internal static void NotifyItemChange(PilotCallContext context, InventoryChange change)
+    {
+        // OnItemChange keys index the inventory DBRow; values describe the old row.
+        Dictionary<long, object?> old = [];
+        if (change.Previous is not { } previous)
+        {
+            // A new stack must enter the cached container. A quantity-only change
+            // updates capacity but does not insert an unknown item in invCache.
+            old[(long)InventoryColumn.Location] = 0L;
+            old[(long)InventoryColumn.Flag] = 0;
+            old[(long)InventoryColumn.Quantity] = 0;
+            old[(long)InventoryColumn.StackSize] = 0;
+        }
+        else
+        {
+            if (previous.LocationId != change.Item.LocationId) { old[(long)InventoryColumn.Location] = previous.LocationId; }
+            if (previous.FlagId != change.Item.FlagId) { old[(long)InventoryColumn.Flag] = previous.FlagId; }
+            if (previous.Singleton != change.Item.Singleton) { old[(long)InventoryColumn.Singleton] = previous.Singleton ? 1 : 0; }
+            if (previous.Quantity != change.Item.Quantity)
+            {
+                old[(long)InventoryColumn.Quantity] = previous.Quantity;
+                old[(long)InventoryColumn.StackSize] = previous.Quantity;
+            }
+        }
+        context.Notifications.Add(("OnItemChange", [Item(change.Item), old, null]));
+    }
+
     private BlueConstructor Item(DockedPilot pilot, string kind)
     {
         object?[] line = kind switch
@@ -137,17 +147,15 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         var attributes = kind == "pilot" ? PilotProfile.TrainingAttributes() : fitting.ShipAttributes(pilot.PilotId).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         if (kind != "pilot")
         {
-            // Undamaged, fully charged Ibis. The HUD reads these current values from godma.
+            // The hull is undamaged; capacitor charge is saved and recharges over time.
             attributes[(long)DogmaAttributeId.StructureHitPoints] = pilot.Hull.Structure;
-            attributes[(long)DogmaAttributeId.CapacitorCharge] = pilot.Hull.Capacitor;
+            attributes[(long)DogmaAttributeId.CapacitorCharge] = mining.Capacitor(pilot.PilotId, now);
             attributes[(long)DogmaAttributeId.MaxVelocity] = (double)pilot.Flight.MaxSpeed;
             attributes[(long)DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
-            attributes[(long)DogmaAttributeId.CapacitorRechargeTime] = pilot.Hull.RechargeTime;
             attributes[(long)DogmaAttributeId.ShieldCapacity] = pilot.Hull.Shield;
             attributes[(long)DogmaAttributeId.ShieldCharge] = pilot.Hull.Shield;
             attributes[(long)DogmaAttributeId.ArmorHitPoints] = pilot.Hull.Armor;
             attributes[(long)DogmaAttributeId.ShieldRechargeTime] = pilot.Hull.ShieldRechargeTime;
-            attributes[(long)DogmaAttributeId.CapacitorCapacity] = pilot.Hull.Capacitor;
         }
         return new()
         {
@@ -166,15 +174,21 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     private BlueInstance PrimeModule(DockedPilot pilot, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
+        var attributes = mining.ModuleAttributes(pilot.PilotId, module).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[(long)DogmaAttributeId.Damage] = 0d;
+        Dictionary<long, object?> effects = [];
+        if (module.Online)
+        {
+            effects[(long)DogmaEffect.Online] = new object?[] { module.Id, pilot.PilotId, pilot.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online, now, InventoryDefinitions.InfiniteEffectDuration, 0 };
+        }
+        if (miningEffects.ActiveEffect(pilot, module.Id) is { } active) { effects[(long)DogmaEffect.MiningLaser] = active; }
         return KeyVal(new()
         {
             ["itemID"] = module.Id,
             ["invItem"] = Item(module),
             ["attributes"] = attributes,
-            ["activeEffects"] = module.Online ? new Dictionary<long, object?> { [(long)DogmaEffect.Online] = new object?[] { module.Id, pilot.PilotId, pilot.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online, now, InventoryDefinitions.InfiniteEffectDuration, 0 } } : new Dictionary<long, object?>(),
+            ["activeEffects"] = effects,
             ["time"] = now,
             ["wallclockTime"] = now,
         });
@@ -187,7 +201,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         Dictionary<long, object?> instances = new()
         {
             [pilot.PilotId] = new object?[] { pilot.PilotId, 0, 0, 0, 0, 0, 0, 0 },
-            [pilot.ShipId] = new object?[] { pilot.ShipId, 0, 0, pilot.Hull.Capacitor, 0, 0, pilot.Hull.Shield, 0 },
+            [pilot.ShipId] = new object?[] { pilot.ShipId, 0, 0, mining.Capacitor(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 0, 0, pilot.Hull.Shield, 0 },
         };
         foreach (var module in modules)
         {
@@ -207,10 +221,11 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
 
     private void NotifyShipAttributes(PilotCallContext context)
     {
+        context.Flight.RefreshModules(inventory.List(context.Pilot.PilotId, context.Pilot.ShipId));
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         var changes = new[] { DogmaAttributeId.CpuLoad, DogmaAttributeId.PowerLoad, DogmaAttributeId.TurretSlotsLeft }
-            .Select(attribute => (object?)new object?[] { "OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)attribute, now, attributes[attribute], null }).ToList();
+            .Select(attribute => (object?)new object?[] { "OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)attribute, now, attributes[attribute], null, now }).ToList();
         context.Notifications.Add(("OnModuleAttributeChanges", [changes]));
     }
 
@@ -221,7 +236,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             _ = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             context.Notifications.Add(("OnGodmaShipEffect", [module, (int)DogmaEffect.Online, now, online, online,
-                new object?[] { module, context.Pilot.PilotId, ship, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online }, now, InventoryDefinitions.InfiniteEffectDuration, 0, null, null, false]));
+                new object?[] { module, context.Pilot.PilotId, ship, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online }, now, InventoryDefinitions.InfiniteEffectDuration, 0, null, null]));
             NotifyShipAttributes(context);
             return null;
         }

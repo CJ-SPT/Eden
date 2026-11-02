@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 14 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 15 migrates in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -90,7 +90,7 @@ While docked, select **Eden Pilot**, open **Inventory**, and verify **Ibis (Ibis
 3. Choose **Unfit**. The slot clears and the assembled miner appears in Item Hangar. Drag it back onto the empty slot.
 4. Restart the host and client. Open Fitting and check that the same module and its online state return.
 
-World version 14 adds assembled and online state to owned items without repeating the starter grant. This milestone supports mining lasers fitted or unfitted while docked; other module families, saved fitting templates, in-space online changes and mining activation remain separate work.
+World version 14 adds assembled and online state to owned items without repeating the starter grant. Mining lasers can be fitted or unfitted while docked; other module families, saved fitting templates and in-space online changes remain separate work. Civilian Miner activation on corvettes is described below.
 
 ## Fly two pilots in Jita
 
@@ -117,7 +117,7 @@ Start the two clients as above and undock both Ibises at the same station. On **
 3. On Pilot, choose **Unlock Target** from Wing's menu. The target portrait should disappear and Wing's indicator should clear.
 4. Lock Wing again, wait for completion, then dock Wing. Pilot should lose both Wing's Overview entry and target portrait while remaining in space.
 
-Eden checks range and target slots on the server, including pending locks. Long Range Targeting and Signature Analysis modify the hull's range and scan resolution. Target Management and Advanced Target Management increase the pilot's limit, capped by the hull. Locks are temporary connection state and do not survive logout. Mining cycles and weapon activation remain separate milestones.
+Eden checks range and target slots on the server, including pending locks. Long Range Targeting and Signature Analysis modify the hull's range and scan resolution. Target Management and Advanced Target Management increase the pilot's limit, capped by the hull. Locks are temporary connection state and do not survive logout. Weapon activation remains separate work.
 
 ## Warp within Jita and verify braking
 
@@ -148,7 +148,19 @@ Jita has no asteroid belts in the pinned catalog. Jump to Perimeter as above and
 3. Warp to a different belt. The previous target should clear, and the new field should appear without disconnecting the client. Use the Mining tab again to inspect its rocks.
 4. Stop near the second belt, restart the host and client, then compare the field, ore types and distances. The rocks retain their saved IDs, positions and quantities.
 
-World version 15 adds saved asteroid fields. The catalog supplies belt anchors and per-type counts; Eden generates the individual rocks on first use and saves them. Rocks within 250 km load into the local ballpark. Depleted rows remain saved so reopening a belt cannot replenish it. Mining-laser activation and collecting ore remain unimplemented.
+World version 15 adds saved asteroid fields. The catalog supplies belt anchors and per-type counts; Eden generates the individual rocks on first use and saves them. Rocks within 250 km load into the local ballpark. Depleted rows remain saved so reopening a belt cannot replenish it.
+
+## Mine and unload ore
+
+Fit an online **Civilian Miner** to the Ibis while docked, then visit a belt as above. Select Eden Pilot and check **Ibis (Ibis)** in Inventory. Leave cargo room for the ore.
+
+1. Lock a Veldspar or Scordite asteroid within the miner's **10 km** range. Activate the module on the ship HUD, or press **F1** when it occupies the first high slot. Watch the beam and active-module indicator.
+2. After its **10-second** cycle, look for the native mining message and an ore stack appearing in cargo. Further cycles add to that stack. Mining and Astrogeology increase yield; critical successes add bonus ore without consuming the bonus from the deposit.
+3. Press the module button again to stop manually. The elapsed part of the cycle returns whole ore units. Auto-repeat also stops when no unit fits in cargo, the deposit empties, capacitor is insufficient or the target is lost. Warp and logout cancel active mining; mining does not continue offline.
+4. Warp to a station, dock, and drag the ore from Ibis cargo into **Item Hangar**. Compare the quantity and used cargo space before and after unloading.
+5. Restart the host and client. Check that the ore remains in its saved cargo or hangar location. A depleted asteroid should remain absent when returning to its belt.
+
+World version 16 saves capacitor charge and its recharge timestamp. Charge regenerates while connected or offline, using the pinned client's curve and the pilot's capacitor skills. Activation currently supports the Civilian Miner on corvettes. Other miners, boosts, specialized mining holds, survey scans, reprocessing and selling ore remain separate work.
 
 ## Check the character sheet
 
