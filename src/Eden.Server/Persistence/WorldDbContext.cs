@@ -123,6 +123,10 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WorldNpc>().ToTable("WorldNpc", t =>
+            t.HasCheckConstraint("CK_Npc_Health", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0"));
+        model.Entity<WorldNpc>().HasIndex(n => n.BeltId);
+        model.Entity<WorldNpc>().HasIndex(n => n.SystemId);
         model.Entity<ShipHealthState>().ToTable("WorldShipHealth", t =>
             t.HasCheckConstraint("CK_ShipHealth_Values", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0")).HasKey(s => s.ShipId);
         model.Entity<ShipHealthState>().HasOne<Ship>().WithMany().HasForeignKey(s => s.ShipId);

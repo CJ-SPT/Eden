@@ -1,0 +1,70 @@
+using Eden.Protocol;
+using Eden.Protocol.Combat;
+using Eden.Protocol.Docking;
+using Eden.Protocol.Mining;
+using Eden.Server.Catalog;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.Server.Persistence;
+
+public sealed class WorldNpc
+{
+    public long Id { get; set; }
+    public int BeltId { get; set; }
+    public int SystemId { get; set; }
+    public int TypeId { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Z { get; set; }
+    public double ShieldCharge { get; set; }
+    public double ArmorDamage { get; set; }
+    public double StructureDamage { get; set; }
+    public long UpdatedAt { get; set; }
+    public long? DestroyedAt { get; set; }
+}
+
+[Injectable]
+internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
+{
+    public IReadOnlyList<NpcContact> List(int systemId, long now)
+    {
+        if (systemId != NpcEncounterDefinitions.PerimeterSystem) { return []; }
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        using var transaction = world.Database.BeginTransaction();
+        var belts = catalog.Set<Celestial>().Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)
+            .OrderBy(c => c.Id).ToArray();
+        if (belts.Length == 0) { return []; }
+        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == NpcEncounterDefinitions.GuristasRookieType);
+        var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == type.Id).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        var defense = ShipHealth.DefenseFrom(attributes);
+        foreach (var belt in belts)
+        {
+            // Keep defeated rows: reconnecting must not replace or heal an NPC.
+            if (world.Set<WorldNpc>().Any(n => n.BeltId == belt.Id)) { continue; }
+            world.Set<WorldNpc>().Add(new()
+            {
+                Id = checked(NpcEncounterDefinitions.FirstNpcId + belt.Id),
+                BeltId = belt.Id,
+                SystemId = systemId,
+                TypeId = type.Id,
+                X = belt.X + NpcEncounterDefinitions.AnchorOffset,
+                Y = belt.Y,
+                Z = belt.Z,
+                ShieldCharge = defense.Shield,
+                UpdatedAt = now,
+            });
+        }
+        world.SaveChanges();
+        var contacts = world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id)
+            .AsEnumerable().Select(n => n.TypeId != type.Id ? throw new InvalidDataException($"Unsupported saved NPC type {n.TypeId}.") :
+                new NpcContact(n.Id, n.TypeId, type.GroupId, type.Group.CategoryId, NpcEncounterDefinitions.GuristasCorporation,
+                type.Name, systemId, new(n.X, n.Y, n.Z), type.Mass ?? 0, (float)(type.Radius ?? 0),
+                (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity), (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility, NpcEncounterDefinitions.StationaryAgility),
+                new(n.Id, defense, new(ChargedResource.Recharged(n.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
+                    Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)),
+                    Math.Max(0, defense.Armor - n.ArmorDamage), Math.Max(0, defense.Structure - n.StructureDamage))))).ToArray();
+        transaction.Commit();
+        return contacts;
+    }
+}

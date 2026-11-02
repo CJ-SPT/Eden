@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 16 migrates to version 17 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 18 migrates to version 19 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -207,9 +207,15 @@ Sales tax is currently pinned to the staged client's observed **7.5%** runtime f
 
 Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Venture assembly is the first supported purchased hull. Repackaging, assembled-ship sales and boarding in space remain unavailable.
 
+## Check belt NPCs
+
+Select **Eden Pilot**, check the active ship in Inventory, undock and warp to **Perimeter II – Asteroid Belt 1**. The local encounter policy places one Guristas Rookie 3,500 m from each Perimeter belt anchor. It should appear as a red NPC in an Overview preset that includes **Minor Threat**. The existing Mining preset also showed it during acceptance. Right-click it and choose **Lock Target**; after the normal scan delay, its portrait and health rings should appear. **Look at** should render its native ship model. **Approach** should move toward it. Restart the host and client at the belt and verify the same NPC appears without a duplicate.
+
+The client displays the catalog's 3,000 ISK bounty, but this milestone does not yet fire weapons, retaliate or pay rewards. NPCs remain stationary and do not aggress arriving miners. Positions and health are saved. Reconnect does not regenerate defeated entries; respawn policy will be added with combat lifecycle handling.
+
 ## Check saved ship health
 
-Combat encounters are still being integrated. For an isolated health acceptance fixture, start with a copy of the verified Venture save and let the server migrate it to world version 18. With the client stopped, add a `WorldShipHealth` row for the active Venture with `ShieldCharge=75`, `ArmorDamage=100`, `StructureDamage=100` and `UpdatedAt` set to the current Windows FILETIME. This is test damage, not damage earned through a working encounter. Keep the normal gameplay save separate.
+Combat encounters are still being integrated. For an isolated health acceptance fixture, start with a copy of the verified Venture save and let the server migrate it to world version 18 or later. With the client stopped, add a `WorldShipHealth` row for the active Venture with `ShieldCharge=75`, `ArmorDamage=100`, `StructureDamage=100` and `UpdatedAt` set to the current Windows FILETIME. This is test damage, not damage earned through a working encounter. Keep the normal gameplay save separate.
 
 Select **Eden Pilot**, verify **prospector (Venture)** and its saved ore in Inventory, and open Fitting with the circled ship button. Expand Defense to check the trained maximum health values. Undock and hover over the three health rings. On the existing fixture (Mechanics III, Hull Upgrades II and Shield Management II), the client rounds the maximum values to 248 shield, 193 armor and 230 structure; the saved damage leaves 93 armor (48%) and 130 structure (57%). Shield charge should rise over time. Restart both host and client and compare the health rings again. Switching to another hull must retain damage on the original hull; that path also has automated coverage. There is no public damage RPC or repair service in this milestone.
 

@@ -44,6 +44,7 @@ public enum DogmaAttributeId
     MaxRange = 54,
     CapacitorRechargeTime = 55,
     DamageMultiplier = 64,
+    Agility = 70,
     Duration = 73,
     MaxTargetRange = 76,
     MiningAmount = 77,

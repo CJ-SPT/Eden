@@ -158,7 +158,7 @@ public sealed class PilotHealthTests
             world.Database.ExecuteSqlRaw("""
                 INSERT INTO WorldWallet VALUES (90000001,12345);
                 INSERT INTO WorldShipEnergy VALUES (1000000000001,17,134000000000000000);
-                DROP TABLE WorldShipHealth;
+                DROP TABLE WorldShipHealth; DROP TABLE WorldNpc;
                 PRAGMA user_version=17;
                 """);
         }

@@ -1,3 +1,4 @@
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Serialization;
@@ -7,6 +8,9 @@ namespace Eden.Protocol.Flight;
 internal static class Ballpark
 {
     internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
+        => Snapshot(own, stamp, objects, peers, []);
+
+    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, ShipContact[] peers, IReadOnlyList<NpcContact> npcs)
     {
         var pilot = own.Pilot;
         using MemoryStream stream = new();
@@ -23,6 +27,9 @@ internal static class Ballpark
         {
             items.Add(WriteShip(writer, peer, stamp));
         }
+        foreach (var npc in npcs) { items.Add(WriteNpc(writer, npc)); }
+        var damage = peers.Prepend(own).Where(s => s.Health is not null).Select(s => s.Health!).Concat(npcs.Select(n => n.Health))
+            .ToDictionary(s => s.ShipId, s => (object?)s.DamageState());
         return new("utillib.KeyVal", new Dictionary<string, object?>
         {
             ["state"] = stream.ToArray(),
@@ -30,8 +37,7 @@ internal static class Ballpark
             ["slims"] = items,
             ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
             ["droneState"] = new List<object?>(),
-            ["damageState"] = peers.Prepend(own).Where(s => s.Health is not null)
-                .ToDictionary(s => s.Pilot.ShipId, s => (object?)s.Health!.DamageState()),
+            ["damageState"] = damage,
             ["effectStates"] = new List<object?>(),
             ["dbuffState"] = new Dictionary<long, object?>(),
             ["industryLevel"] = 0,
@@ -43,7 +49,8 @@ internal static class Ballpark
     {
         // Rigid balls have only the formation ID after the common header. Asteroids
         // use local coordinates; global celestials remain selectable system-wide.
-        var flags = DestinyBallFlags.Massive | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
+        var flags = (body.GroupId == AsteroidDefinitions.BeltGroup ? DestinyBallFlags.None : DestinyBallFlags.Massive) |
+            (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
         WriteBallHeader(writer, body.Id, (byte)DestinyBallMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
         var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
@@ -85,6 +92,41 @@ internal static class Ballpark
         var damage = new Dictionary<long, object?>();
         if (ship.Health is not null) { damage[ship.Pilot.ShipId] = ship.Health.DamageState(); }
         return [stream.ToArray(), new List<object?> { slim }, damage];
+    }
+
+    internal static object?[] AddNpcs(IEnumerable<NpcContact> npcs, int stamp)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+        writer.Write((byte)0);
+        writer.Write(stamp);
+        var contacts = npcs.ToArray();
+        var slims = contacts.Select(n => (object?)WriteNpc(writer, n)).ToList();
+        return [stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => (object?)n.Health.DamageState())];
+    }
+
+    private static BlueInstance WriteNpc(BinaryWriter writer, NpcContact npc)
+    {
+        // Local, free, stationary entity ships use the same free-ball layout as
+        // player ships. EntityShip fits its graphics turret from the type catalog.
+        WriteBallHeader(writer, npc.Id, (byte)DestinyBallMode.Stop, npc.Radius, npc.Position,
+            (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive));
+        writer.Write(npc.Mass);
+        writer.Write((byte)0);
+        writer.Write(-1L);
+        writer.Write(npc.CorporationId);
+        writer.Write(-1);
+        writer.Write(npc.MaxSpeed);
+        WritePosition(writer, SpacePosition.Zero);
+        writer.Write(npc.Agility);
+        writer.Write(0f);
+        writer.Write((sbyte)-1);
+        var item = Item(npc.Id, npc.TypeId, npc.CorporationId, npc.GroupId, npc.CategoryId);
+        item["name"] = npc.Name;
+        item["corpID"] = npc.CorporationId;
+        item["charID"] = null;
+        item["modules"] = new List<object?>();
+        return Slim(item);
     }
 
     private static BlueInstance WriteShip(BinaryWriter writer, ShipContact ship, int stamp)

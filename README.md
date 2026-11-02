@@ -22,7 +22,7 @@ Mining income can buy a **Venture** for 10,000 ISK at the starter market. Assemb
 
 The Character Sheet opens for Eden Pilot and shows the Jita home station. Each local pilot has a saved account profile, pilot identity, and the starting skills for their race from the pinned catalog. Character selection and the Skill Catalogue show 384,047 SP for the seeded Caldari pilots. Pilots can queue injected skills, pause, resume, and retain training progress across a restart. The local gateway answers the personal plan list and tracked-plan lookup. See the [character-sheet service roadmap](docs/protocol.md#character-sheet-service-roadmap).
 
-Combat groundwork includes tested turret range/tracking accuracy and resistance-aware damage through shield, armor and structure. Ship health is saved per hull, shields recharge across restarts, and the client receives existing armor and structure damage. Mechanics, Hull Upgrades, Shield Management and Shield Operation affect health and recharge. Weapons and NPC encounters still require integration.
+Combat groundwork includes tested turret range/tracking accuracy and resistance-aware damage through shield, armor and structure. Ship health is saved per hull, shields recharge across restarts, and the client receives existing armor and structure damage. Mechanics, Hull Upgrades, Shield Management and Shield Operation affect health and recharge. One saved Guristas Rookie waits at each Perimeter belt; pilots can lock it, approach it and inspect its native model. Weapon fire, NPC retaliation, destruction and rewards still require integration.
 
 ## Local game data
 

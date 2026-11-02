@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 18)
+        if (version is < 0 or > 19)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -173,6 +173,18 @@ internal static class WorldMigration
                 """);
         }
         if (version < 18) { world.Database.ExecuteSqlRaw("PRAGMA user_version=18"); }
+        if (version is >= 6 and < 19)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE WorldNpc(Id INTEGER PRIMARY KEY AUTOINCREMENT, BeltId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                    TypeId INTEGER NOT NULL, X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, ShieldCharge REAL NOT NULL,
+                    ArmorDamage REAL NOT NULL, StructureDamage REAL NOT NULL, UpdatedAt INTEGER NOT NULL, DestroyedAt INTEGER,
+                    CONSTRAINT CK_Npc_Health CHECK(ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0));
+                CREATE INDEX IX_WorldNpc_BeltId ON WorldNpc(BeltId);
+                CREATE INDEX IX_WorldNpc_SystemId ON WorldNpc(SystemId);
+                """);
+        }
+        if (version < 19) { world.Database.ExecuteSqlRaw("PRAGMA user_version=19"); }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

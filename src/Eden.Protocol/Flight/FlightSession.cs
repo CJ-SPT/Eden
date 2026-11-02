@@ -7,11 +7,12 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null, IPilotHealth? health = null) : IDisposable
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null, IPilotHealth? health = null, INpcEncounters? encounters = null) : IDisposable
 {
     private ShipContact[] _peers = [];
     private StaticSpaceObject[] _visibleAsteroids = [];
     private MiningContact[] _mining = [];
+    private NpcContact[] _npcs = [];
     private int _lastPeerSync;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
@@ -47,12 +48,33 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
+        if (_npcs.FirstOrDefault(n => n.Id == id) is { } npc) { return new(id, npc.TypeId, npc.Position, npc.Radius); }
         return VisibleObjects().FirstOrDefault(o => o.Id == id && o.CategoryId == AsteroidDefinitions.Category) is { } asteroid
             ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius) : null;
     }
 
     private StaticSpaceObject[] VisibleObjects() => objects.Where(o => o.CategoryId != AsteroidDefinitions.Category ||
         (Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)).ToArray();
+
+    public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
+
+    private StaticSpaceObject? NavigationTarget(long id) => objects.FirstOrDefault(o => o.Id == id) ??
+        (_npcs.FirstOrDefault(n => n.Id == id) is { } npc ?
+            new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius) : null);
+
+    private NpcContact[] ReadNpcs() => Pilot.Position is not { } position ? [] :
+        (encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
+            .Where(n => n.SystemId == Pilot.SystemId && position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange).ToArray();
+
+    public void RefreshNpcs()
+    {
+        if (!InBallpark) { return; }
+        var current = ReadNpcs();
+        foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id)) { Update("RemoveBall", departed.Id, false); }
+        var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
+        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]); }
+        _npcs = current;
+    }
 
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
     {
@@ -187,7 +209,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         var delta = end - start;
         double lengthSquared = delta.Dot(delta);
         double earliest = double.PositiveInfinity;
-        foreach (var body in objects)
+        foreach (var body in objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
         {
             var radial = start - body.Position;
             double along = radial.Dot(delta);
@@ -293,6 +315,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _peers = [];
         _visibleAsteroids = [];
         _mining = [];
+        _npcs = [];
         space.Leave(Pilot.ShipId);
     }
 
@@ -326,7 +349,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         if (!InBallpark && Pilot.Position is { } position)
         {
             // A legacy save or a disconnect during warp can leave the ship inside a rigid body.
-            foreach (var body in objects)
+            foreach (var body in objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
             {
                 var radial = position - body.Position;
                 double surface = body.Radius + Pilot.Flight.ShipRadius;
@@ -358,8 +381,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _peers = peers;
         int stamp = Stamp;
         var visible = VisibleObjects();
+        _npcs = ReadNpcs();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers) } } });
+        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs) } } });
         foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
         foreach (var peer in peers) { RefreshMining(peer, null); }
         if (_warp is not null || _warpDestination is not null)
@@ -561,7 +585,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("GotoDirection", Pilot.ShipId, x, y, z);
                 Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
                 return null;
-            case "CmdFollowBall" when arguments is [long target, var distance] && objects.FirstOrDefault(o => o.Id == target) is { } follow &&
+            case "CmdFollowBall" when arguments is [long target, var distance] && NavigationTarget(target) is { } follow &&
                 distance is double or long:
                 double standOff = Convert.ToDouble(distance);
                 if (standOff is < 0 or > 1_000_000 || !double.IsFinite(standOff))

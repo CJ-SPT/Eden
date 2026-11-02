@@ -71,7 +71,11 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                     owner.Position?.Y ?? owner.Y, owner.Position?.Z ?? owner.Z, null,
                 }).Concat(ids.OfType<long>().Except(context.Flight.VisiblePilots().Select(p => p.ShipId)).Select(id => fleet.Find(pilot.PilotId, id))
                     .OfType<InventoryItem>().Where(ship => pilot.Position is null && ship.LocationId == pilot.StationId)
-                    .Select(ship => (object?)new object?[] { ship.Id, fleet.Name(pilot.PilotId, ship.Id), pilot.SystemId, pilot.X, pilot.Y, pilot.Z, null })).ToList(),
+                    .Select(ship => (object?)new object?[] { ship.Id, fleet.Name(pilot.PilotId, ship.Id), pilot.SystemId, pilot.X, pilot.Y, pilot.Z, null }))
+                    .Concat(context.Flight.VisibleNpcs.Where(n => ids.Contains(n.Id)).Select(n => (object?)new object?[]
+                    {
+                        n.Id, n.Name, n.SystemId, n.Position.X, n.Position.Y, n.Position.Z, null,
+                    })).ToList(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => new Dictionary<string, object?>(),
