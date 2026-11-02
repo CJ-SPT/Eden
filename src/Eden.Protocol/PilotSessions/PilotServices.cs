@@ -5,22 +5,22 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
 
-    public async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long clientId, object?[] signedSettings, CancellationToken cancellationToken)
+    public async Task RunAsync(Func<Task<object?>> read, Func<object?, Task> write, Action<string> report, long accountId, long clientId, object?[] signedSettings, CancellationToken cancellationToken)
     {
-        DockedPilot pilot = pilots.FindPilot(PilotLogin.UserId) ?? throw new InvalidDataException("Account has no active pilot.");
-        FlightSession flight = new(positions, pilot, clock);
+        DockedPilot pilot = pilots.FindPilot(accountId) ?? throw new InvalidDataException("Account has no active pilot.");
+        using FlightSession flight = new(positions, pilot, clock, space);
         PilotCallContext context = new(flight, clientId, signedSettings);
         bool initialStateSent = false;
         Task? checkpoint = null;
         while (true)
         {
             var incoming = read();
-            while (flight.Moving)
+            while (flight.Moving || flight.InBallpark)
             {
                 checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);
                 await Task.WhenAny(incoming, checkpoint);
@@ -28,6 +28,11 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 {
                     await checkpoint;
                     flight.Checkpoint();
+                    if (flight.InBallpark)
+                    {
+                        flight.RefreshPeers();
+                        await FlushFlightUpdatesAsync();
+                    }
                     checkpoint = null;
                 }
                 if (incoming.IsCompleted)
@@ -92,13 +97,13 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             }
             if (!selected && context.Selected)
             {
-                await write(SessionChange(clientId, pilot));
+                await write(SessionChange(accountId, clientId, pilot));
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
             if (previous.LocationId != flight.Pilot.LocationId)
             {
-                await write(SessionChange(clientId, flight.Pilot, previous));
+                await write(SessionChange(accountId, clientId, flight.Pilot, previous));
                 report($"Ship {pilot.ShipId} moved from {previous.LocationId} to {flight.Pilot.LocationId}.");
             }
             await write(Response(state, "CallRsp", 7, new object?[] { BlueMarshal.Encode(result) }));
@@ -106,6 +111,20 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             {
                 flight.Snapshot();
             }
+            await FlushFlightUpdatesAsync();
+            if (!initialStateSent && service == "machoNet" && method == "GetServiceInfo")
+            {
+                initialStateSent = true;
+                await write(new BlueInstance(PacketNamespace + "SessionInitialStateNotification", new object?[]
+                {
+                    18, Address(1, PilotLogin.NodeId, null, null), Address(2, clientId, null, null), accountId,
+                    new object?[] { clientId, 5, PilotLogin.AccountState(accountId) }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
+                }));
+            }
+        }
+
+        async Task FlushFlightUpdatesAsync()
+        {
             if (flight.Updates.Count > 0)
             {
                 // Broadcast -> service -> object-call layers each wrap the payload.
@@ -114,18 +133,9 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                 await write(new BlueInstance(PacketNamespace + "Notification", new object?[]
                 {
                     12, Address(1, PilotLogin.NodeId, null, null), Address(4, "DoDestinyUpdate", new List<object?> { clientId }, "clientID"),
-                    PilotLogin.UserId, new object?[] { payload }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
+                    accountId, new object?[] { payload }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
                 }));
                 flight.Updates.Clear();
-            }
-            if (!initialStateSent && service == "machoNet" && method == "GetServiceInfo")
-            {
-                initialStateSent = true;
-                await write(new BlueInstance(PacketNamespace + "SessionInitialStateNotification", new object?[]
-                {
-                    18, Address(1, PilotLogin.NodeId, null, null), Address(2, clientId, null, null), PilotLogin.UserId,
-                    new object?[] { clientId, 5, PilotLogin.AccountState() }, new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
-                }));
             }
         }
     }
@@ -150,14 +160,14 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
         };
     }
 
-    private static BlueInstance SessionChange(long clientId, DockedPilot pilot, DockedPilot? previous = null)
+    private static BlueInstance SessionChange(long accountId, long clientId, DockedPilot pilot, DockedPilot? previous = null)
     {
         var before = previous is null ? new Dictionary<string, object?>() : SessionFields(previous);
         var changes = SessionFields(pilot).Where(field => !Equals(before.GetValueOrDefault(field.Key), field.Value))
             .ToDictionary(field => field.Key, field => (object?)new object?[] { before.GetValueOrDefault(field.Key), field.Value });
         return new(PacketNamespace + "SessionChangeNotification", new object?[]
         {
-            16, Address(1, PilotLogin.NodeId, null, null), Address(2, clientId, null, null), PilotLogin.UserId,
+            16, Address(1, PilotLogin.NodeId, null, null), Address(2, clientId, null, null), accountId,
             new object?[] { clientId, new object?[] { 0, changes }, new List<object?>() },
             new Dictionary<string, object?>(), null, null, null, null, null, null, null, null,
         });

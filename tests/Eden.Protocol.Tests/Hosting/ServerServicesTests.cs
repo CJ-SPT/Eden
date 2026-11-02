@@ -28,7 +28,7 @@ public sealed class ServerServicesTests
     }
 
     [Fact]
-    public async Task MalformedLoginReleasesOccupiedPilotSlot()
+    public async Task MalformedLoginDoesNotOccupyAnAccount()
     {
         using TestWorld world = new();
         using var scope = world.Services.CreateScope();
@@ -43,16 +43,16 @@ public sealed class ServerServicesTests
         await PacketStream.ReadAsync(wire, timeout.Token);
         await PacketStream.WriteAsync(wire, Convert.FromHexString(
             "7E00000000140604E899020005F001080AC3F5285C8F0238400458E13700130A5632342E303140636370"), timeout.Token);
-        // A valid VK starts login and holds the gate while Eden waits for the key exchange.
+        // An incomplete key exchange has no authenticated account.
         await PacketStream.WriteAsync(wire, BlueMarshal.Encode(new object?[] { null, "VK", null }), timeout.Token);
         var gate = world.Services.GetRequiredService<PilotGate>();
-        while (!gate.IsOccupied)
-        {
-            await Task.Delay(10, timeout.Token);
-        }
         await PacketStream.WriteAsync(wire, BlueMarshal.Encode(null), timeout.Token);
         await serving;
-        Assert.True(gate.TryEnter());
-        gate.Leave();
+        Assert.True(gate.TryEnter(1000001));
+        Assert.True(gate.TryEnter(1000002));
+        Assert.False(gate.TryEnter(1000001));
+        gate.Leave(1000001);
+        Assert.True(gate.TryEnter(1000001));
+        Assert.False(gate.TryEnter(1000002));
     }
 }

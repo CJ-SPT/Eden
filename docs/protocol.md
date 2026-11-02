@@ -79,3 +79,15 @@ Automated checks passed separately. Restore and build succeeded without warnings
 **Automated checks.** With SDK 10.0.403, restore succeeded, the build produced zero warnings and errors, all 32 tests passed, and formatting verification passed. The production registrations share one SQLite world across pilot lookup and position writes and isolate sessions between connections. Loopback and packet tests cover admission after failed login, bound inventory calls, successful None replies, unsupported calls, and the order of flight notifications.
 
 **Staged Windows client, build 3662168.** Selecting Eden Pilot and opening Inventory showed **Ibis (Ibis)**. After undocking, Overview listed Jita Trade Hub at 453 m. Double-clicking open space accelerated the ship to an observed 267 m/s. **Stop My Ship** brought the HUD to 0.0 m/s at 924 m. Restarting the client and server restored the stopped ship at 924 m. Selecting **Dock** on the station returned the Ibis to the Caldari Navy Assembly Plant, where Inventory again showed **Ibis (Ibis)**. After the second restart, the host loaded pilot `90000001` at station `60003760` in ship `1000000000001`, and the client showed the same active Ibis in Inventory.
+
+## Two pilots in Jita, November 2, 2026
+
+World version 5 adds a second local account, Eden Wing, with its own pilot and Ibis. The signed ticket identifies the account. Both accounts can connect concurrently, and a second session for the same account is rejected.
+
+Each client receives its own ship as the ballpark ego. The initial snapshot includes other connected ships in the same system. Once the observer has bound the ballpark, Eden sends `AddBalls` when another ship appears and `RemoveBall` when it docks or disconnects. Movement and stop commands use the observing client's simulation tick.
+
+**Live observations on earlier revisions.** Both staged clients selected their own pilot and undocked in Jita. With Wing stopped, its Overview showed Eden Pilot moving from 1,687 m to 2,144 m. With Pilot stopped, its Overview showed Wing moving from 11 km to 12 km. That run exposed a speed discrepancy near the station hull. After correcting station contact and course updates, Wing observed Pilot at 294 m/s and later at rest 23 km away. Disconnecting Wing removed it from Pilot's Overview, but the displayed station range jumped. That prompted the switch to individual ship arrival and departure messages.
+
+**Automated checks on the committed revision.** Restore and build passed with zero warnings or errors, all 34 tests passed, and formatting verification passed. The flight tests cover peer arrival, course changes in both directions, departure, and stopping at the station surface.
+
+**Remaining live check.** Computer Use was stopped before the final revision could be exercised in both windows. Repeat the two-way flight, then disconnect one pilot and verify that only its ship disappears and the stationary observer's range to Jita Trade Hub stays steady.

@@ -7,12 +7,11 @@ namespace Eden.Protocol.PilotSessions;
 [Injectable(InjectionType.Scoped)]
 public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
 {
-    internal const int UserId = 1000001;
     private static long s_nextClientId = DateTime.UtcNow.Ticks;
     internal const long PlayerRole = 1L << 61;
     internal const int NodeId = 10001;
 
-    public async Task RunAsync(Stream stream, byte[] firstCommand, Action<string> report, CancellationToken cancellationToken, Action? authenticated = null)
+    public async Task RunAsync(Stream stream, byte[] firstCommand, Action<string> report, CancellationToken cancellationToken, Action<long>? authenticated = null)
     {
         object?[] vk = Tuple(BlueMarshal.Decode(firstCommand), 3);
         if (vk[0] is not null || BlueMarshal.Text(vk[1]) != "VK")
@@ -32,7 +31,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
         EncryptedPackets packets = new(stream, aes, cancellationToken);
         object?[] credentials = Tuple(await packets.ReadAsync(), 2);
         var fields = Fields(credentials[1]);
-        if (!identity.ValidateTicket(BlueMarshal.Text(fields["user_sso_token"])))
+        if (identity.ValidateTicket(BlueMarshal.Text(fields["user_sso_token"])) is not long accountId)
         {
             throw new InvalidDataException("Invalid or expired local login ticket.");
         }
@@ -63,10 +62,11 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
             throw new InvalidDataException("Client challenge response mismatch.");
         }
 
+        authenticated?.Invoke(accountId);
         long clientId = Interlocked.Increment(ref s_nextClientId);
         await packets.WriteAsync(new Dictionary<string, object?>
         {
-            ["session_init"] = AccountState(),
+            ["session_init"] = AccountState(accountId),
             ["session_id"] = clientId,
             ["sessionID"] = clientId,
             ["clientID"] = clientId,
@@ -74,7 +74,6 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
             ["computer_hash"] = "",
             ["client_hash"] = "Unknown",
         });
-        authenticated?.Invoke();
         report("Authenticated local pilot account; session established.");
 
         // Build 3662168 expects a signed Python 2.7 function body for its optional settings statistics.
@@ -82,12 +81,12 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
         byte[] settingsCode = BlueMarshal.Encode(Convert.FromHexString(
             "630000000000000000010000004300000073040000006900005328010000004E280000000028000000002800000000280000000074080000003C737472696E673E74080000003C6C616D6264613E010000007300000000"));
         byte[] settingsSignature = key.SignData(HashArgument(settingsCode), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        await session.RunAsync(packets.ReadAsync, packets.WriteAsync, report, clientId, [settingsCode, settingsSignature], cancellationToken);
+        await session.RunAsync(packets.ReadAsync, packets.WriteAsync, report, accountId, clientId, [settingsCode, settingsSignature], cancellationToken);
     }
 
-    internal static Dictionary<string, object?> AccountState() => new()
+    internal static Dictionary<string, object?> AccountState(long accountId) => new()
     {
-        ["userid"] = UserId,
+        ["userid"] = accountId,
         ["role"] = PlayerRole,
         ["languageID"] = "EN",
         ["userType"] = 1,

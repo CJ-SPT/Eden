@@ -12,7 +12,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         {
             ("machoNet", "GetServiceInfo") => new Dictionary<string, object?>(),
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.Pilot),
+            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.Flight.VisiblePilots()),
             ("config", "GetMultiCorpTickerNamesEx") => new object?[] { new object?[] { "corporationID", "tickerName" }, new List<object?> { new object?[] { 1000044, "SWA" } } },
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => new List<object?>(),
             ("config", "GetAverageMarketPrices") => new Dictionary<long, object?>(),
@@ -29,13 +29,13 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         };
     }
 
-    private static object?[] OwnerRows(object? arguments, DockedPilot pilot)
+    private static object?[] OwnerRows(object? arguments, IEnumerable<DockedPilot> pilots)
     {
         var ids = PilotLogin.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected owner IDs.");
         List<object?> rows = [];
-        foreach (object? id in ids)
+        foreach (var pilot in pilots)
         {
-            if (Equals(id, pilot.PilotId))
+            if (ids.Contains(pilot.PilotId))
             {
                 rows.Add(new object?[] { pilot.PilotId, pilot.Name, 1373, 1, null });
             }

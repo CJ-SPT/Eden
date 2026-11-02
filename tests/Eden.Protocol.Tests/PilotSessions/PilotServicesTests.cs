@@ -115,7 +115,7 @@ public sealed class PilotServicesTests
                 output.Add(Assert.IsType<BlueInstance>(packet));
                 return Task.CompletedTask;
             },
-            _ => { }, sessionId, [], CancellationToken.None));
+            _ => { }, 1000001, sessionId, [], CancellationToken.None));
         return output;
     }
 }

@@ -15,7 +15,7 @@ public sealed class DockedServicesTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        PilotCallContext context = new(new(db.Store, pilot, TimeProvider.System), 10, []) { Selected = true };
+        PilotCallContext context = new(new(db.Store, pilot, TimeProvider.System, new()), 10, []) { Selected = true };
         object?[] getHangar = ["GetInventory", new object?[] { 10004L, null }, new Dictionary<string, object?>()];
         var bind = Assert.IsType<object?[]>(router.Call(context, "invbroker", "MachoBindObject",
             new object?[] { new object?[] { (long)pilot.StationId, 15L }, getHangar }, _ => { }));
@@ -31,7 +31,7 @@ public sealed class DockedServicesTests
         Assert.Equal(pilot.ShipId, values[keys.IndexOf("itemID")]);
         Assert.Equal(pilot.StationId, values[keys.IndexOf("locationID")]);
         Assert.Equal(pilot.PilotId, values[keys.IndexOf("ownerID")]);
-        Assert.Null(new PilotCallContext(new(db.Store, pilot, TimeProvider.System), 11, []).ResolveReference(handle.Id));
+        Assert.Null(new PilotCallContext(new(db.Store, pilot, TimeProvider.System, new()), 11, []).ResolveReference(handle.Id));
         Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "invbroker", "MachoBindObject",
             new object?[] { new object?[] { (long)pilot.StationId + 1, 15L }, getHangar }, _ => { }));
     }

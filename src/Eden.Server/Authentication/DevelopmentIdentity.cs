@@ -24,7 +24,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
         return new RSACng(key);
     }
 
-    internal string Prepare(string root)
+    internal string Prepare(string root, long accountId)
     {
         if (!File.Exists(Path.Combine(root, ".eden-client-ready")))
         {
@@ -63,21 +63,28 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
             File.Move(temporary, path, overwrite: true);
         }
 
-        string claim = $"eden1.{clock.GetUtcNow().ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
+        string claim = $"eden2.{accountId}.{clock.GetUtcNow().ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
         return claim + "." + Convert.ToHexString(Key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
-    public bool ValidateTicket(string ticket)
+    public long? ValidateTicket(string ticket)
     {
         string[] parts = ticket.Split('.');
-        if (parts.Length != 4 || parts[0] != "eden1" || !long.TryParse(parts[1], out long timestamp) ||
-            timestamp < clock.GetUtcNow().ToUnixTimeSeconds() - 180 || timestamp > clock.GetUtcNow().ToUnixTimeSeconds() + 5 ||
-            parts[2].Length != 32 || parts[3].Length != Key.KeySize / 4 || !parts[3].All(Uri.IsHexDigit))
+        // Version 1 tickets identify the original account until their normal expiry.
+        long? account = parts switch
         {
-            return false;
+            ["eden1", _, _, _] or ["eden2", "1000001", _, _, _] => 1000001,
+            ["eden2", "1000002", _, _, _] => 1000002,
+            _ => null,
+        };
+        if (account is null || !long.TryParse(parts[^3], out long timestamp) ||
+            timestamp < clock.GetUtcNow().ToUnixTimeSeconds() - 180 || timestamp > clock.GetUtcNow().ToUnixTimeSeconds() + 5 ||
+            parts[^2].Length != 32 || parts[^1].Length != Key.KeySize / 4 || !parts[^1].All(Uri.IsHexDigit))
+        {
+            return null;
         }
 
-        return Key.VerifyData(Encoding.ASCII.GetBytes(string.Join('.', parts[..3])), Convert.FromHexString(parts[3]),
-            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        return Key.VerifyData(Encoding.ASCII.GetBytes(string.Join('.', parts[..^1])), Convert.FromHexString(parts[^1]),
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1) ? account : null;
     }
 }

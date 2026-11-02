@@ -1,10 +1,10 @@
 # Eden
 
-Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. The first playable milestone is one local pilot who can undock, fly a starter ship, dock, and return to the same ship after a restart.
+Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Two local pilots can fly together in Jita using separate Windows clients.
 
 ## Current status
 
-On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. A restart restores the same ship in its hangar or at its last saved position in space.
+On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis from Jita IV – Moon 4, fly on a heading, stop, and dock at the Caldari Navy Assembly Plant. **Eden Wing** has a separate account and Ibis at the same station. Each pilot can see the other ship move and stop in Overview. A restart restores each ship in its hangar or at its last saved position in space.
 
 ## Build and run
 
@@ -18,7 +18,7 @@ dotnet format --verify-no-changes --no-restore
 dotnet run --no-build --project src/Eden.Server
 ```
 
-The tests use fixtures and loopback sockets. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and first-flight acceptance results.
+The tests use fixtures and loopback sockets. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and flight and two-pilot acceptance results.
 
 ## Projects and conventions
 

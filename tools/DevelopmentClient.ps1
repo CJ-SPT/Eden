@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory)][string] $DevelopmentRoot,
     [string] $PrepareFrom,
     [switch] $Login,
+    [ValidateSet('Pilot', 'Wing')][string] $Pilot = 'Pilot',
     [switch] $Hidden
 )
 
@@ -59,15 +60,15 @@ Assert-ClientBuild $clientRoot
 $cache = Join-Path $root 'ResFiles'
 if (!(Test-Path -LiteralPath $cache -PathType Container)) { throw 'Missing staged resource cache.' }
 $bin = Join-Path $clientRoot 'bin64'
-$launchArgs = @('/noconsole', '/server:127.0.0.1', ('"/remotefilecachefolder=' + $cache + '"'), '/settingsprofile=Eden', '/triPlatform=dx11')
+$launchArgs = @('/noconsole', '/server:127.0.0.1', ('"/remotefilecachefolder=' + $cache + '"'), ('/settingsprofile=' + $(if ($Pilot -eq 'Wing') { 'EdenWing' } else { 'Eden' })), '/triPlatform=dx11')
 $start = [Diagnostics.ProcessStartInfo]::new((Join-Path $bin 'exefile.exe'))
 $start.WorkingDirectory = $bin
 $start.UseShellExecute = $false
 $start.WindowStyle = if ($Hidden) { 'Hidden' } else { 'Normal' }
 if ($Login) {
     $project = Join-Path $PSScriptRoot '../src/Eden.Server'
-    $ticket = & dotnet run --no-build --project $project -- --prepare-login $root
-    if ($LASTEXITCODE -or $ticket -notmatch '^eden1\.[0-9]+\.[A-F0-9]+\.[A-F0-9]+$') {
+    $ticket = & dotnet run --no-build --project $project -- --prepare-login $root $Pilot
+    if ($LASTEXITCODE -or $ticket -notmatch '^eden2\.100000[12]\.[0-9]+\.[A-F0-9]+\.[A-F0-9]+$') {
         throw 'Could not provision the development login. Build the solution first.'
     }
     $launchArgs += "/ssoToken=$ticket"

@@ -20,18 +20,25 @@ internal sealed class ClientConnection(PilotLogin login, PilotGate gate)
                 NetworkStream stream = client.GetStream();
                 await CompatibilityHandshake.ServeAsync(stream, Console.WriteLine, timeout.Token, async (command, token) =>
                 {
-                    if (!gate.TryEnter())
-                    {
-                        throw new InvalidDataException("The local pilot session is unavailable.");
-                    }
-
+                    long? admitted = null;
                     try
                     {
-                        await login.RunAsync(stream, command, Console.WriteLine, token, () => timeout.CancelAfter(Timeout.InfiniteTimeSpan));
+                        await login.RunAsync(stream, command, Console.WriteLine, token, accountId =>
+                        {
+                            if (!gate.TryEnter(accountId))
+                            {
+                                throw new InvalidDataException("This account is already connected.");
+                            }
+                            admitted = accountId;
+                            timeout.CancelAfter(Timeout.InfiniteTimeSpan);
+                        });
                     }
                     finally
                     {
-                        gate.Leave();
+                        if (admitted is long accountId)
+                        {
+                            gate.Leave(accountId);
+                        }
                     }
                 });
             }

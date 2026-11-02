@@ -3,8 +3,11 @@ using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock)
+internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space) : IDisposable
 {
+    private ShipContact[] _peers = [];
+    private int _lastPeerSync;
+    public bool InBallpark { get; private set; }
     private readonly long _start = clock.GetTimestamp();
     private double Elapsed => clock.GetElapsedTime(_start).TotalSeconds;
     private double _sampleTime;
@@ -45,7 +48,98 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             _direction = null;
             _velocity = new(0, 0, 0);
         }
+        if (StationContact(position, next) is { } contact)
+        {
+            SetPosition(contact);
+            Stop();
+            return;
+        }
         SetPosition(next);
+    }
+
+    private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
+        _approachPoint is null ? null : _followRange);
+
+    // Clip the complete checkpoint segment so even a delayed tick cannot cross the station.
+    private SpacePosition? StationContact(SpacePosition start, SpacePosition end)
+    {
+        double x = start.X - Pilot.X, y = start.Y - Pilot.Y, z = start.Z - Pilot.Z;
+        double dx = end.X - start.X, dy = end.Y - start.Y, dz = end.Z - start.Z;
+        double along = x * dx + y * dy + z * dz;
+        if (along >= 0)
+        {
+            return null;
+        }
+        const double radius = Ballpark.StationRadius + Ballpark.ShipRadius;
+        double lengthSquared = dx * dx + dy * dy + dz * dz;
+        double clearance = Math.Max(0, x * x + y * y + z * z - radius * radius);
+        double discriminant = along * along - lengthSquared * clearance;
+        if (discriminant <= 0)
+        {
+            return null;
+        }
+        double fraction = clearance / (-along + Math.Sqrt(discriminant));
+        return fraction <= 1 ? new(start.X + dx * fraction, start.Y + dy * fraction, start.Z + dz * fraction) : null;
+    }
+
+    public void RefreshPeers()
+    {
+        space.Publish(Sample);
+        var current = space.Peers(Pilot);
+        foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
+        {
+            Update("RemoveBall", departed.Pilot.ShipId, false);
+        }
+        // Destiny integrates the same course between changes. Occasionally reconcile drift.
+        bool reconcile = Stamp - _lastPeerSync >= 10;
+        foreach (var ship in current)
+        {
+            var previous = Array.Find(_peers, peer => peer.Pilot.ShipId == ship.Pilot.ShipId);
+            if (previous is null)
+            {
+                // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
+                Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
+                if (ship.Heading is not null)
+                {
+                    ApplyCourse(ship);
+                }
+                continue;
+            }
+            if (ship.Heading != previous.Heading || ship.SpeedFraction != previous.SpeedFraction ||
+                ship.FollowRange != previous.FollowRange || (reconcile && ship.Heading is not null) ||
+                (ship.Heading is null && ship.Pilot.Position != previous.Pilot.Position))
+            {
+                var position = ship.Pilot.Position!;
+                Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
+                ApplyCourse(ship);
+            }
+        }
+        if (reconcile)
+        {
+            _lastPeerSync = Stamp;
+        }
+        _peers = current;
+    }
+
+    public IEnumerable<DockedPilot> VisiblePilots() => space.Peers(Pilot).Select(ship => ship.Pilot).Prepend(Pilot);
+
+    private void LeaveSpace()
+    {
+        InBallpark = false;
+        _peers = [];
+        space.Leave(Pilot.ShipId);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Checkpoint();
+        }
+        finally
+        {
+            LeaveSpace();
+        }
     }
 
     private void SetPosition(SpacePosition? position)
@@ -64,21 +158,68 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     public void Snapshot()
     {
-        int stamp = Stamp;
-        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Pilot, stamp) } } });
-        if (_direction is { } heading)
+        var position = Pilot.Position!;
+        double separation = DistanceToStation(position);
+        const double surface = Ballpark.StationRadius + Ballpark.ShipRadius;
+        if (separation < surface - 0.01)
         {
-            Update("SetBallVelocity", Pilot.ShipId, _velocity.X, _velocity.Y, _velocity.Z);
-            if (_approachPoint is not null)
+            // Older worlds could save a ship inside the station. Recover just outside its hull.
+            double scale = (surface + 1) / Math.Max(separation, 1);
+            SetPosition(separation < 1 ? new(Pilot.X + surface + 1, Pilot.Y, Pilot.Z) :
+                new(Pilot.X + (position.X - Pilot.X) * scale, Pilot.Y + (position.Y - Pilot.Y) * scale,
+                    Pilot.Z + (position.Z - Pilot.Z) * scale));
+        }
+        InBallpark = true;
+        space.Publish(Sample);
+        Snapshot(space.Peers(Pilot));
+    }
+
+    private void Snapshot(ShipContact[] peers)
+    {
+        _peers = peers;
+        int stamp = Stamp;
+        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Pilot, stamp, peers) } } });
+        if (Moving)
+        {
+            ApplyCourse(Sample);
+        }
+        foreach (var peer in peers.Where(ship => ship.Heading is not null))
+        {
+            ApplyCourse(peer);
+        }
+    }
+
+    private void ApplyCourse(ShipContact ship)
+    {
+        long id = ship.Pilot.ShipId;
+        if (ship.Heading is null)
+        {
+            Update("Stop", id);
+        }
+        else
+        {
+            if (ship.FollowRange is double range)
             {
-                Update("FollowBall", Pilot.ShipId, Pilot.StationId, _followRange);
+                Update("FollowBall", id, ship.Pilot.StationId, range);
             }
             else
             {
-                Update("GotoDirection", Pilot.ShipId, heading.X, heading.Y, heading.Z);
+                Update("GotoDirection", id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z);
             }
-            Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
+            Update("SetSpeedFraction", id, ship.SpeedFraction);
         }
+        Update("SetBallVelocity", id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z);
+    }
+
+    private void Stop()
+    {
+        _direction = null;
+        _approachPoint = null;
+        _velocity = new(0, 0, 0);
+        var position = Pilot.Position!;
+        Update("Stop", Pilot.ShipId);
+        Update("SetBallPosition", Pilot.ShipId, position.X, position.Y, position.Z);
+        Update("SetBallVelocity", Pilot.ShipId, 0d, 0d, 0d);
     }
 
     private void Update(string method, params object?[] args) =>
@@ -89,7 +230,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         if (service == "ship" && method == "Undock" && Pilot.Position is null &&
             arguments is [long id, ..] && id == Pilot.ShipId)
         {
-            SetPosition(new(Pilot.X + Ballpark.StationRadius + 500, Pilot.Y, Pilot.Z));
+            // Separate the two local launch lanes even on simultaneous undocks.
+            double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
+            SetPosition(new(Pilot.X + Ballpark.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
             return null;
         }
         if (service != "beyonce" || Pilot.Position is not { } position)
@@ -164,13 +307,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 return null;
             case "CmdStop":
                 Checkpoint();
-                _direction = null;
-                _approachPoint = null;
-                _velocity = new(0, 0, 0);
-                position = Pilot.Position!;
-                Update("Stop", Pilot.ShipId);
-                Update("SetBallPosition", Pilot.ShipId, position.X, position.Y, position.Z);
-                Update("SetBallVelocity", Pilot.ShipId, 0d, 0d, 0d);
+                Stop();
                 return null;
             case "CmdDock" when arguments is [long station, long ship] && station == Pilot.StationId && ship == Pilot.ShipId:
                 Checkpoint();
@@ -180,6 +317,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                     return PilotCallRouter.Unsupported;
                 }
                 SetPosition(null);
+                LeaveSpace();
                 _direction = null;
                 _velocity = new(0, 0, 0);
                 _approachPoint = null;

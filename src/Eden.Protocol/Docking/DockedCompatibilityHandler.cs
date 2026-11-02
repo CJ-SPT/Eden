@@ -59,8 +59,11 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock) : ISelected
             ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new object?[]
             {
                 new object?[] { "locationID", "locationName", "solarSystemID", "x", "y", "z", "locationNameID" },
-                ids.Contains(pilot.ShipId) ? new List<object?> { new object?[] { pilot.ShipId, pilot.ShipName, pilot.SystemId,
-                    pilot.Position?.X ?? pilot.X, pilot.Position?.Y ?? pilot.Y, pilot.Position?.Z ?? pilot.Z, null } } : new List<object?>(),
+                context.Flight.VisiblePilots().Where(owner => ids.Contains(owner.ShipId)).Select(owner => (object?)new object?[]
+                {
+                    owner.ShipId, owner.ShipName, owner.SystemId, owner.Position?.X ?? owner.X,
+                    owner.Position?.Y ?? owner.Y, owner.Position?.Z ?? owner.Z, null,
+                }).ToList(),
             },
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") or ("@skills", "GetSkills") => new Dictionary<string, object?>(),

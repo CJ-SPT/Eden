@@ -46,7 +46,7 @@ To enter character selection from the repository root, keep the server running i
 .\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login
 ```
 
-The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. A single authenticated pilot can be connected at once.
+The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. Each local account can have one authenticated session at a time.
 
 After the source installation finishes downloading, run the preparation command again with the staged client closed. The ready marker checks the pinned binaries and successful copy. The main resource index can still have missing assets if the source was mid-download.
 
@@ -58,3 +58,19 @@ After the source installation finishes downloading, run the preparation command 
 4. To check space persistence, note the range, close the client, restart Eden, and launch the client with `-Login`. Select the pilot and compare the range.
 5. Select the station in Overview and click **Dock** in Selected Item. From outside docking range, allow time for the approach. Once inside, open Inventory and check **Ibis (Ibis)**.
 6. Restart Eden and the client again. Select **Eden Pilot** and verify the station label, ship and active inventory entry match the previous session.
+
+## Fly two pilots in Jita
+
+Start one server. From the repository root, launch both clients against it.
+
+```powershell
+.\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login
+.\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login -Pilot Wing
+```
+
+Select **Eden Pilot** in the first client and **Eden Wing** in the second. Each account has its own ship and settings profile. Windowed mode makes it easier to switch between them. Undock either ship that is still in the station.
+
+1. In each client's **General** Overview, find the other pilot by name and confirm the type is **Ibis**.
+2. Leave Wing stopped. Fly Pilot into open space, switch to Wing, and watch Pilot's velocity and range. Stop Pilot and check that Wing sees zero velocity.
+3. Reverse the roles. Keep Pilot stationary while Wing flies, then stop Wing and compare the final range.
+4. Close one client or dock its ship. The other pilot should remain in space and the departed ship should disappear from Overview.

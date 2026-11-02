@@ -22,7 +22,8 @@ public sealed class WorldTests
         Assert.Equal(1, command.ExecuteNonQuery());
         SqliteWorld reopened = new(db.Path);
         Assert.Equal(pilot with { Name = "Persisted" }, reopened.FindPilot(1000001));
-        Assert.Null(reopened.FindPilot(1000002));
+        Assert.Equal(1000000000002L, reopened.FindPilot(1000002)!.ShipId);
+        Assert.Null(reopened.FindPilot(1000003));
         command.CommandText = "SELECT count(*) FROM ship WHERE owner=90000001";
         Assert.Equal(1L, command.ExecuteScalar());
     }

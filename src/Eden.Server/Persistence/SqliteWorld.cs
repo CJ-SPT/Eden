@@ -45,7 +45,7 @@ public sealed class SqliteWorld : IDockedWorld
                 """;
             command.ExecuteNonQuery();
         }
-        else if (version is not (0 or 3 or 4))
+        else if (version is not (0 or 3 or 4 or 5))
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -56,6 +56,16 @@ public sealed class SqliteWorld : IDockedWorld
                 CREATE TABLE flight (ship INTEGER PRIMARY KEY REFERENCES ship(id),
                     x REAL NOT NULL, y REAL NOT NULL, z REAL NOT NULL);
                 PRAGMA user_version = 4;
+                """;
+            command.ExecuteNonQuery();
+        }
+        if (version < 5)
+        {
+            command.CommandText = """
+                INSERT INTO account VALUES (1000002);
+                INSERT INTO pilot VALUES (90000002,1000002,'Eden Wing',1000044,1000000000002);
+                INSERT INTO ship VALUES (1000000000002,90000002,601,60003760,'Wing Ibis');
+                PRAGMA user_version = 5;
                 """;
             command.ExecuteNonQuery();
         }

@@ -11,41 +11,26 @@ internal static class Ballpark
     internal const float Agility = 4.5f;
     internal const float MaxSpeed = 295;
 
-    internal static BlueInstance Snapshot(DockedPilot pilot, int stamp)
+    internal static BlueInstance Snapshot(DockedPilot pilot, int stamp, params ShipContact[] peers)
     {
-        SpacePosition ship = pilot.Position!;
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE
         writer.Write(stamp);
         WriteBallHeader(writer, pilot.StationId, 11, StationRadius, new(pilot.X, pilot.Y, pilot.Z), 2 | 4);
         writer.Write((sbyte)-1); // Rigid balls have only a formation ID after the flags.
-        WriteBallHeader(writer, pilot.ShipId, 2, ShipRadius, ship, 1 | 4 | 8);
-        writer.Write(Mass);
-        writer.Write((byte)0); // Uncloaked
-        writer.Write(-1L); // Force-field harmonic
-        writer.Write(pilot.CorpId);
-        writer.Write(-1);
-        writer.Write(MaxSpeed);
-        writer.Write(0d);
-        writer.Write(0d);
-        writer.Write(0d);
-        writer.Write(Agility); // Agility
-        writer.Write(0f); // Stopped on entry or reconnect
-        writer.Write((sbyte)-1);
-
         var station = Item(pilot.StationId, pilot.StationTypeId, pilot.StationOwnerId, 15, 3);
-        var ibis = Item(pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.ShipGroupId, pilot.ShipCategoryId);
-        ibis["name"] = pilot.ShipName;
-        ibis["charID"] = pilot.PilotId;
-        ibis["corpID"] = pilot.CorpId;
-        ibis["modules"] = new List<object?>();
         station["corpID"] = pilot.StationOwnerId;
+        List<object?> items = [Slim(station), WriteShip(writer, pilot, new(0, 0, 0))];
+        foreach (var peer in peers)
+        {
+            items.Add(WriteShip(writer, peer.Pilot, peer.Velocity));
+        }
         return new("utillib.KeyVal", new Dictionary<string, object?>
         {
             ["state"] = stream.ToArray(),
             ["ego"] = pilot.ShipId,
-            ["slims"] = new List<object?> { Slim(station), Slim(ibis) },
+            ["slims"] = items,
             ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
             ["droneState"] = new List<object?>(),
             ["damageState"] = new Dictionary<long, object?>(),
@@ -54,6 +39,40 @@ internal static class Ballpark
             ["industryLevel"] = 0,
             ["researchLevel"] = 0,
         });
+    }
+
+    internal static object?[] AddShip(ShipContact ship, int stamp)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+        writer.Write((byte)0); // AddBalls reads the full-state format in partial mode.
+        writer.Write(stamp);
+        var slim = WriteShip(writer, ship.Pilot, ship.Velocity);
+        return [stream.ToArray(), new List<object?> { slim }, new Dictionary<long, object?>()];
+    }
+
+    private static BlueInstance WriteShip(BinaryWriter writer, DockedPilot pilot, SpacePosition velocity)
+    {
+        WriteBallHeader(writer, pilot.ShipId, 2, ShipRadius, pilot.Position!, 1 | 4 | 8);
+        writer.Write(Mass);
+        writer.Write((byte)0); // Uncloaked
+        writer.Write(-1L); // Force-field harmonic
+        writer.Write(pilot.CorpId);
+        writer.Write(-1);
+        writer.Write(MaxSpeed);
+        writer.Write(velocity.X);
+        writer.Write(velocity.Y);
+        writer.Write(velocity.Z);
+        writer.Write(Agility); // Agility
+        writer.Write(0f); // Stopped on entry or reconnect
+        writer.Write((sbyte)-1);
+
+        var ibis = Item(pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.ShipGroupId, pilot.ShipCategoryId);
+        ibis["name"] = pilot.ShipName;
+        ibis["charID"] = pilot.PilotId;
+        ibis["corpID"] = pilot.CorpId;
+        ibis["modules"] = new List<object?>();
+        return Slim(ibis);
     }
 
     private static BlueInstance Slim(Dictionary<string, object?> item) => new("eve.common.script.util.slimItem.SlimItem", item);

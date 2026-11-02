@@ -5,5 +5,5 @@ namespace Eden.Protocol.PilotSessions;
 public interface ILoginIdentity
 {
     RSA Key { get; }
-    bool ValidateTicket(string ticket);
+    long? ValidateTicket(string ticket);
 }
