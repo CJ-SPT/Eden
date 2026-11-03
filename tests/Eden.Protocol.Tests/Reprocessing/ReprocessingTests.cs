@@ -199,6 +199,64 @@ public sealed class ReprocessingTests
     }
 
     [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void OnlyConsumedCargoReleasesOutputSpace(bool cargoInput, bool mixedInput)
+    {
+        using Fixture f = new(mixedInput ? 2000 : 100);
+        PilotFleetTests.AddVenture(f.Db);
+        var pilot = f.Pilot;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(pilot.ShipId)!.TypeId = (int)StarterShipType.Venture;
+            var ore = world.Set<OwnedItem>().Find(OreId)!;
+            ore.LocationId = pilot.ShipId;
+            ore.FlagId = (int)(cargoInput ? InventoryFlag.Cargo : InventoryFlag.GeneralMiningHold);
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId + 10,
+                    OwnerId = pilot.PilotId,
+                    TypeId = TritaniumType,
+                    LocationId = pilot.ShipId,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = cargoInput || mixedInput ? 3500 : 5000,
+                }
+            );
+            if (mixedInput)
+            {
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = OreId + 1,
+                        OwnerId = pilot.PilotId,
+                        TypeId = ScorditeType,
+                        LocationId = pilot.ShipId,
+                        FlagId = (int)InventoryFlag.Cargo,
+                        Quantity = 100,
+                    }
+                );
+            }
+            world.SaveChanges();
+        }
+        long[] ids = mixedInput ? [OreId, OreId + 1] : [OreId];
+        var before = f.Inventory.List(pilot.PilotId, pilot.ShipId).ToArray();
+        if (cargoInput)
+        {
+            f.Store.Reprocess(pilot.PilotId, pilot.StationId, ids, pilot.ShipId, null, pilot.ShipId, (int)InventoryFlag.Cargo);
+            Assert.True(f.Inventory.List(pilot.PilotId, pilot.ShipId).Sum(i => i.Quantity * i.Volume) <= 50);
+        }
+        else
+        {
+            Assert.Throws<CargoCapacityException>(() =>
+                f.Store.Reprocess(pilot.PilotId, pilot.StationId, ids, pilot.ShipId, null, pilot.ShipId, (int)InventoryFlag.Cargo)
+            );
+            Assert.Equal(before, f.Inventory.List(pilot.PilotId, pilot.ShipId));
+        }
+    }
+
+    [Theory]
     [InlineData(InventoryFlag.Cargo)]
     [InlineData(InventoryFlag.GeneralMiningHold)]
     public void CargoCapacityAccountsForConsumedOreAndRejectsOverflowWithoutConsumingInput(InventoryFlag inputHold)

@@ -211,7 +211,10 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
                 .Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo)
                 .AsEnumerable()
                 .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
-            double removed = sourceId == ship.Id ? quotes.Sum(q => PilotInventoryStore.Volume(catalog, q.TypeId) * q.QuantityToProcess) : 0;
+            double removed = items
+                .Zip(quotes)
+                .Where(pair => pair.First.LocationId == ship.Id && pair.First.FlagId == (int)InventoryFlag.Cargo)
+                .Sum(pair => PilotInventoryStore.Volume(catalog, pair.Second.TypeId) * pair.Second.QuantityToProcess);
             double added = output.Sum(p => PilotInventoryStore.Volume(catalog, p.Key) * p.Value);
             if (added > capacity - used + removed + InventoryDefinitions.ResourceTolerance)
             {
