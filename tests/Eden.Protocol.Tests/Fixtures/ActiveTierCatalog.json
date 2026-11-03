@@ -1,0 +1,5234 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 577,
+      "name": "Medium Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 2024,
+      "name": "Medium Capacitor Booster II",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 40.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 165.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 3566,
+      "name": "Small Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 3568,
+      "name": "Small Capacitor Booster II",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 15.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 3576,
+      "name": "Heavy Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1750.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 3578,
+      "name": "Heavy Capacitor Booster II",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 160.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1925.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 4833,
+      "name": "Medium F-RX Compact Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 135.0
+        },
+        {
+          "id": 50,
+          "value": 20.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12750.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 4959,
+      "name": "'Seed' Micro Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 10.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 3.0
+        },
+        {
+          "id": 50,
+          "value": 8.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12750.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 5011,
+      "name": "Small F-RX Compact Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 12.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12750.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 5051,
+      "name": "Heavy F-RX Compact Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1575.0
+        },
+        {
+          "id": 50,
+          "value": 32.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12750.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14172,
+      "name": "Dark Blood Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1750.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14174,
+      "name": "True Sansha Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1750.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14176,
+      "name": "Dark Blood Medium Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14178,
+      "name": "True Sansha Medium Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14184,
+      "name": "Dark Blood Small Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 14186,
+      "name": "True Sansha Small Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15128,
+      "name": "Brokara's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1925.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 10687.5
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.9
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15130,
+      "name": "Tairei's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1925.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 10687.5
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.9
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15132,
+      "name": "Selynne's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2100.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 10125.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15134,
+      "name": "Raysere's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2100.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 10125.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15136,
+      "name": "Vizan's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2275.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9562.5
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15138,
+      "name": "Ahremen's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2275.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9562.5
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15140,
+      "name": "Chelm's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2450.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15142,
+      "name": "Draclira's Modified Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2450.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 2.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15772,
+      "name": "Ammatar Navy Small Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15776,
+      "name": "Ammatar Navy Medium Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15778,
+      "name": "Ammatar Navy Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1750.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15780,
+      "name": "Imperial Navy Small Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15784,
+      "name": "Imperial Navy Medium Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 15786,
+      "name": "Imperial Navy Heavy Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1750.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11250.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 20555,
+      "name": "Small 'Siesta' Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 11.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 13500.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 20557,
+      "name": "Medium 'Gattotte' Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 135.0
+        },
+        {
+          "id": 50,
+          "value": 19.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 13500.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.5
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 20559,
+      "name": "Heavy 'Brave' Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1575.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 13500.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 23807,
+      "name": "'Saddle' Small Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 15.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 13750.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 23809,
+      "name": "'Harness' Medium Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 128.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 23811,
+      "name": "'Plough' Heavy Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 128.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1490.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 41491,
+      "name": "Capital Capacitor Booster I",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 512.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 120000.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 41492,
+      "name": "Capital F-RX Compact Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 512.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 108000.0
+        },
+        {
+          "id": 50,
+          "value": 48.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 14000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 41493,
+      "name": "Capital Capacitor Booster II",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 640.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 132000.0
+        },
+        {
+          "id": 50,
+          "value": 66.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 41494,
+      "name": "Dark Blood Capital Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 640.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 100000.0
+        },
+        {
+          "id": 50,
+          "value": 46.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 41495,
+      "name": "True Sansha Capital Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 640.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 100000.0
+        },
+        {
+          "id": 50,
+          "value": 46.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 11000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 85027,
+      "name": "Usaras' Modified Small Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 12.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 6.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 5.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 85028,
+      "name": "Nija's Modified Medium Capacitor Booster",
+      "groupId": 76,
+      "groupName": "Capacitor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 32.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 173.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 56,
+          "value": 1.0
+        },
+        {
+          "id": 73,
+          "value": 9000.0
+        },
+        {
+          "id": 182,
+          "value": 3417.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 87.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 978,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 10000.0
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/types",
+      "key": 577,
+      "data": {
+        "typeID": 577,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 577,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2024,
+      "data": {
+        "typeID": 2024,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2024,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3566,
+      "data": {
+        "typeID": 3566,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3566,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3568,
+      "data": {
+        "typeID": 3568,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3568,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3576,
+      "data": {
+        "typeID": 3576,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3576,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3578,
+      "data": {
+        "typeID": 3578,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3578,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4833,
+      "data": {
+        "typeID": 4833,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4833,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4959,
+      "data": {
+        "typeID": 4959,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 698,
+        "volume": 2.5
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4959,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5011,
+      "data": {
+        "typeID": 5011,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5011,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5051,
+      "data": {
+        "typeID": 5051,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5051,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14172,
+      "data": {
+        "typeID": 14172,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14172,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14174,
+      "data": {
+        "typeID": 14174,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14174,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14176,
+      "data": {
+        "typeID": 14176,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14176,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14178,
+      "data": {
+        "typeID": 14178,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14178,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14184,
+      "data": {
+        "typeID": 14184,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14184,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14186,
+      "data": {
+        "typeID": 14186,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14186,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15128,
+      "data": {
+        "typeID": 15128,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15128,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15130,
+      "data": {
+        "typeID": 15130,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15130,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15132,
+      "data": {
+        "typeID": 15132,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15132,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15134,
+      "data": {
+        "typeID": 15134,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15134,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15136,
+      "data": {
+        "typeID": 15136,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15136,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15138,
+      "data": {
+        "typeID": 15138,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15138,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15140,
+      "data": {
+        "typeID": 15140,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15140,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15142,
+      "data": {
+        "typeID": 15142,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15142,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15772,
+      "data": {
+        "typeID": 15772,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15772,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15776,
+      "data": {
+        "typeID": 15776,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15776,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15778,
+      "data": {
+        "typeID": 15778,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15778,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15780,
+      "data": {
+        "typeID": 15780,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15780,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15784,
+      "data": {
+        "typeID": 15784,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15784,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15786,
+      "data": {
+        "typeID": 15786,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15786,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 20555,
+      "data": {
+        "typeID": 20555,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 20555,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 20557,
+      "data": {
+        "typeID": 20557,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 20557,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 20559,
+      "data": {
+        "typeID": 20559,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 20559,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 23807,
+      "data": {
+        "typeID": 23807,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 23807,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 23809,
+      "data": {
+        "typeID": 23809,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 23809,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 23811,
+      "data": {
+        "typeID": 23811,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 701,
+        "volume": 20.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 23811,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41491,
+      "data": {
+        "typeID": 41491,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2243,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41491,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41492,
+      "data": {
+        "typeID": 41492,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2243,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41492,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41493,
+      "data": {
+        "typeID": 41493,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 2243,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41493,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41494,
+      "data": {
+        "typeID": 41494,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 2243,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41494,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41495,
+      "data": {
+        "typeID": 41495,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 2243,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41495,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 85027,
+      "data": {
+        "typeID": 85027,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 699,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 85027,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 85028,
+      "data": {
+        "typeID": 85028,
+        "groupID": 76,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 700,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 85028,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 48,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 13,
+      "data": {
+        "descriptionID": 107006,
+        "isAssistance": 0,
+        "displayNameID": 109443,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 294,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "medPower",
+        "propulsionChance": 0,
+        "effectID": 13,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 16,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 16,
+        "propulsionChance": 0,
+        "effectName": "online",
+        "guid": "",
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 48,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 48,
+        "propulsionChance": 0,
+        "effectName": "powerBooster",
+        "guid": "",
+        "durationAttributeID": 73,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3002,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3002,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 73,
+            "operation": 6,
+            "modifyingAttributeID": 1206,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfDurationBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 9,
+      "data": {
+        "attributeID": 9,
+        "name": "hp",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 30,
+      "data": {
+        "attributeID": 30,
+        "name": "power",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 50,
+      "data": {
+        "attributeID": 50,
+        "name": "cpu",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 56,
+      "data": {
+        "attributeID": 56,
+        "name": "chargeRate",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 73,
+      "data": {
+        "attributeID": 73,
+        "name": "duration",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 182,
+      "data": {
+        "attributeID": 182,
+        "name": "requiredSkill1",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 277,
+      "data": {
+        "attributeID": 277,
+        "name": "requiredSkill1Level",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 422,
+      "data": {
+        "attributeID": 422,
+        "name": "techLevel",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 604,
+      "data": {
+        "attributeID": 604,
+        "name": "chargeGroup1",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 633,
+      "data": {
+        "attributeID": 633,
+        "name": "metaLevelOld",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 978,
+      "data": {
+        "attributeID": 978,
+        "name": "maxGroupOnline",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1180,
+      "data": {
+        "attributeID": 1180,
+        "name": "heatAbsorbtionRateModifier",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1206,
+      "data": {
+        "attributeID": 1206,
+        "name": "overloadSelfDurationBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1211,
+      "data": {
+        "attributeID": 1211,
+        "name": "heatDamage",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1212,
+      "data": {
+        "attributeID": 1212,
+        "name": "requiredThermoDynamicsSkill",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1692,
+      "data": {
+        "attributeID": 1692,
+        "name": "metaGroupID",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1795,
+      "data": {
+        "attributeID": 1795,
+        "name": "reloadTime",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 10000.0,
+        "highIsGood": 0
+      }
+    }
+  ]
+}

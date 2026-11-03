@@ -1,5 +1,6 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Ships;
 
@@ -19,9 +20,12 @@ public static class CapacitorBoosterDefinitions
     public const int SmallTechOne = 3566;
     public const int ChargeOneHundred = 3554;
     private const int TechOne = 1;
+    private const int TechTwo = 2;
 
     public static bool IsSupported(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        group == Group && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == TechOne;
+        group == Group
+        && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is TechOne or TechTwo
+        && !InventoryDefinitions.RequiresSpecificShip(attributes);
 
     public static CapacitorBooster Define(
         long itemId,

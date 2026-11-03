@@ -58,15 +58,15 @@ public sealed class CapacitorBoosterTests
     }
 
     [Fact]
-    public void EightOrdinaryTechOneBoosterProfilesUseMediumSlotsAndExcludeTechTwo()
+    public void ExistingTechOneAndTechTwoBoosterFixturesUseMediumSlots()
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(t => t.GroupId == CapacitorBoosterDefinitions.Group).ToArray();
         var supported = types.Select(t => FittingCatalog.Definition(catalog, t.Id)).OfType<ModuleFittingDefinition>().ToArray();
-        Assert.Equal(8, supported.Length);
+        Assert.Equal(9, supported.Length);
         Assert.All(supported, definition => Assert.Equal(ModuleRack.Medium, definition.Rack));
-        Assert.Null(FittingCatalog.Definition(catalog, 3568));
+        Assert.NotNull(FittingCatalog.Definition(catalog, 3568));
     }
 
     [Theory]

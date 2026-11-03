@@ -29,11 +29,7 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (
-            type.GroupId == CapacitorBoosterDefinitions.Group
-            && catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>()
-                is not { Published: 1, MetaGroupID: 1 }
-        )
+        if (type.GroupId == CapacitorBoosterDefinitions.Group && !CapacitorBoosterCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

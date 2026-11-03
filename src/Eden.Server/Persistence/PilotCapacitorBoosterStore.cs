@@ -30,7 +30,7 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
-            throw new InvalidDataException("Use an online fitted Tech I capacitor booster on your active ship in space.");
+            throw new InvalidDataException("Use an online fitted capacitor booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var loaded = PilotAmmunitionStore.Contents(world, moduleId);
