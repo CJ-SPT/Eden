@@ -1,3 +1,4 @@
+using Eden.Gameplay.Dogma;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;

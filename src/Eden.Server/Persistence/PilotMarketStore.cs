@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Gameplay.Dogma;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;

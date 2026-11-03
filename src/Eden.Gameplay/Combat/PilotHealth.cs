@@ -1,22 +1,9 @@
-using Eden.Protocol.Docking;
+using Eden.Gameplay.Dogma;
 
-namespace Eden.Protocol.Combat;
+namespace Eden.Gameplay.Combat;
 
 public sealed record ShipHealth(long ShipId, HullDefense Defense, HullDamage Remaining)
 {
-    // damageStateValue.pyj accepts (shield fraction, tau in milliseconds), then
-    // armor and structure fractions. dogma.const.dgmTauConstant is 10,000 ticks/ms.
-    public ShipDamageState DamageState()
-    {
-        var fractions = Remaining.Fractions(Defense);
-        return new(
-            fractions.Shield,
-            ChargedResource.TimeConstant(Defense.ShieldRechargeMilliseconds),
-            fractions.Armor,
-            fractions.Structure
-        );
-    }
-
     public static HullDefense DefenseFrom(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
         double Value(DogmaAttributeId id, double fallback = 0) => attributes.GetValueOrDefault(id, fallback);

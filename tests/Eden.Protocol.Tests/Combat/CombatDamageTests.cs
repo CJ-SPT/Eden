@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Protocol.Combat;
 
 namespace Eden.Protocol.Tests.Combat;

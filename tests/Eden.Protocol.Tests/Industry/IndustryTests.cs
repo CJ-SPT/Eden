@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Dogma;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;

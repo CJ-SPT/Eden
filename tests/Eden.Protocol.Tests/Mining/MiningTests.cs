@@ -1,3 +1,7 @@
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
@@ -268,7 +272,7 @@ public sealed class MiningTests
             fixture.Store,
             mining,
             fixture.Db.Services.GetRequiredService<IPilotFleet>(),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotHealth>(),
+            fixture.Db.Services.GetRequiredService<IPilotHealth>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
             new Eden.Protocol.Combat.CombatHandler(
                 fixture.Clock,

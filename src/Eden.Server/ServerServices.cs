@@ -1,4 +1,5 @@
 using System.Reflection;
+using Eden.Gameplay.Combat;
 using Eden.Protocol;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +32,11 @@ internal static class ServerServices
                 foreach (
                     Type contract in implementation
                         .GetInterfaces()
-                        .Where(i => i.Assembly == typeof(InjectableAttribute).Assembly || i.Assembly == typeof(ServerServices).Assembly)
+                        .Where(i =>
+                            i.Assembly == typeof(InjectableAttribute).Assembly
+                            || i.Assembly == typeof(ServerServices).Assembly
+                            || i.Assembly == typeof(IPilotHealth).Assembly
+                        )
                 )
                 {
                     services.Add(new ServiceDescriptor(contract, provider => provider.GetRequiredService(implementation), lifetime));

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Dogma;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;

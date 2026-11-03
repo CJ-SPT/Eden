@@ -92,6 +92,7 @@ For format-on-save in Visual Studio, VS Code or Rider, install the CSharpier edi
 
 | Project | Responsibility |
 | --- | --- |
+| `src/Eden.Gameplay` | Typed gameplay rules, state, commands and persistence interfaces. |
 | `src/Eden.Server` | Host the loopback session and own the SQLite world. |
 | `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve character selection, inventory, and first flight. |
 | `tests/Eden.Protocol.Tests` | Verify wire formats, login, ship movement, docking, and SQLite persistence. |
@@ -103,3 +104,7 @@ The server uses Microsoft DI to discover services marked with `[Injectable]` and
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).
 
 Eden's original source and documentation are available under the [MIT License](LICENSE). Supply the EVE client and its resource cache separately.
+
+## Architecture
+
+Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.Server references both to compose the host and implement catalog and SQLite operations. Gameplay references neither adapter assembly. Combat health, damage arithmetic, recharge, coordinates and catalog attribute identifiers establish this boundary. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by Server.

@@ -1,3 +1,5 @@
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;

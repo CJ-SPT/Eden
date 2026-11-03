@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;

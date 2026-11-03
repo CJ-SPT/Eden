@@ -1,11 +1,13 @@
 using System.Net;
 using System.Net.Sockets;
+using Eden.Gameplay.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
 using Eden.Server;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Hosting;
@@ -22,6 +24,9 @@ public sealed class ServerServicesTests
         Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
         Assert.NotSame(session, second.ServiceProvider.GetRequiredService<IPilotSession>());
         Assert.Same(world.Store, first.ServiceProvider.GetRequiredService<IPilotLookup>());
+        Assert.IsType<PilotHealthStore>(first.ServiceProvider.GetRequiredService<IPilotHealth>());
+        Assert.NotSame(first.ServiceProvider.GetRequiredService<IPilotHealth>(), first.ServiceProvider.GetRequiredService<IPilotHealth>());
+        Assert.NotSame(first.ServiceProvider.GetRequiredService<IPilotHealth>(), second.ServiceProvider.GetRequiredService<IPilotHealth>());
         Assert.Same(world.Store, second.ServiceProvider.GetRequiredService<IShipPositionStore>());
         Assert.Same(first.ServiceProvider.GetRequiredService<PilotGate>(), second.ServiceProvider.GetRequiredService<PilotGate>());
         Assert.Throws<InvalidOperationException>(() => world.Services.GetRequiredService<ClientConnection>());

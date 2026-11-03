@@ -1,3 +1,7 @@
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;

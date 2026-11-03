@@ -1,3 +1,5 @@
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;

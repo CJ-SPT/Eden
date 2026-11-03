@@ -1,3 +1,5 @@
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 
 namespace Eden.Server.Persistence;

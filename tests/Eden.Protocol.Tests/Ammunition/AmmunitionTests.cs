@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;

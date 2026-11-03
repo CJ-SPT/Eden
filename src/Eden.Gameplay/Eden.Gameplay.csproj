@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="Eden.Protocol.Tests" />
+  </ItemGroup>
+  <Target Name="CheckGameplayDependencies" BeforeTargets="ResolveReferences">
+    <Error
+      Condition="'@(ProjectReference)' != '' Or '@(PackageReference)' != ''"
+      Text="Eden.Gameplay must depend only on the .NET runtime. Keep adapters and infrastructure in Protocol and Server."
+    />
+  </Target>
+</Project>

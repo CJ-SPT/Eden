@@ -1,4 +1,4 @@
-namespace Eden.Protocol.Docking;
+namespace Eden.Gameplay.Ships;
 
 public static class ChargedResource
 {

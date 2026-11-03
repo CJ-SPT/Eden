@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;

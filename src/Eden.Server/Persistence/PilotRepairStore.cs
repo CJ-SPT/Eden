@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;

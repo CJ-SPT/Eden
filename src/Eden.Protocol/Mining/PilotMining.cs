@@ -1,3 +1,4 @@
+using Eden.Gameplay.Dogma;
 using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Mining;
