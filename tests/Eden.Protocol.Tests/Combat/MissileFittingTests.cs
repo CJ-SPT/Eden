@@ -397,6 +397,26 @@ public sealed class MissileFittingTests
     }
 
     [Fact]
+    public void InvalidMissileMotorCannotLoadAChargeWithAnOtherwiseValidWarhead()
+    {
+        using Fixture f = WithTiers(LightLauncher, LightMissile);
+        long launcher = f.Fit(LightLauncher);
+        long stack = f.Grant(LightMissile, 3);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog
+                .Set<TypeAttribute>()
+                .Where(a => a.ItemTypeId == LightMissile && a.AttributeId == (int)DogmaAttributeId.Agility)
+                .ExecuteUpdate(set => set.SetProperty(a => a.Value, 0));
+        }
+        Assert.Throws<InvalidDataException>(() => Ammo(f).Load(f.PilotId, f.ShipId, [launcher], [stack], f.StationId, f.Clock.Now));
+        Assert.Empty(Ammo(f).Read(f.PilotId, f.ShipId));
+        Assert.Equal(3, f.Inventory.List(f.PilotId, f.StationId).Single(i => i.Id == stack).Quantity);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Null(saved.Set<ModuleCooldown>().Find(launcher));
+    }
+
+    [Fact]
     public void CivilianLauncherUsesAHighSlotWithoutInventingALauncherHardpoint()
     {
         using Fixture f = new();

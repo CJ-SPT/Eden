@@ -25,7 +25,8 @@ internal static class Ballpark
         IReadOnlyList<StaticSpaceObject> objects,
         ShipContact[] peers,
         IReadOnlyList<NpcContact> npcs,
-        IReadOnlyList<WreckContact>? wrecks = null
+        IReadOnlyList<WreckContact>? wrecks = null,
+        IReadOnlyList<MissileContact>? missiles = null
     )
     {
         var pilot = own.Pilot;
@@ -50,6 +51,10 @@ internal static class Ballpark
         foreach (var wreck in wrecks ?? [])
         {
             items.Add(WriteWreck(writer, wreck));
+        }
+        foreach (var missile in missiles ?? [])
+        {
+            items.Add(WriteMissile(writer, missile));
         }
         var damage = peers
             .Prepend(own)
@@ -116,6 +121,61 @@ internal static class Ballpark
         writer.Write(stamp);
         var slims = wrecks.Select(w => WriteWreck(writer, w)).ToList();
         return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+    }
+
+    internal static BallparkAddition AddMissiles(IEnumerable<MissileContact> missiles, int stamp)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+        writer.Write((byte)0);
+        writer.Write(stamp);
+        var slims = missiles.Select(missile => WriteMissile(writer, missile)).ToList();
+        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+    }
+
+    private static SlimItem WriteMissile(BinaryWriter writer, MissileContact missile)
+    {
+        var flight = missile.Flight;
+        var drive = flight.Drive;
+        MissileFlightRules.Validate(flight);
+        float followRange = -(drive.Radius + missile.TargetRadius);
+        if (!float.IsFinite(missile.TargetRadius) || missile.TargetRadius < 0 || !float.IsFinite(followRange))
+        {
+            throw new InvalidDataException("Invalid missile follow range.");
+        }
+        if (flight.Status != MissileFlightStatus.Flying)
+        {
+            throw new InvalidDataException("A completed missile cannot enter the ballpark.");
+        }
+        WriteBallHeader(
+            writer,
+            missile.Id,
+            (byte)(flight.Orphaned ? NavigationMode.Goto : NavigationMode.Missile),
+            drive.Radius,
+            flight.Position,
+            (byte)DestinyBallFlags.Free
+        );
+        writer.Write(drive.Mass);
+        writer.Write((byte)0);
+        writer.Write(-1L);
+        writer.Write(missile.CorporationId);
+        writer.Write(-1);
+        writer.Write(drive.MaxVelocity);
+        WritePosition(writer, flight.Velocity);
+        writer.Write(drive.Agility);
+        writer.Write(1f);
+        writer.Write((sbyte)-1);
+        if (!flight.Orphaned)
+        {
+            // Carbon Thunkers.cpp mode 5: follow ID/range, launching ball ID,
+            // effect stamp, and the current absolute guidance point.
+            writer.Write(missile.TargetId);
+            writer.Write(followRange);
+            writer.Write(missile.SourceShipId);
+            writer.Write(missile.LaunchStamp);
+        }
+        WritePosition(writer, flight.Goto);
+        return new MissileSlimItem(missile);
     }
 
     private static SlimItem WriteWreck(BinaryWriter writer, WreckContact wreck)

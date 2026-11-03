@@ -47,13 +47,24 @@ internal static class MissileChargeCatalog
         try
         {
             _ = MissileRules.Warhead(attributes);
-            return new[] { DogmaAttributeId.MaxVelocity, DogmaAttributeId.MissileFlightTime }.All(a =>
-                double.IsFinite(attributes.GetValueOrDefault(a)) && attributes.GetValueOrDefault(a) > 0
-            );
+            MissileFlightRules.Validate(Drive(catalog, typeId, attributes));
+            return true;
         }
         catch (InvalidDataException)
         {
             return false;
         }
+    }
+
+    internal static MissileDrive Drive(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        var type = catalog.Set<ItemType>().Find(typeId) ?? throw new InvalidDataException("Unknown missile type.");
+        return new(
+            type.Mass ?? 0,
+            (float)(type.Radius ?? 0),
+            (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+            (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility),
+            attributes.GetValueOrDefault(DogmaAttributeId.MissileFlightTime)
+        );
     }
 }

@@ -7,6 +7,7 @@ public enum NavigationMode : byte
     Stop = 2,
     Warp = 3,
     Orbit = 4,
+    Missile = 5,
     Rigid = 11,
 }
 

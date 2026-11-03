@@ -65,6 +65,17 @@ internal sealed record SolarSystemSlim(int SystemId) : SlimItem
     public override object ToBlue() => Wrap(Fields(SystemId, 5, 1, 5, 2));
 }
 
+internal sealed record MissileSlimItem(MissileContact Missile) : SlimItem
+{
+    public override object ToBlue()
+    {
+        var fields = Fields(Missile.Id, Missile.TypeId, Missile.PilotId, Missile.GroupId, (int)InventoryCategory.Charge);
+        fields["sourceShipID"] = Missile.SourceShipId;
+        fields["launchModules"] = new BlueList<long>(Missile.LaunchModules);
+        return Wrap(fields);
+    }
+}
+
 internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
 {
     public override object ToBlue()
