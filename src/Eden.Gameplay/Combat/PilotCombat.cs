@@ -8,7 +8,7 @@ namespace Eden.Gameplay.Combat;
 
 public enum WeaponActivation
 {
-    Civilian,
+    Laser,
     AmmoFed,
 }
 
@@ -23,7 +23,7 @@ public sealed record CombatWeapon(
     double Tracking,
     double SignatureResolution,
     double CapacitorNeed,
-    int EffectId = (int)DogmaEffect.CivilianWeapon
+    int EffectId = (int)DogmaEffect.LaserFired
 );
 
 public sealed record CombatReward(
@@ -58,7 +58,8 @@ public interface IPilotCombat
         SpacePosition velocity,
         long now,
         double roll,
-        WeaponActivation? activation = null
+        WeaponActivation? activation = null,
+        double? crystalRoll = null
     );
     IReadOnlyList<CombatReward> Rewards(long pilotId);
 }

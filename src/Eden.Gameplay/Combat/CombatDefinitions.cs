@@ -13,6 +13,18 @@ public enum CombatWeaponType
 public enum CombatSkill
 {
     Gunnery = 3300,
+    SmallEnergyTurret = 3303,
+    MediumEnergyTurret = 3306,
+    LargeEnergyTurret = 3309,
+    CapitalEnergyTurret = 20327,
+    SmallBeamLaserSpecialization = 11083,
+    MediumBeamLaserSpecialization = 12204,
+    LargeBeamLaserSpecialization = 12205,
+    CapitalBeamLaserSpecialization = 41408,
+    SmallPulseLaserSpecialization = 12213,
+    MediumPulseLaserSpecialization = 12214,
+    LargePulseLaserSpecialization = 12215,
+    CapitalPulseLaserSpecialization = 41407,
     SmallHybridTurret = 3301,
     SmallProjectileTurret = 3302,
     MediumProjectileTurret = 3305,
@@ -60,7 +72,7 @@ public static class CombatDefinitions
     public const int ProjectileWeaponGroup = 55;
 
     public static bool IsSupportedAmmoTurret(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        group is HybridWeaponGroup or ProjectileWeaponGroup
+        group is EnergyWeaponGroup or HybridWeaponGroup or ProjectileWeaponGroup
         && AmmunitionDefinitions.ValidSize(attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize))
         && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is AmmunitionDefinitions.TechOne or AmmunitionDefinitions.TechTwo
         && !InventoryDefinitions.RequiresSpecificShip(attributes);
@@ -83,6 +95,58 @@ public static class CombatDefinitions
     public static IReadOnlyList<WeaponSkillModifier> SkillModifiers { get; } =
         new WeaponSkillModifier[]
         {
+            new(CombatSkill.SmallEnergyTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.SmallEnergyTurret),
+            new(CombatSkill.MediumEnergyTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.MediumEnergyTurret),
+            new(CombatSkill.LargeEnergyTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.LargeEnergyTurret),
+            new(CombatSkill.CapitalEnergyTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.CapitalEnergyTurret),
+            new(
+                CombatSkill.SmallBeamLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallBeamLaserSpecialization
+            ),
+            new(
+                CombatSkill.MediumBeamLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumBeamLaserSpecialization
+            ),
+            new(
+                CombatSkill.LargeBeamLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargeBeamLaserSpecialization
+            ),
+            new(
+                CombatSkill.CapitalBeamLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalBeamLaserSpecialization
+            ),
+            new(
+                CombatSkill.SmallPulseLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallPulseLaserSpecialization
+            ),
+            new(
+                CombatSkill.MediumPulseLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumPulseLaserSpecialization
+            ),
+            new(
+                CombatSkill.LargePulseLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargePulseLaserSpecialization
+            ),
+            new(
+                CombatSkill.CapitalPulseLaserSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalPulseLaserSpecialization
+            ),
             new(CombatSkill.Gunnery, DogmaAttributeId.WeaponCycleTime, -GunneryCycleReduction),
             new(CombatSkill.RapidFiring, DogmaAttributeId.WeaponCycleTime, -RapidFiringCycleReduction),
             new(CombatSkill.Sharpshooter, DogmaAttributeId.MaxRange, WeaponSkillBonus),

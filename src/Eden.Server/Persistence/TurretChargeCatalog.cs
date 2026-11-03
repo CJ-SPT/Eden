@@ -25,9 +25,26 @@ internal static class TurretChargeCatalog
         {
             return false;
         }
+        if (AmmunitionDefinitions.IsCrystalGroup(group))
+        {
+            try
+            {
+                CrystalRules.Use(attributes, 0, 0);
+            }
+            catch (InvalidDataException)
+            {
+                return false;
+            }
+        }
         var effects = PassiveCatalog.Effects(catalog, typeId);
         HashSet<TurretChargeEffect> expectedEffects = group switch
         {
+            AmmunitionDefinitions.FrequencyCrystalGroup =>
+            [
+                TurretChargeEffect.Range,
+                TurretChargeEffect.Capacitor,
+                TurretChargeEffect.EntityFlyRange,
+            ],
             AmmunitionDefinitions.HybridChargeGroup => [TurretChargeEffect.Range, TurretChargeEffect.Capacitor],
             AmmunitionDefinitions.ProjectileChargeGroup =>
             [

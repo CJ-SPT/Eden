@@ -19,16 +19,20 @@ internal static class TurretWeaponCatalog
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
-        if (group is not (CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup))
+        if (
+            group
+            is not (CombatDefinitions.EnergyWeaponGroup or CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup)
+        )
         {
             return false;
         }
+        var firingEffect = group == CombatDefinitions.EnergyWeaponGroup ? DogmaEffect.LaserFired : DogmaEffect.ProjectileFired;
         var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
             || !CombatDefinitions.IsSupportedAmmoTurret(group, PilotFittingStore.ReadAttributes(catalog, typeId))
-            || FittingCatalog.DefaultEffect(catalog, typeId) != DogmaEffect.ProjectileFired
+            || FittingCatalog.DefaultEffect(catalog, typeId) != firingEffect
         )
         {
             return false;
@@ -36,14 +40,11 @@ internal static class TurretWeaponCatalog
         var effects = PassiveCatalog.Effects(catalog, typeId);
         var ids = effects.Select(e => e.EffectID!.Value).ToHashSet();
         if (
-            effects.Count != FittingCatalog.Effects(catalog, typeId).Count
-            || !new long[]
-            {
-                (int)DogmaEffect.Online,
-                (int)DogmaEffect.HighPower,
-                (int)DogmaEffect.TurretFitted,
-                (int)DogmaEffect.ProjectileFired,
-            }.All(ids.Contains)
+            ids.Contains((int)(firingEffect == DogmaEffect.LaserFired ? DogmaEffect.ProjectileFired : DogmaEffect.LaserFired))
+            || effects.Count != FittingCatalog.Effects(catalog, typeId).Count
+            || !new long[] { (int)DogmaEffect.Online, (int)DogmaEffect.HighPower, (int)DogmaEffect.TurretFitted, (int)firingEffect }.All(
+                ids.Contains
+            )
             || ids.Contains(OverloadRate) == ids.Contains(OverloadDamage)
             || ids.Contains(HullResistanceOverride) != ids.Contains(ShieldArmorResistanceOverride)
             || (
@@ -55,7 +56,7 @@ internal static class TurretWeaponCatalog
             return false;
         }
         return effects.Any(e =>
-                e.EffectID == (int)DogmaEffect.ProjectileFired
+                e.EffectID == (int)firingEffect
                 && e.EffectCategory == (int)PassiveEffectPhase.Targeted
                 && e.RangeAttributeID == (int)DogmaAttributeId.MaxRange
                 && e.DurationAttributeID == (int)DogmaAttributeId.WeaponCycleTime
@@ -70,7 +71,8 @@ internal static class TurretWeaponCatalog
                     (int)DogmaEffect.Online
                     or (int)DogmaEffect.HighPower
                     or (int)DogmaEffect.TurretFitted
-                    or (int)DogmaEffect.ProjectileFired => (e.ModifierInfo ?? []).Length == 0,
+                    or (int)DogmaEffect.ProjectileFired
+                    or (int)DogmaEffect.LaserFired => (e.ModifierInfo ?? []).Length == 0,
                     OverloadRate or OverloadDamage => e.EffectCategory == OverloadPhase,
                     HullResistanceOverride or ShieldArmorResistanceOverride => ValidOverride(e),
                     BarrageDamageDerivation => group == CombatDefinitions.ProjectileWeaponGroup
@@ -87,7 +89,7 @@ internal static class TurretWeaponCatalog
                             DogmaAttributeId.AccuracyFalloff,
                             DogmaAttributeId.BarrageFalloffBonus
                         ),
-                    LegacyBarrage => group == CombatDefinitions.ProjectileWeaponGroup
+                    LegacyBarrage => group is CombatDefinitions.ProjectileWeaponGroup or CombatDefinitions.EnergyWeaponGroup
                         && e.EffectCategory == (int)PassiveEffectPhase.Targeted
                         && e.DurationAttributeID == (int)DogmaAttributeId.WeaponCycleTime
                         && e.FalloffAttributeID == (int)DogmaAttributeId.BarrageFalloff,

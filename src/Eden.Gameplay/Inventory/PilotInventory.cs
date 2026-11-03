@@ -13,7 +13,8 @@ public sealed record InventoryItem(
     int CategoryId,
     double Volume,
     bool Singleton = false,
-    bool Online = false
+    bool Online = false,
+    double CrystalDamage = 0
 );
 
 public sealed record InventoryChange(InventoryItem Item, InventoryItem? Previous);

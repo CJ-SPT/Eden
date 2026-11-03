@@ -18,6 +18,8 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
 {
+    private const int CrystalProbabilityResolution = 1_000_000;
+
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         using WorldDbContext world = new(database.Path);
@@ -47,7 +49,9 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
                 hull.GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus),
                 loaded is null ? null : PilotFittingStore.ReadAttributes(catalog, loaded.TypeId),
                 cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0,
-                hull.GetValueOrDefault(DogmaAttributeId.RookieProjectileDamageBonus)
+                hull.GetValueOrDefault(DogmaAttributeId.RookieProjectileDamageBonus),
+                hull.GetValueOrDefault(DogmaAttributeId.RookieEnergyDamageBonus),
+                hull.GetValueOrDefault(DogmaAttributeId.RookieEnergyCapacitorBonus)
             )
         );
     }
@@ -59,7 +63,8 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         SpacePosition velocity,
         long now,
         double roll,
-        WeaponActivation? activation = null
+        WeaponActivation? activation = null,
+        double? crystalRoll = null
     )
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1)
@@ -94,7 +99,8 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
         }
-        if (activation is not null && activation != (ammoFed ? WeaponActivation.AmmoFed : WeaponActivation.Civilian))
+        bool energy = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;
+        if (activation is not null && activation != (ammoFed && !energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser))
         {
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
@@ -125,12 +131,15 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             throw new InvalidDataException("Load ammunition before firing the weapon.");
         }
         var damageAttributes = loadedAmmo is null ? attributes : PilotFittingStore.ReadAttributes(catalog, loadedAmmo.TypeId);
-        int rounds = ammoFed ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)) : 0;
+        int rounds =
+            energy ? 1
+            : ammoFed ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate))
+            : 0;
         if (
             ammoFed
             && (
                 rounds <= 0
-                || rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)
+                || !energy && rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)
                 || loadedAmmo!.Quantity < rounds
                 || !AmmunitionDefinitions.CompatibleTurretCharge(
                     attributes,
@@ -185,7 +194,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed),
             attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            (int)(ammoFed ? DogmaEffect.ProjectileFired : DogmaEffect.CivilianWeapon)
+            (int)(ammoFed && !energy ? DogmaEffect.ProjectileFired : DogmaEffect.LaserFired)
         );
         var target = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         var defense = ShipHealth.DefenseFrom(target);
@@ -264,8 +273,34 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         Magazine? magazine = null;
         if (loadedAmmo is not null)
         {
-            loadedAmmo.Quantity -= rounds;
-            magazine = new(module.Id, module.LocationId, module.FlagId, loadedAmmo.TypeId, loadedAmmo.Quantity, 0);
+            if (energy)
+            {
+                var wear = CrystalRules.Use(
+                    damageAttributes,
+                    loadedAmmo.CrystalDamage,
+                    crystalRoll
+                        ?? System.Security.Cryptography.RandomNumberGenerator.GetInt32(CrystalProbabilityResolution)
+                            / (double)CrystalProbabilityResolution
+                );
+                loadedAmmo.CrystalDamage = wear.Damage;
+                if (wear.Destroyed)
+                {
+                    loadedAmmo.Quantity = 0;
+                }
+            }
+            else
+            {
+                loadedAmmo.Quantity -= rounds;
+            }
+            magazine = new(
+                module.Id,
+                module.LocationId,
+                module.FlagId,
+                loadedAmmo.TypeId,
+                loadedAmmo.Quantity,
+                0,
+                loadedAmmo.CrystalDamage
+            );
             if (loadedAmmo.Quantity == 0)
             {
                 world.Remove(loadedAmmo);

@@ -142,6 +142,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
                             FlagId = flagId,
                             Quantity = moved,
                             Singleton = item.Singleton,
+                            CrystalDamage = item.CrystalDamage,
                         }
                     )
                     .Entity;
@@ -178,7 +179,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             type.Group.CategoryId,
             Volume(catalog, item.TypeId),
             item.Singleton,
-            item.Online
+            item.Online,
+            item.CrystalDamage
         );
     }
 

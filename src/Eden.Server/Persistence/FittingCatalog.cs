@@ -19,7 +19,11 @@ internal static class FittingCatalog
             return null;
         }
         if (
-            type.GroupId is CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup
+            type.GroupId
+                is CombatDefinitions.EnergyWeaponGroup
+                    or CombatDefinitions.HybridWeaponGroup
+                    or CombatDefinitions.ProjectileWeaponGroup
+            && typeId != (int)CombatWeaponType.CivilianGatlingRailgun
             && !TurretWeaponCatalog.Supported(catalog, typeId, type.GroupId)
         )
         {

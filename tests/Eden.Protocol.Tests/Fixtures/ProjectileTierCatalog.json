@@ -5226,6 +5226,42 @@
       ]
     },
     {
+      "id": 3303,
+      "name": "Small Energy Turret",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3300.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 292,
+          "value": 5.0
+        }
+      ]
+    },
+    {
       "id": 3304,
       "name": "Medium Hybrid Turret",
       "groupId": 255,
@@ -5314,6 +5350,50 @@
       ]
     },
     {
+      "id": 3306,
+      "name": "Medium Energy Turret",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3300.0
+        },
+        {
+          "id": 183,
+          "value": 3303.0
+        },
+        {
+          "id": 275,
+          "value": 3.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 292,
+          "value": 5.0
+        }
+      ]
+    },
+    {
       "id": 3307,
       "name": "Large Hybrid Turret",
       "groupId": 255,
@@ -5382,6 +5462,50 @@
         {
           "id": 183,
           "value": 3305.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 292,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 3309,
+      "name": "Large Energy Turret",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3300.0
+        },
+        {
+          "id": 183,
+          "value": 3306.0
         },
         {
           "id": 275,
@@ -13126,6 +13250,54 @@
       ]
     },
     {
+      "id": 11083,
+      "name": "Small Beam Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3311.0
+        },
+        {
+          "id": 183,
+          "value": 3303.0
+        },
+        {
+          "id": 275,
+          "value": 3.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 11084,
       "name": "Small Autocannon Specialization",
       "groupId": 255,
@@ -13294,6 +13466,102 @@
         {
           "id": 183,
           "value": 3308.0
+        },
+        {
+          "id": 275,
+          "value": 8.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 12204,
+      "name": "Medium Beam Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3311.0
+        },
+        {
+          "id": 183,
+          "value": 3306.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 12205,
+      "name": "Large Beam Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3311.0
+        },
+        {
+          "id": 183,
+          "value": 3309.0
         },
         {
           "id": 275,
@@ -13630,6 +13898,150 @@
         {
           "id": 183,
           "value": 3307.0
+        },
+        {
+          "id": 275,
+          "value": 8.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 12213,
+      "name": "Small Pulse Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3312.0
+        },
+        {
+          "id": 183,
+          "value": 3303.0
+        },
+        {
+          "id": 275,
+          "value": 3.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 12214,
+      "name": "Medium Pulse Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3312.0
+        },
+        {
+          "id": 183,
+          "value": 3306.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 12215,
+      "name": "Large Pulse Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3312.0
+        },
+        {
+          "id": 183,
+          "value": 3309.0
         },
         {
           "id": 275,
@@ -21042,6 +21454,54 @@
         {
           "id": 1692,
           "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 20327,
+      "name": "Capital Energy Turret",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3300.0
+        },
+        {
+          "id": 183,
+          "value": 3309.0
+        },
+        {
+          "id": 275,
+          "value": 7.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 5.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
         }
       ]
     },
@@ -30686,6 +31146,102 @@
       ]
     },
     {
+      "id": 41407,
+      "name": "Capital Pulse Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3312.0
+        },
+        {
+          "id": 183,
+          "value": 20327.0
+        },
+        {
+          "id": 275,
+          "value": 10.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 41408,
+      "name": "Capital Beam Laser Specialization",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3311.0
+        },
+        {
+          "id": 183,
+          "value": 20327.0
+        },
+        {
+          "id": 275,
+          "value": 10.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 85010,
       "name": "Ramaku's Modified 200mm AutoCannon",
       "groupId": 55,
@@ -33362,6 +33918,37 @@
     },
     {
       "dataset": "client/types",
+      "key": 3303,
+      "data": {
+        "typeID": 3303,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3303,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 172,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3304,
       "data": {
         "typeID": 3304,
@@ -33424,6 +34011,37 @@
     },
     {
       "dataset": "client/types",
+      "key": 3306,
+      "data": {
+        "typeID": 3306,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3306,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 159,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3307,
       "data": {
         "typeID": 3307,
@@ -33479,6 +34097,37 @@
           },
           {
             "effectID": 408,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3309,
+      "data": {
+        "typeID": 3309,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3309,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 162,
             "isDefault": 0
           }
         ]
@@ -36939,6 +37588,37 @@
     },
     {
       "dataset": "client/types",
+      "key": 11083,
+      "data": {
+        "typeID": 11083,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11083,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1004,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 11084,
       "data": {
         "typeID": 11084,
@@ -37056,6 +37736,68 @@
           },
           {
             "effectID": 1020,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12204,
+      "data": {
+        "typeID": 12204,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12204,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1010,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12205,
+      "data": {
+        "typeID": 12205,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12205,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1016,
             "isDefault": 0
           }
         ]
@@ -37273,6 +38015,99 @@
           },
           {
             "effectID": 1017,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12213,
+      "data": {
+        "typeID": 12213,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12213,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1003,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12214,
+      "data": {
+        "typeID": 12214,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12214,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1009,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12215,
+      "data": {
+        "typeID": 12215,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12215,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1015,
             "isDefault": 0
           }
         ]
@@ -40553,6 +41388,37 @@
           },
           {
             "effectID": 1173,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 20327,
+      "data": {
+        "typeID": 20327,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 20327,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1585,
             "isDefault": 0
           }
         ]
@@ -45190,6 +46056,68 @@
     },
     {
       "dataset": "client/types",
+      "key": 41407,
+      "data": {
+        "typeID": 41407,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41407,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6575,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41408,
+      "data": {
+        "typeID": 41408,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41408,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6576,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 85010,
       "data": {
         "typeID": 85010,
@@ -45471,6 +46399,35 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 159,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 159,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3306
+          }
+        ],
+        "effectName": "mediumEnergyTurretDamageMultiplierBonusPostPercentDamageMultiplierLocationShipModulesRequiringMediumEnergyTurret",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 160,
       "data": {
         "isAssistance": 0,
@@ -45529,6 +46486,35 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 162,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 162,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3309
+          }
+        ],
+        "effectName": "largeEnergyTurretDamageMultiplierBonusPostPercentDamageMultiplierLocationShipModulesRequiringLargeEnergyTurret",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 163,
       "data": {
         "isAssistance": 0,
@@ -45577,6 +46563,35 @@
           }
         ],
         "effectName": "sharpshooterSkillBoostRangeSkillBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 172,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 172,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3303
+          }
+        ],
+        "effectName": "smallEnergyTurretDamageMultiplierBonusPostPercentDamageMultiplierLocationShipModulesRequiringSmallEnergyTurret",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -46165,6 +47180,64 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 1003,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1003,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 12213
+          }
+        ],
+        "effectName": "selfT2SmallLaserPulseDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1004,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1004,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 11083
+          }
+        ],
+        "effectName": "selfT2SmallLaserBeamDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 1005,
       "data": {
         "isAssistance": 0,
@@ -46281,6 +47354,64 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 1009,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1009,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 12214
+          }
+        ],
+        "effectName": "selfT2MediumLaserPulseDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1010,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1010,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 12204
+          }
+        ],
+        "effectName": "selfT2MediumLaserBeamDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 1011,
       "data": {
         "isAssistance": 0,
@@ -46390,6 +47521,64 @@
           }
         ],
         "effectName": "selfT2MediumProjectileArtyDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1015,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1015,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 12215
+          }
+        ],
+        "effectName": "selfT2LargeLaserPulseDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1016,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1016,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 12205
+          }
+        ],
+        "effectName": "selfT2LargeLaserBeamDamageBonus",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -46534,6 +47723,35 @@
           }
         ],
         "effectName": "ammoInfluenceEntityFlyRange",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1585,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1585,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 20327
+          }
+        ],
+        "effectName": "capitalTurretSkillLaserDamage",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -46945,6 +48163,62 @@
           }
         ],
         "effectName": "skillBonusCapitalRailgunSpecialization",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6575,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6575,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 41407
+          }
+        ],
+        "effectName": "skillBonusCapitalPulseLaserSpecialization",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6576,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6576,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 292,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 41408
+          }
+        ],
+        "effectName": "skillBonusCapitalBeamLaserSpecialization",
         "guid": "",
         "propulsionChance": 0,
         "published": 0

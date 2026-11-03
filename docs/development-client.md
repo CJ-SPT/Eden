@@ -461,3 +461,12 @@ Select **Eden Pilot**, verify **prospector (Venture)** and its saved ore in Inve
 ## Check the character sheet
 
 Start a fresh client with `-Login` and select **Eden Pilot**. Open the sheet from the portrait on the left, or use the window restored at login. Under **Character → Home Station**, check the pilot name, birth date, Jita home station, and total SP. Click **Skills → Skill Catalogue**, filter to **My skills**, and select **Spaceship Command**. On a fresh save the Caldari pilot has Spaceship Command III and 384,047 total SP. Reopen the client after restarting the server to compare against the saved pilot.
+
+
+## Compare energy-turret tiers and crystal wear
+
+Native acceptance is pending while game windows remain untouched. When testing resumes, use a copied save, select **Eden Pilot**, open Inventory and verify the active ship. Fit a laser whose actual fitting budget, hardpoints and skill requirements the hull meets. Larger and capital automated cases use artificial budgets and do not establish a real Ibis fit. Compare a Tech I/named laser, Dual Light Beam Laser II, a Dark Blood laser, a storyline/officer variant and a polarized pulse laser. The starter civilian railgun must still fire its built-in charge.
+
+Load a crystal of the exact size and a permitted catalog group. Beam and pulse advanced crystals require their matching specialization; eligible faction guns may accept them but only receive specialization weapon damage if they require that skill. Compare Radio, faction Radio, Gleam and Scorch where compatible, including damage, range, tracking, falloff and capacitor. Swapping crystals retains the catalog's near-instant 0.01 ms reload, with no five/ten-second substitution. Wrong group/size/skills must leave owned stacks and the loaded crystal intact.
+
+Ordinary Tech I crystals stay at zero wear. Faction crystals gain 0.025% damage each paid shot; Tech II crystals have a 10% chance to gain 1% damage. Check the crystal damage tooltip during firing, including misses. Unload a worn crystal, move it to cargo/hangar, load a fresh crystal of the same type, and reload the worn one: damage belongs to that individual. Restart the copied save and compare condition. A nearly broken test crystal should resolve its last paid shot, disappear and stop repeat firing until reloaded. Compare heat-sink stacking, polarized defenses offline/online/unfitted, continuous repeat rings and manual shutdown. Record each observed result separately from automated tests.

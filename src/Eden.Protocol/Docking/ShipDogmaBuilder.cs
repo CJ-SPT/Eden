@@ -108,13 +108,20 @@ internal sealed class ShipDogmaBuilder(
             module.GroupId == PropulsionDefinitions.AfterburnerGroup ? propulsion.ModuleAttributes(pilot.PilotId, module)
             : module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module)
             : module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun
-            || module.GroupId is CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup
+            || module.GroupId
+                is CombatDefinitions.EnergyWeaponGroup
+                    or CombatDefinitions.HybridWeaponGroup
+                    or CombatDefinitions.ProjectileWeaponGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
             : module.GroupId == InventoryDefinitions.MiningLaserGroup ? mining.ModuleAttributes(pilot.PilotId, module)
             : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
-        attributes[DogmaAttributeId.Damage] = 0d;
+        attributes[DogmaAttributeId.Damage] = module.CrystalDamage;
+        if (AmmunitionDefinitions.IsCrystalGroup(module.GroupId))
+        {
+            attributes[DogmaAttributeId.Quantity] = module.Quantity;
+        }
         Dictionary<DogmaEffect, DogmaActiveEffect> effects = [];
         if (module.Online)
         {

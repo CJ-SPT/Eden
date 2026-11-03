@@ -18,6 +18,7 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = fitting.Attributes(magazine.TypeId).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.Quantity] = magazine.Quantity;
+        attributes[DogmaAttributeId.Damage] = magazine.Damage;
         return new(
             new DogmaItemKey.Charge(magazine.ShipId, magazine.FlagId, magazine.TypeId),
             null,
@@ -40,6 +41,23 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
             ])
         );
 
+    internal static void NotifyState(PilotCallContext context, Magazine magazine, long now)
+    {
+        // Quantity zero removes the native sublocation. Deliver final crystal
+        // damage before that removal so no update targets an unloaded charge.
+        if (magazine.Quantity > 0)
+        {
+            NotifyQuantity(context, magazine, magazine.Quantity, now);
+        }
+        context.Notifications.Add(
+            new ModuleAttributesChanged([new(context.Pilot.PilotId, Key(magazine), DogmaAttributeId.Damage, now, magazine.Damage)])
+        );
+        if (magazine.Quantity == 0)
+        {
+            NotifyQuantity(context, magazine, 0, now);
+        }
+    }
+
     internal void NotifyChanges(PilotCallContext context, IReadOnlyList<MagazineChange> changes, double reload = 0)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -57,7 +75,7 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
                 }
                 // Godma primes its row, but clientDogmaLocation fits a tuple
                 // sublocation only on attributeQuantity (build 3662168).
-                NotifyQuantity(context, current, current.Quantity, now);
+                NotifyState(context, current, now);
                 if (reload > 0)
                 {
                     context.Notifications.Add(new ChargeLoading([current.ModuleId], current.TypeId, reload));
@@ -74,7 +92,14 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
             var attributes = InventoryDefinitions.IsHighSlot(module.FlagId)
                 ? combat.ModuleAttributes(context.Pilot.PilotId, module)
                 : fitting.ModuleAttributes(context.Pilot.PilotId, module);
-            var values = new[] { DogmaAttributeId.MaxRange, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.NextActivationTime }
+            var values = new[]
+            {
+                DogmaAttributeId.MaxRange,
+                DogmaAttributeId.AccuracyFalloff,
+                DogmaAttributeId.TrackingSpeed,
+                DogmaAttributeId.CapacitorNeed,
+                DogmaAttributeId.NextActivationTime,
+            }
                 .Select(attribute => new ModuleAttributeChange(
                     context.Pilot.PilotId,
                     new DogmaItemKey.Item(magazine.ModuleId),

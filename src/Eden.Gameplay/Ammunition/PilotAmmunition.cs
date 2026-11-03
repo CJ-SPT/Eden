@@ -3,7 +3,7 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Ammunition;
 
-public sealed record Magazine(long ModuleId, long ShipId, int FlagId, int TypeId, int Quantity, long ReadyAt);
+public sealed record Magazine(long ModuleId, long ShipId, int FlagId, int TypeId, int Quantity, long ReadyAt, double Damage = 0);
 
 public sealed record MagazineChange(Magazine? Previous, Magazine? Current);
 
@@ -68,6 +68,9 @@ public sealed record TurretChargeModifier(
 
 public static class AmmunitionDefinitions
 {
+    public const int FrequencyCrystalGroup = 86;
+    public const int AdvancedBeamCrystalGroup = 374;
+    public const int AdvancedPulseCrystalGroup = 375;
     public const int HybridChargeGroup = 85;
     public const int AdvancedRailgunChargeGroup = 373;
     public const int AdvancedBlasterChargeGroup = 377;
@@ -83,12 +86,17 @@ public static class AmmunitionDefinitions
 
     public static bool IsTurretChargeGroup(int group) =>
         group
-            is HybridChargeGroup
+            is FrequencyCrystalGroup
+                or AdvancedBeamCrystalGroup
+                or AdvancedPulseCrystalGroup
+                or HybridChargeGroup
                 or AdvancedRailgunChargeGroup
                 or AdvancedBlasterChargeGroup
                 or ProjectileChargeGroup
                 or AdvancedAutocannonChargeGroup
                 or AdvancedArtilleryChargeGroup;
+
+    public static bool IsCrystalGroup(int group) => group is FrequencyCrystalGroup or AdvancedBeamCrystalGroup or AdvancedPulseCrystalGroup;
 
     public static bool CompatibleTurretCharge(
         IReadOnlyDictionary<DogmaAttributeId, double> weapon,

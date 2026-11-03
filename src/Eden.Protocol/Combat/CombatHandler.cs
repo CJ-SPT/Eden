@@ -101,7 +101,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
             effectName is null ? null
                 : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
-                : WeaponActivation.Civilian
+                : WeaponActivation.Laser
         );
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats);
         _cycles[module] = cycle;
@@ -137,7 +137,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         }
         if (result.Magazine is { } magazine)
         {
-            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, now);
+            MagazineWire.NotifyState(context, magazine, now);
         }
         if (result.Destroyed)
         {

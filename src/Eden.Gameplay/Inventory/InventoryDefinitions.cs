@@ -47,7 +47,7 @@ public enum FittingSkill
 public enum DogmaEffect
 {
     ShieldBoosting = 4,
-    CivilianWeapon = 10,
+    LaserFired = 10,
     LowPower = 11,
     HighPower = 12,
     MediumPower = 13,

@@ -244,7 +244,7 @@ public sealed class AmmunitionTests
                     n.Name == "OnModuleAttributeChanges"
                         ? ((List<object?>)n.Arguments[0]!)
                             .Cast<object?[]>()
-                            .Where(a => a[2] is object?[])
+                            .Where(a => a[2] is object?[] && Equals(a[3], (int)DogmaAttributeId.Quantity))
                             .Select(a => (Index: index, Change: a))
                         : []
             )

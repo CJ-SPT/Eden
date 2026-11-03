@@ -29,7 +29,8 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             module.FlagId,
             charge.TypeId,
             charge.Quantity,
-            cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0
+            cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0,
+            charge.CrystalDamage
         );
     }
 
@@ -162,9 +163,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var modules = Modules(world, catalog, pilot, moduleIds, now);
         var sources = world
             .Set<OwnedItem>()
-            .Where(i =>
-                chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag && !i.Singleton
-            )
+            .Where(i => chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag)
             .OrderBy(i => i.Id)
             .ToArray();
         if (sources.Length != chargeIds.Count || sources.Select(i => i.TypeId).Distinct().Count() != 1)
@@ -182,7 +181,12 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             )
         )
         {
-            throw new InvalidDataException("Use supported hybrid ammunition or capacitor booster charges.");
+            throw new InvalidDataException("Use supported turret ammunition or capacitor booster charges.");
+        }
+        bool crystal = AmmunitionDefinitions.IsCrystalGroup(chargeType.GroupId);
+        if (sources.Any(s => s.Singleton && (!crystal || s.Quantity != 1)))
+        {
+            throw new InvalidDataException("Only individual frequency crystals can be loaded from singleton items.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
         double volume = PilotInventoryStore.Volume(catalog, typeId);
@@ -197,7 +201,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         double duration = 0;
         foreach (var module in modules)
         {
-            if (sources.All(s => s.Quantity == 0))
+            if (sources.All(s => s.Quantity == 0 || s.LocationId != sourceId))
             {
                 break;
             }
@@ -212,13 +216,17 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             }
             double capacity = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).Capacity ?? 0;
             int limit = checked((int)Math.Floor(capacity / volume + InventoryDefinitions.ResourceTolerance));
+            if (crystal)
+            {
+                limit = Math.Min(limit, 1);
+            }
             if (limit <= 0)
             {
                 throw new InvalidDataException("The weapon's magazine has no room for this ammunition.");
             }
             var loaded = Contents(world, module.Id);
             var previous = loaded is null ? null : Read(world, module, loaded);
-            if (loaded is not null && loaded.TypeId != typeId)
+            if (loaded is not null && (loaded.TypeId != typeId || crystal))
             {
                 var old = PilotInventoryStore.Read(catalog, loaded);
                 loaded.LocationId = sourceId;
@@ -231,6 +239,13 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             {
                 continue;
             }
+            var individual = crystal ? sources.FirstOrDefault(s => s.Singleton && s.LocationId == sourceId) : null;
+            if (individual is not null)
+            {
+                individual.LocationId = module.Id;
+                individual.FlagId = (int)InventoryFlag.Cargo;
+                loaded = individual;
+            }
             loaded ??= world
                 .Set<OwnedItem>()
                 .Add(
@@ -241,10 +256,15 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                         TypeId = typeId,
                         LocationId = module.Id,
                         FlagId = (int)InventoryFlag.Cargo,
+                        Singleton = crystal && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CrystalsGetDamaged) != 0,
                     }
                 )
                 .Entity;
-            foreach (var source in sources.Where(s => s.Quantity > 0))
+            if (individual is not null)
+            {
+                available = 0;
+            }
+            foreach (var source in sources.Where(s => available > 0 && s.Quantity > 0 && s.LocationId == sourceId))
             {
                 int moved = Math.Min(available, source.Quantity);
                 loaded.Quantity = checked(loaded.Quantity + moved);
@@ -269,15 +289,17 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             cooldown.Kind = ModuleCooldownKind.Reload;
             cooldown.ReadyAt = checked(now + (long)Math.Ceiling(reload * TimeSpan.TicksPerMillisecond));
             duration = Math.Max(duration, reload);
-            magazines.Add(new(previous, new(module.Id, shipId, module.FlagId, typeId, loaded.Quantity, cooldown.ReadyAt)));
+            magazines.Add(
+                new(previous, new(module.Id, shipId, module.FlagId, typeId, loaded.Quantity, cooldown.ReadyAt, loaded.CrystalDamage))
+            );
         }
         if (magazines.Count == 0)
         {
             throw new InvalidDataException("The selected magazines are already full.");
         }
-        foreach (var source in sources.Where(s => s.Quantity != beforeSources[s.Id].Quantity))
+        foreach (var source in sources.Where(s => s.Quantity != beforeSources[s.Id].Quantity || s.LocationId != sourceId))
         {
-            changes.Add(new(beforeSources[source.Id] with { Quantity = source.Quantity }, beforeSources[source.Id]));
+            changes.Add(new(PilotInventoryStore.Read(catalog, source), beforeSources[source.Id]));
         }
         world.SaveChanges();
         CheckCargo(world, catalog, pilot);

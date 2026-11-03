@@ -102,6 +102,7 @@ public sealed class WorldAsteroid
 
 public sealed class OwnedItem
 {
+    public double CrystalDamage { get; set; }
     public bool Singleton { get; set; }
     public bool Online { get; set; }
     public long Id { get; set; }
@@ -273,6 +274,7 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);
         model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
+        model.Entity<OwnedItem>().Property(i => i.CrystalDamage).HasDefaultValue(0d);
         model.Entity<OwnedItem>().Property(i => i.Singleton).HasDefaultValue(false);
         model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);
         model.Entity<OwnedItem>().HasOne<Pilot>().WithMany().HasForeignKey(i => i.OwnerId);

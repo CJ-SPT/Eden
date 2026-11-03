@@ -116,15 +116,20 @@ internal sealed class InventoryHandler(
         {
             return dogma.PrimePilot(pilot);
         }
-        var module = inventory
-            .List(pilot.PilotId, pilot.ShipId)
-            .FirstOrDefault(i => i.Id == id && InventoryDefinitions.IsFittedSlot(i.FlagId));
-        if (module is null)
+        var item = inventory.List(pilot.PilotId, pilot.ShipId).FirstOrDefault(i => i.Id == id);
+        if (item is null && pilot.Position is null)
+        {
+            item = inventory.List(pilot.PilotId, pilot.StationId).FirstOrDefault(i => i.Id == id);
+        }
+        if (item is null || (!InventoryDefinitions.IsFittedSlot(item.FlagId) && !AmmunitionDefinitions.IsCrystalGroup(item.GroupId)))
         {
             return PilotCallResult.Unsupported;
         }
-        var result = dogma.PrimeModule(pilot, module);
-        refits.Primed(context, id);
+        var result = dogma.PrimeModule(pilot, item);
+        if (InventoryDefinitions.IsFittedSlot(item.FlagId))
+        {
+            refits.Primed(context, id);
+        }
         return result;
     }
 

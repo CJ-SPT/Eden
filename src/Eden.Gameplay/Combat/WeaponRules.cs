@@ -12,7 +12,9 @@ public sealed record WeaponModuleInputs(
     double HullOptimalBonus,
     IReadOnlyDictionary<DogmaAttributeId, double>? ChargeAttributes,
     long ReloadReadyAt,
-    double HullProjectileDamageBonus = 0
+    double HullProjectileDamageBonus = 0,
+    double HullEnergyDamageBonus = 0,
+    double HullEnergyCapacitorBonus = 0
 );
 
 public static class WeaponRules
@@ -50,6 +52,15 @@ public static class WeaponRules
             )
             {
                 attributes[DogmaAttributeId.MaxRange] *= 1 + inputs.HullOptimalBonus / Percent;
+            }
+            if (
+                InventoryDefinitions.RequiredSkills.Any(pair =>
+                    attributes.GetValueOrDefault(pair.Skill) == (int)CombatSkill.SmallEnergyTurret
+                )
+            )
+            {
+                attributes[DogmaAttributeId.DamageMultiplier] *= 1 + inputs.HullEnergyDamageBonus / Percent;
+                attributes[DogmaAttributeId.CapacitorNeed] *= 1 + inputs.HullEnergyCapacitorBonus / Percent;
             }
             if (inputs.ChargeAttributes is { } charge)
             {
