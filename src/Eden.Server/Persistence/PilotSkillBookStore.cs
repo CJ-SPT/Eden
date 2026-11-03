@@ -20,10 +20,18 @@ internal sealed class PilotSkillBookStore(WorldDatabase database) : IPilotSkillB
         using var transaction = world.Database.BeginTransaction();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
-        var items = world.Set<OwnedItem>().Where(i => itemIds.Contains(i.Id) && i.OwnerId == pilotId &&
-            ((i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo) ||
-             (ship.Position == null && i.LocationId == ship.StationId && i.FlagId == (int)InventoryFlag.Hangar)))
-            .OrderBy(i => i.Id).ToArray();
+        var items = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                itemIds.Contains(i.Id)
+                && i.OwnerId == pilotId
+                && (
+                    (i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo)
+                    || (ship.Position == null && i.LocationId == ship.StationId && i.FlagId == (int)InventoryFlag.Hangar)
+                )
+            )
+            .OrderBy(i => i.Id)
+            .ToArray();
         if (items.Length != itemIds.Count || items.Select(i => i.TypeId).Distinct().Count() != items.Length)
         {
             throw new InvalidDataException("The skillbooks must be in your current ship's cargo or docked station hangar.");
@@ -33,10 +41,19 @@ internal sealed class PilotSkillBookStore(WorldDatabase database) : IPilotSkillB
         foreach (var item in items)
         {
             var previous = PilotInventoryStore.Read(catalog, item);
-            var type = catalog.Set<SourceRecord>().Find("client/types", item.TypeId.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
+            var type = catalog
+                .Set<SourceRecord>()
+                .Find("client/types", item.TypeId.ToString(CultureInfo.InvariantCulture))
+                ?.Read<ClientTypes>();
             double rank = catalog.Set<TypeAttribute>().Find(item.TypeId, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 0;
-            if (previous.CategoryId != (int)InventoryCategory.Skill || type?.Published != 1 ||
-                item.Singleton || item.Quantity < 1 || !double.IsFinite(rank) || rank <= 0)
+            if (
+                previous.CategoryId != (int)InventoryCategory.Skill
+                || type?.Published != 1
+                || item.Singleton
+                || item.Quantity < 1
+                || !double.IsFinite(rank)
+                || rank <= 0
+            )
             {
                 throw new InvalidDataException("Only published skillbooks can be injected.");
             }

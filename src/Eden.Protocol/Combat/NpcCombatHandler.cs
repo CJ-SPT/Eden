@@ -10,8 +10,16 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, SharedTargetLocks locks,
-    MiningHandler mining, CombatHandler weapons, ShieldBoostHandler shields, PropulsionHandler propulsion, SharedSpace space) : IDisposable
+internal sealed class NpcCombatHandler(
+    TimeProvider clock,
+    INpcCombat combat,
+    SharedTargetLocks locks,
+    MiningHandler mining,
+    CombatHandler weapons,
+    ShieldBoostHandler shields,
+    PropulsionHandler propulsion,
+    SharedSpace space
+) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
     private long _shipId;
@@ -27,14 +35,23 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
 
     private void Clear()
     {
-        foreach (long npc in _aggressors) { locks.Remove(npc, _shipId); }
-        if (_shipId != 0) { combat.Disengage(_shipId); }
+        foreach (long npc in _aggressors)
+        {
+            locks.Remove(npc, _shipId);
+        }
+        if (_shipId != 0)
+        {
+            combat.Disengage(_shipId);
+        }
         _aggressors = [];
     }
 
     public void Advance(PilotCallContext context)
     {
-        if (!context.Selected) { return; }
+        if (!context.Selected)
+        {
+            return;
+        }
         if (_shipId != context.Pilot.ShipId)
         {
             Clear();
@@ -57,18 +74,35 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
                 continue;
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-            var shot = combat.Fire(context.Pilot.PilotId, _shipId, npc, context.Flight.Velocity, now,
-                RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution, context.Flight.CurrentStamp);
-            if (shot is null) { continue; }
+            var shot = combat.Fire(
+                context.Pilot.PilotId,
+                _shipId,
+                npc,
+                context.Flight.Velocity,
+                now,
+                RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
+                context.Flight.CurrentStamp
+            );
+            if (shot is null)
+            {
+                continue;
+            }
             context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Incoming(shot)]));
             context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);
             context.Flight.NotifyHealth(shot.Health);
-            context.Notifications.Add(("OnModuleAttributeChanges", [new List<object?>
-            {
-                Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
-                Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
-                Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
-            }]));
+            context.Notifications.Add(
+                (
+                    "OnModuleAttributeChanges",
+                    [
+                        new List<object?>
+                        {
+                            Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
+                            Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
+                            Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
+                        },
+                    ]
+                )
+            );
             if (shot.Capsule is { } capsule)
             {
                 context.Flight.BeginShipLoss();
@@ -89,8 +123,14 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
                 ["OnModuleAttributeChange", context.Pilot.PilotId, shot.Health.ShipId, (int)attribute, now, value, null, now];
         }
         var current = combat.Aggressors(_shipId).ToArray();
-        foreach (long npc in _aggressors.Except(current)) { locks.Remove(npc, _shipId); }
-        foreach (long npc in current.Except(_aggressors)) { locks.Add(npc, _shipId); }
+        foreach (long npc in _aggressors.Except(current))
+        {
+            locks.Remove(npc, _shipId);
+        }
+        foreach (long npc in current.Except(_aggressors))
+        {
+            locks.Add(npc, _shipId);
+        }
         _aggressors = current;
         context.Flight.RefreshNpcs();
     }

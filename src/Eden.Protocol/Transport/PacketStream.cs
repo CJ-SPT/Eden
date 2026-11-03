@@ -6,6 +6,7 @@ public static class PacketStream
 {
     // The high four length bits are Carbon transport flags. Startup uses plain frames.
     private const int MaxHandshakeBytes = 16 * 1024;
+
     // Local session bound, separate from the small startup exchange. Full ballparks
     // exceed 16 KiB; the high four header bits remain unsupported transport flags.
     internal const int MaxSessionBytes = 1024 * 1024;
@@ -25,7 +26,12 @@ public static class PacketStream
         return payload;
     }
 
-    public static async Task WriteAsync(Stream stream, ReadOnlyMemory<byte> payload, CancellationToken cancellationToken, int maxPayloadBytes = MaxHandshakeBytes)
+    public static async Task WriteAsync(
+        Stream stream,
+        ReadOnlyMemory<byte> payload,
+        CancellationToken cancellationToken,
+        int maxPayloadBytes = MaxHandshakeBytes
+    )
     {
         if (payload.Length == 0 || payload.Length > maxPayloadBytes)
         {

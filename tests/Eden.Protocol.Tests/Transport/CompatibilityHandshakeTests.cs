@@ -10,7 +10,8 @@ public sealed class CompatibilityHandshakeTests
     // the six-field reply and QC bytes on the loopback smoke test.
     private const string ClientVersion = "7E00000000140604E899020005F001080AC3F5285C8F0238400458E13700130A5632342E303140636370";
     private const string QueueCheck = "7E000000002C0113025143";
-    private const string ServerGreeting = "7E00000000140704E899020005F001080AC3F5285C8F0238400458E13700130A5632342E3031406363701307556E6B6E6F776E";
+    private const string ServerGreeting =
+        "7E00000000140704E899020005F001080AC3F5285C8F0238400458E13700130A5632342E3031406363701307556E6B6E6F776E";
 
     [Theory]
     [InlineData(false, false)]

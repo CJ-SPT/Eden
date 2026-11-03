@@ -2,10 +2,19 @@ using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Mining;
 
-public sealed record MiningLaser(long ItemId, int TypeId, double Range, double DurationMilliseconds,
-    double Volume, double CapacitorNeed, double CriticalChance, double CriticalBonusYield);
+public sealed record MiningLaser(
+    long ItemId,
+    int TypeId,
+    double Range,
+    double DurationMilliseconds,
+    double Volume,
+    double CapacitorNeed,
+    double CriticalChance,
+    double CriticalBonusYield
+);
 
 public sealed record MiningStart(MiningLaser Laser, double Capacitor);
+
 public sealed record MiningYield(InventoryChange? Cargo, int TypeId, int Extracted, int CriticalBonus, bool Depleted, bool CargoFull);
 
 public interface IPilotMining

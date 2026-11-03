@@ -2,16 +2,52 @@ using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Market;
 
-public sealed record MarketOrder(long Id, int StationId, int SystemId, int RegionId, long OwnerId,
-    int TypeId, bool Bid, long PriceCents, int Remaining, int Entered, long Issued);
+public sealed record MarketOrder(
+    long Id,
+    int StationId,
+    int SystemId,
+    int RegionId,
+    long OwnerId,
+    int TypeId,
+    bool Bid,
+    long PriceCents,
+    int Remaining,
+    int Entered,
+    long Issued
+);
+
 public sealed record MarketSale(long ItemId, int StationId, int TypeId, long LimitPriceCents, int Quantity);
+
 public sealed record MarketPurchase(int TypeId, long LimitPriceCents, int Quantity);
-public sealed record MarketTrade(long Id, long PilotId, long OrderId, int StationId, long CounterpartyId,
-    int TypeId, bool IsBuy, int Quantity, long PriceCents, long TaxCents, long BalanceCents, long Time);
+
+public sealed record MarketTrade(
+    long Id,
+    long PilotId,
+    long OrderId,
+    int StationId,
+    long CounterpartyId,
+    int TypeId,
+    bool IsBuy,
+    int Quantity,
+    long PriceCents,
+    long TaxCents,
+    long BalanceCents,
+    long Time
+);
+
 public sealed record MarketResult(long BalanceCents, IReadOnlyList<MarketTrade> Trades, IReadOnlyList<InventoryChange> Changes);
+
 public sealed record WalletEntryDefinition(int Id, long NameId, string Name, string Description);
-public sealed record MarketHistoryDay(int TypeId, long Date, long LowPriceCents, long HighPriceCents,
-    decimal AveragePriceCents, long Volume, int Orders);
+
+public sealed record MarketHistoryDay(
+    int TypeId,
+    long Date,
+    long LowPriceCents,
+    long HighPriceCents,
+    decimal AveragePriceCents,
+    long Volume,
+    int Orders
+);
 
 public interface IPilotMarket
 {
@@ -67,7 +103,10 @@ public static class MarketDefinitions
             throw new InvalidDataException("Enter a positive market price within the client limit.");
         }
         decimal rounded = Math.Round((decimal)price * CentsPerIsk, 0, MidpointRounding.ToEven);
-        if (rounded < 1) { throw new InvalidDataException("Market prices must be at least 0.01 ISK."); }
+        if (rounded < 1)
+        {
+            throw new InvalidDataException("Market prices must be at least 0.01 ISK.");
+        }
         return checked((long)rounded);
     }
 }

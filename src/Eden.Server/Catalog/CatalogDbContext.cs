@@ -139,13 +139,17 @@ public sealed class TypeAttribute
 
 public sealed class CatalogDbContext(string path, bool writable = false) : DbContext
 {
-    protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite(
-        new SqliteConnectionStringBuilder
-        {
-            DataSource = path,
-            Mode = writable ? SqliteOpenMode.ReadWriteCreate : SqliteOpenMode.ReadOnly,
-            Pooling = false
-        }.ToString()).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
+        options
+            .UseSqlite(
+                new SqliteConnectionStringBuilder
+                {
+                    DataSource = path,
+                    Mode = writable ? SqliteOpenMode.ReadWriteCreate : SqliteOpenMode.ReadOnly,
+                    Pooling = false,
+                }.ToString()
+            )
+            .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
     protected override void OnModelCreating(ModelBuilder model)
     {

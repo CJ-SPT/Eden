@@ -12,7 +12,12 @@ internal enum BrainOperation
 }
 
 [Injectable]
-internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, IPilotIndustrySkills industry, IPilotNavigationSkills navigation)
+internal sealed class PilotBrain(
+    IPilotSkillReader skills,
+    TimeProvider clock,
+    IPilotIndustrySkills industry,
+    IPilotNavigationSkills navigation
+)
 {
     private const string LocationRequiredSkillModifier = "LRS";
     private const string LocationGroupModifier = "LG";
@@ -24,42 +29,73 @@ internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, I
     public object?[] Read(long pilotId, long shipId)
     {
         var levels = skills.ReadSkills(pilotId).ToDictionary(s => s.TypeId, s => s.Level);
-        var effects = CombatDefinitions.SkillModifiers.Where(m => levels.GetValueOrDefault((int)m.Skill) > 0)
-            .Select(m => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass, new Dictionary<string, object?>
-            {
-                ["fromAttrib"] = null,
-                ["toItemID"] = shipId,
-                ["modifierType"] = m.GroupId is null ? LocationRequiredSkillModifier : LocationGroupModifier,
-                ["toAttribID"] = (int)m.Attribute,
-                ["operation"] = (int)BrainOperation.PostPercent,
-                ["extras"] = new object?[] { m.GroupId ?? (int)m.RequiredSkill },
-                ["skills"] = new List<object?> { (int)m.Skill },
-                ["value"] = Percent * m.PerLevel * levels[(int)m.Skill],
-            })).ToList();
-        effects.AddRange(navigation.NavigationBonuses(pilotId).Select(b => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass,
-            new Dictionary<string, object?>
-            {
-                ["fromAttrib"] = null,
-                ["toItemID"] = shipId,
-                ["modifierType"] = b.RequiredSkill.HasValue ? LocationRequiredSkillModifier : b.Group.HasValue ? LocationGroupModifier : "M",
-                ["toAttribID"] = (int)b.Attribute,
-                ["operation"] = (int)BrainOperation.PostPercent,
-                ["extras"] = b.RequiredSkill is int skill ? new object?[] { skill } : b.Group is int group ? new object?[] { group } : Array.Empty<object?>(),
-                ["skills"] = new List<object?> { b.SkillId },
-                ["value"] = b.Percent,
-            })));
-        var characterEffects = industry.CharacterBonuses(pilotId).Select(b => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass,
-            new Dictionary<string, object?>
-            {
-                ["fromAttrib"] = null,
-                ["toItemID"] = pilotId,
-                ["modifierType"] = "M",
-                ["toAttribID"] = (int)b.Attribute,
-                ["operation"] = (int)(b.Additive ? BrainOperation.Add : BrainOperation.PostPercent),
-                ["extras"] = Array.Empty<object?>(),
-                ["skills"] = new List<object?> { b.SkillId },
-                ["value"] = b.Value,
-            })).ToList();
+        var effects = CombatDefinitions
+            .SkillModifiers.Where(m => levels.GetValueOrDefault((int)m.Skill) > 0)
+            .Select(m =>
+                (object?)
+                    new BlueNewObject(
+                        BlueNewObject.BrainEffectClass,
+                        new Dictionary<string, object?>
+                        {
+                            ["fromAttrib"] = null,
+                            ["toItemID"] = shipId,
+                            ["modifierType"] = m.GroupId is null ? LocationRequiredSkillModifier : LocationGroupModifier,
+                            ["toAttribID"] = (int)m.Attribute,
+                            ["operation"] = (int)BrainOperation.PostPercent,
+                            ["extras"] = new object?[] { m.GroupId ?? (int)m.RequiredSkill },
+                            ["skills"] = new List<object?> { (int)m.Skill },
+                            ["value"] = Percent * m.PerLevel * levels[(int)m.Skill],
+                        }
+                    )
+            )
+            .ToList();
+        effects.AddRange(
+            navigation
+                .NavigationBonuses(pilotId)
+                .Select(b =>
+                    (object?)
+                        new BlueNewObject(
+                            BlueNewObject.BrainEffectClass,
+                            new Dictionary<string, object?>
+                            {
+                                ["fromAttrib"] = null,
+                                ["toItemID"] = shipId,
+                                ["modifierType"] =
+                                    b.RequiredSkill.HasValue ? LocationRequiredSkillModifier
+                                    : b.Group.HasValue ? LocationGroupModifier
+                                    : "M",
+                                ["toAttribID"] = (int)b.Attribute,
+                                ["operation"] = (int)BrainOperation.PostPercent,
+                                ["extras"] =
+                                    b.RequiredSkill is int skill ? new object?[] { skill }
+                                    : b.Group is int group ? new object?[] { group }
+                                    : Array.Empty<object?>(),
+                                ["skills"] = new List<object?> { b.SkillId },
+                                ["value"] = b.Percent,
+                            }
+                        )
+                )
+        );
+        var characterEffects = industry
+            .CharacterBonuses(pilotId)
+            .Select(b =>
+                (object?)
+                    new BlueNewObject(
+                        BlueNewObject.BrainEffectClass,
+                        new Dictionary<string, object?>
+                        {
+                            ["fromAttrib"] = null,
+                            ["toItemID"] = pilotId,
+                            ["modifierType"] = "M",
+                            ["toAttribID"] = (int)b.Attribute,
+                            ["operation"] = (int)(b.Additive ? BrainOperation.Add : BrainOperation.PostPercent),
+                            ["extras"] = Array.Empty<object?>(),
+                            ["skills"] = new List<object?> { b.SkillId },
+                            ["value"] = b.Value,
+                        }
+                    )
+            )
+            .ToList();
         return [clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), characterEffects, effects, new List<object?>()];
     }
 

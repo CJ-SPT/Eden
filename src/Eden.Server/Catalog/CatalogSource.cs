@@ -33,9 +33,13 @@ public sealed class CatalogSource<T>(string name) : ICatalogSource
     {
         var entity = model.SharedTypeEntity<CatalogEntry<T>>(Name);
         entity.HasNoKey().ToView("records_" + Name.Replace('/', '_'));
-        entity.Property(e => e.Value).HasColumnName("Data").HasConversion(
-            value => JsonSerializer.Serialize(value, JsonSerializerOptions.Default),
-            json => JsonSerializer.Deserialize<T>(json, JsonSerializerOptions.Default)!);
+        entity
+            .Property(e => e.Value)
+            .HasColumnName("Data")
+            .HasConversion(
+                value => JsonSerializer.Serialize(value, JsonSerializerOptions.Default),
+                json => JsonSerializer.Deserialize<T>(json, JsonSerializerOptions.Default)!
+            );
     }
 
     long ICatalogSource.Verify(CatalogDbContext db)

@@ -5,17 +5,24 @@ namespace Eden.Protocol.Serialization;
 
 // Only the inert wire types used by the local session. Class names are data.
 internal sealed record BlueInstance(string Name, object? State);
+
 // Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
 internal sealed record BlueConstructor(string Name, object?[] Arguments, object? State = null);
+
 internal sealed record BlueGlobal(string Name);
+
 internal sealed record BlueNewObject(string Name, object? State)
 {
     internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
     internal const string IndustryLocationClass = "industry.job.Location";
 }
+
 internal sealed record PaperDollRow(string Name, object?[] Fields);
+
 internal sealed record BlueStream(byte[] Bytes);
+
 internal sealed record BlueObjectReference(string Id, int ReferenceId);
+
 // Python dictionaries can use None as a key (station efficiency's default).
 internal sealed record BlueDictionary(IReadOnlyList<(object? Key, object? Value)> Entries);
 
@@ -107,7 +114,10 @@ internal static class BlueMarshal
                 object? key = Read(depth + 1);
                 if (key is null)
                 {
-                    if (hasDefault) { throw new InvalidDataException("Duplicate None dictionary key."); }
+                    if (hasDefault)
+                    {
+                        throw new InvalidDataException("Duplicate None dictionary key.");
+                    }
                     hasDefault = true;
                     defaultValue = value;
                 }
@@ -139,8 +149,13 @@ internal static class BlueMarshal
         {
             // Bounty sets and inventory row descriptors reduce to inert arguments.
             // Interpret only these allowlisted shapes; never execute a global.
-            if (Read(depth + 1) is not object?[] { Length: 2 or 3 } pair || pair[0] is not BlueGlobal global ||
-                pair[1] is not object?[] { Length: 1 } args || reader.ReadByte() != 45 || reader.ReadByte() != 45)
+            if (
+                Read(depth + 1) is not object?[] { Length: 2 or 3 } pair
+                || pair[0] is not BlueGlobal global
+                || pair[1] is not object?[] { Length: 1 } args
+                || reader.ReadByte() != 45
+                || reader.ReadByte() != 45
+            )
             {
                 throw new InvalidDataException("Unsupported Blue reduction.");
             }
@@ -154,7 +169,10 @@ internal static class BlueMarshal
                 HashSet<string> names = [];
                 foreach (var column in columns)
                 {
-                    if (column is not object?[] { Length: 2 } field || field[1] is not long type) { throw new InvalidDataException("Invalid Blue row descriptor."); }
+                    if (column is not object?[] { Length: 2 } field || field[1] is not long type)
+                    {
+                        throw new InvalidDataException("Invalid Blue row descriptor.");
+                    }
                     string text = Text(field[0]);
                     if (text.StartsWith("__", StringComparison.Ordinal) || !names.Add(text))
                     {
@@ -179,20 +197,32 @@ internal static class BlueMarshal
             // Carbon NEWOBJ (35) stores ((class,), state) and empty iterators.
             // Retain only known brain/location values as inert data; never allocate a
             // Python class or invoke a client-provided __new__ implementation.
-            if (Read(depth + 1) is not object?[] { Length: 1 or 2 } parts ||
-                parts[0] is not object?[] { Length: >= 1 } args || args[0] is not BlueGlobal name ||
-                reader.ReadByte() != 45 || reader.ReadByte() != 45)
+            if (
+                Read(depth + 1) is not object?[] { Length: 1 or 2 } parts
+                || parts[0] is not object?[] { Length: >= 1 } args
+                || args[0] is not BlueGlobal name
+                || reader.ReadByte() != 45
+                || reader.ReadByte() != 45
+            )
             {
                 throw new InvalidDataException("Unsupported Blue new-style object.");
             }
-            if (parts.Length == 2 && args.Length == 1 && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass &&
-                parts[1] is Dictionary<string, object?> state)
+            if (
+                parts.Length == 2
+                && args.Length == 1
+                && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass
+                && parts[1] is Dictionary<string, object?> state
+            )
             {
                 return new BlueNewObject(name.Name, state);
             }
-            if (parts.Length == 1 && args.Length >= 2 && name.Name.StartsWith(PaperDollNamespace, StringComparison.Ordinal) &&
-                name.Name[PaperDollNamespace.Length..] is "AppearanceRow" or "ColorSelectionRow" or "ModifierRow" or "SculptingRow" &&
-                args.Skip(1).All(field => field is null or long or double))
+            if (
+                parts.Length == 1
+                && args.Length >= 2
+                && name.Name.StartsWith(PaperDollNamespace, StringComparison.Ordinal)
+                && name.Name[PaperDollNamespace.Length..] is "AppearanceRow" or "ColorSelectionRow" or "ModifierRow" or "SculptingRow"
+                && args.Skip(1).All(field => field is null or long or double)
+            )
             {
                 return new PaperDollRow(name.Name, args[1..]);
             }
@@ -201,7 +231,10 @@ internal static class BlueMarshal
 
         BluePackedRow ReadPackedRow(int depth)
         {
-            if (Read(depth + 1) is not BlueRowDescriptor descriptor) { throw new InvalidDataException("Expected a Blue row descriptor."); }
+            if (Read(depth + 1) is not BlueRowDescriptor descriptor)
+            {
+                throw new InvalidDataException("Expected a Blue row descriptor.");
+            }
             byte[] packed = reader.ReadBytes(Length());
             BluePackedRow.Validate(packed, descriptor.DataLength);
             return new(descriptor, packed, Items(descriptor.ObjectCount, depth));
@@ -247,7 +280,9 @@ internal static class BlueMarshal
                 21 => Items(Length(), depth).ToList(),
                 22 => Map(depth),
                 23 => new BlueInstance(Text(Read(depth + 1)), Read(depth + 1)),
-                27 => shared.TryGetValue(ReadIndex() - 1, out object? reference) ? reference : throw new InvalidDataException("Unknown shared reference."),
+                27 => shared.TryGetValue(ReadIndex() - 1, out object? reference)
+                    ? reference
+                    : throw new InvalidDataException("Unknown shared reference."),
                 31 => true,
                 32 => false,
                 34 => ReadReduction(depth),
@@ -281,16 +316,20 @@ internal static class BlueMarshal
     private static object ReadInteger(byte[] bytes)
     {
         BigInteger value = new(bytes);
-        if (value >= long.MinValue && value <= long.MaxValue) { return (long)value; }
+        if (value >= long.MinValue && value <= long.MaxValue)
+        {
+            return (long)value;
+        }
         return value;
     }
 
-    public static string Text(object? value) => value switch
-    {
-        string text => text,
-        byte[] bytes => Encoding.UTF8.GetString(bytes),
-        _ => throw new InvalidDataException("Expected a byte string."),
-    };
+    public static string Text(object? value) =>
+        value switch
+        {
+            string text => text,
+            byte[] bytes => Encoding.UTF8.GetString(bytes),
+            _ => throw new InvalidDataException("Expected a byte string."),
+        };
 
     private static void Size(BinaryWriter writer, int size)
     {
@@ -378,29 +417,50 @@ internal static class BlueMarshal
                 writer.Write(name);
                 break;
             case BlueRowDescriptor descriptor:
-                Write(writer, new BlueConstructor("blue.DBRowDescriptor",
-                    [descriptor.Columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()],
-                    descriptor.InventoryVirtuals ? BlueRowDescriptor.InventoryVirtualColumns() : null));
+                Write(
+                    writer,
+                    new BlueConstructor(
+                        "blue.DBRowDescriptor",
+                        [descriptor.Columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()],
+                        descriptor.InventoryVirtuals ? BlueRowDescriptor.InventoryVirtualColumns() : null
+                    )
+                );
                 break;
             case BluePackedRow row:
                 BluePackedRow.Validate(row.Packed, row.Descriptor.DataLength);
-                if (row.Objects.Length != row.Descriptor.ObjectCount) { throw new InvalidDataException("Invalid Blue row object count."); }
+                if (row.Objects.Length != row.Descriptor.ObjectCount)
+                {
+                    throw new InvalidDataException("Invalid Blue row object count.");
+                }
                 writer.Write((byte)42);
                 Write(writer, row.Descriptor);
                 Size(writer, row.Packed.Length);
                 writer.Write(row.Packed);
-                foreach (var item in row.Objects) { Write(writer, item); }
+                foreach (var item in row.Objects)
+                {
+                    Write(writer, item);
+                }
                 break;
             case BlueConstructor constructor:
                 writer.Write((byte)34); // Reduce: (callable, arguments), followed by two empty iterators.
-                if (constructor.State is null) { writer.Write((byte)44); }
-                else { writer.Write((byte)20); Size(writer, 3); }
+                if (constructor.State is null)
+                {
+                    writer.Write((byte)44);
+                }
+                else
+                {
+                    writer.Write((byte)20);
+                    Size(writer, 3);
+                }
                 writer.Write((byte)2);
                 byte[] globalName = Encoding.ASCII.GetBytes(constructor.Name);
                 Size(writer, globalName.Length);
                 writer.Write(globalName);
                 Write(writer, constructor.Arguments);
-                if (constructor.State is not null) { Write(writer, constructor.State); }
+                if (constructor.State is not null)
+                {
+                    Write(writer, constructor.State);
+                }
                 writer.Write((byte)45);
                 writer.Write((byte)45);
                 break;
@@ -443,7 +503,17 @@ internal static class BlueMarshal
                 writer.Write((byte)45);
                 break;
             case object?[] tuple:
-                writer.Write((byte)(tuple.Length switch { 0 => 36, 1 => 37, 2 => 44, _ => 20 }));
+                writer.Write(
+                    (byte)(
+                        tuple.Length switch
+                        {
+                            0 => 36,
+                            1 => 37,
+                            2 => 44,
+                            _ => 20,
+                        }
+                    )
+                );
                 if (tuple.Length > 2)
                 {
                     Size(writer, tuple.Length);

@@ -13,16 +13,28 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
             ("machoNet", "GetServiceInfo") => new Dictionary<string, object?>(),
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.ActiveFlight?.VisiblePilots() ?? context.Roster),
-            ("config", "GetMultiCorpTickerNamesEx") when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids
-                => new object?[] { new object?[] { "corporationID", "tickerName" },
-                    (context.ActiveFlight?.VisiblePilots() ?? context.Roster).DistinctBy(p => p.CorpId)
-                        .Where(p => ids.Contains((long)p.CorpId)).Select(p => (object?)new object?[] { p.CorpId, p.CorporationTicker }).ToList() },
+            ("config", "GetMultiCorpTickerNamesEx")
+                when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new object?[]
+            {
+                new object?[] { "corporationID", "tickerName" },
+                (context.ActiveFlight?.VisiblePilots() ?? context.Roster)
+                    .DistinctBy(p => p.CorpId)
+                    .Where(p => ids.Contains((long)p.CorpId))
+                    .Select(p => (object?)new object?[] { p.CorpId, p.CorporationTicker })
+                    .ToList(),
+            },
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => new List<object?>(),
             ("config", "GetAverageMarketPrices") => new Dictionary<long, object?>(),
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => 0,
-            ("map", "GetSecurityModifiedSystems") => new BlueInstance("eve.common.script.sys.rowset.Rowset",
-                new Dictionary<string, object?> { ["header"] = new List<object?> { "solarSystemID", "security", "modifiedSecurity" }, ["lines"] = new List<object?>() }),
+            ("map", "GetSecurityModifiedSystems") => new BlueInstance(
+                "eve.common.script.sys.rowset.Rowset",
+                new Dictionary<string, object?>
+                {
+                    ["header"] = new List<object?> { "solarSystemID", "security", "modifiedSecurity" },
+                    ["lines"] = new List<object?>(),
+                }
+            ),
             ("userSvc", "GetRedeemTokens") => new List<object?>(),
             ("seasonalLoginCampaignManager", "get_active_campaign") => new object?[] { null, null, null, 0 },
             ("alert", "BeanCount") => new object?[] { 1, 0 },

@@ -16,8 +16,14 @@ public sealed class DockedServicesTests
         var pilot = db.Store.FindPilot(1000001)!;
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
         HashSet<long> owners = [90000002, 1000044];
         var response = Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetBounties", new object?[] { owners }, _ => { }));
@@ -30,7 +36,9 @@ public sealed class DockedServicesTests
             Assert.Equal(pair[0], bounty["targetID"]);
             Assert.Equal(0d, bounty["bounty"]);
         }
-        Assert.Empty(Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { })));
+        Assert.Empty(
+            Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { }))
+        );
     }
 
     [Fact]
@@ -40,14 +48,23 @@ public sealed class DockedServicesTests
         var pilot = db.Store.FindPilot(1000001)!;
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
         object?[] standingCheck = ["DoStandingCheckForStationService", new object?[] { (long)StationService.Fitting }];
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "corpStationMgr", "MachoBindObject",
-            new object?[] { (long)pilot.StationId + 1, standingCheck }, _ => { }));
-        var binding = Assert.IsType<object?[]>(router.Call(context, "corpStationMgr", "MachoBindObject",
-            new object?[] { (long)pilot.StationId, standingCheck }, _ => { }));
+        Assert.Same(
+            PilotCallRouter.Unsupported,
+            router.Call(context, "corpStationMgr", "MachoBindObject", new object?[] { (long)pilot.StationId + 1, standingCheck }, _ => { })
+        );
+        var binding = Assert.IsType<object?[]>(
+            router.Call(context, "corpStationMgr", "MachoBindObject", new object?[] { (long)pilot.StationId, standingCheck }, _ => { })
+        );
         var reference = Assert.IsType<BlueObjectReference>(binding[0]);
         Assert.Null(binding[1]);
         Assert.Equal("corpStationMgr", context.ResolveReference(reference.Id));
@@ -70,11 +87,25 @@ public sealed class DockedServicesTests
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
         long id = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
-        Assert.Null(router.Call(context, "@ship", "Add", new object?[] { id, (long)pilot.StationId }, _ => { },
-            new() { ["flag"] = 5L, ["qty"] = 25L }));
+        Assert.Null(
+            router.Call(
+                context,
+                "@ship",
+                "Add",
+                new object?[] { id, (long)pilot.StationId },
+                _ => { },
+                new() { ["flag"] = 5L, ["qty"] = 25L }
+            )
+        );
         Assert.Equal(2, context.Notifications.Count);
         var remainder = context.Notifications[0].Arguments;
         Assert.Equal(3, remainder.Length);
@@ -108,11 +139,18 @@ public sealed class DockedServicesTests
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var inventory = scope.ServiceProvider.GetRequiredService<IPilotInventory>();
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
-        Assert.Null(router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { },
-            new() { ["flag"] = 5L }));
+        Assert.Null(
+            router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { }, new() { ["flag"] = 5L })
+        );
         var notification = Assert.Single(context.Notifications);
         Assert.Equal("OnItemChange", notification.Name);
         var changes = Assert.IsType<Dictionary<long, object?>>(notification.Arguments[1]);
@@ -122,10 +160,24 @@ public sealed class DockedServicesTests
         // The receive codec deliberately rejects DBRow reductions; the client owns decoding those.
         Assert.NotEmpty(BlueMarshal.Encode(notification.Arguments));
         Assert.Single(Assert.IsType<List<object?>>(router.Call(context, "@ship", "List", new object?[] { 5L }, _ => { })));
-        Assert.IsType<PilotCallRouter.Error>(router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { }));
+        Assert.IsType<PilotCallRouter.Error>(
+            router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { })
+        );
         Assert.Single(context.Notifications);
         context.Notifications.Clear();
-        Assert.Null(router.Call(context, "@hangar", "MultiAdd", new object?[] { new List<object?> { item.Id }, pilot.ShipId }, _ => { }));
+        Assert.Null(
+            router.Call(
+                context,
+                "@hangar",
+                "MultiAdd",
+                new object?[]
+                {
+                    new List<object?> { item.Id },
+                    pilot.ShipId,
+                },
+                _ => { }
+            )
+        );
         Assert.Single(context.Notifications);
         Assert.Empty(inventory.List(pilot.PilotId, pilot.ShipId));
     }
@@ -137,12 +189,25 @@ public sealed class DockedServicesTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         using var scope = db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
         object?[] getHangar = ["GetInventory", new object?[] { 10004L, null }, new Dictionary<string, object?>()];
-        var bind = Assert.IsType<object?[]>(router.Call(context, "invbroker", "MachoBindObject",
-            new object?[] { new object?[] { (long)pilot.StationId, 15L }, getHangar }, _ => { }));
+        var bind = Assert.IsType<object?[]>(
+            router.Call(
+                context,
+                "invbroker",
+                "MachoBindObject",
+                new object?[] { new object?[] { (long)pilot.StationId, 15L }, getHangar },
+                _ => { }
+            )
+        );
         var handle = Assert.IsType<BlueObjectReference>(bind[1]);
         string boundService = Assert.IsType<string>(context.ResolveReference(handle.Id));
         var items = Assert.IsType<List<object?>>(router.Call(context, boundService, "List", new object?[] { 4L }, _ => { }));
@@ -156,8 +221,20 @@ public sealed class DockedServicesTests
         Assert.Equal(pilot.ShipId, values[keys.IndexOf("itemID")]);
         Assert.Equal((long)pilot.StationId, values[keys.IndexOf("locationID")]);
         Assert.Equal(pilot.PilotId, values[keys.IndexOf("ownerID")]);
-        Assert.Null(new PilotCallContext(1000001, pilot.Account, [pilot], _ => throw new NotSupportedException(), 11, []).ResolveReference(handle.Id));
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "invbroker", "MachoBindObject",
-            new object?[] { new object?[] { (long)pilot.StationId + 1, 15L }, getHangar }, _ => { }));
+        Assert.Null(
+            new PilotCallContext(1000001, pilot.Account, [pilot], _ => throw new NotSupportedException(), 11, []).ResolveReference(
+                handle.Id
+            )
+        );
+        Assert.Same(
+            PilotCallRouter.Unsupported,
+            router.Call(
+                context,
+                "invbroker",
+                "MachoBindObject",
+                new object?[] { new object?[] { (long)pilot.StationId + 1, 15L }, getHangar },
+                _ => { }
+            )
+        );
     }
 }

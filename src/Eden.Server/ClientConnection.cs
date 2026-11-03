@@ -18,35 +18,54 @@ internal sealed class ClientConnection(PilotLogin login, PilotGate gate)
             try
             {
                 NetworkStream stream = client.GetStream();
-                await CompatibilityHandshake.ServeAsync(stream, Console.WriteLine, timeout.Token, async (command, token) =>
-                {
-                    long? admitted = null;
-                    try
+                await CompatibilityHandshake.ServeAsync(
+                    stream,
+                    Console.WriteLine,
+                    timeout.Token,
+                    async (command, token) =>
                     {
-                        await login.RunAsync(stream, command, Console.WriteLine, token, accountId =>
+                        long? admitted = null;
+                        try
                         {
-                            if (!gate.TryEnter(accountId))
+                            await login.RunAsync(
+                                stream,
+                                command,
+                                Console.WriteLine,
+                                token,
+                                accountId =>
+                                {
+                                    if (!gate.TryEnter(accountId))
+                                    {
+                                        throw new InvalidDataException("This account is already connected.");
+                                    }
+                                    admitted = accountId;
+                                    timeout.CancelAfter(Timeout.InfiniteTimeSpan);
+                                }
+                            );
+                        }
+                        finally
+                        {
+                            if (admitted is long accountId)
                             {
-                                throw new InvalidDataException("This account is already connected.");
+                                gate.Leave(accountId);
                             }
-                            admitted = accountId;
-                            timeout.CancelAfter(Timeout.InfiniteTimeSpan);
-                        });
-                    }
-                    finally
-                    {
-                        if (admitted is long accountId)
-                        {
-                            gate.Leave(accountId);
                         }
                     }
-                });
+                );
             }
             catch (OperationCanceledException)
             {
                 Console.WriteLine(shutdown.IsCancellationRequested ? "Session closed." : "Login timed out.");
             }
-            catch (Exception exception) when (exception is IOException or InvalidDataException or SocketException or CryptographicException or KeyNotFoundException or ArgumentException)
+            catch (Exception exception)
+                when (exception
+                        is IOException
+                            or InvalidDataException
+                            or SocketException
+                            or CryptographicException
+                            or KeyNotFoundException
+                            or ArgumentException
+                )
             {
                 Console.WriteLine(exception.Message);
             }

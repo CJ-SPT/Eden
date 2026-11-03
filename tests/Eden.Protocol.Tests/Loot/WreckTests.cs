@@ -21,7 +21,9 @@ public sealed class WreckTests
     {
         public int Seconds { get; set; }
         public override long TimestampFrequency => 1;
+
         public override long GetTimestamp() => Seconds;
+
         public override DateTimeOffset GetUtcNow() => s_start.AddSeconds(Seconds);
     }
 
@@ -32,6 +34,7 @@ public sealed class WreckTests
         public IWrecks Store => Db.Services.GetRequiredService<IWrecks>();
         public WreckContact Wreck { get; }
         public long Item => Store.Read(Pilot.PilotId, Wreck.Id, Now).Items.Single().Id;
+
         public Fixture()
         {
             NpcEncounterTests.Prepare(Db);
@@ -49,7 +52,10 @@ public sealed class WreckTests
             }
             Wreck = Assert.Single(Store.List(npc.SystemId, Now));
         }
-        public IReadOnlyList<InventoryChange> Take(int? quantity = null) => Store.Take(Pilot.PilotId, Pilot.ShipId, Wreck.Id, [Item], quantity, Now);
+
+        public IReadOnlyList<InventoryChange> Take(int? quantity = null) =>
+            Store.Take(Pilot.PilotId, Pilot.ShipId, Wreck.Id, [Item], quantity, Now);
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -104,7 +110,10 @@ public sealed class WreckTests
         Assert.Equal(original, Assert.Single(f.Take()).Item.Id);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(100, saved.Set<OwnedItem>().Where(i => i.TypeId == WreckDefinitions.StarterLootType).Sum(i => i.Quantity));
-        Assert.All(saved.Set<OwnedItem>().Where(i => i.TypeId == WreckDefinitions.StarterLootType), i => Assert.Equal(f.Pilot.ShipId, i.LocationId));
+        Assert.All(
+            saved.Set<OwnedItem>().Where(i => i.TypeId == WreckDefinitions.StarterLootType),
+            i => Assert.Equal(f.Pilot.ShipId, i.LocationId)
+        );
     }
 
     [Fact]
@@ -113,15 +122,17 @@ public sealed class WreckTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem
-            {
-                Id = PilotInventoryStore.NextId(world),
-                OwnerId = f.Pilot.PilotId,
-                TypeId = WreckDefinitions.StarterLootType,
-                LocationId = f.Pilot.ShipId,
-                FlagId = (int)InventoryFlag.Cargo,
-                Quantity = 12475,
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = PilotInventoryStore.NextId(world),
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = WreckDefinitions.StarterLootType,
+                    LocationId = f.Pilot.ShipId,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = 12475,
+                }
+            );
             world.SaveChanges();
         }
         var failure = Assert.Throws<CargoCapacityException>(() => f.Take());
@@ -137,11 +148,23 @@ public sealed class WreckTests
     {
         using Fixture f = new();
         long item = f.Item;
-        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
-        {
-            try { return f.Store.Take(f.Pilot.PilotId, f.Pilot.ShipId, f.Wreck.Id, [item], null, Now); }
-            catch (InvalidDataException) { return null; }
-        })));
+        var results = await Task.WhenAll(
+            Enumerable
+                .Range(0, 2)
+                .Select(_ =>
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            return f.Store.Take(f.Pilot.PilotId, f.Pilot.ShipId, f.Wreck.Id, [item], null, Now);
+                        }
+                        catch (InvalidDataException)
+                        {
+                            return null;
+                        }
+                    })
+                )
+        );
         Assert.Single(results, r => r is not null);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.TypeId == WreckDefinitions.StarterLootType).Quantity);
@@ -192,8 +215,16 @@ public sealed class WreckTests
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, clock, new(), [], wrecks: f.Store), 7, []);
-        object? Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) => router.Call(context, service, method, args, _ => { }, keywords);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, clock, new(), [], wrecks: f.Store),
+            7,
+            []
+        );
+        object? Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(context, service, method, args, _ => { }, keywords);
         context.Select(pilot);
         context.Flight.Snapshot();
         var reference = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [f.Wreck.Id, false]));
@@ -205,7 +236,10 @@ public sealed class WreckTests
         var change = Assert.Single(context.Notifications, n => n.Name == "OnItemChange");
         Assert.Equal(f.Wreck.Id, Assert.IsType<Dictionary<long, object?>>(change.Arguments[1])[(long)InventoryColumn.Location]);
         Assert.Empty(Assert.IsType<List<object?>>(Call(service, "List", [])));
-        var action = Assert.Single(context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!), a => Equals(a[0], "OnSlimItemChange"));
+        var action = Assert.Single(
+            context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!),
+            a => Equals(a[0], "OnSlimItemChange")
+        );
         var args = Assert.IsType<object?[]>(action[1]);
         Assert.True(Assert.IsType<bool>(Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(args[1]).State)["isEmpty"]));
         Assert.NotEmpty(BlueMarshal.Encode(context.Flight.Updates));
@@ -229,7 +263,9 @@ public sealed class WreckTests
         Assert.Equal(f.Wreck.Position.Y, reader.ReadDouble());
         Assert.Equal(f.Wreck.Position.Z, reader.ReadDouble());
         Assert.Equal((byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive), reader.ReadByte());
-        var slim = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(payload[1]))).State);
+        var slim = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(payload[1]))).State
+        );
         Assert.Equal(f.Wreck.SourceId, slim["launcherID"]);
         Assert.Equal(false, slim["isEmpty"]);
         Assert.Equal(new object?[] { f.Pilot.PilotId, f.Pilot.CorpId, null, false }, slim["lootRights"]);
@@ -260,7 +296,11 @@ public sealed class WreckTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSql($"DELETE FROM WorldItem WHERE LocationId={f.Wreck.Id}");
-            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22");
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropNpcNavigationColumns
+                    + "DROP TABLE WorldWreck; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE "
+                    + "WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22"
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         Assert.Empty(f.Store.List(f.Wreck.SystemId, Now));
@@ -277,24 +317,31 @@ public sealed class WreckTests
         long itemId = f.Item;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + """
-                CREATE TABLE LegacyWreck(Id INTEGER PRIMARY KEY, NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
-                    OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, CorporationId INTEGER NOT NULL,
-                    TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Name TEXT NOT NULL, X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL,
-                    CreatedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
-                INSERT INTO LegacyWreck SELECT Id,NpcId,OwnerId,CorporationId,TypeId,SystemId,Name,X,Y,Z,CreatedAt,ExpiresAt FROM WorldWreck;
-                DROP TABLE WorldWreck;
-                ALTER TABLE LegacyWreck RENAME TO WorldWreck;
-                CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
-                CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
-                ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson;
-                ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind;
-                PRAGMA user_version=23;
-                """);
-            world.Database.ExecuteSql($"""
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropNpcNavigationColumns
+                    + """
+                    CREATE TABLE LegacyWreck(Id INTEGER PRIMARY KEY, NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
+                        OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, CorporationId INTEGER NOT NULL,
+                        TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Name TEXT NOT NULL, X REAL NOT NULL, Y REAL NOT NULL, Z
+                            REAL NOT NULL,
+                        CreatedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
+                    INSERT INTO LegacyWreck SELECT Id,NpcId,OwnerId,CorporationId,TypeId,SystemId,Name,X,Y,Z,CreatedAt,ExpiresAt FROM
+                        WorldWreck;
+                    DROP TABLE WorldWreck;
+                    ALTER TABLE LegacyWreck RENAME TO WorldWreck;
+                    CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
+                    CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
+                    ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson;
+                    ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind;
+                    PRAGMA user_version=23;
+                    """
+            );
+            world.Database.ExecuteSql(
+                $"""
                 INSERT INTO WorldShipLoss(ShipId,PilotId,NpcId,CapsuleId,TypeId,SystemId,Time,Name,ItemsJson,X,Y,Z)
                     VALUES (123,{f.Pilot.PilotId},{f.Wreck.SourceId},124,601,{f.Wreck.SystemId},{Now},'Earlier loss','[]',0,0,0)
-                """);
+                """
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);

@@ -36,13 +36,37 @@ public enum IndustryBlueprintType
 }
 
 public sealed record IndustryFacility(int Id, int TypeId, int OwnerId, int SystemId);
+
 public sealed record OwnedBlueprint(InventoryItem Item, IndustryFacility Facility, long? JobId);
+
 public sealed record IndustryCharacterBonus(int SkillId, DogmaAttributeId Attribute, double Value, bool Additive);
-public sealed record ManufacturingRequest(long BlueprintId, int BlueprintTypeId, int FacilityId, int Runs, int? ProductTypeId,
-    double QuotedSeconds, IReadOnlyDictionary<int, int> QuotedMaterials);
-public sealed record ManufacturingJob(long Id, long PilotId, long BlueprintId, int BlueprintTypeId, IndustryFacility Facility,
-    int ProductTypeId, int Runs, int OutputQuantity, long StartTime, long EndTime, long DurationSeconds,
-    IndustryJobStatus Status, long? CompletedAt);
+
+public sealed record ManufacturingRequest(
+    long BlueprintId,
+    int BlueprintTypeId,
+    int FacilityId,
+    int Runs,
+    int? ProductTypeId,
+    double QuotedSeconds,
+    IReadOnlyDictionary<int, int> QuotedMaterials
+);
+
+public sealed record ManufacturingJob(
+    long Id,
+    long PilotId,
+    long BlueprintId,
+    int BlueprintTypeId,
+    IndustryFacility Facility,
+    int ProductTypeId,
+    int Runs,
+    int OutputQuantity,
+    long StartTime,
+    long EndTime,
+    long DurationSeconds,
+    IndustryJobStatus Status,
+    long? CompletedAt
+);
+
 public sealed record IndustryResult(ManufacturingJob Job, IReadOnlyList<InventoryChange> Changes);
 
 public interface IPilotIndustrySkills

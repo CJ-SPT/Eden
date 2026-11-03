@@ -64,13 +64,23 @@ public sealed class PilotHealthTests
                 catalog.Database.ExecuteSql($"INSERT INTO TypeAttribute VALUES ({(int)skill},275,1)");
             }
             // Omitted resonances default to one; explicit zero means immunity.
-            catalog.Database.ExecuteSqlRaw("INSERT INTO DogmaAttribute(Id,Name) VALUES (273,'shieldKineticDamageResonance'); INSERT INTO TypeAttribute VALUES (601,273,0)");
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT INTO DogmaAttribute(Id,Name) VALUES (273,'shieldKineticDamageResonance'); INSERT INTO "
+                    + "TypeAttribute VALUES (601,273,0)"
+            );
         }
         using (WorldDbContext world = new(db.Path))
         {
             foreach (var skill in Enum.GetValues<DefenseSkill>())
             {
-                world.Add(new PilotSkill { PilotId = PilotId, TypeId = (int)skill, Points = 8000 });
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = PilotId,
+                        TypeId = (int)skill,
+                        Points = 8000,
+                    }
+                );
             }
             world.SaveChanges();
         }
@@ -102,10 +112,18 @@ public sealed class PilotHealthTests
         using var scope = db.Services.CreateScope();
         var health = scope.ServiceProvider.GetRequiredService<IPilotHealth>();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
+            10,
+            []
+        );
         context.Select(pilot);
-        var all = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State);
+        var all = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
+        );
         var shipInfo = Assert.IsType<Dictionary<long, object?>>(all["shipInfo"]);
         var ship = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(shipInfo[ShipId]).State);
         var attributes = Assert.IsType<Dictionary<long, object?>>(ship["attributes"]);
@@ -115,8 +133,11 @@ public sealed class PilotHealthTests
         var row = Assert.IsType<object?[]>(instances[ShipId]);
         Assert.Equal(75d, row[2]);
         Assert.Equal(125d, row[5]);
-        var snapshot = Ballpark.Snapshot(new(pilot with { Position = SpacePosition.Zero }, SpacePosition.Zero, null, 0, null,
-            Health: health.Read(PilotId, s_now)), 42, db.Objects);
+        var snapshot = Ballpark.Snapshot(
+            new(pilot with { Position = SpacePosition.Zero }, SpacePosition.Zero, null, 0, null, Health: health.Read(PilotId, s_now)),
+            42,
+            db.Objects
+        );
         var state = Assert.IsType<Dictionary<string, object?>>(snapshot.State);
         var damage = Assert.IsType<Dictionary<long, object?>>(state["damageState"]);
         var value = Assert.IsType<object?[]>(damage[ShipId]);
@@ -138,7 +159,16 @@ public sealed class PilotHealthTests
         const long spareShip = 2000000000500;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Ships.Add(new() { Id = spareShip, OwnerId = PilotId, TypeId = pilot.ShipTypeId, StationId = pilot.StationId, Name = "Spare" });
+            world.Ships.Add(
+                new()
+                {
+                    Id = spareShip,
+                    OwnerId = PilotId,
+                    TypeId = pilot.ShipTypeId,
+                    StationId = pilot.StationId,
+                    Name = "Spare",
+                }
+            );
             world.SaveChanges();
         }
         fleet.Board(PilotId, spareShip, ShipId);
@@ -155,12 +185,16 @@ public sealed class PilotHealthTests
         using TestWorld db = new();
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO WorldWallet VALUES (90000001,12345);
                 INSERT INTO WorldShipEnergy VALUES (1000000000001,17,134000000000000000);
-                DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
+                DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP
+                    TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM
+                    WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=17;
-                """);
+                """
+            );
         }
         var pilot = db.Store.FindPilot(1000001)!;
         _ = new SqliteWorld(db.Path);
@@ -173,6 +207,8 @@ public sealed class PilotHealthTests
         Assert.Equal(4, reopened.Set<OwnedItem>().Count());
         var fresh = db.Services.GetRequiredService<IPilotHealth>().Read(PilotId, s_now);
         Assert.Equal(fresh.Defense.Undamaged, fresh.Remaining);
-        Assert.Throws<SqliteException>(() => reopened.Database.ExecuteSqlRaw("INSERT INTO WorldShipHealth VALUES (1000000000001,-1,0,0,0)"));
+        Assert.Throws<SqliteException>(() =>
+            reopened.Database.ExecuteSqlRaw("INSERT INTO WorldShipHealth VALUES (1000000000001,-1,0,0,0)")
+        );
     }
 }

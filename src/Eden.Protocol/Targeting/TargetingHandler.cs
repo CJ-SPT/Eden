@@ -4,9 +4,12 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Targeting;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting, SharedTargetLocks shared) : ISelectedPilotCallHandler, IDisposable
+internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting, SharedTargetLocks shared)
+    : ISelectedPilotCallHandler,
+        IDisposable
 {
     private sealed record PendingLock(long Started, double Seconds);
+
     private readonly Dictionary<long, PendingLock> _pending = [];
     private readonly HashSet<long> _locked = [];
     private long[] _targeters = [];
@@ -16,13 +19,22 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
 
     public void Advance(PilotCallContext context)
     {
-        if (!context.Selected) { return; }
+        if (!context.Selected)
+        {
+            return;
+        }
         if (_shipId != 0 && _shipId != context.Pilot.ShipId)
         {
             // Changing hulls clears both directions in the client's target UI.
             // Removing shared edges alone leaves portraits and targeted markers.
-            foreach (long id in _pending.Keys.Concat(_locked).Distinct()) { Notify(context, "lost", id); }
-            foreach (long id in _targeters) { Notify(context, "otherlost", id); }
+            foreach (long id in _pending.Keys.Concat(_locked).Distinct())
+            {
+                Notify(context, "lost", id);
+            }
+            foreach (long id in _targeters)
+            {
+                Notify(context, "otherlost", id);
+            }
             shared.RemoveShip(_shipId);
             _pending.Clear();
             _locked.Clear();
@@ -57,8 +69,14 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
             }
         }
         var targeters = shared.Targeters(_shipId);
-        foreach (long id in _targeters.Except(targeters)) { Notify(context, "otherlost", id); }
-        foreach (long id in targeters.Except(_targeters)) { Notify(context, "otheradd", id); }
+        foreach (long id in _targeters.Except(targeters))
+        {
+            Notify(context, "otherlost", id);
+        }
+        foreach (long id in targeters.Except(_targeters))
+        {
+            Notify(context, "otheradd", id);
+        }
         _targeters = targeters;
     }
 
@@ -73,18 +91,30 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         bool pending = _pending.Remove(target);
         bool locked = _locked.Remove(target);
         shared.Remove(_shipId, target);
-        if (pending || locked) { Notify(context, "lost", target); }
+        if (pending || locked)
+        {
+            Notify(context, "lost", target);
+        }
     }
 
     private object Add(PilotCallContext context, long id)
     {
-        if (id == _shipId) { return new PilotCallRouter.UserError("DeniedTargetSelf", []); }
+        if (id == _shipId)
+        {
+            return new PilotCallRouter.UserError("DeniedTargetSelf", []);
+        }
         if (context.Flight.FindTarget(id) is not { } target)
         {
             return new PilotCallRouter.UserError("TargetCantValidate", []);
         }
-        if (_locked.Contains(id)) { return new object?[] { false, _locked.Order().Cast<object?>().ToList() }; }
-        if (_pending.ContainsKey(id)) { return new object?[] { true, _locked.Order().Cast<object?>().ToList() }; }
+        if (_locked.Contains(id))
+        {
+            return new object?[] { false, _locked.Order().Cast<object?>().ToList() };
+        }
+        if (_pending.ContainsKey(id))
+        {
+            return new object?[] { true, _locked.Order().Cast<object?>().ToList() };
+        }
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets));
         if (_pending.Count + _locked.Count >= limit)
@@ -95,8 +125,10 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         {
             return new PilotCallRouter.UserError("UnableToTarget", []);
         }
-        double seconds = TargetingDefinitions.LockSeconds(attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
-            fitting.Attributes(target.TypeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius));
+        double seconds = TargetingDefinitions.LockSeconds(
+            attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
+            fitting.Attributes(target.TypeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius)
+        );
         if (!(seconds > 0) || !double.IsFinite(seconds))
         {
             return new PilotCallRouter.UserError("TargetingSystemsNotInstalled", []);
@@ -106,9 +138,18 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         return new object?[] { true, _locked.Order().Cast<object?>().ToList() };
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
+    public object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    )
     {
-        if (service != "dogmaIM") { return PilotCallRouter.Unsupported; }
+        if (service != "dogmaIM")
+        {
+            return PilotCallRouter.Unsupported;
+        }
         context.Flight.Checkpoint();
         Advance(context);
         switch (method)
@@ -119,7 +160,10 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
                 Remove(context, target);
                 return null;
             case "ClearTargets" when args.Length == 0:
-                foreach (long id in _pending.Keys.Concat(_locked).ToArray()) { Remove(context, id); }
+                foreach (long id in _pending.Keys.Concat(_locked).ToArray())
+                {
+                    Remove(context, id);
+                }
                 return null;
             case "GetTargets" when args.Length == 0:
                 return _locked.Order().Cast<object?>().ToList();

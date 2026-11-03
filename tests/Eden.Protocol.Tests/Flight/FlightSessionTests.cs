@@ -14,6 +14,7 @@ public sealed class FlightSessionTests
     {
         public long Seconds { get; set; }
         public override long TimestampFrequency => 1;
+
         public override long GetTimestamp() => Seconds;
     }
 
@@ -51,8 +52,10 @@ public sealed class FlightSessionTests
             observer.Updates.Clear();
             observer.RefreshPeers();
             var calls = observer.Updates.Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToList();
-            Assert.Equal(new object?[] { "SetBallPosition", "GotoDirection", "SetSpeedFraction", "SetBallVelocity" },
-                calls.Select(call => call[0]));
+            Assert.Equal(
+                new object?[] { "SetBallPosition", "GotoDirection", "SetSpeedFraction", "SetBallVelocity" },
+                calls.Select(call => call[0])
+            );
             Assert.All(calls, call => Assert.Equal(moving.Pilot.ShipId, ((object?[])call[1]!)[0]));
             var sample = Assert.Single(space.Peers(observer.Pilot));
             Assert.True(sample.Pilot.Position!.X > initial.X);
@@ -164,8 +167,17 @@ public sealed class FlightSessionTests
     [Theory]
     [InlineData(40009098, 7, -639929607985, -111789387758, -1118379774140, 57970000, 61571564.109, -7889581.898, -62815244.816)]
     [InlineData(40009114, 8, -632088182700, -110419568139, -1126786979180, 1100000, -5634213.245, 1422500, -2337871.064)]
-    public void CelestialLandingsMatchPublishedFormulasFromEitherSide(int id, int group, double x, double y, double z,
-        float radius, double dx, double dy, double dz)
+    public void CelestialLandingsMatchPublishedFormulasFromEitherSide(
+        int id,
+        int group,
+        double x,
+        double y,
+        double z,
+        float radius,
+        double dx,
+        double dy,
+        double dz
+    )
     {
         SpacePosition center = new(x, y, z);
         StaticSpaceObject body = new(id, 0, group, 2, 1, center, radius);
@@ -307,8 +319,7 @@ public sealed class FlightSessionTests
         var stream = (byte[])((Dictionary<string, object?>)state.State!)["state"]!;
         Assert.Equal(((byte[])chunk[0]!)[5..], stream.AsSpan(5 + 39, ((byte[])chunk[0]!).Length - 5).ToArray());
         Assert.True(destination.X < gate.Position.X);
-        Assert.DoesNotContain(mover.Updates.Concat(observer.Updates), update =>
-            Equals(((object?[])((object?[])update!)[1]!)[0], "WarpTo"));
+        Assert.DoesNotContain(mover.Updates.Concat(observer.Updates), update => Equals(((object?[])((object?[])update!)[1]!)[0], "WarpTo"));
     }
 
     [Fact]
@@ -350,7 +361,8 @@ public sealed class FlightSessionTests
         var after = Assert.Single(space.Peers(viewer)).Velocity;
         Assert.Equal(Math.Exp(-2 / pilot.Flight.InertiaTime), after.X / before.X, 10);
         Assert.Equal(Math.Pow(0.93 / 1.07, 2), after.Y / after.X, 10);
-        double range = session.Pilot.Position!.DistanceTo(new(pilot.X, pilot.Y, pilot.Z)) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius;
+        double range =
+            session.Pilot.Position!.DistanceTo(new(pilot.X, pilot.Y, pilot.Z)) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius;
         session.Call("beyonce", "CmdFollowBall", [(long)pilot.StationId, range]);
         var atRange = session.Pilot.Position;
         clock.Seconds++;
@@ -400,9 +412,26 @@ public sealed class FlightSessionTests
         Assert.Same(PilotCallRouter.Unsupported, session.StartJump([args[0], 1L, args[2]], systems));
         session.Updates.Clear();
         Assert.Null(session.StartJump(args, systems));
-        Assert.Equal(new object?[] { pilot.ShipId, null, null, gate.Id, null, "effects.JumpOut", false, true, false,
-            10000, 0, null, 0, new object?[] { gate.DestinationSystemId } },
-            EffectArguments(session).Single());
+        Assert.Equal(
+            new object?[]
+            {
+                pilot.ShipId,
+                null,
+                null,
+                gate.Id,
+                null,
+                "effects.JumpOut",
+                false,
+                true,
+                false,
+                10000,
+                0,
+                null,
+                0,
+                new object?[] { gate.DestinationSystemId },
+            },
+            EffectArguments(session).Single()
+        );
         Assert.Same(PilotCallRouter.Unsupported, session.StartJump(args, systems));
         Assert.False(session.CompleteJump());
         clock.Seconds += 10;
@@ -423,8 +452,12 @@ public sealed class FlightSessionTests
         Assert.Equal(pilot.SystemId, session.Pilot.SystemId);
         Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
 
-        static IEnumerable<object?[]> EffectArguments(FlightSession flight) => flight.Updates.Cast<object?[]>()
-            .Select(update => (object?[])update[1]!).Where(call => Equals(call[0], "OnSpecialFX")).Select(call => (object?[])call[1]!);
+        static IEnumerable<object?[]> EffectArguments(FlightSession flight) =>
+            flight
+                .Updates.Cast<object?[]>()
+                .Select(update => (object?[])update[1]!)
+                .Where(call => Equals(call[0], "OnSpecialFX"))
+                .Select(call => (object?[])call[1]!);
     }
 
     [Fact]
@@ -521,8 +554,7 @@ public sealed class FlightSessionTests
         Assert.Equal(13, reader.ReadByte());
     }
 
-    private static SpacePosition ReadPosition(BinaryReader reader) =>
-        new(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
+    private static SpacePosition ReadPosition(BinaryReader reader) => new(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble());
 
     [Fact]
     public void ApproachReachesStationAndChecksActiveShipBeforeDocking()

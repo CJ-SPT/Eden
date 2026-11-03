@@ -1,7 +1,15 @@
 namespace Eden.Protocol.Characters;
 
-public sealed record NewCharacter(string Name, int RaceId, int BloodlineId, int GenderId, int AncestryId,
-    byte[] Appearance, byte[] Portrait, int SchoolId);
+public sealed record NewCharacter(
+    string Name,
+    int RaceId,
+    int BloodlineId,
+    int GenderId,
+    int AncestryId,
+    byte[] Appearance,
+    byte[] Portrait,
+    int SchoolId
+);
 
 public interface ICharacterCreation
 {

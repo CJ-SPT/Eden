@@ -10,33 +10,59 @@ namespace Eden.Protocol.Mining;
 internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting)
 {
     private sealed record Cycle(MiningLaser Laser, long Target, long Started, long StartTime, long Repeats);
+
     private readonly Dictionary<long, Cycle> _cycles = [];
     private const int ProbabilityResolution = 1_000_000;
 
     public void Cancel(PilotCallContext context)
     {
-        foreach (var cycle in _cycles.Values.ToArray()) { Stop(context, cycle); }
+        foreach (var cycle in _cycles.Values.ToArray())
+        {
+            Stop(context, cycle);
+        }
     }
 
     public bool IsActive(long module) => _cycles.ContainsKey(module);
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) => _cycles.TryGetValue(module, out var cycle)
-        ? [module, pilot.PilotId, pilot.ShipId, cycle.Target, null, Array.Empty<object?>(), (int)DogmaEffect.MiningLaser,
-            cycle.StartTime, cycle.Laser.DurationMilliseconds, cycle.Repeats] : null;
+    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+        _cycles.TryGetValue(module, out var cycle)
+            ?
+            [
+                module,
+                pilot.PilotId,
+                pilot.ShipId,
+                cycle.Target,
+                null,
+                Array.Empty<object?>(),
+                (int)DogmaEffect.MiningLaser,
+                cycle.StartTime,
+                cycle.Laser.DurationMilliseconds,
+                cycle.Repeats,
+            ]
+            : null;
 
     public void Advance(PilotCallContext context)
     {
-        if (!context.Selected) { return; }
+        if (!context.Selected)
+        {
+            return;
+        }
         foreach (var (module, cycle) in _cycles.ToArray())
         {
             var target = context.Flight.FindTarget(cycle.Target);
-            if (!targeting.IsLocked(cycle.Target) || target is null ||
-                context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius > cycle.Laser.Range)
+            if (
+                !targeting.IsLocked(cycle.Target)
+                || target is null
+                || context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius > cycle.Laser.Range
+            )
             {
                 Stop(context, cycle);
                 continue;
             }
-            if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Laser.DurationMilliseconds) { continue; }
+            if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Laser.DurationMilliseconds)
+            {
+                continue;
+            }
             try
             {
                 bool critical = RandomNumberGenerator.GetInt32(ProbabilityResolution) < cycle.Laser.CriticalChance * ProbabilityResolution;
@@ -57,16 +83,31 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     private MiningYield Collect(PilotCallContext context, Cycle cycle, double volume, double criticalBonus)
     {
         var result = mining.Collect(context.Pilot.PilotId, cycle.Laser.ItemId, cycle.Target, volume, criticalBonus);
-        if (result.Cargo is { } change) { InventoryHandler.NotifyItemChange(context, change); }
+        if (result.Cargo is { } change)
+        {
+            InventoryHandler.NotifyItemChange(context, change);
+        }
         if (result.Extracted > 0)
         {
             // oreMinedNotificationAdapter in build 3662168 uses these exact keys.
-            context.Notifications.Add(("OnOreMined", [new Dictionary<string, object?>
-            {
-                ["oreType"] = result.TypeId, ["quantity_added"] = result.Extracted + result.CriticalBonus,
-                ["quantity_removed"] = result.Extracted, ["hasRewards"] = false, ["amountWasted"] = 0,
-                ["amountCritBonus"] = result.CriticalBonus, ["itemID"] = cycle.Target, ["moduleItemID"] = cycle.Laser.ItemId,
-            }]));
+            context.Notifications.Add(
+                (
+                    "OnOreMined",
+                    [
+                        new Dictionary<string, object?>
+                        {
+                            ["oreType"] = result.TypeId,
+                            ["quantity_added"] = result.Extracted + result.CriticalBonus,
+                            ["quantity_removed"] = result.Extracted,
+                            ["hasRewards"] = false,
+                            ["amountWasted"] = 0,
+                            ["amountCritBonus"] = result.CriticalBonus,
+                            ["itemID"] = cycle.Target,
+                            ["moduleItemID"] = cycle.Laser.ItemId,
+                        },
+                    ]
+                )
+            );
         }
         return result;
     }
@@ -79,37 +120,98 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         _cycles.Add(module, cycle);
         Effect(context, cycle, true);
         context.Flight.SetMiningEffect(new(module, start.Laser.TypeId, target, now, start.Laser.DurationMilliseconds), true);
-        context.Notifications.Add(("OnModuleAttributeChanges", [new List<object?>
-        {
-            new object?[] { "OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)DogmaAttributeId.CapacitorCharge, now, start.Capacitor, null, now },
-        }]));
+        context.Notifications.Add(
+            (
+                "OnModuleAttributeChanges",
+                [
+                    new List<object?>
+                    {
+                        new object?[]
+                        {
+                            "OnModuleAttributeChange",
+                            context.Pilot.PilotId,
+                            context.Pilot.ShipId,
+                            (int)DogmaAttributeId.CapacitorCharge,
+                            now,
+                            start.Capacitor,
+                            null,
+                            now,
+                        },
+                    },
+                ]
+            )
+        );
     }
 
     private void Stop(PilotCallContext context, Cycle cycle)
     {
-        if (!_cycles.Remove(cycle.Laser.ItemId)) { return; }
+        if (!_cycles.Remove(cycle.Laser.ItemId))
+        {
+            return;
+        }
         Effect(context, cycle, false);
-        context.Flight.SetMiningEffect(new(cycle.Laser.ItemId, cycle.Laser.TypeId, cycle.Target, cycle.StartTime, cycle.Laser.DurationMilliseconds), false);
+        context.Flight.SetMiningEffect(
+            new(cycle.Laser.ItemId, cycle.Laser.TypeId, cycle.Target, cycle.StartTime, cycle.Laser.DurationMilliseconds),
+            false
+        );
     }
 
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(("OnGodmaShipEffect", [cycle.Laser.ItemId, (int)DogmaEffect.MiningLaser, now, active, active,
-            new object?[] { cycle.Laser.ItemId, context.Pilot.PilotId, context.Pilot.ShipId, cycle.Target, null, Array.Empty<object?>(), (int)DogmaEffect.MiningLaser },
-            cycle.StartTime, cycle.Laser.DurationMilliseconds, cycle.Repeats, null, active ? null : now]));
+        context.Notifications.Add(
+            (
+                "OnGodmaShipEffect",
+                [
+                    cycle.Laser.ItemId,
+                    (int)DogmaEffect.MiningLaser,
+                    now,
+                    active,
+                    active,
+                    new object?[]
+                    {
+                        cycle.Laser.ItemId,
+                        context.Pilot.PilotId,
+                        context.Pilot.ShipId,
+                        cycle.Target,
+                        null,
+                        Array.Empty<object?>(),
+                        (int)DogmaEffect.MiningLaser,
+                    },
+                    cycle.StartTime,
+                    cycle.Laser.DurationMilliseconds,
+                    cycle.Repeats,
+                    null,
+                    active ? null : now,
+                ]
+            )
+        );
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
+    public object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    )
     {
-        if (service != "dogmaIM" || method is not ("Activate" or "Deactivate")) { return PilotCallRouter.Unsupported; }
+        if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
+        {
+            return PilotCallRouter.Unsupported;
+        }
         context.Flight.Checkpoint();
         targeting.Advance(context);
         Advance(context);
         try
         {
-            if (method == "Activate" && args is [long module, var effect, long target, long repeats] &&
-                BlueMarshal.Text(effect) == MiningDefinitions.EffectName && repeats >= 0 && repeats <= int.MaxValue)
+            if (
+                method == "Activate"
+                && args is [long module, var effect, long target, long repeats]
+                && BlueMarshal.Text(effect) == MiningDefinitions.EffectName
+                && repeats >= 0
+                && repeats <= int.MaxValue
+            )
             {
                 if (!context.Flight.CanTarget || !targeting.IsLocked(target))
                 {
@@ -122,13 +224,21 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                 Start(context, module, target, repeats);
                 return null;
             }
-            if (method == "Deactivate" && args is [long item, var effectName] && BlueMarshal.Text(effectName) == MiningDefinitions.EffectName)
+            if (
+                method == "Deactivate"
+                && args is [long item, var effectName]
+                && BlueMarshal.Text(effectName) == MiningDefinitions.EffectName
+            )
             {
                 if (_cycles.TryGetValue(item, out var cycle))
                 {
                     // A manual mining stop returns whole units for the elapsed part of
                     // this cycle. Only completed cycles can roll a critical success.
-                    double fraction = Math.Clamp(clock.GetElapsedTime(cycle.Started).TotalMilliseconds / cycle.Laser.DurationMilliseconds, 0, 1);
+                    double fraction = Math.Clamp(
+                        clock.GetElapsedTime(cycle.Started).TotalMilliseconds / cycle.Laser.DurationMilliseconds,
+                        0,
+                        1
+                    );
                     _ = Collect(context, cycle, cycle.Laser.Volume * fraction, 0);
                     Stop(context, cycle);
                 }

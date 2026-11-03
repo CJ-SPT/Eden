@@ -16,14 +16,23 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
     private const int Completed = 53;
 
     public TrainingState Advance(long pilotId) => Update(pilotId, null, false, false);
-    public TrainingState Save(long pilotId, IReadOnlyList<TrainingTarget> targets, bool activate) => Update(pilotId, targets, activate, false);
+
+    public TrainingState Save(long pilotId, IReadOnlyList<TrainingTarget> targets, bool activate) =>
+        Update(pilotId, targets, activate, false);
+
     public TrainingState Pause(long pilotId) => Update(pilotId, null, false, true);
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
         using WorldDbContext world = new(database.Path);
-        return world.Set<TrainingLog>().Where(e => e.PilotId == pilotId).OrderByDescending(e => e.Time)
-            .ThenByDescending(e => e.Id).Take(count).Select(e => new TrainingEvent(e.Time, e.TypeId, e.Points, e.EventId)).ToArray();
+        return world
+            .Set<TrainingLog>()
+            .Where(e => e.PilotId == pilotId)
+            .OrderByDescending(e => e.Time)
+            .ThenByDescending(e => e.Id)
+            .Take(count)
+            .Select(e => new TrainingEvent(e.Time, e.TypeId, e.Points, e.EventId))
+            .ToArray();
     }
 
     private TrainingState Update(long pilotId, IReadOnlyList<TrainingTarget>? targets, bool activate, bool pause)
@@ -71,17 +80,19 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             for (int i = 0; i < queue.Count; i++)
             {
                 var entry = queue[i];
-                world.Add(new QueuedLevel
-                {
-                    PilotId = pilotId,
-                    Position = i,
-                    TypeId = entry.Target.TypeId,
-                    Level = entry.Target.Level,
-                    StartPoints = entry.StartPoints,
-                    EndPoints = entry.EndPoints,
-                    StartTime = entry.StartTime,
-                    EndTime = entry.EndTime,
-                });
+                world.Add(
+                    new QueuedLevel
+                    {
+                        PilotId = pilotId,
+                        Position = i,
+                        TypeId = entry.Target.TypeId,
+                        Level = entry.Target.Level,
+                        StartPoints = entry.StartPoints,
+                        EndPoints = entry.EndPoints,
+                        StartTime = entry.StartTime,
+                        EndTime = entry.EndTime,
+                    }
+                );
             }
             if (activate && !keepHead && queue.Count > 0)
             {
@@ -101,8 +112,14 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         return new(queue, changed.ToArray());
     }
 
-    private List<TrainingEntry> Plan(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets,
-        bool activate, TrainingEntry? running, long now)
+    private List<TrainingEntry> Plan(
+        WorldDbContext world,
+        long pilotId,
+        IReadOnlyList<TrainingTarget> targets,
+        bool activate,
+        TrainingEntry? running,
+        long now
+    )
     {
         if (targets.Count > 150)
         {
@@ -116,15 +133,22 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var owned = points.Keys.ToArray();
-        var attributes = catalog.Set<TypeAttribute>().Where(a => owned.Contains(a.ItemTypeId) &&
-            (a.AttributeId == 180 || a.AttributeId == 181 || a.AttributeId == 275)).AsEnumerable()
-            .GroupBy(a => a.ItemTypeId).ToDictionary(g => g.Key, g => g.ToDictionary(a => a.AttributeId, a => a.Value));
+        var attributes = catalog
+            .Set<TypeAttribute>()
+            .Where(a => owned.Contains(a.ItemTypeId) && (a.AttributeId == 180 || a.AttributeId == 181 || a.AttributeId == 275))
+            .AsEnumerable()
+            .GroupBy(a => a.ItemTypeId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(a => a.AttributeId, a => a.Value));
         int race = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.RaceId).Single();
-        var alpha = CatalogData.Client.Clonegrades.Get(catalog, race.ToString(CultureInfo.InvariantCulture)).Skills!
-            .ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
+        var alpha = CatalogData
+            .Client.Clonegrades.Get(catalog, race.ToString(CultureInfo.InvariantCulture))
+            .Skills!.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
         var types = targets.Select(t => t.TypeId.ToString(CultureInfo.InvariantCulture)).Distinct().ToArray();
-        var prerequisites = CatalogData.Client.Requiredskillsfortypes.Query(catalog).Where(r => types.Contains(r.Key))
-            .AsEnumerable().ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
+        var prerequisites = CatalogData
+            .Client.Requiredskillsfortypes.Query(catalog)
+            .Where(r => types.Contains(r.Key))
+            .AsEnumerable()
+            .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
         long start = now;
         long total = points.Values.Sum();
         var pilotAttributes = PilotProfile.TrainingAttributes();
@@ -169,8 +193,10 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             double primary = Convert.ToDouble(pilotAttributes[(long)dogma[180]], CultureInfo.InvariantCulture);
             double secondary = Convert.ToDouble(pilotAttributes[(long)dogma[181]], CultureInfo.InvariantCulture);
             long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / ((primary + secondary / 2) / 2));
-            var entry = result.Count == 0 && running is not null ? running :
-                new TrainingEntry(target, before, after, activate ? start : null, activate ? start + duration : null);
+            var entry =
+                result.Count == 0 && running is not null
+                    ? running
+                    : new TrainingEntry(target, before, after, activate ? start : null, activate ? start + duration : null);
             start = entry.EndTime ?? start + duration;
             points[target.TypeId] = after;
             result.Add(entry);
@@ -178,6 +204,15 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         return result;
     }
 
-    private static void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId)
-        => world.Add(new TrainingLog { PilotId = pilotId, Time = time, TypeId = typeId, Points = points, EventId = eventId });
+    private static void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>
+        world.Add(
+            new TrainingLog
+            {
+                PilotId = pilotId,
+                Time = time,
+                TypeId = typeId,
+                Points = points,
+                EventId = eventId,
+            }
+        );
 }

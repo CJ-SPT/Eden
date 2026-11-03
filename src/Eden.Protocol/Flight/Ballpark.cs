@@ -8,10 +8,21 @@ namespace Eden.Protocol.Flight;
 
 internal static class Ballpark
 {
-    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, params ShipContact[] peers)
-        => Snapshot(own, stamp, objects, peers, []);
+    internal static BlueInstance Snapshot(
+        ShipContact own,
+        int stamp,
+        IReadOnlyList<StaticSpaceObject> objects,
+        params ShipContact[] peers
+    ) => Snapshot(own, stamp, objects, peers, []);
 
-    internal static BlueInstance Snapshot(ShipContact own, int stamp, IReadOnlyList<StaticSpaceObject> objects, ShipContact[] peers, IReadOnlyList<NpcContact> npcs, IReadOnlyList<WreckContact>? wrecks = null)
+    internal static BlueInstance Snapshot(
+        ShipContact own,
+        int stamp,
+        IReadOnlyList<StaticSpaceObject> objects,
+        ShipContact[] peers,
+        IReadOnlyList<NpcContact> npcs,
+        IReadOnlyList<WreckContact>? wrecks = null
+    )
     {
         var pilot = own.Pilot;
         using MemoryStream stream = new();
@@ -28,31 +39,45 @@ internal static class Ballpark
         {
             items.Add(WriteShip(writer, peer, stamp));
         }
-        foreach (var npc in npcs) { items.Add(WriteNpc(writer, npc)); }
-        foreach (var wreck in wrecks ?? []) { items.Add(WriteWreck(writer, wreck)); }
-        var damage = peers.Prepend(own).Where(s => s.Health is not null).Select(s => s.Health!).Concat(npcs.Select(n => n.Health))
-            .ToDictionary(s => s.ShipId, s => (object?)s.DamageState());
-        return new("utillib.KeyVal", new Dictionary<string, object?>
+        foreach (var npc in npcs)
         {
-            ["state"] = stream.ToArray(),
-            ["ego"] = pilot.ShipId,
-            ["slims"] = items,
-            ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
-            ["droneState"] = new List<object?>(),
-            ["damageState"] = damage,
-            ["effectStates"] = new List<object?>(),
-            ["dbuffState"] = new Dictionary<long, object?>(),
-            ["industryLevel"] = 0,
-            ["researchLevel"] = 0,
-        });
+            items.Add(WriteNpc(writer, npc));
+        }
+        foreach (var wreck in wrecks ?? [])
+        {
+            items.Add(WriteWreck(writer, wreck));
+        }
+        var damage = peers
+            .Prepend(own)
+            .Where(s => s.Health is not null)
+            .Select(s => s.Health!)
+            .Concat(npcs.Select(n => n.Health))
+            .ToDictionary(s => s.ShipId, s => (object?)s.DamageState());
+        return new(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["state"] = stream.ToArray(),
+                ["ego"] = pilot.ShipId,
+                ["slims"] = items,
+                ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
+                ["droneState"] = new List<object?>(),
+                ["damageState"] = damage,
+                ["effectStates"] = new List<object?>(),
+                ["dbuffState"] = new Dictionary<long, object?>(),
+                ["industryLevel"] = 0,
+                ["researchLevel"] = 0,
+            }
+        );
     }
 
     private static BlueInstance WriteObject(BinaryWriter writer, StaticSpaceObject body)
     {
         // Rigid balls have only the formation ID after the common header. Asteroids
         // use local coordinates; global celestials remain selectable system-wide.
-        var flags = (body.GroupId == AsteroidDefinitions.BeltGroup ? DestinyBallFlags.None : DestinyBallFlags.Massive) |
-            (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
+        var flags =
+            (body.GroupId == AsteroidDefinitions.BeltGroup ? DestinyBallFlags.None : DestinyBallFlags.Massive)
+            | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
         WriteBallHeader(writer, body.Id, (byte)DestinyBallMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
         var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
@@ -64,13 +89,19 @@ internal static class Ballpark
             item["destinationSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
             item["localSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
             // Menus read the columns by name. JumpTransitionGate unpacks the same row in order.
-            item["jumps"] = new BlueInstance("eve.common.script.sys.rowset.Rowset", new Dictionary<string, object?>
-            {
-                ["header"] = new List<object?> { "toCelestialID", "locationID" },
-                ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
-            });
+            item["jumps"] = new BlueInstance(
+                "eve.common.script.sys.rowset.Rowset",
+                new Dictionary<string, object?>
+                {
+                    ["header"] = new List<object?> { "toCelestialID", "locationID" },
+                    ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
+                }
+            );
         }
-        if (body.CategoryId == 3) { item["corpID"] = body.OwnerId; }
+        if (body.CategoryId == 3)
+        {
+            item["corpID"] = body.OwnerId;
+        }
         return Slim(item);
     }
 
@@ -92,7 +123,10 @@ internal static class Ballpark
         writer.Write(stamp);
         var slim = WriteShip(writer, ship, stamp);
         var damage = new Dictionary<long, object?>();
-        if (ship.Health is not null) { damage[ship.Pilot.ShipId] = ship.Health.DamageState(); }
+        if (ship.Health is not null)
+        {
+            damage[ship.Pilot.ShipId] = ship.Health.DamageState();
+        }
         return [stream.ToArray(), new List<object?> { slim }, damage];
     }
 
@@ -119,7 +153,14 @@ internal static class Ballpark
 
     private static BlueInstance WriteWreck(BinaryWriter writer, WreckContact wreck)
     {
-        WriteBallHeader(writer, wreck.Id, (byte)DestinyBallMode.Stop, wreck.Radius, wreck.Position, (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive));
+        WriteBallHeader(
+            writer,
+            wreck.Id,
+            (byte)DestinyBallMode.Stop,
+            wreck.Radius,
+            wreck.Position,
+            (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive)
+        );
         writer.Write(wreck.Mass);
         writer.Write((byte)0);
         writer.Write(-1L);
@@ -150,10 +191,19 @@ internal static class Ballpark
         // Entity ships share the free-ball movement layout with player ships.
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;
-        var mode = course is null ? DestinyBallMode.Stop : course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit :
-            course.TargetId != 0 ? DestinyBallMode.Follow : DestinyBallMode.Goto;
-        WriteBallHeader(writer, npc.Id, (byte)mode, npc.Radius, npc.Position,
-            (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive));
+        var mode =
+            course is null ? DestinyBallMode.Stop
+            : course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit
+            : course.TargetId != 0 ? DestinyBallMode.Follow
+            : DestinyBallMode.Goto;
+        WriteBallHeader(
+            writer,
+            npc.Id,
+            (byte)mode,
+            npc.Radius,
+            npc.Position,
+            (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive)
+        );
         writer.Write(npc.Mass);
         writer.Write((byte)0);
         writer.Write(-1L);
@@ -186,9 +236,14 @@ internal static class Ballpark
         var pilot = ship.Pilot;
         var velocity = ship.Velocity;
         var warpTarget = ship.Warp?.Destination ?? ship.AlignTo;
-        var mode = warpTarget is not null ? DestinyBallMode.Warp : ship.FollowRange.HasValue ? ship.FollowMode : ship.Heading is null ? DestinyBallMode.Stop : DestinyBallMode.Goto;
+        var mode =
+            warpTarget is not null ? DestinyBallMode.Warp
+            : ship.FollowRange.HasValue ? ship.FollowMode
+            : ship.Heading is null ? DestinyBallMode.Stop
+            : DestinyBallMode.Goto;
         // Proper warp temporarily clears the massive flag. Aligning ships still collide.
-        var flags = DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);
+        var flags =
+            DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);
         WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);
         writer.Write(pilot.Flight.Mass);
         writer.Write((byte)0); // Uncloaked
@@ -225,7 +280,9 @@ internal static class Ballpark
         ibis["name"] = pilot.ShipName;
         ibis["charID"] = pilot.PilotId;
         ibis["corpID"] = pilot.CorpId;
-        ibis["modules"] = (ship.Modules ?? []).Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId }).ToList();
+        ibis["modules"] = (ship.Modules ?? [])
+            .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })
+            .ToList();
         return Slim(ibis);
     }
 
@@ -238,14 +295,15 @@ internal static class Ballpark
 
     private static BlueInstance Slim(Dictionary<string, object?> item) => new("eve.common.script.util.slimItem.SlimItem", item);
 
-    private static Dictionary<string, object?> Item(long id, int type, long owner, int group, int category) => new()
-    {
-        ["itemID"] = id,
-        ["typeID"] = type,
-        ["ownerID"] = owner,
-        ["groupID"] = group,
-        ["categoryID"] = category,
-    };
+    private static Dictionary<string, object?> Item(long id, int type, long owner, int group, int category) =>
+        new()
+        {
+            ["itemID"] = id,
+            ["typeID"] = type,
+            ["ownerID"] = owner,
+            ["groupID"] = group,
+            ["categoryID"] = category,
+        };
 
     private static void WriteBallHeader(BinaryWriter writer, long id, byte mode, float radius, SpacePosition pos, byte flags)
     {

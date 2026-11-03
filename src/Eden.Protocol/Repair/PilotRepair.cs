@@ -3,9 +3,20 @@ using Eden.Protocol.Market;
 namespace Eden.Protocol.Repair;
 
 public sealed record RepairQuote(long ItemId, int TypeId, int GroupId, double Damage, double MaxHealth);
+
 public sealed record ShipRepair(long ShipId, double ArmorRepaired, double StructureRepaired);
+
 public sealed record RepairResult(long BalanceCents, IReadOnlyList<ShipRepair> Ships);
-public sealed record RepairPayment(long Id, long PilotId, int StationId, long StationOwnerId, long AmountCents, long BalanceCents, long Time);
+
+public sealed record RepairPayment(
+    long Id,
+    long PilotId,
+    int StationId,
+    long StationOwnerId,
+    long AmountCents,
+    long BalanceCents,
+    long Time
+);
 
 public interface IPilotRepair
 {

@@ -20,6 +20,7 @@ public sealed class PilotSkillBookTests
     private sealed class Clock : TimeProvider
     {
         public DateTimeOffset Now { get; set; } = DateTimeOffset.UtcNow;
+
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
@@ -34,7 +35,8 @@ public sealed class PilotSkillBookTests
         {
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
+                catalog.Database.ExecuteSqlRaw(
+                    """
                     INSERT INTO ItemType(Id,Name,GroupId) VALUES (3416,'Shield Operation',257);
                     INSERT INTO TypeAttribute VALUES (3416,275,1),(3416,180,165),(3416,181,166);
                     INSERT INTO SourceRecord VALUES ('client/types','3416','{{"volume":0.01,"published":1}}'),
@@ -42,15 +44,21 @@ public sealed class PilotSkillBookTests
                         ('client/requiredskillsfortypes','3416','{{"3327":4}}');
                     UPDATE SourceRecord SET Data='{{"skills":[{{"typeID":3327,"level":4}},{{"typeID":3416,"level":5}}]}}'
                         WHERE Dataset='client/clonegrades';
-                    """);
+                    """
+                );
             }
             using (WorldDbContext world = new(Db.Path))
             {
                 world.Add(new PilotWallet { PilotId = PilotSkillBookTests.Pilot, Cents = 2000000 });
                 world.SaveChanges();
             }
-            Book = Assert.Single(Db.Services.GetRequiredService<IPilotMarket>()
-                .Buy(PilotSkillBookTests.Pilot, Pilot.StationId, [new(ShieldOperation, 500000, quantity)]).Changes).Item.Id;
+            Book = Assert
+                .Single(
+                    Db.Services.GetRequiredService<IPilotMarket>()
+                        .Buy(PilotSkillBookTests.Pilot, Pilot.StationId, [new(ShieldOperation, 500000, quantity)])
+                        .Changes
+                )
+                .Item.Id;
         }
 
         public void Dispose() => Db.Dispose();
@@ -105,20 +113,37 @@ public sealed class PilotSkillBookTests
             var book = world.Set<OwnedItem>().Find(f.Book)!;
             switch (rejection)
             {
-                case "foreign": book.OwnerId = 90000002; break;
-                case "remote": book.LocationId++; break;
-                case "miningHold": book.LocationId = f.Pilot.ShipId; book.FlagId = (int)InventoryFlag.GeneralMiningHold; break;
-                case "module": ids = [f.Book, world.Set<OwnedItem>().First(i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id]; break;
-                case "duplicate": ids = [f.Book, f.Book]; break;
-                case "missing": ids = [f.Book, long.MaxValue]; break;
-                case "empty": ids = []; break;
+                case "foreign":
+                    book.OwnerId = 90000002;
+                    break;
+                case "remote":
+                    book.LocationId++;
+                    break;
+                case "miningHold":
+                    book.LocationId = f.Pilot.ShipId;
+                    book.FlagId = (int)InventoryFlag.GeneralMiningHold;
+                    break;
+                case "module":
+                    ids = [f.Book, world.Set<OwnedItem>().First(i => i.TypeId == InventoryDefinitions.CivilianMinerType).Id];
+                    break;
+                case "duplicate":
+                    ids = [f.Book, f.Book];
+                    break;
+                case "missing":
+                    ids = [f.Book, long.MaxValue];
+                    break;
+                case "empty":
+                    ids = [];
+                    break;
             }
             world.SaveChanges();
         }
         if (rejection == "unpublished")
         {
             using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true);
-            catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{\"volume\":0.01,\"published\":0}}' WHERE Dataset='client/types' AND Key='3416'");
+            catalog.Database.ExecuteSqlRaw(
+                "UPDATE SourceRecord SET Data='{{\"volume\":0.01,\"published\":0}}' WHERE Dataset='client/types' AND Key='3416'"
+            );
         }
         Assert.Throws<InvalidDataException>(() => f.Books.Inject(Pilot, ids));
         using WorldDbContext saved = new(f.Db.Path);
@@ -130,11 +155,23 @@ public sealed class PilotSkillBookTests
     public async Task CompetingInjectionsLearnOnlyOnceAndConsumeOnlyOneBook()
     {
         using Fixture f = new(2);
-        var attempts = Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
-        {
-            try { f.Books.Inject(Pilot, [f.Book]); return true; }
-            catch (InvalidDataException) { return false; }
-        })).ToArray();
+        var attempts = Enumerable
+            .Range(0, 2)
+            .Select(_ =>
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        f.Books.Inject(Pilot, [f.Book]);
+                        return true;
+                    }
+                    catch (InvalidDataException)
+                    {
+                        return false;
+                    }
+                })
+            )
+            .ToArray();
         Assert.Single(await Task.WhenAll(attempts), success => success);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(1, saved.Set<OwnedItem>().Find(f.Book)!.Quantity);
@@ -155,7 +192,14 @@ public sealed class PilotSkillBookTests
             saved.SaveChanges();
         }
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, TimeProvider.System, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, TimeProvider.System, new(), []),
+            7,
+            []
+        );
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         object?[] args = [new List<object?> { f.Book }];

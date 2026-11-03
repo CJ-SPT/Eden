@@ -18,6 +18,7 @@ public sealed class NpcEncounterTests
     {
         public long Seconds { get; set; }
         public override long TimestampFrequency => 1;
+
         public override long GetTimestamp() => Seconds;
     }
 
@@ -26,10 +27,12 @@ public sealed class NpcEncounterTests
     internal static void Prepare(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
-        catalog.Database.ExecuteSqlRaw("""
+        catalog.Database.ExecuteSqlRaw(
+            """
             INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (4,'Material');
             INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (186,'Wreck',2),(18,'Mineral',4);
-            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (26557,'Frigate Wreck',186,10000,14,27500),(34,'Tritanium',18,0,1,0);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (26557,'Frigate Wreck',186,10000,14,27500),
+                (34,'Tritanium',18,0,1,0);
             INSERT INTO SourceRecord VALUES ('client/types','30380','{{"wreckTypeID":26557}}'),
                 ('client/types','26557','{{"volume":27500}}'),('client/types','34','{{"volume":0.01}}');
             INSERT INTO ItemCategory(Id,Name) VALUES (11,'Entity');
@@ -37,7 +40,8 @@ public sealed class NpcEncounterTests
             INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius) VALUES (30380,'Guristas Rookie',286,1500100,50),(15,'Belt',9,0,1);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
                 (40009232,30000144,15,9,1e10,2e10,3e10),(40009245,30000144,15,9,2e10,2e10,3e10);
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),(564,'scanResolution');
+            INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
+                (564,'scanResolution');
             INSERT INTO TypeAttribute VALUES (30380,9,20),(30380,263,20),(30380,265,15),(30380,479,2000000),(30380,37,440),(30380,552,33);
             INSERT INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
             INSERT INTO DogmaAttribute(Id,Name) VALUES (51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),
@@ -48,7 +52,8 @@ public sealed class NpcEncounterTests
             INSERT INTO TypeAttribute VALUES (30380,51,2500),(30380,54,500),(30380,64,0.625),
                 (30380,114,0),(30380,116,0),(30380,117,2),(30380,118,2),(30380,158,3000),
                 (30380,160,0.365),(30380,245,562),(30380,247,3125),(30380,475,7500),(30380,620,40);
-            """);
+            """
+        );
     }
 
     [Fact]
@@ -61,18 +66,21 @@ public sealed class NpcEncounterTests
         Assert.All(results, list => Assert.Equal(results[0], list));
         Assert.Equal(2, results[0].Count);
         Assert.Empty(encounters.List(30000142, s_now));
-        Assert.All(results[0], n =>
-        {
-            Assert.Equal(30380, n.TypeId);
-            Assert.Equal(286, n.GroupId);
-            Assert.Equal(11, n.CategoryId);
-            Assert.Equal(1000127, n.CorporationId);
-            Assert.Equal(1500100, n.Mass);
-            Assert.Equal(50, n.Radius);
-            Assert.Equal(440, n.MaxSpeed);
-            Assert.Equal(new HullDamage(20, 15, 20), n.Health.Remaining);
-            Assert.True(n.Id >= NpcEncounterDefinitions.FirstNpcId);
-        });
+        Assert.All(
+            results[0],
+            n =>
+            {
+                Assert.Equal(30380, n.TypeId);
+                Assert.Equal(286, n.GroupId);
+                Assert.Equal(11, n.CategoryId);
+                Assert.Equal(1000127, n.CorporationId);
+                Assert.Equal(1500100, n.Mass);
+                Assert.Equal(50, n.Radius);
+                Assert.Equal(440, n.MaxSpeed);
+                Assert.Equal(new HullDamage(20, 15, 20), n.Health.Remaining);
+                Assert.True(n.Id >= NpcEncounterDefinitions.FirstNpcId);
+            }
+        );
         _ = new SqliteWorld(db.Path);
         Assert.Equal(results[0], new NpcEncounterStore(new(db.Path)).List(30000144, s_now));
         using WorldDbContext world = new(db.Path);
@@ -132,7 +140,9 @@ public sealed class NpcEncounterTests
         Assert.Equal(0, reader.ReadSingle());
         Assert.Equal(-1, reader.ReadSByte());
         Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);
-        var slim = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(chunk[1]))).State);
+        var slim = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(chunk[1]))).State
+        );
         Assert.Equal("Guristas Rookie", slim["name"]);
         Assert.Equal(11, slim["categoryID"]);
         Assert.Null(slim["charID"]);
@@ -151,8 +161,14 @@ public sealed class NpcEncounterTests
         db.Store.SetPosition(pilot.ShipId, npc.Position + new SpacePosition(2000, 0, 0), npc.SystemId);
         pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            p => new(db.Store, p, clock, new(), [], encounters: encounters), 10, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(db.Store, p, clock, new(), [], encounters: encounters),
+            10,
+            []
+        );
         context.Select(pilot);
         context.Flight.Snapshot();
         Assert.Single(context.Flight.VisibleNpcs);
@@ -266,11 +282,14 @@ public sealed class NpcEncounterTests
         Prepare(db);
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO WorldShipHealth VALUES (1000000000001,10,20,30,134000000000000000);
-                DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
+                DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP
+                    TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638;
                 PRAGMA user_version=18;
-                """);
+                """
+            );
         }
         _ = new SqliteWorld(db.Path);
         using WorldDbContext migrated = new(db.Path);

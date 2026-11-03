@@ -23,11 +23,14 @@ public sealed class GatewayRequestsTests
         Assert.Equal(200u, response.StatusCode);
         var system = response.Payload.Unpack<Protocol.Gateway.Corruption.GetSystemInfoResponse>();
         Assert.Equal(0u, system.Stage);
-        Assert.All(new[] { system.TotalProgress, system.EveContribution, system.VanguardContribution }, progress =>
-        {
-            Assert.Equal(0ul, progress.Numerator);
-            Assert.Equal(1ul, progress.Denominator);
-        });
+        Assert.All(
+            new[] { system.TotalProgress, system.EveContribution, system.VanguardContribution },
+            progress =>
+            {
+                Assert.Equal(0ul, progress.Numerator);
+                Assert.Equal(1ul, progress.Denominator);
+            }
+        );
     }
 
     [Fact]

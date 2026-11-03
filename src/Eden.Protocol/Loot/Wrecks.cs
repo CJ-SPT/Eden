@@ -2,8 +2,20 @@ using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Loot;
 
-public sealed record WreckContact(long Id, long SourceId, long OwnerId, int CorporationId, int TypeId, string Name,
-    int SystemId, SpacePosition Position, double Mass, float Radius, bool Empty);
+public sealed record WreckContact(
+    long Id,
+    long SourceId,
+    long OwnerId,
+    int CorporationId,
+    int TypeId,
+    string Name,
+    int SystemId,
+    SpacePosition Position,
+    double Mass,
+    float Radius,
+    bool Empty
+);
+
 public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);
 
 public interface IWrecks
@@ -19,9 +31,11 @@ public static class WreckDefinitions
     public const int Category = 2;
     public const string BindingPrefix = "@wreck:";
     public const long FirstWreckId = 8_000_000_000_000;
+
     // Player wreck identities use the lost hull's persistent ID in a separate
     // range from NPC wrecks; a retry cannot create another container.
     public const long FirstPlayerWreckId = 10_000_000_000_000;
+
     // Pinned appConst.maxCargoContainerTransferDistance. Visibility follows
     // Eden's local grid policy; the two-hour lifetime and loot are Eden policy.
     public const double TransferRange = 2500;

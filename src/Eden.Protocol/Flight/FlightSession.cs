@@ -10,7 +10,18 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot, TimeProvider clock, SharedSpace space, IReadOnlyList<StaticSpaceObject> objects, FittedSpaceModule[]? modules = null, IStationDocking? docking = null, IPilotHealth? health = null, INpcEncounters? encounters = null, IWrecks? wrecks = null) : IDisposable
+internal sealed class FlightSession(
+    IShipPositionStore world,
+    DockedPilot pilot,
+    TimeProvider clock,
+    SharedSpace space,
+    IReadOnlyList<StaticSpaceObject> objects,
+    FittedSpaceModule[]? modules = null,
+    IStationDocking? docking = null,
+    IPilotHealth? health = null,
+    INpcEncounters? encounters = null,
+    IWrecks? wrecks = null
+) : IDisposable
 {
     private ShipContact[] _peers = [];
     private StaticSpaceObject[] _visibleAsteroids = [];
@@ -34,7 +45,15 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private SpacePosition _velocity = new(0, 0, 0);
     private StaticSpaceObject? _followTarget;
     private DestinyBallMode _followMode = DestinyBallMode.Follow;
-    private sealed record GateTransit(long SourceId, StaticSpaceObject Exit, FlightSystem System, IReadOnlyList<StaticSpaceObject> Objects, int TransferStamp);
+
+    private sealed record GateTransit(
+        long SourceId,
+        StaticSpaceObject Exit,
+        FlightSystem System,
+        IReadOnlyList<StaticSpaceObject> Objects,
+        int TransferStamp
+    );
+
     // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
     private const int JumpDurationTicks = 10;
     private GateTransit? _jump;
@@ -49,7 +68,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<object?> Updates { get; } = [];
     public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
-    public bool CanTarget => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+    public bool CanTarget =>
+        InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
     // the terminal hull transition still prevent local module activations.
     public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null;
@@ -62,47 +83,104 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             return null;
         }
-        if (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is { } ship)
+        if (
+            space
+                .Peers(Pilot)
+                .FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is
+            { } ship
+        )
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
-        if (_npcs.FirstOrDefault(n => n.Id == id) is { } npc) { return new(id, npc.TypeId, npc.Position, npc.Radius); }
-        if (_wrecks.FirstOrDefault(w => w.Id == id) is { } wreck) { return new(id, wreck.TypeId, wreck.Position, wreck.Radius); }
+        if (_npcs.FirstOrDefault(n => n.Id == id) is { } npc)
+        {
+            return new(id, npc.TypeId, npc.Position, npc.Radius);
+        }
+        if (_wrecks.FirstOrDefault(w => w.Id == id) is { } wreck)
+        {
+            return new(id, wreck.TypeId, wreck.Position, wreck.Radius);
+        }
         return VisibleObjects().FirstOrDefault(o => o.Id == id && o.CategoryId == AsteroidDefinitions.Category) is { } asteroid
-            ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius) : null;
+            ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius)
+            : null;
     }
 
-    private StaticSpaceObject[] VisibleObjects() => objects.Where(o => o.CategoryId != AsteroidDefinitions.Category ||
-        (Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)).ToArray();
+    private StaticSpaceObject[] VisibleObjects() =>
+        objects
+            .Where(o =>
+                o.CategoryId != AsteroidDefinitions.Category
+                || (Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
+            )
+            .ToArray();
 
     public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
     public IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
 
     private StaticSpaceObject? NavigationTarget(long id)
     {
-        if (id == Pilot.ShipId || Pilot.Position is not { } position) { return null; }
-        var target = VisibleObjects().FirstOrDefault(o => o.Id == id) ??
-            (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is { } peer ?
-                new StaticSpaceObject(peer.Pilot.ShipId, peer.Pilot.ShipTypeId, peer.Pilot.ShipGroupId, peer.Pilot.ShipCategoryId,
-                    checked((int)peer.Pilot.PilotId), peer.Pilot.Position!, peer.Pilot.Flight.ShipRadius) : null) ??
-            (_npcs.FirstOrDefault(n => n.Id == id) is { } npc ?
-            new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius) :
-                _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck ?
-                new(wreck.Id, wreck.TypeId, WreckDefinitions.Group, WreckDefinitions.Category, checked((int)wreck.OwnerId), wreck.Position, wreck.Radius) : null);
+        if (id == Pilot.ShipId || Pilot.Position is not { } position)
+        {
+            return null;
+        }
+        var target =
+            VisibleObjects().FirstOrDefault(o => o.Id == id)
+            ?? (
+                space
+                    .Peers(Pilot)
+                    .FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null)
+                    is { } peer
+                    ? new StaticSpaceObject(
+                        peer.Pilot.ShipId,
+                        peer.Pilot.ShipTypeId,
+                        peer.Pilot.ShipGroupId,
+                        peer.Pilot.ShipCategoryId,
+                        checked((int)peer.Pilot.PilotId),
+                        peer.Pilot.Position!,
+                        peer.Pilot.Flight.ShipRadius
+                    )
+                    : null
+            )
+            ?? (
+                _npcs.FirstOrDefault(n => n.Id == id) is { } npc
+                    ? new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius)
+                : _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck
+                    ? new(
+                        wreck.Id,
+                        wreck.TypeId,
+                        WreckDefinitions.Group,
+                        WreckDefinitions.Category,
+                        checked((int)wreck.OwnerId),
+                        wreck.Position,
+                        wreck.Radius
+                    )
+                : null
+            );
         return target is not null && position.DistanceTo(target.Position) <= NavigationDefinitions.MaximumTargetDistance ? target : null;
     }
 
-    private WreckContact[] ReadWrecks() => Pilot.Position is not { } position ? [] :
-        (wrecks?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-            .Where(w => w.SystemId == Pilot.SystemId && position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange).ToArray();
+    private WreckContact[] ReadWrecks() =>
+        Pilot.Position is not { } position
+            ? []
+            : (wrecks?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
+                .Where(w => w.SystemId == Pilot.SystemId && position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
+                .ToArray();
 
     public void RefreshWrecks()
     {
-        if (!InBallpark) { return; }
+        if (!InBallpark)
+        {
+            return;
+        }
         var current = ReadWrecks();
-        foreach (var departed in _wrecks.ExceptBy(current.Select(w => w.Id), w => w.Id)) { Update("RemoveBall", departed.Id, false); }
+        foreach (var departed in _wrecks.ExceptBy(current.Select(w => w.Id), w => w.Id))
+        {
+            Update("RemoveBall", departed.Id, false);
+        }
         var added = current.ExceptBy(_wrecks.Select(w => w.Id), w => w.Id).ToArray();
-        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddWrecks(added, Stamp)]); }
+        if (added.Length > 0)
+        {
+            Update("AddBalls", [Ballpark.AddWrecks(added, Stamp)]);
+        }
         foreach (var wreck in current)
         {
             if (_wrecks.FirstOrDefault(w => w.Id == wreck.Id) is { } previous && previous != wreck)
@@ -113,32 +191,58 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _wrecks = current;
     }
 
-    private NpcContact[] ReadNpcs() => Pilot.Position is not { } position ? [] :
-        (encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-            .Where(n => n.SystemId == Pilot.SystemId && position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange).ToArray();
+    private NpcContact[] ReadNpcs() =>
+        Pilot.Position is not { } position
+            ? []
+            : (encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
+                .Where(n => n.SystemId == Pilot.SystemId && position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                .ToArray();
 
     public void RefreshNpcs()
     {
-        if (!InBallpark) { return; }
+        if (!InBallpark)
+        {
+            return;
+        }
         var current = ReadNpcs();
         foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
-            if (departed.Weapon is { } weapon) { NpcWeaponEffect(departed.Id, weapon, false); }
+            if (departed.Weapon is { } weapon)
+            {
+                NpcWeaponEffect(departed.Id, weapon, false);
+            }
             Update("RemoveBall", departed.Id, encounters?.WasDestroyed(departed.Id) == true);
         }
         var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
-        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]); }
+        if (added.Length > 0)
+        {
+            Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]);
+        }
         bool reconcile = Stamp - _lastNpcSync >= NpcReconciliationTicks;
         foreach (var npc in current)
         {
             var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
-            if (previous is not null && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null))
+            if (
+                previous is not null
+                && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null)
+            )
             {
                 Update("SetBallPosition", npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z);
                 if (npc.Navigation is { } course)
                 {
-                    if (course.TargetId != 0) { Update(course.State == NpcNavigationState.Orbiting ? "Orbit" : "FollowBall", npc.Id, course.TargetId, course.FollowRange); }
-                    else if (course.Destination is { } destination) { Update("GotoPoint", npc.Id, destination.X, destination.Y, destination.Z); }
+                    if (course.TargetId != 0)
+                    {
+                        Update(
+                            course.State == NpcNavigationState.Orbiting ? "Orbit" : "FollowBall",
+                            npc.Id,
+                            course.TargetId,
+                            course.FollowRange
+                        );
+                    }
+                    else if (course.Destination is { } destination)
+                    {
+                        Update("GotoPoint", npc.Id, destination.X, destination.Y, destination.Z);
+                    }
                     Update("SetSpeedFraction", npc.Id, course.SpeedFraction);
                     Update("SetBallVelocity", npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z);
                 }
@@ -150,26 +254,59 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             }
             if (previous?.Weapon != npc.Weapon)
             {
-                if (previous?.Weapon is { } stopped) { NpcWeaponEffect(npc.Id, stopped, false); }
-                if (npc.Weapon is { } started) { NpcWeaponEffect(npc.Id, started, true); }
+                if (previous?.Weapon is { } stopped)
+                {
+                    NpcWeaponEffect(npc.Id, stopped, false);
+                }
+                if (npc.Weapon is { } started)
+                {
+                    NpcWeaponEffect(npc.Id, started, true);
+                }
             }
-            if (previous is not null && (npc.Health.Remaining.Armor != previous.Health.Remaining.Armor ||
-                npc.Health.Remaining.Structure != previous.Health.Remaining.Structure || npc.Health.Remaining.Shield < previous.Health.Remaining.Shield))
+            if (
+                previous is not null
+                && (
+                    npc.Health.Remaining.Armor != previous.Health.Remaining.Armor
+                    || npc.Health.Remaining.Structure != previous.Health.Remaining.Structure
+                    || npc.Health.Remaining.Shield < previous.Health.Remaining.Shield
+                )
+            )
             {
                 NotifyHealth(npc.Health);
             }
         }
-        if (reconcile) { _lastNpcSync = Stamp; }
+        if (reconcile)
+        {
+            _lastNpcSync = Stamp;
+        }
         _npcs = current;
     }
 
     private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active) =>
-        Update("OnSpecialFX", npcId, npcId, weapon.TurretTypeId, weapon.TargetId, null, "effects.Laser", true, active, active,
-            weapon.Duration, 0, weapon.StartedAt, 0, null);
+        Update(
+            "OnSpecialFX",
+            npcId,
+            npcId,
+            weapon.TurretTypeId,
+            weapon.TargetId,
+            null,
+            "effects.Laser",
+            true,
+            active,
+            active,
+            weapon.Duration,
+            0,
+            weapon.StartedAt,
+            0,
+            null
+        );
 
     public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
     {
-        if (_npcs.FirstOrDefault(n => n.Id == npcId)?.Weapon is { } previous) { NpcWeaponEffect(npcId, previous, false); }
+        if (_npcs.FirstOrDefault(n => n.Id == npcId)?.Weapon is { } previous)
+        {
+            NpcWeaponEffect(npcId, previous, false);
+        }
         NpcWeaponEffect(npcId, weapon, true);
         _npcs = _npcs.Select(n => n.Id == npcId ? n with { Weapon = weapon } : n).ToArray();
     }
@@ -183,7 +320,10 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public void ReplaceDestroyedShip(DockedPilot capsule)
     {
         long destroyed = Pilot.ShipId;
-        foreach (var npc in _npcs.Where(n => n.Weapon?.TargetId == destroyed)) { NpcWeaponEffect(npc.Id, npc.Weapon!, false); }
+        foreach (var npc in _npcs.Where(n => n.Weapon?.TargetId == destroyed))
+        {
+            NpcWeaponEffect(npc.Id, npc.Weapon!, false);
+        }
         _npcs = _npcs.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToArray();
         Pilot = capsule;
         _baseFlight = capsule.Flight;
@@ -216,14 +356,20 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
     {
         objects = objects.Where(o => o.CategoryId != AsteroidDefinitions.Category).Concat(asteroids).ToArray();
-        if (!InBallpark) { return; }
+        if (!InBallpark)
+        {
+            return;
+        }
         var current = VisibleObjects().Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
         foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
         {
             Update("RemoveBall", departed.Id, false);
         }
         var added = current.ExceptBy(_visibleAsteroids.Select(o => o.Id), o => o.Id).ToArray();
-        if (added.Length > 0) { Update("AddBalls", [Ballpark.AddObjects(added, Stamp)]); }
+        if (added.Length > 0)
+        {
+            Update("AddBalls", [Ballpark.AddObjects(added, Stamp)]);
+        }
         _visibleAsteroids = current;
     }
 
@@ -249,8 +395,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             _direction = (destination - position).Unit;
             double speed = _velocity.Length;
-            if ((speed > Pilot.Flight.MaxSpeed * 0.75 && _velocity.Unit.Dot(_direction) > 0.99) ||
-                _simulatedStamp - _alignStamp > 180)
+            if ((speed > Pilot.Flight.MaxSpeed * 0.75 && _velocity.Unit.Dot(_direction) > 0.99) || _simulatedStamp - _alignStamp > 180)
             {
                 _warp = new(position, destination, _simulatedStamp, Pilot.Flight, speed);
                 _warpDestination = null;
@@ -300,7 +445,13 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 if (_followMode == DestinyBallMode.Orbit)
                 {
                     // Destiny evolves behavior at the beginning of each tick.
-                    _direction = OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp - 1, position, current.Position, Pilot.Flight.ShipRadius + current.Radius + _followRange);
+                    _direction = OrbitCourse.Direction(
+                        Pilot.ShipId,
+                        _simulatedStamp - 1,
+                        position,
+                        current.Position,
+                        Pilot.Flight.ShipRadius + current.Radius + _followRange
+                    );
                 }
                 else
                 {
@@ -345,14 +496,35 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         Pilot = Pilot with { Position = next };
     }
 
-    private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
-        _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
-        _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining,
-        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts, _propulsion, _followMode);
+    private ShipContact Sample =>
+        new(
+            Pilot,
+            _velocity,
+            _direction,
+            _speedFraction,
+            _followTarget is null ? null : _followRange,
+            _warp,
+            _warpDestination,
+            _alignStamp,
+            (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
+            _followTarget?.Id ?? 0,
+            _jump?.SourceId,
+            Stamp - _arrivalStamp < 8,
+            modules,
+            _mining,
+            health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            _weapons,
+            _shieldBoosts,
+            _propulsion,
+            _followMode
+        );
 
     public void SetBaseSpeed(double speed)
     {
-        if (!double.IsFinite(speed) || speed <= 0 || speed > float.MaxValue) { throw new InvalidDataException("Invalid ship navigation speed."); }
+        if (!double.IsFinite(speed) || speed <= 0 || speed > float.MaxValue)
+        {
+            throw new InvalidDataException("Invalid ship navigation speed.");
+        }
         Checkpoint();
         _baseFlight = _baseFlight with { MaxSpeed = (float)speed };
         ApplyFlightProperties();
@@ -364,27 +536,57 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         var previous = _propulsion;
         _propulsion = effect;
         ApplyFlightProperties();
-        if (previous is not null) { PropulsionEffect(Pilot.ShipId, previous, false); }
-        if (effect is not null) { PropulsionEffect(Pilot.ShipId, effect, true); }
-        if (InBallpark && !_destroying) { space.Publish(Sample); }
+        if (previous is not null)
+        {
+            PropulsionEffect(Pilot.ShipId, previous, false);
+        }
+        if (effect is not null)
+        {
+            PropulsionEffect(Pilot.ShipId, effect, true);
+        }
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(Sample);
+        }
     }
 
     private void ApplyFlightProperties()
     {
         var properties = _propulsion?.Module.Apply(_baseFlight) ?? _baseFlight;
-        if (Pilot.Flight == properties) { return; }
+        if (Pilot.Flight == properties)
+        {
+            return;
+        }
         Pilot = Pilot with { Flight = properties };
         if (InBallpark)
         {
             Update("SetBallMass", Pilot.ShipId, properties.Mass);
             Update("SetMaxSpeed", Pilot.ShipId, (double)properties.MaxSpeed);
-            if (!_destroying) { space.Publish(Sample); }
+            if (!_destroying)
+            {
+                space.Publish(Sample);
+            }
         }
     }
 
     private void PropulsionEffect(long shipId, PropulsionContact effect, bool active) =>
-        Update("OnSpecialFX", shipId, effect.Module.ItemId, effect.Module.TypeId, shipId, null, PropulsionDefinitions.EffectGraphic, false, active, active,
-            effect.Module.DurationMilliseconds, 0, effect.StartedAt, 0, null);
+        Update(
+            "OnSpecialFX",
+            shipId,
+            effect.Module.ItemId,
+            effect.Module.TypeId,
+            shipId,
+            null,
+            PropulsionDefinitions.EffectGraphic,
+            false,
+            active,
+            active,
+            effect.Module.DurationMilliseconds,
+            0,
+            effect.StartedAt,
+            0,
+            null
+        );
 
     private void RefreshPropulsion(ShipContact ship, ShipContact? previous)
     {
@@ -394,51 +596,114 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             Update("SetBallMass", id, ship.Pilot.Flight.Mass);
             Update("SetMaxSpeed", id, (double)ship.Pilot.Flight.MaxSpeed);
         }
-        if (previous?.Propulsion == ship.Propulsion) { return; }
-        if (previous?.Propulsion is { } stopped) { PropulsionEffect(id, stopped, false); }
-        if (ship.Propulsion is { } started) { PropulsionEffect(id, started, true); }
+        if (previous?.Propulsion == ship.Propulsion)
+        {
+            return;
+        }
+        if (previous?.Propulsion is { } stopped)
+        {
+            PropulsionEffect(id, stopped, false);
+        }
+        if (ship.Propulsion is { } started)
+        {
+            PropulsionEffect(id, started, true);
+        }
     }
 
     public void SetMiningEffect(MiningContact effect, bool active)
     {
         _mining = _mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
         MiningEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying) { space.Publish(Sample); }
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(Sample);
+        }
     }
 
-    public void RefreshModules(IReadOnlyList<InventoryItem> items) => modules = items.Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
-        .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId)).ToArray();
+    public void RefreshModules(IReadOnlyList<InventoryItem> items) =>
+        modules = items
+            .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
+            .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId))
+            .ToArray();
 
     private void MiningEffect(long shipId, MiningContact effect, bool active) =>
-        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, effect.Target, null, "effects.Laser", false, active, active,
-            effect.Duration, 0, effect.StartedAt, 0, null);
+        Update(
+            "OnSpecialFX",
+            shipId,
+            effect.ModuleId,
+            effect.TypeId,
+            effect.Target,
+            null,
+            "effects.Laser",
+            false,
+            active,
+            active,
+            effect.Duration,
+            0,
+            effect.StartedAt,
+            0,
+            null
+        );
 
     private void RefreshMining(ShipContact ship, ShipContact? previous)
     {
-        foreach (var effect in (previous?.Mining ?? []).Except(ship.Mining ?? [])) { MiningEffect(ship.Pilot.ShipId, effect, false); }
-        foreach (var effect in (ship.Mining ?? []).Except(previous?.Mining ?? [])) { MiningEffect(ship.Pilot.ShipId, effect, true); }
+        foreach (var effect in (previous?.Mining ?? []).Except(ship.Mining ?? []))
+        {
+            MiningEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.Mining ?? []).Except(previous?.Mining ?? []))
+        {
+            MiningEffect(ship.Pilot.ShipId, effect, true);
+        }
     }
 
     public void SetWeaponEffect(WeaponContact effect, bool active)
     {
         _weapons = _weapons.Where(w => w.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<WeaponContact>()).ToArray();
         WeaponEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying) { space.Publish(Sample); }
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(Sample);
+        }
     }
 
     private void WeaponEffect(long shipId, WeaponContact effect, bool active) =>
-        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, effect.Target, effect.ChargeTypeId, effect.Graphic, true, active, active,
-            effect.Duration, 0, effect.StartedAt, 0, null);
+        Update(
+            "OnSpecialFX",
+            shipId,
+            effect.ModuleId,
+            effect.TypeId,
+            effect.Target,
+            effect.ChargeTypeId,
+            effect.Graphic,
+            true,
+            active,
+            active,
+            effect.Duration,
+            0,
+            effect.StartedAt,
+            0,
+            null
+        );
 
     private void RefreshWeapons(ShipContact ship, ShipContact? previous)
     {
-        foreach (var effect in (previous?.Weapons ?? []).Except(ship.Weapons ?? [])) { WeaponEffect(ship.Pilot.ShipId, effect, false); }
-        foreach (var effect in (ship.Weapons ?? []).Except(previous?.Weapons ?? [])) { WeaponEffect(ship.Pilot.ShipId, effect, true); }
+        foreach (var effect in (previous?.Weapons ?? []).Except(ship.Weapons ?? []))
+        {
+            WeaponEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.Weapons ?? []).Except(previous?.Weapons ?? []))
+        {
+            WeaponEffect(ship.Pilot.ShipId, effect, true);
+        }
     }
 
     public void SetShieldBoostEffect(ShieldBoostContact effect, bool active)
     {
-        _shieldBoosts = _shieldBoosts.Where(b => b.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<ShieldBoostContact>()).ToArray();
+        _shieldBoosts = _shieldBoosts
+            .Where(b => b.ModuleId != effect.ModuleId)
+            .Concat(active ? [effect] : Array.Empty<ShieldBoostContact>())
+            .ToArray();
         ShieldBoostEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
@@ -447,8 +712,23 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     }
 
     private void ShieldBoostEffect(long shipId, ShieldBoostContact effect, bool active) =>
-        Update("OnSpecialFX", shipId, effect.ModuleId, effect.TypeId, shipId, null, ShieldBoostDefinitions.EffectGraphic, false, active, active,
-            effect.Duration, 0, effect.StartedAt, 0, null);
+        Update(
+            "OnSpecialFX",
+            shipId,
+            effect.ModuleId,
+            effect.TypeId,
+            shipId,
+            null,
+            ShieldBoostDefinitions.EffectGraphic,
+            false,
+            active,
+            active,
+            effect.Duration,
+            0,
+            effect.StartedAt,
+            0,
+            null
+        );
 
     private void RefreshShieldBoosts(ShipContact ship, ShipContact? previous)
     {
@@ -490,8 +770,15 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     {
         space.Publish(Sample);
         var current = space.Peers(Pilot);
-        if (current.Any(ship => ship.Warp is not null && Array.Exists(_peers, old => old.Pilot.ShipId == ship.Pilot.ShipId &&
-            old.Warp != ship.Warp && old.AlignTo != ship.Warp.Destination)))
+        if (
+            current.Any(ship =>
+                ship.Warp is not null
+                && Array.Exists(
+                    _peers,
+                    old => old.Pilot.ShipId == ship.Pilot.ShipId && old.Warp != ship.Warp && old.AlignTo != ship.Warp.Destination
+                )
+            )
+        )
         {
             Snapshot(current);
             return;
@@ -529,9 +816,15 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             RefreshWeapons(ship, previous);
             RefreshShieldBoosts(ship, previous);
             RefreshPropulsion(ship, previous);
-            if (ship.Health is { } currentHealth && previous.Health is { } previousHealth &&
-                (currentHealth.Remaining.Armor != previousHealth.Remaining.Armor || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure ||
-                currentHealth.Remaining.Shield != previousHealth.Remaining.Shield))
+            if (
+                ship.Health is { } currentHealth
+                && previous.Health is { } previousHealth
+                && (
+                    currentHealth.Remaining.Armor != previousHealth.Remaining.Armor
+                    || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure
+                    || currentHealth.Remaining.Shield != previousHealth.Remaining.Shield
+                )
+            )
             {
                 NotifyHealth(currentHealth);
             }
@@ -567,8 +860,14 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 }
                 continue;
             }
-            if ((ship.FollowRange is null && ship.Heading != previous.Heading) || ship.SpeedFraction != previous.SpeedFraction ||
-                ship.FollowRange != previous.FollowRange || ship.FollowTargetId != previous.FollowTargetId || ship.FollowMode != previous.FollowMode || reconcile)
+            if (
+                (ship.FollowRange is null && ship.Heading != previous.Heading)
+                || ship.SpeedFraction != previous.SpeedFraction
+                || ship.FollowRange != previous.FollowRange
+                || ship.FollowTargetId != previous.FollowTargetId
+                || ship.FollowMode != previous.FollowMode
+                || reconcile
+            )
             {
                 var position = ship.Pilot.Position!;
                 Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
@@ -619,7 +918,9 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     private double DistanceToStation(SpacePosition position)
     {
-        double dx = position.X - Pilot.X, dy = position.Y - Pilot.Y, dz = position.Z - Pilot.Z;
+        double dx = position.X - Pilot.X,
+            dy = position.Y - Pilot.Y,
+            dz = position.Z - Pilot.Z;
         return Math.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
@@ -664,13 +965,40 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         _npcs = ReadNpcs();
         _wrecks = ReadWrecks();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(new object?[] { stamp, new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs, _wrecks) } } });
-        foreach (var npc in _npcs.Where(n => n.Weapon is not null)) { NpcWeaponEffect(npc.Id, npc.Weapon!, true); }
-        foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
-        foreach (var effect in _weapons) { WeaponEffect(Pilot.ShipId, effect, true); }
-        foreach (var effect in _shieldBoosts) { ShieldBoostEffect(Pilot.ShipId, effect, true); }
-        if (_propulsion is { } propulsion) { PropulsionEffect(Pilot.ShipId, propulsion, true); }
-        foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); RefreshShieldBoosts(peer, null); RefreshPropulsion(peer, null); }
+        Updates.Add(
+            new object?[]
+            {
+                stamp,
+                new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs, _wrecks) } },
+            }
+        );
+        foreach (var npc in _npcs.Where(n => n.Weapon is not null))
+        {
+            NpcWeaponEffect(npc.Id, npc.Weapon!, true);
+        }
+        foreach (var effect in _mining)
+        {
+            MiningEffect(Pilot.ShipId, effect, true);
+        }
+        foreach (var effect in _weapons)
+        {
+            WeaponEffect(Pilot.ShipId, effect, true);
+        }
+        foreach (var effect in _shieldBoosts)
+        {
+            ShieldBoostEffect(Pilot.ShipId, effect, true);
+        }
+        if (_propulsion is { } propulsion)
+        {
+            PropulsionEffect(Pilot.ShipId, propulsion, true);
+        }
+        foreach (var peer in peers)
+        {
+            RefreshMining(peer, null);
+            RefreshWeapons(peer, null);
+            RefreshShieldBoosts(peer, null);
+            RefreshPropulsion(peer, null);
+        }
         if (_warp is not null || _warpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);
@@ -726,15 +1054,25 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public object? StartJump(object?[] args, ISystemObjects systems)
     {
         Checkpoint();
-        if (!InBallpark || Pilot.Position is not { } position || _jump is not null || _warp is not null ||
-            _warpDestination is not null || args is not [long sourceId, long exitId, long shipId] || shipId != Pilot.ShipId ||
-            objects.FirstOrDefault(o => o.Id == sourceId) is not { DestinationSystemId: int systemId } source ||
-            source.DestinationGateId != exitId || position.DistanceTo(source.Position) > source.Radius + Pilot.Flight.ShipRadius + 2500)
+        if (
+            !InBallpark
+            || Pilot.Position is not { } position
+            || _jump is not null
+            || _warp is not null
+            || _warpDestination is not null
+            || args is not [long sourceId, long exitId, long shipId]
+            || shipId != Pilot.ShipId
+            || objects.FirstOrDefault(o => o.Id == sourceId) is not { DestinationSystemId: int systemId } source
+            || source.DestinationGateId != exitId
+            || position.DistanceTo(source.Position) > source.Radius + Pilot.Flight.ShipRadius + 2500
+        )
         {
             return PilotCallRouter.Unsupported;
         }
         var destination = systems.Load(systemId);
-        var exit = destination.FirstOrDefault(o => o.Id == exitId && o.DestinationGateId == source.Id && o.DestinationSystemId == Pilot.SystemId);
+        var exit = destination.FirstOrDefault(o =>
+            o.Id == exitId && o.DestinationGateId == source.Id && o.DestinationSystemId == Pilot.SystemId
+        );
         if (exit is null)
         {
             return PilotCallRouter.Unsupported;
@@ -768,12 +1106,26 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     // SubwayService reads graphicInfo[0] to preload the skybox and attach the destination camera.
     private void DepartureEffect(long shipId, long gateId, int systemId) =>
-        Update("OnSpecialFX", shipId, null, null, gateId, null, "effects.JumpOut", false, true, false,
-            JumpDurationTicks * 1000, 0, null, 0, new object?[] { systemId });
+        Update(
+            "OnSpecialFX",
+            shipId,
+            null,
+            null,
+            gateId,
+            null,
+            "effects.JumpOut",
+            false,
+            true,
+            false,
+            JumpDurationTicks * 1000,
+            0,
+            null,
+            0,
+            new object?[] { systemId }
+        );
 
     // SubwayService completes the gate transition. JumpIn supplies the ship flash.
-    private void ArrivalEffect(long shipId) =>
-        Update("OnSpecialFX", shipId, null, null, null, null, "effects.JumpIn", false, true, false);
+    private void ArrivalEffect(long shipId) => Update("OnSpecialFX", shipId, null, null, null, null, "effects.JumpIn", false, true, false);
 
     private object? StartWarp(long target, double range)
     {
@@ -816,8 +1168,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     public object? Call(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
     {
-        if (service == "ship" && method == "Undock" && Pilot.Position is null &&
-            arguments is [long id, ..] && id == Pilot.ShipId)
+        if (service == "ship" && method == "Undock" && Pilot.Position is null && arguments is [long id, ..] && id == Pilot.ShipId)
         {
             // Separate the two local launch lanes even on simultaneous undocks.
             double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
@@ -838,17 +1189,23 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             // The native docking navigator retries its warp order on a timer.
             // Acknowledge the same destination without restarting the active course.
-            if (_jump is null && method == "CmdWarpToStuff" && arguments is [string or byte[], long retryTarget] &&
-                BlueMarshal.Text(arguments[0]) == "item" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long)
+            if (
+                _jump is null
+                && method == "CmdWarpToStuff"
+                && arguments is [string or byte[], long retryTarget]
+                && BlueMarshal.Text(arguments[0]) == "item"
+                && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long
+            )
             {
-                return _warpOrder == (retryTarget, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)) ? null : PilotCallRouter.Unsupported;
+                return _warpOrder == (retryTarget, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L))
+                    ? null
+                    : PilotCallRouter.Unsupported;
             }
             return PilotCallRouter.Unsupported;
         }
         switch (method)
         {
-            case "CmdWarpToStuff" when arguments is [string or byte[], long targetId] &&
-                BlueMarshal.Text(arguments[0]) == "item":
+            case "CmdWarpToStuff" when arguments is [string or byte[], long targetId] && BlueMarshal.Text(arguments[0]) == "item":
                 var range = keywords?.GetValueOrDefault("minRange") ?? 0L;
                 return range is double or long ? StartWarp(targetId, Convert.ToDouble(range)) : PilotCallRouter.Unsupported;
             case "UpdateStateRequest":
@@ -870,10 +1227,16 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("GotoDirection", Pilot.ShipId, x, y, z);
                 Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
                 return null;
-            case "CmdFollowBall" or "CmdOrbit" when arguments is [long target, var distance] && NavigationTarget(target) is { } follow &&
-                distance is double or long:
+            case "CmdFollowBall"
+            or "CmdOrbit"
+                when arguments is [long target, var distance] && NavigationTarget(target) is { } follow && distance is double or long:
                 double standOff = Convert.ToDouble(distance);
-                if (standOff < 0 || standOff > NavigationDefinitions.MaximumFollowRange || !double.IsFinite(standOff) || method == "CmdOrbit" && !InBallpark)
+                if (
+                    standOff < 0
+                    || standOff > NavigationDefinitions.MaximumFollowRange
+                    || !double.IsFinite(standOff)
+                    || method == "CmdOrbit" && !InBallpark
+                )
                 {
                     return PilotCallRouter.Unsupported;
                 }
@@ -884,9 +1247,10 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                     double radius = follow.Radius + Pilot.Flight.ShipRadius + standOff;
                     double sign = separation >= radius ? 1 : -1;
                     _followMode = method == "CmdOrbit" ? DestinyBallMode.Orbit : DestinyBallMode.Follow;
-                    _direction = _followMode == DestinyBallMode.Orbit ?
-                        OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow.Position, radius) :
-                        (follow.Position - position) * (sign / separation);
+                    _direction =
+                        _followMode == DestinyBallMode.Orbit
+                            ? OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow.Position, radius)
+                            : (follow.Position - position) * (sign / separation);
                     _lastHeading = _direction;
                     _followTarget = follow;
                     _followRange = standOff;
@@ -916,16 +1280,28 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 _speedFraction = 0;
                 Update("Stop", Pilot.ShipId);
                 return null;
-            case "CmdDock" when arguments is [long station, long ship] && ship == Pilot.ShipId && station is > 0 and <= int.MaxValue &&
-                objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
+            case "CmdDock"
+                when arguments is [long station, long ship]
+                    && ship == Pilot.ShipId
+                    && station is > 0 and <= int.MaxValue
+                    && objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
                 position = Pilot.Position!;
-                if (position.DistanceTo(destination.Position) > destination.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange ||
-                    (docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId)))
+                if (
+                    position.DistanceTo(destination.Position)
+                        > destination.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange
+                    || (docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId))
+                )
                 {
                     return PilotCallRouter.Unsupported;
                 }
-                if (docking is not null) { Pilot = docking.Dock(Pilot.PilotId, ship, (int)station); }
-                else { SetPosition(null); }
+                if (docking is not null)
+                {
+                    Pilot = docking.Dock(Pilot.PilotId, ship, (int)station);
+                }
+                else
+                {
+                    SetPosition(null);
+                }
                 LeaveSpace();
                 _direction = null;
                 _velocity = new(0, 0, 0);

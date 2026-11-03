@@ -33,10 +33,22 @@ internal sealed class PilotHealthStore(WorldDatabase database, IPilotFitting fit
     internal static ShipHealth Read(WorldDbContext world, long shipId, HullDefense defense, long now)
     {
         var saved = world.Set<ShipHealthState>().Find(shipId);
-        return new(shipId, defense, saved is null ? defense.Undamaged : new(
-            ChargedResource.Recharged(saved.ShieldCharge, defense.Shield, defense.ShieldRechargeMilliseconds,
-                Math.Max(0, (now - saved.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)),
-            Math.Max(0, defense.Armor - saved.ArmorDamage), Math.Max(0, defense.Structure - saved.StructureDamage)));
+        return new(
+            shipId,
+            defense,
+            saved is null
+                ? defense.Undamaged
+                : new(
+                    ChargedResource.Recharged(
+                        saved.ShieldCharge,
+                        defense.Shield,
+                        defense.ShieldRechargeMilliseconds,
+                        Math.Max(0, (now - saved.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
+                    ),
+                    Math.Max(0, defense.Armor - saved.ArmorDamage),
+                    Math.Max(0, defense.Structure - saved.StructureDamage)
+                )
+        );
     }
 
     // Internal combat persistence primitive: callers keep health, destruction

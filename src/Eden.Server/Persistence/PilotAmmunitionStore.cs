@@ -18,18 +18,35 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
     internal static Magazine Read(WorldDbContext world, OwnedItem module, OwnedItem charge)
     {
         var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
-        return new(module.Id, module.LocationId, module.FlagId, charge.TypeId, charge.Quantity,
-            cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0);
+        return new(
+            module.Id,
+            module.LocationId,
+            module.FlagId,
+            charge.TypeId,
+            charge.Quantity,
+            cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0
+        );
     }
 
     public IReadOnlyList<Magazine> Read(long pilotId, long shipId)
     {
         using WorldDbContext world = new(database.Path);
         var pilot = Pilot(world, pilotId, shipId);
-        var modules = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == shipId &&
-            i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).OrderBy(i => i.FlagId).ToArray();
-        return modules.Select(module => (module, charge: Contents(world, module.Id)))
-            .Where(p => p.charge is not null).Select(p => Read(world, p.module, p.charge!)).ToArray();
+        var modules = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                i.OwnerId == pilot.Id
+                && i.LocationId == shipId
+                && i.FlagId >= (int)InventoryFlag.HighSlot0
+                && i.FlagId <= (int)InventoryFlag.HighSlot7
+            )
+            .OrderBy(i => i.FlagId)
+            .ToArray();
+        return modules
+            .Select(module => (module, charge: Contents(world, module.Id)))
+            .Where(p => p.charge is not null)
+            .Select(p => Read(world, p.module, p.charge!))
+            .ToArray();
     }
 
     private static Pilot Pilot(WorldDbContext world, long pilotId, long shipId)
@@ -42,15 +59,31 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         return pilot;
     }
 
-    private static OwnedItem[] Modules(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, IReadOnlyList<long> ids, long now, bool unloading = false)
+    private static OwnedItem[] Modules(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        IReadOnlyList<long> ids,
+        long now,
+        bool unloading = false
+    )
     {
         if (ids.Count == 0 || ids.Distinct().Count() != ids.Count)
         {
             throw new InvalidDataException("Select distinct fitted weapons.");
         }
-        var modules = world.Set<OwnedItem>().Where(i => ids.Contains(i.Id) && i.OwnerId == pilot.Id &&
-            i.LocationId == pilot.ActiveShipId && i.Singleton && i.FlagId >= (int)InventoryFlag.HighSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
-            .OrderBy(i => i.FlagId).ToArray();
+        var modules = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                ids.Contains(i.Id)
+                && i.OwnerId == pilot.Id
+                && i.LocationId == pilot.ActiveShipId
+                && i.Singleton
+                && i.FlagId >= (int)InventoryFlag.HighSlot0
+                && i.FlagId <= (int)InventoryFlag.HighSlot7
+            )
+            .OrderBy(i => i.FlagId)
+            .ToArray();
         if (modules.Length != ids.Count)
         {
             throw new InvalidDataException("The fitted weapons are unavailable.");
@@ -59,8 +92,14 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         {
             var attributes = Attributes(catalog, module.TypeId);
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
-            if (!CombatDefinitions.IsSupportedHybrid(group, attributes) &&
-                !(unloading && (group == InventoryDefinitions.MiningLaserGroup || module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun) && Contents(world, module.Id) is null))
+            if (
+                !CombatDefinitions.IsSupportedHybrid(group, attributes)
+                && !(
+                    unloading
+                    && (group == InventoryDefinitions.MiningLaserGroup || module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun)
+                    && Contents(world, module.Id) is null
+                )
+            )
             {
                 throw new InvalidDataException("This weapon does not use supported small hybrid charges.");
             }
@@ -79,29 +118,47 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
     private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)InventoryFlag.Cargo);
-        double used = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && i.LocationId == pilot.ActiveShipId && i.FlagId == (int)InventoryFlag.Cargo)
-            .AsEnumerable().Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+        double used = world
+            .Set<OwnedItem>()
+            .Where(i => i.OwnerId == pilot.Id && i.LocationId == pilot.ActiveShipId && i.FlagId == (int)InventoryFlag.Cargo)
+            .AsEnumerable()
+            .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
         if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {
             throw new CargoCapacityException(0, used - capacity);
         }
     }
 
-    public AmmunitionTransfer Load(long pilotId, long shipId, IReadOnlyList<long> moduleIds, IReadOnlyList<long> chargeIds, long sourceId, long now)
+    public AmmunitionTransfer Load(
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> moduleIds,
+        IReadOnlyList<long> chargeIds,
+        long sourceId,
+        long now
+    )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId, shipId);
         int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
-        if ((sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.StationId)) ||
-            chargeIds.Count == 0 || chargeIds.Distinct().Count() != chargeIds.Count)
+        if (
+            (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.StationId))
+            || chargeIds.Count == 0
+            || chargeIds.Distinct().Count() != chargeIds.Count
+        )
         {
             throw new InvalidDataException("Load distinct ammunition stacks from your cargo or current docked station hangar.");
         }
         var modules = Modules(world, catalog, pilot, moduleIds, now);
-        var sources = world.Set<OwnedItem>().Where(i => chargeIds.Contains(i.Id) && i.OwnerId == pilotId &&
-            i.LocationId == sourceId && i.FlagId == sourceFlag && !i.Singleton).OrderBy(i => i.Id).ToArray();
+        var sources = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag && !i.Singleton
+            )
+            .OrderBy(i => i.Id)
+            .ToArray();
         if (sources.Length != chargeIds.Count || sources.Select(i => i.TypeId).Distinct().Count() != 1)
         {
             throw new InvalidDataException("Choose available stacks of one ammunition type.");
@@ -109,8 +166,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         int typeId = sources[0].TypeId;
         var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
         var chargeAttributes = Attributes(catalog, typeId);
-        if (chargeType.GroupId != AmmunitionDefinitions.HybridChargeGroup ||
-            chargeAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize)
+        if (
+            chargeType.GroupId != AmmunitionDefinitions.HybridChargeGroup
+            || chargeAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize
+        )
         {
             throw new InvalidDataException("Use small hybrid charges in these weapons.");
         }
@@ -157,14 +216,19 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             {
                 continue;
             }
-            loaded ??= world.Set<OwnedItem>().Add(new()
-            {
-                Id = nextId++,
-                OwnerId = pilotId,
-                TypeId = typeId,
-                LocationId = module.Id,
-                FlagId = (int)InventoryFlag.Cargo,
-            }).Entity;
+            loaded ??= world
+                .Set<OwnedItem>()
+                .Add(
+                    new()
+                    {
+                        Id = nextId++,
+                        OwnerId = pilotId,
+                        TypeId = typeId,
+                        LocationId = module.Id,
+                        FlagId = (int)InventoryFlag.Cargo,
+                    }
+                )
+                .Entity;
             foreach (var source in sources.Where(s => s.Quantity > 0))
             {
                 int moved = Math.Min(available, source.Quantity);
@@ -185,7 +249,8 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             {
                 throw new InvalidDataException("Invalid weapon reload duration.");
             }
-            var cooldown = world.Set<ModuleCooldown>().Find(module.Id) ?? world.Set<ModuleCooldown>().Add(new() { ModuleId = module.Id }).Entity;
+            var cooldown =
+                world.Set<ModuleCooldown>().Find(module.Id) ?? world.Set<ModuleCooldown>().Add(new() { ModuleId = module.Id }).Entity;
             cooldown.Kind = ModuleCooldownKind.Reload;
             cooldown.ReadyAt = checked(now + (long)Math.Ceiling(reload * TimeSpan.TicksPerMillisecond));
             duration = Math.Max(duration, reload);
@@ -205,15 +270,28 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         return new(changes, magazines, duration);
     }
 
-    public AmmunitionTransfer Unload(long pilotId, long shipId, IReadOnlyList<long> moduleIds, long destinationId, int flagId, int? quantity, long now)
+    public AmmunitionTransfer Unload(
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> moduleIds,
+        long destinationId,
+        int flagId,
+        int? quantity,
+        long now
+    )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId, shipId);
-        if (!((destinationId == shipId && flagId == (int)InventoryFlag.Cargo) ||
-            (pilot.ActiveShip.Position is null && destinationId == pilot.ActiveShip.StationId && flagId == (int)InventoryFlag.Hangar)) ||
-            quantity is <= 0 || quantity.HasValue && moduleIds.Count != 1)
+        if (
+            !(
+                (destinationId == shipId && flagId == (int)InventoryFlag.Cargo)
+                || (pilot.ActiveShip.Position is null && destinationId == pilot.ActiveShip.StationId && flagId == (int)InventoryFlag.Hangar)
+            )
+            || quantity is <= 0
+            || quantity.HasValue && moduleIds.Count != 1
+        )
         {
             throw new InvalidDataException("Unload into your cargo or current docked station hangar with a valid quantity.");
         }
@@ -245,15 +323,20 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             else
             {
                 loaded.Quantity -= moved;
-                var split = world.Set<OwnedItem>().Add(new()
-                {
-                    Id = nextId++,
-                    OwnerId = pilotId,
-                    TypeId = loaded.TypeId,
-                    LocationId = destinationId,
-                    FlagId = flagId,
-                    Quantity = moved,
-                }).Entity;
+                var split = world
+                    .Set<OwnedItem>()
+                    .Add(
+                        new()
+                        {
+                            Id = nextId++,
+                            OwnerId = pilotId,
+                            TypeId = loaded.TypeId,
+                            LocationId = destinationId,
+                            FlagId = flagId,
+                            Quantity = moved,
+                        }
+                    )
+                    .Entity;
                 items.Add(new(PilotInventoryStore.Read(catalog, split), null));
                 magazines.Add(new(previous, Read(world, module, loaded)));
             }

@@ -1,0 +1,36 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore tools
+        run: dotnet tool restore
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build
+      - name: Test catalog setup
+        run: python tests/Eden.Protocol.Tests/Persistence/catalog_setup_test.py
+      - name: Test formatting policy
+        run: python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
+      - name: Check formatting
+        shell: pwsh
+        run: ./tools/Format.ps1 -Check

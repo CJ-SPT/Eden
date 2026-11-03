@@ -12,33 +12,75 @@ namespace Eden.Protocol.Combat;
 [Injectable(InjectionType.Scoped)]
 internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, TargetingHandler targeting)
 {
-    private sealed record Cycle(long ShipId, CombatWeapon Weapon, long Target, long Started, long StartTime, long Repeats, bool Stopping = false);
+    private sealed record Cycle(
+        long ShipId,
+        CombatWeapon Weapon,
+        long Target,
+        long Started,
+        long StartTime,
+        long Repeats,
+        bool Stopping = false
+    );
+
     private readonly Dictionary<long, Cycle> _cycles = [];
     private const int ProbabilityResolution = 1_000_000;
 
     public void Cancel(PilotCallContext context)
     {
-        foreach (var cycle in _cycles.Values.ToArray()) { Stop(context, cycle); }
+        foreach (var cycle in _cycles.Values.ToArray())
+        {
+            Stop(context, cycle);
+        }
     }
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) => _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
-        ? [module, pilot.PilotId, pilot.ShipId, cycle.Target, null, Array.Empty<object?>(), cycle.Weapon.EffectId,
-            cycle.StartTime, cycle.Weapon.CycleMilliseconds, cycle.Repeats] : null;
+    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+        _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
+            ?
+            [
+                module,
+                pilot.PilotId,
+                pilot.ShipId,
+                cycle.Target,
+                null,
+                Array.Empty<object?>(),
+                cycle.Weapon.EffectId,
+                cycle.StartTime,
+                cycle.Weapon.CycleMilliseconds,
+                cycle.Repeats,
+            ]
+            : null;
 
     public void Advance(PilotCallContext context)
     {
-        if (!context.Selected) { return; }
+        if (!context.Selected)
+        {
+            return;
+        }
         foreach (var (module, cycle) in _cycles.ToArray())
         {
-            if (cycle.ShipId != context.Pilot.ShipId || !context.Flight.CanTarget || !targeting.IsLocked(cycle.Target) || context.Flight.FindTarget(cycle.Target) is null)
+            if (
+                cycle.ShipId != context.Pilot.ShipId
+                || !context.Flight.CanTarget
+                || !targeting.IsLocked(cycle.Target)
+                || context.Flight.FindTarget(cycle.Target) is null
+            )
             {
                 Stop(context, cycle);
                 continue;
             }
-            if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Weapon.CycleMilliseconds) { continue; }
+            if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Weapon.CycleMilliseconds)
+            {
+                continue;
+            }
             Stop(context, cycle);
-            if (cycle.Stopping || cycle.Repeats == 0) { continue; }
-            try { Start(context, module, cycle.Target, cycle.Repeats - 1); }
+            if (cycle.Stopping || cycle.Repeats == 0)
+            {
+                continue;
+            }
+            try
+            {
+                Start(context, module, cycle.Target, cycle.Repeats - 1);
+            }
             catch (Exception error) when (error is InvalidDataException or OverflowException) { }
         }
     }
@@ -46,8 +88,15 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     private void Start(PilotCallContext context, long module, long target, long repeats, string? effectName = null)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = combat.Fire(context.Pilot.PilotId, module, target, context.Flight.Velocity, now,
-            RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution, effectName);
+        var result = combat.Fire(
+            context.Pilot.PilotId,
+            module,
+            target,
+            context.Flight.Velocity,
+            now,
+            RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
+            effectName
+        );
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, clock.GetTimestamp(), now, repeats);
         _cycles.Add(module, cycle);
         context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Outgoing(result, target)]));
@@ -56,29 +105,60 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         context.Flight.NotifyHealth(result.Health);
         context.Flight.RefreshWrecks();
         context.Flight.RefreshNpcs();
-        context.Notifications.Add(("OnModuleAttributeChanges", [new List<object?>
-        {
-            new object?[] { "OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)DogmaAttributeId.CapacitorCharge,
-                now, result.Capacitor, null, now },
-        }]));
+        context.Notifications.Add(
+            (
+                "OnModuleAttributeChanges",
+                [
+                    new List<object?>
+                    {
+                        new object?[]
+                        {
+                            "OnModuleAttributeChange",
+                            context.Pilot.PilotId,
+                            context.Pilot.ShipId,
+                            (int)DogmaAttributeId.CapacitorCharge,
+                            now,
+                            result.Capacitor,
+                            null,
+                            now,
+                        },
+                    },
+                ]
+            )
+        );
         if (result.Reward is { } reward)
         {
-            context.Notifications.Add(("OnAccountChange", ["cash", context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk]));
+            context.Notifications.Add(
+                ("OnAccountChange", ["cash", context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk])
+            );
         }
         if (result.Magazine is { } magazine)
         {
             AmmunitionHandler.NotifyQuantity(context, magazine, magazine.Quantity, now);
         }
-        if (result.Destroyed) { Stop(context, cycle); }
+        if (result.Destroyed)
+        {
+            Stop(context, cycle);
+        }
     }
 
-    private static WeaponContact Contact(Cycle cycle) => new(cycle.Weapon.ItemId, cycle.Weapon.TypeId, cycle.Weapon.ChargeTypeId,
-        cycle.Target, cycle.StartTime, cycle.Weapon.CycleMilliseconds,
-        cycle.Weapon.EffectId == (int)DogmaEffect.ProjectileFired ? "effects.ProjectileFired" : "effects.Laser");
+    private static WeaponContact Contact(Cycle cycle) =>
+        new(
+            cycle.Weapon.ItemId,
+            cycle.Weapon.TypeId,
+            cycle.Weapon.ChargeTypeId,
+            cycle.Target,
+            cycle.StartTime,
+            cycle.Weapon.CycleMilliseconds,
+            cycle.Weapon.EffectId == (int)DogmaEffect.ProjectileFired ? "effects.ProjectileFired" : "effects.Laser"
+        );
 
     private void Stop(PilotCallContext context, Cycle cycle)
     {
-        if (!_cycles.Remove(cycle.Weapon.ItemId)) { return; }
+        if (!_cycles.Remove(cycle.Weapon.ItemId))
+        {
+            return;
+        }
         Effect(context, cycle, false);
         context.Flight.SetWeaponEffect(Contact(cycle), false);
     }
@@ -86,21 +166,58 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(("OnGodmaShipEffect", [cycle.Weapon.ItemId, cycle.Weapon.EffectId, now, active, active,
-            new object?[] { cycle.Weapon.ItemId, context.Pilot.PilotId, cycle.ShipId, cycle.Target, null, Array.Empty<object?>(), cycle.Weapon.EffectId },
-            cycle.StartTime, cycle.Weapon.CycleMilliseconds, cycle.Repeats, null, active ? null : now]));
+        context.Notifications.Add(
+            (
+                "OnGodmaShipEffect",
+                [
+                    cycle.Weapon.ItemId,
+                    cycle.Weapon.EffectId,
+                    now,
+                    active,
+                    active,
+                    new object?[]
+                    {
+                        cycle.Weapon.ItemId,
+                        context.Pilot.PilotId,
+                        cycle.ShipId,
+                        cycle.Target,
+                        null,
+                        Array.Empty<object?>(),
+                        cycle.Weapon.EffectId,
+                    },
+                    cycle.StartTime,
+                    cycle.Weapon.CycleMilliseconds,
+                    cycle.Repeats,
+                    null,
+                    active ? null : now,
+                ]
+            )
+        );
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
+    public object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    )
     {
-        if (service != "dogmaIM" || method is not ("Activate" or "Deactivate")) { return PilotCallRouter.Unsupported; }
+        if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
+        {
+            return PilotCallRouter.Unsupported;
+        }
         context.Flight.Checkpoint();
         targeting.Advance(context);
         Advance(context);
         try
         {
-            if (method == "Activate" && args is [long module, var effect, long target, long repeats] &&
-                BlueMarshal.Text(effect) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect && repeats is >= 0 and <= int.MaxValue)
+            if (
+                method == "Activate"
+                && args is [long module, var effect, long target, long repeats]
+                && BlueMarshal.Text(effect) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect
+                && repeats is >= 0 and <= int.MaxValue
+            )
             {
                 if (!context.Flight.CanTarget || !targeting.IsLocked(target) || !context.Flight.VisibleNpcs.Any(n => n.Id == target))
                 {
@@ -113,16 +230,29 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 Start(context, module, target, repeats, BlueMarshal.Text(effect));
                 return null;
             }
-            if (method == "Deactivate" && args is [long item, var effectName] && BlueMarshal.Text(effectName) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect)
+            if (
+                method == "Deactivate"
+                && args is [long item, var effectName]
+                && BlueMarshal.Text(effectName) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect
+            )
             {
                 // Turret damage is paid at cycle start; stop repeating after the
                 // current cycle. A reconnect cannot bypass the saved cooldown.
-                if (_cycles.TryGetValue(item, out var stopping)) { _cycles[item] = stopping with { Stopping = true }; }
+                if (_cycles.TryGetValue(item, out var stopping))
+                {
+                    _cycles[item] = stopping with { Stopping = true };
+                }
                 return null;
             }
             return PilotCallRouter.Unsupported;
         }
-        catch (InvalidDataException error) { return new PilotCallRouter.Error(error.Message); }
-        catch (OverflowException) { return new PilotCallRouter.Error("The combat transaction exceeded the local value limit."); }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallRouter.Error(error.Message);
+        }
+        catch (OverflowException)
+        {
+            return new PilotCallRouter.Error("The combat transaction exceeded the local value limit.");
+        }
     }
 }

@@ -23,8 +23,9 @@ public sealed class ShieldBoostTests
     {
         using Fixture f = new();
         f.Db.Store.SetPosition(f.Pilot.ShipId, null);
-        long other = Assert.Single(f.Market.Buy(f.Pilot.PilotId, f.Pilot.StationId,
-            [new((int)ShieldBoosterType.SmallI, 100000, 1)]).Changes).Item.Id;
+        long other = Assert
+            .Single(f.Market.Buy(f.Pilot.PilotId, f.Pilot.StationId, [new((int)ShieldBoosterType.SmallI, 100000, 1)]).Changes)
+            .Item.Id;
         f.Fitting.Fit(f.Pilot.PilotId, [other], f.Pilot.StationId, (int)InventoryFlag.AutoFit);
         var before = f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId);
         var attributes = f.Fitting.ShipAttributes(f.Pilot.PilotId);
@@ -32,8 +33,10 @@ public sealed class ShieldBoostTests
         int destination = Assert.Single(before, i => i.Id == other).FlagId;
         var changes = f.Fitting.Fit(f.Pilot.PilotId, [f.Module], f.Pilot.ShipId, destination);
         Assert.Equal(2, changes.Count);
-        Assert.Equal(before.Select(i => i with { FlagId = i.Id == f.Module ? destination : (int)InventoryFlag.MediumSlot0 }),
-            f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId));
+        Assert.Equal(
+            before.Select(i => i with { FlagId = i.Id == f.Module ? destination : (int)InventoryFlag.MediumSlot0 }),
+            f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId)
+        );
         Assert.Equal(attributes.OrderBy(a => a.Key), f.Fitting.ShipAttributes(f.Pilot.PilotId).OrderBy(a => a.Key));
         Assert.Equal(health, f.Health.Read(f.Pilot.PilotId, f.Clock.Now));
         using WorldDbContext saved = new(f.Db.Path);
@@ -45,8 +48,11 @@ public sealed class ShieldBoostTests
         private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
         public long Milliseconds { get; set; }
         public override long TimestampFrequency => 1000;
+
         public override long GetTimestamp() => Milliseconds;
+
         public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
+
         public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
@@ -66,16 +72,21 @@ public sealed class ShieldBoostTests
         {
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
+                catalog.Database.ExecuteSqlRaw(
+                    """
                     INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (40,'Shield Booster',7);
-                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (399,'Small Shield Booster I',40),(3416,'Shield Operation',257),(21059,'Shield Compensation',257);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (399,'Small Shield Booster I',40),(3416,'Shield Operation',257),
+                        (21059,'Shield Compensation',257);
                     INSERT INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(11,'powerOutput'),(13,'medSlots'),(14,'hiSlots'),
-                        (30,'power'),(48,'cpuOutput'),(50,'cpu'),(68,'shieldBonus'),(73,'duration'),(182,'requiredSkill1'),(277,'requiredSkill1Level'),(851,'shieldBoostCapacitorBonus');
+                        (30,'power'),(48,'cpuOutput'),(50,'cpu'),(68,'shieldBonus'),(73,'duration'),(182,'requiredSkill1'),
+                            (277,'requiredSkill1Level'),(851,'shieldBoostCapacitorBonus');
                     INSERT INTO TypeAttribute VALUES (601,11,23),(601,13,2),(601,14,2),(601,48,135),
                         (3651,50,65),(3651,30,2),(399,6,20),(399,30,2),(399,50,25),(399,68,26),(399,73,2000),(399,182,3416),(399,277,1),
                         (3416,275,1),(21059,275,2),(21059,851,-2);
-                    INSERT INTO SourceRecord VALUES ('client/types','399','{{"volume":5}}'),('client/stationoperations','14','{{"services":[7,17,13]}}');
-                    """);
+                    INSERT INTO SourceRecord VALUES ('client/types','399','{{"volume":5}}'),
+                        ('client/stationoperations','14','{{"services":[7,17,13]}}');
+                    """
+                );
             }
             using (WorldDbContext world = new(Db.Path))
             {
@@ -83,7 +94,9 @@ public sealed class ShieldBoostTests
                 world.Add(new PilotWallet { PilotId = Pilot.PilotId, Cents = 1000000 });
                 world.SaveChanges();
             }
-            Module = Assert.Single(Market.Buy(Pilot.PilotId, Pilot.StationId, [new((int)ShieldBoosterType.SmallI, 100000, 1)]).Changes).Item.Id;
+            Module = Assert
+                .Single(Market.Buy(Pilot.PilotId, Pilot.StationId, [new((int)ShieldBoosterType.SmallI, 100000, 1)]).Changes)
+                .Item.Id;
             Fitting.Fit(Pilot.PilotId, [Module], Pilot.StationId, (int)InventoryFlag.AutoFit);
             Fitting.SetOnline(Pilot.PilotId, Pilot.ShipId, Module, true);
             Db.Store.SetPosition(Pilot.ShipId, SpacePosition.Zero);
@@ -93,7 +106,8 @@ public sealed class ShieldBoostTests
         public void Damage(double shield = 25)
         {
             using WorldDbContext world = new(Db.Path);
-            var saved = world.Set<ShipHealthState>().Find(Pilot.ShipId) ?? world.Set<ShipHealthState>().Add(new() { ShipId = Pilot.ShipId }).Entity;
+            var saved =
+                world.Set<ShipHealthState>().Find(Pilot.ShipId) ?? world.Set<ShipHealthState>().Add(new() { ShipId = Pilot.ShipId }).Entity;
             saved.ShieldCharge = shield;
             saved.ArmorDamage = 12;
             saved.StructureDamage = 9;
@@ -102,10 +116,18 @@ public sealed class ShieldBoostTests
         }
 
         public ShieldBoost Boost() => Boosting.Boost(Pilot.PilotId, Module, Clock.Now);
+
         public PilotCallContext Client(SharedSpace? space = null)
         {
             var pilot = Pilot;
-            PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(Db.Store, p, Clock, space ?? new(), Db.Objects, health: Health), 7, []);
+            PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, Clock, space ?? new(), Db.Objects, health: Health),
+                7,
+                []
+            );
             context.Select(pilot);
             context.Flight.Snapshot();
             context.Flight.Updates.Clear();
@@ -146,7 +168,9 @@ public sealed class ShieldBoostTests
         using Fixture f = new();
         var pilot = f.Pilot;
         f.Db.Store.SetPosition(pilot.ShipId, null);
-        long stack = Assert.Single(f.Market.Buy(pilot.PilotId, pilot.StationId, [new((int)ShieldBoosterType.SmallI, 100000, 2)]).Changes).Item.Id;
+        long stack = Assert
+            .Single(f.Market.Buy(pilot.PilotId, pilot.StationId, [new((int)ShieldBoosterType.SmallI, 100000, 2)]).Changes)
+            .Item.Id;
         Assert.Throws<InvalidDataException>(() => f.Fitting.Fit(pilot.PilotId, [stack], pilot.StationId, (int)InventoryFlag.HighSlot1));
         Assert.Throws<InvalidDataException>(() => f.Fitting.Fit(pilot.PilotId, [stack], pilot.StationId, (int)InventoryFlag.MediumSlot7));
         using (WorldDbContext world = new(f.Db.Path))
@@ -198,7 +222,14 @@ public sealed class ShieldBoostTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = (int)ShieldBoostSkill.Compensation, Points = 16000 });
+            world.Add(
+                new PilotSkill
+                {
+                    PilotId = f.Pilot.PilotId,
+                    TypeId = (int)ShieldBoostSkill.Compensation,
+                    Points = 16000,
+                }
+            );
             world.SaveChanges();
         }
         Assert.Equal(18.8, f.Boost().Booster.CapacitorNeed, 8);
@@ -209,11 +240,23 @@ public sealed class ShieldBoostTests
     public async Task CompetingBoostCallsPayAndHealOnce()
     {
         using Fixture f = new();
-        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
-        {
-            try { return f.Boost(); }
-            catch (InvalidDataException) { return null; }
-        })));
+        var results = await Task.WhenAll(
+            Enumerable
+                .Range(0, 2)
+                .Select(_ =>
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            return f.Boost();
+                        }
+                        catch (InvalidDataException)
+                        {
+                            return null;
+                        }
+                    })
+                )
+        );
         Assert.Single(results, r => r is not null);
         Assert.Equal(51, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);
         Assert.Equal(110, f.Db.Services.GetRequiredService<IPilotMining>().Capacitor(f.Pilot.PilotId, f.Clock.Now));
@@ -231,7 +274,11 @@ public sealed class ShieldBoostTests
             world.Add(new NpcAggression { NpcId = npc.Id, TargetShipId = f.Pilot.ShipId });
             world.SaveChanges();
         }
-        var incoming = Task.Run(() => f.Db.Services.GetRequiredService<INpcCombat>().Fire(f.Pilot.PilotId, f.Pilot.ShipId, npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1));
+        var incoming = Task.Run(() =>
+            f
+                .Db.Services.GetRequiredService<INpcCombat>()
+                .Fire(f.Pilot.PilotId, f.Pilot.ShipId, npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1)
+        );
         var boost = Task.Run(f.Boost);
         await Task.WhenAll(incoming, boost);
         Assert.Equal(51 - (await incoming)!.Applied, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);
@@ -252,14 +299,25 @@ public sealed class ShieldBoostTests
             var module = world.Set<OwnedItem>().Find(f.Module)!;
             switch (reason)
             {
-                case "offline": module.Online = false; break;
-                case "cargo": module.FlagId = (int)InventoryFlag.Cargo; break;
-                case "high slot": module.FlagId = (int)InventoryFlag.HighSlot0; break;
-                case "foreign": module.OwnerId = 90000002; break;
+                case "offline":
+                    module.Online = false;
+                    break;
+                case "cargo":
+                    module.FlagId = (int)InventoryFlag.Cargo;
+                    break;
+                case "high slot":
+                    module.FlagId = (int)InventoryFlag.HighSlot0;
+                    break;
+                case "foreign":
+                    module.OwnerId = 90000002;
+                    break;
             }
             world.SaveChanges();
         }
-        if (reason == "docked") { f.Db.Store.SetPosition(f.Pilot.ShipId, null); }
+        if (reason == "docked")
+        {
+            f.Db.Store.SetPosition(f.Pilot.ShipId, null);
+        }
         Assert.Throws<InvalidDataException>(() => f.Boost());
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(25, saved.Set<ShipHealthState>().Single().ShieldCharge);
@@ -273,7 +331,14 @@ public sealed class ShieldBoostTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new ShipEnergy { ShipId = f.Pilot.ShipId, Charge = 1, UpdatedAt = f.Clock.Now });
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = f.Pilot.ShipId,
+                    Charge = 1,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
             world.SaveChanges();
         }
         Assert.Throws<InvalidDataException>(() => f.Boost());
@@ -316,9 +381,13 @@ public sealed class ShieldBoostTests
         SharedTargetLocks locks = new();
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
         using var activationScope = f.Db.Services.CreateScope();
-        ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), handler,
-            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(), new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
+        ModuleActivationHandler activation = new(
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
+            handler,
+            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+        );
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]);
         Assert.Null(Activate());
         Assert.Null(Activate());
@@ -333,7 +402,10 @@ public sealed class ShieldBoostTests
         f.Clock.Milliseconds = 2000;
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
-        Assert.Contains(context.Notifications, n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[1], (int)DogmaEffect.ShieldBoosting) && Equals(n.Arguments[3], false));
+        Assert.Contains(
+            context.Notifications,
+            n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[1], (int)DogmaEffect.ShieldBoosting) && Equals(n.Arguments[3], false)
+        );
         Assert.NotEmpty(BlueMarshal.Encode(context.Notifications.Select(n => (object?)n.Arguments).ToList()));
     }
 
@@ -371,8 +443,12 @@ public sealed class ShieldBoostTests
         using var context = f.Client();
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        Assert.Null(router.Call(context, "dogmaIM", "Activate", new object?[] { f.Module, ShieldBoostDefinitions.EffectName, null, 0L }, _ => { }));
-        var info = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State);
+        Assert.Null(
+            router.Call(context, "dogmaIM", "Activate", new object?[] { f.Module, ShieldBoostDefinitions.EffectName, null, 0L }, _ => { })
+        );
+        var info = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
+        );
         var modules = Assert.IsType<Dictionary<long, object?>>(info["shipInfo"]);
         var module = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(modules[f.Module]).State);
         var attributes = Assert.IsType<Dictionary<long, object?>>(module["attributes"]);
@@ -398,7 +474,9 @@ public sealed class ShieldBoostTests
         context.Flight.BeginShipLoss();
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
-        Assert.IsType<PilotCallRouter.Error>(handler.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 0L]));
+        Assert.IsType<PilotCallRouter.Error>(
+            handler.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 0L])
+        );
     }
 
     [Fact]
@@ -411,27 +489,43 @@ public sealed class ShieldBoostTests
         f.Db.Store.SetPosition(f.Pilot.ShipId, npc.Position + new SpacePosition(1000, 0, 0), npc.SystemId);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("""
+            catalog.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (29,'Capsule',6);
-                INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (670,'Capsule',29,32000,2,0),(26510,'Caldari Rookie ship Wreck',186,10000,14,27500);
+                INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (670,'Capsule',29,32000,2,0),
+                    (26510,'Caldari Rookie ship Wreck',186,10000,14,27500);
                 INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
                 UPDATE TypeAttribute SET Value=1000 WHERE ItemTypeId=30380 AND AttributeId=64;
                 UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=54;
                 UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
-                """);
+                """
+            );
         }
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot],
-            p => new(f.Db.Store, p, f.Clock, new(), [], health: f.Health, encounters: encounters), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), [], health: f.Health, encounters: encounters),
+            7,
+            []
+        );
         context.Select(pilot);
         context.Flight.Snapshot();
         ShieldBoostHandler shields = new(f.Clock, f.Boosting);
         Assert.Null(shields.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]));
         SharedTargetLocks locks = new();
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
-        using NpcCombatHandler combat = new(f.Clock, f.Db.Services.GetRequiredService<INpcCombat>(), locks,
+        using NpcCombatHandler combat = new(
+            f.Clock,
+            f.Db.Services.GetRequiredService<INpcCombat>(),
+            locks,
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), shields, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()), new());
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
+            shields,
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()),
+            new()
+        );
         combat.Enter(context);
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -445,7 +539,10 @@ public sealed class ShieldBoostTests
         combat.Advance(context);
         Assert.Equal(FleetDefinitions.CapsuleType, context.Pilot.ShipTypeId);
         Assert.Null(shields.ActiveEffect(context.Pilot, f.Module));
-        Assert.Contains(context.Notifications, n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[1], (int)DogmaEffect.ShieldBoosting) && Equals(n.Arguments[3], false));
+        Assert.Contains(
+            context.Notifications,
+            n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[1], (int)DogmaEffect.ShieldBoosting) && Equals(n.Arguments[3], false)
+        );
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Empty(saved.Set<ModuleCooldown>());
         Assert.Null(saved.Ships.Find(pilot.ShipId));

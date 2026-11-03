@@ -22,8 +22,11 @@ public sealed class PilotCombatTests
         private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
         public long Milliseconds { get; set; }
         public override long TimestampFrequency => 1000;
+
         public override long GetTimestamp() => Milliseconds;
+
         public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
+
         public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
@@ -37,16 +40,22 @@ public sealed class PilotCombatTests
         public INpcEncounters Encounters => Db.Services.GetRequiredService<INpcEncounters>();
         public NpcContact Npc { get; }
         public long Module { get; }
+
         public Fixture()
         {
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
-                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(14,'hiSlots'),(48,'cpuOutput'),(11,'powerOutput'),
-                        (50,'cpu'),(30,'power'),(51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),(114,'emDamage'),(116,'explosiveDamage'),
-                        (117,'kineticDamage'),(118,'thermalDamage'),(127,'ammoLoaded'),(158,'falloff'),(160,'trackingSpeed'),(620,'optimalSigRadius'),
-                        (183,'requiredSkill2'),(278,'requiredSkill2Level'),(273,'shieldKineticDamageResonance'),(274,'shieldThermalDamageResonance'),(481,'entityKillBounty');
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(14,'hiSlots'),(48,'cpuOutput'),
+                        (11,'powerOutput'),
+                        (50,'cpu'),(30,'power'),(51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),(114,'emDamage'),
+                            (116,'explosiveDamage'),
+                        (117,'kineticDamage'),(118,'thermalDamage'),(127,'ammoLoaded'),(158,'falloff'),(160,'trackingSpeed'),
+                            (620,'optimalSigRadius'),
+                        (183,'requiredSkill2'),(278,'requiredSkill2Level'),(273,'shieldKineticDamageResonance'),
+                            (274,'shieldThermalDamageResonance'),(481,'entityKillBounty');
                     INSERT INTO TypeAttribute VALUES (601,14,2),(601,48,135),(601,11,23);
                     INSERT INTO TypeAttribute VALUES (3638,6,1),(3638,9,40),(3638,30,6),(3638,50,4),(3638,51,2000),(3638,54,4800),
                         (3638,64,1.25),(3638,114,0),(3638,116,0),(3638,117,3),(3638,118,2),(3638,127,20132),(3638,158,2000),
@@ -54,7 +63,8 @@ public sealed class PilotCombatTests
                     INSERT INTO TypeAttribute VALUES (30380,273,1),(30380,274,0.9),(30380,481,3000);
                     INSERT INTO ItemType(Id,Name,GroupId) VALUES (3300,'Gunnery',257);
                     INSERT INTO TypeAttribute VALUES (3300,275,1);
-                    """);
+                    """
+                );
             }
             using (WorldDbContext world = new(Db.Path))
             {
@@ -74,7 +84,8 @@ public sealed class PilotCombatTests
             return module.Id;
         }
 
-        public CombatShot Fire(double roll = 0.5, long? target = null) => Combat.Fire(90000001, Module, target ?? Npc.Id, SpacePosition.Zero, Clock.Now, roll);
+        public CombatShot Fire(double roll = 0.5, long? target = null) =>
+            Combat.Fire(90000001, Module, target ?? Npc.Id, SpacePosition.Zero, Clock.Now, roll);
 
         public void AlmostDefeated()
         {
@@ -90,8 +101,14 @@ public sealed class PilotCombatTests
         public (PilotCallContext Context, TargetingHandler Targeting, CombatHandler Combat) Client()
         {
             var pilot = Db.Store.FindPilot(1000001)!;
-            PilotCallContext context = new(1000001, pilot.Account, [pilot],
-                p => new(Db.Store, p, Clock, new(), [], encounters: Encounters, wrecks: Db.Services.GetRequiredService<IWrecks>()), 10, []);
+            PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, Clock, new(), [], encounters: Encounters, wrecks: Db.Services.GetRequiredService<IWrecks>()),
+                10,
+                []
+            );
             context.Select(pilot);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, Fitting, new());
@@ -172,12 +189,21 @@ public sealed class PilotCombatTests
         using Fixture f = new();
         long wingGun = f.Fit(1000002);
         f.AlmostDefeated();
-        var results = await Task.WhenAll(new[] { (Pilot: 90000001L, Module: f.Module), (Pilot: 90000002L, Module: wingGun) }
-            .Select(pair => Task.Run(() =>
-            {
-                try { return f.Combat.Fire(pair.Pilot, pair.Module, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5); }
-                catch (InvalidDataException) { return null; }
-            })));
+        var results = await Task.WhenAll(
+            new[] { (Pilot: 90000001L, Module: f.Module), (Pilot: 90000002L, Module: wingGun) }.Select(pair =>
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        return f.Combat.Fire(pair.Pilot, pair.Module, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5);
+                    }
+                    catch (InvalidDataException)
+                    {
+                        return null;
+                    }
+                })
+            )
+        );
         var kill = Assert.Single(results.OfType<CombatShot>());
         Assert.True(kill.Destroyed);
         Assert.Equal(300000, kill.Reward!.AmountCents);
@@ -201,16 +227,20 @@ public sealed class PilotCombatTests
         using var owned = context;
         using var locks = targeting;
         using var activationScope = f.Db.Services.CreateScope();
-        ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting), combat,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()), activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(), new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
+        ModuleActivationHandler activation = new(
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
+            combat,
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
+            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+        );
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());
         using WorldDbContext saved = new(f.Db.Path);
         double firstDamage = saved.Set<WorldNpc>().AsNoTracking().Single(n => n.Id == f.Npc.Id).ShieldCharge;
         Assert.True(firstDamage < 20);
         Assert.Null(Activate());
-        var message = Assert.IsType<Dictionary<string, object?>>(Assert.Single(
-            Assert.Single(context.NotificationsBeforeFlight).Arguments));
+        var message = Assert.IsType<Dictionary<string, object?>>(Assert.Single(Assert.Single(context.NotificationsBeforeFlight).Arguments));
         Assert.Equal("OnDamageMessage", context.NotificationsBeforeFlight[0].Name);
         Assert.Equal(f.Npc.Id, message["target"]);
         Assert.Equal((int)CombatWeaponType.CivilianGatlingRailgun, message["weapon"]);
@@ -242,7 +272,9 @@ public sealed class PilotCombatTests
         f.AlmostDefeated();
         Assert.Null(combat.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
         Assert.Null(combat.ActiveEffect(context.Pilot, f.Module));
-        var feedback = Assert.IsType<Dictionary<string, object?>>(Assert.Single(Assert.Single(context.NotificationsBeforeFlight).Arguments));
+        var feedback = Assert.IsType<Dictionary<string, object?>>(
+            Assert.Single(Assert.Single(context.NotificationsBeforeFlight).Arguments)
+        );
         Assert.Equal(f.Npc.Id, feedback["target"]);
         Assert.True(Assert.IsType<double>(feedback["damage"]) > 0);
         var removal = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).Single(m => Equals(m[0], "RemoveBall"));
@@ -253,7 +285,9 @@ public sealed class PilotCombatTests
         Assert.Contains(context.Notifications, n => n.Name == "OnAccountChange" && Equals(n.Arguments[2], 3000d));
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        var journal = Assert.IsType<List<object?>>(router.Call(context, "account", "GetTransactions", new object?[] { 1000L, null, null, false }, _ => { }));
+        var journal = Assert.IsType<List<object?>>(
+            router.Call(context, "account", "GetTransactions", new object?[] { 1000L, null, null, false }, _ => { })
+        );
         var entry = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(journal)).State);
         Assert.Equal(85, entry["entryTypeID"]);
         Assert.Equal(30000144, entry["referenceID"]);
@@ -275,21 +309,39 @@ public sealed class PilotCombatTests
         f.AlmostDefeated();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("""
+            catalog.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
                     ('client/asteroidcountbytypeidbeltid','40009232','{{}}'),
                     ('client/asteroidcountbytypeidbeltid','40009245','{{}}');
-                """);
+                """
+            );
         }
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
-        BlueInstance Request(string service, string method, params object?[] args) => new(
-            "carbon.common.script.net.machoNetPacket.CallReq", new object?[]
-            {
-                6L, new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
-                new BlueInstance(address, new object?[] { 8L, service, null }), null,
-                new object?[] { new object?[] { 0L, BlueMarshal.Encode(new object?[] { null, method, args, new Dictionary<string, object?>() }) } },
-                null, null, null, null, null, null, null, null, null,
-            });
+        BlueInstance Request(string service, string method, params object?[] args) =>
+            new(
+                "carbon.common.script.net.machoNetPacket.CallReq",
+                new object?[]
+                {
+                    6L,
+                    new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
+                    new BlueInstance(address, new object?[] { 8L, service, null }),
+                    null,
+                    new object?[]
+                    {
+                        new object?[] { 0L, BlueMarshal.Encode(new object?[] { null, method, args, new Dictionary<string, object?>() }) },
+                    },
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                }
+            );
         Queue<BlueInstance> input = new([
             Request("charUnboundMgr", "SelectCharacterID", 90000001L),
             Request("beyonce", "MachoBindObject", (long)f.Npc.SystemId, null),
@@ -299,27 +351,50 @@ public sealed class PilotCombatTests
         List<(string Name, object?[] Args)> notifications = [];
         using var scope = f.Db.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
-        await Assert.ThrowsAsync<EndOfStreamException>(() => session.RunAsync(async () =>
-        {
-            // The real session clock must complete the native NPC target lock.
-            if (input.Count == 1) { await Task.Delay(TimeSpan.FromSeconds(5)); }
-            return input.TryDequeue(out var request) ? request : throw new EndOfStreamException();
-        }, packet =>
-        {
-            var value = Assert.IsType<BlueInstance>(packet);
-            if (!value.Name.EndsWith(".Notification", StringComparison.Ordinal)) { return Task.CompletedTask; }
-            var fields = PilotLogin.Tuple(value.State, 14);
-            string name = BlueMarshal.Text(PilotLogin.Tuple(Assert.IsType<BlueInstance>(fields[2]).State, 4)[1]);
-            var payload = PilotLogin.Tuple(PilotLogin.Tuple(fields[4], 1)[0], 2);
-            var call = PilotLogin.Tuple(BlueMarshal.Decode(PilotLogin.Bytes(payload[1])), 2);
-            notifications.Add((name, Assert.IsType<object?[]>(PilotLogin.Tuple(call[1], 2)[1])));
-            return Task.CompletedTask;
-        }, _ => { }, 1000001, 42, [], CancellationToken.None));
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                async () =>
+                {
+                    // The real session clock must complete the native NPC target lock.
+                    if (input.Count == 1)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                    }
+                    return input.TryDequeue(out var request) ? request : throw new EndOfStreamException();
+                },
+                packet =>
+                {
+                    var value = Assert.IsType<BlueInstance>(packet);
+                    if (!value.Name.EndsWith(".Notification", StringComparison.Ordinal))
+                    {
+                        return Task.CompletedTask;
+                    }
+                    var fields = PilotLogin.Tuple(value.State, 14);
+                    string name = BlueMarshal.Text(PilotLogin.Tuple(Assert.IsType<BlueInstance>(fields[2]).State, 4)[1]);
+                    var payload = PilotLogin.Tuple(PilotLogin.Tuple(fields[4], 1)[0], 2);
+                    var call = PilotLogin.Tuple(BlueMarshal.Decode(PilotLogin.Bytes(payload[1])), 2);
+                    notifications.Add((name, Assert.IsType<object?[]>(PilotLogin.Tuple(call[1], 2)[1])));
+                    return Task.CompletedTask;
+                },
+                _ => { },
+                1000001,
+                42,
+                [],
+                CancellationToken.None
+            )
+        );
         int messageIndex = notifications.FindIndex(n => n.Name == "OnDamageMessage");
         Assert.True(messageIndex >= 0);
-        int removalIndex = notifications.FindIndex(n => n.Name == "DoDestinyUpdate" &&
-            Assert.IsType<List<object?>>(n.Args[0]).Cast<object?[]>().Select(u => (object?[])u[1]!)
-                .Any(action => BlueMarshal.Text(action[0]) == "RemoveBall" && ((object?[])action[1]!) is [var id, true] && Equals(id, f.Npc.Id)));
+        int removalIndex = notifications.FindIndex(n =>
+            n.Name == "DoDestinyUpdate"
+            && Assert
+                .IsType<List<object?>>(n.Args[0])
+                .Cast<object?[]>()
+                .Select(u => (object?[])u[1]!)
+                .Any(action =>
+                    BlueMarshal.Text(action[0]) == "RemoveBall" && ((object?[])action[1]!) is [var id, true] && Equals(id, f.Npc.Id)
+                )
+        );
         Assert.True(removalIndex > messageIndex, $"Damage message index {messageIndex}, terminal target removal index {removalIndex}.");
         var message = Assert.IsType<Dictionary<string, object?>>(Assert.Single(notifications[messageIndex].Args));
         Assert.Equal(f.Npc.Id, message["target"]);
@@ -380,7 +455,14 @@ public sealed class PilotCombatTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new ShipEnergy { ShipId = 1000000000001, Charge = 0, UpdatedAt = f.Clock.Now });
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = 1000000000001,
+                    Charge = 0,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
             world.SaveChanges();
         }
         Assert.Throws<InvalidDataException>(() => f.Fire());
@@ -402,7 +484,14 @@ public sealed class PilotCombatTests
             {
                 catalog.Database.ExecuteSql($"INSERT INTO ItemType(Id,Name,GroupId) VALUES ({(int)skill},{skill.ToString()},257)");
                 catalog.Database.ExecuteSql($"INSERT INTO TypeAttribute VALUES ({(int)skill},275,1)");
-                world.Add(new PilotSkill { PilotId = 90000001, TypeId = (int)skill, Points = 1415 });
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = 90000001,
+                        TypeId = (int)skill,
+                        Points = 1415,
+                    }
+                );
             }
             world.SaveChanges();
         }
@@ -423,19 +512,47 @@ public sealed class PilotCombatTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Add(new PilotWallet { PilotId = 90000001, Cents = 12345 });
-            world.Add(new ShipEnergy { ShipId = 1000000000001, Charge = 17, UpdatedAt = f.Clock.Now });
-            world.Add(new ShipHealthState { ShipId = 1000000000001, ShieldCharge = 10, ArmorDamage = 20, StructureDamage = 30, UpdatedAt = f.Clock.Now });
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = 1000000000001,
+                    Charge = 17,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = 1000000000001,
+                    ShieldCharge = 10,
+                    ArmorDamage = 20,
+                    StructureDamage = 30,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
             world.SaveChanges();
             world.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).ExecuteDelete();
-            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19");
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropNpcNavigationColumns
+                    + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE "
+                    + "WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19"
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext migrated = new(f.Db.Path);
         Assert.Equal(2, migrated.Set<OwnedItem>().Count(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun));
         Assert.Equal(2, migrated.Set<OwnedItem>().Count(i => i.TypeId == InventoryDefinitions.CivilianMinerType));
-        Assert.All(migrated.Pilots.ToArray(), p => Assert.Single(migrated.Set<OwnedItem>().Where(i => i.OwnerId == p.Id && i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun)));
-        Assert.True(migrated.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).Min(i => i.Id) > f.Module);
+        Assert.All(
+            migrated.Pilots.ToArray(),
+            p =>
+                Assert.Single(
+                    migrated.Set<OwnedItem>().Where(i => i.OwnerId == p.Id && i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun)
+                )
+        );
+        Assert.True(
+            migrated.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).Min(i => i.Id) > f.Module
+        );
         Assert.Equal(12345, migrated.Set<PilotWallet>().Single().Cents);
         Assert.Equal(17, migrated.Set<ShipEnergy>().Single().Charge);
         Assert.Equal(20, migrated.Set<ShipHealthState>().Single().ArmorDamage);

@@ -1,0 +1,7 @@
+# The generated catalog and SDK outputs are not authored source.
+**/*.g.cs
+**/*.generated.cs
+**/bin/**
+**/obj/**
+**/TestResults/**
+artifacts/**

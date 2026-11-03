@@ -16,6 +16,7 @@ public sealed class TargetingTests
     {
         public long Seconds { get; set; }
         public override long TimestampFrequency => 1;
+
         public override long GetTimestamp() => Seconds;
     }
 
@@ -32,30 +33,52 @@ public sealed class TargetingTests
         public Fixture()
         {
             using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
-            catalog.Database.ExecuteSqlRaw("""
-                INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),(564,'scanResolution');
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
+                    (564,'scanResolution');
                 INSERT INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3428,'Long Range Targeting',257),(3429,'Target Management',257),(3430,'Advanced Target Management',257),(3431,'Signature Analysis',257);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3428,'Long Range Targeting',257),(3429,'Target Management',257),
+                    (3430,'Advanced Target Management',257),(3431,'Signature Analysis',257);
                 INSERT INTO TypeAttribute VALUES (3428,275,2),(3429,275,1),(3430,275,3),(3431,275,1);
                 INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
                 INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
                 INSERT INTO TypeAttribute VALUES (1230,552,100);
-                """);
+                """
+            );
             Fitting = Db.Services.GetRequiredService<IPilotFitting>();
             var pilot = Db.Store.FindPilot(1000001)!;
             var launch = new SpacePosition(pilot.X + pilot.Flight.StationRadius + 500, pilot.Y, pilot.Z);
-            Objects = Db.Objects.Concat(Enumerable.Range(1, 3).Select(index =>
-                new StaticSpaceObject(70000000 + index, 1230, 462, TargetingDefinitions.AsteroidCategory, 1,
-                    launch + new SpacePosition(1000 * index, 0, 0), 50))).Append(
-                new(70000004, 1230, 462, TargetingDefinitions.AsteroidCategory, 1, launch + new SpacePosition(100000, 0, 0), 50)).ToArray();
+            Objects = Db
+                .Objects.Concat(
+                    Enumerable
+                        .Range(1, 3)
+                        .Select(index => new StaticSpaceObject(
+                            70000000 + index,
+                            1230,
+                            462,
+                            TargetingDefinitions.AsteroidCategory,
+                            1,
+                            launch + new SpacePosition(1000 * index, 0, 0),
+                            50
+                        ))
+                )
+                .Append(new(70000004, 1230, 462, TargetingDefinitions.AsteroidCategory, 1, launch + new SpacePosition(100000, 0, 0), 50))
+                .ToArray();
         }
 
         public (PilotCallContext Context, TargetingHandler Handler) Client(long account, bool undock = true)
         {
             var pilot = Db.Store.FindPilot(account)!;
-            PilotCallContext context = new(account, pilot.Account, [pilot],
-                selected => new(Db.Store, selected, Clock, Space, Objects), account, []);
+            PilotCallContext context = new(
+                account,
+                pilot.Account,
+                [pilot],
+                selected => new(Db.Store, selected, Clock, Space, Objects),
+                account,
+                []
+            );
             context.Select(pilot);
             if (undock)
             {
@@ -99,7 +122,10 @@ public sealed class TargetingTests
         Assert.Equal(new object?[] { "add", target, null }, Assert.Single(pilot.Notifications).Arguments);
         observed.Advance(wing);
         Assert.Equal(new object?[] { "otheradd", pilot.Pilot.ShipId, null }, Assert.Single(wing.Notifications).Arguments);
-        Assert.Equal(new object?[] { pilot.Pilot.ShipId }, Assert.IsType<List<object?>>(observed.Call(wing, "dogmaIM", "GetTargeters", [])));
+        Assert.Equal(
+            new object?[] { pilot.Pilot.ShipId },
+            Assert.IsType<List<object?>>(observed.Call(wing, "dogmaIM", "GetTargeters", []))
+        );
         var duplicate = Assert.IsType<object?[]>(Call("AddTarget", target));
         Assert.Equal(false, duplicate[0]);
         Assert.Single(pilot.Notifications);
@@ -197,7 +223,12 @@ public sealed class TargetingTests
                 break;
             case "jump":
                 var source = fixture.Objects.First(o => o.DestinationGateId.HasValue);
-                Assert.Null(wing.Flight.StartJump([(long)source.Id, (long)source.DestinationGateId!.Value, wing.Pilot.ShipId], fixture.Db.Services.GetRequiredService<ISystemObjects>()));
+                Assert.Null(
+                    wing.Flight.StartJump(
+                        [(long)source.Id, (long)source.DestinationGateId!.Value, wing.Pilot.ShipId],
+                        fixture.Db.Services.GetRequiredService<ISystemObjects>()
+                    )
+                );
                 break;
             case "dock":
                 Assert.Null(wing.Flight.Call("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]));
@@ -228,7 +259,9 @@ public sealed class TargetingTests
         var pilot = fixture.Db.Store.FindPilot(1000001)!;
         using (WorldDbContext world = new(fixture.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3428,2829),(90000001,3429,8000),(90000001,3431,1415)");
+            world.Database.ExecuteSqlRaw(
+                "INSERT INTO WorldPilotSkill VALUES (90000001,3428,2829),(90000001,3429,8000),(90000001,3431,1415)"
+            );
         }
         var attributes = fixture.Fitting.ShipAttributes(pilot.PilotId);
         Assert.Equal(29700, attributes[DogmaAttributeId.MaxTargetRange], precision: 6);

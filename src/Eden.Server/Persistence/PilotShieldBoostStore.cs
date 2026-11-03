@@ -20,10 +20,13 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         int level = PilotSkillReader.Level(world, catalog, pilotId, (int)ShieldBoostSkill.Compensation);
-        double bonus = catalog.Set<TypeAttribute>().Find((int)ShieldBoostSkill.Compensation, (int)DogmaAttributeId.ShieldBoostCapacitorBonus)?.Value ?? 0;
+        double bonus =
+            catalog.Set<TypeAttribute>().Find((int)ShieldBoostSkill.Compensation, (int)DogmaAttributeId.ShieldBoostCapacitorBonus)?.Value
+            ?? 0;
         // Pinned effects 1499/1500 multiply shield-booster capacitor need by the
         // trained Shield Compensation level and its catalog percent bonus.
-        attributes[DogmaAttributeId.CapacitorNeed] = attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed) * (1 + bonus * level / 100);
+        attributes[DogmaAttributeId.CapacitorNeed] =
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed) * (1 + bonus * level / 100);
         return attributes;
     }
 
@@ -34,18 +37,34 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
-        if (pilot.ActiveShip.Position is null || module is null || module.OwnerId != pilotId || module.LocationId != pilot.ActiveShipId ||
-            !module.Singleton || !module.Online || !InventoryDefinitions.IsMediumSlot(module.FlagId) ||
-            catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ShieldBoostDefinitions.Group)
+        if (
+            pilot.ActiveShip.Position is null
+            || module is null
+            || module.OwnerId != pilotId
+            || module.LocationId != pilot.ActiveShipId
+            || !module.Singleton
+            || !module.Online
+            || !InventoryDefinitions.IsMediumSlot(module.FlagId)
+            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ShieldBoostDefinitions.Group
+        )
         {
             throw new InvalidDataException("Use an online fitted shield booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var attributes = ModuleAttributes(pilotId, PilotInventoryStore.Read(catalog, module));
-        ShieldBooster booster = new(moduleId, module.TypeId, attributes.GetValueOrDefault(DogmaAttributeId.Duration),
-            attributes.GetValueOrDefault(DogmaAttributeId.ShieldBonus), attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed));
-        if (!double.IsFinite(booster.DurationMilliseconds) || booster.DurationMilliseconds <= 0 ||
-            !double.IsFinite(booster.ShieldAmount) || booster.ShieldAmount <= 0)
+        ShieldBooster booster = new(
+            moduleId,
+            module.TypeId,
+            attributes.GetValueOrDefault(DogmaAttributeId.Duration),
+            attributes.GetValueOrDefault(DogmaAttributeId.ShieldBonus),
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed)
+        );
+        if (
+            !double.IsFinite(booster.DurationMilliseconds)
+            || booster.DurationMilliseconds <= 0
+            || !double.IsFinite(booster.ShieldAmount)
+            || booster.ShieldAmount <= 0
+        )
         {
             throw new InvalidDataException("Invalid shield booster cycle attributes.");
         }
@@ -62,7 +81,9 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, booster.CapacitorNeed, now);
         double shield = Math.Min(health.Defense.Shield, health.Remaining.Shield + booster.ShieldAmount);
-        var saved = world.Set<ShipHealthState>().Find(pilot.ActiveShipId) ?? world.Set<ShipHealthState>().Add(new() { ShipId = pilot.ActiveShipId }).Entity;
+        var saved =
+            world.Set<ShipHealthState>().Find(pilot.ActiveShipId)
+            ?? world.Set<ShipHealthState>().Add(new() { ShipId = pilot.ActiveShipId }).Entity;
         saved.ShieldCharge = shield;
         saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
@@ -70,6 +91,14 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(booster.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         world.SaveChanges();
         transaction.Commit();
-        return new(booster, health with { Remaining = health.Remaining with { Shield = shield } }, capacitor, shield - health.Remaining.Shield);
+        return new(
+            booster,
+            health with
+            {
+                Remaining = health.Remaining with { Shield = shield },
+            },
+            capacitor,
+            shield - health.Remaining.Shield
+        );
     }
 }

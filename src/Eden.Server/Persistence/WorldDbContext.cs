@@ -118,18 +118,42 @@ public sealed class WorldDbContext(string path) : DbContext
     public DbSet<Ship> Ships => Set<Ship>();
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite(
-        new SqliteConnectionStringBuilder { DataSource = path, ForeignKeys = true, Pooling = false }.ToString());
+    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
+        options.UseSqlite(
+            new SqliteConnectionStringBuilder
+            {
+                DataSource = path,
+                ForeignKeys = true,
+                Pooling = false,
+            }.ToString()
+        );
 
     protected override void OnModelCreating(ModelBuilder model)
     {
-        model.Entity<IndustryJob>().ToTable("WorldIndustryJob", t => t.HasCheckConstraint("CK_IndustryJob_Values",
-            "Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime"));
+        model
+            .Entity<IndustryJob>()
+            .ToTable(
+                "WorldIndustryJob",
+                t =>
+                    t.HasCheckConstraint(
+                        "CK_IndustryJob_Values",
+                        "Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime"
+                    )
+            );
         model.Entity<IndustryJob>().HasOne<Pilot>().WithMany().HasForeignKey(j => j.PilotId);
         model.Entity<IndustryJob>().HasIndex(j => new { j.PilotId, j.Status });
         model.Entity<IndustryJob>().HasIndex(j => j.BlueprintId);
-        model.Entity<WorldWreck>().ToTable("WorldWreck", t => t.HasCheckConstraint("CK_Wreck_Source",
-            "(NpcId IS NOT NULL AND ShipId IS NULL) OR (NpcId IS NULL AND ShipId IS NOT NULL)")).HasKey(w => w.Id);
+        model
+            .Entity<WorldWreck>()
+            .ToTable(
+                "WorldWreck",
+                t =>
+                    t.HasCheckConstraint(
+                        "CK_Wreck_Source",
+                        "(NpcId IS NOT NULL AND ShipId IS NULL) OR (NpcId IS NULL AND ShipId IS NOT NULL)"
+                    )
+            )
+            .HasKey(w => w.Id);
         model.Entity<WorldWreck>().Property(w => w.Id).ValueGeneratedNever();
         model.Entity<WorldWreck>().HasOne<WorldNpc>().WithMany().HasForeignKey(w => w.NpcId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<WorldWreck>().HasOne<ShipLoss>().WithMany().HasForeignKey(w => w.ShipId).OnDelete(DeleteBehavior.Restrict);
@@ -151,36 +175,73 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<ShipLoss>().HasIndex(l => new { l.PilotId, l.Time });
         model.Entity<ModuleCooldown>().ToTable("WorldWeaponCooldown").HasKey(w => w.ModuleId);
         model.Entity<ModuleCooldown>().HasOne<OwnedItem>().WithMany().HasForeignKey(w => w.ModuleId);
-        model.Entity<NpcBounty>().ToTable("WorldNpcBounty", t =>
-            t.HasCheckConstraint("CK_NpcBounty_Amounts", "AmountCents > 0 AND BalanceCents >= 0"));
+        model
+            .Entity<NpcBounty>()
+            .ToTable("WorldNpcBounty", t => t.HasCheckConstraint("CK_NpcBounty_Amounts", "AmountCents > 0 AND BalanceCents >= 0"));
         model.Entity<NpcBounty>().HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);
         model.Entity<NpcBounty>().HasOne<WorldNpc>().WithMany().HasForeignKey(b => b.NpcId);
         model.Entity<NpcBounty>().HasIndex(b => b.NpcId).IsUnique();
         model.Entity<NpcBounty>().HasIndex(b => new { b.PilotId, b.Time });
-        model.Entity<WorldNpc>().ToTable("WorldNpc", t =>
-            t.HasCheckConstraint("CK_Npc_Health", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0"));
+        model
+            .Entity<WorldNpc>()
+            .ToTable(
+                "WorldNpc",
+                t => t.HasCheckConstraint("CK_Npc_Health", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0")
+            );
         model.Entity<WorldNpc>().HasIndex(n => n.BeltId);
         model.Entity<WorldNpc>().HasIndex(n => n.SystemId);
-        model.Entity<ShipHealthState>().ToTable("WorldShipHealth", t =>
-            t.HasCheckConstraint("CK_ShipHealth_Values", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0")).HasKey(s => s.ShipId);
+        model
+            .Entity<ShipHealthState>()
+            .ToTable(
+                "WorldShipHealth",
+                t => t.HasCheckConstraint("CK_ShipHealth_Values", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0")
+            )
+            .HasKey(s => s.ShipId);
         model.Entity<ShipHealthState>().HasOne<Ship>().WithMany().HasForeignKey(s => s.ShipId);
-        model.Entity<PilotWallet>().ToTable("WorldWallet", t => t.HasCheckConstraint("CK_Wallet_Cents", "Cents >= 0")).HasKey(w => w.PilotId);
+        model
+            .Entity<PilotWallet>()
+            .ToTable("WorldWallet", t => t.HasCheckConstraint("CK_Wallet_Cents", "Cents >= 0"))
+            .HasKey(w => w.PilotId);
         model.Entity<PilotWallet>().HasOne<Pilot>().WithMany().HasForeignKey(w => w.PilotId);
         model.Entity<MarketStation>().ToTable("WorldMarketStation").HasKey(s => s.StationId);
-        model.Entity<NpcMarketOrder>().ToTable("WorldMarketOrder", t =>
-        {
-            t.HasCheckConstraint("CK_MarketOrder_Price", "PriceCents > 0");
-            t.HasCheckConstraint("CK_MarketOrder_Quantity", "Remaining >= 0 AND Entered > 0 AND Remaining <= Entered");
-        });
-        model.Entity<NpcMarketOrder>().HasIndex(o => new { o.StationId, o.TypeId, o.Bid }).IsUnique();
+        model
+            .Entity<NpcMarketOrder>()
+            .ToTable(
+                "WorldMarketOrder",
+                t =>
+                {
+                    t.HasCheckConstraint("CK_MarketOrder_Price", "PriceCents > 0");
+                    t.HasCheckConstraint("CK_MarketOrder_Quantity", "Remaining >= 0 AND Entered > 0 AND Remaining <= Entered");
+                }
+            );
+        model
+            .Entity<NpcMarketOrder>()
+            .HasIndex(o => new
+            {
+                o.StationId,
+                o.TypeId,
+                o.Bid,
+            })
+            .IsUnique();
         model.Entity<NpcMarketOrder>().HasIndex(o => o.RegionId);
-        model.Entity<MarketExecution>().ToTable("WorldMarketTrade", t =>
-        {
-            t.HasCheckConstraint("CK_MarketTrade_Amounts", "PriceCents > 0 AND Quantity > 0 AND TaxCents >= 0 AND BalanceCents >= 0");
-        });
+        model
+            .Entity<MarketExecution>()
+            .ToTable(
+                "WorldMarketTrade",
+                t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_MarketTrade_Amounts",
+                        "PriceCents > 0 AND Quantity > 0 AND TaxCents >= 0 AND BalanceCents >= 0"
+                    );
+                }
+            );
         model.Entity<MarketExecution>().HasOne<Pilot>().WithMany().HasForeignKey(t => t.PilotId);
         model.Entity<MarketExecution>().HasIndex(t => new { t.PilotId, t.Time });
-        model.Entity<ShipEnergy>().ToTable("WorldShipEnergy", t => t.HasCheckConstraint("CK_ShipEnergy_Charge", "Charge >= 0")).HasKey(e => e.ShipId);
+        model
+            .Entity<ShipEnergy>()
+            .ToTable("WorldShipEnergy", t => t.HasCheckConstraint("CK_ShipEnergy_Charge", "Charge >= 0"))
+            .HasKey(e => e.ShipId);
         model.Entity<ShipEnergy>().HasOne<Ship>().WithMany().HasForeignKey(e => e.ShipId);
         model.Entity<WorldAsteroid>().ToTable("WorldAsteroid", t => t.HasCheckConstraint("CK_Asteroid_Quantity", "Quantity >= 0"));
         model.Entity<WorldAsteroid>().Property(a => a.Id).ValueGeneratedNever();
@@ -212,8 +273,12 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<Pilot>().HasIndex(p => p.AccountId);
         model.Entity<Pilot>().Property(p => p.Name).UseCollation("NOCASE");
         model.Entity<Pilot>().HasIndex(p => p.Name).IsUnique();
-        model.Entity<Pilot>().HasOne(p => p.ActiveShip).WithMany()
-            .HasForeignKey(p => new { p.ActiveShipId, p.Id }).HasPrincipalKey(s => new { s.Id, s.OwnerId })
+        model
+            .Entity<Pilot>()
+            .HasOne(p => p.ActiveShip)
+            .WithMany()
+            .HasForeignKey(p => new { p.ActiveShipId, p.Id })
+            .HasPrincipalKey(s => new { s.Id, s.OwnerId })
             .OnDelete(DeleteBehavior.Restrict);
         model.Entity<Ship>().HasOne(s => s.Owner).WithMany().HasForeignKey(s => s.OwnerId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<Ship>().HasOne(s => s.Position).WithOne().HasForeignKey<FlightPosition>(p => p.ShipId);

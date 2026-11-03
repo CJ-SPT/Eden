@@ -31,36 +31,52 @@ public sealed class ReprocessingTests
         public Fixture(int quantity = 133)
         {
             using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
-            catalog.Database.ExecuteSqlRaw("""
+            catalog.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO ItemCategory VALUES (25,'Asteroid'),(4,'Material');
                 INSERT INTO ItemGroup VALUES (459,'Scordite',25),(18,'Mineral',4);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1228,'Scordite',459),(34,'Tritanium',18),(35,'Pyerite',18),
                     (3385,'Reprocessing',257),(3389,'Reprocessing Efficiency',257),(60377,'Simple Ore Processing',257);
                 INSERT INTO SourceRecord VALUES ('client/types','1228','{{"volume":0.15,"portionSize":100}}'),
                     ('client/types','34','{{"volume":0.01}}'),('client/types','35','{{"volume":0.01}}'),
-                    ('client/typematerials','1228','{{"materials":[{{"materialTypeID":34,"quantity":150}},{{"materialTypeID":35,"quantity":110}}]}}'),
+                    ('client/typematerials','1228',
+                        '{{"materials":[{{"materialTypeID":34,"quantity":150}},{{"materialTypeID":35,"quantity":110}}]}}'),
                     ('sde/npcStations','60003760','{{"operationID":14,"reprocessingEfficiency":0.5,"reprocessingStationsTake":0.05}}'),
                     ('client/stationoperations','14','{{"services":[5,17]}}');
                 INSERT INTO DogmaAttribute VALUES (379,'refiningYieldMutator'),(790,'reprocessingSkillType');
                 INSERT INTO TypeAttribute VALUES (3385,379,3),(3389,379,2),(60377,379,2),(1228,790,60377),
                     (3385,275,1),(3389,275,3),(60377,275,3);
-                """);
+                """
+            );
             using WorldDbContext world = new(Db.Path);
-            world.Add(new OwnedItem
-            {
-                Id = OreId,
-                OwnerId = Pilot.PilotId,
-                TypeId = ScorditeType,
-                LocationId = Pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = quantity
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId,
+                    OwnerId = Pilot.PilotId,
+                    TypeId = ScorditeType,
+                    LocationId = Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = quantity,
+                }
+            );
             world.SaveChanges();
         }
 
-        public ReprocessingQuotes Quote(params long[] ids) => Store.Quote(Pilot.PilotId, Pilot.StationId, Pilot.ShipId, ids.Length == 0 ? [OreId] : ids);
-        public ReprocessingResult Run(params long[] ids) => Store.Reprocess(Pilot.PilotId, Pilot.StationId,
-            ids.Length == 0 ? [OreId] : ids, Pilot.StationId, Pilot.PilotId, Pilot.StationId, (int)InventoryFlag.Hangar);
+        public ReprocessingQuotes Quote(params long[] ids) =>
+            Store.Quote(Pilot.PilotId, Pilot.StationId, Pilot.ShipId, ids.Length == 0 ? [OreId] : ids);
+
+        public ReprocessingResult Run(params long[] ids) =>
+            Store.Reprocess(
+                Pilot.PilotId,
+                Pilot.StationId,
+                ids.Length == 0 ? [OreId] : ids,
+                Pilot.StationId,
+                Pilot.PilotId,
+                Pilot.StationId,
+                (int)InventoryFlag.Hangar
+            );
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -77,10 +93,23 @@ public sealed class ReprocessingTests
         Assert.Equal(new RecoveredMaterial[] { new(TritaniumType, 225, 225), new(PyeriteType, 165, 165) }, quote.Recoverables);
         using (WorldDbContext world = new(f.Db.Path))
         {
-            foreach (var (skill, rank, level) in new[] { ((int)ReprocessingSkill.Reprocessing, 1, 3),
-                ((int)ReprocessingSkill.ReprocessingEfficiency, 3, 2), (SimpleOreSkill, 3, 4) })
+            foreach (
+                var (skill, rank, level) in new[]
+                {
+                    ((int)ReprocessingSkill.Reprocessing, 1, 3),
+                    ((int)ReprocessingSkill.ReprocessingEfficiency, 3, 2),
+                    (SimpleOreSkill, 3, 4),
+                }
+            )
             {
-                world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = skill, Points = TrainedSkill.PointsForLevel(rank, level) });
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = f.Pilot.PilotId,
+                        TypeId = skill,
+                        Points = TrainedSkill.PointsForLevel(rank, level),
+                    }
+                );
             }
             world.SaveChanges();
         }
@@ -116,15 +145,17 @@ public sealed class ReprocessingTests
         using Fixture f = new(133);
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem
-            {
-                Id = OreId + 1,
-                OwnerId = f.Pilot.PilotId,
-                TypeId = ScorditeType,
-                LocationId = f.Pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = 270,
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId + 1,
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = ScorditeType,
+                    LocationId = f.Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 270,
+                }
+            );
             world.SaveChanges();
         }
         var result = f.Run(OreId, OreId + 1);
@@ -144,15 +175,17 @@ public sealed class ReprocessingTests
         using Fixture f = new(200);
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem
-            {
-                Id = OreId + 1,
-                OwnerId = f.Pilot.PilotId,
-                TypeId = TritaniumType,
-                LocationId = f.Pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = 10
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId + 1,
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = TritaniumType,
+                    LocationId = f.Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 10,
+                }
+            );
             world.SaveChanges();
         }
         var result = f.Run();
@@ -181,19 +214,30 @@ public sealed class ReprocessingTests
         Assert.Equal(130, result.Output.Values.Sum());
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem
-            {
-                Id = OreId + 10,
-                OwnerId = pilot.PilotId,
-                TypeId = ScorditeType,
-                LocationId = pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = 10000
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId + 10,
+                    OwnerId = pilot.PilotId,
+                    TypeId = ScorditeType,
+                    LocationId = pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 10000,
+                }
+            );
             world.SaveChanges();
         }
-        Assert.Throws<CargoCapacityException>(() => f.Store.Reprocess(pilot.PilotId, pilot.StationId, [OreId + 10],
-            pilot.StationId, pilot.PilotId, pilot.ShipId, (int)InventoryFlag.Cargo));
+        Assert.Throws<CargoCapacityException>(() =>
+            f.Store.Reprocess(
+                pilot.PilotId,
+                pilot.StationId,
+                [OreId + 10],
+                pilot.StationId,
+                pilot.PilotId,
+                pilot.ShipId,
+                (int)InventoryFlag.Cargo
+            )
+        );
         Assert.Equal(10000, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId + 10).Quantity);
         Assert.Equal(130, f.Inventory.List(pilot.PilotId, pilot.ShipId).Sum(i => i.Quantity));
     }
@@ -211,12 +255,39 @@ public sealed class ReprocessingTests
         Assert.Empty(Assert.Single(f.Quote(starter.Id).Items).Recoverables);
         Assert.Throws<InvalidDataException>(() => f.Store.Quote(pilot.PilotId, pilot.StationId + 1, pilot.ShipId, [OreId]));
         Assert.Throws<InvalidDataException>(() => f.Store.Quote(pilot.PilotId, pilot.StationId, pilot.ShipId + 1, [OreId]));
-        Assert.Throws<InvalidDataException>(() => f.Store.Reprocess(pilot.PilotId, pilot.StationId, [OreId], pilot.StationId + 1,
-            pilot.PilotId, pilot.StationId, (int)InventoryFlag.Hangar));
-        Assert.Throws<InvalidDataException>(() => f.Store.Reprocess(pilot.PilotId, pilot.StationId, [OreId], pilot.StationId,
-            90000002, pilot.StationId, (int)InventoryFlag.Hangar));
-        Assert.Throws<InvalidDataException>(() => f.Store.Reprocess(pilot.PilotId, pilot.StationId, [OreId], pilot.StationId,
-            pilot.PilotId, pilot.StationId + 1, (int)InventoryFlag.Hangar));
+        Assert.Throws<InvalidDataException>(() =>
+            f.Store.Reprocess(
+                pilot.PilotId,
+                pilot.StationId,
+                [OreId],
+                pilot.StationId + 1,
+                pilot.PilotId,
+                pilot.StationId,
+                (int)InventoryFlag.Hangar
+            )
+        );
+        Assert.Throws<InvalidDataException>(() =>
+            f.Store.Reprocess(
+                pilot.PilotId,
+                pilot.StationId,
+                [OreId],
+                pilot.StationId,
+                90000002,
+                pilot.StationId,
+                (int)InventoryFlag.Hangar
+            )
+        );
+        Assert.Throws<InvalidDataException>(() =>
+            f.Store.Reprocess(
+                pilot.PilotId,
+                pilot.StationId,
+                [OreId],
+                pilot.StationId,
+                pilot.PilotId,
+                pilot.StationId + 1,
+                (int)InventoryFlag.Hangar
+            )
+        );
         f.Db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
         Assert.Throws<InvalidDataException>(() => f.Run());
         Assert.Equal(133, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId).Quantity);
@@ -231,15 +302,17 @@ public sealed class ReprocessingTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Set<OwnedItem>().Find(OreId)!.Quantity = 100;
-            world.Add(new OwnedItem
-            {
-                Id = OreId + 1,
-                OwnerId = f.Pilot.PilotId,
-                TypeId = TritaniumType,
-                LocationId = f.Pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = int.MaxValue
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = OreId + 1,
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = TritaniumType,
+                    LocationId = f.Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = int.MaxValue,
+                }
+            );
             world.SaveChanges();
         }
         Assert.Throws<OverflowException>(() => f.Run());
@@ -252,18 +325,43 @@ public sealed class ReprocessingTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], selected =>
-            new(f.Db.Store, selected, TimeProvider.System, new SharedSpace(), f.Db.Objects), 1, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new(f.Db.Store, selected, TimeProvider.System, new SharedSpace(), f.Db.Objects),
+            1,
+            []
+        );
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "reprocessingSvc", "GetQuotes", new object?[] { new List<object?> { OreId }, pilot.ShipId }, _ => { }));
+        Assert.Same(
+            PilotCallRouter.Unsupported,
+            router.Call(
+                context,
+                "reprocessingSvc",
+                "GetQuotes",
+                new object?[]
+                {
+                    new List<object?> { OreId },
+                    pilot.ShipId,
+                },
+                _ => { }
+            )
+        );
         context.Select(pilot);
         // The native client sends itemID -> packed inventory row. Its fields
         // are untrusted; only keys identify the saved authoritative inventory.
         BluePackedRow forged = new(new([("quantity", BlueColumnType.Int32)]), [], []);
         var rows = new Dictionary<long, object?> { [OreId] = forged };
-        object? Bind(int station) => router.Call(context, "reprocessingSvc", "MachoBindObject",
-            new object?[] { (long)station, new object?[] { "GetQuotes", new object?[] { rows, pilot.ShipId } } }, _ => { });
+        object? Bind(int station) =>
+            router.Call(
+                context,
+                "reprocessingSvc",
+                "MachoBindObject",
+                new object?[] { (long)station, new object?[] { "GetQuotes", new object?[] { rows, pilot.ShipId } } },
+                _ => { }
+            );
         Assert.Same(PilotCallRouter.Unsupported, Bind(pilot.StationId + 1));
         var bound = Assert.IsType<object?[]>(Bind(pilot.StationId));
         var reference = Assert.IsType<BlueObjectReference>(bound[0]);
@@ -272,8 +370,20 @@ public sealed class ReprocessingTests
         Assert.Equal((null, (object?)0.5), Assert.Single(efficiency.Entries));
         var quote = Assert.IsType<BlueInstance>(Assert.IsType<Dictionary<long, object?>>(wire[2])[OreId]);
         Assert.Equal(100L, PilotLogin.Fields(quote.State)["quantityToProcess"]);
-        var result = router.Call(context, "reprocessingSvc", "Reprocess",
-            new object?[] { new List<object?> { OreId }, (long)pilot.StationId, pilot.PilotId, (long)pilot.StationId, (long)InventoryFlag.Hangar }, _ => { });
+        var result = router.Call(
+            context,
+            "reprocessingSvc",
+            "Reprocess",
+            new object?[]
+            {
+                new List<object?> { OreId },
+                (long)pilot.StationId,
+                pilot.PilotId,
+                (long)pilot.StationId,
+                (long)InventoryFlag.Hangar,
+            },
+            _ => { }
+        );
         Assert.Equal(2, Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(result))).Length);
         Assert.Equal(3, context.Notifications.Count(n => n.Name == "OnItemChange"));
         context.ReleaseLocationReferences();

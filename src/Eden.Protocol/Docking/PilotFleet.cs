@@ -1,6 +1,7 @@
 namespace Eden.Protocol.Docking;
 
 public sealed record ShipAssembly(IReadOnlyList<long> ShipIds, IReadOnlyList<InventoryChange> Changes);
+
 public sealed record ShipBoarding(DockedPilot Pilot, IReadOnlyList<InventoryChange> Changes);
 
 public static class FleetDefinitions

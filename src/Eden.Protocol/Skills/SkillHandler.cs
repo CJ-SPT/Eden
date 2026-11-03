@@ -6,9 +6,22 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Skills;
 
 [Injectable]
-internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock, PilotBrain brain, PropulsionHandler propulsion) : ISelectedPilotCallHandler
+internal sealed class SkillHandler(
+    IPilotSkillReader skills,
+    IPilotTraining training,
+    IPilotSkillBooks books,
+    TimeProvider clock,
+    PilotBrain brain,
+    PropulsionHandler propulsion
+) : ISelectedPilotCallHandler
 {
-    public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
+    public object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    )
     {
         long pilotId = context.Pilot.PilotId;
         try
@@ -89,7 +102,12 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
         List<TrainingTarget> targets = [];
         for (int i = 0; i < entries.Count; i++)
         {
-            if (entries.GetValueOrDefault(i) is not object?[] pair || pair is not [long typeId, long level] || typeId is < 1 or > int.MaxValue || level is < 1 or > 5)
+            if (
+                entries.GetValueOrDefault(i) is not object?[] pair
+                || pair is not [long typeId, long level]
+                || typeId is < 1 or > int.MaxValue
+                || level is < 1 or > 5
+            )
             {
                 throw new InvalidTrainingQueue("QueueInvalidPosition");
             }
@@ -115,16 +133,25 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
             context.Notifications.Add(("OnServerSkillsChanged", [updates, null, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()]));
             context.Notifications.Add(("OnServerBrainUpdated", [brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)]));
         }
-        var rows = state.Queue.Select((e, index) => (object?)new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
-        {
-            ["queuePosition"] = index,
-            ["trainingStartTime"] = e.StartTime,
-            ["trainingEndTime"] = e.EndTime,
-            ["trainingTypeID"] = e.Target.TypeId,
-            ["trainingToLevel"] = e.Target.Level,
-            ["trainingStartSP"] = e.StartPoints,
-            ["trainingDestinationSP"] = e.EndPoints,
-        })).ToList();
+        var rows = state
+            .Queue.Select(
+                (e, index) =>
+                    (object?)
+                        new BlueInstance(
+                            "utillib.KeyVal",
+                            new Dictionary<string, object?>
+                            {
+                                ["queuePosition"] = index,
+                                ["trainingStartTime"] = e.StartTime,
+                                ["trainingEndTime"] = e.EndTime,
+                                ["trainingTypeID"] = e.Target.TypeId,
+                                ["trainingToLevel"] = e.Target.Level,
+                                ["trainingStartSP"] = e.StartPoints,
+                                ["trainingDestinationSP"] = e.EndPoints,
+                            }
+                        )
+            )
+            .ToList();
         if (notify)
         {
             context.Notifications.Add(("OnNewSkillQueueSaved", [rows]));
@@ -140,16 +167,32 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
             [long n] when n is >= 0 and <= int.MaxValue => (int)n,
             _ => throw new InvalidTrainingQueue("Invalid history limit"),
         };
-        return training.History(pilotId, count).Select(e => (object?)new BlueInstance("utillib.KeyVal", new Dictionary<string, object?>
-        {
-            ["logDate"] = e.Time,
-            ["eventTypeID"] = e.EventId,
-            ["skillTypeID"] = e.TypeId,
-            ["absolutePoints"] = e.Points,
-        })).ToList();
+        return training
+            .History(pilotId, count)
+            .Select(e =>
+                (object?)
+                    new BlueInstance(
+                        "utillib.KeyVal",
+                        new Dictionary<string, object?>
+                        {
+                            ["logDate"] = e.Time,
+                            ["eventTypeID"] = e.EventId,
+                            ["skillTypeID"] = e.TypeId,
+                            ["absolutePoints"] = e.Points,
+                        }
+                    )
+            )
+            .ToList();
     }
 
     private static Dictionary<long, object?> SkillRows(IEnumerable<TrainedSkill> source) =>
-        source.ToDictionary(s => (long)s.TypeId, s => (object?)new BlueConstructor(
-            "characterskills.common.character_skill_entry.CharacterSkillEntry", [s.TypeId, s.Level, s.Points, s.Rank, null]));
+        source.ToDictionary(
+            s => (long)s.TypeId,
+            s =>
+                (object?)
+                    new BlueConstructor(
+                        "characterskills.common.character_skill_entry.CharacterSkillEntry",
+                        [s.TypeId, s.Level, s.Points, s.Rank, null]
+                    )
+        );
 }

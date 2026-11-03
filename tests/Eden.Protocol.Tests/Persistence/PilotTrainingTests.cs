@@ -13,6 +13,7 @@ public sealed class PilotTrainingTests
     private sealed class Clock : TimeProvider
     {
         public DateTimeOffset Now { get; set; } = new(2026, 11, 2, 0, 0, 0, TimeSpan.Zero);
+
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
@@ -74,8 +75,19 @@ public sealed class PilotTrainingTests
         var training = new PilotTrainingStore(new(db.Path), clock);
         var pilot = db.Store.FindPilot(1000001)!;
         var skills = db.Services.GetRequiredService<IPilotSkillReader>();
-        SkillHandler handler = new(skills, training, db.Services.GetRequiredService<IPilotSkillBooks>(), clock, new(skills, clock, db.Services.GetRequiredService<Eden.Protocol.Industry.IPilotIndustrySkills>(), db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()),
-            new(clock, db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
+        SkillHandler handler = new(
+            skills,
+            training,
+            db.Services.GetRequiredService<IPilotSkillBooks>(),
+            clock,
+            new(
+                skills,
+                clock,
+                db.Services.GetRequiredService<Eden.Protocol.Industry.IPilotIndustrySkills>(),
+                db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()
+            ),
+            new(clock, db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+        );
         using (WorldDbContext world = new(db.Path))
         {
             world.Set<PilotSkill>().Find(pilot.PilotId, 3327)!.Points = 0;
@@ -86,7 +98,10 @@ public sealed class PilotTrainingTests
         training.Save(pilot.PilotId, [new(3327, 1)], true);
         clock.Now = clock.Now.AddSeconds(1000);
         Assert.Empty(handler.Advance(context));
-        Assert.Equal(new[] { "OnServerSkillsChanged", "OnServerBrainUpdated", "OnNewSkillQueueSaved" }, context.Notifications.Select(n => n.Name));
+        Assert.Equal(
+            new[] { "OnServerSkillsChanged", "OnServerBrainUpdated", "OnNewSkillQueueSaved" },
+            context.Notifications.Select(n => n.Name)
+        );
         var notification = Assert.Single(context.Notifications, n => n.Name == "OnServerBrainUpdated");
         var update = Assert.IsType<object?[]>(Assert.Single(notification.Arguments));
         Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), update[0]);

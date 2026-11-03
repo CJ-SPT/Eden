@@ -18,16 +18,19 @@ public sealed class CorvetteRecoveryTests
         public IPilotFleet Fleet => Db.Services.GetRequiredService<IPilotFleet>();
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public DockedPilot Venture { get; }
+
         public Fixture()
         {
             PilotFleetTests.AddVenture(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
+                catalog.Database.ExecuteSqlRaw(
+                    """
                     INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (50,'cpu'),(30,'power');
                     INSERT OR REPLACE INTO TypeAttribute VALUES (601,14,2),(601,48,125),(601,11,23),
                         (3651,50,65),(3651,30,2),(3638,50,4),(3638,30,6);
-                    """);
+                    """
+                );
             }
             using (WorldDbContext world = new(Db.Path))
             {
@@ -35,12 +38,19 @@ public sealed class CorvetteRecoveryTests
                 world.SaveChanges();
             }
             var original = Pilot;
-            var purchase = Assert.Single(Db.Services.GetRequiredService<IPilotMarket>().Buy(Pilot.PilotId, Pilot.StationId,
-                [new((int)StarterShipType.Venture, 1000000, 1)]).Changes).Item;
+            var purchase = Assert
+                .Single(
+                    Db.Services.GetRequiredService<IPilotMarket>()
+                        .Buy(Pilot.PilotId, Pilot.StationId, [new((int)StarterShipType.Venture, 1000000, 1)])
+                        .Changes
+                )
+                .Item;
             long ship = Assert.Single(Fleet.Assemble(Pilot.PilotId, [purchase.Id], "Working Venture").ShipIds);
             Venture = Fleet.Board(Pilot.PilotId, ship, original.ShipId);
         }
+
         public ShipBoarding Recover() => Fleet.RecoverCorvette(Venture.PilotId, Venture.ShipId, Venture.StationId);
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -53,7 +63,15 @@ public sealed class CorvetteRecoveryTests
         inventory.Move(f.Venture.PilotId, [cargo.Id], f.Venture.StationId, f.Venture.ShipId, (int)InventoryFlag.Cargo, null);
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new ShipHealthState { ShipId = f.Venture.ShipId, ShieldCharge = 1, ArmorDamage = 10, StructureDamage = 20 });
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = f.Venture.ShipId,
+                    ShieldCharge = 1,
+                    ArmorDamage = 10,
+                    StructureDamage = 20,
+                }
+            );
             world.SaveChanges();
         }
         var recovery = f.Recover();
@@ -62,8 +80,18 @@ public sealed class CorvetteRecoveryTests
         Assert.NotEqual(f.Venture.ShipId, recovery.Pilot.ShipId);
         Assert.Equal(3, recovery.Changes.Count);
         var modules = inventory.List(f.Pilot.PilotId, recovery.Pilot.ShipId);
-        Assert.Equal(new[] { InventoryDefinitions.CivilianMinerType, (int)CombatWeaponType.CivilianGatlingRailgun }, modules.OrderBy(i => i.FlagId).Select(i => i.TypeId));
-        Assert.All(modules, m => { Assert.True(m.Singleton); Assert.True(m.Online); });
+        Assert.Equal(
+            new[] { InventoryDefinitions.CivilianMinerType, (int)CombatWeaponType.CivilianGatlingRailgun },
+            modules.OrderBy(i => i.FlagId).Select(i => i.TypeId)
+        );
+        Assert.All(
+            modules,
+            m =>
+            {
+                Assert.True(m.Singleton);
+                Assert.True(m.Online);
+            }
+        );
         Assert.Equal(cargo.Id, Assert.Single(inventory.List(f.Pilot.PilotId, f.Venture.ShipId)).Id);
         Assert.Equal("Working Venture", f.Fleet.Name(f.Pilot.PilotId, f.Venture.ShipId));
         using WorldDbContext saved = new(f.Db.Path);
@@ -102,7 +130,9 @@ public sealed class CorvetteRecoveryTests
         Assert.Throws<InvalidDataException>(() => f.Recover());
         f.Db.Store.SetPosition(f.Venture.ShipId, null);
         var recovery = f.Recover();
-        Assert.Throws<InvalidDataException>(() => f.Fleet.RecoverCorvette(f.Pilot.PilotId, recovery.Pilot.ShipId, recovery.Pilot.StationId));
+        Assert.Throws<InvalidDataException>(() =>
+            f.Fleet.RecoverCorvette(f.Pilot.PilotId, recovery.Pilot.ShipId, recovery.Pilot.StationId)
+        );
         Assert.Throws<InvalidDataException>(() => f.Fleet.RecoverCorvette(90000002, f.Venture.ShipId, f.Venture.StationId));
     }
 
@@ -128,20 +158,30 @@ public sealed class CorvetteRecoveryTests
         using Fixture f = new();
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, f.Venture.Account, [f.Venture],
-            p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects), 42, []);
-        object? Call() => router.Call(context, "dogmaIM", "CreateNewbieShip", new object?[] { f.Venture.ShipId, (long)f.Venture.StationId }, _ => { });
+        using PilotCallContext context = new(
+            1000001,
+            f.Venture.Account,
+            [f.Venture],
+            p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
+            42,
+            []
+        );
+        object? Call() =>
+            router.Call(context, "dogmaIM", "CreateNewbieShip", new object?[] { f.Venture.ShipId, (long)f.Venture.StationId }, _ => { });
         Assert.Same(PilotCallRouter.Unsupported, Call());
         context.Select(f.Venture);
         Assert.Null(Call());
         Assert.Equal(601, context.Pilot.ShipTypeId);
         Assert.Equal(3, context.Notifications.Count(n => n.Name == "OnItemChange"));
-        Assert.All(context.Notifications.Where(n => n.Name == "OnItemChange"), n =>
-        {
-            var previous = Assert.IsType<Dictionary<long, object?>>(n.Arguments[1]);
-            Assert.DoesNotContain((long)InventoryColumn.Quantity, previous.Keys);
-            Assert.Equal(0, previous[(long)InventoryColumn.StackSize]);
-        });
+        Assert.All(
+            context.Notifications.Where(n => n.Name == "OnItemChange"),
+            n =>
+            {
+                var previous = Assert.IsType<Dictionary<long, object?>>(n.Arguments[1]);
+                Assert.DoesNotContain((long)InventoryColumn.Quantity, previous.Keys);
+                Assert.Equal(0, previous[(long)InventoryColumn.StackSize]);
+            }
+        );
         Assert.Null(Call());
         Assert.Equal(3, context.Notifications.Count(n => n.Name == "OnItemChange"));
     }

@@ -6,27 +6,49 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal static class TestCatalog
 {
-    public static void AddSchool(string path, int schoolId, int raceId, int bloodlineId, int systemId, int stationId, int hull, bool starterSpace = false)
+    public static void AddSchool(
+        string path,
+        int schoolId,
+        int raceId,
+        int bloodlineId,
+        int systemId,
+        int stationId,
+        int hull,
+        bool starterSpace = false
+    )
     {
         using CatalogDbContext db = new(path, writable: true);
-        db.Database.ExecuteSqlRaw("CREATE VIEW IF NOT EXISTS records_client_schoolmap AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/schoolmap'");
+        db.Database.ExecuteSqlRaw(
+            "CREATE VIEW IF NOT EXISTS records_client_schoolmap AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/schoolmap'"
+        );
         db.Database.ExecuteSql($"INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES ({systemId},20000020,'School system')");
-        db.Database.ExecuteSql($"INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z) VALUES ({stationId},52678,1000035,{systemId},14,40009087,1,2,3)");
+        db.Database.ExecuteSql(
+            $"""
+            INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
+            VALUES ({stationId},52678,1000035,{systemId},14,40009087,1,2,3)
+            """
+        );
         if (hull != 601)
         {
-            db.Database.ExecuteSql($"INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES ({hull},'Starter ship',237,125,1163000,47)");
+            db.Database.ExecuteSql(
+                $"INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES ({hull},'Starter ship',237,125,1163000,47)"
+            );
             db.Database.ExecuteSql($"INSERT INTO TypeAttribute SELECT {hull},AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601");
         }
         Add("client/races", raceId, new { shipTypeID = hull, skills = new Dictionary<string, int> { ["3327"] = 3 } });
         Add("client/bloodlines", bloodlineId, new { raceID = raceId });
         // The first station in the list is deliberately in the wrong system.
-        Add("client/schools", schoolId, new
-        {
-            raceID = raceId,
-            corporationID = 1000044,
-            is_starter_space_school = starterSpace ? 1 : 0,
-            startingStations = starterSpace ? new[] { stationId } : new[] { 60003760, stationId }
-        });
+        Add(
+            "client/schools",
+            schoolId,
+            new
+            {
+                raceID = raceId,
+                corporationID = 1000044,
+                is_starter_space_school = starterSpace ? 1 : 0,
+                startingStations = starterSpace ? new[] { stationId } : new[] { 60003760, stationId },
+            }
+        );
         if (!starterSpace)
         {
             Add("client/schoolmap", schoolId - 10, new { schoolID = schoolId, solarSystemID = systemId });
@@ -34,7 +56,9 @@ internal static class TestCatalog
 
         void Add(string dataset, int key, object value)
         {
-            db.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord(Dataset,Key,Data) VALUES ({dataset},{key},{JsonSerializer.Serialize(value)})");
+            db.Database.ExecuteSql(
+                $"INSERT OR REPLACE INTO SourceRecord(Dataset,Key,Data) VALUES ({dataset},{key},{JsonSerializer.Serialize(value)})"
+            );
         }
     }
 
@@ -42,16 +66,19 @@ internal static class TestCatalog
     {
         using CatalogDbContext db = new(path, writable: true);
         db.Database.EnsureCreated();
-        db.Database.ExecuteSqlRaw("""
+        db.Database.ExecuteSqlRaw(
+            """
             PRAGMA application_id=0x4544454E;
             PRAGMA user_version=1;
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('sde/_sde','"sde"','{{"buildNumber":3662168}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"shipTypeID":601,"skills":{{"3327":3}}}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/clonegrades','"1"','{{"skills":[{{"typeID":3327,"level":4}}]}}');
             CREATE VIEW records_client_clonegrades AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/clonegrades';
-            CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/requiredskillsfortypes';
+            CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE
+                Dataset='client/requiredskillsfortypes';
             CREATE VIEW records_client_races AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/races';
-            CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber, 'Assembly Plant' AS Operation
+            CREATE VIEW StationDesignation AS SELECT 60003760 AS StationId, NULL AS OrbitName, 4 AS PlanetNumber, 4 AS MoonNumber,
+                'Assembly Plant' AS Operation
                 UNION ALL SELECT Id,NULL,1,NULL,NULL FROM Station WHERE Id <> 60003760;
             INSERT INTO Region(Id,Name) VALUES (10000002,'The Forge');
             INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000020,10000002,'Kimotoro');
@@ -63,13 +90,17 @@ internal static class TestCatalog
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (53,'Energy Weapon',7);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3638,'Civilian Gatling Railgun',53);
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3638','{{"volume":5.0}}');
-            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3651','{{"volume":5.0}}'),('client/types','601','{{"volume":15000.0}}');
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3651','{{"volume":5.0}}'),
+                ('client/types','601','{{"volume":15000.0}}');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (237,'Corvette',6),(15,'Station',3);
             INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES
                 (601,'Ibis',237,125,1163000,47),(52678,'Station',15,0,0,100000);
             INSERT INTO NpcCorporation(Id,Name) VALUES (1000044,'Pilot corporation'),(1000035,'Caldari Navy');
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (102,'turretSlotsLeft'),(37,'maxVelocity'),(70,'agility'),(9,'hp'),(482,'capacitorCapacity'),(55,'rechargeRate'),(263,'shieldCapacity'),(265,'armorHP'),(479,'shieldRechargeRate'),(600,'warpSpeedMultiplier'),(1281,'baseWarpSpeed');
-            INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (601,102,2),(601,37,295),(601,70,4.5),(601,9,175),(601,482,130),(601,55,65000),(601,263,200),(601,265,125),(601,479,860000),(601,600,3),(601,1281,1);
+            INSERT INTO DogmaAttribute(Id,Name) VALUES (102,'turretSlotsLeft'),(37,'maxVelocity'),(70,'agility'),(9,'hp'),
+                (482,'capacitorCapacity'),(55,'rechargeRate'),(263,'shieldCapacity'),(265,'armorHP'),(479,'shieldRechargeRate'),
+                (600,'warpSpeedMultiplier'),(1281,'baseWarpSpeed');
+            INSERT INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (601,102,2),(601,37,295),(601,70,4.5),(601,9,175),
+                (601,482,130),(601,55,65000),(601,263,200),(601,265,125),(601,479,860000),(601,600,3),(601,1281,1);
             INSERT INTO ItemCategory(Id,Name) VALUES (16,'Skill');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (257,'Spaceship Command',16);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3327,'Spaceship Command',257);
@@ -92,6 +123,7 @@ internal static class TestCatalog
                 "disruptedStargates":{{"50016295":{{"typeID":56247,"position":{{"x":4,"y":5,"z":6}}}}}}}}');
             INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
                 VALUES (60003760,52678,1000035,30000142,14,40009087,-107303362560,-18744975360,436489052160);
-            """);
+            """
+        );
     }
 }

@@ -41,8 +41,11 @@ public sealed class ServerServicesTests
         Task serving = scope.ServiceProvider.GetRequiredService<ClientConnection>().ServeAsync(accepted, timeout.Token);
         var wire = client.GetStream();
         await PacketStream.ReadAsync(wire, timeout.Token);
-        await PacketStream.WriteAsync(wire, Convert.FromHexString(
-            "7E00000000140604E899020005F001080AC3F5285C8F0238400458E13700130A5632342E303140636370"), timeout.Token);
+        await PacketStream.WriteAsync(
+            wire,
+            Convert.FromHexString("7E00000000140604E899020005F001080AC3F5285C8F0238400458E13700130A5632342E303140636370"),
+            timeout.Token
+        );
         // An incomplete key exchange has no authenticated account.
         await PacketStream.WriteAsync(wire, BlueMarshal.Encode(new object?[] { null, "VK", null }), timeout.Token);
         var gate = world.Services.GetRequiredService<PilotGate>();

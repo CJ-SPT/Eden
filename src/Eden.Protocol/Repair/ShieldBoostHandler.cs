@@ -9,11 +9,25 @@ namespace Eden.Protocol.Repair;
 internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoosting boosting)
 {
     private sealed record Cycle(long ShipId, ShieldBooster Booster, long Started, long StartTime, long Repeats, bool Stopping = false);
+
     private readonly Dictionary<long, Cycle> _cycles = [];
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) => _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
-        ? [module, pilot.PilotId, pilot.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.ShieldBoosting,
-            cycle.StartTime, cycle.Booster.DurationMilliseconds, cycle.Repeats] : null;
+    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+        _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
+            ?
+            [
+                module,
+                pilot.PilotId,
+                pilot.ShipId,
+                null,
+                null,
+                Array.Empty<object?>(),
+                (int)DogmaEffect.ShieldBoosting,
+                cycle.StartTime,
+                cycle.Booster.DurationMilliseconds,
+                cycle.Repeats,
+            ]
+            : null;
 
     public void Cancel(PilotCallContext context)
     {
@@ -65,17 +79,25 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
         Effect(context, cycle, true);
         context.Flight.NotifyHealth(result.Health);
         context.Flight.SetShieldBoostEffect(Contact(cycle), true);
-        context.Notifications.Add(("OnModuleAttributeChanges", [new List<object?>
-        {
-            Attribute(DogmaAttributeId.CapacitorCharge, result.Capacitor),
-            Attribute(DogmaAttributeId.ShieldCharge, result.Health.Remaining.Shield),
-        }]));
+        context.Notifications.Add(
+            (
+                "OnModuleAttributeChanges",
+                [
+                    new List<object?>
+                    {
+                        Attribute(DogmaAttributeId.CapacitorCharge, result.Capacitor),
+                        Attribute(DogmaAttributeId.ShieldCharge, result.Health.Remaining.Shield),
+                    },
+                ]
+            )
+        );
 
         object?[] Attribute(DogmaAttributeId attribute, double value) =>
             ["OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)attribute, now, value, null, now];
     }
 
-    private static ShieldBoostContact Contact(Cycle cycle) => new(cycle.Booster.ItemId, cycle.Booster.TypeId, cycle.StartTime, cycle.Booster.DurationMilliseconds);
+    private static ShieldBoostContact Contact(Cycle cycle) =>
+        new(cycle.Booster.ItemId, cycle.Booster.TypeId, cycle.StartTime, cycle.Booster.DurationMilliseconds);
 
     private void Stop(PilotCallContext context, Cycle cycle)
     {
@@ -90,9 +112,33 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(("OnGodmaShipEffect", [cycle.Booster.ItemId, (int)DogmaEffect.ShieldBoosting, now, active, active,
-            new object?[] { cycle.Booster.ItemId, context.Pilot.PilotId, cycle.ShipId, null, null, Array.Empty<object?>(), (int)DogmaEffect.ShieldBoosting },
-            cycle.StartTime, cycle.Booster.DurationMilliseconds, cycle.Repeats, null, active ? null : now]));
+        context.Notifications.Add(
+            (
+                "OnGodmaShipEffect",
+                [
+                    cycle.Booster.ItemId,
+                    (int)DogmaEffect.ShieldBoosting,
+                    now,
+                    active,
+                    active,
+                    new object?[]
+                    {
+                        cycle.Booster.ItemId,
+                        context.Pilot.PilotId,
+                        cycle.ShipId,
+                        null,
+                        null,
+                        Array.Empty<object?>(),
+                        (int)DogmaEffect.ShieldBoosting,
+                    },
+                    cycle.StartTime,
+                    cycle.Booster.DurationMilliseconds,
+                    cycle.Repeats,
+                    null,
+                    active ? null : now,
+                ]
+            )
+        );
     }
 
     public object? Call(PilotCallContext context, string service, string method, object?[] args)
@@ -105,8 +151,12 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
         Advance(context);
         try
         {
-            if (method == "Activate" && args is [long module, var effect, var target, long repeats] &&
-                BlueMarshal.Text(effect) == ShieldBoostDefinitions.EffectName && repeats is >= 0 and <= int.MaxValue)
+            if (
+                method == "Activate"
+                && args is [long module, var effect, var target, long repeats]
+                && BlueMarshal.Text(effect) == ShieldBoostDefinitions.EffectName
+                && repeats is >= 0 and <= int.MaxValue
+            )
             {
                 if (!context.Flight.CanUseSelfModules || target is not null && !Equals(target, context.Pilot.ShipId))
                 {

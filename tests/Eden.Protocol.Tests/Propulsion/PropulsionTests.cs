@@ -20,8 +20,11 @@ public sealed class PropulsionTests
         private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
         public long Milliseconds { get; set; }
         public override long TimestampFrequency => 1000;
+
         public override long GetTimestamp() => Milliseconds;
+
         public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
+
         public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
@@ -33,11 +36,13 @@ public sealed class PropulsionTests
         public IPilotFitting Fitting => Db.Services.GetRequiredService<IPilotFitting>();
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public long Module { get; }
+
         public Fixture()
         {
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
+                catalog.Database.ExecuteSqlRaw(
+                    """
                     INSERT INTO ItemGroup VALUES (46,'Afterburner',7);
                     INSERT INTO ItemType(Id,Name,GroupId) VALUES (439,'1MN Afterburner I',46),(3449,'Navigation',257),
                         (3450,'Afterburner',257),(3451,'Fuel Conservation',257),(3452,'Acceleration Control',257);
@@ -50,37 +55,63 @@ public sealed class PropulsionTests
                         (439,567,1500000),(439,763,1),(439,796,500000),(3449,275,1),(3449,315,5),
                         (3450,275,1),(3450,66,-5),(3450,317,-10),(3451,275,2),(3451,317,-10),(3452,275,4),(3452,318,5);
                     INSERT INTO SourceRecord VALUES ('client/types','439','{{"volume":5}}');
-                    """);
+                    """
+                );
             }
             using (WorldDbContext world = new(Db.Path))
             {
-                world.Add(new PilotSkill { PilotId = Pilot.PilotId, TypeId = (int)NavigationSkill.Navigation, Points = 8000 });
-                world.Add(new PilotSkill { PilotId = Pilot.PilotId, TypeId = (int)NavigationSkill.Afterburner, Points = 8000 });
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = Pilot.PilotId,
+                        TypeId = (int)NavigationSkill.Navigation,
+                        Points = 8000,
+                    }
+                );
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = Pilot.PilotId,
+                        TypeId = (int)NavigationSkill.Afterburner,
+                        Points = 8000,
+                    }
+                );
                 Module = PilotInventoryStore.NextId(world);
-                world.Add(new OwnedItem
-                {
-                    Id = Module,
-                    OwnerId = Pilot.PilotId,
-                    TypeId = 439,
-                    LocationId = Pilot.StationId,
-                    FlagId = (int)InventoryFlag.Hangar,
-                    Quantity = 1
-                });
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = Module,
+                        OwnerId = Pilot.PilotId,
+                        TypeId = 439,
+                        LocationId = Pilot.StationId,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 1,
+                    }
+                );
                 world.SaveChanges();
             }
             Fitting.Fit(Pilot.PilotId, [Module], Pilot.StationId, (int)InventoryFlag.AutoFit);
             Fitting.SetOnline(Pilot.PilotId, Pilot.ShipId, Module, true);
             Db.Store.SetPosition(Pilot.ShipId, new(1_000_000, 0, 0));
         }
+
         public PilotCallContext Client(SharedSpace? space = null, IReadOnlyList<StaticSpaceObject>? objects = null)
         {
             var pilot = Pilot;
-            PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(Db.Store, p, Clock, space ?? new(), objects ?? []), 7, []);
+            PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, Clock, space ?? new(), objects ?? []),
+                7,
+                []
+            );
             context.Select(pilot);
             context.Flight.Snapshot();
             context.Flight.Updates.Clear();
             return context;
         }
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -98,7 +129,11 @@ public sealed class PropulsionTests
         Assert.Equal(1_663_000, boosted.Mass);
         Assert.Equal(339.25 * (1 + 1.15 * 1_500_000 / 1_663_000), boosted.MaxSpeed, 3);
         var brain = f.Db.Services.GetRequiredService<PilotBrain>().Read(f.Pilot.PilotId, f.Pilot.ShipId);
-        var effects = Assert.IsType<List<object?>>(brain[2]).Cast<BlueNewObject>().Select(e => (Dictionary<string, object?>)e.State!).ToArray();
+        var effects = Assert
+            .IsType<List<object?>>(brain[2])
+            .Cast<BlueNewObject>()
+            .Select(e => (Dictionary<string, object?>)e.State!)
+            .ToArray();
         Assert.Contains(effects, e => Equals(e["modifierType"], "M") && Equals(e["value"], 15d) && Equals(e["toItemID"], f.Pilot.ShipId));
         Assert.Contains(effects, e => Equals(e["modifierType"], "LRS") && Equals(e["value"], -30d));
         Assert.Contains(effects, e => Equals(e["toAttribID"], (int)DogmaAttributeId.Duration) && Equals(e["value"], -15d));
@@ -111,8 +146,22 @@ public sealed class PropulsionTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = (int)NavigationSkill.FuelConservation, Points = 16000 });
-            world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = (int)NavigationSkill.AccelerationControl, Points = 32000 });
+            world.Add(
+                new PilotSkill
+                {
+                    PilotId = f.Pilot.PilotId,
+                    TypeId = (int)NavigationSkill.FuelConservation,
+                    Points = 16000,
+                }
+            );
+            world.Add(
+                new PilotSkill
+                {
+                    PilotId = f.Pilot.PilotId,
+                    TypeId = (int)NavigationSkill.AccelerationControl,
+                    Points = 32000,
+                }
+            );
             world.SaveChanges();
         }
         var cycle = f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now);
@@ -124,11 +173,23 @@ public sealed class PropulsionTests
     public async Task CompetingCyclesPayOnceAndCooldownSurvivesRestart()
     {
         using Fixture f = new();
-        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
-        {
-            try { return f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now); }
-            catch (InvalidDataException) { return null; }
-        })));
+        var results = await Task.WhenAll(
+            Enumerable
+                .Range(0, 2)
+                .Select(_ =>
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            return f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now);
+                        }
+                        catch (InvalidDataException)
+                        {
+                            return null;
+                        }
+                    })
+                )
+        );
         Assert.Single(results, r => r is not null);
         _ = new SqliteWorld(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now));
@@ -158,7 +219,14 @@ public sealed class PropulsionTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Set<PilotSkill>().Find(f.Pilot.PilotId, (int)NavigationSkill.Afterburner)!.Points = 8000;
-            world.Add(new ShipEnergy { ShipId = f.Pilot.ShipId, Charge = 0, UpdatedAt = f.Clock.Now });
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = f.Pilot.ShipId,
+                    Charge = 0,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
             world.SaveChanges();
         }
         Assert.Throws<InvalidDataException>(() => f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now));
@@ -174,13 +242,25 @@ public sealed class PropulsionTests
         f.Db.Store.SetPosition(f.Pilot.ShipId, null);
         var inventory = f.Db.Services.GetRequiredService<IPilotInventory>();
         inventory.Move(f.Pilot.PilotId, [f.Module], f.Pilot.ShipId, f.Pilot.StationId, (int)InventoryFlag.Hangar, null);
-        Assert.Throws<InvalidDataException>(() => f.Fitting.Fit(f.Pilot.PilotId, [f.Module], f.Pilot.StationId, (int)InventoryFlag.HighSlot0));
+        Assert.Throws<InvalidDataException>(() =>
+            f.Fitting.Fit(f.Pilot.PilotId, [f.Module], f.Pilot.StationId, (int)InventoryFlag.HighSlot0)
+        );
         f.Fitting.Fit(f.Pilot.PilotId, [f.Module], f.Pilot.StationId, (int)InventoryFlag.AutoFit);
         f.Fitting.SetOnline(f.Pilot.PilotId, f.Pilot.ShipId, f.Module, true);
         long second = f.Module + 1;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem { Id = second, OwnerId = f.Pilot.PilotId, TypeId = 439, LocationId = f.Pilot.StationId, FlagId = 4, Quantity = 1 });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = second,
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = 439,
+                    LocationId = f.Pilot.StationId,
+                    FlagId = 4,
+                    Quantity = 1,
+                }
+            );
             world.SaveChanges();
         }
         f.Fitting.Fit(f.Pilot.PilotId, [second], f.Pilot.StationId, (int)InventoryFlag.AutoFit);
@@ -273,7 +353,9 @@ public sealed class PropulsionTests
         using Fixture f = new();
         using var context = f.Client();
         PropulsionHandler handler = new(f.Clock, f.Store);
-        Assert.IsType<PilotCallRouter.Error>(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, 999L, 0L]));
+        Assert.IsType<PilotCallRouter.Error>(
+            handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, 999L, 0L])
+        );
         Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 0L]));
         handler.Cancel(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
@@ -294,7 +376,9 @@ public sealed class PropulsionTests
             PropulsionHandler handler = new(f.Clock, f.Store);
             Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
             Assert.Null(context.Flight.Call("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
-            Assert.IsType<PilotCallRouter.Error>(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
+            Assert.IsType<PilotCallRouter.Error>(
+                handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L])
+            );
             f.Clock.Milliseconds = 9000;
             handler.Advance(context);
             Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));

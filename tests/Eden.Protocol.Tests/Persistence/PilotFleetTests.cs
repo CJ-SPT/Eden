@@ -20,6 +20,7 @@ public sealed class PilotFleetTests
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public IPilotFleet Fleet => Db.Services.GetRequiredService<IPilotFleet>();
         public IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
+
         public Fixture()
         {
             AddVenture(Db);
@@ -27,15 +28,24 @@ public sealed class PilotFleetTests
             world.Add(new PilotWallet { PilotId = Pilot.PilotId, Cents = 2000000 });
             world.SaveChanges();
         }
-        public InventoryItem Buy(int quantity = 1) => Assert.Single(Db.Services.GetRequiredService<IPilotMarket>()
-            .Buy(Pilot.PilotId, Pilot.StationId, [new((int)StarterShipType.Venture, 1000000, quantity)]).Changes).Item;
+
+        public InventoryItem Buy(int quantity = 1) =>
+            Assert
+                .Single(
+                    Db.Services.GetRequiredService<IPilotMarket>()
+                        .Buy(Pilot.PilotId, Pilot.StationId, [new((int)StarterShipType.Venture, 1000000, quantity)])
+                        .Changes
+                )
+                .Item;
+
         public void Dispose() => Db.Dispose();
     }
 
     internal static void AddVenture(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
-        catalog.Database.ExecuteSqlRaw("""
+        catalog.Database.ExecuteSqlRaw(
+            """
             INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(11,'powerOutput'),(48,'cpuOutput'),
                 (1556,'generalMiningHoldCapacity'),(207,'miningYieldMultiplier'),(1842,'miningFrigateYieldBonus'),
                 (182,'requiredSkill1'),(277,'requiredSkill1Level');
@@ -48,9 +58,17 @@ public sealed class PilotFleetTests
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (32918,'Mining Frigate',257);
             INSERT INTO TypeAttribute VALUES (32918,275,2);
             INSERT OR IGNORE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7,17]}}');
-            """);
+            """
+        );
         using WorldDbContext world = new(db.Path);
-        world.Add(new PilotSkill { PilotId = db.Store.FindPilot(1000001)!.PilotId, TypeId = (int)MiningSkill.Frigate, Points = 500 });
+        world.Add(
+            new PilotSkill
+            {
+                PilotId = db.Store.FindPilot(1000001)!.PilotId,
+                TypeId = (int)MiningSkill.Frigate,
+                Points = 500,
+            }
+        );
         world.SaveChanges();
     }
 
@@ -59,17 +77,28 @@ public sealed class PilotFleetTests
     {
         using Fixture f = new();
         var original = f.Pilot;
-        var starter = Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
+        var starter = Assert.Single(
+            f.Inventory.List(original.PilotId, original.StationId),
+            i => i.TypeId == InventoryDefinitions.CivilianMinerType
+        );
         f.Inventory.Move(original.PilotId, [starter.Id], original.StationId, original.ShipId, (int)InventoryFlag.Cargo, null);
         var stack = f.Buy(2);
-        Assert.Throws<InvalidDataException>(() => f.Fleet.Assemble(original.PilotId, [stack.Id], new string('x', FleetDefinitions.MaximumShipNameLength + 1)));
+        Assert.Throws<InvalidDataException>(() =>
+            f.Fleet.Assemble(original.PilotId, [stack.Id], new string('x', FleetDefinitions.MaximumShipNameLength + 1))
+        );
         Assert.Throws<InvalidDataException>(() => f.Fleet.Assemble(original.PilotId, [stack.Id, long.MaxValue], null));
-        Assert.Equal(2, Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity);
+        Assert.Equal(
+            2,
+            Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity
+        );
         Assert.Single(f.Fleet.Ships(original.PilotId, original.StationId));
         var result = f.Fleet.Assemble(original.PilotId, [stack.Id], "Prospector");
         long first = Assert.Single(result.ShipIds);
         Assert.NotEqual(stack.Id, first);
-        Assert.Equal(1, Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity);
+        Assert.Equal(
+            1,
+            Assert.Single(f.Inventory.List(original.PilotId, original.StationId), i => i.TypeId == (int)StarterShipType.Venture).Quantity
+        );
         Assert.Empty(f.Fleet.Assemble(original.PilotId, [first], "Ignored retry").Changes);
         long second = Assert.Single(f.Fleet.Assemble(original.PilotId, [stack.Id], null).ShipIds);
         Assert.Equal(stack.Id, second);
@@ -122,13 +151,22 @@ public sealed class PilotFleetTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        var cargo = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
+        var cargo = Assert.Single(
+            f.Inventory.List(pilot.PilotId, pilot.StationId),
+            i => i.TypeId == InventoryDefinitions.CivilianMinerType
+        );
         f.Inventory.Move(pilot.PilotId, [cargo.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null);
         var stack = f.Buy();
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p =>
-            new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects), 1, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects),
+            1,
+            []
+        );
         context.Select(pilot);
         object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
         Assert.IsType<List<object?>>(Call("ship", "AssembleShip", new List<object?> { stack.Id }));
@@ -140,10 +178,18 @@ public sealed class PilotFleetTests
         Assert.Equal(stack.Id, context.Pilot.ShipId);
         Assert.IsType<BlueConstructor>(Call(originalContainer, "GetSelfInvItem"));
         var flags = new Dictionary<string, object?> { ["flags"] = new List<object?> { (long)InventoryFlag.Cargo } };
-        Assert.Single(Assert.IsType<List<object?>>(router.Call(context, originalContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags)));
-        string newContainer = context.ResolveReference(Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", stack.Id, 1L)).Id)!;
-        Assert.Empty(Assert.IsType<List<object?>>(router.Call(context, newContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags)));
-        var locations = Assert.IsType<object?[]>(Call("config", "GetMultiLocationsEx", new List<object?> { pilot.ShipId, stack.Id, f.Db.Store.FindPilot(1000002)!.ShipId }));
+        Assert.Single(
+            Assert.IsType<List<object?>>(router.Call(context, originalContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags))
+        );
+        string newContainer = context.ResolveReference(
+            Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", stack.Id, 1L)).Id
+        )!;
+        Assert.Empty(
+            Assert.IsType<List<object?>>(router.Call(context, newContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags))
+        );
+        var locations = Assert.IsType<object?[]>(
+            Call("config", "GetMultiLocationsEx", new List<object?> { pilot.ShipId, stack.Id, f.Db.Store.FindPilot(1000002)!.ShipId })
+        );
         var names = Assert.IsType<List<object?>>(locations[1]).Cast<object?[]>().ToArray();
         Assert.Equal(2, names.Length);
         var previous = Assert.Single(names, row => Equals(row[0], pilot.ShipId));
@@ -161,31 +207,42 @@ public sealed class PilotFleetTests
         var stack = f.Buy();
         long ship = Assert.Single(f.Fleet.Assemble(pilot.PilotId, [stack.Id], null).ShipIds);
         f.Fleet.Board(pilot.PilotId, ship, pilot.ShipId);
-        var starter = Assert.Single(f.Inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
-        Assert.Throws<InvalidDataException>(() => f.Inventory.Move(pilot.PilotId, [starter.Id], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, null));
+        var starter = Assert.Single(
+            f.Inventory.List(pilot.PilotId, pilot.StationId),
+            i => i.TypeId == InventoryDefinitions.CivilianMinerType
+        );
+        Assert.Throws<InvalidDataException>(() =>
+            f.Inventory.Move(pilot.PilotId, [starter.Id], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, null)
+        );
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("""
+            catalog.Database.ExecuteSqlRaw(
+                """
                 INSERT INTO ItemCategory VALUES (25,'Asteroid');
                 INSERT INTO ItemGroup VALUES (462,'Veldspar',25);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
                 INSERT INTO SourceRecord VALUES ('client/types','1230','{{"volume":0.1}}');
-                """);
+                """
+            );
         }
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new OwnedItem
-            {
-                Id = stack.Id + 10,
-                OwnerId = pilot.PilotId,
-                TypeId = 1230,
-                LocationId = pilot.StationId,
-                FlagId = (int)InventoryFlag.Hangar,
-                Quantity = 50001
-            });
+            world.Add(
+                new OwnedItem
+                {
+                    Id = stack.Id + 10,
+                    OwnerId = pilot.PilotId,
+                    TypeId = 1230,
+                    LocationId = pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 50001,
+                }
+            );
             world.SaveChanges();
         }
-        Assert.Throws<CargoCapacityException>(() => f.Inventory.Move(pilot.PilotId, [stack.Id + 10], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, null));
+        Assert.Throws<CargoCapacityException>(() =>
+            f.Inventory.Move(pilot.PilotId, [stack.Id + 10], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, null)
+        );
         f.Inventory.Move(pilot.PilotId, [stack.Id + 10], pilot.StationId, ship, (int)InventoryFlag.GeneralMiningHold, 50000);
         var ore = Assert.Single(f.Inventory.List(pilot.PilotId, ship));
         Assert.Equal(50000, ore.Quantity);

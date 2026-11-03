@@ -33,7 +33,10 @@ public sealed class CharacterCreationTests
         var pilot = Assert.Single(reopened.ListPilots(1000001), p => p.PilotId == id);
         Assert.Equal((station, system, hull, 1000044), (pilot.StationId, pilot.SystemId, pilot.ShipTypeId, pilot.CorpId));
         Assert.Null(pilot.Position);
-        Assert.Equal((race, bloodline, 0, 64, school), (pilot.Profile.RaceId, pilot.Profile.BloodlineId, pilot.Profile.GenderId, pilot.Profile.AncestryId, pilot.Profile.SchoolId));
+        Assert.Equal(
+            (race, bloodline, 0, 64, school),
+            (pilot.Profile.RaceId, pilot.Profile.BloodlineId, pilot.Profile.GenderId, pilot.Profile.AncestryId, pilot.Profile.SchoolId)
+        );
         Assert.Equal(character.Appearance, creation.ReadAppearance(id, false));
         Assert.Equal(character.Portrait, creation.ReadAppearance(id, true));
         using WorldDbContext save = new(db.Path);
@@ -66,9 +69,13 @@ public sealed class CharacterCreationTests
         using TestWorld db = new();
         TestCatalog.AddSchool(new WorldDatabase(db.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
         using WorldDbContext save = new(db.Path);
-        save.Database.ExecuteSqlRaw("CREATE TRIGGER reject_skill BEFORE INSERT ON WorldPilotSkill BEGIN SELECT RAISE(ABORT,'test rollback'); END");
+        save.Database.ExecuteSqlRaw(
+            "CREATE TRIGGER reject_skill BEFORE INSERT ON WorldPilotSkill BEGIN SELECT RAISE(ABORT,'test rollback'); END"
+        );
         var creation = db.Services.GetRequiredService<ICharacterCreation>();
-        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => creation.Create(1000001, new("Rollback Pilot", 1, 1, 1, 64, [1], [2], 18)));
+        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() =>
+            creation.Create(1000001, new("Rollback Pilot", 1, 1, 1, 64, [1], [2], 18))
+        );
         Assert.Equal(2, save.Pilots.Count());
         Assert.Equal(2, save.Ships.Count());
         Assert.Equal(2, save.Set<PilotSkill>().Count());

@@ -12,8 +12,8 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcPursuitTests
 {
-    private static NpcContact Contact(NpcCombatTests.Fixture f) => f.Db.Services.GetRequiredService<INpcEncounters>()
-        .List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
+    private static NpcContact Contact(NpcCombatTests.Fixture f) =>
+        f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
 
     private static void StartDistantFight(NpcCombatTests.Fixture f)
     {
@@ -42,7 +42,10 @@ public sealed class NpcPursuitTests
         for (int second = 1; second <= 60; second++)
         {
             f.Clock.Milliseconds += 1000;
-            if (f.Fire() is { } shot) { shots.Add(shot); }
+            if (f.Fire() is { } shot)
+            {
+                shots.Add(shot);
+            }
         }
         var npc = Contact(f);
         double surfaceRange = npc.Position.DistanceTo(f.Pilot.Position!) - npc.Radius - f.Pilot.Flight.ShipRadius;
@@ -105,7 +108,11 @@ public sealed class NpcPursuitTests
         StartDistantFight(f);
         f.Clock.Milliseconds = 7500;
         f.Fire();
-        for (int second = 0; second < 20; second++) { f.Clock.Milliseconds += 1000; f.Fire(); }
+        for (int second = 0; second < 20; second++)
+        {
+            f.Clock.Milliseconds += 1000;
+            f.Fire();
+        }
         long healthAt = f.Clock.Now;
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -119,7 +126,11 @@ public sealed class NpcPursuitTests
         f.Combat.Disengage(NpcCombatTests.Fixture.ShipId);
         Assert.Empty(f.Combat.Aggressors(NpcCombatTests.Fixture.ShipId));
         Assert.Equal(f.Npc.Position, Contact(f).Navigation!.Destination);
-        for (int second = 0; second < 100; second++) { f.Clock.Milliseconds += 1000; _ = Contact(f); }
+        for (int second = 0; second < 100; second++)
+        {
+            f.Clock.Milliseconds += 1000;
+            _ = Contact(f);
+        }
         var returned = Contact(f);
         Assert.InRange(f.Npc.Position.DistanceTo(returned.Position), 0, 25);
         Assert.Null(returned.Navigation);
@@ -166,7 +177,14 @@ public sealed class NpcPursuitTests
     {
         using NpcCombatTests.Fixture f = new();
         StartDistantFight(f);
-        using FlightSession observer = new(f.Db.Store, f.Pilot, f.Clock, new(), [], encounters: f.Db.Services.GetRequiredService<INpcEncounters>());
+        using FlightSession observer = new(
+            f.Db.Store,
+            f.Pilot,
+            f.Clock,
+            new(),
+            [],
+            encounters: f.Db.Services.GetRequiredService<INpcEncounters>()
+        );
         observer.Snapshot();
         observer.Updates.Clear();
         f.Clock.Milliseconds = 7500;
@@ -182,7 +200,16 @@ public sealed class NpcPursuitTests
         Assert.Equal(42, reader.ReadInt32());
         Assert.Equal(npc.Id, reader.ReadInt64());
         Assert.Equal((byte)DestinyBallMode.Follow, reader.ReadByte());
-        reader.ReadBytes(sizeof(float) + 3 * sizeof(double) + sizeof(byte) + sizeof(double) + sizeof(byte) + sizeof(long) + 2 * sizeof(int) + sizeof(float));
+        reader.ReadBytes(
+            sizeof(float)
+                + 3 * sizeof(double)
+                + sizeof(byte)
+                + sizeof(double)
+                + sizeof(byte)
+                + sizeof(long)
+                + 2 * sizeof(int)
+                + sizeof(float)
+        );
         Assert.Equal(npc.Navigation!.Velocity, new(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble()));
         Assert.Equal(npc.Agility, reader.ReadSingle());
         Assert.Equal(0.5, reader.ReadSingle());
@@ -203,7 +230,9 @@ public sealed class NpcPursuitTests
         using NpcCombatTests.Fixture f = new();
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var type = catalog.Set<ItemType>().Single(t => t.Id == f.Npc.TypeId);
-        var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == type.Id)
+        var attributes = catalog
+            .Set<TypeAttribute>()
+            .Where(a => a.ItemTypeId == type.Id)
             .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
         WorldNpc npc = new()
         {

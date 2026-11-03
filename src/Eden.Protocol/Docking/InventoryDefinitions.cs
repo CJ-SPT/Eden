@@ -190,9 +190,13 @@ public static class InventoryDefinitions
     public const int InfiniteEffectDuration = -1;
     public const long FirstOwnedItemId = 2000000000000;
     public const int SlotsPerRack = 8; // Pinned inventory flags reserve eight slots per rack.
+
     public static bool IsHighSlot(int flag) => flag is >= (int)InventoryFlag.HighSlot0 and <= (int)InventoryFlag.HighSlot7;
+
     public static bool IsMediumSlot(int flag) => flag is >= (int)InventoryFlag.MediumSlot0 and <= (int)InventoryFlag.MediumSlot7;
+
     public static bool IsFittedSlot(int flag) => IsHighSlot(flag) || IsMediumSlot(flag);
+
     public static readonly (DogmaAttributeId Skill, DogmaAttributeId Level)[] RequiredSkills =
     [
         (DogmaAttributeId.RequiredSkill1, DogmaAttributeId.RequiredSkill1Level),

@@ -14,13 +14,22 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
 
     private RSA? _key = OperatingSystem.IsWindows() ? Open() : null;
     public RSA Key => _key ?? throw new InvalidDataException("The local pilot session is unavailable.");
+
     public void Dispose() => Interlocked.Exchange(ref _key, null)?.Dispose();
 
     [SupportedOSPlatform("windows")]
     internal static RSACng Open()
     {
-        using CngKey key = CngKey.Exists(KeyName) ? CngKey.Open(KeyName) : CngKey.Create(CngAlgorithm.Rsa, KeyName,
-            new CngKeyCreationParameters { Parameters = { new CngProperty("Length", BitConverter.GetBytes(3072), CngPropertyOptions.None) } });
+        using CngKey key = CngKey.Exists(KeyName)
+            ? CngKey.Open(KeyName)
+            : CngKey.Create(
+                CngAlgorithm.Rsa,
+                KeyName,
+                new CngKeyCreationParameters
+                {
+                    Parameters = { new CngProperty("Length", BitConverter.GetBytes(3072), CngPropertyOptions.None) },
+                }
+            );
         return new RSACng(key);
     }
 
@@ -35,8 +44,11 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
         byte[] original = File.ReadAllBytes(path);
         // Every byte through the public-key flag is part of the fingerprinted build.
         const int prefixLength = 17769;
-        if (original.Length < prefixLength || Convert.ToHexString(SHA256.HashData(original.AsSpan(0, prefixLength))) !=
-            "04EB4A00671E7289BF14AAFBEE6849D490678A291DAD0DF333E519913921C631")
+        if (
+            original.Length < prefixLength
+            || Convert.ToHexString(SHA256.HashData(original.AsSpan(0, prefixLength)))
+                != "04EB4A00671E7289BF14AAFBEE6849D490678A291DAD0DF333E519913921C631"
+        )
         {
             throw new InvalidDataException("Unrecognized manifest prefix.");
         }
@@ -63,8 +75,11 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
             File.Move(temporary, path, overwrite: true);
         }
 
-        string claim = $"eden2.{accountId}.{clock.GetUtcNow().ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
-        return claim + "." + Convert.ToHexString(Key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        string claim =
+            $"eden2.{accountId}.{clock.GetUtcNow().ToUnixTimeSeconds()}.{Convert.ToHexString(RandomNumberGenerator.GetBytes(16))}";
+        return claim
+            + "."
+            + Convert.ToHexString(Key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
     public long? ValidateTicket(string ticket)
@@ -77,14 +92,26 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
             ["eden2", "1000002", _, _, _] => 1000002,
             _ => null,
         };
-        if (account is null || !long.TryParse(parts[^3], out long timestamp) ||
-            timestamp < clock.GetUtcNow().ToUnixTimeSeconds() - 180 || timestamp > clock.GetUtcNow().ToUnixTimeSeconds() + 5 ||
-            parts[^2].Length != 32 || parts[^1].Length != Key.KeySize / 4 || !parts[^1].All(Uri.IsHexDigit))
+        if (
+            account is null
+            || !long.TryParse(parts[^3], out long timestamp)
+            || timestamp < clock.GetUtcNow().ToUnixTimeSeconds() - 180
+            || timestamp > clock.GetUtcNow().ToUnixTimeSeconds() + 5
+            || parts[^2].Length != 32
+            || parts[^1].Length != Key.KeySize / 4
+            || !parts[^1].All(Uri.IsHexDigit)
+        )
         {
             return null;
         }
 
-        return Key.VerifyData(Encoding.ASCII.GetBytes(string.Join('.', parts[..^1])), Convert.FromHexString(parts[^1]),
-            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1) ? account : null;
+        return Key.VerifyData(
+            Encoding.ASCII.GetBytes(string.Join('.', parts[..^1])),
+            Convert.FromHexString(parts[^1]),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1
+        )
+            ? account
+            : null;
     }
 }

@@ -41,8 +41,11 @@ public sealed class NpcAggressionTests
     {
         using NpcCombatTests.Fixture f = new();
         f.Db.Store.SetPosition(s_wing.ShipId, f.Pilot.Position!, f.Npc.SystemId);
-        await Task.WhenAll(Enumerable.Range(0, 3).Select(index => Task.Run(() =>
-            f.Combat.Acquire(index % 2 == 0 ? [s_wing, s_pilot] : [s_pilot, s_wing], f.Clock.Now))));
+        await Task.WhenAll(
+            Enumerable
+                .Range(0, 3)
+                .Select(index => Task.Run(() => f.Combat.Acquire(index % 2 == 0 ? [s_wing, s_pilot] : [s_pilot, s_wing], f.Clock.Now)))
+        );
         using (WorldDbContext saved = new(f.Db.Path))
         {
             var aggression = Assert.Single(saved.Set<NpcAggression>());
@@ -119,7 +122,11 @@ public sealed class NpcAggressionTests
         f.Combat.Acquire([s_pilot], f.Clock.Now);
         f.Clock.Milliseconds = 7500;
         f.Fire();
-        for (int tick = 0; tick < 10; tick++) { f.Clock.Milliseconds += 1000; f.Fire(); }
+        for (int tick = 0; tick < 10; tick++)
+        {
+            f.Clock.Milliseconds += 1000;
+            f.Fire();
+        }
         f.Combat.Disengage(s_pilot.ShipId);
         f.Combat.Acquire([s_pilot], f.Clock.Now);
         Assert.Empty(f.Combat.Aggressors(s_pilot.ShipId));
@@ -159,16 +166,39 @@ public sealed class NpcAggressionTests
         space.Publish(contact);
         Assert.Equal(new[] { s_pilot }, space.NpcTargets(f.Npc.SystemId));
         Assert.Empty(space.NpcTargets(30000142));
-        foreach (var unavailable in new[]
-        {
-            contact with { Warp = new(f.Pilot.Position!, f.Pilot.Position! + new SpacePosition(1_000_000, 0, 0), 1, f.Pilot.Flight, 0) },
-            contact with { AlignTo = f.Npc.Position },
-            contact with { DepartureGate = 123 },
-            contact with { Arriving = true },
-            contact with { Pilot = f.Pilot with { ShipGroupId = FleetDefinitions.CapsuleGroup } },
-            contact with { Pilot = f.Pilot with { Position = null } },
-            contact with { Health = new(f.Pilot.ShipId, f.Npc.Health.Defense, new(0, 0, 0)) },
-        })
+        foreach (
+            var unavailable in new[]
+            {
+                contact with
+                {
+                    Warp = new(f.Pilot.Position!, f.Pilot.Position! + new SpacePosition(1_000_000, 0, 0), 1, f.Pilot.Flight, 0),
+                },
+                contact with
+                {
+                    AlignTo = f.Npc.Position,
+                },
+                contact with
+                {
+                    DepartureGate = 123,
+                },
+                contact with
+                {
+                    Arriving = true,
+                },
+                contact with
+                {
+                    Pilot = f.Pilot with { ShipGroupId = FleetDefinitions.CapsuleGroup },
+                },
+                contact with
+                {
+                    Pilot = f.Pilot with { Position = null },
+                },
+                contact with
+                {
+                    Health = new(f.Pilot.ShipId, f.Npc.Health.Defense, new(0, 0, 0)),
+                },
+            }
+        )
         {
             space.Publish(unavailable);
             Assert.Empty(space.NpcTargets(f.Npc.SystemId));
@@ -188,12 +218,34 @@ public sealed class NpcAggressionTests
         using TargetingHandler targeting = new(f.Clock, fitting, locks);
         MiningHandler mining = new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting);
         CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
-        using NpcCombatHandler handler = new(f.Clock, f.Combat, locks, mining, weapons,
+        using NpcCombatHandler handler = new(
+            f.Clock,
+            f.Combat,
+            locks,
+            mining,
+            weapons,
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotShieldBoosting>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotPropulsion>()), space);
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotPropulsion>()),
+            space
+        );
         StaticSpaceObject destination = new(999, 0, 0, 0, 0, f.Pilot.Position! + new SpacePosition(1_000_000, 0, 0), 1);
-        using PilotCallContext context = new(1000001, f.Pilot.Account, [f.Pilot],
-            p => new(f.Db.Store, p, f.Clock, space, [destination], health: f.Health, encounters: f.Db.Services.GetRequiredService<INpcEncounters>()), 42, []);
+        using PilotCallContext context = new(
+            1000001,
+            f.Pilot.Account,
+            [f.Pilot],
+            p =>
+                new(
+                    f.Db.Store,
+                    p,
+                    f.Clock,
+                    space,
+                    [destination],
+                    health: f.Health,
+                    encounters: f.Db.Services.GetRequiredService<INpcEncounters>()
+                ),
+            42,
+            []
+        );
         context.Select(f.Pilot);
         handler.Enter(context);
         context.Flight.Snapshot();

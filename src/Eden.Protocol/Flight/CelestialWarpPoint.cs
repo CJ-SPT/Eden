@@ -15,18 +15,17 @@ internal static class CelestialWarpPoint
             double longitude = Math.Atan2(center.Z * Math.Sign(center.X), Math.Abs(center.X)) + jitter;
             double size = (10 * Math.Log10(radius / 1_000_000) - 39) / 40;
             double distance = radius * (1 + Math.Clamp(20 * Math.Pow(size, 20) + 0.5, 0.5, 10.5)) + 1_000_000;
-            return center + new SpacePosition(distance * Math.Sin(longitude), radius * Math.Sin(jitter) / 2,
-                -distance * Math.Cos(longitude));
+            return center
+                + new SpacePosition(distance * Math.Sin(longitude), radius * Math.Sin(jitter) / 2, -distance * Math.Cos(longitude));
         }
         if (body.CategoryId == 2 && body.GroupId == 6)
         {
-            return center + new SpacePosition((radius + 100_000) * Math.Cos(radius), 0.2 * radius,
-                -(radius + 100_000) * Math.Sin(radius));
+            return center + new SpacePosition((radius + 100_000) * Math.Cos(radius), 0.2 * radius, -(radius + 100_000) * Math.Sin(radius));
         }
         if (body.CategoryId == 2 && body.GroupId != 186 && radius >= 90_000)
         {
-            return center + new SpacePosition((radius + 5_000_000) * Math.Cos(radius), 1.3 * radius - 7500,
-                -(radius + 5_000_000) * Math.Sin(radius));
+            return center
+                + new SpacePosition((radius + 5_000_000) * Math.Cos(radius), 1.3 * radius - 7500, -(radius + 5_000_000) * Math.Sin(radius));
         }
         return center + (origin - center).Unit * radius;
     }

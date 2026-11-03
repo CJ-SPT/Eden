@@ -18,7 +18,8 @@ public sealed class SourceRecord
     public string Key { get; set; } = "";
     public string Data { get; set; } = "";
 
-    public T Read<T>() => JsonSerializer.Deserialize<T>(Data, JsonSerializerOptions.Web)
+    public T Read<T>() =>
+        JsonSerializer.Deserialize<T>(Data, JsonSerializerOptions.Web)
         ?? throw new InvalidDataException($"Missing {Dataset} record {Key}.");
 }
 
@@ -42,8 +43,11 @@ public sealed class SourceDifference
 
 internal static class CatalogSources
 {
-    private static readonly ICatalogSource[] s_sources = typeof(CatalogData).GetNestedTypes()
-        .SelectMany(group => group.GetFields()).Select(field => (ICatalogSource)field.GetValue(null)!).ToArray();
+    private static readonly ICatalogSource[] s_sources = typeof(CatalogData)
+        .GetNestedTypes()
+        .SelectMany(group => group.GetFields())
+        .Select(field => (ICatalogSource)field.GetValue(null)!)
+        .ToArray();
 
     internal static void Configure(ModelBuilder model)
     {
@@ -59,8 +63,10 @@ internal static class CatalogSources
 
     internal static void CheckBuild(CatalogDbContext db)
     {
-        if (db.Database.SqlQueryRaw<int>("PRAGMA application_id").AsEnumerable().Single() != 0x4544454E ||
-            db.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single() != 1)
+        if (
+            db.Database.SqlQueryRaw<int>("PRAGMA application_id").AsEnumerable().Single() != 0x4544454E
+            || db.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single() != 1
+        )
         {
             throw new InvalidDataException("Unsupported catalog schema. Run tools/Setup-Catalog.ps1 with the staged client.");
         }
@@ -75,24 +81,43 @@ internal static class CatalogSources
     {
         using CatalogDbContext db = new(path);
         CheckBuild(db);
-        var station = db.Set<Station>().Include(s => s.Orbit).Include(s => s.Owner).Include(s => s.SolarSystem)
-            .ThenInclude(s => s.Constellation).ThenInclude(c => c.Region).Single(s => s.Id == 60003760);
-        var gate = db.Set<Stargate>().Where(g => g.SolarSystemId == station.SolarSystemId)
-            .Include(g => g.Destination).ThenInclude(g => g.SolarSystem).OrderBy(g => g.Id).First();
-        var ibis = db.Set<ItemType>().Include(t => t.Group).ThenInclude(g => g.Category)
-            .Include(t => t.Attributes).Single(t => t.Id == 601);
+        var station = db.Set<Station>()
+            .Include(s => s.Orbit)
+            .Include(s => s.Owner)
+            .Include(s => s.SolarSystem)
+                .ThenInclude(s => s.Constellation)
+                    .ThenInclude(c => c.Region)
+            .Single(s => s.Id == 60003760);
+        var gate = db.Set<Stargate>()
+            .Where(g => g.SolarSystemId == station.SolarSystemId)
+            .Include(g => g.Destination)
+                .ThenInclude(g => g.SolarSystem)
+            .OrderBy(g => g.Id)
+            .First();
+        var ibis = db.Set<ItemType>()
+            .Include(t => t.Group)
+                .ThenInclude(g => g.Category)
+            .Include(t => t.Attributes)
+            .Single(t => t.Id == 601);
         var designation = db.Set<StationDesignation>().Single(s => s.StationId == station.Id);
         var blueprint = CatalogData.Sde.Blueprints.Get(db, 681);
-        if (blueprint.Activities?.Manufacturing?.Products?.Single().TypeID != 165 ||
-            designation.Format(station.SolarSystem.Name, station.Owner.Name) != "Jita IV - Moon 4 - Caldari Navy Assembly Plant" ||
-            station.Orbit.Id != 40009087 || station.SolarSystem.Name != "Jita" ||
-            station.SolarSystem.Constellation.Id != 20000020 || station.SolarSystem.Constellation.Region.Id != 10000002 ||
-            db.Set<Celestial>().Count(c => c.SolarSystemId == station.SolarSystemId) != 49 ||
-            db.Set<Station>().Count(s => s.SolarSystemId == station.SolarSystemId) != 18 ||
-            gate.Destination.DestinationId != gate.Id || gate.Destination.SolarSystemId == station.SolarSystemId ||
-            ibis.Group.Category.Id != 6 || ibis.Mass != 1163000 || ibis.Radius != 47 ||
-            ibis.Attributes.Single(a => a.AttributeId == 37).Value != 295 ||
-            ibis.Attributes.Single(a => a.AttributeId == 70).Value != 4.5)
+        if (
+            blueprint.Activities?.Manufacturing?.Products?.Single().TypeID != 165
+            || designation.Format(station.SolarSystem.Name, station.Owner.Name) != "Jita IV - Moon 4 - Caldari Navy Assembly Plant"
+            || station.Orbit.Id != 40009087
+            || station.SolarSystem.Name != "Jita"
+            || station.SolarSystem.Constellation.Id != 20000020
+            || station.SolarSystem.Constellation.Region.Id != 10000002
+            || db.Set<Celestial>().Count(c => c.SolarSystemId == station.SolarSystemId) != 49
+            || db.Set<Station>().Count(s => s.SolarSystemId == station.SolarSystemId) != 18
+            || gate.Destination.DestinationId != gate.Id
+            || gate.Destination.SolarSystemId == station.SolarSystemId
+            || ibis.Group.Category.Id != 6
+            || ibis.Mass != 1163000
+            || ibis.Radius != 47
+            || ibis.Attributes.Single(a => a.AttributeId == 37).Value != 295
+            || ibis.Attributes.Single(a => a.AttributeId == 70).Value != 4.5
+        )
         {
             throw new InvalidDataException("The catalog failed Jita geography or Ibis flight verification.");
         }
@@ -108,6 +133,8 @@ internal static class CatalogSources
         {
             throw new InvalidDataException($"Missing typed models for {string.Join(", ", counts.Keys)}.");
         }
-        Console.WriteLine($"Verified {db.Set<SourceDataset>().Count()} datasets, Jita, its gate to {gate.Destination.SolarSystem.Name}, and the Ibis.");
+        Console.WriteLine(
+            $"Verified {db.Set<SourceDataset>().Count()} datasets, Jita, its gate to {gate.Destination.SolarSystem.Name}, and the Ibis."
+        );
     }
 }

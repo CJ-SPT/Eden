@@ -12,16 +12,22 @@ public sealed class PilotBrainTests
     private sealed class Clock : TimeProvider
     {
         public DateTimeOffset Now { get; set; } = new(2026, 11, 2, 0, 0, 0, TimeSpan.Zero);
+
         public override DateTimeOffset GetUtcNow() => Now;
     }
 
     private sealed class Skills : IPilotSkillReader, IPilotIndustrySkills, IPilotNavigationSkills
     {
         public IReadOnlyList<TrainedSkill> Values { get; set; } = [];
+
         public IReadOnlyList<TrainedSkill> ReadSkills(long pilotId) => Values;
+
         public IReadOnlyList<IndustryCharacterBonus> Bonuses { get; set; } = [];
+
         public IReadOnlyList<IndustryCharacterBonus> CharacterBonuses(long pilotId) => Bonuses;
+
         public IReadOnlyList<NavigationBonus> NavigationBonuses(long pilotId) => [];
+
         public double MaxSpeed(long pilotId) => 295;
     }
 
@@ -37,21 +43,30 @@ public sealed class PilotBrainTests
     {
         Skills skills = new()
         {
-            Values = [new((int)CombatSkill.Gunnery, 8000, 1), new((int)CombatSkill.MotionPrediction, 2830, 2),
-                new((int)CombatSkill.SmallHybridTurret, 250, 1), new((int)CombatSkill.RapidFiring, 0, 2), new(3327, 256000, 1)],
+            Values =
+            [
+                new((int)CombatSkill.Gunnery, 8000, 1),
+                new((int)CombatSkill.MotionPrediction, 2830, 2),
+                new((int)CombatSkill.SmallHybridTurret, 250, 1),
+                new((int)CombatSkill.RapidFiring, 0, 2),
+                new(3327, 256000, 1),
+            ],
         };
         Clock clock = new();
         var brain = new PilotBrain(skills, clock, skills, skills).Read(90000001, 1000000000001);
         Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), brain[0]);
         var effects = Assert.IsType<List<object?>>(brain[2]).Select(State).ToArray();
         Assert.Equal(3, effects.Length);
-        Assert.All(effects, e =>
-        {
-            Assert.Null(e["fromAttrib"]);
-            Assert.Equal(1000000000001L, e["toItemID"]);
-            Assert.Equal("LRS", e["modifierType"]);
-            Assert.Equal(6, e["operation"]);
-        });
+        Assert.All(
+            effects,
+            e =>
+            {
+                Assert.Null(e["fromAttrib"]);
+                Assert.Equal(1000000000001L, e["toItemID"]);
+                Assert.Equal("LRS", e["modifierType"]);
+                Assert.Equal(6, e["operation"]);
+            }
+        );
         var cycle = Assert.Single(effects, e => Equals(e["toAttribID"], (int)DogmaAttributeId.WeaponCycleTime));
         Assert.Equal(-6d, cycle["value"]);
         Assert.Equal(new object?[] { (int)CombatSkill.Gunnery }, cycle["extras"]);
@@ -92,13 +107,18 @@ public sealed class PilotBrainTests
         var brain = new PilotBrain(skills, new Clock(), skills, skills).Read(90000001, 1000000000001);
         var effects = Assert.IsType<List<object?>>(brain[2]).Select(State).ToArray();
         Assert.Equal(2, effects.Length);
-        Assert.All(effects, e =>
-        {
-            Assert.Equal("LG", e["modifierType"]);
-            Assert.Equal((int)DogmaAttributeId.DamageMultiplier, e["toAttribID"]);
-            Assert.Equal(9d, e["value"]);
-        });
-        Assert.Equal(new object?[] { CombatDefinitions.EnergyWeaponGroup, CombatDefinitions.HybridWeaponGroup },
-            effects.Select(e => Assert.Single(Assert.IsType<object?[]>(e["extras"]))));
+        Assert.All(
+            effects,
+            e =>
+            {
+                Assert.Equal("LG", e["modifierType"]);
+                Assert.Equal((int)DogmaAttributeId.DamageMultiplier, e["toAttribID"]);
+                Assert.Equal(9d, e["value"]);
+            }
+        );
+        Assert.Equal(
+            new object?[] { CombatDefinitions.EnergyWeaponGroup, CombatDefinitions.HybridWeaponGroup },
+            effects.Select(e => Assert.Single(Assert.IsType<object?[]>(e["extras"])))
+        );
     }
 }

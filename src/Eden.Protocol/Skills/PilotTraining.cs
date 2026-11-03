@@ -4,9 +4,10 @@ public readonly record struct TrainingTarget(int TypeId, int Level);
 
 public sealed record TrainingEntry(TrainingTarget Target, long StartPoints, long EndPoints, long? StartTime, long? EndTime)
 {
-    public long PointsAt(long now) => StartTime is long start && EndTime is long end
-        ? StartPoints + (long)((decimal)(EndPoints - StartPoints) * Math.Clamp(now - start, 0, end - start) / (end - start))
-        : StartPoints;
+    public long PointsAt(long now) =>
+        StartTime is long start && EndTime is long end
+            ? StartPoints + (long)((decimal)(EndPoints - StartPoints) * Math.Clamp(now - start, 0, end - start) / (end - start))
+            : StartPoints;
 }
 
 public sealed record TrainingEvent(long Time, int TypeId, long Points, int EventId);

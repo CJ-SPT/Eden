@@ -40,7 +40,8 @@ internal static class WorldMigration
         }
         if (version is 6 or 7)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 ALTER TABLE WorldAccount ADD COLUMN UserName TEXT NOT NULL DEFAULT 'Eden';
                 ALTER TABLE WorldAccount ADD COLUMN CreatedAt INTEGER NOT NULL DEFAULT 134000000000000000;
                 ALTER TABLE WorldPilot ADD COLUMN CreatedAt INTEGER NOT NULL DEFAULT 134000000000000000;
@@ -49,7 +50,8 @@ internal static class WorldMigration
                 ALTER TABLE WorldPilot ADD COLUMN GenderId INTEGER NOT NULL DEFAULT 1;
                 ALTER TABLE WorldPilot ADD COLUMN AncestryId INTEGER NOT NULL DEFAULT 10;
                 ALTER TABLE WorldPilot ADD COLUMN SchoolId INTEGER NOT NULL DEFAULT 19;
-                """);
+                """
+            );
         }
         if (version < 8)
         {
@@ -57,13 +59,15 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 9)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldPilotSkill(
                     PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                     TypeId INTEGER NOT NULL,
                     Points INTEGER NOT NULL CONSTRAINT CK_PilotSkill_Points CHECK (Points >= 0),
                     PRIMARY KEY(PilotId,TypeId));
-                """);
+                """
+            );
         }
         if (version < 10)
         {
@@ -71,7 +75,8 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 11)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldSkillQueue(
                     PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, Position INTEGER NOT NULL,
                     TypeId INTEGER NOT NULL, Level INTEGER NOT NULL, StartPoints INTEGER NOT NULL, EndPoints INTEGER NOT NULL,
@@ -80,27 +85,32 @@ internal static class WorldMigration
                     Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                     Time INTEGER NOT NULL, TypeId INTEGER NOT NULL, Points INTEGER NOT NULL, EventId INTEGER NOT NULL);
                 CREATE INDEX IX_WorldSkillHistory_PilotId_Time ON WorldSkillHistory(PilotId,Time);
-                """);
+                """
+            );
         }
         if (version is >= 6 and < 12)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 DROP INDEX IX_WorldPilot_AccountId;
                 CREATE INDEX IX_WorldPilot_AccountId ON WorldPilot(AccountId);
                 CREATE UNIQUE INDEX IX_WorldPilot_Name ON WorldPilot(Name COLLATE NOCASE);
                 ALTER TABLE WorldPilot ADD COLUMN Appearance BLOB;
                 ALTER TABLE WorldPilot ADD COLUMN Portrait BLOB;
-                """);
+                """
+            );
         }
         if (version is >= 6 and < 13)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldItem(
                     Id INTEGER PRIMARY KEY AUTOINCREMENT, OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                     TypeId INTEGER NOT NULL, LocationId INTEGER NOT NULL, FlagId INTEGER NOT NULL,
                     Quantity INTEGER NOT NULL CONSTRAINT CK_Item_Quantity CHECK (Quantity > 0));
                 CREATE INDEX IX_WorldItem_OwnerId_LocationId ON WorldItem(OwnerId,LocationId);
-                """);
+                """
+            );
         }
         if (version < 13)
         {
@@ -112,7 +122,10 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 14)
         {
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem ADD COLUMN Singleton INTEGER NOT NULL DEFAULT 0; ALTER TABLE WorldItem ADD COLUMN Online INTEGER NOT NULL DEFAULT 0");
+            world.Database.ExecuteSqlRaw(
+                "ALTER TABLE WorldItem ADD COLUMN Singleton INTEGER NOT NULL DEFAULT 0; ALTER TABLE WorldItem ADD "
+                    + "COLUMN Online INTEGER NOT NULL DEFAULT 0"
+            );
         }
         if (version < 14)
         {
@@ -120,14 +133,16 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 15)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldAsteroid(
                     Id INTEGER PRIMARY KEY, BeltId INTEGER NOT NULL, SystemId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
                     Quantity INTEGER NOT NULL CONSTRAINT CK_Asteroid_Quantity CHECK (Quantity >= 0),
                     X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, Radius REAL NOT NULL);
                 CREATE INDEX IX_WorldAsteroid_SystemId ON WorldAsteroid(SystemId);
                 CREATE INDEX IX_WorldAsteroid_BeltId ON WorldAsteroid(BeltId);
-                """);
+                """
+            );
         }
         if (version < 15)
         {
@@ -135,16 +150,22 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 16)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldShipEnergy(
                     ShipId INTEGER PRIMARY KEY REFERENCES WorldShip(Id) ON DELETE CASCADE,
                     Charge REAL NOT NULL CONSTRAINT CK_ShipEnergy_Charge CHECK (Charge >= 0), UpdatedAt INTEGER NOT NULL);
-                """);
+                """
+            );
         }
-        if (version < 16) { world.Database.ExecuteSqlRaw("PRAGMA user_version=16"); }
+        if (version < 16)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=16");
+        }
         if (version is >= 6 and < 17)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldWallet(PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                     Cents INTEGER NOT NULL CONSTRAINT CK_Wallet_Cents CHECK(Cents >= 0));
                 CREATE TABLE WorldMarketStation(StationId INTEGER PRIMARY KEY, CreatedAt INTEGER NOT NULL);
@@ -155,47 +176,66 @@ internal static class WorldMigration
                     CONSTRAINT CK_MarketOrder_Quantity CHECK(Remaining >= 0 AND Entered > 0 AND Remaining <= Entered));
                 CREATE UNIQUE INDEX IX_WorldMarketOrder_StationId_TypeId_Bid ON WorldMarketOrder(StationId,TypeId,Bid);
                 CREATE INDEX IX_WorldMarketOrder_RegionId ON WorldMarketOrder(RegionId);
-                CREATE TABLE WorldMarketTrade(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                CREATE TABLE WorldMarketTrade(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id)
+                    ON DELETE CASCADE,
                     OrderId INTEGER NOT NULL, StationId INTEGER NOT NULL, CounterpartyId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
                     IsBuy INTEGER NOT NULL, Quantity INTEGER NOT NULL, PriceCents INTEGER NOT NULL, TaxCents INTEGER NOT NULL,
                     BalanceCents INTEGER NOT NULL, Time INTEGER NOT NULL,
                     CONSTRAINT CK_MarketTrade_Amounts CHECK(PriceCents > 0 AND Quantity > 0 AND TaxCents >= 0 AND BalanceCents >= 0));
                 CREATE INDEX IX_WorldMarketTrade_PilotId_Time ON WorldMarketTrade(PilotId,Time);
-                """);
+                """
+            );
         }
-        if (version < 17) { world.Database.ExecuteSqlRaw("PRAGMA user_version=17"); }
+        if (version < 17)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=17");
+        }
         if (version is >= 6 and < 18)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldShipHealth(ShipId INTEGER PRIMARY KEY REFERENCES WorldShip(Id) ON DELETE CASCADE,
                     ShieldCharge REAL NOT NULL, ArmorDamage REAL NOT NULL, StructureDamage REAL NOT NULL, UpdatedAt INTEGER NOT NULL,
                     CONSTRAINT CK_ShipHealth_Values CHECK(ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0));
-                """);
+                """
+            );
         }
-        if (version < 18) { world.Database.ExecuteSqlRaw("PRAGMA user_version=18"); }
+        if (version < 18)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=18");
+        }
         if (version is >= 6 and < 19)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldNpc(Id INTEGER PRIMARY KEY AUTOINCREMENT, BeltId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
                     TypeId INTEGER NOT NULL, X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, ShieldCharge REAL NOT NULL,
                     ArmorDamage REAL NOT NULL, StructureDamage REAL NOT NULL, UpdatedAt INTEGER NOT NULL, DestroyedAt INTEGER,
                     CONSTRAINT CK_Npc_Health CHECK(ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0));
                 CREATE INDEX IX_WorldNpc_BeltId ON WorldNpc(BeltId);
                 CREATE INDEX IX_WorldNpc_SystemId ON WorldNpc(SystemId);
-                """);
+                """
+            );
         }
-        if (version < 19) { world.Database.ExecuteSqlRaw("PRAGMA user_version=19"); }
+        if (version < 19)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=19");
+        }
         if (version is >= 6 and < 20)
         {
-            world.Database.ExecuteSqlRaw("""
-                CREATE TABLE WorldWeaponCooldown(ModuleId INTEGER PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE, ReadyAt INTEGER NOT NULL);
-                CREATE TABLE WorldNpcBounty(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE WorldWeaponCooldown(ModuleId INTEGER PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE, ReadyAt
+                    INTEGER NOT NULL);
+                CREATE TABLE WorldNpcBounty(Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON
+                    DELETE CASCADE,
                     NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE CASCADE, TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
                     Time INTEGER NOT NULL, AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL,
                     CONSTRAINT CK_NpcBounty_Amounts CHECK(AmountCents > 0 AND BalanceCents >= 0));
                 CREATE UNIQUE INDEX IX_WorldNpcBounty_NpcId ON WorldNpcBounty(NpcId);
                 CREATE INDEX IX_WorldNpcBounty_PilotId_Time ON WorldNpcBounty(PilotId,Time);
-                """);
+                """
+            );
         }
         if (version < 20)
         {
@@ -207,7 +247,8 @@ internal static class WorldMigration
         }
         if (version is >= 6 and < 21)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldNpcAggression(NpcId INTEGER PRIMARY KEY REFERENCES WorldNpc(Id) ON DELETE CASCADE,
                     TargetShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE, ReadyAt INTEGER NOT NULL, LastShotAt INTEGER);
                 CREATE INDEX IX_WorldNpcAggression_TargetShipId ON WorldNpcAggression(TargetShipId);
@@ -216,23 +257,33 @@ internal static class WorldMigration
                     TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL, Time INTEGER NOT NULL, Name TEXT NOT NULL, ItemsJson TEXT NOT NULL,
                     X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL);
                 CREATE INDEX IX_WorldShipLoss_PilotId_Time ON WorldShipLoss(PilotId,Time);
-                """);
+                """
+            );
         }
-        if (version < 21) { world.Database.ExecuteSqlRaw("PRAGMA user_version=21"); }
+        if (version < 21)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=21");
+        }
         if (version is >= 6 and < 22)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldRepairPayment(Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, StationId INTEGER NOT NULL,
                     StationOwnerId INTEGER NOT NULL, AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL,
                     Time INTEGER NOT NULL, RepairsJson TEXT NOT NULL);
                 CREATE INDEX IX_WorldRepairPayment_PilotId_Time ON WorldRepairPayment(PilotId,Time);
-                """);
+                """
+            );
         }
-        if (version < 22) { world.Database.ExecuteSqlRaw("PRAGMA user_version=22"); }
+        if (version < 22)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=22");
+        }
         if (version is >= 6 and < 23)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE WorldWreck(Id INTEGER PRIMARY KEY,
                     NpcId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
                     OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, CorporationId INTEGER NOT NULL,
@@ -240,14 +291,19 @@ internal static class WorldMigration
                     X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, CreatedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
                 CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
                 CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
-                """);
+                """
+            );
         }
-        if (version < 23) { world.Database.ExecuteSqlRaw("PRAGMA user_version=23"); }
+        if (version < 23)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=23");
+        }
         if (version is >= 6 and < 24)
         {
             // Retain every existing NPC wreck and its item identities. Locations
             // are polymorphic inventory IDs, so no item FK needs rebuilding.
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 ALTER TABLE WorldShipLoss ADD COLUMN DroppedItemIdsJson TEXT NOT NULL DEFAULT '[]';
                 CREATE TABLE WorldWreckNew(Id INTEGER PRIMARY KEY,
                     NpcId INTEGER REFERENCES WorldNpc(Id) ON DELETE RESTRICT,
@@ -263,28 +319,41 @@ internal static class WorldMigration
                 CREATE UNIQUE INDEX IX_WorldWreck_NpcId ON WorldWreck(NpcId);
                 CREATE UNIQUE INDEX IX_WorldWreck_ShipId ON WorldWreck(ShipId);
                 CREATE INDEX IX_WorldWreck_SystemId_ExpiresAt ON WorldWreck(SystemId,ExpiresAt);
-                """);
+                """
+            );
         }
-        if (version < 24) { world.Database.ExecuteSqlRaw("PRAGMA user_version=24"); }
+        if (version < 24)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=24");
+        }
         if (version is >= 6 and < 25)
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldWeaponCooldown ADD COLUMN Kind INTEGER NOT NULL DEFAULT 0");
         }
-        if (version < 25) { world.Database.ExecuteSqlRaw("PRAGMA user_version=25"); }
+        if (version < 25)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=25");
+        }
         if (version is >= 6 and < 26)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 ALTER TABLE WorldNpc ADD COLUMN VelocityX REAL NOT NULL DEFAULT 0;
                 ALTER TABLE WorldNpc ADD COLUMN VelocityY REAL NOT NULL DEFAULT 0;
                 ALTER TABLE WorldNpc ADD COLUMN VelocityZ REAL NOT NULL DEFAULT 0;
                 ALTER TABLE WorldNpc ADD COLUMN MotionAt INTEGER NOT NULL DEFAULT 0;
                 ALTER TABLE WorldNpc ADD COLUMN Navigation INTEGER NOT NULL DEFAULT 0;
-                """);
+                """
+            );
         }
-        if (version < 26) { world.Database.ExecuteSqlRaw("PRAGMA user_version=26"); }
+        if (version < 26)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=26");
+        }
         if (version is >= 6 and < 27)
         {
-            world.Database.ExecuteSqlRaw("""
+            world.Database.ExecuteSqlRaw(
+                """
                 CREATE TABLE IF NOT EXISTS WorldIndustryJob(
                     Id INTEGER NOT NULL CONSTRAINT PK_WorldIndustryJob PRIMARY KEY AUTOINCREMENT,
                     PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
@@ -292,15 +361,22 @@ internal static class WorldMigration
                     ProductTypeId INTEGER NOT NULL, Runs INTEGER NOT NULL, OutputQuantity INTEGER NOT NULL,
                     StartTime INTEGER NOT NULL, EndTime INTEGER NOT NULL, DurationSeconds INTEGER NOT NULL,
                     Status INTEGER NOT NULL, CompletedAt INTEGER, MaterialsJson TEXT NOT NULL,
-                    CONSTRAINT CK_IndustryJob_Values CHECK (Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime));
+                    CONSTRAINT CK_IndustryJob_Values CHECK (Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime >
+                        StartTime));
                 CREATE INDEX IF NOT EXISTS IX_WorldIndustryJob_PilotId_Status ON WorldIndustryJob(PilotId,Status);
                 CREATE INDEX IF NOT EXISTS IX_WorldIndustryJob_BlueprintId ON WorldIndustryJob(BlueprintId);
-                """);
+                """
+            );
         }
-        if (version < 27) { world.Database.ExecuteSqlRaw("PRAGMA user_version=27"); }
+        if (version < 27)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=27");
+        }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
-        var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
-            t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();
+        var rankedSkills = catalog
+            .Set<ItemType>()
+            .Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 && t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0))
+            .Count();
         if (rankedSkills != skillTypes.Length)
         {
             throw new InvalidDataException("Save references an unknown skill or training multiplier.");
@@ -342,31 +418,37 @@ internal static class WorldMigration
 
     internal static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog, long pilotId, int raceId)
     {
-        var levels = CatalogData.Client.Races.Get(catalog, raceId).Skills
+        var levels =
+            CatalogData.Client.Races.Get(catalog, raceId).Skills
             ?? throw new InvalidDataException($"Missing starting skills for race {raceId}.");
         foreach (var (key, level) in levels)
         {
             int typeId = int.Parse(key, CultureInfo.InvariantCulture);
             double rank = catalog.Set<TypeAttribute>().Single(a => a.ItemTypeId == typeId && a.AttributeId == 275).Value;
             long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
-            world.Database.ExecuteSql($"""
+            world.Database.ExecuteSql(
+                $"""
                 INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES ({pilotId},{typeId},{points})
                 ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=MAX(Points,excluded.Points)
-                """);
+                """
+            );
         }
     }
 
     private static void CopyLegacy(WorldDbContext world, int version)
     {
         world.Database.ExecuteSqlRaw("INSERT INTO WorldAccount(Id) SELECT id FROM account");
-        world.Database.ExecuteSqlRaw("""
+        world.Database.ExecuteSqlRaw(
+            """
             INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,ActiveShipId)
             SELECT id,account,name,corporation,active_ship FROM pilot
-            """);
+            """
+        );
         // Version 1 predates custom ship names. Every later version has the column.
-        string copyShip = version == 1
-            ? "INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) SELECT id,owner,type,station,'Ibis' FROM ship"
-            : "INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) SELECT id,owner,type,station,name FROM ship";
+        string copyShip =
+            version == 1
+                ? "INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) SELECT id,owner,type,station,'Ibis' FROM ship"
+                : "INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) SELECT id,owner,type,station,name FROM ship";
         world.Database.ExecuteSqlRaw(copyShip);
         if (version >= 4)
         {
@@ -380,7 +462,11 @@ internal static class WorldMigration
         // The active ship references its owner and the owner references the ship.
         // Both constraints are checked together when this transaction commits.
         world.Database.ExecuteSql($"INSERT INTO WorldAccount(Id) VALUES ({account})");
-        world.Database.ExecuteSql($"INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,ActiveShipId) VALUES ({pilot},{account},{pilotName},1000044,{ship})");
-        world.Database.ExecuteSql($"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},601,60003760,{shipName})");
+        world.Database.ExecuteSql(
+            $"INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,ActiveShipId) VALUES ({pilot},{account},{pilotName},1000044,{ship})"
+        );
+        world.Database.ExecuteSql(
+            $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},601,60003760,{shipName})"
+        );
     }
 }

@@ -59,17 +59,34 @@ Setup downloads and verifies CCP's exact-build export on the first run, decodes 
 
 ## Build and run
 
-Install the .NET SDK version in `global.json`. Run these commands from the repository root.
+Install the .NET SDK version in `global.json` and Python 3.11 or later for the policy checks. Run these commands from the repository root.
 
 ```powershell
+dotnet tool restore
 dotnet restore
 dotnet build --no-restore
 dotnet test --no-build
-dotnet format --verify-no-changes --no-restore
+python tests/Eden.Protocol.Tests/Persistence/catalog_setup_test.py
+python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
+.\tools\Format.ps1 -Check
 dotnet run --no-build --project src/Eden.Server
 ```
 
 The tests use fixtures and loopback sockets. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and flight and two-pilot acceptance results.
+
+## Formatting
+
+Run `.\tools\Format.ps1` to apply formatting after restoring tools and the solution. Run `.\tools\Format.ps1 -Check` to verify without editing files. Both commands run .NET style rules, CSharpier, then strict line-width validation. Verification also runs in the Windows GitHub Actions workflow on pull requests and pushes to `main`.
+
+The root `.editorconfig` is the source of truth. CSharpier 1.3.0 is pinned in the local tool manifest and owns layout; .NET analyzers enforce required braces, file-scoped namespaces and import placement. Do not run the full `dotnet format` command, whose whitespace formatter can disagree with CSharpier. Use `dotnet format style --no-restore --severity warn` for style-only cleanup.
+
+Follow Microsoft's C# conventions with four spaces, Allman braces and a maximum line width of **140 characters**, including indentation. Expand nonempty executable brace bodies. Auto-properties, empty bodies, initializers, patterns and expression-bodied members may remain compact. Prefer expression-bodied trivial accessors because CSharpier otherwise places their statements beside their braces. Project/configuration files use two spaces. Preserve existing line endings.
+
+The strict width check covers authored C#, `.csproj`, `.props`, `.targets`, `.slnx`, root `global.json`, JSON under `.config` and `.vscode`, and `appsettings*.json`/`launchSettings.json`. Generated C# (including the catalog models), SDK outputs, build artifacts and runtime/data JSON are excluded. Documentation and development scripts retain the basic UTF-8, final-newline and trailing-whitespace rules without a width limit.
+
+Wrap long code first. Split literals only when their runtime value remains identical. For content that cannot safely be split, add an entry to `tools/formatting-exceptions.json` with its repository-relative `path` (forward slashes), exact full `line` (including indentation), and a specific `reason`. The checker rejects duplicate or unused exceptions, including exceptions whose content changes or no longer exceeds the limit. The allowlist itself is data and is excluded from width checking.
+
+For format-on-save in Visual Studio, VS Code or Rider, install the CSharpier editor integration and select the repository-local tool. Keep EditorConfig support enabled and avoid running a second whitespace formatter on save. Restore with `dotnet tool restore` after cloning or changing the pinned formatter version.
 
 ## Projects and conventions
 

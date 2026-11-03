@@ -28,7 +28,11 @@ internal static class ServerServices
                     _ => throw new InvalidOperationException($"Unknown service lifetime on {implementation}."),
                 };
                 services.Add(new ServiceDescriptor(implementation, implementation, lifetime));
-                foreach (Type contract in implementation.GetInterfaces().Where(i => i.Assembly == typeof(InjectableAttribute).Assembly || i.Assembly == typeof(ServerServices).Assembly))
+                foreach (
+                    Type contract in implementation
+                        .GetInterfaces()
+                        .Where(i => i.Assembly == typeof(InjectableAttribute).Assembly || i.Assembly == typeof(ServerServices).Assembly)
+                )
                 {
                     services.Add(new ServiceDescriptor(contract, provider => provider.GetRequiredService(implementation), lifetime));
                 }

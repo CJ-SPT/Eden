@@ -15,11 +15,25 @@ public sealed class PilotServicesTests
     public async Task FailedBoundMarketCheckReturnsAnErrorAndKeepsTheSessionUsable()
     {
         using TestWorld world = new();
-        var packets = await ExchangeAsync(world, 42,
+        var packets = await ExchangeAsync(
+            world,
+            42,
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
-            Request("corpStationMgr", "MachoBindObject", [60003760L,
-                new object?[] { "DoStandingCheckForStationService", new object?[] { (long)StationService.Market }, new Dictionary<string, object?>() }]),
-            Request("account", "GetCashBalance", [0L]));
+            Request(
+                "corpStationMgr",
+                "MachoBindObject",
+                [
+                    60003760L,
+                    new object?[]
+                    {
+                        "DoStandingCheckForStationService",
+                        new object?[] { (long)StationService.Market },
+                        new Dictionary<string, object?>(),
+                    },
+                ]
+            ),
+            Request("account", "GetCashBalance", [0L])
+        );
         Assert.EndsWith(".ErrorResponse", packets[^2].Name);
         AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "This station does not provide a market." });
         Assert.EndsWith(".CallRsp", packets[^1].Name);
@@ -51,10 +65,14 @@ public sealed class PilotServicesTests
         var rejection = bound
             ? Request("dogmaIM", "MachoBindObject", [null, new object?[] { method, args, new Dictionary<string, object?>() }])
             : Request("dogmaIM", method, args);
-        var packets = await ExchangeAsync(world, 42,
+        var packets = await ExchangeAsync(
+            world,
+            42,
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
-            Request("ship", "Undock", [ship]), rejection,
-            Request("account", "GetCashBalance", [0L]));
+            Request("ship", "Undock", [ship]),
+            rejection,
+            Request("account", "GetCashBalance", [0L])
+        );
         AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "Change module online state on your docked active ship." });
         Assert.EndsWith(".CallRsp", packets[^1].Name);
         Assert.Equal(0d, Result(packets[^1]));
@@ -79,11 +97,25 @@ public sealed class PilotServicesTests
             saved.Ships.Single(s => s.Id == 1000000000001L).TypeId = (int)StarterShipType.Venture;
             saved.SaveChanges();
         }
-        var packets = await ExchangeAsync(world, 42,
+        var packets = await ExchangeAsync(
+            world,
+            42,
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
-            Request("dogmaIM", "CreateNewbieShip", [1000000000001L, 60003760L]));
-        Assert.Equal(new[] { "SessionChangeNotification", "CallRsp", "Notification", "Notification", "Notification",
-            "SessionChangeNotification", "CallRsp" }, packets.Select(p => p.Name.Split('.')[^1]));
+            Request("dogmaIM", "CreateNewbieShip", [1000000000001L, 60003760L])
+        );
+        Assert.Equal(
+            new[]
+            {
+                "SessionChangeNotification",
+                "CallRsp",
+                "Notification",
+                "Notification",
+                "Notification",
+                "SessionChangeNotification",
+                "CallRsp",
+            },
+            packets.Select(p => p.Name.Split('.')[^1])
+        );
         foreach (var packet in packets.Skip(2).Take(3))
         {
             var envelope = PilotLogin.Tuple(packet.State, 14);
@@ -108,10 +140,13 @@ public sealed class PilotServicesTests
             itemId = item.Id;
             saved.SaveChanges();
         }
-        var packets = await ExchangeAsync(world, 42,
+        var packets = await ExchangeAsync(
+            world,
+            42,
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
             Request("invbroker", "GetInventoryFromId", [1000000000001L]),
-            Request(null, "Add", [itemId, 60003760L], "N=10001:42-2", new() { ["flag"] = 5L }));
+            Request(null, "Add", [itemId, 60003760L], "N=10001:42-2", new() { ["flag"] = 5L })
+        );
         var packet = packets[^1];
         AssertUserError(packet, "NotEnoughCargoSpace", new() { ["available"] = 125d, ["volume"] = 150d });
     }
@@ -163,11 +198,13 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task SheetReadsOnlyTheSelectedPilotsProfile()
     {
-        var packets = await ExchangeAsync(42,
+        var packets = await ExchangeAsync(
+            42,
             Request("charMgr", "GetPublicInfo", [90000001L]),
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
             Request("charMgr", "GetPublicInfo", [90000002L]),
-            Request("charMgr", "GetPublicInfo", [90000001L]));
+            Request("charMgr", "GetPublicInfo", [90000001L])
+        );
         Assert.EndsWith(".ErrorResponse", packets[0].Name);
         Assert.EndsWith(".ErrorResponse", packets[3].Name);
         var fields = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);
@@ -193,16 +230,22 @@ public sealed class PilotServicesTests
     {
         using TestWorld world = new();
         TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 22, 8, 7, 30005305, 60015161, 606);
-        BlueInstance appearance = new("utillib.KeyVal", new Dictionary<string, object?>
-        {
-            ["appearance"] = new PaperDollRow("eve.common.script.paperDoll.paperDollDefinitions.AppearanceRow", [1L]),
-        });
+        BlueInstance appearance = new(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["appearance"] = new PaperDollRow("eve.common.script.paperDoll.paperDollDefinitions.AppearanceRow", [1L]),
+            }
+        );
         BlueInstance portrait = new("utillib.KeyVal", new Dictionary<string, object?> { ["lightID"] = 15 });
-        var replies = await ExchangeAsync(world, 42,
+        var replies = await ExchangeAsync(
+            world,
+            42,
             Request("charUnboundMgr", "CreateCharacterWithDoll", ["New Pilot", 8, 7, 1, 64, appearance, portrait, 22, null, null]),
             Request("charUnboundMgr", "SelectCharacterID", [], keywords: new() { ["charID"] = 90000003L, ["skipTutorial"] = true }),
             Request("paperDollServer", "GetPaperDollData", [90000003L]),
-            Request("home_station", "get_home_station", []));
+            Request("home_station", "get_home_station", [])
+        );
         Assert.Equal(90000003L, Result(replies[0]));
         Assert.EndsWith(".SessionChangeNotification", replies[1].Name);
         Assert.Null(Result(replies[2]));
@@ -232,15 +275,30 @@ public sealed class PilotServicesTests
     public async Task RoutesBoundInventoryAndOrdersFlightNotifications()
     {
         const long ship = 1000000000001L;
-        var packets = await ExchangeAsync(42,
+        var packets = await ExchangeAsync(
+            42,
             Request("ship", "Undock", [ship]),
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
             Request("invbroker", "GetInventory", [10004L]),
             Request(null, "List", [4L], "N=10001:42-2"),
             Request("ship", "Undock", [ship]),
-            Request("beyonce", "MachoBindObject", [30000142L, null]));
-        Assert.Equal(new[] { "ErrorResponse", "SessionChangeNotification", "CallRsp", "CallRsp", "CallRsp",
-            "SessionChangeNotification", "CallRsp", "CallRsp", "Notification" }, packets.Select(packet => packet.Name.Split('.')[^1]));
+            Request("beyonce", "MachoBindObject", [30000142L, null])
+        );
+        Assert.Equal(
+            new[]
+            {
+                "ErrorResponse",
+                "SessionChangeNotification",
+                "CallRsp",
+                "CallRsp",
+                "CallRsp",
+                "SessionChangeNotification",
+                "CallRsp",
+                "CallRsp",
+                "Notification",
+            },
+            packets.Select(packet => packet.Name.Split('.')[^1])
+        );
         // DBRow uses a client-only constructor. Compare the actual bound List payload with the owned ship ID on the wire.
         var state = PilotLogin.Tuple(packets[4].State, 14);
         var payload = PilotLogin.Bytes(PilotLogin.Tuple(state[4], 1)[0]);
@@ -251,19 +309,42 @@ public sealed class PilotServicesTests
         Assert.Equal("DoDestinyUpdate", PilotLogin.Tuple(destination.State, 4)[1]);
     }
 
-    private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId)
-        => ExchangeAsync(sessionId, Request(service, method, args));
+    private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId) =>
+        ExchangeAsync(sessionId, Request(service, method, args));
 
-    private static BlueInstance Request(string? service, string method, object?[] args, object? objectId = null, Dictionary<string, object?>? keywords = null)
+    private static BlueInstance Request(
+        string? service,
+        string method,
+        object?[] args,
+        object? objectId = null,
+        Dictionary<string, object?>? keywords = null
+    )
     {
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
         byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, keywords ?? new Dictionary<string, object?>() });
-        return new("carbon.common.script.net.machoNetPacket.CallReq", new object?[]
-        {
-            6L, new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
-            new BlueInstance(address, service is null ? new object?[] { 1L, (long)PilotLogin.NodeId, null, null } : new object?[] { 8L, service, null }), null,
-            new object?[] { new object?[] { 0L, call } }, null, null, null, null, null, null, null, null, null,
-        });
+        return new(
+            "carbon.common.script.net.machoNetPacket.CallReq",
+            new object?[]
+            {
+                6L,
+                new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
+                new BlueInstance(
+                    address,
+                    service is null ? new object?[] { 1L, (long)PilotLogin.NodeId, null, null } : new object?[] { 8L, service, null }
+                ),
+                null,
+                new object?[] { new object?[] { 0L, call } },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+            }
+        );
     }
 
     private static async Task<List<BlueInstance>> ExchangeAsync(long sessionId, params BlueInstance[] requests)
@@ -278,14 +359,21 @@ public sealed class PilotServicesTests
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         Queue<object?> input = new(requests);
         List<BlueInstance> output = [];
-        await Assert.ThrowsAsync<EndOfStreamException>(() => session.RunAsync(
-            () => input.TryDequeue(out object? packet) ? Task.FromResult(packet) : throw new EndOfStreamException(),
-            packet =>
-            {
-                output.Add(Assert.IsType<BlueInstance>(packet));
-                return Task.CompletedTask;
-            },
-            _ => { }, 1000001, sessionId, [], CancellationToken.None));
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                () => input.TryDequeue(out object? packet) ? Task.FromResult(packet) : throw new EndOfStreamException(),
+                packet =>
+                {
+                    output.Add(Assert.IsType<BlueInstance>(packet));
+                    return Task.CompletedTask;
+                },
+                _ => { },
+                1000001,
+                sessionId,
+                [],
+                CancellationToken.None
+            )
+        );
         return output;
     }
 }

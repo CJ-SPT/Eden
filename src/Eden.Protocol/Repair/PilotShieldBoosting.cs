@@ -4,6 +4,7 @@ using Eden.Protocol.Docking;
 namespace Eden.Protocol.Repair;
 
 public sealed record ShieldBooster(long ItemId, int TypeId, double DurationMilliseconds, double ShieldAmount, double CapacitorNeed);
+
 public sealed record ShieldBoost(ShieldBooster Booster, ShipHealth Health, double Capacitor, double Restored);
 
 public interface IPilotShieldBoosting

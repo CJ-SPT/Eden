@@ -20,6 +20,7 @@ internal sealed class TestWorld : IDisposable
     public SqliteWorld Store { get; }
     public ServiceProvider Services { get; }
     public IReadOnlyList<StaticSpaceObject> Objects => Services.GetRequiredService<ISystemObjects>().Load(30000142);
+
     public TestWorld()
     {
         TestCatalog.Create(new WorldDatabase(Path).CatalogPath);

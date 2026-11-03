@@ -15,7 +15,10 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
             using ZLibStream inflater = new(new MemoryStream(plain), CompressionMode.Decompress);
             byte[] decoded = new byte[PacketStream.MaxSessionBytes + 1];
             int length = inflater.ReadAtLeast(decoded, decoded.Length, throwOnEndOfStream: false);
-            if (length == decoded.Length) { throw new InvalidDataException("Oversized compressed packet."); }
+            if (length == decoded.Length)
+            {
+                throw new InvalidDataException("Oversized compressed packet.");
+            }
             plain = decoded[..length];
         }
         return BlueMarshal.Decode(plain);

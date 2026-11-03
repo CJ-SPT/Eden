@@ -21,8 +21,11 @@ public sealed class NpcCombatTests
     {
         public long Milliseconds { get; set; }
         public override long TimestampFrequency => 1000;
+
         public override long GetTimestamp() => Milliseconds;
+
         public override DateTimeOffset GetUtcNow() => DateTimeOffset.UnixEpoch.AddYears(56).AddMilliseconds(Milliseconds);
+
         public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
@@ -45,8 +48,10 @@ public sealed class NpcCombatTests
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
-                catalog.Database.ExecuteSqlRaw("""
-                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(14,'hiSlots'),(48,'cpuOutput'),(11,'powerOutput');
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(14,'hiSlots'),(48,'cpuOutput'),
+                        (11,'powerOutput');
                     INSERT INTO TypeAttribute VALUES (601,14,2),(601,48,125),(601,11,23),
                         (3638,6,0),(3638,51,1000),(3638,54,10000),(3638,64,1),(3638,117,1),(3638,158,3000),(3638,160,500),(3638,620,40);
                     INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (29,'Capsule',6);
@@ -54,10 +59,12 @@ public sealed class NpcCombatTests
                     INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
                     INSERT OR REPLACE INTO TypeAttribute VALUES (670,9,150),(670,263,63),(670,265,156),(670,482,125),
                         (670,55,187500),(670,479,625000),(670,102,0),(670,14,0),(670,37,150),(670,70,2),(670,600,4),(670,552,25);
-                    INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (26510,'Caldari Rookie ship Wreck',186,27500,10000,14);
+                    INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES
+                        (26510,'Caldari Rookie ship Wreck',186,27500,10000,14);
                     INSERT INTO SourceRecord VALUES ('client/types','26510','{{"volume":27500}}');
                     UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
-                    """);
+                    """
+                );
             }
             Npc = Db.Services.GetRequiredService<INpcEncounters>().List(30000144, Clock.Now)[0];
             var inventory = Db.Services.GetRequiredService<IPilotInventory>();
@@ -69,14 +76,27 @@ public sealed class NpcCombatTests
         }
 
         public void Aggress() => Weapons.Fire(PilotId, Module, Npc.Id, SpacePosition.Zero, Clock.Now, 0.5);
-        public NpcShot? Fire(double roll = 0.5) => Combat.Fire(PilotId, ShipId, Npc.Id, SpacePosition.Zero, Clock.Now, roll, 1 + checked((int)(Clock.Milliseconds / 1000)));
+
+        public NpcShot? Fire(double roll = 0.5) =>
+            Combat.Fire(PilotId, ShipId, Npc.Id, SpacePosition.Zero, Clock.Now, roll, 1 + checked((int)(Clock.Milliseconds / 1000)));
+
         public void AlmostLost()
         {
             using WorldDbContext world = new(Db.Path);
-            world.Add(new ShipHealthState { ShipId = ShipId, ShieldCharge = 0, ArmorDamage = 125, StructureDamage = 174, UpdatedAt = Clock.Now });
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = ShipId,
+                    ShieldCharge = 0,
+                    ArmorDamage = 125,
+                    StructureDamage = 174,
+                    UpdatedAt = Clock.Now,
+                }
+            );
             world.Add(new PilotWallet { PilotId = PilotId, Cents = 12345 });
             world.SaveChanges();
         }
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -88,6 +108,7 @@ public sealed class NpcCombatTests
     private sealed class AlternatingLootRoll : IShipLootRoll
     {
         private int _rolls;
+
         public bool Survives() => _rolls++ % 2 == 0;
     }
 
@@ -137,7 +158,11 @@ public sealed class NpcCombatTests
     {
         using Fixture f = new();
         f.Aggress();
-        f.Db.Store.SetPosition(Fixture.ShipId, dock ? null : f.Npc.Position + new SpacePosition(NpcEncounterDefinitions.ChaseLeash + 1, 0, 0), f.Npc.SystemId);
+        f.Db.Store.SetPosition(
+            Fixture.ShipId,
+            dock ? null : f.Npc.Position + new SpacePosition(NpcEncounterDefinitions.ChaseLeash + 1, 0, 0),
+            f.Npc.SystemId
+        );
         Assert.Null(f.Fire());
         Assert.Empty(f.Combat.Aggressors(Fixture.ShipId));
         using WorldDbContext world = new(f.Db.Path);
@@ -153,15 +178,17 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         using (WorldDbContext before = new(f.Db.Path))
         {
-            before.Add(new OwnedItem
-            {
-                Id = PilotInventoryStore.NextId(before),
-                OwnerId = Fixture.PilotId,
-                TypeId = 34,
-                LocationId = Fixture.ShipId,
-                FlagId = (int)InventoryFlag.Cargo,
-                Quantity = 123
-            });
+            before.Add(
+                new OwnedItem
+                {
+                    Id = PilotInventoryStore.NextId(before),
+                    OwnerId = Fixture.PilotId,
+                    TypeId = 34,
+                    LocationId = Fixture.ShipId,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = 123,
+                }
+            );
             before.SaveChanges();
         }
         var shots = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => f.Fire())));
@@ -194,7 +221,14 @@ public sealed class NpcCombatTests
             var contents = saved.Set<OwnedItem>().Where(i => i.LocationId == wreck.Id).OrderBy(i => i.Id).ToArray();
             Assert.Equal(items.Select(i => i.Id), contents.Select(i => i.Id));
             Assert.Equal(items.Select(i => i.Id), JsonSerializer.Deserialize<long[]>(loss.DroppedItemIdsJson));
-            Assert.All(contents, i => { Assert.False(i.Online); Assert.Equal((int)InventoryFlag.Cargo, i.FlagId); });
+            Assert.All(
+                contents,
+                i =>
+                {
+                    Assert.False(i.Online);
+                    Assert.Equal((int)InventoryFlag.Cargo, i.FlagId);
+                }
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
@@ -254,15 +288,16 @@ public sealed class NpcCombatTests
         {
             cargo = PilotInventoryStore.NextId(world);
             mining = cargo + 1;
-            world.AddRange(new OwnedItem
-            {
-                Id = cargo,
-                OwnerId = Fixture.PilotId,
-                TypeId = 34,
-                LocationId = Fixture.ShipId,
-                FlagId = (int)InventoryFlag.Cargo,
-                Quantity = 23
-            },
+            world.AddRange(
+                new OwnedItem
+                {
+                    Id = cargo,
+                    OwnerId = Fixture.PilotId,
+                    TypeId = 34,
+                    LocationId = Fixture.ShipId,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = 23,
+                },
                 new OwnedItem
                 {
                     Id = mining,
@@ -270,8 +305,9 @@ public sealed class NpcCombatTests
                     TypeId = 34,
                     LocationId = Fixture.ShipId,
                     FlagId = (int)InventoryFlag.GeneralMiningHold,
-                    Quantity = 37
-                });
+                    Quantity = 37,
+                }
+            );
             world.SaveChanges();
         }
         Assert.NotNull(f.Fire()!.Capsule);
@@ -345,7 +381,11 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20");
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropNpcNavigationColumns
+                    + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE "
+                    + "WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20"
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
@@ -388,10 +428,13 @@ public sealed class NpcCombatTests
         using Fixture f = new();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("""
-                INSERT INTO DogmaAttribute(Id,Name) VALUES (1829,'rookieShieldResistBonus'),(273,'shieldKineticDamageResonance'),(274,'shieldThermalDamageResonance');
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO DogmaAttribute(Id,Name) VALUES (1829,'rookieShieldResistBonus'),(273,'shieldKineticDamageResonance'),
+                    (274,'shieldThermalDamageResonance');
                 INSERT INTO TypeAttribute VALUES (601,1829,-8),(601,273,0.6),(601,274,0.8);
-                """);
+                """
+            );
         }
         f.Aggress();
         f.Clock.Milliseconds = 7500;
@@ -415,10 +458,34 @@ public sealed class NpcCombatTests
         using TargetingHandler targeting = new(f.Clock, fitting, locks);
         MiningHandler mining = new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting);
         CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
-        using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()), space);
-        using PilotCallContext context = new(1000001, f.Pilot.Account, [f.Pilot],
-            p => new(f.Db.Store, p, f.Clock, space, [], health: f.Health, encounters: encounters, wrecks: f.Db.Services.GetRequiredService<IWrecks>()), 42, []);
+        using NpcCombatHandler npcCombat = new(
+            f.Clock,
+            f.Combat,
+            locks,
+            mining,
+            weapons,
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()),
+            space
+        );
+        using PilotCallContext context = new(
+            1000001,
+            f.Pilot.Account,
+            [f.Pilot],
+            p =>
+                new(
+                    f.Db.Store,
+                    p,
+                    f.Clock,
+                    space,
+                    [],
+                    health: f.Health,
+                    encounters: encounters,
+                    wrecks: f.Db.Services.GetRequiredService<IWrecks>()
+                ),
+            42,
+            []
+        );
         context.Select(f.Pilot);
         context.Flight.Snapshot();
         npcCombat.Enter(context);
@@ -431,8 +498,16 @@ public sealed class NpcCombatTests
         Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otheradd"));
         var wing = f.Db.Store.FindPilot(1000002)!;
         f.Db.Store.SetPosition(wing.ShipId, f.Pilot.Position! + new SpacePosition(100, 0, 0), f.Npc.SystemId);
-        using FlightSession observer = new(f.Db.Store, f.Db.Store.FindPilot(1000002)!, f.Clock, space, [], health: f.Health, encounters: encounters,
-            wrecks: f.Db.Services.GetRequiredService<IWrecks>());
+        using FlightSession observer = new(
+            f.Db.Store,
+            f.Db.Store.FindPilot(1000002)!,
+            f.Clock,
+            space,
+            [],
+            health: f.Health,
+            encounters: encounters,
+            wrecks: f.Db.Services.GetRequiredService<IWrecks>()
+        );
         observer.Snapshot();
         context.Notifications.Clear();
         context.NotificationsBeforeFlight.Clear();
@@ -445,10 +520,19 @@ public sealed class NpcCombatTests
         observer.RefreshWrecks();
         observer.RefreshPeers();
         Assert.Equal(FleetDefinitions.CapsuleType, context.Pilot.ShipTypeId);
-        Assert.Contains(context.Notifications, n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[0], f.Module) && Equals(n.Arguments[3], false));
+        Assert.Contains(
+            context.Notifications,
+            n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[0], f.Module) && Equals(n.Arguments[3], false)
+        );
         Assert.False(locks.Contains(f.Npc.Id, Fixture.ShipId));
-        Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "lost") && Equals(n.Arguments[1], f.Npc.Id));
-        Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otherlost") && Equals(n.Arguments[1], f.Npc.Id));
+        Assert.Contains(
+            context.Notifications,
+            n => n.Name == "OnTarget" && Equals(n.Arguments[0], "lost") && Equals(n.Arguments[1], f.Npc.Id)
+        );
+        Assert.Contains(
+            context.Notifications,
+            n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otherlost") && Equals(n.Arguments[1], f.Npc.Id)
+        );
         var message = Assert.IsType<Dictionary<string, object?>>(Assert.Single(Assert.Single(context.NotificationsBeforeFlight).Arguments));
         Assert.Equal("otherPlayer", message["attackType"]);
         Assert.Equal(f.Npc.Id, message["source"]);
@@ -463,12 +547,17 @@ public sealed class NpcCombatTests
         var ownWreck = Assert.Single(context.Flight.VisibleWrecks);
         Assert.Equal(Fixture.ShipId, ownWreck.SourceId);
         var wreckPayload = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<object?[]>(ownActions[added][1])));
-        var slim = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(wreckPayload[1]))).State);
+        var slim = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(wreckPayload[1]))).State
+        );
         Assert.Equal(Fixture.ShipId, slim["launcherID"]);
         Assert.Equal(new object?[] { Fixture.ShipId, true }, ownActions[removed][1]);
         Assert.DoesNotContain(ownActions, a => Equals(a[0], "SetState"));
         var peerActions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
-        Assert.Contains(peerActions, a => Equals(a[0], "RemoveBall") && Equals(((object?[])a[1]!)[0], Fixture.ShipId) && Equals(((object?[])a[1]!)[1], true));
+        Assert.Contains(
+            peerActions,
+            a => Equals(a[0], "RemoveBall") && Equals(((object?[])a[1]!)[0], Fixture.ShipId) && Equals(((object?[])a[1]!)[1], true)
+        );
         Assert.Contains(peerActions, a => Equals(a[0], "AddBalls"));
         Assert.Equal("AddBalls", peerActions[0][0]);
         Assert.Single(observer.VisibleWrecks);
@@ -494,8 +583,16 @@ public sealed class NpcCombatTests
         context.ReplaceDestroyedShip(capsule);
         // The pinned holdTracker rebinds via this nested MachoBindObject call
         // after session.shipid has changed but before its old controller retires.
-        var bound = Assert.IsType<object?[]>(Call("invbroker", "MachoBindObject",
-            [new object?[] { (long)capsule.SystemId, 5L }, new object?[] { "GetInventoryFromId", new object?[] { old.ShipId, 0L }, new Dictionary<string, object?>() }]));
+        var bound = Assert.IsType<object?[]>(
+            Call(
+                "invbroker",
+                "MachoBindObject",
+                [
+                    new object?[] { (long)capsule.SystemId, 5L },
+                    new object?[] { "GetInventoryFromId", new object?[] { old.ShipId, 0L }, new Dictionary<string, object?>() },
+                ]
+            )
+        );
         var inventory = Assert.IsType<BlueObjectReference>(bound[1]);
         Assert.Equal(previous, inventory);
         string service = context.ResolveReference(inventory.Id)!;
@@ -535,21 +632,39 @@ public sealed class NpcCombatTests
         using Fixture f = new();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("""
+            catalog.Database.ExecuteSqlRaw(
+                """
                 UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=54;
                 INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
                     ('client/asteroidcountbytypeidbeltid','40009232','{{}}'),('client/asteroidcountbytypeidbeltid','40009245','{{}}');
-                """);
+                """
+            );
         }
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
-        BlueInstance Request(string service, string method, params object?[] args) => new(
-            "carbon.common.script.net.machoNetPacket.CallReq", new object?[]
-            {
-                6L, new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
-                new BlueInstance(address, new object?[] { 8L, service, null }), null,
-                new object?[] { new object?[] { 0L, BlueMarshal.Encode(new object?[] { null, method, args, new Dictionary<string, object?>() }) } },
-                null, null, null, null, null, null, null, null, null,
-            });
+        BlueInstance Request(string service, string method, params object?[] args) =>
+            new(
+                "carbon.common.script.net.machoNetPacket.CallReq",
+                new object?[]
+                {
+                    6L,
+                    new BlueInstance(address, new object?[] { 2L, 0L, 1L, null }),
+                    new BlueInstance(address, new object?[] { 8L, service, null }),
+                    null,
+                    new object?[]
+                    {
+                        new object?[] { 0L, BlueMarshal.Encode(new object?[] { null, method, args, new Dictionary<string, object?>() }) },
+                    },
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                }
+            );
         Queue<BlueInstance> input = new([
             Request("charUnboundMgr", "SelectCharacterID", Fixture.PilotId),
             Request("beyonce", "MachoBindObject", (long)f.Npc.SystemId, null),
@@ -558,46 +673,70 @@ public sealed class NpcCombatTests
         List<BlueInstance> packets = [];
         using var scope = f.Db.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
-        await Assert.ThrowsAsync<EndOfStreamException>(() => session.RunAsync(() =>
-        {
-            if (input.Count == 1)
-            {
-                using WorldDbContext world = new(f.Db.Path);
-                world.Add(new NpcAggression { NpcId = f.Npc.Id, TargetShipId = Fixture.ShipId });
-                world.Add(new ShipHealthState
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                () =>
                 {
-                    ShipId = Fixture.ShipId,
-                    ShieldCharge = 0,
-                    ArmorDamage = 125,
-                    StructureDamage = 174,
-                    UpdatedAt = DateTime.UtcNow.ToFileTimeUtc()
-                });
-                world.SaveChanges();
-            }
-            return input.TryDequeue(out var request) ? Task.FromResult<object?>(request) : throw new EndOfStreamException();
-        }, packet =>
-        {
-            packets.Add(Assert.IsType<BlueInstance>(packet));
-            return Task.CompletedTask;
-        }, _ => { }, 1000001, 42, [], CancellationToken.None));
+                    if (input.Count == 1)
+                    {
+                        using WorldDbContext world = new(f.Db.Path);
+                        world.Add(new NpcAggression { NpcId = f.Npc.Id, TargetShipId = Fixture.ShipId });
+                        world.Add(
+                            new ShipHealthState
+                            {
+                                ShipId = Fixture.ShipId,
+                                ShieldCharge = 0,
+                                ArmorDamage = 125,
+                                StructureDamage = 174,
+                                UpdatedAt = DateTime.UtcNow.ToFileTimeUtc(),
+                            }
+                        );
+                        world.SaveChanges();
+                    }
+                    return input.TryDequeue(out var request) ? Task.FromResult<object?>(request) : throw new EndOfStreamException();
+                },
+                packet =>
+                {
+                    packets.Add(Assert.IsType<BlueInstance>(packet));
+                    return Task.CompletedTask;
+                },
+                _ => { },
+                1000001,
+                42,
+                [],
+                CancellationToken.None
+            )
+        );
         int transition = packets.FindLastIndex(p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal));
         int damage = -1;
         int removal = -1;
         for (int index = 0; index < transition; index++)
         {
             var packet = packets[index];
-            if (!packet.Name.EndsWith(".Notification", StringComparison.Ordinal)) { continue; }
+            if (!packet.Name.EndsWith(".Notification", StringComparison.Ordinal))
+            {
+                continue;
+            }
             var state = PilotLogin.Tuple(packet.State, 14);
             var destination = Assert.IsType<BlueInstance>(state[2]);
             string name = BlueMarshal.Text(PilotLogin.Tuple(destination.State, 4)[1]);
-            if (name == "OnDamageMessage") { damage = index; }
-            if (name != "DoDestinyUpdate") { continue; }
+            if (name == "OnDamageMessage")
+            {
+                damage = index;
+            }
+            if (name != "DoDestinyUpdate")
+            {
+                continue;
+            }
             var payload = PilotLogin.Tuple(Assert.Single(PilotLogin.Tuple(state[4], 1)), 2);
             var call = PilotLogin.Tuple(BlueMarshal.Decode(PilotLogin.Bytes(payload[1])), 2);
             var args = Assert.IsType<object?[]>(PilotLogin.Tuple(call[1], 2)[1]);
             var actions = Assert.IsType<List<object?>>(args[0]).Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
             int removed = actions.FindIndex(a => BlueMarshal.Text(a[0]) == "RemoveBall" && Equals(((object?[])a[1]!)[0], Fixture.ShipId));
-            if (removed < 0) { continue; }
+            if (removed < 0)
+            {
+                continue;
+            }
             Assert.True(actions.FindIndex(a => BlueMarshal.Text(a[0]) == "AddBalls") < removed);
             Assert.Equal(true, ((object?[])actions[removed][1]!)[1]);
             removal = index;

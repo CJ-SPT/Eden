@@ -11,8 +11,7 @@ public static class OrbitCourse
     private const double TransitionWidthSquared = 40_000;
 
     // The center radius includes the requested surface range and both radii.
-    public static SpacePosition Direction(long shipId, int stamp, SpacePosition position,
-        SpacePosition target, double centerRadius)
+    public static SpacePosition Direction(long shipId, int stamp, SpacePosition position, SpacePosition target, double centerRadius)
     {
         var offset = target - position;
         double distance = offset.Length;
@@ -20,8 +19,11 @@ public static class OrbitCourse
         double radius = centerRadius;
         double phase = stamp * PlanePrecession;
         double identityPhase = (shipId & ushort.MaxValue) + phase;
-        SpacePosition normal = new(Truncate(Math.Cos(phase) * Math.Cos(identityPhase)),
-            Truncate(Math.Sin(identityPhase)), Truncate(Math.Sin(phase) * Math.Cos(identityPhase)));
+        SpacePosition normal = new(
+            Truncate(Math.Cos(phase) * Math.Cos(identityPhase)),
+            Truncate(Math.Sin(identityPhase)),
+            Truncate(Math.Sin(phase) * Math.Cos(identityPhase))
+        );
         var tangent = normal.Cross(toward).Unit;
         if (tangent == SpacePosition.Zero)
         {

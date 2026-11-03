@@ -16,45 +16,47 @@ internal enum CombatHitQuality
 
 internal static class CombatMessages
 {
-    public static Dictionary<string, object?> Incoming(NpcShot shot) => new()
-    {
-        ["damage"] = shot.Applied,
-        ["hitQuality"] = (int)HitQuality(shot.Quality),
-        ["isBanked"] = false,
-        ["attackType"] = "otherPlayer",
-        ["source"] = shot.NpcId,
-        ["attackerID"] = shot.NpcId,
-        // Received-damage localization uses owner; an NPC has a type name,
-        // rather than a capsuleer owner. UE_TYPEID resolves it in the client.
-        ["owner"] = new object?[] { (int)MessageArgumentType.TypeId, shot.TypeId },
-        ["weapon"] = shot.Weapon.TurretTypeId,
-        ["damageAttributes"] = new Dictionary<long, object?>
+    public static Dictionary<string, object?> Incoming(NpcShot shot) =>
+        new()
         {
-            [(long)DogmaAttributeId.EmDamage] = shot.Damage.Em * shot.Quality,
-            [(long)DogmaAttributeId.ExplosiveDamage] = shot.Damage.Explosive * shot.Quality,
-            [(long)DogmaAttributeId.KineticDamage] = shot.Damage.Kinetic * shot.Quality,
-            [(long)DogmaAttributeId.ThermalDamage] = shot.Damage.Thermal * shot.Quality,
-        },
-    };
+            ["damage"] = shot.Applied,
+            ["hitQuality"] = (int)HitQuality(shot.Quality),
+            ["isBanked"] = false,
+            ["attackType"] = "otherPlayer",
+            ["source"] = shot.NpcId,
+            ["attackerID"] = shot.NpcId,
+            // Received-damage localization uses owner; an NPC has a type name,
+            // rather than a capsuleer owner. UE_TYPEID resolves it in the client.
+            ["owner"] = new object?[] { (int)MessageArgumentType.TypeId, shot.TypeId },
+            ["weapon"] = shot.Weapon.TurretTypeId,
+            ["damageAttributes"] = new Dictionary<long, object?>
+            {
+                [(long)DogmaAttributeId.EmDamage] = shot.Damage.Em * shot.Quality,
+                [(long)DogmaAttributeId.ExplosiveDamage] = shot.Damage.Explosive * shot.Quality,
+                [(long)DogmaAttributeId.KineticDamage] = shot.Damage.Kinetic * shot.Quality,
+                [(long)DogmaAttributeId.ThermalDamage] = shot.Damage.Thermal * shot.Quality,
+            },
+        };
 
     // Build 3662168 godma.OnDamageMessage and logger.AddCombatMessageFromDict
     // consume this dictionary. "weapon" is a type ID; "target" is a ball ID.
-    public static Dictionary<string, object?> Outgoing(CombatShot shot, long target) => new()
-    {
-        ["damage"] = shot.Applied,
-        ["hitQuality"] = (int)HitQuality(shot.Quality),
-        ["isBanked"] = false,
-        ["attackType"] = "me",
-        ["target"] = target,
-        ["weapon"] = shot.Weapon.TypeId,
-        ["damageAttributes"] = new Dictionary<long, object?>
+    public static Dictionary<string, object?> Outgoing(CombatShot shot, long target) =>
+        new()
         {
-            [(long)DogmaAttributeId.EmDamage] = shot.Weapon.Damage.Em * shot.Quality,
-            [(long)DogmaAttributeId.ExplosiveDamage] = shot.Weapon.Damage.Explosive * shot.Quality,
-            [(long)DogmaAttributeId.KineticDamage] = shot.Weapon.Damage.Kinetic * shot.Quality,
-            [(long)DogmaAttributeId.ThermalDamage] = shot.Weapon.Damage.Thermal * shot.Quality,
-        },
-    };
+            ["damage"] = shot.Applied,
+            ["hitQuality"] = (int)HitQuality(shot.Quality),
+            ["isBanked"] = false,
+            ["attackType"] = "me",
+            ["target"] = target,
+            ["weapon"] = shot.Weapon.TypeId,
+            ["damageAttributes"] = new Dictionary<long, object?>
+            {
+                [(long)DogmaAttributeId.EmDamage] = shot.Weapon.Damage.Em * shot.Quality,
+                [(long)DogmaAttributeId.ExplosiveDamage] = shot.Weapon.Damage.Explosive * shot.Quality,
+                [(long)DogmaAttributeId.KineticDamage] = shot.Weapon.Damage.Kinetic * shot.Quality,
+                [(long)DogmaAttributeId.ThermalDamage] = shot.Weapon.Damage.Thermal * shot.Quality,
+            },
+        };
 
     public static CombatHitQuality HitQuality(double multiplier)
     {

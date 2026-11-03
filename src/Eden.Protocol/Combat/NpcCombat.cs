@@ -3,9 +3,19 @@ using Eden.Protocol.Docking;
 namespace Eden.Protocol.Combat;
 
 public sealed record NpcWeaponContact(long TargetId, int TurretTypeId, long StartedAt, double Duration);
+
 public sealed record NpcTargetCandidate(long PilotId, long ShipId);
-public sealed record NpcShot(long NpcId, int TypeId, NpcWeaponContact Weapon, DamageVector Damage, double Applied,
-    double Quality, ShipHealth Health, DockedPilot? Capsule);
+
+public sealed record NpcShot(
+    long NpcId,
+    int TypeId,
+    NpcWeaponContact Weapon,
+    DamageVector Damage,
+    double Applied,
+    double Quality,
+    ShipHealth Health,
+    DockedPilot? Capsule
+);
 
 public interface INpcCombat
 {

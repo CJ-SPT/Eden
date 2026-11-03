@@ -18,13 +18,15 @@ public sealed class AsteroidFieldTests
     {
         public long Seconds { get; set; }
         public override long TimestampFrequency => 1;
+
         public override long GetTimestamp() => Seconds;
     }
 
     private static void Prepare(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
-        catalog.Database.ExecuteSqlRaw("""
+        catalog.Database.ExecuteSqlRaw(
+            """
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (9,'Asteroid Belt',2);
             INSERT INTO ItemType(Id,Name,GroupId,Radius) VALUES (15,'Asteroid Belt',9,1);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
@@ -38,7 +40,8 @@ public sealed class AsteroidFieldTests
                 ('client/asteroidcountbytypeidbeltid','40009232','{{"1230":3,"1228":2}}'),
                 ('client/asteroidcountbytypeidbeltid','40009245','{{"1230":3}}'),
                 ('client/dogmaattributes','552','{{"defaultValue":100}}');
-            """);
+            """
+        );
     }
 
     [Fact]
@@ -61,8 +64,15 @@ public sealed class AsteroidFieldTests
         {
             double volume = asteroid.TypeId == 1230 ? 0.1 : 0.15;
             Assert.InRange(asteroid.Quantity * volume, AsteroidDefinitions.MinimumOreVolume - volume, AsteroidDefinitions.MaximumOreVolume);
-            var anchor = asteroid.BeltId == 40009232 ? new SpacePosition(10001000000, 20000000000, 30000000000) : new SpacePosition(10002000000, 20000000000, 30000000000);
-            Assert.InRange(new SpacePosition(asteroid.X, asteroid.Y, asteroid.Z).DistanceTo(anchor), AsteroidDefinitions.InnerFieldRadius, AsteroidDefinitions.OuterFieldRadius + AsteroidDefinitions.FieldThickness);
+            var anchor =
+                asteroid.BeltId == 40009232
+                    ? new SpacePosition(10001000000, 20000000000, 30000000000)
+                    : new SpacePosition(10002000000, 20000000000, 30000000000);
+            Assert.InRange(
+                new SpacePosition(asteroid.X, asteroid.Y, asteroid.Z).DistanceTo(anchor),
+                AsteroidDefinitions.InnerFieldRadius,
+                AsteroidDefinitions.OuterFieldRadius + AsteroidDefinitions.FieldThickness
+            );
         }
         _ = new SqliteWorld(db.Path);
         Assert.Equal(loads[0], new AsteroidFieldStore(new(db.Path)).List(30000144));
@@ -174,10 +184,18 @@ public sealed class AsteroidFieldTests
         var pilot = db.Store.FindPilot(1000001)!;
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
-        var cargo = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)).Item;
+        var cargo = Assert
+            .Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null))
+            .Item;
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=14");
+            world.Database.ExecuteSqlRaw(
+                "DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE "
+                    + "WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE "
+                    + "WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE "
+                    + "WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP "
+                    + "TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=14"
+            );
         }
         _ = new SqliteWorld(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));

@@ -11,15 +11,21 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcOrbitTests
 {
-    private static NpcContact Contact(NpcCombatTests.Fixture f) => f.Db.Services.GetRequiredService<INpcEncounters>()
-        .List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
+    private static NpcContact Contact(NpcCombatTests.Fixture f) =>
+        f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
 
     private static (WorldNpc Npc, ItemType Type, Dictionary<DogmaAttributeId, double> Attributes) Motion(NpcCombatTests.Fixture f)
     {
         using WorldDbContext world = new(f.Db.Path);
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
-        return (world.Set<WorldNpc>().Find(f.Npc.Id)!, catalog.Set<ItemType>().Single(t => t.Id == f.Npc.TypeId),
-            catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == f.Npc.TypeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value));
+        return (
+            world.Set<WorldNpc>().Find(f.Npc.Id)!,
+            catalog.Set<ItemType>().Single(t => t.Id == f.Npc.TypeId),
+            catalog
+                .Set<TypeAttribute>()
+                .Where(a => a.ItemTypeId == f.Npc.TypeId)
+                .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value)
+        );
     }
 
     [Fact]
@@ -54,7 +60,10 @@ public sealed class NpcOrbitTests
         {
             f.Clock.Milliseconds = tick * 1000;
             NpcMotion.Pursue(npc, target, f.Pilot.Flight.ShipRadius, type, attributes, f.Clock.Now, tick + 1);
-            if (tick < 200) { continue; }
+            if (tick < 200)
+            {
+                continue;
+            }
             var radial = NpcMotion.Position(npc) - target;
             Assert.Equal(NpcNavigationState.Orbiting, npc.Navigation);
             Assert.InRange(radial.Length - radii, 1100, 1600);
@@ -91,7 +100,14 @@ public sealed class NpcOrbitTests
     public void ObserversAndJoiningSnapshotsCarryNativeOrbitAndSwitchBackToFollow()
     {
         using NpcCombatTests.Fixture f = new();
-        using FlightSession observer = new(f.Db.Store, f.Pilot, f.Clock, new(), [], encounters: f.Db.Services.GetRequiredService<INpcEncounters>());
+        using FlightSession observer = new(
+            f.Db.Store,
+            f.Pilot,
+            f.Clock,
+            new(),
+            [],
+            encounters: f.Db.Services.GetRequiredService<INpcEncounters>()
+        );
         observer.Snapshot();
         f.Aggress();
         f.Clock.Milliseconds = 7500;
@@ -108,8 +124,19 @@ public sealed class NpcOrbitTests
         reader.ReadInt32();
         Assert.Equal(npc.Id, reader.ReadInt64());
         Assert.Equal((byte)DestinyBallMode.Orbit, reader.ReadByte());
-        reader.ReadBytes(sizeof(float) + 3 * sizeof(double) + sizeof(byte) + sizeof(double) + sizeof(byte) + sizeof(long) +
-            2 * sizeof(int) + sizeof(float) + 3 * sizeof(double) + 2 * sizeof(float) + sizeof(sbyte));
+        reader.ReadBytes(
+            sizeof(float)
+                + 3 * sizeof(double)
+                + sizeof(byte)
+                + sizeof(double)
+                + sizeof(byte)
+                + sizeof(long)
+                + 2 * sizeof(int)
+                + sizeof(float)
+                + 3 * sizeof(double)
+                + 2 * sizeof(float)
+                + sizeof(sbyte)
+        );
         Assert.Equal(f.Pilot.ShipId, reader.ReadInt64());
         Assert.Equal(1250, reader.ReadSingle());
         Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);

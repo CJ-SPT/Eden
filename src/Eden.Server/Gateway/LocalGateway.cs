@@ -18,7 +18,8 @@ internal static class LocalGateway
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(options =>
-            options.Listen(IPAddress.Loopback, 26001, endpoint => endpoint.Protocols = HttpProtocols.Http2));
+            options.Listen(IPAddress.Loopback, 26001, endpoint => endpoint.Protocols = HttpProtocols.Http2)
+        );
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);
         var app = builder.Build();

@@ -48,24 +48,30 @@ public sealed class WorldMigrationTests
         using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
         connection.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
-            DROP INDEX IX_WorldPilot_Name;
-            ALTER TABLE WorldPilot DROP COLUMN Appearance;
-            ALTER TABLE WorldPilot DROP COLUMN Portrait;
-            DROP TABLE WorldSkillQueue;
-            DROP TABLE WorldSkillHistory;
-            DROP TABLE WorldPilotSkill;
-            DROP TABLE WorldItem;
-            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
-            ALTER TABLE WorldAccount DROP COLUMN UserName;
-            ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
-            ALTER TABLE WorldPilot DROP COLUMN CreatedAt;
-            ALTER TABLE WorldPilot DROP COLUMN RaceId;
-            ALTER TABLE WorldPilot DROP COLUMN BloodlineId;
-            ALTER TABLE WorldPilot DROP COLUMN GenderId;
-            ALTER TABLE WorldPilot DROP COLUMN AncestryId;
-            ALTER TABLE WorldPilot DROP COLUMN SchoolId;
-            """ + (version == 6 ? "ALTER TABLE WorldPosition DROP COLUMN SystemId;" : "") + $"PRAGMA user_version={version}";
+        command.CommandText =
+            """
+                DROP INDEX IX_WorldPilot_Name;
+                ALTER TABLE WorldPilot DROP COLUMN Appearance;
+                ALTER TABLE WorldPilot DROP COLUMN Portrait;
+                DROP TABLE WorldSkillQueue;
+                DROP TABLE WorldSkillHistory;
+                DROP TABLE WorldPilotSkill;
+                DROP TABLE WorldItem;
+                DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP
+                    TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE
+                    WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE
+                    WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
+                ALTER TABLE WorldAccount DROP COLUMN UserName;
+                ALTER TABLE WorldAccount DROP COLUMN CreatedAt;
+                ALTER TABLE WorldPilot DROP COLUMN CreatedAt;
+                ALTER TABLE WorldPilot DROP COLUMN RaceId;
+                ALTER TABLE WorldPilot DROP COLUMN BloodlineId;
+                ALTER TABLE WorldPilot DROP COLUMN GenderId;
+                ALTER TABLE WorldPilot DROP COLUMN AncestryId;
+                ALTER TABLE WorldPilot DROP COLUMN SchoolId;
+                """
+            + (version == 6 ? "ALTER TABLE WorldPosition DROP COLUMN SystemId;" : "")
+            + $"PRAGMA user_version={version}";
         command.ExecuteNonQuery();
 
         var world = new SqliteWorld(db.Path);
@@ -97,7 +103,10 @@ public sealed class WorldMigrationTests
             ALTER TABLE WorldPilot DROP COLUMN Portrait;
             UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
             DROP TABLE WorldItem;
-            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
+            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE
+                WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE
+                WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE
+                WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
             PRAGMA user_version=11;
             """;
         command.ExecuteNonQuery();
@@ -140,13 +149,19 @@ public sealed class WorldMigrationTests
     public async Task TwoPilotsCanSaveTheirPositionsConcurrently()
     {
         using TestWorld db = new();
-        await Task.WhenAll(Enumerable.Range(1, 2).Select(offset => Task.Run(() =>
-        {
-            for (int tick = 1; tick <= 8; tick++)
-            {
-                db.Store.SetPosition(1000000000000 + offset, new(tick, offset, 0));
-            }
-        })));
+        await Task.WhenAll(
+            Enumerable
+                .Range(1, 2)
+                .Select(offset =>
+                    Task.Run(() =>
+                    {
+                        for (int tick = 1; tick <= 8; tick++)
+                        {
+                            db.Store.SetPosition(1000000000000 + offset, new(tick, offset, 0));
+                        }
+                    })
+                )
+        );
         Assert.Equal(new SpacePosition(8, 1, 0), db.Store.FindPilot(1000001)!.Position);
         Assert.Equal(new SpacePosition(8, 2, 0), db.Store.FindPilot(1000002)!.Position);
     }
@@ -176,7 +191,9 @@ public sealed class WorldMigrationTests
         }
         if (version >= 4)
         {
-            command.CommandText = "CREATE TABLE flight(ship INTEGER PRIMARY KEY REFERENCES ship(id),x REAL,y REAL,z REAL); INSERT INTO flight VALUES(1000000000001,1,2,3)";
+            command.CommandText =
+                "CREATE TABLE flight(ship INTEGER PRIMARY KEY REFERENCES ship(id),x REAL,y REAL,z REAL); INSERT INTO "
+                + "flight VALUES(1000000000001,1,2,3)";
             command.ExecuteNonQuery();
         }
         if (version == 5)

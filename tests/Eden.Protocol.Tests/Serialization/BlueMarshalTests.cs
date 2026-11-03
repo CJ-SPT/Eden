@@ -32,7 +32,9 @@ public sealed class BlueMarshalTests
     {
         // TY_DBROW, descriptor(itemID I8, name STR), one literal byte 42 and
         // implicit zero tail, followed by the row's separate string object.
-        var fixture = Convert.FromHexString("7E000000002A222C0214626C75652E4442526F7744657363726970746F72252C2C13066974656D494406142C13046E616D650581002D2D02072A13036F7265");
+        var fixture = Convert.FromHexString(
+            "7E000000002A222C0214626C75652E4442526F7744657363726970746F72252C2C13066974656D494406142C13046E616D650581002D2D02072A13036F7265"
+        );
         var row = Assert.IsType<BluePackedRow>(BlueMarshal.Decode(fixture));
         Assert.Equal(9, row.Descriptor.DataLength);
         Assert.Equal(1, row.Descriptor.ObjectCount);

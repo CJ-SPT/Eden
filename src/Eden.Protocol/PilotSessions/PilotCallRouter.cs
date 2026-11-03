@@ -16,8 +16,14 @@ internal interface ISelectedPilotCallHandler
     object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null);
 }
 
-internal sealed class PilotCallContext(long accountId, AccountProfile account, IReadOnlyList<DockedPilot> roster,
-    Func<DockedPilot, FlightSession> startFlight, long sessionId, object?[] signedSettings) : IDisposable
+internal sealed class PilotCallContext(
+    long accountId,
+    AccountProfile account,
+    IReadOnlyList<DockedPilot> roster,
+    Func<DockedPilot, FlightSession> startFlight,
+    long sessionId,
+    object?[] signedSettings
+) : IDisposable
 {
     public long AccountId { get; } = accountId;
     public AccountProfile Account { get; } = account;
@@ -25,11 +31,13 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
     public FlightSession? ActiveFlight { get; private set; }
     public DockedPilot? DestroyedShip { get; private set; }
     public FlightSession Flight => ActiveFlight ?? throw new InvalidOperationException("Select a pilot before entering flight.");
+
     public void Select(DockedPilot pilot)
     {
         DestroyedShip = null;
         ActiveFlight = startFlight(pilot);
     }
+
     public void ChangeShip(DockedPilot pilot)
     {
         DestroyedShip = null;
@@ -37,18 +45,22 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
         ActiveFlight = startFlight(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
+
     public void ReplaceDestroyedShip(DockedPilot pilot)
     {
         DestroyedShip = Pilot;
         Flight.ReplaceDestroyedShip(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
+
     public void Dispose() => ActiveFlight?.Dispose();
+
     public DockedPilot Pilot => Flight.Pilot;
     public object?[] SignedSettings { get; } = signedSettings;
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
     public List<(string Name, object?[] Arguments)> Notifications { get; } = [];
+
     // Combat text resolves the target's slim item, including on a fatal hit.
     // Deliver it before Destiny removes that ball from the client's park.
     public List<(string Name, object?[] Arguments)> NotificationsBeforeFlight { get; } = [];
@@ -61,8 +73,19 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
     public void ReleaseLocationReferences()
     {
         DestroyedShip = null;
-        foreach (string service in new[] { "beyonce", "ship", "invbroker", "dogmaIM", "jumpCloneSvc", "corpStationMgr", "reprocessingSvc", "repairSvc" }
-            .Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray()))
+        foreach (
+            string service in new[]
+            {
+                "beyonce",
+                "ship",
+                "invbroker",
+                "dogmaIM",
+                "jumpCloneSvc",
+                "corpStationMgr",
+                "reprocessingSvc",
+                "repairSvc",
+            }.Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray())
+        )
         {
             if (_references.Remove(service, out var reference))
             {
@@ -88,11 +111,16 @@ internal sealed class PilotCallContext(long accountId, AccountProfile account, I
 }
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHandlers, IEnumerable<ISelectedPilotCallHandler> selectedHandlers)
+internal sealed class PilotCallRouter(
+    IEnumerable<IPilotCallHandler> accountHandlers,
+    IEnumerable<ISelectedPilotCallHandler> selectedHandlers
+)
 {
     // A successful MachoNet method can return Python None.
     public static readonly object Unsupported = new();
+
     internal sealed record Error(string Message);
+
     internal sealed record UserError(string Name, Dictionary<string, object?> Values);
 
     public string ResolveService(PilotCallContext context, object?[] route, object? objectId)
@@ -113,7 +141,14 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
         return name.StartsWith('@') ? "unknown binding" : name;
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object? arguments, Action<string> report, Dictionary<string, object?>? keywords = null)
+    public object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object? arguments,
+        Action<string> report,
+        Dictionary<string, object?>? keywords = null
+    )
     {
         foreach (var handler in accountHandlers)
         {
@@ -123,12 +158,35 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 return result;
             }
         }
-        return context.Selected && arguments is object?[] args ? CallSelected(context, service, method, args, report, keywords) : Unsupported;
+        return context.Selected && arguments is object?[] args
+            ? CallSelected(context, service, method, args, report, keywords)
+            : Unsupported;
     }
 
-    private object? CallSelected(PilotCallContext context, string service, string method, object?[] args, Action<string> report, Dictionary<string, object?>? keywords)
+    private object? CallSelected(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Action<string> report,
+        Dictionary<string, object?>? keywords
+    )
     {
-        if (service is "jumpCloneSvc" or "invbroker" or "dogmaIM" or "corpRegistry" or "crimewatch" or "warRegistry" or "ship" or "insuranceSvc" or "beyonce" or "corpStationMgr" or "reprocessingSvc" or "repairSvc")
+        if (
+            service
+            is "jumpCloneSvc"
+                or "invbroker"
+                or "dogmaIM"
+                or "corpRegistry"
+                or "crimewatch"
+                or "warRegistry"
+                or "ship"
+                or "insuranceSvc"
+                or "beyonce"
+                or "corpStationMgr"
+                or "reprocessingSvc"
+                or "repairSvc"
+        )
         {
             if (method == "MachoResolveObject")
             {
@@ -137,18 +195,36 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
             if (method == "MachoBindObject" && args.Length == 2)
             {
                 long locationGroup = context.Pilot.Position is null ? 15 : 5;
-                if (service == "repairSvc" && (context.Pilot.Position is not null || args[0] is not object?[] repairBind ||
-                    repairBind is not [long repairStation, long repairLocation, (long)RepairDefinitions.StationGroup] ||
-                    repairStation != context.Pilot.StationId || repairLocation != repairStation))
+                if (
+                    service == "repairSvc"
+                    && (
+                        context.Pilot.Position is not null
+                        || args[0] is not object?[] repairBind
+                        || repairBind is not [long repairStation, long repairLocation, (long)RepairDefinitions.StationGroup]
+                        || repairStation != context.Pilot.StationId
+                        || repairLocation != repairStation
+                    )
+                )
                 {
                     return Unsupported;
                 }
-                if (service is "corpStationMgr" or "reprocessingSvc" && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId)))
+                if (
+                    service is "corpStationMgr" or "reprocessingSvc"
+                    && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId))
+                )
                 {
                     return Unsupported;
                 }
-                if (service is "invbroker" or "ship" or "jumpCloneSvc" && args[0] is not null &&
-                    (args[0] is not object?[] bind || bind is not [long location, long group] || location != context.Pilot.LocationId || group != locationGroup))
+                if (
+                    service is "invbroker" or "ship" or "jumpCloneSvc"
+                    && args[0] is not null
+                    && (
+                        args[0] is not object?[] bind
+                        || bind is not [long location, long group]
+                        || location != context.Pilot.LocationId
+                        || group != locationGroup
+                    )
+                )
                 {
                     return Unsupported;
                 }
@@ -161,7 +237,14 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 {
                     string innerMethod = BlueMarshal.Text(first[0]);
                     report($"Bound call {service}.{innerMethod}.");
-                    result = CallSelected(context, service, innerMethod, innerArgs, report, first.ElementAtOrDefault(2) as Dictionary<string, object?>);
+                    result = CallSelected(
+                        context,
+                        service,
+                        innerMethod,
+                        innerArgs,
+                        report,
+                        first.ElementAtOrDefault(2) as Dictionary<string, object?>
+                    );
                 }
                 else if (args[1] is not null)
                 {
@@ -170,7 +253,8 @@ internal sealed class PilotCallRouter(IEnumerable<IPilotCallHandler> accountHand
                 // A failed first call is an RPC failure, not a value to embed in
                 // the successful (bound reference, result) tuple.
                 return result is Error or UserError || ReferenceEquals(result, Unsupported)
-                    ? result : new object?[] { context.Reference(service), result };
+                    ? result
+                    : new object?[] { context.Reference(service), result };
             }
         }
         foreach (var handler in selectedHandlers)

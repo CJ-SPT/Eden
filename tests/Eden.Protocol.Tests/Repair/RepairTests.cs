@@ -22,17 +22,37 @@ public sealed class RepairTests
         public TestWorld Db { get; } = new();
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public IPilotRepair Store => Db.Services.GetRequiredService<IPilotRepair>();
+
         public Fixture()
         {
             using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
             catalog.Database.ExecuteSqlRaw("INSERT INTO SourceRecord VALUES ('client/stationoperations','14','{{\"services\":[13,17]}}')");
             using WorldDbContext world = new(Db.Path);
             world.Add(new PilotWallet { PilotId = Pilot.PilotId, Cents = 100000 });
-            world.Add(new ShipHealthState { ShipId = Pilot.ShipId, ShieldCharge = 77, ArmorDamage = 10, StructureDamage = 20, UpdatedAt = s_now });
-            world.Add(new ShipEnergy { ShipId = Pilot.ShipId, Charge = 9, UpdatedAt = s_now });
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = Pilot.ShipId,
+                    ShieldCharge = 77,
+                    ArmorDamage = 10,
+                    StructureDamage = 20,
+                    UpdatedAt = s_now,
+                }
+            );
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = Pilot.ShipId,
+                    Charge = 9,
+                    UpdatedAt = s_now,
+                }
+            );
             world.SaveChanges();
         }
-        public RepairResult Run(long payment = 100000, params long[] ids) => Store.Repair(Pilot.PilotId, Pilot.StationId, ids.Length == 0 ? [Pilot.ShipId] : ids, payment, s_now);
+
+        public RepairResult Run(long payment = 100000, params long[] ids) =>
+            Store.Repair(Pilot.PilotId, Pilot.StationId, ids.Length == 0 ? [Pilot.ShipId] : ids, payment, s_now);
+
         public void Dispose() => Db.Dispose();
     }
 
@@ -129,13 +149,40 @@ public sealed class RepairTests
         using Fixture f = new();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("INSERT INTO ItemType(Id,Name,GroupId) VALUES (3392,'Mechanics',257); INSERT INTO TypeAttribute VALUES (3392,275,1)");
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT INTO ItemType(Id,Name,GroupId) VALUES (3392,'Mechanics',257); INSERT INTO TypeAttribute VALUES (3392,275,1)"
+            );
         }
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Add(new PilotSkill { PilotId = f.Pilot.PilotId, TypeId = (int)DefenseSkill.Mechanics, Points = 8000 });
-            world.Ships.Add(new() { Id = SpareShip, OwnerId = f.Pilot.PilotId, TypeId = 601, StationId = f.Pilot.StationId, Name = "Spare" });
-            world.Add(new ShipHealthState { ShipId = SpareShip, ShieldCharge = 1, ArmorDamage = 40, StructureDamage = 30, UpdatedAt = s_now });
+            world.Add(
+                new PilotSkill
+                {
+                    PilotId = f.Pilot.PilotId,
+                    TypeId = (int)DefenseSkill.Mechanics,
+                    Points = 8000,
+                }
+            );
+            world.Ships.Add(
+                new()
+                {
+                    Id = SpareShip,
+                    OwnerId = f.Pilot.PilotId,
+                    TypeId = 601,
+                    StationId = f.Pilot.StationId,
+                    Name = "Spare",
+                }
+            );
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = SpareShip,
+                    ShieldCharge = 1,
+                    ArmorDamage = 40,
+                    StructureDamage = 30,
+                    UpdatedAt = s_now,
+                }
+            );
             world.SaveChanges();
         }
         long active = f.Pilot.ShipId;
@@ -157,7 +204,9 @@ public sealed class RepairTests
         long module;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            var item = world.Set<OwnedItem>().Single(i => i.OwnerId == f.Pilot.PilotId && i.TypeId == InventoryDefinitions.CivilianMinerType);
+            var item = world
+                .Set<OwnedItem>()
+                .Single(i => i.OwnerId == f.Pilot.PilotId && i.TypeId == InventoryDefinitions.CivilianMinerType);
             module = item.Id;
             Assert.Throws<InvalidDataException>(() => f.Store.Quotes(f.Pilot.PilotId, f.Pilot.StationId, [module]));
             item.Singleton = true;
@@ -196,7 +245,11 @@ public sealed class RepairTests
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; ALTER TABLE WorldShipLoss DROP COLUMN DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=21");
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropNpcNavigationColumns
+                    + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; ALTER TABLE WorldShipLoss DROP COLUMN "
+                    + "DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=21"
+            );
         }
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
@@ -215,7 +268,14 @@ public sealed class RepairTests
         var pilot = f.Pilot;
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects), 2, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
+            2,
+            []
+        );
         object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
         List<object?> ids = [pilot.ShipId];
         Assert.Same(PilotCallRouter.Unsupported, Call("repairSvc", "GetRepairQuotes", ids));
@@ -232,7 +292,9 @@ public sealed class RepairTests
         Assert.NotEmpty(BlueMarshal.Encode(quotes));
         Assert.Null(Call("repairSvc", "RepairItemsInStation", ids, 15d));
         Assert.Contains(context.Notifications, n => n.Name == "OnAccountChange" && Equals(n.Arguments[2], 985d));
-        var attributes = Assert.IsType<List<object?>>(Assert.Single(context.Notifications, n => n.Name == "OnModuleAttributeChanges").Arguments[0]);
+        var attributes = Assert.IsType<List<object?>>(
+            Assert.Single(context.Notifications, n => n.Name == "OnModuleAttributeChanges").Arguments[0]
+        );
         Assert.Equal(new[] { 5d, 10d }, attributes.Cast<object?[]>().Select(a => (double)a[5]!));
         var journal = Assert.IsType<List<object?>>(Call("account", "GetTransactions", (long)WalletAccountKey.Cash, null, null, false));
         var row = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(journal)).State);
@@ -241,12 +303,21 @@ public sealed class RepairTests
         Assert.Equal(985d, row["balance"]);
         context.ReleaseLocationReferences();
         Assert.Null(context.ResolveReference(reference.Id));
-        Assert.Same(PilotCallRouter.Unsupported, Call("repairSvc", "MachoBindObject", new object?[] { (long)pilot.StationId + 1, (long)pilot.StationId + 1, (long)RepairDefinitions.StationGroup }, null));
+        Assert.Same(
+            PilotCallRouter.Unsupported,
+            Call(
+                "repairSvc",
+                "MachoBindObject",
+                new object?[] { (long)pilot.StationId + 1, (long)pilot.StationId + 1, (long)RepairDefinitions.StationGroup },
+                null
+            )
+        );
     }
 
     [Theory]
     [InlineData(double.NaN)]
     [InlineData(double.PositiveInfinity)]
     [InlineData(-1d)]
-    public void InvalidPaymentsCannotReachTheWallet(double payment) => Assert.Throws<InvalidDataException>(() => RepairDefinitions.PaymentCents(payment));
+    public void InvalidPaymentsCannotReachTheWallet(double payment) =>
+        Assert.Throws<InvalidDataException>(() => RepairDefinitions.PaymentCents(payment));
 }

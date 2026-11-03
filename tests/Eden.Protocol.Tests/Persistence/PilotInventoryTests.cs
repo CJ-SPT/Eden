@@ -15,8 +15,10 @@ public sealed class PilotInventoryTests
         using TestWorld db = new();
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var pilot = db.Store.FindPilot(1000001)!;
-        Assert.Equal(new[] { (int)CombatWeaponType.CivilianGatlingRailgun, InventoryDefinitions.CivilianMinerType },
-            inventory.List(pilot.PilotId, pilot.StationId).Select(i => i.TypeId).Order());
+        Assert.Equal(
+            new[] { (int)CombatWeaponType.CivilianGatlingRailgun, InventoryDefinitions.CivilianMinerType },
+            inventory.List(pilot.PilotId, pilot.StationId).Select(i => i.TypeId).Order()
+        );
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Equal(3651, item.TypeId);
         Assert.Equal(5, item.Volume);
@@ -28,7 +30,10 @@ public sealed class PilotInventoryTests
         Assert.Equal(moved.Item, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
         Assert.Single(inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         inventory.Move(pilot.PilotId, [item.Id], pilot.ShipId, pilot.StationId, 4, null);
-        Assert.Equal(item, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType));
+        Assert.Equal(
+            item,
+            Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType)
+        );
     }
 
     [Fact]
@@ -50,7 +55,10 @@ public sealed class PilotInventoryTests
         Reject([item.Id], pilot.StationId + 1, pilot.ShipId, 5);
         db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
         Reject([item.Id], pilot.StationId, pilot.ShipId, 5);
-        Assert.Equal(item, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType));
+        Assert.Equal(
+            item,
+            Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType)
+        );
     }
 
     [Fact]
@@ -65,16 +73,28 @@ public sealed class PilotInventoryTests
         }
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Throws<CargoCapacityException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, null));
-        Assert.Equal(item, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType));
+        Assert.Equal(
+            item,
+            Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType)
+        );
         var changes = inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, 25);
         Assert.Equal(2, changes.Count);
         var cargo = Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId));
         Assert.Equal(25, cargo.Quantity);
         Assert.NotEqual(item.Id, cargo.Id);
-        Assert.Equal(5, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity);
+        Assert.Equal(
+            5,
+            Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity
+        );
         Assert.Throws<CargoCapacityException>(() => inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, 1));
-        Assert.Equal(30, inventory.List(pilot.PilotId, pilot.StationId).Concat(inventory.List(pilot.PilotId, pilot.ShipId))
-            .Where(i => i.TypeId == InventoryDefinitions.CivilianMinerType).Sum(i => i.Quantity));
+        Assert.Equal(
+            30,
+            inventory
+                .List(pilot.PilotId, pilot.StationId)
+                .Concat(inventory.List(pilot.PilotId, pilot.ShipId))
+                .Where(i => i.TypeId == InventoryDefinitions.CivilianMinerType)
+                .Sum(i => i.Quantity)
+        );
     }
 
     [Fact]
@@ -84,7 +104,13 @@ public sealed class PilotInventoryTests
         var pilot = db.Store.FindPilot(1000001);
         using (WorldDbContext world = new(db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; PRAGMA user_version=12");
+            world.Database.ExecuteSqlRaw(
+                "DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE "
+                    + "WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE "
+                    + "WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP "
+                    + "TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; "
+                    + "DROP TABLE WorldWeaponCooldown; PRAGMA user_version=12"
+            );
         }
         _ = new SqliteWorld(db.Path);
         _ = new SqliteWorld(db.Path);

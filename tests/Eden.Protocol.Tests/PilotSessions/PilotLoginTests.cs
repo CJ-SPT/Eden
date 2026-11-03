@@ -14,6 +14,7 @@ public sealed class PilotLoginTests
     private sealed class FixtureIdentity(RSA key) : ILoginIdentity
     {
         public RSA Key => key;
+
         public long? ValidateTicket(string ticket) => ticket == "fixture" ? 1000001 : null;
     }
 

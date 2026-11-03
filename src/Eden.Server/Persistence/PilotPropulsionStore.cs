@@ -10,12 +10,19 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting) : IPilotPropulsion
 {
-    private static double Bonus(WorldDbContext world, CatalogDbContext catalog, long pilotId, NavigationSkill skill, DogmaAttributeId source) =>
-        PilotSkillReader.Level(world, catalog, pilotId, (int)skill) *
-        (catalog.Set<TypeAttribute>().Find((int)skill, (int)source)?.Value ?? 0);
+    private static double Bonus(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        NavigationSkill skill,
+        DogmaAttributeId source
+    ) =>
+        PilotSkillReader.Level(world, catalog, pilotId, (int)skill)
+        * (catalog.Set<TypeAttribute>().Find((int)skill, (int)source)?.Value ?? 0);
 
     internal static double NavigationSpeed(WorldDbContext world, CatalogDbContext catalog, long pilotId, double speed) =>
-        speed * (1 + Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus) / PropulsionDefinitions.Percent);
+        speed
+        * (1 + Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus) / PropulsionDefinitions.Percent);
 
     public double MaxSpeed(long pilotId)
     {
@@ -32,12 +39,38 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         using CatalogDbContext catalog = new(database.CatalogPath);
         return new NavigationBonus[]
         {
-            new((int)NavigationSkill.Navigation, DogmaAttributeId.MaxVelocity, Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus)),
-            new((int)NavigationSkill.Afterburner, DogmaAttributeId.Duration, Bonus(world, catalog, pilotId, NavigationSkill.Afterburner, DogmaAttributeId.DurationBonus), (int)NavigationSkill.Afterburner),
-            new((int)NavigationSkill.Afterburner, DogmaAttributeId.CapacitorNeed, Bonus(world, catalog, pilotId, NavigationSkill.Afterburner, DogmaAttributeId.CapacitorNeedBonus), (int)NavigationSkill.Afterburner),
-            new((int)NavigationSkill.FuelConservation, DogmaAttributeId.CapacitorNeed, Bonus(world, catalog, pilotId, NavigationSkill.FuelConservation, DogmaAttributeId.CapacitorNeedBonus), (int)NavigationSkill.Afterburner),
-            new((int)NavigationSkill.AccelerationControl, DogmaAttributeId.SpeedFactor, Bonus(world, catalog, pilotId, NavigationSkill.AccelerationControl, DogmaAttributeId.SpeedFactorBonus), Group: PropulsionDefinitions.AfterburnerGroup),
-        }.Where(b => b.Percent != 0).ToArray();
+            new(
+                (int)NavigationSkill.Navigation,
+                DogmaAttributeId.MaxVelocity,
+                Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus)
+            ),
+            new(
+                (int)NavigationSkill.Afterburner,
+                DogmaAttributeId.Duration,
+                Bonus(world, catalog, pilotId, NavigationSkill.Afterburner, DogmaAttributeId.DurationBonus),
+                (int)NavigationSkill.Afterburner
+            ),
+            new(
+                (int)NavigationSkill.Afterburner,
+                DogmaAttributeId.CapacitorNeed,
+                Bonus(world, catalog, pilotId, NavigationSkill.Afterburner, DogmaAttributeId.CapacitorNeedBonus),
+                (int)NavigationSkill.Afterburner
+            ),
+            new(
+                (int)NavigationSkill.FuelConservation,
+                DogmaAttributeId.CapacitorNeed,
+                Bonus(world, catalog, pilotId, NavigationSkill.FuelConservation, DogmaAttributeId.CapacitorNeedBonus),
+                (int)NavigationSkill.Afterburner
+            ),
+            new(
+                (int)NavigationSkill.AccelerationControl,
+                DogmaAttributeId.SpeedFactor,
+                Bonus(world, catalog, pilotId, NavigationSkill.AccelerationControl, DogmaAttributeId.SpeedFactorBonus),
+                Group: PropulsionDefinitions.AfterburnerGroup
+            ),
+        }
+            .Where(b => b.Percent != 0)
+            .ToArray();
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
@@ -47,7 +80,8 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         {
             foreach (var bonus in NavigationBonuses(pilotId).Where(b => b.RequiredSkill.HasValue || b.Group == module.GroupId))
             {
-                attributes[bonus.Attribute] = attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Percent / PropulsionDefinitions.Percent);
+                attributes[bonus.Attribute] =
+                    attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Percent / PropulsionDefinitions.Percent);
             }
         }
         return attributes;
@@ -60,18 +94,31 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
-        if (pilot.ActiveShip.Position is null || module is null || module.OwnerId != pilotId || module.LocationId != pilot.ActiveShipId ||
-            !module.Singleton || !module.Online || !InventoryDefinitions.IsMediumSlot(module.FlagId) ||
-            catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup)
+        if (
+            pilot.ActiveShip.Position is null
+            || module is null
+            || module.OwnerId != pilotId
+            || module.LocationId != pilot.ActiveShipId
+            || !module.Singleton
+            || !module.Online
+            || !InventoryDefinitions.IsMediumSlot(module.FlagId)
+            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup
+        )
         {
             throw new InvalidDataException("Use an online fitted afterburner on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var item = PilotInventoryStore.Read(catalog, module);
         var attributes = ModuleAttributes(pilotId, item);
-        Afterburner burner = new(moduleId, module.TypeId, attributes.GetValueOrDefault(DogmaAttributeId.Duration),
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed), attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor),
-            attributes.GetValueOrDefault(DogmaAttributeId.SpeedBoostFactor), attributes.GetValueOrDefault(DogmaAttributeId.MassAddition));
+        Afterburner burner = new(
+            moduleId,
+            module.TypeId,
+            attributes.GetValueOrDefault(DogmaAttributeId.Duration),
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
+            attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor),
+            attributes.GetValueOrDefault(DogmaAttributeId.SpeedBoostFactor),
+            attributes.GetValueOrDefault(DogmaAttributeId.MassAddition)
+        );
         var ship = fitting.ShipAttributes(pilotId);
         double mass = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Mass ?? 0;
         _ = burner.Apply(new(0, 0, mass, 1, (float)ship.GetValueOrDefault(DogmaAttributeId.MaxVelocity), 1));
@@ -80,8 +127,16 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         {
             throw new InvalidDataException("The afterburner is still cycling.");
         }
-        var groupTypes = catalog.Set<ItemType>().Where(t => t.GroupId == PropulsionDefinitions.AfterburnerGroup).Select(t => t.Id).ToArray();
-        var groupModules = world.Set<OwnedItem>().Where(i => i.LocationId == pilot.ActiveShipId && groupTypes.Contains(i.TypeId)).Select(i => i.Id).ToArray();
+        var groupTypes = catalog
+            .Set<ItemType>()
+            .Where(t => t.GroupId == PropulsionDefinitions.AfterburnerGroup)
+            .Select(t => t.Id)
+            .ToArray();
+        var groupModules = world
+            .Set<OwnedItem>()
+            .Where(i => i.LocationId == pilot.ActiveShipId && groupTypes.Contains(i.TypeId))
+            .Select(i => i.Id)
+            .ToArray();
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxGroupActive, 1));
         if (limit <= 0 || world.Set<ModuleCooldown>().Count(c => groupModules.Contains(c.ModuleId) && c.ReadyAt > now) >= limit)
         {
