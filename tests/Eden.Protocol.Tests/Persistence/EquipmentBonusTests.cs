@@ -188,12 +188,12 @@ public sealed class EquipmentBonusTests
     }
 
     [Fact]
-    public void BallisticControlsMultiplyTheCharacterAttributeOnlyWhileOnline()
+    public void BallisticControlsDiminishTheCharacterAttributeOnlyWhileOnline()
     {
         using Fixture f = new();
         long first = f.Fit(12274);
         f.Fit(12274);
-        Assert.Equal(1.07 * 1.07, Multiplier(), 8);
+        Assert.Equal(1.07 * (1 + .07 * .8691199808003975), Multiplier(), 8);
         f.Fitting.SetOnline(f.PilotId, f.ShipId, first, false);
         Assert.Equal(1.07, Multiplier(), 8);
 

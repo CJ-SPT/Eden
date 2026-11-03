@@ -9,14 +9,22 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Ammunition;
 
 [Injectable]
-internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IPilotCombat combat, IPilotInventory inventory)
+internal sealed class MagazineWire(
+    TimeProvider clock,
+    IPilotFitting fitting,
+    IPilotCombat combat,
+    IPilotInventory inventory,
+    IPilotAmmunition? ammunition = null
+)
 {
     internal static DogmaItemKey.Charge Key(Magazine magazine) => new(magazine.ShipId, magazine.FlagId, magazine.TypeId);
 
-    internal DogmaItemInfo<double> Prime(Magazine magazine)
+    internal DogmaItemInfo<double> Prime(long pilotId, Magazine magazine)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = fitting.Attributes(magazine.TypeId).ToDictionary(a => a.Key, a => a.Value);
+        var attributes = (
+            ammunition?.ChargeAttributes(pilotId, magazine.ShipId, magazine.ModuleId) ?? fitting.Attributes(magazine.TypeId)
+        ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.Quantity] = magazine.Quantity;
         attributes[DogmaAttributeId.Damage] = magazine.Damage;
         return new(
@@ -71,7 +79,7 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
             {
                 if (change.Previous?.TypeId != current.TypeId)
                 {
-                    context.Notifications.Add(new GodmaItemPrimed(current.ShipId, Prime(current)));
+                    context.Notifications.Add(new GodmaItemPrimed(current.ShipId, Prime(context.Pilot.PilotId, current)));
                 }
                 // Godma primes its row, but clientDogmaLocation fits a tuple
                 // sublocation only on attributeQuantity (build 3662168).
@@ -89,9 +97,10 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
             {
                 continue;
             }
-            var attributes = InventoryDefinitions.IsHighSlot(module.FlagId)
-                ? combat.ModuleAttributes(context.Pilot.PilotId, module)
-                : fitting.ModuleAttributes(context.Pilot.PilotId, module);
+            var attributes =
+                InventoryDefinitions.IsHighSlot(module.FlagId) && !MissileDefinitions.LauncherGroups.Contains(module.GroupId)
+                    ? combat.ModuleAttributes(context.Pilot.PilotId, module)
+                    : fitting.ModuleAttributes(context.Pilot.PilotId, module);
             var values = new[]
             {
                 DogmaAttributeId.MaxRange,

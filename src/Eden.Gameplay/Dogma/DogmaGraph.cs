@@ -126,7 +126,7 @@ public sealed class DogmaGraph
                     .Select(m =>
                         (
                             Factor: operation == DogmaOperation.PostPercent ? 1 + Read(m.Source) / Percent : Read(m.Source),
-                            Exempt: definition.Stackable || m.ExemptFromStacking || operation == DogmaOperation.PreMultiply
+                            Exempt: definition.Stackable || m.ExemptFromStacking
                         )
                     )
                     .ToArray();

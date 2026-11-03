@@ -5,6 +5,23 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class DogmaGraphTests
 {
     [Fact]
+    public void PreMultipliersDiminishWithinTheirOwnOperatorBucket()
+    {
+        var attribute = DogmaAttributeId.MissileDamageMultiplier;
+        DogmaNode[] nodes = [new(1, new Dictionary<DogmaAttributeId, double> { [attribute] = 1 })];
+        DogmaModifier[] modifiers =
+        [
+            new(1, attribute, DogmaOperation.PreMultiply, new DogmaValue.Constant(1.07)),
+            new(1, attribute, DogmaOperation.PreMultiply, new DogmaValue.Constant(1.12)),
+            new(1, attribute, DogmaOperation.PostPercent, new DogmaValue.Constant(20), true),
+        ];
+        Dictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions = new() { [attribute] = new(attribute, 1, false) };
+        double expected = 1.12 * (1 + .07 * .8691199808003975) * 1.2;
+        Assert.Equal(expected, new DogmaGraph(nodes, modifiers, definitions).Read(1, attribute), 12);
+        Assert.Equal(expected, new DogmaGraph(nodes, modifiers.Reverse().ToArray(), definitions).Read(1, attribute), 12);
+    }
+
+    [Fact]
     public void PreAssignmentReplacesTheBaseBeforeAdditionAndPercentModifiers()
     {
         var attribute = DogmaAttributeId.DamageMultiplier;

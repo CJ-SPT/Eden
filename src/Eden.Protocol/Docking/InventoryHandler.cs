@@ -251,7 +251,7 @@ internal sealed class InventoryHandler(
                 .Read(pilot.PilotId, hull)
                 .FirstOrDefault(m => m.FlagId == slot && m.TypeId == type)
                 is { } magazine
-                ? magazinesWire.Prime(magazine)
+                ? magazinesWire.Prime(context.Pilot.PilotId, magazine)
                 : PilotCallResult.None,
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => fittingOperations.SetOnline(
                 context,

@@ -47,7 +47,10 @@ public enum FittingSkill
 public enum DogmaEffect
 {
     ShieldBoosting = 4,
+    MissileLaunching = 9,
     LaserFired = 10,
+    UseMissiles = 101,
+    AutoTargetingMissile = 104,
     LowPower = 11,
     HighPower = 12,
     MediumPower = 13,

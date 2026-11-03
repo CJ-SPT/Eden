@@ -5,7 +5,7 @@ using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
 
-internal static class TurretWeaponCatalog
+internal static class WeaponCatalog
 {
     private const int AbyssalMetaGroup = 15;
     private const int OverloadRate = 3001;
@@ -19,6 +19,10 @@ internal static class TurretWeaponCatalog
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
+        if (MissileDefinitions.LauncherGroups.Contains(group))
+        {
+            return MissileLauncherCatalog.Supported(catalog, typeId, group);
+        }
         if (
             group
             is not (CombatDefinitions.EnergyWeaponGroup or CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup)
@@ -108,7 +112,7 @@ internal static class TurretWeaponCatalog
             && modifiers.Any(m => m.Operation == (int)DogmaOperation.PostPercent && m.ModifyingAttributeID == (int)bonus);
     }
 
-    private static bool ValidOverride(ClientDogmaeffects effect)
+    internal static bool ValidOverride(ClientDogmaeffects effect)
     {
         var attributes =
             effect.EffectID == HullResistanceOverride

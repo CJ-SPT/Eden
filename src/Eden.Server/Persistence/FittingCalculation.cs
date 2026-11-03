@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
@@ -7,14 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
-internal sealed record FittingModule(OwnedItem Item, int GroupId, IReadOnlySet<int> RequiredSkills);
+internal sealed record FittingLocation(OwnedItem Item, int GroupId, IReadOnlySet<int> RequiredSkills);
 
 internal sealed record FittingCalculation(
     DogmaGraph Graph,
     long ShipId,
     long PilotId,
-    IReadOnlyList<FittingModule> Modules,
-    IReadOnlyList<FittingSkillBonus> SkillBonuses
+    IReadOnlyList<FittingLocation> Modules,
+    IReadOnlyList<FittingSkillBonus> SkillBonuses,
+    IReadOnlyList<FittingLocation> Charges
 )
 {
     internal static FittingCalculation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
@@ -38,7 +40,7 @@ internal sealed record FittingCalculation(
             .Distinct()
             .ToDictionary(id => id, id => PilotFittingStore.ReadAttributes(catalog, id));
         var modules = items
-            .Select(i => new FittingModule(
+            .Select(i => new FittingLocation(
                 i,
                 catalog.Set<ItemType>().Find(i.TypeId)!.GroupId,
                 InventoryDefinitions
@@ -48,7 +50,30 @@ internal sealed record FittingCalculation(
                     .ToHashSet()
             ))
             .ToArray();
-        List<DogmaNode> nodes = [new(ship.Id, hullAttributes), new(pilot.Id, new Dictionary<DogmaAttributeId, double>())];
+        var moduleIds = items.Select(i => i.Id).ToArray();
+        var loaded = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && moduleIds.Contains(i.LocationId)).ToArray();
+        var chargeAttributes = loaded
+            .Select(i => i.TypeId)
+            .Distinct()
+            .ToDictionary(id => id, id => PilotFittingStore.ReadAttributes(catalog, id));
+        var charges = loaded
+            .Select(i => new FittingLocation(
+                i,
+                catalog.Set<ItemType>().Find(i.TypeId)!.GroupId,
+                InventoryDefinitions
+                    .RequiredSkills.Select(p => chargeAttributes[i.TypeId].GetValueOrDefault(p.Skill))
+                    .Where(v => v > 0)
+                    .Select(v => checked((int)v))
+                    .ToHashSet()
+            ))
+            .ToArray();
+        var locations = modules.Concat(charges).ToArray();
+        List<DogmaNode> nodes =
+        [
+            new(ship.Id, hullAttributes),
+            new(pilot.Id, new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.MissileDamageMultiplier] = 1 }),
+        ];
+        nodes.AddRange(loaded.Select(i => new DogmaNode(i.Id, chargeAttributes[i.TypeId])));
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
         List<DogmaModifier> modifiers = [];
         foreach (var role in FittingRules.RookieResistanceModifiers)
@@ -56,12 +81,30 @@ internal sealed record FittingCalculation(
             hullAttributes.TryAdd(role.Resonance, 1);
             modifiers.Add(new(ship.Id, role.Resonance, DogmaOperation.PostPercent, new DogmaValue.Attribute(ship.Id, role.Bonus), true));
         }
+        // Build 3662168 effect 5000 applies the Ibis role to pilot-owned
+        // missile ammunition, independently of launcher damage upgrades.
+        foreach (
+            var charge in charges.Where(c =>
+                MissileDefinitions.ChargeGroups.Contains(c.GroupId) && c.RequiredSkills.Contains((int)MissileSkill.MissileLauncherOperation)
+            )
+        )
+        {
+            modifiers.Add(
+                new(
+                    charge.Item.Id,
+                    DogmaAttributeId.KineticDamage,
+                    DogmaOperation.PostPercent,
+                    new DogmaValue.Attribute(ship.Id, DogmaAttributeId.RookieMissileKineticBonus),
+                    true
+                )
+            );
+        }
         var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
         foreach (var module in modules)
         {
-            if (TurretWeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            if (WeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
-                foreach (var modifier in TurretWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
+                foreach (var modifier in WeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
                     Add(module.Item.Id, modifier, true);
                 }
@@ -101,7 +144,7 @@ internal sealed record FittingCalculation(
             }
         }
         List<(int Skill, PassiveModifier Modifier)> skillModifiers = [];
-        var relevantSkills = PassiveModules.Skills.ToArray();
+        var relevantSkills = PassiveModules.Skills.Concat(MissileDefinitions.Skills).Distinct().ToArray();
         var trained = world
             .Set<PilotSkill>()
             .Where(s => s.PilotId == pilot.Id && relevantSkills.Contains(s.TypeId))
@@ -173,14 +216,14 @@ internal sealed record FittingCalculation(
         var bonuses = skillModifiers
             .Select(s => new FittingSkillBonus(s.Skill, s.Modifier, graph.Read(s.Skill, s.Modifier.SourceAttribute)))
             .ToArray();
-        return new(graph, ship.Id, pilot.Id, modules, bonuses);
+        return new(graph, ship.Id, pilot.Id, modules, bonuses, charges);
 
         void Add(long source, PassiveModifier modifier, bool exempt)
         {
             IEnumerable<long> targets = modifier.Selector switch
             {
-                ModifierSelector.Group => modules.Where(m => m.GroupId == modifier.SelectionId).Select(m => m.Item.Id),
-                ModifierSelector.RequiredSkill => modules
+                ModifierSelector.Group => locations.Where(m => m.GroupId == modifier.SelectionId).Select(m => m.Item.Id),
+                ModifierSelector.RequiredSkill or ModifierSelector.OwnerRequiredSkill => locations
                     .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))
                     .Select(m => m.Item.Id),
                 _ =>

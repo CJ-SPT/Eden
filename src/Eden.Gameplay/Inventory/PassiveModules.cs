@@ -15,6 +15,7 @@ public enum ModifierSelector
     Item,
     Group,
     RequiredSkill,
+    OwnerRequiredSkill,
 }
 
 public enum PassiveEffectPhase

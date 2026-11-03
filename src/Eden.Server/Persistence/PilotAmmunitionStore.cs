@@ -55,6 +55,28 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             .ToArray();
     }
 
+    public IReadOnlyDictionary<DogmaAttributeId, double> ChargeAttributes(long pilotId, long shipId, long moduleId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = Pilot(world, pilotId, shipId);
+        var module = world.Set<OwnedItem>().SingleOrDefault(i => i.Id == moduleId && i.OwnerId == pilotId && i.LocationId == shipId);
+        if (
+            module is null
+            || !InventoryDefinitions.IsFittedSlot(module.FlagId)
+            || Contents(world, moduleId) is not { } charge
+            || charge.OwnerId != pilotId
+        )
+        {
+            throw new InvalidDataException("The loaded ammunition is unavailable.");
+        }
+        int group = catalog.Set<ItemType>().Single(t => t.Id == charge.TypeId).GroupId;
+        return MissileDefinitions.ChargeGroups.Contains(group)
+            ? FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(charge.Id)
+            : Attributes(catalog, charge.TypeId);
+    }
+
     private static Pilot Pilot(WorldDbContext world, long pilotId, long shipId)
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
@@ -100,7 +122,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
-                !(TurretWeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
@@ -174,14 +196,17 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
         var chargeAttributes = Attributes(catalog, typeId);
         if (
-            !(TurretChargeCatalog.Supported(catalog, typeId, chargeType.GroupId))
+            !(
+                TurretChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
+                || MissileChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
+            )
             && !(
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                 && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0
             )
         )
         {
-            throw new InvalidDataException("Use supported turret ammunition or capacitor booster charges.");
+            throw new InvalidDataException("Use supported weapon ammunition or capacitor booster charges.");
         }
         bool crystal = AmmunitionDefinitions.IsCrystalGroup(chargeType.GroupId);
         if (sources.Any(s => s.Singleton && (!crystal || s.Quantity != 1)))
@@ -209,7 +234,9 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             bool compatible =
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
-                    : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);
+                : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
+                    ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId)
+                : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);
             if (!compatible)
             {
                 throw new InvalidDataException("The ammunition group or size does not match the weapon.");

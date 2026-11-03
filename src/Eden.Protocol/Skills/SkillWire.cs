@@ -73,6 +73,7 @@ internal enum BrainModifier
     Item,
     LocationRequiredSkill,
     LocationGroup,
+    OwnerRequiredSkill,
 }
 
 internal sealed record BrainEffect(
@@ -97,6 +98,7 @@ internal sealed record BrainEffect(
                     BrainModifier.Item => "M",
                     BrainModifier.LocationRequiredSkill => "LRS",
                     BrainModifier.LocationGroup => "LG",
+                    BrainModifier.OwnerRequiredSkill => "ORS",
                     _ => throw new InvalidOperationException("Unknown brain modifier."),
                 },
                 ["toAttribID"] = (int)Attribute,

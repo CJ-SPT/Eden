@@ -63,13 +63,15 @@ internal sealed class PilotBrain(
                     bonus.Percent
                 ))
         );
-        effects.AddRange(
-            (fitting?.SkillBonuses(pilotId) ?? []).Select(bonus => new BrainEffect(
-                shipId,
+        var fittingBonuses = fitting?.SkillBonuses(pilotId) ?? [];
+        BrainEffect FittingEffect(FittingSkillBonus bonus) =>
+            new(
+                bonus.Modifier.Selector == ModifierSelector.OwnerRequiredSkill ? pilotId : shipId,
                 bonus.Modifier.Selector switch
                 {
                     ModifierSelector.Group => BrainModifier.LocationGroup,
                     ModifierSelector.RequiredSkill => BrainModifier.LocationRequiredSkill,
+                    ModifierSelector.OwnerRequiredSkill => BrainModifier.OwnerRequiredSkill,
                     _ => BrainModifier.Item,
                 },
                 bonus.Modifier.Attribute,
@@ -77,8 +79,9 @@ internal sealed class PilotBrain(
                 bonus.Modifier.SelectionId is int selected ? [selected] : [],
                 [bonus.SkillId],
                 bonus.Value
-            ))
-        );
+            );
+        effects.AddRange(fittingBonuses.Where(b => b.Modifier.Selector != ModifierSelector.OwnerRequiredSkill).Select(FittingEffect));
+        var ownerEffects = fittingBonuses.Where(b => b.Modifier.Selector == ModifierSelector.OwnerRequiredSkill).Select(FittingEffect);
         var character = industry
             .CharacterBonuses(pilotId)
             .Select(bonus => new BrainEffect(
@@ -90,6 +93,7 @@ internal sealed class PilotBrain(
                 [bonus.SkillId],
                 bonus.Value
             ))
+            .Concat(ownerEffects)
             .ToArray();
         return new(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), character, effects, []);
     }

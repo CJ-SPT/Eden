@@ -159,7 +159,7 @@ internal sealed class ShipDogmaBuilder(
         return new(
             new(instances, quantities),
             shipInfo,
-            magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => magazinesWire.Prime(m)),
+            magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => magazinesWire.Prime(pilot.PilotId, m)),
             PrimePilot(pilot),
             brain.Read(pilot.PilotId, pilot.ShipId)
         );

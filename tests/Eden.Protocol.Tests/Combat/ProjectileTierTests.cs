@@ -71,7 +71,7 @@ public sealed class ProjectileTierTests
         PassiveCatalogFixture.LoadProjectileTiers(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var guns = catalog.Set<ItemType>().Where(t => t.GroupId == CombatDefinitions.ProjectileWeaponGroup).ToArray();
-        var supported = guns.Where(t => TurretWeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
+        var supported = guns.Where(t => WeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
         var charges = catalog
             .Set<ItemType>()
             .Where(t =>

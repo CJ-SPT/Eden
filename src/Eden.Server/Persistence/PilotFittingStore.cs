@@ -369,7 +369,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 ? calculation.Graph.Attributes(module.Id)
                 : ReadAttributes(catalog, module.TypeId)
         ).ToDictionary();
-        if (module.GroupId == CapacitorBoosterDefinitions.Group)
+        if (module.GroupId == CapacitorBoosterDefinitions.Group || MissileDefinitions.LauncherGroups.Contains(module.GroupId))
         {
             var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
             attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;

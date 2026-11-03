@@ -75,7 +75,7 @@ public sealed class EnergyTierTests
             .Set<ItemType>()
             .Where(t => t.GroupId == CombatDefinitions.EnergyWeaponGroup && t.Id != (int)CombatWeaponType.CivilianGatlingRailgun)
             .ToArray();
-        var supported = guns.Where(t => TurretWeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
+        var supported = guns.Where(t => WeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
         var charges = catalog
             .Set<ItemType>()
             .Where(t =>
@@ -315,7 +315,7 @@ public sealed class EnergyTierTests
         var prime = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().PrimeModule(f.Db.Store.FindPilot(1000001)!, module);
         Assert.Equal(3.6 * 1.25 * 1.1, prime.Attributes[DogmaAttributeId.DamageMultiplier], 8);
         var magazine = Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId));
-        var charge = scope.ServiceProvider.GetRequiredService<MagazineWire>().Prime(magazine);
+        var charge = scope.ServiceProvider.GetRequiredService<MagazineWire>().Prime(f.PilotId, magazine);
         Assert.Equal(.42, charge.Attributes[DogmaAttributeId.Damage]);
         Assert.Equal(1, charge.Attributes[DogmaAttributeId.Quantity]);
     }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Server.Catalog;
@@ -49,7 +50,8 @@ internal static class PassiveCatalog
                 e.EffectID != SkillLevelEffect && e.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online
             )
             .SelectMany(e =>
-                (e.ModifierInfo ?? []).Select(m =>
+                MissileSkillCatalog.LegacyModifiers(typeId, e)
+                ?? (e.ModifierInfo ?? []).Select(m =>
                     Parse(m, e.EffectCategory!.Value) ?? throw new InvalidDataException($"Unsupported passive modifier on type {typeId}.")
                 )
             )
@@ -69,6 +71,7 @@ internal static class PassiveCatalog
             "ItemModifier" => ModifierSelector.Item,
             "LocationGroupModifier" => ModifierSelector.Group,
             "LocationRequiredSkillModifier" => ModifierSelector.RequiredSkill,
+            "OwnerRequiredSkillModifier" => ModifierSelector.OwnerRequiredSkill,
             _ => null,
         };
         if (
@@ -82,7 +85,17 @@ internal static class PassiveCatalog
             return null;
         }
         int? selection = selector == ModifierSelector.Group ? (int?)modifier.GroupID : (int?)modifier.SkillTypeID;
-        if (selector != ModifierSelector.Item && (domain != ModifierDomain.Ship || selection is null))
+        if (
+            selector == ModifierSelector.OwnerRequiredSkill
+            && (domain != ModifierDomain.Character || selection is not int ownerSkill || !MissileDefinitions.SupportsOwnerSkill(ownerSkill))
+        )
+        {
+            return null;
+        }
+        if (
+            selector is not (ModifierSelector.Item or ModifierSelector.OwnerRequiredSkill)
+            && (domain != ModifierDomain.Ship || selection is null)
+        )
         {
             return null;
         }

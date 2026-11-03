@@ -16,6 +16,7 @@ public sealed record AmmunitionTransfer(
 public interface IPilotAmmunition
 {
     IReadOnlyList<Magazine> Read(long pilotId, long shipId);
+    IReadOnlyDictionary<DogmaAttributeId, double> ChargeAttributes(long pilotId, long shipId, long moduleId);
     AmmunitionTransfer Load(
         long pilotId,
         long shipId,
