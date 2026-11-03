@@ -11,9 +11,9 @@ internal sealed record BallparkSnapshot(
     IReadOnlyList<SlimItem> Slims,
     SlimItem SolarSystem,
     IReadOnlyDictionary<long, ShipDamageState> Damage
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -33,14 +33,14 @@ internal sealed record BallparkSnapshot(
 }
 
 internal sealed record BallparkAddition(byte[] State, IReadOnlyList<SlimItem> Slims, IReadOnlyDictionary<long, ShipDamageState> Damage)
-    : IBlueWritable
+    : BlueModel
 {
-    public object ToBlue() => new object?[] { State, new BlueList<SlimItem>(Slims), new BlueMap<long, ShipDamageState>(Damage) };
+    public override object ToBlue() => new object?[] { State, new BlueList<SlimItem>(Slims), new BlueMap<long, ShipDamageState>(Damage) };
 }
 
-internal abstract record SlimItem : IBlueWritable
+internal abstract record SlimItem : BlueModel
 {
-    public abstract object ToBlue();
+    public abstract override object ToBlue();
 
     protected static Dictionary<string, object?> Fields(long id, int type, long owner, int group, int category) =>
         new()

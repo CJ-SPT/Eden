@@ -229,7 +229,7 @@ public sealed class OrbitTests
         SpacePosition saved;
         using (FlightSession session = new(db.Store, pilot, clock, new(), [target, distant]))
         {
-            Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
+            Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
             session.Snapshot();
             foreach (
                 object?[] args in new object?[][]
@@ -244,13 +244,13 @@ public sealed class OrbitTests
                 }
             )
             {
-                Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", args));
+                Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdOrbit", args));
             }
             Assert.Null(session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
             clock.Seconds = 10;
             session.Checkpoint();
             Assert.Null(session.CallWire("beyonce", "CmdWarpToStuff", ["item", distant.Id]));
-            Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
+            Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
             Assert.Null(session.CallWire("beyonce", "CmdStop", []));
             saved = session.Pilot.Position!;
         }

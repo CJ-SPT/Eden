@@ -2,9 +2,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Repair;
 
-internal sealed record RepairQuoteReply(RepairQuote Quote) : IBlueWritable
+internal sealed record RepairQuoteReply(RepairQuote Quote) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>

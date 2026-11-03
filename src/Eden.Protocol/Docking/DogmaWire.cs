@@ -4,9 +4,9 @@ using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
-internal abstract record DogmaItemKey : IBlueWritable
+internal abstract record DogmaItemKey : BlueModel
 {
-    public abstract object ToBlue();
+    public abstract override object ToBlue();
 
     internal sealed record Item(long Id) : DogmaItemKey
     {
@@ -28,9 +28,9 @@ internal sealed record DogmaActiveEffect(
     long StartTime,
     double? DurationMilliseconds,
     long Repeats
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             ModuleId,
@@ -52,9 +52,9 @@ internal sealed record DogmaItemInfo<T>(
     IReadOnlyDictionary<DogmaAttributeId, T> Attributes,
     IReadOnlyDictionary<DogmaEffect, DogmaActiveEffect> ActiveEffects,
     long Time
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -76,18 +76,18 @@ internal sealed record DogmaInstanceState(
     double? Capacitor = null,
     double? ArmorDamage = null,
     double? Shield = null
-) : IBlueWritable
+) : BlueModel
 {
     // Uninitialized fields in pilot/module instances are integer zero, not floating zero.
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[] { Id, Online ? 1 : 0, Number(HullDamage), Number(Capacitor), 0, Number(ArmorDamage), Number(Shield), 0 };
 
     private static object Number(double? value) => value is double number ? number : (object)0;
 }
 
-internal sealed record MagazineQuantity(Magazine Magazine) : IBlueWritable
+internal sealed record MagazineQuantity(Magazine Magazine) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueConstructor(
             "blue.DBRow",
             [
@@ -111,9 +111,9 @@ internal sealed record MagazineQuantity(Magazine Magazine) : IBlueWritable
 internal sealed record DogmaShipState(
     IReadOnlyDictionary<long, DogmaInstanceState> Instances,
     IReadOnlyDictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> Quantities
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             new BlueMap<long, DogmaInstanceState>(Instances),
@@ -131,9 +131,9 @@ internal sealed record DogmaAllInfo(
     IReadOnlyDictionary<DogmaItemKey.Charge, DogmaItemInfo<double>> Charges,
     DogmaItemInfo<int> Character,
     PilotBrainState Brain
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>

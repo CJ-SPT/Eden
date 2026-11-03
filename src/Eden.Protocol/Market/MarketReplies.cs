@@ -13,36 +13,36 @@ internal sealed record WalletJournalFilter(int? Year, int? Month)
     }
 }
 
-internal sealed record MarketOrderRow(MarketOrder Order, int Duration = MarketDefinitions.NpcOrderDays) : IBlueWritable
+internal sealed record MarketOrderRow(MarketOrder Order, int Duration = MarketDefinitions.NpcOrderDays) : BlueModel
 {
-    public object ToBlue() => MarketWire.Row(Order, Duration);
+    public override object ToBlue() => MarketWire.Row(Order, Duration);
 }
 
-internal sealed record MarketOrderRows(IReadOnlyList<MarketOrder> Orders) : IBlueWritable
+internal sealed record MarketOrderRows(IReadOnlyList<MarketOrder> Orders) : BlueModel
 {
-    public object ToBlue() => MarketWire.Rows(Orders);
+    public override object ToBlue() => MarketWire.Rows(Orders);
 }
 
-internal sealed record MarketOrderBook(IReadOnlyList<MarketOrder> Sell, IReadOnlyList<MarketOrder> Buy) : IBlueWritable
+internal sealed record MarketOrderBook(IReadOnlyList<MarketOrder> Sell, IReadOnlyList<MarketOrder> Buy) : BlueModel
 {
-    public object ToBlue() => new object?[] { new MarketOrderRows(Sell), new MarketOrderRows(Buy) };
+    public override object ToBlue() => new object?[] { new MarketOrderRows(Sell), new MarketOrderRows(Buy) };
 }
 
-internal sealed record MarketHistoryRows(IReadOnlyList<MarketHistoryDay> Days) : IBlueWritable
+internal sealed record MarketHistoryRows(IReadOnlyList<MarketHistoryDay> Days) : BlueModel
 {
-    public object ToBlue() => MarketWire.HistoryRows(Days);
+    public override object ToBlue() => MarketWire.HistoryRows(Days);
 }
 
-internal sealed record MarketHistoryPair(IReadOnlyList<MarketHistoryDay> Days, long Midnight) : IBlueWritable
+internal sealed record MarketHistoryPair(IReadOnlyList<MarketHistoryDay> Days, long Midnight) : BlueModel
 {
     public MarketHistoryRows For(bool current) => new(Days.Where(day => current ? day.Date >= Midnight : day.Date < Midnight).ToArray());
 
-    public object ToBlue() => new object?[] { For(false), For(true) };
+    public override object ToBlue() => new object?[] { For(false), For(true) };
 }
 
-internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : IBlueWritable
+internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "carbon.common.script.net.objectCaching.CachedMethodCallResult",
             new object?[]
@@ -54,9 +54,9 @@ internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : 
         );
 }
 
-internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId) : IBlueWritable
+internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["transactionID"] = Trade.Id,
@@ -73,9 +73,9 @@ internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId)
         };
 }
 
-internal sealed record WalletEntryTypeReply(WalletEntryDefinition Type) : IBlueWritable
+internal sealed record WalletEntryTypeReply(WalletEntryDefinition Type) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -97,9 +97,9 @@ internal sealed record WalletJournalEntry(
     long ReferenceId,
     long AmountCents,
     long BalanceCents
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>

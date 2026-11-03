@@ -6,7 +6,7 @@ namespace Eden.Protocol.Docking;
 [Injectable]
 internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventories) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -16,7 +16,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
     {
         if (!(service == "ship" && method is "AssembleShip" or "Board") && !(service == "dogmaIM" && method == "CreateNewbieShip"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
@@ -28,7 +28,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
                 {
                     InventoryHandler.NotifyItemChange(context, change);
                 }
-                return null;
+                return PilotCallResult.None;
             }
             if (
                 method == "AssembleShip"
@@ -55,11 +55,11 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
                 context.ChangeShip(pilot);
                 return inventories.AllInfo(pilot).ShipState;
             }
-            return new PilotCallRouter.Error("Unsupported ship assembly or boarding request.");
+            return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 }

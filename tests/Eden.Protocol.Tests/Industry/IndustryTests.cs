@@ -450,7 +450,14 @@ public sealed class IndustryTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
         context.Select(pilot);
         IndustryHandler handler = new(f.Store);
         BlueNewObject location = new(
@@ -496,7 +503,7 @@ public sealed class IndustryTests
                 ["flagID"] = (long)InventoryFlag.Hangar,
             }
         );
-        Assert.IsType<PilotCallRouter.Error>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
+        Assert.IsType<PilotCallResult.Failure>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
         Assert.Equal(81, f.Quantity(34));
         request["outputLocation"] = request["inputLocation"];
         long jobId = Assert.IsType<long>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
@@ -505,7 +512,7 @@ public sealed class IndustryTests
         var materials = Assert.Single(context.Notifications, n => n.Name == "OnIndustryMaterials");
         Assert.Equal(54L, Assert.IsType<Dictionary<long, object?>>(materials.Arguments[1])[34]);
         Assert.NotEmpty(BlueMarshal.Encode(handler.CallWire(context, "industryManager", "GetJobsByOwner", [pilot.PilotId, false])));
-        Assert.IsType<PilotCallRouter.Error>(handler.CallWire(context, "industryManager", "GetJob", [jobId + 1]));
+        Assert.IsType<PilotCallResult.Failure>(handler.CallWire(context, "industryManager", "GetJob", [jobId + 1]));
         Assert.Null(handler.CallWire(context, "industryMonitor", "DisconnectJob", [connected[0]]));
         Assert.False(handler.IsMonitoring);
     }
@@ -562,7 +569,14 @@ public sealed class IndustryTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
         context.Select(pilot);
         var item = f.Store.Blueprint(pilot.PilotId, Fixture.BlueprintId).Item;
         InventoryHandler.NotifyItemChange(context, new(item, null));
@@ -579,7 +593,14 @@ public sealed class IndustryTests
     {
         using Fixture f = new();
         var pilot = f.Pilot;
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
         context.Select(pilot);
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
@@ -601,9 +622,9 @@ public sealed class IndustryTests
         }
         Assert.IsType<object?[]>(Check(StationService.Laboratory, pilot.StationId));
         Assert.Throws<InvalidDataException>(() => f.Store.Install(pilot.PilotId, f.Request()));
-        Assert.Same(PilotCallRouter.Unsupported, Check(StationService.Laboratory, pilot.StationId + 1));
+        Assert.Same(PilotCallResult.Unsupported, Check(StationService.Laboratory, pilot.StationId + 1));
         Assert.Same(
-            PilotCallRouter.Unsupported,
+            PilotCallResult.Unsupported,
             router.CallWire(context, "industryManager", "ResearchJob", Array.Empty<object?>(), _ => { })
         );
     }

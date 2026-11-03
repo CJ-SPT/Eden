@@ -244,7 +244,7 @@ public sealed class NpcAggressionTests
                     encounters: f.Db.Services.GetRequiredService<INpcEncounters>()
                 ),
             42,
-            []
+            SignedSettings.Empty
         );
         context.Select(f.Pilot);
         handler.Enter(context);

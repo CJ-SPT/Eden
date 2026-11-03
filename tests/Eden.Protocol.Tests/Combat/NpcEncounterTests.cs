@@ -167,7 +167,7 @@ public sealed class NpcEncounterTests
             [pilot],
             p => new(db.Store, p, clock, new(), [], encounters: encounters),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         context.Flight.Snapshot();

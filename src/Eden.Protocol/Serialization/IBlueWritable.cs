@@ -7,21 +7,28 @@ public interface IBlueWritable
     object? ToBlue();
 }
 
-internal sealed record BlueList<T>(IReadOnlyList<T> Items) : IBlueWritable
+// Outbound models use this base so call outcomes can accept models without
+// accepting an arbitrary CLR object. The decoder still uses the inert vocabulary.
+public abstract record BlueModel : IBlueWritable
 {
-    public object ToBlue() => Items.Select(item => (object?)item).ToList();
+    public abstract object? ToBlue();
 }
 
-internal sealed record BlueMap<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> Entries) : IBlueWritable
+internal sealed record BlueList<T>(IReadOnlyList<T> Items) : BlueModel
+{
+    public override object ToBlue() => Items.Select(item => (object?)item).ToList();
+}
+
+internal sealed record BlueMap<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> Entries) : BlueModel
     where TKey : notnull
 {
-    public object ToBlue()
+    public override object ToBlue()
     {
         if (typeof(TKey) == typeof(string))
         {
             return Entries.ToDictionary(pair => (string)(object)pair.Key, pair => (object?)pair.Value);
         }
-        if (typeof(TKey) == typeof(long) || typeof(TKey) == typeof(int) || typeof(TKey).IsEnum)
+        if (typeof(TKey) == typeof(long) || typeof(TKey) == typeof(int) || default(TKey) is Enum)
         {
             return Entries.ToDictionary(pair => Convert.ToInt64(pair.Key), pair => (object?)pair.Value);
         }

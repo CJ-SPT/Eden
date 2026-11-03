@@ -68,7 +68,7 @@ internal sealed class PilotServices(
                 wrecks
             ),
             clientId,
-            (object?[])signedSettings.ToBlue()
+            signedSettings
         );
         bool initialStateSent = false;
         Task? checkpoint = null;
@@ -95,7 +95,7 @@ internal sealed class PilotServices(
                     if (flight.CompleteJump())
                     {
                         context.ReleaseLocationReferences();
-                        await write(SessionChange(accountId, clientId, flight.Pilot, departure));
+                        await write(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
                         report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
                     }
                     if (flight.InBallpark)
@@ -150,7 +150,7 @@ internal sealed class PilotServices(
             catch (InvalidDataException error)
             {
                 report(error.Message);
-                await write(packet.Response("ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" }));
+                await write(packet.InvalidArguments());
                 continue;
             }
             string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
@@ -158,7 +158,7 @@ internal sealed class PilotServices(
             report($"Call {service}.{method}.");
             bool selected = context.Selected;
             DockedPilot? previous = context.ActiveFlight?.Pilot;
-            PilotCallResult result = router.Dispatch(context, service, method, call.Arguments, report, call.Keywords);
+            PilotCallResult result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
             if (!selected && context.Selected)
             {
                 npcCombat.Enter(context);
@@ -181,35 +181,30 @@ internal sealed class PilotServices(
             {
                 // The pinned fitting service uses CustomInfo/info for a readable
                 // gameplay rejection. Macho error code 0 means a bad destination.
-                result = new PilotCallResult.NamedFailure(
-                    "CustomInfo",
-                    new PilotCallResult.LegacyReply(new Dictionary<string, object?> { ["info"] = validationError.Message })
-                );
+                result = new PilotCallResult.NamedFailure("CustomInfo", new InformationErrorValues(validationError.Message));
             }
             if (result is PilotCallResult.NamedFailure userError)
             {
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
                 // exception stream. Named errors retain their client-specific handling,
                 // including inventory's smaller-quantity retry for cargo capacity.
-                byte[] exception = BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [userError.Name, userError.Values]));
-                await write(packet.Response("ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } }));
+                await write(packet.UserError(userError));
                 continue;
             }
-            if (ReferenceEquals(result, PilotCallRouter.Unsupported))
+            if (result is PilotCallResult.UnsupportedCall)
             {
-                string message = $"Unsupported local call {service}.{method}";
-                await write(packet.Response("ErrorResponse", 15, new object?[] { 6, 0, message }));
+                await write(packet.UnsupportedCall(service, method));
                 continue;
             }
             if (!selected && context.Selected)
             {
                 var pilot = context.Pilot;
                 skills.Advance(context);
-                await write(SessionChange(accountId, clientId, pilot));
+                await write(new PilotSessionChange(accountId, clientId, pilot).ToBlue());
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
-            await write(packet.Response("CallRsp", 7, new object?[] { BlueMarshal.Encode(((PilotCallResult.Success)result).Reply) }));
+            await write(packet.CallSucceeded(((PilotCallResult.Success)result).Reply));
             if (
                 service == "beyonce"
                 && method == "MachoBindObject"
@@ -244,7 +239,7 @@ internal sealed class PilotServices(
             {
                 context.ReleaseLocationReferences();
             }
-            await write(SessionChange(accountId, clientId, context.Pilot, previous));
+            await write(new PilotSessionChange(accountId, clientId, context.Pilot, previous).ToBlue());
             report(
                 previous.ShipId != context.Pilot.ShipId
                     ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} "
@@ -255,31 +250,31 @@ internal sealed class PilotServices(
 
         async Task FlushFlightUpdatesAsync()
         {
-            foreach (var (name, arguments) in context.NotificationsBeforeFlight)
+            foreach (var notification in context.NotificationsBeforeFlight)
             {
-                await SendNotificationAsync(name, arguments);
+                await SendNotificationAsync(notification);
             }
             context.NotificationsBeforeFlight.Clear();
             if (context.ActiveFlight is { Updates.Count: > 0 } flight)
             {
-                await SendNotificationAsync("DoDestinyUpdate", new DestinyUpdatesNotification(flight.Updates).Arguments);
+                await SendNotificationAsync(new DestinyUpdatesNotification(flight.Updates));
                 flight.Updates.Clear();
             }
         }
 
         async Task FlushNotificationsAsync()
         {
-            foreach (var (name, arguments) in context.Notifications)
+            foreach (var notification in context.Notifications)
             {
-                await SendNotificationAsync(name, arguments);
+                await SendNotificationAsync(notification);
             }
             context.Notifications.Clear();
         }
 
-        Task SendNotificationAsync(string name, object?[] arguments)
+        Task SendNotificationAsync(PilotNotification notification)
         {
-            report($"Notify {name}.");
-            return write(Notification(accountId, clientId, name, arguments));
+            report($"Notify {notification.Name}.");
+            return write(Notification(accountId, clientId, notification));
         }
     }
 }

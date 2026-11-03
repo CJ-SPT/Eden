@@ -14,7 +14,7 @@ internal sealed record InventoryRow(
     int GroupId,
     int CategoryId,
     string CustomInfo = ""
-) : IBlueWritable
+) : BlueModel
 {
     public static InventoryRow From(InventoryItem item) =>
         new(
@@ -28,7 +28,7 @@ internal sealed record InventoryRow(
             item.CategoryId
         );
 
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueConstructor(
             "blue.DBRow",
             [
@@ -54,10 +54,5 @@ internal static class InventoryWire
         ("customInfo", BlueColumnType.String),
     ];
 
-    internal static BlueConstructor Descriptor() =>
-        new(
-            "blue.DBRowDescriptor",
-            [s_columns.Select(column => (object?)new object?[] { column.Name, (long)column.Type }).ToArray()],
-            BlueRowDescriptor.InventoryVirtualColumns()
-        );
+    internal static BlueConstructor Descriptor() => BlueRows.Descriptor(s_columns, inventoryVirtuals: true);
 }

@@ -22,7 +22,7 @@ public sealed class DockedServicesTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         HashSet<long> owners = [90000002, 1000044];
@@ -56,12 +56,12 @@ public sealed class DockedServicesTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         object?[] standingCheck = ["DoStandingCheckForStationService", new object?[] { (long)StationService.Fitting }];
         Assert.Same(
-            PilotCallRouter.Unsupported,
+            PilotCallResult.Unsupported,
             router.CallWire(
                 context,
                 "corpStationMgr",
@@ -101,7 +101,7 @@ public sealed class DockedServicesTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         Assert.Null(
@@ -153,7 +153,7 @@ public sealed class DockedServicesTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         Assert.Null(
@@ -168,7 +168,7 @@ public sealed class DockedServicesTests
         // The receive codec deliberately rejects DBRow reductions; the client owns decoding those.
         Assert.NotEmpty(BlueMarshal.Encode(notification.Arguments));
         Assert.Single(Assert.IsType<List<object?>>(router.CallWire(context, "@ship", "List", new object?[] { 5L }, _ => { })));
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             router.CallWire(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { })
         );
         Assert.Single(context.Notifications);
@@ -203,7 +203,7 @@ public sealed class DockedServicesTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         object?[] getHangar = ["GetInventory", new object?[] { 10004L, null }, new Dictionary<string, object?>()];
@@ -230,12 +230,17 @@ public sealed class DockedServicesTests
         Assert.Equal((long)pilot.StationId, values[keys.IndexOf("locationID")]);
         Assert.Equal(pilot.PilotId, values[keys.IndexOf("ownerID")]);
         Assert.Null(
-            new PilotCallContext(1000001, pilot.Account, [pilot], _ => throw new NotSupportedException(), 11, []).ResolveReference(
-                handle.Id
-            )
+            new PilotCallContext(
+                1000001,
+                pilot.Account,
+                [pilot],
+                _ => throw new NotSupportedException(),
+                11,
+                SignedSettings.Empty
+            ).ResolveReference(handle.Id)
         );
         Assert.Same(
-            PilotCallRouter.Unsupported,
+            PilotCallResult.Unsupported,
             router.CallWire(
                 context,
                 "invbroker",

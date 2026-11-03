@@ -14,7 +14,7 @@ internal sealed class AmmunitionHandler(
     IPilotInventory inventory
 ) : ISelectedPilotCallHandler
 {
-    internal static object?[] Key(Magazine magazine) => [magazine.ShipId, magazine.FlagId, magazine.TypeId];
+    internal static DogmaItemKey.Charge Key(Magazine magazine) => new(magazine.ShipId, magazine.FlagId, magazine.TypeId);
 
     internal DogmaItemInfo<double> Prime(Magazine magazine)
     {
@@ -96,19 +96,19 @@ internal sealed class AmmunitionHandler(
             _ => null,
         };
 
-    private static (long Location, long Owner, int Flag)? Destination(object? value, DockedPilot pilot) =>
+    private static AmmunitionDestination? Destination(object? value, DockedPilot pilot) =>
         value switch
         {
-            object?[] { Length: 3 } parts when parts is [long location, long owner, long flag] && flag is >= 0 and <= int.MaxValue => (
+            object?[] { Length: 3 } parts when parts is [long location, long owner, long flag] && flag is >= 0 and <= int.MaxValue => new(
                 location,
                 owner,
                 (int)flag
             ),
-            long location => (location, pilot.PilotId, location == pilot.ShipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar),
+            long location => new(location, pilot.PilotId, location == pilot.ShipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar),
             _ => null,
         };
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -118,7 +118,7 @@ internal sealed class AmmunitionHandler(
     {
         if (service != "dogmaIM" || method is not ("LoadAmmo" or "UnloadAmmo"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
@@ -148,29 +148,26 @@ internal sealed class AmmunitionHandler(
             }
             else
             {
-                return PilotCallRouter.Unsupported;
+                return PilotCallResult.Unsupported;
             }
             NotifyChanges(context, transfer.Magazines, transfer.ReloadMilliseconds);
             foreach (var change in transfer.Items)
             {
                 InventoryHandler.NotifyItemChange(context, change);
             }
-            return null;
+            return PilotCallResult.None;
         }
         catch (CargoCapacityException error)
         {
-            return new PilotCallRouter.UserError(
-                "NotEnoughCargoSpace",
-                new() { ["available"] = error.Available, ["volume"] = error.Required }
-            );
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("The ammunition quantity or reload time exceeds the local limit.");
+            return new PilotCallResult.Failure("The ammunition quantity or reload time exceeds the local limit.");
         }
     }
 }

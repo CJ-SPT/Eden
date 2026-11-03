@@ -6,7 +6,7 @@ namespace Eden.Protocol.Characters;
 [Injectable]
 internal sealed class CharacterSheetHandler(ICharacterCreation creation) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -17,7 +17,7 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation) : ISele
         var pilot = context.Pilot;
         if (service == "paperDollServer" && method == "GetPaperDollData" && args is [long characterId] && characterId == pilot.PilotId)
         {
-            return creation.ReadAppearance(characterId, false) is { } data ? BlueMarshal.Decode(data) : null;
+            return creation.ReadAppearance(characterId, false) is { } data ? new CharacterAppearanceReply(data) : PilotCallResult.None;
         }
         if (
             service == "paperDollServer"
@@ -27,18 +27,12 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation) : ISele
         )
         {
             var data = creation.ReadAppearance(portraitId, true);
-            return new object?[]
-            {
-                data is null
-                    ? new List<object?>()
-                    : new List<object?> { BlueMarshal.Decode(data) },
-                null,
-            };
+            return new CharacterPortraitReply(data);
         }
         if (service == "charMgr" && method == "GetPublicInfo" && args is [long id] && id == pilot.PilotId)
         {
             return new PublicCharacterInfo(pilot);
         }
-        return PilotCallRouter.Unsupported;
+        return PilotCallResult.Unsupported;
     }
 }

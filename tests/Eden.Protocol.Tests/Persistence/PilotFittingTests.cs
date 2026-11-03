@@ -122,7 +122,7 @@ public sealed class PilotFittingTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         Assert.Null(

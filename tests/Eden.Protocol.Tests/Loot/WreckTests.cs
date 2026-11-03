@@ -221,7 +221,7 @@ public sealed class WreckTests
             [pilot],
             p => new(f.Db.Store, p, clock, new(), [], wrecks: f.Store),
             7,
-            []
+            SignedSettings.Empty
         );
         object? Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             router.CallWire(context, service, method, args, _ => { }, keywords);

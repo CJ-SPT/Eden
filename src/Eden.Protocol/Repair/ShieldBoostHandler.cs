@@ -123,11 +123,11 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
         );
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args)
+    public PilotCallResult Call(PilotCallContext context, string service, string method, object?[] args)
     {
         if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         context.Flight.Checkpoint();
         Advance(context);
@@ -142,13 +142,13 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             {
                 if (!context.Flight.CanUseSelfModules || target is not null && !Equals(target, context.Pilot.ShipId))
                 {
-                    return new PilotCallRouter.Error("Activate the shield booster on your own ship in space.");
+                    return new PilotCallResult.Failure("Activate the shield booster on your own ship in space.");
                 }
                 if (!_cycles.ContainsKey(module))
                 {
                     Start(context, module, repeats);
                 }
-                return null;
+                return PilotCallResult.None;
             }
             if (method == "Deactivate" && args is [long item, var name] && BlueMarshal.Text(name) == ShieldBoostDefinitions.EffectName)
             {
@@ -158,17 +158,17 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                 {
                     _cycles[item] = cycle with { Stopping = true };
                 }
-                return null;
+                return PilotCallResult.None;
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("The shield boost exceeded the local cycle limit.");
+            return new PilotCallResult.Failure("The shield boost exceeded the local cycle limit.");
         }
     }
 }

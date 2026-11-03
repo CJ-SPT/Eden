@@ -523,7 +523,7 @@ public sealed class MarketTests
             [pilot],
             p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
             1,
-            []
+            SignedSettings.Empty
         );
         object?[] bind =
         [
@@ -535,7 +535,7 @@ public sealed class MarketTests
                 new Dictionary<string, object?>(),
             },
         ];
-        Assert.Same(PilotCallRouter.Unsupported, router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        Assert.Same(PilotCallResult.Unsupported, router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         context.Select(pilot);
         var result = Assert.IsType<object?[]>(router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         Assert.IsType<BlueObjectReference>(result[0]);
@@ -551,7 +551,7 @@ public sealed class MarketTests
         {
             catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{\"services\":[]}}' WHERE Dataset='client/stationoperations'");
         }
-        Assert.IsType<PilotCallRouter.Error>(router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        Assert.IsType<PilotCallResult.Failure>(router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         f.Db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
         Assert.Throws<InvalidDataException>(() => f.Store.CheckStation(pilot.PilotId, pilot.StationId));
     }
@@ -569,10 +569,10 @@ public sealed class MarketTests
             [pilot],
             p => new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects),
             1,
-            []
+            SignedSettings.Empty
         );
         object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });
-        Assert.Same(PilotCallRouter.Unsupported, Call("marketProxy", "GetOrders", (long)Scordite));
+        Assert.Same(PilotCallResult.Unsupported, Call("marketProxy", "GetOrders", (long)Scordite));
         context.Select(pilot);
         Assert.Null(Call("charMgr", "GetPrivateInfoOnCorpChange", pilot.PilotId));
         Assert.Empty(Assert.IsType<List<object?>>(Call("LPSvc", "GetAllMyCharacterWalletLPBalances")));
@@ -630,7 +630,7 @@ public sealed class MarketTests
         var empty = Assert.IsType<object?[]>(history[Tritanium]);
         Assert.All(empty, rows => Assert.Empty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(rows).Arguments[1])));
         Assert.IsType<Dictionary<long, object?>>(Call("marketProxy", "GetPlexHistory"));
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             Call("marketProxy", "PlaceBuyOrder", (long)pilot.StationId, 3651L, 100d, 1L, -1L, 1L, 1L, false, null)
         );
     }

@@ -4,9 +4,27 @@ using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Characters;
 
-internal sealed record PublicCharacterInfo(DockedPilot Pilot) : IBlueWritable
+// Appearance schemas are client-defined, validated inert data stored as Blue bytes.
+internal sealed record CharacterAppearanceReply(byte[] Data) : BlueModel
 {
-    public object ToBlue() =>
+    public override object? ToBlue() => BlueMarshal.Decode(Data);
+}
+
+internal sealed record CharacterPortraitReply(byte[]? Data) : BlueModel
+{
+    public override object ToBlue() =>
+        new object?[]
+        {
+            Data is null
+                ? new List<object?>()
+                : new List<object?> { BlueMarshal.Decode(Data) },
+            null,
+        };
+}
+
+internal sealed record PublicCharacterInfo(DockedPilot Pilot) : BlueModel
+{
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -24,9 +42,9 @@ internal sealed record PublicCharacterInfo(DockedPilot Pilot) : IBlueWritable
         );
 }
 
-internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnlyList<CharacterSelectionCard> Pilots) : IBlueWritable
+internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnlyList<CharacterSelectionCard> Pilots) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             new List<object?>
@@ -49,12 +67,12 @@ internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnly
         };
 }
 
-internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd) : IBlueWritable
+internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd) : BlueModel
 {
     // Existing selection-card placeholder; this is not a persisted logoff timestamp.
     private const long PlaceholderLogoffDate = 134000000000000000L;
 
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>

@@ -12,6 +12,7 @@ internal static class WireAssertions
     internal static object? Materialize(object? value) =>
         value switch
         {
+            PilotCallResult.Success success => Materialize(success.Reply),
             IBlueWritable model => Materialize(model.ToBlue()),
             BlueInstance instance => instance with { State = Materialize(instance.State) },
             BlueConstructor constructor => constructor with

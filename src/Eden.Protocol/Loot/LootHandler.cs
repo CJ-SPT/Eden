@@ -1,13 +1,14 @@
 using System.Globalization;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Loot;
 
 [Injectable]
 internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -31,15 +32,15 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             )
         )
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         if (bind && !context.Flight.VisibleWrecks.Any(w => w.Id == id))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         if (!context.Flight.CanTarget)
         {
-            return new PilotCallRouter.Error("Approach the wreck in a ship outside warp before opening it.");
+            return new PilotCallResult.Failure("Approach the wreck in a ship outside warp before opening it.");
         }
         try
         {
@@ -56,16 +57,15 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             if (method == "List")
             {
                 object? flag = args.FirstOrDefault() ?? keywords?.GetValueOrDefault("flag");
-                return contents
-                    .Items.Where(i => flag is null || Equals(flag, (long)i.FlagId))
-                    .Select(i => (object?)InventoryHandler.Item(i))
-                    .ToList();
+                return new BlueList<InventoryRow>(
+                    contents.Items.Where(item => flag is null || Equals(flag, (long)item.FlagId)).Select(InventoryHandler.Item).ToArray()
+                );
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 }

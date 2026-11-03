@@ -14,17 +14,23 @@ internal sealed class CharacterSelectionHandler(
     TimeProvider clock
 ) : IPilotCallHandler
 {
-    public object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords)
+    public PilotCallResult Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object? arguments,
+        Dictionary<string, object?>? keywords
+    )
     {
         if (service == "charUnboundMgr" && method == "SelectCharacterID")
         {
             var id = arguments is object?[] { Length: > 0 } args ? args[0] : keywords?.GetValueOrDefault("charID");
             if (context.Selected || context.Roster.FirstOrDefault(p => Equals(p.PilotId, id)) is not { } selected)
             {
-                return new PilotCallRouter.Error("Unknown pilot for this account");
+                return new PilotCallResult.Failure("Unknown pilot for this account");
             }
             context.Select(selected);
-            return null;
+            return PilotCallResult.None;
         }
         if (service == "charUnboundMgr" && method == "CreateCharacterWithDoll" && !context.Selected)
         {
@@ -38,7 +44,7 @@ internal sealed class CharacterSelectionHandler(
                 || new[] { 1, 2, 3, 4, 7 }.Any(i => fields[i] is not long number || number < 0 || number > int.MaxValue)
             )
             {
-                return new PilotCallRouter.Error("Invalid character creation arguments");
+                return new PilotCallResult.Failure("Invalid character creation arguments");
             }
             int Number(int index) => (int)(long)fields[index]!;
             try
@@ -61,7 +67,7 @@ internal sealed class CharacterSelectionHandler(
             }
             catch (InvalidDataException error)
             {
-                return new PilotCallRouter.Error(error.Message);
+                return new PilotCallResult.Failure(error.Message);
             }
         }
         return (service, method) switch
@@ -69,17 +75,14 @@ internal sealed class CharacterSelectionHandler(
             ("charUnboundMgr", "GetCharacterSelectionData") => CharacterSelection(context),
             ("charUnboundMgr", "ValidateNameEx") when arguments is object?[] { Length: > 0 } name && name[0] is byte[] or string =>
                 creation.ValidateName(BlueMarshal.Text(name[0])),
-            ("charUnboundMgr", "GetCohortsForUser") => new List<object?>(),
+            ("charUnboundMgr", "GetCohortsForUser") => BlueEmpty.List,
             ("charUnboundMgr", "GetValidRandomName") => $"Eden {Guid.NewGuid().ToString("N")[..8]}",
-            ("charUnboundMgr", "GetCharOmegaDowngradeStatus") => new Dictionary<string, object?>(),
-            ("charUnboundMgr", "GetCharacterLockType") => null,
+            ("charUnboundMgr", "GetCharOmegaDowngradeStatus") => BlueEmpty.Dictionary,
+            ("charUnboundMgr", "GetCharacterLockType") => PilotCallResult.None,
             ("populationCap", "MachoResolveObject") => PilotLogin.NodeId,
-            ("populationCap", "MachoBindObject") when context.Roster.Any(p => IsPilotLoadSlot(arguments, p.PilotId)) => new object?[]
-            {
-                new BlueObjectReference($"N={PilotLogin.NodeId}:1", 1),
-                new Dictionary<string, object?>(),
-            },
-            _ => PilotCallRouter.Unsupported,
+            ("populationCap", "MachoBindObject") when context.Roster.Any(p => IsPilotLoadSlot(arguments, p.PilotId)) =>
+                new PilotLoadSlotReply(new BlueObjectReference($"N={PilotLogin.NodeId}:1", 1)),
+            _ => PilotCallResult.Unsupported,
         };
     }
 

@@ -40,7 +40,7 @@ internal sealed class InventoryHandler(
 
     internal static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
 
-    private BlueList<InventoryRow> List(DockedPilot pilot, string service, object?[] args)
+    private BlueList<InventoryRow> List(DockedPilot pilot, string service, long? flag)
     {
         List<InventoryRow> result = [];
         if (service == "@hangar" && pilot.Position is not null)
@@ -48,7 +48,6 @@ internal sealed class InventoryHandler(
             return new(result);
         }
         long location = service == "@hangar" ? pilot.StationId : ShipContainer(service, pilot);
-        var flag = args.FirstOrDefault() as long?;
         if (service == "@hangar" && (flag is null or (long)InventoryFlag.Hangar))
         {
             result.AddRange(fleet.Ships(pilot.PilotId, pilot.StationId).Select(Item));
@@ -64,11 +63,17 @@ internal sealed class InventoryHandler(
             ? id
         : 0;
 
-    private object? Move(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords)
+    private PilotCallResult MoveFromWire(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords
+    )
     {
         if (args.Length != 2 || args[1] is not long source)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         long[] ids;
         if (method == "Add" && args[0] is long id)
@@ -81,7 +86,7 @@ internal sealed class InventoryHandler(
         }
         else
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         object? flagValue = keywords?.GetValueOrDefault("flag");
         object? quantityValue = keywords?.GetValueOrDefault("qty");
@@ -92,7 +97,7 @@ internal sealed class InventoryHandler(
             || (quantityValue is long quantityNumber && (quantityNumber <= 0 || quantityNumber > int.MaxValue))
         )
         {
-            return new PilotCallRouter.Error("Invalid cargo flag or quantity.");
+            return new PilotCallResult.Failure("Invalid cargo flag or quantity.");
         }
         int flag =
             flagValue is long f ? (int)f
@@ -102,7 +107,7 @@ internal sealed class InventoryHandler(
         return Move(context, service, new InventoryMoveRequest(ids, source, flag, quantity));
     }
 
-    private object? Move(PilotCallContext context, string service, InventoryMoveRequest request)
+    private PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
     {
         var ids = request.ItemIds;
         long source = request.SourceId;
@@ -119,7 +124,7 @@ internal sealed class InventoryHandler(
                 && context.Flight.VisibleWrecks.Any(w => w.Id == source);
             if (looting && !context.Flight.CanTarget)
             {
-                return new PilotCallRouter.Error("Wreck contents cannot be transferred during warp or a system transition.");
+                return new PilotCallResult.Failure("Wreck contents cannot be transferred during warp or a system transition.");
             }
             if (looting)
             {
@@ -207,18 +212,15 @@ internal sealed class InventoryHandler(
             {
                 ammunitionHandler.NotifyChanges(context, movedMagazines);
             }
-            return null;
+            return PilotCallResult.None;
         }
         catch (CargoCapacityException error)
         {
-            return new PilotCallRouter.UserError(
-                "NotEnoughCargoSpace",
-                new() { ["available"] = error.Available, ["volume"] = error.Required }
-            );
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 
@@ -436,7 +438,7 @@ internal sealed class InventoryHandler(
         context.Notifications.Add(new ModuleAttributesChanged(changes));
     }
 
-    internal object? SetOnline(PilotCallContext context, long ship, long module, bool online)
+    internal PilotCallResult SetOnline(PilotCallContext context, long ship, long module, bool online)
     {
         try
         {
@@ -446,15 +448,15 @@ internal sealed class InventoryHandler(
                 new ShipEffectChanged(new(module, context.Pilot.PilotId, ship, null, DogmaEffect.Online, now, null, 0), now, online, online)
             );
             NotifyShipAttributes(context);
-            return null;
+            return PilotCallResult.None;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 
-    private object? ItemInfo(PilotCallContext context, long id)
+    private PilotCallResult ItemInfo(PilotCallContext context, long id)
     {
         var pilot = context.Pilot;
         if (id == pilot.ShipId)
@@ -470,7 +472,7 @@ internal sealed class InventoryHandler(
             .FirstOrDefault(i => i.Id == id && InventoryDefinitions.IsFittedSlot(i.FlagId));
         if (module is null)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         var result = PrimeModule(pilot, module);
         if (_refittingShip == pilot.ShipId && _refittingModules.Remove(id) && _refittingModules.Count == 0)
@@ -481,15 +483,15 @@ internal sealed class InventoryHandler(
         return result;
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
         object? arguments,
         Dictionary<string, object?>? keywords
-    ) => (service, method) == ("invbroker", "GetItemDescriptor") ? ItemDescriptor() : PilotCallRouter.Unsupported;
+    ) => (service, method) == ("invbroker", "GetItemDescriptor") ? ItemDescriptor() : PilotCallResult.Unsupported;
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -509,7 +511,7 @@ internal sealed class InventoryHandler(
                 // or a writable inventory. Departure/boarding expires it.
                 return method switch
                 {
-                    "List" or "ListByFlags" => new List<object?>(),
+                    "List" or "ListByFlags" => BlueEmpty.List,
                     "GetSelfInvItem" => Item(
                         new InventoryItem(
                             lost.ShipId,
@@ -524,17 +526,17 @@ internal sealed class InventoryHandler(
                             true
                         )
                     ),
-                    _ => new PilotCallRouter.Error("The ship was destroyed and its inventory is read-only."),
+                    _ => new PilotCallResult.Failure("The ship was destroyed and its inventory is read-only."),
                 };
             }
             var ship = fleet.Find(pilot.PilotId, container);
             if (ship is null || (container != pilot.ShipId && (pilot.Position is not null || ship.LocationId != pilot.StationId)))
             {
-                return new PilotCallRouter.Error("The ship inventory is unavailable at your current location.");
+                return new PilotCallResult.Failure("The ship inventory is unavailable at your current location.");
             }
             if (method == "List")
             {
-                return List(pilot, service, args);
+                return List(pilot, service, args.FirstOrDefault() as long?);
             }
             if (
                 method == "ListByFlags"
@@ -558,22 +560,17 @@ internal sealed class InventoryHandler(
             if (method is "Add" or "MultiAdd")
             {
                 return container == pilot.ShipId
-                    ? Move(context, "@ship", method, args, keywords)
-                    : new PilotCallRouter.Error("Activate the ship before changing its cargo or fitting.");
+                    ? MoveFromWire(context, "@ship", method, args, keywords)
+                    : new PilotCallResult.Failure("Activate the ship before changing its cargo or fitting.");
             }
         }
         return (service, method) switch
         {
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
-                null,
-            ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") or ("charFittingMgr", "GetFittings") => new Dictionary<
-                long,
-                object?
-            >(),
-            ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId => new Dictionary<
-                long,
-                object?
-            >(),
+                PilotCallResult.None,
+            ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") or ("charFittingMgr", "GetFittings") => BlueEmpty.IndexedDictionary,
+            ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId =>
+                BlueEmpty.IndexedDictionary,
             ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference("@hangar"),
             ("invbroker", "GetInventoryFromId")
                 when args is [long id, ..]
@@ -585,9 +582,9 @@ internal sealed class InventoryHandler(
                 $"{ShipInventoryPrefix}{id}"
             ),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference("@pilot"),
-            ("@hangar" or "@ship", "List") => List(pilot, service, args),
-            ("@pilot", "List") => new List<object?>(),
-            ("@hangar" or "@ship", "Add" or "MultiAdd") => Move(context, service, method, args, keywords),
+            ("@hangar" or "@ship", "List") => List(pilot, service, args.FirstOrDefault() as long?),
+            ("@pilot", "List") => BlueEmpty.List,
+            ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => Item(pilot, service[1..]),
             ("dogmaIM", "GetAllInfo") => AllInfo(pilot),
             ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(context, id),
@@ -597,14 +594,14 @@ internal sealed class InventoryHandler(
                 .FirstOrDefault(m => m.FlagId == slot && m.TypeId == type)
                 is { } magazine
                 ? ammunitionHandler.Prime(magazine)
-                : null,
+                : PilotCallResult.None,
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => SetOnline(
                 context,
                 ship,
                 module,
                 method == "SetModuleOnline"
             ),
-            _ => PilotCallRouter.Unsupported,
+            _ => PilotCallResult.Unsupported,
         };
     }
 }

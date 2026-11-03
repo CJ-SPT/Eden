@@ -118,7 +118,7 @@ public sealed class PilotHealthTests
             [pilot],
             selected => new(db.Store, selected, TimeProvider.System, new(), db.Objects),
             10,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         var all = Assert.IsType<Dictionary<string, object?>>(

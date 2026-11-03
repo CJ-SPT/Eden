@@ -56,13 +56,12 @@ public sealed class TypedSessionTests
     [Fact]
     public void SuccessfulNoneIsDistinctFromUnsupportedAndFailures()
     {
-        var none = Assert.IsType<PilotCallResult.Success>(PilotCallResult.FromLegacy(null));
+        var none = Assert.IsType<PilotCallResult.Success>(PilotCallResult.None);
         Equal(null, none.Reply);
-        Assert.IsType<PilotCallResult.UnsupportedCall>(PilotCallResult.FromLegacy(PilotCallRouter.Unsupported));
-        Assert.Equal(new PilotCallResult.Failure("reason"), PilotCallResult.FromLegacy(new PilotCallRouter.Error("reason")));
-        var named = Assert.IsType<PilotCallResult.NamedFailure>(
-            PilotCallResult.FromLegacy(new PilotCallRouter.UserError("CustomInfo", new() { ["info"] = "reason" }))
-        );
+        Assert.IsType<PilotCallResult.UnsupportedCall>(PilotCallResult.Unsupported);
+        var failure = new PilotCallResult.Failure("reason");
+        Assert.Equal("reason", failure.Message);
+        var named = new PilotCallResult.NamedFailure("CustomInfo", new InformationErrorValues("reason"));
         Equal(new Dictionary<string, object?> { ["info"] = "reason" }, named.Values);
         Assert.Equal("CustomInfo", named.Name);
     }

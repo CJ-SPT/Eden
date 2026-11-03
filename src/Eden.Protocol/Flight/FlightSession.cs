@@ -1036,7 +1036,7 @@ internal sealed class FlightSession(
 
     private void Update(DestinyCommand command) => Updates.Add(new(_simulatedStamp, command));
 
-    public object? StartJump(object?[] args, ISystemObjects systems)
+    public PilotCallResult StartJump(object?[] args, ISystemObjects systems)
     {
         Checkpoint();
         if (
@@ -1052,7 +1052,7 @@ internal sealed class FlightSession(
             || position.DistanceTo(source.Position) > source.Radius + Pilot.Flight.ShipRadius + 2500
         )
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         var destination = systems.Load(systemId);
         var exit = destination.FirstOrDefault(o =>
@@ -1060,7 +1060,7 @@ internal sealed class FlightSession(
         );
         if (exit is null)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         // Keep the source balls alive while the jump camera turns, fades the UI, and enters the tunnel.
         _arrivalStamp = null;
@@ -1069,7 +1069,7 @@ internal sealed class FlightSession(
         Update(new DestinyCommand.Stop(Pilot.ShipId));
         DepartureEffect(Pilot.ShipId, source.Id, systemId);
         space.Publish(Sample);
-        return null;
+        return PilotCallResult.None;
     }
 
     public bool CompleteJump()
@@ -1097,29 +1097,29 @@ internal sealed class FlightSession(
     private void ArrivalEffect(long shipId) =>
         Update(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));
 
-    private object? StartWarp(long target, double range)
+    private PilotCallResult StartWarp(long target, double range)
     {
         var body = objects.FirstOrDefault(item => item.Id == target);
         if (body is null)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         if (!InBallpark || !double.IsFinite(range) || range is < 0 or > 100_000)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         var origin = Pilot.Position!;
         var anchor = CelestialWarpPoint.Resolve(body, origin);
         if (origin.DistanceTo(anchor) - Pilot.Flight.ShipRadius < 150_000)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         var toward = (anchor - origin).Unit;
         double standOff = range + Pilot.Flight.ShipRadius + (Pilot.ShipId % 2 == 0 ? 1500 : 500);
         var end = anchor - toward * standOff;
         if (origin.DistanceTo(end) < 101_000)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         _warpDestination = end;
         _warpOrder = (target, range);
@@ -1133,21 +1133,21 @@ internal sealed class FlightSession(
         // effect stamp to trigger the camera and acceleration sequence on the client.
         WarpEffect(Pilot.ShipId, true);
         space.Publish(Sample);
-        return null;
+        return PilotCallResult.None;
     }
 
-    public object? Call(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
+    public PilotCallResult Call(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
     {
         if (service == "ship" && method == "Undock" && Pilot.Position is null && arguments is [long id, ..] && id == Pilot.ShipId)
         {
             // Separate the two local launch lanes even on simultaneous undocks.
             double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
             SetPosition(new(Pilot.X + Pilot.Flight.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
-            return null;
+            return PilotCallResult.None;
         }
         if (service != "beyonce" || Pilot.Position is not { } position)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         Checkpoint();
         if (_warpDestination is not null && method == "CmdStop")
@@ -1168,24 +1168,24 @@ internal sealed class FlightSession(
             )
             {
                 return _warpOrder == (retryTarget, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L))
-                    ? null
-                    : PilotCallRouter.Unsupported;
+                    ? PilotCallResult.None
+                    : PilotCallResult.Unsupported;
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         switch (method)
         {
             case "CmdWarpToStuff" when arguments is [string or byte[], long targetId] && BlueMarshal.Text(arguments[0]) == "item":
                 var range = keywords?.GetValueOrDefault("minRange") ?? 0L;
-                return range is double or long ? StartWarp(targetId, Convert.ToDouble(range)) : PilotCallRouter.Unsupported;
+                return range is double or long ? StartWarp(targetId, Convert.ToDouble(range)) : PilotCallResult.Unsupported;
             case "UpdateStateRequest":
                 Snapshot();
-                return null;
+                return PilotCallResult.None;
             case "CmdGotoDirection" when arguments is [double x, double y, double z]:
                 double length = Math.Sqrt(x * x + y * y + z * z);
                 if (!(length > 0) || !double.IsFinite(length))
                 {
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
                 }
                 _followTarget = null;
                 _lastHeading = new(x / length, y / length, z / length);
@@ -1196,7 +1196,7 @@ internal sealed class FlightSession(
                 }
                 Update(new DestinyCommand.GotoDirection(Pilot.ShipId, x, y, z));
                 Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _speedFraction));
-                return null;
+                return PilotCallResult.None;
             case "CmdFollowBall"
             or "CmdOrbit"
                 when arguments is [long target, var distance] && NavigationTarget(target) is { } follow && distance is double or long:
@@ -1208,7 +1208,7 @@ internal sealed class FlightSession(
                     || method == "CmdOrbit" && !InBallpark
                 )
                 {
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
                 }
                 position = Pilot.Position!;
                 double separation = position.DistanceTo(follow.Position);
@@ -1228,12 +1228,12 @@ internal sealed class FlightSession(
                     Update(new DestinyCommand.Follow(_followMode, Pilot.ShipId, target, standOff));
                     Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, 1d));
                 }
-                return null;
+                return PilotCallResult.None;
             case "CmdSetSpeedFraction" when arguments is [var speed] && speed is double or long:
                 double fraction = Convert.ToDouble(speed);
                 if (!(fraction >= 0 && fraction <= 1))
                 {
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
                 }
                 if (_direction is null && fraction > 0)
                 {
@@ -1243,13 +1243,13 @@ internal sealed class FlightSession(
                 }
                 _speedFraction = fraction;
                 Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, fraction));
-                return null;
+                return PilotCallResult.None;
             case "CmdStop":
                 _direction = null;
                 _followTarget = null;
                 _speedFraction = 0;
                 Update(new DestinyCommand.Stop(Pilot.ShipId));
-                return null;
+                return PilotCallResult.None;
             case "CmdDock"
                 when arguments is [long station, long ship]
                     && ship == Pilot.ShipId
@@ -1262,7 +1262,7 @@ internal sealed class FlightSession(
                     || (docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId))
                 )
                 {
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
                 }
                 if (docking is not null)
                 {
@@ -1278,9 +1278,9 @@ internal sealed class FlightSession(
                 _followTarget = null;
                 _speedFraction = 1;
                 _lastHeading = new(1, 0, 0);
-                return null;
+                return PilotCallResult.None;
             default:
-                return PilotCallRouter.Unsupported;
+                return PilotCallResult.Unsupported;
         }
     }
 }

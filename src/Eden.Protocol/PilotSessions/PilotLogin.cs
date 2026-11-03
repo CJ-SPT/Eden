@@ -19,25 +19,19 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
         Action<long>? authenticated = null
     )
     {
-        object?[] vk = Tuple(BlueMarshal.Decode(firstCommand), 3);
-        if (vk[0] is not null || BlueMarshal.Text(vk[1]) != "VK")
-        {
-            throw new InvalidDataException("Expected a local login request.");
-        }
+        PilotLoginWire.ValidateCommand(firstCommand);
 
-        object?[] exchange = Tuple(BlueMarshal.Decode(await PacketStream.ReadAsync(stream, cancellationToken)), 2);
-        var keys = Fields(exchange[1]);
+        var exchange = LoginKeyExchange.Read(BlueMarshal.Decode(await PacketStream.ReadAsync(stream, cancellationToken)));
         RSA key = identity.Key;
         using Aes aes = Aes.Create();
-        aes.Key = key.Decrypt(Bytes(keys["crypting_sessionkey"]), RSAEncryptionPadding.Pkcs1);
-        aes.IV = key.Decrypt(Bytes(keys["crypting_sessioniv"]), RSAEncryptionPadding.Pkcs1);
+        aes.Key = key.Decrypt(exchange.SessionKey, RSAEncryptionPadding.Pkcs1);
+        aes.IV = key.Decrypt(exchange.SessionIv, RSAEncryptionPadding.Pkcs1);
         await PacketStream.WriteAsync(stream, BlueMarshal.Encode("OK CC"), cancellationToken);
         report("Negotiated encrypted login transport.");
 
         EncryptedPackets packets = new(stream, aes, cancellationToken);
-        object?[] credentials = Tuple(await packets.ReadAsync(), 2);
-        var fields = Fields(credentials[1]);
-        if (identity.ValidateTicket(BlueMarshal.Text(fields["user_sso_token"])) is not long accountId)
+        var credentials = LoginCredentials.Read(await packets.ReadAsync());
+        if (identity.ValidateTicket(credentials.Ticket) is not long accountId)
         {
             throw new InvalidDataException("Invalid or expired local login ticket.");
         }
@@ -47,12 +41,12 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
         // Python 2 marshal string containing the fixed expression "{}". The client verifies
         // the local signature, evaluates it, and returns the empty dictionary as its result.
         byte[] expression = BlueMarshal.Encode(new byte[] { (byte)'s', 2, 0, 0, 0, (byte)'{', (byte)'}' });
-        byte[] signature = key.SignData(HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         await packets.WriteAsync(
-            new LoginChallenge(challenge, new SignedSettings(expression, signature), HashArgument(Bytes(credentials[0])))
+            new LoginChallenge(challenge, new SignedSettings(expression, signature), PilotLoginWire.HashArgument(credentials.Challenge))
         );
-        object?[] proof = Tuple(await packets.ReadAsync(), 3);
-        if (!CryptographicOperations.FixedTimeEquals(Bytes(proof[0]), HashArgument(challenge)))
+        var proof = LoginProof.Read(await packets.ReadAsync());
+        if (!CryptographicOperations.FixedTimeEquals(proof.ResponseHash, PilotLoginWire.HashArgument(challenge)))
         {
             throw new InvalidDataException("Client challenge response mismatch.");
         }
@@ -70,7 +64,11 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
                     + "000074080000003C737472696E673E74080000003C6C616D6264613E010000007300000000"
             )
         );
-        byte[] settingsSignature = key.SignData(HashArgument(settingsCode), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        byte[] settingsSignature = key.SignData(
+            PilotLoginWire.HashArgument(settingsCode),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1
+        );
         await session.RunAsync(
             packets.ReadAsync,
             packets.WriteAsync,
@@ -81,19 +79,4 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
             cancellationToken
         );
     }
-
-    internal static Dictionary<string, object?> AccountState(long accountId) =>
-        (Dictionary<string, object?>)new AccountSessionState(accountId).ToBlue();
-
-    internal static byte[] Bytes(object? value) => value as byte[] ?? throw new InvalidDataException("Expected bytes.");
-
-    internal static Dictionary<string, object?> Fields(object? value) =>
-        value as Dictionary<string, object?> ?? throw new InvalidDataException("Expected fields.");
-
-    internal static object?[] Tuple(object? value, int length) =>
-        value is object?[] tuple && tuple.Length == length
-            ? tuple
-            : throw new InvalidDataException($"Expected a tuple with {length} fields.");
-
-    private static byte[] HashArgument(byte[] value) => SHA256.HashData(BlueMarshal.Encode(new object?[] { value }));
 }

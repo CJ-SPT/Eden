@@ -98,15 +98,15 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         }
     }
 
-    private object Add(PilotCallContext context, long id)
+    private PilotCallResult Add(PilotCallContext context, long id)
     {
         if (id == _shipId)
         {
-            return new PilotCallRouter.UserError("DeniedTargetSelf", []);
+            return new PilotCallResult.NamedFailure("DeniedTargetSelf", BlueEmpty.Dictionary);
         }
         if (context.Flight.FindTarget(id) is not { } target)
         {
-            return new PilotCallRouter.UserError("TargetCantValidate", []);
+            return new PilotCallResult.NamedFailure("TargetCantValidate", BlueEmpty.Dictionary);
         }
         if (_locked.Contains(id))
         {
@@ -120,11 +120,11 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets));
         if (_pending.Count + _locked.Count >= limit)
         {
-            return new PilotCallRouter.UserError("TargetingSystemsAlreadyFullyUtilized", new() { ["limit"] = limit });
+            return new PilotCallResult.NamedFailure("TargetingSystemsAlreadyFullyUtilized", new TargetLimitErrorValues(limit));
         }
         if (Distance(context, target) > attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
-            return new PilotCallRouter.UserError("UnableToTarget", []);
+            return new PilotCallResult.NamedFailure("UnableToTarget", BlueEmpty.Dictionary);
         }
         double seconds = TargetingDefinitions.LockSeconds(
             attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
@@ -132,14 +132,14 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         );
         if (!(seconds > 0) || !double.IsFinite(seconds))
         {
-            return new PilotCallRouter.UserError("TargetingSystemsNotInstalled", []);
+            return new PilotCallResult.NamedFailure("TargetingSystemsNotInstalled", BlueEmpty.Dictionary);
         }
         _pending.Add(id, new(clock.GetTimestamp(), seconds));
         // targetMgr._LockTarget interprets true as pending; OnTarget("add") completes it.
         return new TargetLockReply(true, _locked.Order().ToArray());
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -149,7 +149,7 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
     {
         if (service != "dogmaIM")
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         context.Flight.Checkpoint();
         Advance(context);
@@ -159,19 +159,19 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
                 return Add(context, target);
             case "RemoveTarget" or "CancelAddTarget" when args is [long target]:
                 Remove(context, target);
-                return null;
+                return PilotCallResult.None;
             case "ClearTargets" when args.Length == 0:
                 foreach (long id in _pending.Keys.Concat(_locked).ToArray())
                 {
                     Remove(context, id);
                 }
-                return null;
+                return PilotCallResult.None;
             case "GetTargets" when args.Length == 0:
                 return new BlueList<long>(_locked.Order().ToArray());
             case "GetTargeters" when args.Length == 0:
                 return new BlueList<long>(_targeters);
             default:
-                return PilotCallRouter.Unsupported;
+                return PilotCallResult.Unsupported;
         }
     }
 

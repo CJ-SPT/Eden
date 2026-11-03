@@ -2,9 +2,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
 
-public sealed record SignedSettings(byte[] Code, byte[] Signature) : IBlueWritable
+public sealed record SignedSettings(byte[] Code, byte[] Signature) : BlueModel
 {
     public static SignedSettings Empty { get; } = new([], []);
 
-    public object ToBlue() => new object?[] { Code, Signature };
+    public override object ToBlue() => new object?[] { Code, Signature };
 }

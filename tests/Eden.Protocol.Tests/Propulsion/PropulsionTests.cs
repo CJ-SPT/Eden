@@ -104,7 +104,7 @@ public sealed class PropulsionTests
                 [pilot],
                 p => new(Db.Store, p, Clock, space ?? new(), objects ?? []),
                 7,
-                []
+                SignedSettings.Empty
             );
             context.Select(pilot);
             context.Flight.Snapshot();
@@ -353,7 +353,7 @@ public sealed class PropulsionTests
         using Fixture f = new();
         using var context = f.Client();
         PropulsionHandler handler = new(f.Clock, f.Store);
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, 999L, 0L])
         );
         Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 0L]));
@@ -376,7 +376,7 @@ public sealed class PropulsionTests
             PropulsionHandler handler = new(f.Clock, f.Store);
             Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
             Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
-            Assert.IsType<PilotCallRouter.Error>(
+            Assert.IsType<PilotCallResult.Failure>(
                 handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L])
             );
             f.Clock.Milliseconds = 9000;

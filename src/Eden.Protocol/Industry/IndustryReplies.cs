@@ -3,34 +3,34 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Industry;
 
-internal sealed record IndustryFacilityReply(IndustryFacility Facility, IReadOnlyList<int> Products) : IBlueWritable
+internal sealed record IndustryFacilityReply(IndustryFacility Facility, IReadOnlyList<int> Products) : BlueModel
 {
-    public object ToBlue() => IndustryWire.Facility(Facility, Products);
+    public override object ToBlue() => IndustryWire.Facility(Facility, Products);
 }
 
-internal sealed record BlueprintReply(OwnedBlueprint Blueprint) : IBlueWritable
+internal sealed record BlueprintReply(OwnedBlueprint Blueprint) : BlueModel
 {
-    public object ToBlue() => IndustryWire.Blueprint(Blueprint);
+    public override object ToBlue() => IndustryWire.Blueprint(Blueprint);
 }
 
-internal sealed record ManufacturingJobReply(ManufacturingJob Job) : IBlueWritable
+internal sealed record ManufacturingJobReply(ManufacturingJob Job) : BlueModel
 {
-    public object ToBlue() => IndustryWire.Job(Job);
+    public override object ToBlue() => IndustryWire.Job(Job);
 }
 
-internal sealed record IndustryLocationReply(IndustryFacility Facility, long PilotId) : IBlueWritable
+internal sealed record IndustryLocationReply(IndustryFacility Facility, long PilotId) : BlueModel
 {
-    public object ToBlue() => IndustryWire.Location(Facility, PilotId);
+    public override object ToBlue() => IndustryWire.Location(Facility, PilotId);
 }
 
-internal sealed record BlueprintLimits(int MaximumResults) : IBlueWritable
+internal sealed record BlueprintLimits(int MaximumResults) : BlueModel
 {
-    public object ToBlue() => new Dictionary<string, object?> { ["maxBlueprintResults"] = MaximumResults };
+    public override object ToBlue() => new Dictionary<string, object?> { ["maxBlueprintResults"] = MaximumResults };
 }
 
-internal sealed record BlueprintOwnerReply(IReadOnlyList<OwnedBlueprint> Blueprints, int Limit) : IBlueWritable
+internal sealed record BlueprintOwnerReply(IReadOnlyList<OwnedBlueprint> Blueprints, int Limit) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             new BlueList<BlueprintReply>(Blueprints.Take(Limit).Select(blueprint => new BlueprintReply(blueprint)).ToArray()),
@@ -42,9 +42,9 @@ internal sealed record BlueprintOwnerReply(IReadOnlyList<OwnedBlueprint> Bluepri
         };
 }
 
-internal sealed record IndustryMonitorReply(long MonitorId, IReadOnlyDictionary<int, long> Materials) : IBlueWritable
+internal sealed record IndustryMonitorReply(long MonitorId, IReadOnlyDictionary<int, long> Materials) : BlueModel
 {
-    public object ToBlue() => new object?[] { MonitorId, new BlueMap<int, long>(Materials) };
+    public override object ToBlue() => new object?[] { MonitorId, new BlueMap<int, long>(Materials) };
 }
 
 internal sealed record IndustryMaterialsChanged(long MonitorId, IReadOnlyDictionary<int, long> Materials)

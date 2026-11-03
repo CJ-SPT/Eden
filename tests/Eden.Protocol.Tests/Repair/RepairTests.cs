@@ -274,11 +274,11 @@ public sealed class RepairTests
             [pilot],
             p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
             2,
-            []
+            SignedSettings.Empty
         );
         object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });
         List<object?> ids = [pilot.ShipId];
-        Assert.Same(PilotCallRouter.Unsupported, Call("repairSvc", "GetRepairQuotes", ids));
+        Assert.Same(PilotCallResult.Unsupported, Call("repairSvc", "GetRepairQuotes", ids));
         context.Select(pilot);
         object?[] bind = [(long)pilot.StationId, (long)pilot.StationId, (long)RepairDefinitions.StationGroup];
         var binding = Assert.IsType<object?[]>(Call("repairSvc", "MachoBindObject", bind, null));
@@ -304,7 +304,7 @@ public sealed class RepairTests
         context.ReleaseLocationReferences();
         Assert.Null(context.ResolveReference(reference.Id));
         Assert.Same(
-            PilotCallRouter.Unsupported,
+            PilotCallResult.Unsupported,
             Call(
                 "repairSvc",
                 "MachoBindObject",

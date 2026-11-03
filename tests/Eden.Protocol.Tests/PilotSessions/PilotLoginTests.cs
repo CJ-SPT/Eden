@@ -52,10 +52,10 @@ public sealed class PilotLoginTests
         if (validTicket)
         {
             Assert.Equal(2L, await ReadEncrypted());
-            object?[] reply = PilotLogin.Tuple(await ReadEncrypted(), 4);
-            object?[] signed = PilotLogin.Tuple(reply[1], 2);
+            object?[] reply = BlueRead.Tuple(await ReadEncrypted(), 4);
+            object?[] signed = BlueRead.Tuple(reply[1], 2);
             byte[] digest = SHA256.HashData(BlueMarshal.Encode(new object?[] { signed[0] }));
-            Assert.True(key.VerifyData(digest, PilotLogin.Bytes(signed[1]), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+            Assert.True(key.VerifyData(digest, BlueRead.Bytes(signed[1]), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
             await SendEncrypted(new object?[] { new byte[32], "", null });
         }
 

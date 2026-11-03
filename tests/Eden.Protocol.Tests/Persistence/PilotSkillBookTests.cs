@@ -198,12 +198,12 @@ public sealed class PilotSkillBookTests
             [pilot],
             p => new(f.Db.Store, p, TimeProvider.System, new(), []),
             7,
-            []
+            SignedSettings.Empty
         );
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         object?[] args = [new List<object?> { f.Book }];
-        Assert.Same(PilotCallRouter.Unsupported, router.CallWire(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
+        Assert.Same(PilotCallResult.Unsupported, router.CallWire(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
         context.Select(pilot);
         Assert.Null(router.CallWire(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
         Assert.Equal(new[] { "OnItemChange", "OnServerSkillsChanged" }, context.Notifications.Select(n => n.Name));

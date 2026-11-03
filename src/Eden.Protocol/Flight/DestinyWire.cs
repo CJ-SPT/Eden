@@ -5,9 +5,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed record StampedDestinyUpdate(int Stamp, DestinyCommand Command) : IBlueWritable
+internal sealed record StampedDestinyUpdate(int Stamp, DestinyCommand Command) : BlueModel
 {
-    public object ToBlue() => new object?[] { Stamp, Command };
+    public override object ToBlue() => new object?[] { Stamp, Command };
 }
 
 internal sealed record DestinyUpdatesNotification(IReadOnlyList<StampedDestinyUpdate> Updates) : PilotNotification("DoDestinyUpdate")
@@ -15,11 +15,11 @@ internal sealed record DestinyUpdatesNotification(IReadOnlyList<StampedDestinyUp
     public override object?[] Arguments => [new BlueList<StampedDestinyUpdate>(Updates), false, null];
 }
 
-internal abstract record DestinyCommand(string Name) : IBlueWritable
+internal abstract record DestinyCommand(string Name) : BlueModel
 {
     protected abstract object?[] Arguments { get; }
 
-    public object ToBlue() => new object?[] { Name, Arguments };
+    public override object ToBlue() => new object?[] { Name, Arguments };
 
     internal sealed record RemoveBall(long Id, bool Explode) : DestinyCommand("RemoveBall")
     {

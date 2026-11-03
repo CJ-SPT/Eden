@@ -2,15 +2,15 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
-internal sealed record EscrowInfo(double Isk = 0, double Items = 0) : IBlueWritable
+internal sealed record EscrowInfo(double Isk = 0, double Items = 0) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["iskEscrow"] = Isk, ["itemsEscrow"] = Items });
 }
 
-internal sealed record HomeStationInfo(int Id, int TypeId, int SystemId, bool IsFallback = false) : IBlueWritable
+internal sealed record HomeStationInfo(int Id, int TypeId, int SystemId, bool IsFallback = false) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -23,9 +23,9 @@ internal sealed record HomeStationInfo(int Id, int TypeId, int SystemId, bool Is
         );
 }
 
-internal sealed record CorporationMemberInfo(long CharacterId, int CorporationId) : IBlueWritable
+internal sealed record CorporationMemberInfo(long CharacterId, int CorporationId) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -39,24 +39,24 @@ internal sealed record CorporationMemberInfo(long CharacterId, int CorporationId
         );
 }
 
-internal sealed record StationItemBits(DockedPilot Pilot) : IBlueWritable
+internal sealed record StationItemBits(DockedPilot Pilot) : BlueModel
 {
-    public object ToBlue() => new object?[] { Pilot.StationOwnerId, Pilot.StationId, Pilot.OperationId, Pilot.StationTypeId };
+    public override object ToBlue() => new object?[] { Pilot.StationOwnerId, Pilot.StationId, Pilot.OperationId, Pilot.StationTypeId };
 }
 
-internal sealed record StationGuest(long CharacterId, int CorporationId) : IBlueWritable
+internal sealed record StationGuest(long CharacterId, int CorporationId) : BlueModel
 {
-    public object ToBlue() => new object?[] { CharacterId, CorporationId, null, null };
+    public override object ToBlue() => new object?[] { CharacterId, CorporationId, null, null };
 }
 
-internal sealed record LocationRow(long Id, string Name, int SystemId, double X, double Y, double Z) : IBlueWritable
+internal sealed record LocationRow(long Id, string Name, int SystemId, double X, double Y, double Z) : BlueModel
 {
-    public object ToBlue() => new object?[] { Id, Name, SystemId, X, Y, Z, null };
+    public override object ToBlue() => new object?[] { Id, Name, SystemId, X, Y, Z, null };
 }
 
-internal sealed record LocationTable(IReadOnlyList<LocationRow> Locations) : IBlueWritable
+internal sealed record LocationTable(IReadOnlyList<LocationRow> Locations) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             new object?[] { "locationID", "locationName", "solarSystemID", "x", "y", "z", "locationNameID" },
@@ -64,25 +64,25 @@ internal sealed record LocationTable(IReadOnlyList<LocationRow> Locations) : IBl
         };
 }
 
-internal sealed record CompatibilityRowset(IReadOnlyList<string> Header, IReadOnlyList<IBlueWritable> Rows) : IBlueWritable
+internal sealed record CompatibilityRowset(IReadOnlyList<string> Header, IReadOnlyList<IBlueWritable> Rows) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "eve.common.script.sys.rowset.Rowset",
             new Dictionary<string, object?> { ["header"] = new BlueList<string>(Header), ["lines"] = new BlueList<IBlueWritable>(Rows) }
         );
 }
 
-internal sealed record EveOwnerRow(long Id, string Name) : IBlueWritable
+internal sealed record EveOwnerRow(long Id, string Name) : BlueModel
 {
     private const int CharacterTypeId = 1373;
 
-    public object ToBlue() => new object?[] { Id, Name, CharacterTypeId };
+    public override object ToBlue() => new object?[] { Id, Name, CharacterTypeId };
 }
 
-internal sealed record StationInfoRow(DockedPilot Pilot) : IBlueWritable
+internal sealed record StationInfoRow(DockedPilot Pilot) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             Pilot.StationId,

@@ -28,7 +28,7 @@ internal sealed record TargetChanged(TargetChange Change, long TargetId) : Pilot
         ];
 }
 
-internal sealed record TargetLockReply(bool Pending, IReadOnlyList<long> Targets) : IBlueWritable
+internal sealed record TargetLockReply(bool Pending, IReadOnlyList<long> Targets) : BlueModel
 {
-    public object ToBlue() => new object?[] { Pending, new BlueList<long>(Targets) };
+    public override object ToBlue() => new object?[] { Pending, new BlueList<long>(Targets) };
 }

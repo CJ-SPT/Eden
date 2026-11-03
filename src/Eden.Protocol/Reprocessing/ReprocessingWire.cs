@@ -2,9 +2,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Reprocessing;
 
-internal sealed record ReprocessingQuoteReply(ReprocessingQuotes Quote) : IBlueWritable
+internal sealed record ReprocessingQuoteReply(ReprocessingQuotes Quote) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             Quote.StationTax,
@@ -15,9 +15,9 @@ internal sealed record ReprocessingQuoteReply(ReprocessingQuotes Quote) : IBlueW
         };
 }
 
-internal sealed record ReprocessingItemReply(ReprocessingQuote Quote) : IBlueWritable
+internal sealed record ReprocessingItemReply(ReprocessingQuote Quote) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -37,9 +37,9 @@ internal sealed record ReprocessingItemReply(ReprocessingQuote Quote) : IBlueWri
         );
 }
 
-internal sealed record RecoveredMaterialReply(RecoveredMaterial Material) : IBlueWritable
+internal sealed record RecoveredMaterialReply(RecoveredMaterial Material) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -52,7 +52,7 @@ internal sealed record RecoveredMaterialReply(RecoveredMaterial Material) : IBlu
         );
 }
 
-internal sealed record ReprocessingCompleted(ReprocessingResult Result) : IBlueWritable
+internal sealed record ReprocessingCompleted(ReprocessingResult Result) : BlueModel
 {
-    public object ToBlue() => new object?[] { new BlueList<long>(Result.ProcessedIds), new BlueMap<int, int>(Result.Output) };
+    public override object ToBlue() => new object?[] { new BlueList<long>(Result.ProcessedIds), new BlueMap<int, int>(Result.Output) };
 }

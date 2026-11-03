@@ -4,18 +4,18 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Skills;
 
-internal sealed record TrainedSkillReply(TrainedSkill Skill) : IBlueWritable
+internal sealed record TrainedSkillReply(TrainedSkill Skill) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueConstructor(
             "characterskills.common.character_skill_entry.CharacterSkillEntry",
             [Skill.TypeId, Skill.Level, Skill.Points, Skill.Rank, null]
         );
 }
 
-internal sealed record SkillQueueRow(int Position, TrainingEntry Entry) : IBlueWritable
+internal sealed record SkillQueueRow(int Position, TrainingEntry Entry) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -31,14 +31,14 @@ internal sealed record SkillQueueRow(int Position, TrainingEntry Entry) : IBlueW
         );
 }
 
-internal sealed record SkillQueueReply(IReadOnlyList<SkillQueueRow> Queue) : IBlueWritable
+internal sealed record SkillQueueReply(IReadOnlyList<SkillQueueRow> Queue) : BlueModel
 {
-    public object ToBlue() => new object?[] { new BlueList<SkillQueueRow>(Queue), 0 };
+    public override object ToBlue() => new object?[] { new BlueList<SkillQueueRow>(Queue), 0 };
 }
 
-internal sealed record SkillHistoryRow(TrainingEvent Event) : IBlueWritable
+internal sealed record SkillHistoryRow(TrainingEvent Event) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
@@ -81,9 +81,9 @@ internal sealed record BrainEffect(
     IReadOnlyList<int> Extras,
     IReadOnlyList<int> Skills,
     double Value
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new BlueNewObject(
             BlueNewObject.BrainEffectClass,
             new Dictionary<string, object?>
@@ -111,9 +111,9 @@ internal sealed record PilotBrainState(
     IReadOnlyList<BrainEffect> CharacterEffects,
     IReadOnlyList<BrainEffect> ShipEffects,
     IReadOnlyList<BrainEffect> StructureEffects
-) : IBlueWritable
+) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new object?[]
         {
             Version,
@@ -136,9 +136,9 @@ internal sealed record PilotBrainState(
         );
 }
 
-internal sealed record BrainUpdate(long Version, byte[] GrayMatter) : IBlueWritable
+internal sealed record BrainUpdate(long Version, byte[] GrayMatter) : BlueModel
 {
-    public object ToBlue() => new object?[] { Version, GrayMatter };
+    public override object ToBlue() => new object?[] { Version, GrayMatter };
 }
 
 internal sealed record ServerBrainUpdated(BrainUpdate Brain) : PilotNotification("OnServerBrainUpdated")

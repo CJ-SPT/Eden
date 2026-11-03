@@ -331,12 +331,12 @@ public sealed class ReprocessingTests
             [pilot],
             selected => new(f.Db.Store, selected, TimeProvider.System, new SharedSpace(), f.Db.Objects),
             1,
-            []
+            SignedSettings.Empty
         );
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         Assert.Same(
-            PilotCallRouter.Unsupported,
+            PilotCallResult.Unsupported,
             router.CallWire(
                 context,
                 "reprocessingSvc",
@@ -362,14 +362,14 @@ public sealed class ReprocessingTests
                 new object?[] { (long)station, new object?[] { "GetQuotes", new object?[] { rows, pilot.ShipId } } },
                 _ => { }
             );
-        Assert.Same(PilotCallRouter.Unsupported, Bind(pilot.StationId + 1));
+        Assert.Same(PilotCallResult.Unsupported, Bind(pilot.StationId + 1));
         var bound = Assert.IsType<object?[]>(Bind(pilot.StationId));
         var reference = Assert.IsType<BlueObjectReference>(bound[0]);
         var wire = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(bound[1])));
         var efficiency = Assert.IsType<BlueDictionary>(wire[1]);
         Assert.Equal((null, (object?)0.5), Assert.Single(efficiency.Entries));
         var quote = Assert.IsType<BlueInstance>(Assert.IsType<Dictionary<long, object?>>(wire[2])[OreId]);
-        Assert.Equal(100L, PilotLogin.Fields(quote.State)["quantityToProcess"]);
+        Assert.Equal(100L, BlueRead.Fields(quote.State)["quantityToProcess"]);
         var result = router.CallWire(
             context,
             "reprocessingSvc",

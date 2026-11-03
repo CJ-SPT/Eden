@@ -93,7 +93,14 @@ public sealed class PilotTrainingTests
             world.Set<PilotSkill>().Find(pilot.PilotId, 3327)!.Points = 0;
             world.SaveChanges();
         }
-        using PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(db.Store, p, clock, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(db.Store, p, clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
         context.Select(pilot);
         training.Save(pilot.PilotId, [new(3327, 1)], true);
         clock.Now = clock.Now.AddSeconds(1000);

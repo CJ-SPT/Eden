@@ -111,7 +111,14 @@ public sealed class AmmunitionTests
         public PilotCallContext Context()
         {
             var pilot = Pilot;
-            PilotCallContext context = new(1000001, pilot.Account, [pilot], p => new(Db.Store, p, Clock, new(), Db.Objects), 7, []);
+            PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, Clock, new(), Db.Objects),
+                7,
+                SignedSettings.Empty
+            );
             context.Select(pilot);
             return context;
         }
@@ -259,7 +266,10 @@ public sealed class AmmunitionTests
         var removed = quantities.Where(q => Equals(q.Change[5], 0d)).ToArray();
         Assert.Equal(magazines.Count, removed.Length);
         Assert.All(removed, q => Assert.True(q.Index < firstItem));
-        Assert.All(magazines, m => Assert.Contains(removed, q => ((object?[])q.Change[2]!).SequenceEqual(AmmunitionHandler.Key(m))));
+        Assert.All(
+            magazines,
+            m => Assert.Contains(removed, q => ((object?[])q.Change[2]!).SequenceEqual((object?[])AmmunitionHandler.Key(m).ToBlue()))
+        );
         var primes = context
             .Notifications.Select((n, index) => (Notification: n, Index: index))
             .Where(n => n.Notification.Name == "OnGodmaPrimeItem")
@@ -273,7 +283,7 @@ public sealed class AmmunitionTests
                     quantities,
                     q =>
                         q.Index > lastItem
-                        && ((object?[])q.Change[2]!).SequenceEqual(AmmunitionHandler.Key(m))
+                        && ((object?[])q.Change[2]!).SequenceEqual((object?[])AmmunitionHandler.Key(m).ToBlue())
                         && Equals(q.Change[5], (double)m.Quantity)
                 )
         );

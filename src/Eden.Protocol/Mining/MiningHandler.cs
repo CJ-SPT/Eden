@@ -149,7 +149,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         );
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -159,7 +159,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     {
         if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         context.Flight.Checkpoint();
         targeting.Advance(context);
@@ -176,14 +176,16 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             {
                 if (!context.Flight.CanTarget || !targeting.IsLocked(target))
                 {
-                    return new PilotCallRouter.Error("Lock an asteroid before activating the mining laser.");
+                    return new PilotCallResult.Failure("Lock an asteroid before activating the mining laser.");
                 }
                 if (_cycles.TryGetValue(module, out var existing))
                 {
-                    return existing.Target == target ? null : new PilotCallRouter.Error("The mining laser is already active.");
+                    return existing.Target == target
+                        ? PilotCallResult.None
+                        : new PilotCallResult.Failure("The mining laser is already active.");
                 }
                 Start(context, module, target, repeats);
-                return null;
+                return PilotCallResult.None;
             }
             if (
                 method == "Deactivate"
@@ -203,13 +205,13 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                     _ = Collect(context, cycle, cycle.Laser.Volume * fraction, 0);
                     Stop(context, cycle);
                 }
-                return null;
+                return PilotCallResult.None;
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 }

@@ -118,12 +118,12 @@ public sealed class PilotServicesTests
         );
         foreach (var packet in packets.Skip(2).Take(3))
         {
-            var envelope = PilotLogin.Tuple(packet.State, 14);
+            var envelope = BlueRead.Tuple(packet.State, 14);
             var destination = Assert.IsType<BlueInstance>(envelope[2]);
-            Assert.Equal("OnItemChange", PilotLogin.Tuple(destination.State, 4)[1]);
+            Assert.Equal("OnItemChange", BlueRead.Tuple(destination.State, 4)[1]);
         }
-        var sessionBody = PilotLogin.Tuple(PilotLogin.Tuple(packets[5].State, 14)[4], 3);
-        var delta = PilotLogin.Fields(PilotLogin.Tuple(sessionBody[1], 2)[1]);
+        var sessionBody = BlueRead.Tuple(BlueRead.Tuple(packets[5].State, 14)[4], 3);
+        var delta = BlueRead.Fields(BlueRead.Tuple(sessionBody[1], 2)[1]);
         Assert.Equal(new object?[] { 1000000000001L, world.Store.FindPilot(1000001)!.ShipId }, delta["shipid"]);
         Assert.Null(Result(packets[^1]));
     }
@@ -157,9 +157,9 @@ public sealed class PilotServicesTests
         foreach (long sessionId in new long[] { 41, 42 })
         {
             var packets = await ExchangeAsync("charUnboundMgr", "GetCharacterSelectionData", [], sessionId);
-            var roster = PilotLogin.Tuple(Result(packets.Single()), 4);
+            var roster = BlueRead.Tuple(Result(packets.Single()), 4);
             var character = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(roster[2])));
-            var fields = PilotLogin.Fields(character.State);
+            var fields = BlueRead.Fields(character.State);
             Assert.Equal(90000001L, fields["characterID"]);
             Assert.Equal("Eden Pilot", BlueMarshal.Text(fields["characterName"]));
             Assert.Equal(601L, fields["shipTypeID"]);
@@ -181,12 +181,12 @@ public sealed class PilotServicesTests
 
         Assert.Equal(2, packets.Count);
         Assert.EndsWith(".SessionChangeNotification", packets[0].Name);
-        var envelope = PilotLogin.Tuple(packets[0].State, 14);
+        var envelope = BlueRead.Tuple(packets[0].State, 14);
         Assert.Equal(16, envelope[0]);
-        var body = PilotLogin.Tuple(envelope[4], 3);
+        var body = BlueRead.Tuple(envelope[4], 3);
         Assert.Equal(42L, body[0]);
-        var delta = PilotLogin.Tuple(body[1], 2);
-        var changes = PilotLogin.Fields(delta[1]);
+        var delta = BlueRead.Tuple(body[1], 2);
+        var changes = BlueRead.Fields(delta[1]);
         Assert.Equal(new object?[] { null, 90000001L }, changes["charid"]);
         Assert.Equal(new object?[] { null, 1000000000001L }, changes["shipid"]);
         Assert.Equal(new object?[] { null, 60003760 }, changes["stationid"]);
@@ -207,7 +207,7 @@ public sealed class PilotServicesTests
         );
         Assert.EndsWith(".ErrorResponse", packets[0].Name);
         Assert.EndsWith(".ErrorResponse", packets[3].Name);
-        var fields = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);
+        var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);
         Assert.Equal(90000001L, fields["characterID"]);
         Assert.Equal(19L, fields["schoolID"]);
         Assert.Equal(10L, fields["ancestryID"]);
@@ -220,7 +220,7 @@ public sealed class PilotServicesTests
         var packets = await ExchangeAsync("charUnboundMgr", "DeleteCharacter", [90000001], 42);
         var packet = Assert.Single(packets);
         Assert.EndsWith(".ErrorResponse", packet.Name);
-        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
+        var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
         Assert.Equal(0, body[1]);
         Assert.Equal("Unsupported local call charUnboundMgr.DeleteCharacter", body[2]);
     }
@@ -250,7 +250,7 @@ public sealed class PilotServicesTests
         Assert.EndsWith(".SessionChangeNotification", replies[1].Name);
         Assert.Null(Result(replies[2]));
         Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(Result(replies[3])));
-        var home = PilotLogin.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
+        var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(replies[4])).State);
         Assert.Equal(60015161L, home["id"]);
         Assert.Equal(30005305L, home["solar_system_id"]);
     }
@@ -258,17 +258,17 @@ public sealed class PilotServicesTests
     private static void AssertUserError(BlueInstance packet, string name, Dictionary<string, object?> values)
     {
         Assert.EndsWith(".ErrorResponse", packet.Name);
-        var body = PilotLogin.Tuple(PilotLogin.Tuple(packet.State, 14)[4], 3);
+        var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
         Assert.Equal(6, body[0]);
         Assert.Equal(2, body[1]);
-        byte[] exception = PilotLogin.Bytes(Assert.Single(PilotLogin.Tuple(body[2], 1)));
+        byte[] exception = BlueRead.Bytes(Assert.Single(BlueRead.Tuple(body[2], 1)));
         Assert.Equal(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [name, values])), exception);
     }
 
     private static object? Result(BlueInstance packet)
     {
-        var state = PilotLogin.Tuple(packet.State, 14);
-        return BlueMarshal.Decode(PilotLogin.Bytes(PilotLogin.Tuple(state[4], 1)[0]));
+        var state = BlueRead.Tuple(packet.State, 14);
+        return BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(state[4], 1)[0]));
     }
 
     [Fact]
@@ -300,13 +300,13 @@ public sealed class PilotServicesTests
             packets.Select(packet => packet.Name.Split('.')[^1])
         );
         // DBRow uses a client-only constructor. Compare the actual bound List payload with the owned ship ID on the wire.
-        var state = PilotLogin.Tuple(packets[4].State, 14);
-        var payload = PilotLogin.Bytes(PilotLogin.Tuple(state[4], 1)[0]);
+        var state = BlueRead.Tuple(packets[4].State, 14);
+        var payload = BlueRead.Bytes(BlueRead.Tuple(state[4], 1)[0]);
         Assert.True(payload.AsSpan().IndexOf(BitConverter.GetBytes(ship)) >= 0);
         Assert.Null(Result(packets[6]));
-        var notification = PilotLogin.Tuple(packets[8].State, 14);
+        var notification = BlueRead.Tuple(packets[8].State, 14);
         var destination = Assert.IsType<BlueInstance>(notification[2]);
-        Assert.Equal("DoDestinyUpdate", PilotLogin.Tuple(destination.State, 4)[1]);
+        Assert.Equal("DoDestinyUpdate", BlueRead.Tuple(destination.State, 4)[1]);
     }
 
     private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId) =>

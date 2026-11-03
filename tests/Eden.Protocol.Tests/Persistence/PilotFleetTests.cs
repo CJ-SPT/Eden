@@ -165,7 +165,7 @@ public sealed class PilotFleetTests
             [pilot],
             p => new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects),
             1,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });

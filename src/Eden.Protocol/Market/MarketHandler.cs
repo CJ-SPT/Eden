@@ -58,7 +58,7 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
         return new(orders);
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -73,19 +73,19 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
         bool check = service == "corpStationMgr" && method == "DoStandingCheckForStationService" && args is [(long)StationService.Market];
         if (service != "marketProxy" && !check)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
             if (check)
             {
                 market.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
-                return null;
+                return PilotCallResult.None;
             }
             switch (method)
             {
                 case "StartupCheck":
-                    return null;
+                    return PilotCallResult.None;
                 case "GetOrders" when args is [long type] && type is > 0 and <= int.MaxValue:
                     var book = market.Orders(context.Pilot.PilotId).Where(o => o.TypeId == type).ToArray();
                     return CachedOrders(new MarketOrderBook(book.Where(o => !o.Bid).ToArray(), book.Where(o => o.Bid).ToArray()));
@@ -139,7 +139,7 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
                             [new(checked((int)buyType), MarketRequestWire.Price(price), checked((int)quantity))]
                         )
                     );
-                    return null;
+                    return PilotCallResult.None;
                 case "BuyMultipleItems" when args is [long destination, List<object?> entries, false]:
                     var purchases = entries.Select(MarketRequestWire.Purchase).ToArray();
                     return Changed(context, market.Buy(context.Pilot.PilotId, checked((int)destination), purchases));
@@ -155,22 +155,22 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
                 case "PlaceMultiSellOrder":
                 case "PlaceBuyOrder":
                 case "BuyMultipleItems":
-                    return new PilotCallRouter.Error("Eden currently supports immediate personal trades at your docked station.");
+                    return new PilotCallResult.Failure("Eden currently supports immediate personal trades at your docked station.");
                 default:
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
             }
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("This market quantity or amount is too large.");
+            return new PilotCallResult.Failure("This market quantity or amount is too large.");
         }
     }
 
-    private object? Account(PilotCallContext context, string method, object?[] args)
+    private PilotCallResult Account(PilotCallContext context, string method, object?[] args)
     {
         if (method == "GetEntryTypes" && args.Length == 0)
         {
@@ -182,14 +182,14 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
         }
         if (method != "GetTransactions" || args is not [(long)WalletAccountKey.Cash, var year, var month, false])
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         // The default Last 30 Days filter passes (None, None); month filters
         // pass a real year and one-based month in build 3662168.
         bool recent = year is null && month is null;
         if (!recent && (year is not long y || y is < 1601 or > 9999 || month is not long m || m is < 1 or > 12))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         WalletJournalFilter filter = new(
             year is long yearNumber ? (int)yearNumber : null,

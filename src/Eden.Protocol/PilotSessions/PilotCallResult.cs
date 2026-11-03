@@ -6,40 +6,56 @@ internal abstract record PilotCallResult
 {
     private PilotCallResult() { }
 
-    internal sealed record Success(IBlueWritable Reply) : PilotCallResult;
+    internal sealed record Success(BlueModel Reply) : PilotCallResult;
 
     internal sealed record UnsupportedCall : PilotCallResult;
 
     internal sealed record Failure(string Message) : PilotCallResult;
 
-    internal sealed record NamedFailure(string Name, IBlueWritable Values) : PilotCallResult;
+    internal sealed record NamedFailure(string Name, BlueModel Values) : PilotCallResult;
 
     public static PilotCallResult None { get; } = new Success(new NoneReply());
+    public static PilotCallResult Unsupported { get; } = new UnsupportedCall();
 
-    private sealed record NoneReply : IBlueWritable
+    public static implicit operator PilotCallResult(BlueModel reply) => new Success(reply);
+
+    public static implicit operator PilotCallResult(bool value) => new Success(new ScalarReply<bool>(value));
+
+    public static implicit operator PilotCallResult(int value) => new Success(new ScalarReply<int>(value));
+
+    public static implicit operator PilotCallResult(long value) => new Success(new ScalarReply<long>(value));
+
+    public static implicit operator PilotCallResult(double value) => new Success(new ScalarReply<double>(value));
+
+    public static implicit operator PilotCallResult(string value) => new Success(new ScalarReply<string>(value));
+
+    public static implicit operator PilotCallResult(BlueObjectReference value) => new Success(new BoundReferenceReply(value));
+
+    public static implicit operator PilotCallResult(BlueConstructor value) => new Success(new ConstructedBlueReply(value));
+
+    private sealed record ScalarReply<T>(T Value) : BlueModel
     {
-        public object? ToBlue() => null;
+        public override object? ToBlue() => Value;
     }
 
-    // Removed once all service adapters return named replies directly.
-    internal static PilotCallResult FromLegacy(object? value) =>
-        value switch
-        {
-            null => None,
-            PilotCallResult result => result,
-            PilotCallRouter.Error error => new Failure(error.Message),
-            PilotCallRouter.UserError error => new NamedFailure(error.Name, new LegacyReply(error.Values)),
-            IBlueWritable reply => new Success(reply),
-            _ => new Success(new LegacyReply(value)),
-        };
-
-    internal sealed record LegacyReply(object? Value) : IBlueWritable
+    private sealed record NoneReply : BlueModel
     {
-        public object? ToBlue() => Value;
+        public override object? ToBlue() => null;
+    }
+
+    private sealed record BoundReferenceReply(BlueObjectReference Reference) : BlueModel
+    {
+        public override object ToBlue() => Reference;
+    }
+
+    // Native row descriptors are codec values, constructed only by wire adapters.
+    private sealed record ConstructedBlueReply(BlueConstructor Constructor) : BlueModel
+    {
+        public override object ToBlue() => Constructor;
     }
 }
 
-internal sealed record BoundPilotReply(BlueObjectReference Reference, IBlueWritable Reply) : IBlueWritable
+internal sealed record BoundPilotReply(BlueObjectReference Reference, BlueModel Reply) : BlueModel
 {
-    public object ToBlue() => new object?[] { Reference, Reply };
+    public override object ToBlue() => new object?[] { Reference, Reply };
 }

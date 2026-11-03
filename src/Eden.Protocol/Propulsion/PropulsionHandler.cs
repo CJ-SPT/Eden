@@ -140,11 +140,11 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
         );
     }
 
-    public object? Call(PilotCallContext context, string service, string method, object?[] args)
+    public PilotCallResult Call(PilotCallContext context, string service, string method, object?[] args)
     {
         if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         context.Flight.Checkpoint();
         Advance(context);
@@ -159,14 +159,16 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
             {
                 if (!context.Flight.CanTarget || target is not null && !Equals(target, context.Pilot.ShipId))
                 {
-                    return new PilotCallRouter.Error("Activate the afterburner on your own ship outside warp.");
+                    return new PilotCallResult.Failure("Activate the afterburner on your own ship outside warp.");
                 }
                 if (_cycle is { } current)
                 {
-                    return current.Module.ItemId == module ? null : new PilotCallRouter.Error("Only one afterburner can run at a time.");
+                    return current.Module.ItemId == module
+                        ? PilotCallResult.None
+                        : new PilotCallResult.Failure("Only one afterburner can run at a time.");
                 }
                 Start(context, module, repeats);
-                return null;
+                return PilotCallResult.None;
             }
             if (
                 method == "Deactivate"
@@ -178,17 +180,17 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
                 {
                     _cycle = current with { Stopping = true };
                 }
-                return null;
+                return PilotCallResult.None;
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("The afterburner exceeded the local cycle limit.");
+            return new PilotCallResult.Failure("The afterburner exceeded the local cycle limit.");
         }
     }
 }

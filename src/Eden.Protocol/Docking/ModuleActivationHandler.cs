@@ -18,7 +18,7 @@ internal sealed class ModuleActivationHandler(
     PropulsionHandler propulsion
 ) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -28,7 +28,7 @@ internal sealed class ModuleActivationHandler(
     {
         if (service != "dogmaIM" || method is not ("Activate" or "Deactivate") || args.Length < 2)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         return BlueMarshal.Text(args[1]) switch
         {
@@ -38,11 +38,11 @@ internal sealed class ModuleActivationHandler(
             ShieldBoostDefinitions.EffectName => shields.Call(context, service, method, args),
             PropulsionDefinitions.EffectName => propulsion.Call(context, service, method, args),
             InventoryDefinitions.OnlineEffectName => Online(context, method, args),
-            _ => PilotCallRouter.Unsupported,
+            _ => PilotCallResult.Unsupported,
         };
     }
 
-    private object? Online(PilotCallContext context, string method, object?[] args) =>
+    private PilotCallResult Online(PilotCallContext context, string method, object?[] args) =>
         (method, args) switch
         {
             // Pinned Godma EffectWrapper uses these calls from the module menu,
@@ -55,6 +55,6 @@ internal sealed class ModuleActivationHandler(
                 module,
                 true
             ),
-            _ => PilotCallRouter.Unsupported,
+            _ => PilotCallResult.Unsupported,
         };
 }

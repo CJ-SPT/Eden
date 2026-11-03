@@ -15,7 +15,7 @@ internal sealed class SkillHandler(
     PropulsionHandler propulsion
 ) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -31,33 +31,33 @@ internal sealed class SkillHandler(
                 ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills"),
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
-                ("expertSystemMgr", "GetMyExpertSystems") => new Dictionary<long, object?>(),
+                ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,
                 ("@skills", "GetAttributes") => new BlueMap<DogmaAttributeId, int>(PilotProfile.TrainingAttributes()),
                 ("@skills", "GetFreeSkillPoints") => 0,
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
                 ("@skills", "GetSkillQueueAndFreePoints") => new SkillQueueReply(Advance(context)),
                 ("@skills", "SaveNewQueue") => Save(context, args, keywords),
                 ("@skills", "AbortTraining") when args.Length == 0 => Pause(context),
-                ("@skills", "GetBoosters" or "GetImplants") => new Dictionary<long, object?>(),
-                ("@skills", "CheckAndSendNotifications") => null,
-                _ => PilotCallRouter.Unsupported,
+                ("@skills", "GetBoosters" or "GetImplants") => BlueEmpty.IndexedDictionary,
+                ("@skills", "CheckAndSendNotifications") => PilotCallResult.None,
+                _ => PilotCallResult.Unsupported,
             };
         }
         catch (InvalidTrainingQueue error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 
-    private object? Inject(PilotCallContext context, object?[] args)
+    private PilotCallResult Inject(PilotCallContext context, object?[] args)
     {
         if (args is not [List<object?> items] || items.Any(i => i is not long))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         var result = books.Inject(context.Pilot.PilotId, items.Cast<long>().ToArray());
         foreach (var change in result.Changes)
@@ -66,7 +66,7 @@ internal sealed class SkillHandler(
         }
         var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)));
         context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
-        return null;
+        return PilotCallResult.None;
     }
 
     public IReadOnlyList<SkillQueueRow> Advance(PilotCallContext context)
@@ -75,21 +75,21 @@ internal sealed class SkillHandler(
         return Apply(context, state, state.ChangedSkills.Count > 0);
     }
 
-    private object? Pause(PilotCallContext context)
+    private PilotCallResult Pause(PilotCallContext context)
     {
         Apply(context, training.Pause(context.Pilot.PilotId), true);
         context.Notifications.Add(new SkillQueuePaused());
-        return null;
+        return PilotCallResult.None;
     }
 
-    private object? Save(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
+    private PilotCallResult Save(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
     {
         if (SkillQueueRequest.Read(args, keywords) is not { } request)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         Apply(context, training.Save(context.Pilot.PilotId, request.Targets, request.Activate), true);
-        return null;
+        return PilotCallResult.None;
     }
 
     private IReadOnlyList<SkillQueueRow> Apply(PilotCallContext context, TrainingState state, bool notify)
@@ -110,7 +110,7 @@ internal sealed class SkillHandler(
         return rows;
     }
 
-    private object History(long pilotId, object?[] args)
+    private BlueList<SkillHistoryRow> History(long pilotId, object?[] args)
     {
         int count = args switch
         {

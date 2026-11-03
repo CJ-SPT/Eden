@@ -107,7 +107,7 @@ public sealed class PilotCombatTests
                 [pilot],
                 p => new(Db.Store, p, Clock, new(), [], encounters: Encounters, wrecks: Db.Services.GetRequiredService<IWrecks>()),
                 10,
-                []
+                SignedSettings.Empty
             );
             context.Select(pilot);
             context.Flight.Snapshot();
@@ -370,11 +370,11 @@ public sealed class PilotCombatTests
                     {
                         return Task.CompletedTask;
                     }
-                    var fields = PilotLogin.Tuple(value.State, 14);
-                    string name = BlueMarshal.Text(PilotLogin.Tuple(Assert.IsType<BlueInstance>(fields[2]).State, 4)[1]);
-                    var payload = PilotLogin.Tuple(PilotLogin.Tuple(fields[4], 1)[0], 2);
-                    var call = PilotLogin.Tuple(BlueMarshal.Decode(PilotLogin.Bytes(payload[1])), 2);
-                    notifications.Add((name, Assert.IsType<object?[]>(PilotLogin.Tuple(call[1], 2)[1])));
+                    var fields = BlueRead.Tuple(value.State, 14);
+                    string name = BlueMarshal.Text(BlueRead.Tuple(Assert.IsType<BlueInstance>(fields[2]).State, 4)[1]);
+                    var payload = BlueRead.Tuple(BlueRead.Tuple(fields[4], 1)[0], 2);
+                    var call = BlueRead.Tuple(BlueMarshal.Decode(BlueRead.Bytes(payload[1])), 2);
+                    notifications.Add((name, Assert.IsType<object?[]>(BlueRead.Tuple(call[1], 2)[1])));
                     return Task.CompletedTask;
                 },
                 _ => { },

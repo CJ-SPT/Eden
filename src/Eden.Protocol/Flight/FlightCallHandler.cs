@@ -5,7 +5,7 @@ namespace Eden.Protocol.Flight;
 [Injectable]
 internal sealed class FlightCallHandler(ISystemObjects systems) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,

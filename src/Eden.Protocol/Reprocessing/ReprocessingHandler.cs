@@ -16,7 +16,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
             _ => null,
         };
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -28,7 +28,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
             service == "corpStationMgr" && method == "DoStandingCheckForStationService" && args is [(long)StationService.Reprocessing];
         if (!check && (service != "reprocessingSvc" || method is not ("GetQuotes" or "Reprocess")))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
@@ -39,7 +39,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
             if (check)
             {
                 reprocessing.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
-                return null;
+                return PilotCallResult.None;
             }
             if (method == "GetQuotes" && args is [var rows, long ship] && ItemIds(rows) is { } ids)
             {
@@ -70,22 +70,19 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
                 // controller unpacks input IDs and actual output quantities.
                 return new ReprocessingCompleted(result);
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (CargoCapacityException error)
         {
-            return new PilotCallRouter.UserError(
-                "NotEnoughCargoSpace",
-                new() { ["available"] = error.Available, ["volume"] = error.Required }
-            );
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.UserError("ReprocessingPleaseSplit", new());
+            return new PilotCallResult.NamedFailure("ReprocessingPleaseSplit", BlueEmpty.Dictionary);
         }
     }
 }

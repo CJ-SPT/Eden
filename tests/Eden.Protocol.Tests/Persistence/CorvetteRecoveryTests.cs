@@ -164,7 +164,7 @@ public sealed class CorvetteRecoveryTests
             [f.Venture],
             p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
             42,
-            []
+            SignedSettings.Empty
         );
         object? Call() =>
             router.CallWire(
@@ -174,7 +174,7 @@ public sealed class CorvetteRecoveryTests
                 new object?[] { f.Venture.ShipId, (long)f.Venture.StationId },
                 _ => { }
             );
-        Assert.Same(PilotCallRouter.Unsupported, Call());
+        Assert.Same(PilotCallResult.Unsupported, Call());
         context.Select(f.Venture);
         Assert.Null(Call());
         Assert.Equal(601, context.Pilot.ShipTypeId);

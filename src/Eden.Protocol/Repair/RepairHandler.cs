@@ -9,7 +9,7 @@ namespace Eden.Protocol.Repair;
 [Injectable]
 internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, TimeProvider clock) : ISelectedPilotCallHandler
 {
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -21,18 +21,18 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
             service == "corpStationMgr" && method == "DoStandingCheckForStationService" && args is [(long)StationService.Repair];
         if (service != "repairSvc" && !standing)
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
             if (standing)
             {
                 repair.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
-                return null;
+                return PilotCallResult.None;
             }
             if (args.FirstOrDefault() is not List<object?> items || !items.All(i => i is long))
             {
-                return PilotCallRouter.Unsupported;
+                return PilotCallResult.Unsupported;
             }
             var ids = items.Cast<long>().ToArray();
             if (method == "GetRepairQuotes" && args.Length == 1)
@@ -48,7 +48,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
             }
             if (method != "RepairItemsInStation" || args.Length != 2 || args[1] is not (double or long))
             {
-                return PilotCallRouter.Unsupported;
+                return PilotCallResult.Unsupported;
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             long payment = RepairDefinitions.PaymentCents(args[1] is double amount ? amount : (long)args[1]!);
@@ -78,15 +78,15 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
                     ])
                 );
             }
-            return null;
+            return PilotCallResult.None;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("This repair payment is too large.");
+            return new PilotCallResult.Failure("This repair payment is too large.");
         }
     }
 }

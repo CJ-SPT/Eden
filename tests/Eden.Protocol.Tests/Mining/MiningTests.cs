@@ -117,7 +117,7 @@ public sealed class MiningTests
                 [pilot],
                 selected => new(Db.Store, selected, Clock, Space, objects, [new(module, (int)laser, (int)InventoryFlag.HighSlot0)]),
                 account,
-                []
+                SignedSettings.Empty
             );
             context.Select(pilot);
             _ = context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
@@ -213,7 +213,7 @@ public sealed class MiningTests
             world.Set<PilotSkill>().Find(context.Pilot.PilotId, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, 1);
             world.SaveChanges();
         }
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L])
         );
         Assert.False(mining.IsActive(module));
@@ -360,13 +360,13 @@ public sealed class MiningTests
     {
         using Fixture fixture = new();
         var (context, targeting, mining, module) = fixture.Client(locked: false);
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L])
         );
         _ = targeting.CallWire(context, "dogmaIM", "AddTarget", [Fixture.Asteroid]);
         fixture.Clock.Milliseconds += 4000;
         targeting.Advance(context);
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             mining.CallWire(context, "dogmaIM", "Activate", [module + 100, "miningLaser", Fixture.Asteroid, 0L])
         );
         Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
@@ -414,7 +414,7 @@ public sealed class MiningTests
         Assert.False(mining.IsActive(module));
         Assert.Equal(9990, fixture.Remaining());
         Assert.Equal(1250, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.TypeId == 1230).Quantity);
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L])
         );
         using (WorldDbContext world = new(fixture.Db.Path))

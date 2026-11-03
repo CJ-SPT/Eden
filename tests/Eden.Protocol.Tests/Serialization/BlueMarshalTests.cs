@@ -68,14 +68,14 @@ public sealed class BlueMarshalTests
     public void DecodesValueBeforeKeyAndUsesPinnedInternTable()
     {
         // One dictionary entry with integer value 1 and interned key 135.
-        var values = PilotLogin.Fields(BlueMarshal.Decode(Convert.FromHexString("7E000000001601091187")));
+        var values = BlueRead.Fields(BlueMarshal.Decode(Convert.FromHexString("7E000000001601091187")));
         Assert.Equal(1L, values["machoVersion"]);
     }
 
     [Fact]
     public void ReadsSharedStringsUsingTheTrailingReferenceTable()
     {
-        var tuple = PilotLogin.Tuple(BlueMarshal.Decode(Convert.FromHexString("7E010000002C530261621B0101000000")), 2);
+        var tuple = BlueRead.Tuple(BlueMarshal.Decode(Convert.FromHexString("7E010000002C530261621B0101000000")), 2);
         Assert.Same(tuple[0], tuple[1]);
         Assert.Equal("ab", BlueMarshal.Text(tuple[1]));
     }
@@ -121,6 +121,6 @@ public sealed class BlueMarshalTests
         var value = new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["userid"] = 1000001 });
         var decoded = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(value)));
         Assert.Equal(value.Name, decoded.Name);
-        Assert.Equal(1000001L, PilotLogin.Fields(decoded.State)["userid"]);
+        Assert.Equal(1000001L, BlueRead.Fields(decoded.State)["userid"]);
     }
 }

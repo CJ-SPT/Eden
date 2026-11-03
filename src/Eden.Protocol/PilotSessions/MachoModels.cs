@@ -3,9 +3,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
 
-internal abstract record MachoAddress : IBlueWritable
+internal abstract record MachoAddress : BlueModel
 {
-    public abstract object ToBlue();
+    public abstract override object ToBlue();
 
     internal sealed record Node(long Id) : MachoAddress
     {
@@ -30,21 +30,21 @@ internal sealed record PilotCallRequest(object? ObjectId, string Method, object?
 {
     public static PilotCallRequest Read(byte[] bytes)
     {
-        var fields = PilotLogin.Tuple(BlueMarshal.Decode(bytes), 4);
+        var fields = BlueRead.Tuple(BlueMarshal.Decode(bytes), 4);
         return new(fields[0], BlueMarshal.Text(fields[1]), fields[2], fields[3] as Dictionary<string, object?>);
     }
 
     public bool IsBindingWithoutCall => Arguments is object?[] { Length: 2 } bind && bind[1] is null;
 }
 
-internal sealed record PilotSessionChange(long AccountId, long ClientId, DockedPilot Pilot, DockedPilot? Previous = null) : IBlueWritable
+internal sealed record PilotSessionChange(long AccountId, long ClientId, DockedPilot Pilot, DockedPilot? Previous = null) : BlueModel
 {
-    public object ToBlue() => PilotSessionWire.SessionChange(AccountId, ClientId, Pilot, Previous);
+    public override object ToBlue() => PilotSessionWire.SessionChange(AccountId, ClientId, Pilot, Previous);
 }
 
-internal sealed record AccountSessionState(long AccountId) : IBlueWritable
+internal sealed record AccountSessionState(long AccountId) : BlueModel
 {
-    public object ToBlue() =>
+    public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["userid"] = AccountId,
@@ -63,14 +63,14 @@ internal sealed record IncomingMachoPacket(string Name, object?[] Fields)
         {
             throw new InvalidDataException("Expected a MachoNet packet.");
         }
-        return new(packet.Name, PilotLogin.Tuple(packet.State, 14));
+        return new(packet.Name, BlueRead.Tuple(packet.State, 14));
     }
 
     public byte[] CallBytes()
     {
-        var body = PilotLogin.Tuple(Fields[4], 1);
-        var wrapper = PilotLogin.Tuple(body[0], 2);
-        return wrapper[1] is BlueStream stream ? stream.Bytes : PilotLogin.Bytes(wrapper[1]);
+        var body = BlueRead.Tuple(Fields[4], 1);
+        var wrapper = BlueRead.Tuple(body[0], 2);
+        return wrapper[1] is BlueStream stream ? stream.Bytes : BlueRead.Bytes(wrapper[1]);
     }
 
     public object?[] Destination()
@@ -82,11 +82,24 @@ internal sealed record IncomingMachoPacket(string Name, object?[] Fields)
         return route;
     }
 
-    public BlueInstance Response(string name, int command, object? body) => PilotSessionWire.Response(Fields, name, command, body);
+    private BlueInstance Response(string name, int command, object? body) => PilotSessionWire.Response(Fields, name, command, body);
+
+    public BlueInstance CallSucceeded(BlueModel reply) => Response("CallRsp", 7, new object?[] { BlueMarshal.Encode(reply) });
+
+    public BlueInstance InvalidArguments() => Response("ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" });
+
+    public BlueInstance UnsupportedCall(string service, string method) =>
+        Response("ErrorResponse", 15, new object?[] { 6, 0, $"Unsupported local call {service}.{method}" });
+
+    public BlueInstance UserError(PilotCallResult.NamedFailure error)
+    {
+        byte[] exception = BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [error.Name, error.Values]));
+        return Response("ErrorResponse", 15, new object?[] { 6, 2, new object?[] { exception } });
+    }
 
     public BlueInstance Ping(long now)
     {
-        var times = PilotLogin.Tuple(Fields[4], 1)[0] as List<object?> ?? throw new InvalidDataException("Missing ping times.");
+        var times = BlueRead.Tuple(Fields[4], 1)[0] as List<object?> ?? throw new InvalidDataException("Missing ping times.");
         foreach (
             string phase in new[]
             {

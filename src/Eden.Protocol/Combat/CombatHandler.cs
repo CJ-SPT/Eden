@@ -173,7 +173,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         );
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -183,7 +183,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     {
         if (service != "dogmaIM" || method is not ("Activate" or "Deactivate"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         context.Flight.Checkpoint();
         targeting.Advance(context);
@@ -199,14 +199,14 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             {
                 if (!context.Flight.CanTarget || !targeting.IsLocked(target) || !context.Flight.VisibleNpcs.Any(n => n.Id == target))
                 {
-                    return new PilotCallRouter.Error("Lock a nearby NPC before activating the weapon.");
+                    return new PilotCallResult.Failure("Lock a nearby NPC before activating the weapon.");
                 }
                 if (_cycles.TryGetValue(module, out var current))
                 {
-                    return current.Target == target ? null : new PilotCallRouter.Error("The weapon is already active.");
+                    return current.Target == target ? PilotCallResult.None : new PilotCallResult.Failure("The weapon is already active.");
                 }
                 Start(context, module, target, repeats, BlueMarshal.Text(effect));
-                return null;
+                return PilotCallResult.None;
             }
             if (
                 method == "Deactivate"
@@ -220,17 +220,17 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 {
                     _cycles[item] = stopping with { Stopping = true };
                 }
-                return null;
+                return PilotCallResult.None;
             }
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("The combat transaction exceeded the local value limit.");
+            return new PilotCallResult.Failure("The combat transaction exceeded the local value limit.");
         }
     }
 }

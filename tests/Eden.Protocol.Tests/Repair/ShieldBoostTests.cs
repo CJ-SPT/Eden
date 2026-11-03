@@ -126,7 +126,7 @@ public sealed class ShieldBoostTests
                 [pilot],
                 p => new(Db.Store, p, Clock, space ?? new(), Db.Objects, health: Health),
                 7,
-                []
+                SignedSettings.Empty
             );
             context.Select(pilot);
             context.Flight.Snapshot();
@@ -481,7 +481,7 @@ public sealed class ShieldBoostTests
         context.Flight.BeginShipLoss();
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
-        Assert.IsType<PilotCallRouter.Error>(
+        Assert.IsType<PilotCallResult.Failure>(
             handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 0L])
         );
     }
@@ -515,7 +515,7 @@ public sealed class ShieldBoostTests
             [pilot],
             p => new(f.Db.Store, p, f.Clock, new(), [], health: f.Health, encounters: encounters),
             7,
-            []
+            SignedSettings.Empty
         );
         context.Select(pilot);
         context.Flight.Snapshot();

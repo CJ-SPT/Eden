@@ -484,7 +484,7 @@ public sealed class NpcCombatTests
                     wrecks: f.Db.Services.GetRequiredService<IWrecks>()
                 ),
             42,
-            []
+            SignedSettings.Empty
         );
         context.Select(f.Pilot);
         context.Flight.Snapshot();
@@ -572,7 +572,14 @@ public sealed class NpcCombatTests
         var old = f.Pilot;
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
-        using PilotCallContext context = new(1000001, old.Account, [old], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
+        using PilotCallContext context = new(
+            1000001,
+            old.Account,
+            [old],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
         context.Select(old);
         object? Call(string service, string method, object?[] args) => router.CallWire(context, service, method, args, _ => { });
         var previous = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
@@ -602,9 +609,9 @@ public sealed class NpcCombatTests
         Assert.Equal(old.ShipId, row[0]);
         Assert.Equal((long)InventoryLocation.Graveyard, row[(int)InventoryColumn.Location]);
         Assert.Equal(InventoryDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
-        Assert.IsType<PilotCallRouter.Error>(Call(service, "Add", [f.Module, capsule.ShipId]));
-        Assert.IsType<PilotCallRouter.Error>(Call(service, "MultiAdd", [new List<object?> { f.Module }, capsule.ShipId]));
-        Assert.Same(PilotCallRouter.Unsupported, Call("invbroker", "GetInventoryFromId", [1000000000002L, 0L]));
+        Assert.IsType<PilotCallResult.Failure>(Call(service, "Add", [f.Module, capsule.ShipId]));
+        Assert.IsType<PilotCallResult.Failure>(Call(service, "MultiAdd", [new List<object?> { f.Module }, capsule.ShipId]));
+        Assert.Same(PilotCallResult.Unsupported, Call("invbroker", "GetInventoryFromId", [1000000000002L, 0L]));
         if (depart)
         {
             context.ReleaseLocationReferences();
@@ -614,8 +621,8 @@ public sealed class NpcCombatTests
             context.ChangeShip(capsule);
         }
         Assert.Null(context.DestroyedShip);
-        Assert.IsType<PilotCallRouter.Error>(Call(service, "List", []));
-        Assert.Same(PilotCallRouter.Unsupported, Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
+        Assert.IsType<PilotCallResult.Failure>(Call(service, "List", []));
+        Assert.Same(PilotCallResult.Unsupported, Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Null(saved.Ships.Find(old.ShipId));
         Assert.Empty(saved.Set<OwnedItem>().Where(i => i.LocationId == old.ShipId));
@@ -717,9 +724,9 @@ public sealed class NpcCombatTests
             {
                 continue;
             }
-            var state = PilotLogin.Tuple(packet.State, 14);
+            var state = BlueRead.Tuple(packet.State, 14);
             var destination = Assert.IsType<BlueInstance>(state[2]);
-            string name = BlueMarshal.Text(PilotLogin.Tuple(destination.State, 4)[1]);
+            string name = BlueMarshal.Text(BlueRead.Tuple(destination.State, 4)[1]);
             if (name == "OnDamageMessage")
             {
                 damage = index;
@@ -728,9 +735,9 @@ public sealed class NpcCombatTests
             {
                 continue;
             }
-            var payload = PilotLogin.Tuple(Assert.Single(PilotLogin.Tuple(state[4], 1)), 2);
-            var call = PilotLogin.Tuple(BlueMarshal.Decode(PilotLogin.Bytes(payload[1])), 2);
-            var args = Assert.IsType<object?[]>(PilotLogin.Tuple(call[1], 2)[1]);
+            var payload = BlueRead.Tuple(Assert.Single(BlueRead.Tuple(state[4], 1)), 2);
+            var call = BlueRead.Tuple(BlueMarshal.Decode(BlueRead.Bytes(payload[1])), 2);
+            var args = Assert.IsType<object?[]>(BlueRead.Tuple(call[1], 2)[1]);
             var actions = Assert.IsType<List<object?>>(args[0]).Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
             int removed = actions.FindIndex(a => BlueMarshal.Text(a[0]) == "RemoveBall" && Equals(((object?[])a[1]!)[0], Fixture.ShipId));
             if (removed < 0)

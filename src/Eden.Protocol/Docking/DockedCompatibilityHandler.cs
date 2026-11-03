@@ -6,11 +6,9 @@ namespace Eden.Protocol.Docking;
 [Injectable]
 internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet fleet) : ISelectedPilotCallHandler
 {
-    private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
-
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -24,49 +22,41 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
             // The native wallet asks even for NPC-corporation pilots. No private
             // player-corporation membership record exists; None disables EM donation.
-            ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => null,
+            ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => PilotCallResult.None,
             // No loyalty points or EverMarks have been earned in Eden yet.
-            ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => new List<object?>(),
+            ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => BlueEmpty.List,
             ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") => new EscrowInfo(),
-            ("keeper", "GetCurrentDungeonForCharacter") => null,
+            ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("home_station", "get_home_station") => new HomeStationInfo(pilot.StationId, pilot.StationTypeId, pilot.HomeSystemId),
-            ("scanMgr", "SignalTrackerRegister") => null,
-            ("contractProxy", "GetLoginInfo") => KeyVal(
-                new()
-                {
-                    ["assignedToMe"] = new List<object?>(),
-                    ["needsAttention"] = new List<object?>(),
-                    ["inProgress"] = new List<object?>(),
-                }
+            ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,
+            ("contractProxy", "GetLoginInfo") => new ContractLoginState(),
+            ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),
+            ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => new BlueList<BountyReply>(
+                owners.Order().Select(owner => new BountyReply(owner)).ToArray()
             ),
-            ("bountyProxy", "GetBountiesAndKillRights") => new object?[] { new List<object?>(), new List<object?>() },
-            ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => owners
-                .Order()
-                .Select(owner => (object?)new object?[] { owner, KeyVal(new() { ["targetID"] = owner, ["bounty"] = 0d }) })
-                .ToList(),
-            ("bountyProxy", "GetMyKillRights") when args.Length == 0 => new List<object?>(),
-            ("bountyProxy", "GetMyKillRights") => new List<object?>(),
+            ("bountyProxy", "GetMyKillRights") when args.Length == 0 => BlueEmpty.List,
+            ("bountyProxy", "GetMyKillRights") => BlueEmpty.List,
             ("monolithTaskTrackerMgr", "HasEverWarped") => false,
-            ("essMgr", "GetDataForClientSolarSystem") => null,
-            ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new object?[] { pilot.SystemId, null },
-            ("monolithTaskTrackerMgr", "UpdateClientAchievmentsAndCounters") => null,
+            ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
+            ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
+            ("monolithTaskTrackerMgr", "UpdateClientAchievmentsAndCounters") => PilotCallResult.None,
             ("crimewatch", "GetMySecurityStatus") => 0d,
-            ("notificationMgr", "GetAllNotifications") => new List<object?>(),
-            ("beyonce", "GetFormations") => Array.Empty<object?>(),
-            ("charMgr", "SetActivityStatus") => null,
-            ("corpRegistry", "GetAggressionSettings") => null,
+            ("notificationMgr", "GetAllNotifications") => BlueEmpty.List,
+            ("beyonce", "GetFormations") => BlueEmpty.Tuple,
+            ("charMgr", "SetActivityStatus") => PilotCallResult.None,
+            ("corpRegistry", "GetAggressionSettings") => PilotCallResult.None,
             ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], new EveOwnerRow(pilot.PilotId, pilot.Name)),
-            ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new object?[] { 1d, false },
+            ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new DynamicBountyState(),
             ("ProjectDiscovery", "is_enabled") => false,
-            ("clientStatLogger", "LogString") => null,
+            ("clientStatLogger", "LogString") => PilotCallResult.None,
             ("onlineStatus", "GetInitialState") => Rows(["contactID", "online"]),
             ("ship", "GetDirtTimestamp") when args.Length == 1 && Equals(args[0], pilot.ShipId) => clock
                 .GetUtcNow()
                 .UtcDateTime.ToFileTimeUtc(),
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
-            ("userSvc", "GetMultiCharactersTrainingSlots") => new Dictionary<string, object?>(),
-            ("charMgr", "GetContactList") => KeyVal(new() { ["addresses"] = new List<object?>(), ["blocked"] = new List<object?>() }),
-            ("corpRegistry", "GetCorporateContacts") => new List<object?>(),
+            ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
+            ("charMgr", "GetContactList") => new ContactListState(),
+            ("corpRegistry", "GetCorporateContacts") => BlueEmpty.List,
             ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new LocationTable(
                 context
                     .Flight.VisiblePilots()
@@ -107,31 +97,18 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                     .ToArray()
             ),
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
-            ("shipCosmeticsMgr", "GetEnabledCosmetics") => new Dictionary<string, object?>(),
+            ("shipCosmeticsMgr", "GetEnabledCosmetics") => BlueEmpty.Dictionary,
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
-            ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => new Dictionary<long, object?>(),
-            ("XmppChatMgr", "GetDeprecatedPrefsFallback") => null,
+            ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => BlueEmpty.IndexedDictionary,
+            ("XmppChatMgr", "GetDeprecatedPrefsFallback") => PilotCallResult.None,
             ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => new CorporationMemberInfo(id, pilot.CorpId),
-            ("insuranceSvc", "GetContracts") => new List<object?>(),
+            ("insuranceSvc", "GetContracts") => BlueEmpty.List,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("station", "GetGuests") => new BlueList<StationGuest>([new(pilot.PilotId, pilot.CorpId)]),
-            ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => new Dictionary<string, object?>(),
-            ("crimewatch", "GetClientStates") => new object?[]
-            {
-                Enumerable.Range(0, 5).Select(_ => (object?)new object?[] { null, null }).ToArray(),
-                new Dictionary<string, object?>(),
-                new object?[] { new List<object?>(), new List<object?>() },
-                2,
-            }, // Full ship safety is required by the flight HUD.
-            ("jumpCloneSvc", "GetCloneState") => KeyVal(
-                new()
-                {
-                    ["clones"] = Rows(["jumpCloneID", "locationID", "cloneName"]),
-                    ["implants"] = Rows(["jumpCloneID", "typeID"]),
-                    ["timeLastJump"] = null,
-                }
-            ),
-            ("jumpTimers", "GetTimers") => new object?[] { null, null, null },
+            ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
+            ("crimewatch", "GetClientStates") => new CrimewatchClientState(), // Full ship safety is required by the flight HUD.
+            ("jumpCloneSvc", "GetCloneState") => new JumpCloneState(),
+            ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
             ("agentMgr", "GetAgents") => Rows([
                 "agentID",
@@ -145,14 +122,8 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                 "quality",
                 "isLocator",
             ]),
-            ("fighterMgr", "GetFightersForShip") => new object?[]
-            {
-                new List<object?>(),
-                new List<object?>(),
-                new Dictionary<string, object?>(),
-            },
-            ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") =>
-                new List<object?>(),
+            ("fighterMgr", "GetFightersForShip") => new FighterState(),
+            ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("map", "GetStationInfo") => Rows(
                 [
                     "stationID",
@@ -174,33 +145,10 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ),
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
-            ("agentMgr", "GetMyJournalDetails") => new object?[] { new List<object?>(), new List<object?>() },
-            ("accessGroupBookmarkMgr", "GetMyActiveBookmarks") => new object?[]
-            {
-                new List<object?>
-                {
-                    KeyVal(
-                        new()
-                        {
-                            ["folderID"] = 1,
-                            ["folderName"] = "Personal Locations",
-                            ["isPersonal"] = true,
-                            ["creatorID"] = pilot.PilotId,
-                            ["ownerID"] = pilot.PilotId,
-                            ["isActive"] = true,
-                            ["description"] = "",
-                        }
-                    ),
-                },
-                new List<object?>(),
-                new List<object?>(),
-            },
-            ("monolithTaskTrackerMgr", "GetCompletedAchievementsAndClientEventCount") => new Dictionary<string, object?>
-            {
-                ["completedDict"] = new Dictionary<string, object?>(),
-                ["eventDict"] = new Dictionary<string, object?>(),
-            },
-            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new object?[] { pilot.SystemId, null },
+            ("agentMgr", "GetMyJournalDetails") => new AgentJournalState(),
+            ("accessGroupBookmarkMgr", "GetMyActiveBookmarks") => new PersonalBookmarkState(pilot.PilotId),
+            ("monolithTaskTrackerMgr", "GetCompletedAchievementsAndClientEventCount") => new AchievementState(),
+            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 
 
             ("seasonManager", "get_season_data_for_character")
@@ -208,13 +156,13 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("eventLog", "LogClientStats")
             or
             ("ProjectDiscovery", "initialize_tutorial_status")
-            or ("milestoneMgr", "ProcessCharacterLogon") => null,
+            or ("milestoneMgr", "ProcessCharacterLogon") => PilotCallResult.None,
 
 
             ("standingMgr", "GetCharStandings" or "GetCorpStandings")
             or
             ("charMgr", "GetCharacterSettings")
-            or ("securityMgr", "get_modified_systems") => new Dictionary<string, object?>(),
+            or ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
 
 
             ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")
@@ -222,8 +170,8 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("officeManager", "GetMyCorporationsOffices")
             or
             ("insurgencySolarsystem", "GetAllVisibleCampaigns")
-            or ("calendarProxy", "GetEventList") => new List<object?>(),
-            _ => PilotCallRouter.Unsupported,
+            or ("calendarProxy", "GetEventList") => BlueEmpty.List,
+            _ => PilotCallResult.Unsupported,
         };
     }
 }

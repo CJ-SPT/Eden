@@ -77,7 +77,7 @@ public sealed class TargetingTests
                 [pilot],
                 selected => new(Db.Store, selected, Clock, Space, Objects),
                 account,
-                []
+                SignedSettings.Empty
             );
             context.Select(pilot);
             if (undock)
@@ -166,18 +166,21 @@ public sealed class TargetingTests
         using Fixture fixture = new();
         var (pilot, targeting) = fixture.Client(1000001, undock: false);
         object? Call(string method, params object?[] args) => targeting.CallWire(pilot, "dogmaIM", method, args);
-        Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 70000001L));
+        Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", 70000001L));
         pilot.Flight.CallWire("ship", "Undock", [pilot.Pilot.ShipId]);
         pilot.Flight.Snapshot();
-        Assert.Equal("DeniedTargetSelf", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", pilot.Pilot.ShipId)).Name);
-        Assert.Equal("TargetCantValidate", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 999L)).Name);
-        Assert.Equal("TargetCantValidate", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", (long)pilot.Pilot.StationId)).Name);
-        Assert.Equal("UnableToTarget", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 70000004L)).Name);
+        Assert.Equal("DeniedTargetSelf", Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", pilot.Pilot.ShipId)).Name);
+        Assert.Equal("TargetCantValidate", Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", 999L)).Name);
+        Assert.Equal(
+            "TargetCantValidate",
+            Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", (long)pilot.Pilot.StationId)).Name
+        );
+        Assert.Equal("UnableToTarget", Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", 70000004L)).Name);
         Assert.IsType<object?[]>(Call("AddTarget", 70000001L));
         Assert.IsType<object?[]>(Call("AddTarget", 70000002L));
-        var limit = Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 70000003L));
+        var limit = Assert.IsType<PilotCallResult.NamedFailure>(Call("AddTarget", 70000003L));
         Assert.Equal("TargetingSystemsAlreadyFullyUtilized", limit.Name);
-        Assert.Equal(TargetingDefinitions.BasePilotTargetLimit, limit.Values["limit"]);
+        Assert.Equal(TargetingDefinitions.BasePilotTargetLimit, Assert.IsType<TargetLimitErrorValues>(limit.Values).Limit);
         Assert.Null(Call("CancelAddTarget", 70000001L));
         Assert.IsType<object?[]>(Call("AddTarget", 70000003L));
         Assert.Null(Call("ClearTargets"));
@@ -223,7 +226,8 @@ public sealed class TargetingTests
                 break;
             case "jump":
                 var source = fixture.Objects.First(o => o.DestinationGateId.HasValue);
-                Assert.Null(
+                Assert.Same(
+                    PilotCallResult.None,
                     wing.Flight.StartJump(
                         [(long)source.Id, (long)source.DestinationGateId!.Value, wing.Pilot.ShipId],
                         fixture.Db.Services.GetRequiredService<ISystemObjects>()

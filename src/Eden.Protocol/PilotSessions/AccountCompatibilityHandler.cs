@@ -6,56 +6,53 @@ namespace Eden.Protocol.PilotSessions;
 [Injectable]
 internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCallHandler
 {
-    public object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords)
+    public PilotCallResult Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object? arguments,
+        Dictionary<string, object?>? keywords
+    )
     {
         return (service, method) switch
         {
-            ("machoNet", "GetServiceInfo") => new Dictionary<string, object?>(),
+            ("machoNet", "GetServiceInfo") => BlueEmpty.Dictionary,
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.ActiveFlight?.VisiblePilots() ?? context.Roster),
             ("config", "GetMultiCorpTickerNamesEx")
-                when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new object?[]
-            {
-                new object?[] { "corporationID", "tickerName" },
+                when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new CorporationTickerTable(
                 (context.ActiveFlight?.VisiblePilots() ?? context.Roster)
-                    .DistinctBy(p => p.CorpId)
-                    .Where(p => ids.Contains((long)p.CorpId))
-                    .Select(p => (object?)new object?[] { p.CorpId, p.CorporationTicker })
-                    .ToList(),
-            },
-            ("config", "GetBlackListedPlanets" or "GetOldStationData") => new List<object?>(),
-            ("config", "GetAverageMarketPrices") => new Dictionary<long, object?>(),
+                    .DistinctBy(pilot => pilot.CorpId)
+                    .Where(pilot => ids.Contains((long)pilot.CorpId))
+                    .Select(pilot => new CorporationTickerRow(pilot.CorpId, pilot.CorporationTicker))
+                    .ToArray()
+            ),
+            ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
+            ("config", "GetAverageMarketPrices") => BlueEmpty.IndexedDictionary,
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => 0,
-            ("map", "GetSecurityModifiedSystems") => new BlueInstance(
-                "eve.common.script.sys.rowset.Rowset",
-                new Dictionary<string, object?>
-                {
-                    ["header"] = new List<object?> { "solarSystemID", "security", "modifiedSecurity" },
-                    ["lines"] = new List<object?>(),
-                }
-            ),
-            ("userSvc", "GetRedeemTokens") => new List<object?>(),
-            ("seasonalLoginCampaignManager", "get_active_campaign") => new object?[] { null, null, null, 0 },
-            ("alert", "BeanCount") => new object?[] { 1, 0 },
-            ("loginCampaignManager", "get_client_campaign_state") => null,
+            ("map", "GetSecurityModifiedSystems") => new CompatibilityRowset(["solarSystemID", "security", "modifiedSecurity"], []),
+            ("userSvc", "GetRedeemTokens") => BlueEmpty.List,
+            ("seasonalLoginCampaignManager", "get_active_campaign") => new SeasonalCampaignState(),
+            ("alert", "BeanCount") => new AlertCountReply(),
+            ("loginCampaignManager", "get_client_campaign_state") => PilotCallResult.None,
             ("multiLoginBlocker", "Login") => true,
-            _ => PilotCallRouter.Unsupported,
+            _ => PilotCallResult.Unsupported,
         };
     }
 
-    private static object?[] OwnerRows(object? arguments, IEnumerable<DockedPilot> pilots)
+    private static OwnerTable OwnerRows(object? arguments, IEnumerable<DockedPilot> pilots)
     {
-        var ids = PilotLogin.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected owner IDs.");
-        List<object?> rows = [];
+        var ids = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected owner IDs.");
+        List<OwnerRow> rows = [];
         foreach (var pilot in pilots)
         {
             if (ids.Contains(pilot.PilotId))
             {
-                rows.Add(new object?[] { pilot.PilotId, pilot.Name, 1373, pilot.Profile.GenderId, null });
+                rows.Add(new(pilot.PilotId, pilot.Name, pilot.Profile.GenderId));
             }
         }
 
-        return [new object?[] { "ownerID", "ownerName", "typeID", "gender", "ownerNameID" }, rows];
+        return new(rows);
     }
 }

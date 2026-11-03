@@ -27,14 +27,11 @@ internal static class MarketWire
 
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
-    private static BlueConstructor Descriptor((string Name, BlueColumnType Type)[] columns) =>
-        new("blue.DBRowDescriptor", [columns.Select(c => (object?)new object?[] { c.Name, (long)c.Type }).ToArray()]);
-
     internal static BlueConstructor Row(MarketOrder order, int duration = MarketDefinitions.NpcOrderDays) =>
         new(
             "blue.DBRow",
             [
-                Descriptor(s_columns),
+                BlueRows.Descriptor(s_columns),
                 new object?[]
                 {
                     order.Id,
@@ -59,11 +56,11 @@ internal static class MarketWire
         );
 
     internal static BlueConstructor Rows(IEnumerable<MarketOrder> orders) =>
-        new("carbon.common.script.sys.crowset.CRowset", [Descriptor(s_columns), orders.Select(o => (object?)Row(o)).ToList()]);
+        new("carbon.common.script.sys.crowset.CRowset", [BlueRows.Descriptor(s_columns), orders.Select(o => (object?)Row(o)).ToList()]);
 
     internal static BlueConstructor HistoryRows(IEnumerable<MarketHistoryDay> days)
     {
-        var header = Descriptor([
+        var header = BlueRows.Descriptor([
             ("historyDate", BlueColumnType.Int64),
             ("lowPrice", BlueColumnType.Float64),
             ("highPrice", BlueColumnType.Float64),

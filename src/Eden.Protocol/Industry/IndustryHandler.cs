@@ -74,7 +74,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         return station;
     }
 
-    private object Connect(PilotCallContext context, object? request)
+    private IndustryMonitorReply Connect(PilotCallContext context, object? request)
     {
         var values = Values(request);
         int station = CheckLocation(context, values, "inputLocation");
@@ -84,7 +84,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         return new IndustryMonitorReply(_monitor, _available);
     }
 
-    private object Install(PilotCallContext context, object? request)
+    private long Install(PilotCallContext context, object? request)
     {
         var values = Values(request);
         int station = CheckLocation(context, values, "inputLocation");
@@ -152,7 +152,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         InventoryHandler.NotifyBlueprintsUpdated(context, job.PilotId);
     }
 
-    public object? Call(
+    public PilotCallResult Call(
         PilotCallContext context,
         string service,
         string method,
@@ -168,7 +168,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             && args is [(long)StationService.Manufacturing or (long)StationService.Laboratory];
         if (!standing && service is not ("industryManager" or "blueprintManager" or "facilityManager" or "industryMonitor"))
         {
-            return PilotCallRouter.Unsupported;
+            return PilotCallResult.Unsupported;
         }
         try
         {
@@ -176,7 +176,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             if (standing)
             {
                 industry.CheckAccess(pilotId, context.Pilot.StationId);
-                return null;
+                return PilotCallResult.None;
             }
             switch (service, method)
             {
@@ -214,23 +214,23 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                             ? industry.Deliver(pilotId, job, checked((int)system))
                             : industry.Cancel(pilotId, job, checked((int)system));
                     Notify(context, result);
-                    return null;
+                    return PilotCallResult.None;
                 case ("industryMonitor", "ConnectJob") when args is [var request]:
                     return Connect(context, request);
                 case ("industryMonitor", "DisconnectJob") when args is [null] || args is [long monitor] && monitor == _monitor:
                     _station = null;
-                    return null;
+                    return PilotCallResult.None;
                 default:
-                    return PilotCallRouter.Unsupported;
+                    return PilotCallResult.Unsupported;
             }
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallRouter.Error(error.Message);
+            return new PilotCallResult.Failure(error.Message);
         }
         catch (OverflowException)
         {
-            return new PilotCallRouter.Error("The manufacturing job exceeds the supported quantity or time limit.");
+            return new PilotCallResult.Failure("The manufacturing job exceeds the supported quantity or time limit.");
         }
     }
 }
