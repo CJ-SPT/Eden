@@ -12,21 +12,18 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
 
     private readonly Dictionary<long, Cycle> _cycles = [];
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+    public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
-            ?
-            [
+            ? new(
                 module,
                 pilot.PilotId,
                 pilot.ShipId,
                 null,
-                null,
-                Array.Empty<object?>(),
-                (int)DogmaEffect.ShieldBoosting,
+                DogmaEffect.ShieldBoosting,
                 cycle.StartTime,
                 cycle.Booster.DurationMilliseconds,
-                cycle.Repeats,
-            ]
+                cycle.Repeats
+            )
             : null;
 
     public void Cancel(PilotCallContext context)

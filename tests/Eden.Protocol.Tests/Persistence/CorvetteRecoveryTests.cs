@@ -167,7 +167,13 @@ public sealed class CorvetteRecoveryTests
             []
         );
         object? Call() =>
-            router.Call(context, "dogmaIM", "CreateNewbieShip", new object?[] { f.Venture.ShipId, (long)f.Venture.StationId }, _ => { });
+            router.CallWire(
+                context,
+                "dogmaIM",
+                "CreateNewbieShip",
+                new object?[] { f.Venture.ShipId, (long)f.Venture.StationId },
+                _ => { }
+            );
         Assert.Same(PilotCallRouter.Unsupported, Call());
         context.Select(f.Venture);
         Assert.Null(Call());

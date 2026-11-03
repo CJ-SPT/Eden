@@ -112,7 +112,7 @@ public sealed class PilotCombatTests
             context.Select(pilot);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, Fitting, new());
-            Assert.IsType<object?[]>(targeting.Call(context, "dogmaIM", "AddTarget", [Npc.Id]));
+            Assert.IsType<object?[]>(targeting.CallWire(context, "dogmaIM", "AddTarget", [Npc.Id]));
             Clock.Milliseconds += 5000;
             targeting.Advance(context);
             Assert.True(targeting.IsLocked(Npc.Id));
@@ -234,7 +234,7 @@ public sealed class PilotCombatTests
             activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
         );
-        object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
+        object? Activate() => activation.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());
         using WorldDbContext saved = new(f.Db.Path);
         double firstDamage = saved.Set<WorldNpc>().AsNoTracking().Single(n => n.Id == f.Npc.Id).ShieldCharge;
@@ -251,7 +251,7 @@ public sealed class PilotCombatTests
         Assert.NotEmpty(BlueMarshal.Encode(message));
         Assert.Equal(firstDamage, saved.Set<WorldNpc>().AsNoTracking().Single(n => n.Id == f.Npc.Id).ShieldCharge);
         Assert.NotNull(combat.ActiveEffect(context.Pilot, f.Module));
-        Assert.Null(activation.Call(context, "dogmaIM", "Deactivate", [f.Module, "targetAttack"]));
+        Assert.Null(activation.CallWire(context, "dogmaIM", "Deactivate", [f.Module, "targetAttack"]));
         f.Clock.Milliseconds += 2000;
         combat.Advance(context);
         Assert.Null(combat.ActiveEffect(context.Pilot, f.Module));
@@ -270,7 +270,7 @@ public sealed class PilotCombatTests
         using var owned = context;
         using var locks = targeting;
         f.AlmostDefeated();
-        Assert.Null(combat.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
+        Assert.Null(combat.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
         Assert.Null(combat.ActiveEffect(context.Pilot, f.Module));
         var feedback = Assert.IsType<Dictionary<string, object?>>(
             Assert.Single(Assert.Single(context.NotificationsBeforeFlight).Arguments)
@@ -286,7 +286,7 @@ public sealed class PilotCombatTests
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var journal = Assert.IsType<List<object?>>(
-            router.Call(context, "account", "GetTransactions", new object?[] { 1000L, null, null, false }, _ => { })
+            router.CallWire(context, "account", "GetTransactions", new object?[] { 1000L, null, null, false }, _ => { })
         );
         var entry = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(journal)).State);
         Assert.Equal(85, entry["entryTypeID"]);
@@ -427,7 +427,7 @@ public sealed class PilotCombatTests
         var (context, targeting, combat) = f.Client();
         using var owned = context;
         using var locks = targeting;
-        Assert.Null(combat.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
+        Assert.Null(combat.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
         using WorldDbContext saved = new(f.Db.Path);
         double Charge() => saved.Set<WorldNpc>().AsNoTracking().Single(n => n.Id == f.Npc.Id).ShieldCharge;
         double first = Charge();

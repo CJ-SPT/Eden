@@ -142,7 +142,7 @@ public sealed class AsteroidFieldTests
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks);
         Assert.Empty(flight.Updates);
-        Assert.Null(flight.Call("beyonce", "CmdWarpToStuff", ["item", belts[1].Id]));
+        Assert.Null(flight.CallWire("beyonce", "CmdWarpToStuff", ["item", belts[1].Id]));
         clock.Seconds = 120;
         flight.Checkpoint();
         flight.Updates.Clear();

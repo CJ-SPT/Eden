@@ -82,7 +82,7 @@ public sealed class TargetingTests
             context.Select(pilot);
             if (undock)
             {
-                context.Flight.Call("ship", "Undock", [pilot.ShipId]);
+                context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
                 context.Flight.Snapshot();
             }
             TargetingHandler handler = new(Clock, Fitting, Locks);
@@ -108,7 +108,7 @@ public sealed class TargetingTests
         var (pilot, targeting) = fixture.Client(1000001);
         var (wing, observed) = fixture.Client(1000002);
         long target = wing.Pilot.ShipId;
-        object? Call(string method, params object?[] args) => targeting.Call(pilot, "dogmaIM", method, args);
+        object? Call(string method, params object?[] args) => targeting.CallWire(pilot, "dogmaIM", method, args);
         Assert.Equal(new object?[] { true, new List<object?>() }, Assert.IsType<object?[]>(Call("AddTarget", target)));
         fixture.Clock.Seconds = 3;
         targeting.Advance(pilot);
@@ -124,7 +124,7 @@ public sealed class TargetingTests
         Assert.Equal(new object?[] { "otheradd", pilot.Pilot.ShipId, null }, Assert.Single(wing.Notifications).Arguments);
         Assert.Equal(
             new object?[] { pilot.Pilot.ShipId },
-            Assert.IsType<List<object?>>(observed.Call(wing, "dogmaIM", "GetTargeters", []))
+            Assert.IsType<List<object?>>(observed.CallWire(wing, "dogmaIM", "GetTargeters", []))
         );
         var duplicate = Assert.IsType<object?[]>(Call("AddTarget", target));
         Assert.Equal(false, duplicate[0]);
@@ -145,14 +145,14 @@ public sealed class TargetingTests
         var (pilot, targeting) = fixture.Client(1000001);
         var (wing, _) = fixture.Client(1000002);
         long target = wing.Pilot.ShipId;
-        _ = targeting.Call(pilot, "dogmaIM", "AddTarget", [target]);
-        Assert.Null(targeting.Call(pilot, "dogmaIM", "CancelAddTarget", [target]));
+        _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [target]);
+        Assert.Null(targeting.CallWire(pilot, "dogmaIM", "CancelAddTarget", [target]));
         fixture.Clock.Seconds = 10;
         targeting.Advance(pilot);
         Assert.False(targeting.IsLocked(target));
         Assert.DoesNotContain(pilot.Notifications, n => Equals(n.Arguments[0], "add"));
         pilot.Notifications.Clear();
-        _ = targeting.Call(pilot, "dogmaIM", "AddTarget", [target]);
+        _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [target]);
         wing.Flight.Dispose();
         fixture.Clock.Seconds += 10;
         targeting.Advance(pilot);
@@ -165,9 +165,9 @@ public sealed class TargetingTests
     {
         using Fixture fixture = new();
         var (pilot, targeting) = fixture.Client(1000001, undock: false);
-        object? Call(string method, params object?[] args) => targeting.Call(pilot, "dogmaIM", method, args);
+        object? Call(string method, params object?[] args) => targeting.CallWire(pilot, "dogmaIM", method, args);
         Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 70000001L));
-        pilot.Flight.Call("ship", "Undock", [pilot.Pilot.ShipId]);
+        pilot.Flight.CallWire("ship", "Undock", [pilot.Pilot.ShipId]);
         pilot.Flight.Snapshot();
         Assert.Equal("DeniedTargetSelf", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", pilot.Pilot.ShipId)).Name);
         Assert.Equal("TargetCantValidate", Assert.IsType<PilotCallRouter.UserError>(Call("AddTarget", 999L)).Name);
@@ -204,7 +204,7 @@ public sealed class TargetingTests
         }
         var (pilot, targeting) = fixture.Client(1000001);
         var (wing, observed) = fixture.Client(1000002);
-        _ = targeting.Call(pilot, "dogmaIM", "AddTarget", [wing.Pilot.ShipId]);
+        _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [wing.Pilot.ShipId]);
         fixture.Clock.Seconds = 10;
         targeting.Advance(pilot);
         observed.Advance(wing);
@@ -215,11 +215,11 @@ public sealed class TargetingTests
         {
             case "warp":
                 var gate = fixture.Objects.First(o => o.DestinationGateId.HasValue);
-                Assert.Null(wing.Flight.Call("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
+                Assert.Null(wing.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
                 break;
             case "ownwarp":
                 var destination = fixture.Objects.First(o => o.DestinationGateId.HasValue);
-                Assert.Null(pilot.Flight.Call("beyonce", "CmdWarpToStuff", ["item", (long)destination.Id]));
+                Assert.Null(pilot.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)destination.Id]));
                 break;
             case "jump":
                 var source = fixture.Objects.First(o => o.DestinationGateId.HasValue);
@@ -231,14 +231,14 @@ public sealed class TargetingTests
                 );
                 break;
             case "dock":
-                Assert.Null(wing.Flight.Call("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]));
+                Assert.Null(wing.Flight.CallWire("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]));
                 break;
             case "disconnect":
                 observed.Dispose();
                 wing.Flight.Dispose();
                 break;
             case "range":
-                wing.Flight.Call("beyonce", "CmdGotoDirection", [0d, 1d, 0d]);
+                wing.Flight.CallWire("beyonce", "CmdGotoDirection", [0d, 1d, 0d]);
                 fixture.Clock.Seconds += 150;
                 wing.Flight.Checkpoint();
                 wing.Flight.RefreshPeers();

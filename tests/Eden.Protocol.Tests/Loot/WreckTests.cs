@@ -224,7 +224,7 @@ public sealed class WreckTests
             []
         );
         object? Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
-            router.Call(context, service, method, args, _ => { }, keywords);
+            router.CallWire(context, service, method, args, _ => { }, keywords);
         context.Select(pilot);
         context.Flight.Snapshot();
         var reference = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [f.Wreck.Id, false]));
@@ -279,7 +279,7 @@ public sealed class WreckTests
         using FlightSession flight = new(f.Db.Store, f.Pilot, clock, new(), [], wrecks: f.Store);
         flight.Snapshot();
         Assert.Single(flight.VisibleWrecks);
-        Assert.Null(flight.Call("beyonce", "CmdFollowBall", [f.Wreck.Id, 1000d]));
+        Assert.Null(flight.CallWire("beyonce", "CmdFollowBall", [f.Wreck.Id, 1000d]));
         flight.Updates.Clear();
         clock.Seconds = WreckDefinitions.LifetimeSeconds;
         flight.RefreshWrecks();

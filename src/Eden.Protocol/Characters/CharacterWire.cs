@@ -1,0 +1,92 @@
+using Eden.Protocol.Docking;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
+
+namespace Eden.Protocol.Characters;
+
+internal sealed record PublicCharacterInfo(DockedPilot Pilot) : IBlueWritable
+{
+    public object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["characterID"] = Pilot.PilotId,
+                ["characterName"] = Pilot.Name,
+                ["corporationID"] = Pilot.CorpId,
+                ["raceID"] = Pilot.Profile.RaceId,
+                ["bloodlineID"] = Pilot.Profile.BloodlineId,
+                ["gender"] = Pilot.Profile.GenderId,
+                ["schoolID"] = Pilot.Profile.SchoolId,
+                ["ancestryID"] = Pilot.Profile.AncestryId,
+                ["createDateTime"] = Pilot.Profile.CreatedAt,
+            }
+        );
+}
+
+internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnlyList<CharacterSelectionCard> Pilots) : IBlueWritable
+{
+    public object ToBlue() =>
+        new object?[]
+        {
+            new List<object?>
+            {
+                new BlueInstance(
+                    "utillib.KeyVal",
+                    new Dictionary<string, object?>
+                    {
+                        ["userName"] = Account.UserName,
+                        ["characterSlots"] = ICharacterCreation.Slots,
+                        ["maxCharacterSlots"] = ICharacterCreation.Slots,
+                        ["creationDate"] = Account.CreatedAt,
+                        ["subscriptionEndTime"] = null,
+                    }
+                ),
+            },
+            new object?[] { null, null },
+            new BlueList<CharacterSelectionCard>(Pilots),
+            new List<object?>(),
+        };
+}
+
+internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd) : IBlueWritable
+{
+    // Existing selection-card placeholder; this is not a persisted logoff timestamp.
+    private const long PlaceholderLogoffDate = 134000000000000000L;
+
+    public object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["characterID"] = Pilot.PilotId,
+                ["characterName"] = Pilot.Name,
+                ["name"] = Pilot.Name,
+                ["stationID"] = Pilot.Position is null ? Pilot.StationId : null,
+                ["solarSystemID"] = Pilot.SystemId,
+                ["shipTypeID"] = Pilot.ShipTypeId,
+                ["corporationID"] = Pilot.CorpId,
+                ["allianceID"] = null,
+                ["factionID"] = null,
+                ["balance"] = 0,
+                ["balanceChange"] = 0,
+                ["skillPoints"] = SkillPoints,
+                ["finishedSkills"] = 0,
+                ["unreadMailCount"] = 0,
+                ["paperdollState"] = 0,
+                ["lockTypeID"] = null,
+                ["deletePrepareDateTime"] = null,
+                ["logoffDate"] = PlaceholderLogoffDate,
+                ["skillTypeID"] = Active?.Target.TypeId,
+                ["toLevel"] = Active?.Target.Level,
+                ["trainingStartTime"] = Active?.StartTime,
+                ["trainingEndTime"] = Active?.EndTime,
+                ["queueEndTime"] = QueueEnd,
+                ["finishSP"] = Active?.EndPoints,
+                ["trainedSP"] = Active?.StartPoints,
+                ["gender"] = Pilot.Profile.GenderId,
+                ["bloodlineID"] = Pilot.Profile.BloodlineId,
+                ["raceID"] = Pilot.Profile.RaceId,
+            }
+        );
+}

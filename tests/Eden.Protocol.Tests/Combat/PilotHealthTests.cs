@@ -122,7 +122,7 @@ public sealed class PilotHealthTests
         );
         context.Select(pilot);
         var all = Assert.IsType<Dictionary<string, object?>>(
-            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
+            Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
         );
         var shipInfo = Assert.IsType<Dictionary<long, object?>>(all["shipInfo"]);
         var ship = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(shipInfo[ShipId]).State);

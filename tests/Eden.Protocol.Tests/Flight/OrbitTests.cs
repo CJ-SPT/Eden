@@ -70,7 +70,7 @@ public sealed class OrbitTests
         Clock clock = new();
         using FlightSession session = new(db.Store, pilot, clock, new(), [target]);
         session.Snapshot();
-        Assert.Null(session.Call("beyonce", "CmdOrbit", [target.Id, 5000L]));
+        Assert.Null(session.CallWire("beyonce", "CmdOrbit", [target.Id, 5000L]));
         for (int second = 1; second <= 300; second++)
         {
             clock.Seconds = second;
@@ -89,7 +89,7 @@ public sealed class OrbitTests
         }
         Assert.InRange(session.Pilot.Position!.DistanceTo(target.Position) - target.Radius - pilot.Flight.ShipRadius, 4500, 8500);
         Assert.True(session.Velocity.Length > pilot.Flight.MaxSpeed);
-        Assert.Null(session.Call("beyonce", "CmdStop", []));
+        Assert.Null(session.CallWire("beyonce", "CmdStop", []));
         session.SetPropulsionEffect(null);
         clock.Seconds = 800;
         session.Checkpoint();
@@ -108,7 +108,7 @@ public sealed class OrbitTests
         using FlightSession observer = new(db.Store, wing, clock, space, []);
         session.Snapshot();
         observer.Snapshot();
-        Assert.Null(session.Call("beyonce", "CmdOrbit", [wing.ShipId, 2500L]));
+        Assert.Null(session.CallWire("beyonce", "CmdOrbit", [wing.ShipId, 2500L]));
         session.RefreshPeers();
         observer.Updates.Clear();
         observer.RefreshPeers();
@@ -139,7 +139,7 @@ public sealed class OrbitTests
         Assert.Equal(2500, reader.ReadSingle());
         Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);
         Assert.NotEmpty(BlueMarshal.Encode(chunk));
-        Assert.Null(session.Call("beyonce", "CmdFollowBall", [wing.ShipId, 2500L]));
+        Assert.Null(session.CallWire("beyonce", "CmdFollowBall", [wing.ShipId, 2500L]));
         session.RefreshPeers();
         observer.Updates.Clear();
         observer.RefreshPeers();
@@ -161,7 +161,7 @@ public sealed class OrbitTests
         using FlightSession target = new(db.Store, wing, clock, space, []);
         session.Snapshot();
         target.Snapshot();
-        Assert.Null(session.Call("beyonce", method, [wing.ShipId, 2500L]));
+        Assert.Null(session.CallWire("beyonce", method, [wing.ShipId, 2500L]));
         clock.Seconds = 5;
         session.Checkpoint();
         target.Dispose();
@@ -195,7 +195,7 @@ public sealed class OrbitTests
         Encounters encounters = new() { Contacts = [npc] };
         using FlightSession session = new(db.Store, pilot, clock, new(), [], encounters: encounters);
         session.Snapshot();
-        Assert.Null(session.Call("beyonce", "CmdOrbit", [npc.Id, 5000L]));
+        Assert.Null(session.CallWire("beyonce", "CmdOrbit", [npc.Id, 5000L]));
         clock.Seconds = 1;
         session.Checkpoint();
         npc = npc with { Position = npc.Position + new SpacePosition(0, 3000, 0) };
@@ -228,7 +228,7 @@ public sealed class OrbitTests
         SpacePosition saved;
         using (FlightSession session = new(db.Store, pilot, clock, new(), [target, distant]))
         {
-            Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdOrbit", [target.Id, 1000L]));
+            Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
             session.Snapshot();
             foreach (
                 object?[] args in new object?[][]
@@ -243,14 +243,14 @@ public sealed class OrbitTests
                 }
             )
             {
-                Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdOrbit", args));
+                Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", args));
             }
-            Assert.Null(session.Call("beyonce", "CmdOrbit", [target.Id, 1000L]));
+            Assert.Null(session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
             clock.Seconds = 10;
             session.Checkpoint();
-            Assert.Null(session.Call("beyonce", "CmdWarpToStuff", ["item", distant.Id]));
-            Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdOrbit", [target.Id, 1000L]));
-            Assert.Null(session.Call("beyonce", "CmdStop", []));
+            Assert.Null(session.CallWire("beyonce", "CmdWarpToStuff", ["item", distant.Id]));
+            Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdOrbit", [target.Id, 1000L]));
+            Assert.Null(session.CallWire("beyonce", "CmdStop", []));
             saved = session.Pilot.Position!;
         }
         var reopened = new SqliteWorld(db.Path).FindPilot(1000001)!;

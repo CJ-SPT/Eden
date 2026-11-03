@@ -16,46 +16,31 @@ internal sealed class AmmunitionHandler(
 {
     internal static object?[] Key(Magazine magazine) => [magazine.ShipId, magazine.FlagId, magazine.TypeId];
 
-    internal BlueInstance Prime(Magazine magazine)
+    internal DogmaItemInfo<double> Prime(Magazine magazine)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = fitting.Attributes(magazine.TypeId).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
-        attributes[(long)DogmaAttributeId.Quantity] = (double)magazine.Quantity;
+        var attributes = fitting.Attributes(magazine.TypeId).ToDictionary(a => a.Key, a => a.Value);
+        attributes[DogmaAttributeId.Quantity] = magazine.Quantity;
         return new(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["itemID"] = Key(magazine),
-                ["invItem"] = null,
-                ["attributes"] = attributes,
-                ["activeEffects"] = new Dictionary<long, object?>(),
-                ["time"] = now,
-                ["wallclockTime"] = now,
-            }
+            new DogmaItemKey.Charge(magazine.ShipId, magazine.FlagId, magazine.TypeId),
+            null,
+            attributes,
+            new Dictionary<DogmaEffect, DogmaActiveEffect>(),
+            now
         );
     }
 
     internal static void NotifyQuantity(PilotCallContext context, Magazine magazine, int quantity, long now) =>
         context.Notifications.Add(
-            (
-                "OnModuleAttributeChanges",
-                [
-                    new List<object?>
-                    {
-                        new object?[]
-                        {
-                            "OnModuleAttributeChange",
-                            context.Pilot.PilotId,
-                            Key(magazine),
-                            (int)DogmaAttributeId.Quantity,
-                            now,
-                            (double)quantity,
-                            null,
-                            now,
-                        },
-                    },
-                ]
-            )
+            new ModuleAttributesChanged([
+                new(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Charge(magazine.ShipId, magazine.FlagId, magazine.TypeId),
+                    DogmaAttributeId.Quantity,
+                    now,
+                    quantity
+                ),
+            ])
         );
 
     internal void NotifyChanges(PilotCallContext context, IReadOnlyList<MagazineChange> changes, double reload = 0)
@@ -71,16 +56,14 @@ internal sealed class AmmunitionHandler(
             {
                 if (change.Previous?.TypeId != current.TypeId)
                 {
-                    context.Notifications.Add(("OnGodmaPrimeItem", [current.ShipId, Prime(current)]));
+                    context.Notifications.Add(new GodmaItemPrimed(current.ShipId, Prime(current)));
                 }
                 // Godma primes its row, but clientDogmaLocation fits a tuple
                 // sublocation only on attributeQuantity (build 3662168).
                 NotifyQuantity(context, current, current.Quantity, now);
                 if (reload > 0)
                 {
-                    context.Notifications.Add(
-                        ("OnChargeBeingLoadedToModule", [new List<object?> { current.ModuleId }, current.TypeId, reload])
-                    );
+                    context.Notifications.Add(new ChargeLoading([current.ModuleId], current.TypeId, reload));
                 }
             }
             var magazine = change.Current ?? change.Previous!;
@@ -93,22 +76,15 @@ internal sealed class AmmunitionHandler(
             }
             var attributes = combat.ModuleAttributes(context.Pilot.PilotId, module);
             var values = new[] { DogmaAttributeId.MaxRange, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.NextActivationTime }
-                .Select(attribute =>
-                    (object?)
-                        new object?[]
-                        {
-                            "OnModuleAttributeChange",
-                            context.Pilot.PilotId,
-                            magazine.ModuleId,
-                            (int)attribute,
-                            now,
-                            attributes.GetValueOrDefault(attribute),
-                            null,
-                            now,
-                        }
-                )
-                .ToList();
-            context.Notifications.Add(("OnModuleAttributeChanges", [values]));
+                .Select(attribute => new ModuleAttributeChange(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(magazine.ModuleId),
+                    attribute,
+                    now,
+                    attributes.GetValueOrDefault(attribute)
+                ))
+                .ToArray();
+            context.Notifications.Add(new ModuleAttributesChanged(values));
         }
     }
 

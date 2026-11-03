@@ -337,7 +337,7 @@ public sealed class ReprocessingTests
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         Assert.Same(
             PilotCallRouter.Unsupported,
-            router.Call(
+            router.CallWire(
                 context,
                 "reprocessingSvc",
                 "GetQuotes",
@@ -355,7 +355,7 @@ public sealed class ReprocessingTests
         BluePackedRow forged = new(new([("quantity", BlueColumnType.Int32)]), [], []);
         var rows = new Dictionary<long, object?> { [OreId] = forged };
         object? Bind(int station) =>
-            router.Call(
+            router.CallWire(
                 context,
                 "reprocessingSvc",
                 "MachoBindObject",
@@ -370,7 +370,7 @@ public sealed class ReprocessingTests
         Assert.Equal((null, (object?)0.5), Assert.Single(efficiency.Entries));
         var quote = Assert.IsType<BlueInstance>(Assert.IsType<Dictionary<long, object?>>(wire[2])[OreId]);
         Assert.Equal(100L, PilotLogin.Fields(quote.State)["quantityToProcess"]);
-        var result = router.Call(
+        var result = router.CallWire(
             context,
             "reprocessingSvc",
             "Reprocess",

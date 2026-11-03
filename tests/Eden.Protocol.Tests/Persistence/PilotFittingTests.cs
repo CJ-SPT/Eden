@@ -126,7 +126,7 @@ public sealed class PilotFittingTests
         );
         context.Select(pilot);
         Assert.Null(
-            router.Call(
+            router.CallWire(
                 context,
                 "@ship",
                 "MultiAdd",
@@ -161,14 +161,14 @@ public sealed class PilotFittingTests
                     ? [module.Id, InventoryDefinitions.OnlineEffectName, null, 0L]
                     : [module.Id, InventoryDefinitions.OnlineEffectName]
                 : [pilot.ShipId, module.Id];
-            Assert.Null(router.Call(context, "dogmaIM", method, args, _ => { }));
+            Assert.Null(router.CallWire(context, "dogmaIM", method, args, _ => { }));
             Assert.Equal(new[] { "OnGodmaShipEffect", "OnModuleAttributeChanges" }, context.Notifications.Select(n => n.Name));
             var effect = context.Notifications[0].Arguments;
             Assert.Equal(module.Id, effect[0]);
             Assert.Equal((int)DogmaEffect.Online, effect[1]);
             Assert.Equal(online, effect[3]);
             var info = Assert.IsType<Dictionary<string, object?>>(
-                Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "ItemGetInfo", new object?[] { module.Id }, _ => { })).State
+                Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "ItemGetInfo", new object?[] { module.Id }, _ => { })).State
             );
             var attributes = Assert.IsType<Dictionary<long, object?>>(info["attributes"]);
             Assert.Equal(online ? 1d : 0d, attributes[(long)DogmaAttributeId.IsOnline]);
@@ -176,15 +176,15 @@ public sealed class PilotFittingTests
         }
         _ = new SqliteWorld(db.Path);
         var all = Assert.IsType<Dictionary<string, object?>>(
-            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
+            Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
         );
         var shipInfo = Assert.IsType<Dictionary<long, object?>>(all["shipInfo"]);
         var restored = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(shipInfo[module.Id]).State);
         Assert.Single(Assert.IsType<Dictionary<long, object?>>(restored["activeEffects"]));
         Assert.Null(
-            router.Call(context, "dogmaIM", "UnloadAmmo", new object?[] { pilot.ShipId, module.Id, (long)pilot.StationId }, _ => { })
+            router.CallWire(context, "dogmaIM", "UnloadAmmo", new object?[] { pilot.ShipId, module.Id, (long)pilot.StationId }, _ => { })
         );
-        Assert.Null(router.Call(context, "@hangar", "Add", new object?[] { module.Id, pilot.ShipId }, _ => { }));
+        Assert.Null(router.CallWire(context, "@hangar", "Add", new object?[] { module.Id, pilot.ShipId }, _ => { }));
         Assert.Empty(inventory.List(pilot.PilotId, pilot.ShipId));
         Assert.False(inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == module.Id).Online);
     }

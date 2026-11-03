@@ -254,7 +254,7 @@ public sealed class NpcAggressionTests
         Assert.True(locks.Contains(f.Npc.Id, s_pilot.ShipId));
         Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otheradd"));
         Assert.Empty(context.NotificationsBeforeFlight);
-        Assert.Null(context.Flight.Call("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
+        Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
         handler.Advance(context);
         targeting.Advance(context);
         Assert.Empty(f.Combat.Aggressors(s_pilot.ShipId));

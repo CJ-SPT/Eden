@@ -26,7 +26,9 @@ public sealed class DockedServicesTests
         );
         context.Select(pilot);
         HashSet<long> owners = [90000002, 1000044];
-        var response = Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetBounties", new object?[] { owners }, _ => { }));
+        var response = Assert.IsType<List<object?>>(
+            router.CallWire(context, "bountyProxy", "GetBounties", new object?[] { owners }, _ => { })
+        );
         Assert.Equal(owners.Count, response.Count);
         foreach (var value in response)
         {
@@ -37,7 +39,7 @@ public sealed class DockedServicesTests
             Assert.Equal(0d, bounty["bounty"]);
         }
         Assert.Empty(
-            Assert.IsType<List<object?>>(router.Call(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { }))
+            Assert.IsType<List<object?>>(router.CallWire(context, "bountyProxy", "GetMyKillRights", Array.Empty<object?>(), _ => { }))
         );
     }
 
@@ -60,10 +62,16 @@ public sealed class DockedServicesTests
         object?[] standingCheck = ["DoStandingCheckForStationService", new object?[] { (long)StationService.Fitting }];
         Assert.Same(
             PilotCallRouter.Unsupported,
-            router.Call(context, "corpStationMgr", "MachoBindObject", new object?[] { (long)pilot.StationId + 1, standingCheck }, _ => { })
+            router.CallWire(
+                context,
+                "corpStationMgr",
+                "MachoBindObject",
+                new object?[] { (long)pilot.StationId + 1, standingCheck },
+                _ => { }
+            )
         );
         var binding = Assert.IsType<object?[]>(
-            router.Call(context, "corpStationMgr", "MachoBindObject", new object?[] { (long)pilot.StationId, standingCheck }, _ => { })
+            router.CallWire(context, "corpStationMgr", "MachoBindObject", new object?[] { (long)pilot.StationId, standingCheck }, _ => { })
         );
         var reference = Assert.IsType<BlueObjectReference>(binding[0]);
         Assert.Null(binding[1]);
@@ -97,7 +105,7 @@ public sealed class DockedServicesTests
         );
         context.Select(pilot);
         Assert.Null(
-            router.Call(
+            router.CallWire(
                 context,
                 "@ship",
                 "Add",
@@ -149,7 +157,7 @@ public sealed class DockedServicesTests
         );
         context.Select(pilot);
         Assert.Null(
-            router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { }, new() { ["flag"] = 5L })
+            router.CallWire(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { }, new() { ["flag"] = 5L })
         );
         var notification = Assert.Single(context.Notifications);
         Assert.Equal("OnItemChange", notification.Name);
@@ -159,14 +167,14 @@ public sealed class DockedServicesTests
         Assert.IsType<BlueConstructor>(notification.Arguments[0]);
         // The receive codec deliberately rejects DBRow reductions; the client owns decoding those.
         Assert.NotEmpty(BlueMarshal.Encode(notification.Arguments));
-        Assert.Single(Assert.IsType<List<object?>>(router.Call(context, "@ship", "List", new object?[] { 5L }, _ => { })));
+        Assert.Single(Assert.IsType<List<object?>>(router.CallWire(context, "@ship", "List", new object?[] { 5L }, _ => { })));
         Assert.IsType<PilotCallRouter.Error>(
-            router.Call(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { })
+            router.CallWire(context, "@ship", "Add", new object?[] { item.Id, (long)pilot.StationId }, _ => { })
         );
         Assert.Single(context.Notifications);
         context.Notifications.Clear();
         Assert.Null(
-            router.Call(
+            router.CallWire(
                 context,
                 "@hangar",
                 "MultiAdd",
@@ -200,7 +208,7 @@ public sealed class DockedServicesTests
         context.Select(pilot);
         object?[] getHangar = ["GetInventory", new object?[] { 10004L, null }, new Dictionary<string, object?>()];
         var bind = Assert.IsType<object?[]>(
-            router.Call(
+            router.CallWire(
                 context,
                 "invbroker",
                 "MachoBindObject",
@@ -210,7 +218,7 @@ public sealed class DockedServicesTests
         );
         var handle = Assert.IsType<BlueObjectReference>(bind[1]);
         string boundService = Assert.IsType<string>(context.ResolveReference(handle.Id));
-        var items = Assert.IsType<List<object?>>(router.Call(context, boundService, "List", new object?[] { 4L }, _ => { }));
+        var items = Assert.IsType<List<object?>>(router.CallWire(context, boundService, "List", new object?[] { 4L }, _ => { }));
         var item = Assert.IsType<BlueConstructor>(items[0]);
         Assert.Equal(3, items.Count);
         Assert.Equal("blue.DBRow", item.Name);
@@ -228,7 +236,7 @@ public sealed class DockedServicesTests
         );
         Assert.Same(
             PilotCallRouter.Unsupported,
-            router.Call(
+            router.CallWire(
                 context,
                 "invbroker",
                 "MachoBindObject",

@@ -28,7 +28,7 @@ public sealed class FlightSessionTests
         using FlightSession wing = new(db.Store, db.Store.FindPilot(1000002)!, clock, space, db.Objects);
         foreach (var session in new[] { pilot, wing })
         {
-            session.Call("ship", "Undock", [session.Pilot.ShipId]);
+            session.CallWire("ship", "Undock", [session.Pilot.ShipId]);
             session.Snapshot();
         }
         pilot.Updates.Clear();
@@ -45,7 +45,7 @@ public sealed class FlightSessionTests
         foreach (var (moving, observer) in new[] { (pilot, wing), (wing, pilot) })
         {
             var initial = moving.Pilot.Position!;
-            moving.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
+            moving.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
             clock.Seconds += 3;
             moving.Checkpoint();
             moving.RefreshPeers();
@@ -61,7 +61,7 @@ public sealed class FlightSessionTests
             Assert.True(sample.Pilot.Position!.X > initial.X);
             Assert.True(sample.Velocity.X > 0);
             observer.Updates.Clear();
-            moving.Call("beyonce", "CmdStop", []);
+            moving.CallWire("beyonce", "CmdStop", []);
             moving.RefreshPeers();
             observer.RefreshPeers();
             Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(observer.Updates)!)[1]!)[0]);
@@ -75,7 +75,7 @@ public sealed class FlightSessionTests
             Assert.InRange(slower.Velocity.X, 1, braking.Velocity.X - 1);
             Assert.True(slower.Pilot.Position!.X > braking.Pilot.Position!.X);
         }
-        wing.Call("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]);
+        wing.CallWire("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]);
         Assert.Empty(space.Peers(pilot.Pilot));
         pilot.Updates.Clear();
         pilot.RefreshPeers();
@@ -100,14 +100,14 @@ public sealed class FlightSessionTests
         object?[] toGate = ["item"u8.ToArray(), (long)gate.Id];
         foreach (var session in new[] { pilot, wing })
         {
-            session.Call("ship", "Undock", [session.Pilot.ShipId]);
+            session.CallWire("ship", "Undock", [session.Pilot.ShipId]);
             session.Snapshot();
-            session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
+            session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
         }
         clock.Seconds = 100;
         foreach (var session in new[] { pilot, wing })
         {
-            session.Call("beyonce", "CmdStop", []);
+            session.CallWire("beyonce", "CmdStop", []);
         }
         clock.Seconds = 200;
         foreach (var session in new[] { pilot, wing })
@@ -118,12 +118,12 @@ public sealed class FlightSessionTests
         Assert.Single(space.Peers(wing.Pilot));
         var departure = pilot.Pilot.Position;
         pilot.Updates.Clear();
-        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
+        Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
         var commands = pilot.Updates.Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToArray();
         Assert.Equal(new[] { "SetSpeedFraction", "SetBallVelocity", "WarpTo", "OnSpecialFX" }, commands.Select(call => call[0]));
         Assert.Equal(3000, ((object?[])commands[2][1]!)[5]);
         int initialUpdates = pilot.Updates.Count;
-        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
+        Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
         Assert.Equal(initialUpdates, pilot.Updates.Count);
         clock.Seconds += 4;
         pilot.Checkpoint();
@@ -132,10 +132,10 @@ public sealed class FlightSessionTests
         clock.Seconds += 5;
         pilot.Checkpoint();
         Assert.Empty(pilot.Updates);
-        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
+        Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
         Assert.Empty(pilot.Updates);
-        Assert.Same(PilotCallRouter.Unsupported, pilot.Call("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 0L }));
-        Assert.Same(PilotCallRouter.Unsupported, pilot.Call("beyonce", "CmdStop", []));
+        Assert.Same(PilotCallRouter.Unsupported, pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 0L }));
+        Assert.Same(PilotCallRouter.Unsupported, pilot.CallWire("beyonce", "CmdStop", []));
         clock.Seconds += 15;
         pilot.Checkpoint();
         pilot.RefreshPeers();
@@ -147,8 +147,8 @@ public sealed class FlightSessionTests
         pilot.RefreshPeers();
         Assert.False(pilot.Moving);
         Assert.InRange(pilot.Pilot.Position!.DistanceTo(gate.Position) - gate.Radius - pilot.Pilot.Flight.ShipRadius, 10_000, 10_550);
-        Assert.Same(PilotCallRouter.Unsupported, pilot.Call("beyonce", "CmdWarpToStuff", toGate));
-        Assert.Null(wing.Call("beyonce", "CmdWarpToStuff", toGate));
+        Assert.Same(PilotCallRouter.Unsupported, pilot.CallWire("beyonce", "CmdWarpToStuff", toGate));
+        Assert.Null(wing.CallWire("beyonce", "CmdWarpToStuff", toGate));
         clock.Seconds += 8;
         wing.Checkpoint();
         clock.Seconds += 120;
@@ -156,12 +156,12 @@ public sealed class FlightSessionTests
         wing.RefreshPeers();
         Assert.Equal(pilot.Pilot, Assert.Single(space.Peers(wing.Pilot)).Pilot);
         Assert.Equal(wing.Pilot, new SqliteWorld(db.Path).FindPilot(1000002));
-        Assert.Null(pilot.Call("beyonce", "CmdWarpToStuff", ["item", (long)pilot.Pilot.StationId]));
+        Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)pilot.Pilot.StationId]));
         clock.Seconds += 8;
         pilot.Checkpoint();
         clock.Seconds += 320;
         pilot.Checkpoint();
-        Assert.Null(pilot.Call("beyonce", "CmdDock", [(long)pilot.Pilot.StationId, pilot.Pilot.ShipId]));
+        Assert.Null(pilot.CallWire("beyonce", "CmdDock", [(long)pilot.Pilot.StationId, pilot.Pilot.ShipId]));
     }
 
     [Theory]
@@ -221,9 +221,9 @@ public sealed class FlightSessionTests
         SharedSpace space = new();
         using FlightSession session = new(db.Store, pilot, clock, space, [gate]);
         session.Snapshot();
-        session.Call("beyonce", "CmdGotoDirection", [(double)heading, 0d, 0d]);
+        session.CallWire("beyonce", "CmdGotoDirection", [(double)heading, 0d, 0d]);
         clock.Seconds = 60;
-        session.Call("beyonce", "CmdWarpToStuff", ["item", 1L]);
+        session.CallWire("beyonce", "CmdWarpToStuff", ["item", 1L]);
         session.Updates.Clear();
         clock.Seconds += expectedTicks - 1;
         session.Checkpoint();
@@ -246,11 +246,11 @@ public sealed class FlightSessionTests
         SharedSpace space = new();
         using FlightSession session = new(db.Store, pilot, clock, space, [wall, gate]);
         session.Snapshot();
-        session.Call("beyonce", "CmdWarpToStuff", ["item", 9L]);
+        session.CallWire("beyonce", "CmdWarpToStuff", ["item", 9L]);
         clock.Seconds = 12;
-        Assert.Null(session.Call("beyonce", "CmdStop", []));
+        Assert.Null(session.CallWire("beyonce", "CmdStop", []));
         Assert.Equal(3d, session.Pilot.Position!.X, 8);
-        session.Call("beyonce", "CmdWarpToStuff", ["item", 9L]);
+        session.CallWire("beyonce", "CmdWarpToStuff", ["item", 9L]);
         session.Updates.Clear();
         clock.Seconds += 180;
         session.Checkpoint();
@@ -273,7 +273,7 @@ public sealed class FlightSessionTests
         SharedSpace space = new();
         using FlightSession mover = new(db.Store, pilot, clock, space, [gate]);
         mover.Snapshot();
-        mover.Call("beyonce", "CmdWarpToStuff", ["item", 1L]);
+        mover.CallWire("beyonce", "CmdWarpToStuff", ["item", 1L]);
         clock.Seconds = 12;
         using FlightSession observer = new(db.Store, wing, clock, space, [gate]);
         observer.Snapshot();
@@ -331,7 +331,7 @@ public sealed class FlightSessionTests
         var nearer = farther with { Id = 2, Position = new(220, 0, 0) };
         Clock clock = new();
         using FlightSession session = new(db.Store, pilot, clock, new(), [farther, nearer]);
-        session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
+        session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
         clock.Seconds = 120;
         session.Checkpoint();
         Assert.Equal(153, session.Pilot.Position!.X, 8);
@@ -349,9 +349,9 @@ public sealed class FlightSessionTests
         Clock clock = new();
         SharedSpace space = new();
         using FlightSession session = new(db.Store, pilot, clock, space, db.Objects);
-        session.Call("beyonce", "CmdGotoDirection", [1d, 1d, 0d]);
+        session.CallWire("beyonce", "CmdGotoDirection", [1d, 1d, 0d]);
         clock.Seconds = 8;
-        session.Call("beyonce", "CmdStop", []);
+        session.CallWire("beyonce", "CmdStop", []);
         session.RefreshPeers();
         var viewer = pilot with { ShipId = 9 };
         var before = Assert.Single(space.Peers(viewer)).Velocity;
@@ -363,7 +363,7 @@ public sealed class FlightSessionTests
         Assert.Equal(Math.Pow(0.93 / 1.07, 2), after.Y / after.X, 10);
         double range =
             session.Pilot.Position!.DistanceTo(new(pilot.X, pilot.Y, pilot.Z)) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius;
-        session.Call("beyonce", "CmdFollowBall", [(long)pilot.StationId, range]);
+        session.CallWire("beyonce", "CmdFollowBall", [(long)pilot.StationId, range]);
         var atRange = session.Pilot.Position;
         clock.Seconds++;
         session.Checkpoint();
@@ -377,15 +377,15 @@ public sealed class FlightSessionTests
         using TestWorld db = new();
         using FlightSession session = new(db.Store, db.Store.FindPilot(1000001)!, new Clock(), new(), db.Objects);
         object?[] target = ["item", (long)db.Objects.Single(body => body.DestinationGateId.HasValue).Id];
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdWarpToStuff", target));
-        session.Call("ship", "Undock", [session.Pilot.ShipId]);
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", target));
+        session.CallWire("ship", "Undock", [session.Pilot.ShipId]);
         session.Snapshot();
         var origin = session.Pilot.Position;
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdWarpToStuff", ["item", 1L]));
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdWarpToStuff", ["bookmark", target[1]]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", ["item", 1L]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", ["bookmark", target[1]]));
         foreach (object range in new object[] { -1L, 100_001L, double.NaN, "bad" })
         {
-            Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdWarpToStuff", target, new() { ["minRange"] = range }));
+            Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", target, new() { ["minRange"] = range }));
         }
         Assert.Equal(origin, session.Pilot.Position);
         Assert.False(session.Moving);
@@ -401,10 +401,10 @@ public sealed class FlightSessionTests
         object?[] args = [(long)gate.Id, (long)gate.DestinationGateId!.Value, pilot.ShipId];
         Clock clock = new();
         using FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
-        session.Call("ship", "Undock", [pilot.ShipId]);
+        session.CallWire("ship", "Undock", [pilot.ShipId]);
         session.Snapshot();
         Assert.Same(PilotCallRouter.Unsupported, session.StartJump(args, systems));
-        Assert.Null(session.Call("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
+        Assert.Null(session.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
         clock.Seconds += 360;
         session.Checkpoint();
         Assert.InRange(session.Pilot.Position!.DistanceTo(gate.Position) - gate.Radius, 0, 2547);
@@ -443,7 +443,7 @@ public sealed class FlightSessionTests
         session.Updates.Clear();
         session.Snapshot();
         Assert.Equal(new[] { "effects.JumpIn" }, EffectArguments(session).Select(a => a[5]));
-        Assert.Null(session.Call("beyonce", "CmdFollowBall", [args[1], 1000L]));
+        Assert.Null(session.CallWire("beyonce", "CmdFollowBall", [args[1], 1000L]));
         clock.Seconds += 90;
         session.Checkpoint();
         Assert.Null(session.StartJump([args[1], args[0], args[2]], systems));
@@ -481,8 +481,8 @@ public sealed class FlightSessionTests
         var pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         using FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
-        session.Call("ship", "Undock", [pilot.ShipId]);
-        session.Call("beyonce", "CmdGotoDirection", [-1d, 0d, 0d]);
+        session.CallWire("ship", "Undock", [pilot.ShipId]);
+        session.CallWire("beyonce", "CmdGotoDirection", [-1d, 0d, 0d]);
         clock.Seconds = 1000;
         session.Checkpoint();
         Assert.False(session.Moving);
@@ -497,13 +497,13 @@ public sealed class FlightSessionTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
-        Assert.Null(session.Call("ship", "Undock", [pilot.ShipId, false]));
+        Assert.Null(session.CallWire("ship", "Undock", [pilot.ShipId, false]));
         var spawn = Assert.IsType<SpacePosition>(session.Pilot.Position);
         Assert.Equal(pilot.SystemId, session.Pilot.LocationId);
-        Assert.Null(session.Call("beyonce", "CmdGotoDirection", [0d, 2d, 0d]));
+        Assert.Null(session.CallWire("beyonce", "CmdGotoDirection", [0d, 2d, 0d]));
         clock.Seconds = 3;
         session.Updates.Clear();
-        Assert.Null(session.Call("beyonce", "CmdStop", []));
+        Assert.Null(session.CallWire("beyonce", "CmdStop", []));
         Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(session.Updates)!)[1]!)[0]);
         session.Updates.Clear();
         var stopped = Assert.IsType<SpacePosition>(session.Pilot.Position);
@@ -517,7 +517,7 @@ public sealed class FlightSessionTests
         Assert.True(session.Pilot.Position!.Y > stopped.Y);
         Assert.False(session.Moving);
         var resumed = new FlightSession(reopened, reopened.FindPilot(1000001)!, clock, new(), db.Objects);
-        Assert.Null(resumed.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Null(resumed.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot, new SqliteWorld(db.Path).FindPilot(1000001));
     }
 
@@ -563,16 +563,16 @@ public sealed class FlightSessionTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
-        session.Call("ship", "Undock", [pilot.ShipId]);
-        session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
+        session.CallWire("ship", "Undock", [pilot.ShipId]);
+        session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
         clock.Seconds = 60;
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
-        Assert.Null(session.Call("beyonce", "CmdFollowBall", [(long)pilot.StationId, 0d]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Null(session.CallWire("beyonce", "CmdFollowBall", [(long)pilot.StationId, 0d]));
         clock.Seconds = 180;
         session.Checkpoint();
         Assert.False(session.Moving);
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId + 1]));
-        Assert.Null(session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId + 1]));
+        Assert.Null(session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
     }
 
@@ -583,13 +583,13 @@ public sealed class FlightSessionTests
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("ship", "Undock", [pilot.ShipId + 1]));
-        Assert.Null(session.Call("ship", "Undock", [pilot.ShipId]));
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdGotoDirection", [double.NaN, 0d, 0d]));
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId + 1, pilot.ShipId]));
-        Assert.Null(session.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("ship", "Undock", [pilot.ShipId + 1]));
+        Assert.Null(session.CallWire("ship", "Undock", [pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdGotoDirection", [double.NaN, 0d, 0d]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId + 1, pilot.ShipId]));
+        Assert.Null(session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
         clock.Seconds = 60;
-        Assert.Same(PilotCallRouter.Unsupported, session.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Same(PilotCallRouter.Unsupported, session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot.SystemId, db.Store.FindPilot(1000001)!.LocationId);
     }
 }

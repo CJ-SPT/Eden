@@ -174,12 +174,12 @@ public sealed class NpcEncounterTests
         Assert.Single(context.Flight.VisibleNpcs);
         Assert.NotNull(context.Flight.FindTarget(npc.Id));
         using TargetingHandler targeting = new(clock, db.Services.GetRequiredService<IPilotFitting>(), new());
-        Assert.IsType<object?[]>(targeting.Call(context, "dogmaIM", "AddTarget", [npc.Id]));
+        Assert.IsType<object?[]>(targeting.CallWire(context, "dogmaIM", "AddTarget", [npc.Id]));
         clock.Seconds = 5;
         targeting.Advance(context);
         Assert.True(targeting.IsLocked(npc.Id));
         Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "add"));
-        Assert.Null(context.Flight.Call("beyonce", "CmdFollowBall", [npc.Id, 500d]));
+        Assert.Null(context.Flight.CallWire("beyonce", "CmdFollowBall", [npc.Id, 500d]));
         using (WorldDbContext world = new(db.Path))
         {
             world.Set<WorldNpc>().Find(npc.Id)!.X += NpcEncounterDefinitions.VisibilityRange * 2;
@@ -234,7 +234,7 @@ public sealed class NpcEncounterTests
         Clock clock = new();
         using FlightSession flight = new(db.Store, db.Store.FindPilot(1000001)!, clock, new(), [], encounters: encounters);
         flight.Snapshot();
-        Assert.Null(flight.Call("beyonce", "CmdFollowBall", [npc.Id, 500d]));
+        Assert.Null(flight.CallWire("beyonce", "CmdFollowBall", [npc.Id, 500d]));
         var moved = npc.Position + new SpacePosition(10000, 0, 0);
         using (WorldDbContext world = new(db.Path))
         {
@@ -262,7 +262,7 @@ public sealed class NpcEncounterTests
         Clock clock = new();
         using FlightSession flight = new(db.Store, db.Store.FindPilot(1000001)!, clock, new(), [belt], encounters: encounters);
         flight.Snapshot();
-        Assert.Null(flight.Call("beyonce", "CmdFollowBall", [npc.Id, 500d]));
+        Assert.Null(flight.CallWire("beyonce", "CmdFollowBall", [npc.Id, 500d]));
         clock.Seconds = 100;
         flight.Checkpoint();
         double distance = flight.Pilot.Position!.DistanceTo(npc.Position) - pilot.Flight.ShipRadius - npc.Radius;

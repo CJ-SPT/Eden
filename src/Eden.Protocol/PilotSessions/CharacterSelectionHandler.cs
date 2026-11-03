@@ -106,63 +106,17 @@ internal sealed class CharacterSelectionHandler(
         && call[1] is object?[] { Length: 1 } ids
         && Equals(ids[0], pilotId);
 
-    private object?[] CharacterSelection(PilotCallContext context)
-    {
-        BlueInstance account = new(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["userName"] = context.Account.UserName,
-                ["characterSlots"] = ICharacterCreation.Slots,
-                ["maxCharacterSlots"] = ICharacterCreation.Slots,
-                ["creationDate"] = context.Account.CreatedAt,
-                ["subscriptionEndTime"] = null,
-            }
-        );
-        return [new List<object?> { account }, new object?[] { null, null }, context.Roster.Select(Card).ToList(), new List<object?>()];
-    }
+    private CharacterSelectionReply CharacterSelection(PilotCallContext context) =>
+        new(context.Account, context.Roster.Select(Card).ToArray());
 
-    private object? Card(DockedPilot docked)
+    private CharacterSelectionCard Card(DockedPilot pilot)
     {
-        var queue = training.Advance(docked.PilotId).Queue;
+        var queue = training.Advance(pilot.PilotId).Queue;
         var head = queue.FirstOrDefault();
         var active = head?.StartTime is not null ? head : null;
-        BlueInstance pilot = new(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["characterID"] = docked.PilotId,
-                ["characterName"] = docked.Name,
-                ["name"] = docked.Name,
-                ["stationID"] = docked.Position is null ? docked.StationId : null,
-                ["solarSystemID"] = docked.SystemId,
-                ["shipTypeID"] = docked.ShipTypeId,
-                ["corporationID"] = docked.CorpId,
-                ["allianceID"] = null,
-                ["factionID"] = null,
-                ["balance"] = 0,
-                ["balanceChange"] = 0,
-                ["skillPoints"] =
-                    skills.ReadSkills(docked.PilotId).Sum(s => s.Points)
-                    + (active is null ? 0 : active.PointsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) - active.StartPoints),
-                ["finishedSkills"] = 0,
-                ["unreadMailCount"] = 0,
-                ["paperdollState"] = 0,
-                ["lockTypeID"] = null,
-                ["deletePrepareDateTime"] = null,
-                ["logoffDate"] = 134000000000000000L,
-                ["skillTypeID"] = active?.Target.TypeId,
-                ["toLevel"] = active?.Target.Level,
-                ["trainingStartTime"] = active?.StartTime,
-                ["trainingEndTime"] = active?.EndTime,
-                ["queueEndTime"] = queue.LastOrDefault()?.EndTime,
-                ["finishSP"] = active?.EndPoints,
-                ["trainedSP"] = active?.StartPoints,
-                ["gender"] = docked.Profile.GenderId,
-                ["bloodlineID"] = docked.Profile.BloodlineId,
-                ["raceID"] = docked.Profile.RaceId,
-            }
-        );
-        return pilot;
+        long points =
+            skills.ReadSkills(pilot.PilotId).Sum(skill => skill.Points)
+            + (active is null ? 0 : active.PointsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) - active.StartPoints);
+        return new(pilot, points, active, queue.LastOrDefault()?.EndTime);
     }
 }

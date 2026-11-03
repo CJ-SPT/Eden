@@ -168,7 +168,7 @@ public sealed class PilotFleetTests
             []
         );
         context.Select(pilot);
-        object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
+        object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });
         Assert.IsType<List<object?>>(Call("ship", "AssembleShip", new List<object?> { stack.Id }));
         var reference = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", pilot.ShipId, 1L));
         string originalContainer = context.ResolveReference(reference.Id)!;
@@ -179,13 +179,15 @@ public sealed class PilotFleetTests
         Assert.IsType<BlueConstructor>(Call(originalContainer, "GetSelfInvItem"));
         var flags = new Dictionary<string, object?> { ["flags"] = new List<object?> { (long)InventoryFlag.Cargo } };
         Assert.Single(
-            Assert.IsType<List<object?>>(router.Call(context, originalContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags))
+            Assert.IsType<List<object?>>(
+                router.CallWire(context, originalContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags)
+            )
         );
         string newContainer = context.ResolveReference(
             Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", stack.Id, 1L)).Id
         )!;
         Assert.Empty(
-            Assert.IsType<List<object?>>(router.Call(context, newContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags))
+            Assert.IsType<List<object?>>(router.CallWire(context, newContainer, "ListByFlags", Array.Empty<object?>(), _ => { }, flags))
         );
         var locations = Assert.IsType<object?[]>(
             Call("config", "GetMultiLocationsEx", new List<object?> { pilot.ShipId, stack.Id, f.Db.Store.FindPilot(1000002)!.ShipId })

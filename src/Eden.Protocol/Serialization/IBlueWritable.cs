@@ -15,5 +15,16 @@ internal sealed record BlueList<T>(IReadOnlyList<T> Items) : IBlueWritable
 internal sealed record BlueMap<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> Entries) : IBlueWritable
     where TKey : notnull
 {
-    public object ToBlue() => new BlueDictionary(Entries.Select(pair => ((object?)pair.Key, (object?)pair.Value)).ToArray());
+    public object ToBlue()
+    {
+        if (typeof(TKey) == typeof(string))
+        {
+            return Entries.ToDictionary(pair => (string)(object)pair.Key, pair => (object?)pair.Value);
+        }
+        if (typeof(TKey) == typeof(long) || typeof(TKey) == typeof(int) || typeof(TKey).IsEnum)
+        {
+            return Entries.ToDictionary(pair => Convert.ToInt64(pair.Key), pair => (object?)pair.Value);
+        }
+        return new BlueDictionary(Entries.Select(pair => ((object?)pair.Key, (object?)pair.Value)).ToArray());
+    }
 }

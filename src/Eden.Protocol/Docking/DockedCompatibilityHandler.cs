@@ -8,11 +8,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
 {
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
 
-    private static BlueInstance Rows(string[] header, params object?[][] lines) =>
-        new(
-            "eve.common.script.sys.rowset.Rowset",
-            new Dictionary<string, object?> { ["header"] = header.Cast<object?>().ToList(), ["lines"] = lines.Cast<object?>().ToList() }
-        );
+    private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
     public object? Call(
         PilotCallContext context,
@@ -31,19 +27,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => null,
             // No loyalty points or EverMarks have been earned in Eden yet.
             ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => new List<object?>(),
-            ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") => KeyVal(
-                new() { ["iskEscrow"] = 0d, ["itemsEscrow"] = 0d }
-            ),
+            ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => null,
-            ("home_station", "get_home_station") => KeyVal(
-                new()
-                {
-                    ["id"] = pilot.StationId,
-                    ["type_id"] = pilot.StationTypeId,
-                    ["solar_system_id"] = pilot.HomeSystemId,
-                    ["is_fallback"] = false,
-                }
-            ),
+            ("home_station", "get_home_station") => new HomeStationInfo(pilot.StationId, pilot.StationTypeId, pilot.HomeSystemId),
             ("scanMgr", "SignalTrackerRegister") => null,
             ("contractProxy", "GetLoginInfo") => KeyVal(
                 new()
@@ -69,7 +55,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("beyonce", "GetFormations") => Array.Empty<object?>(),
             ("charMgr", "SetActivityStatus") => null,
             ("corpRegistry", "GetAggressionSettings") => null,
-            ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], [pilot.PilotId, pilot.Name, 1373]),
+            ("corpRegistry", "GetEveOwners") => Rows(["ownerID", "ownerName", "typeID"], new EveOwnerRow(pilot.PilotId, pilot.Name)),
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new object?[] { 1d, false },
             ("ProjectDiscovery", "is_enabled") => false,
             ("clientStatLogger", "LogString") => null,
@@ -81,85 +67,54 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("userSvc", "GetMultiCharactersTrainingSlots") => new Dictionary<string, object?>(),
             ("charMgr", "GetContactList") => KeyVal(new() { ["addresses"] = new List<object?>(), ["blocked"] = new List<object?>() }),
             ("corpRegistry", "GetCorporateContacts") => new List<object?>(),
-            ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new object?[]
-            {
-                new object?[] { "locationID", "locationName", "solarSystemID", "x", "y", "z", "locationNameID" },
+            ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new LocationTable(
                 context
                     .Flight.VisiblePilots()
                     .Where(owner => ids.Contains(owner.ShipId))
-                    .Select(owner =>
-                        (object?)
-                            new object?[]
-                            {
-                                owner.ShipId,
-                                owner.ShipName,
-                                owner.SystemId,
-                                owner.Position?.X ?? owner.X,
-                                owner.Position?.Y ?? owner.Y,
-                                owner.Position?.Z ?? owner.Z,
-                                null,
-                            }
-                    )
+                    .Select(owner => new LocationRow(
+                        owner.ShipId,
+                        owner.ShipName,
+                        owner.SystemId,
+                        owner.Position?.X ?? owner.X,
+                        owner.Position?.Y ?? owner.Y,
+                        owner.Position?.Z ?? owner.Z
+                    ))
                     .Concat(
                         ids.OfType<long>()
                             .Except(context.Flight.VisiblePilots().Select(p => p.ShipId))
                             .Select(id => fleet.Find(pilot.PilotId, id))
                             .OfType<InventoryItem>()
                             .Where(ship => pilot.Position is null && ship.LocationId == pilot.StationId)
-                            .Select(ship =>
-                                (object?)
-                                    new object?[]
-                                    {
-                                        ship.Id,
-                                        fleet.Name(pilot.PilotId, ship.Id),
-                                        pilot.SystemId,
-                                        pilot.X,
-                                        pilot.Y,
-                                        pilot.Z,
-                                        null,
-                                    }
-                            )
+                            .Select(ship => new LocationRow(
+                                ship.Id,
+                                fleet.Name(pilot.PilotId, ship.Id),
+                                pilot.SystemId,
+                                pilot.X,
+                                pilot.Y,
+                                pilot.Z
+                            ))
                     )
                     .Concat(
                         context
                             .Flight.VisibleNpcs.Where(n => ids.Contains(n.Id))
-                            .Select(n =>
-                                (object?)new object?[] { n.Id, n.Name, n.SystemId, n.Position.X, n.Position.Y, n.Position.Z, null }
-                            )
+                            .Select(n => new LocationRow(n.Id, n.Name, n.SystemId, n.Position.X, n.Position.Y, n.Position.Z))
                     )
                     .Concat(
                         context
                             .Flight.VisibleWrecks.Where(w => ids.Contains(w.Id))
-                            .Select(w =>
-                                (object?)new object?[] { w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z, null }
-                            )
+                            .Select(w => new LocationRow(w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z))
                     )
-                    .ToList(),
-            },
+                    .ToArray()
+            ),
             ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => new Dictionary<string, object?>(),
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
             ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => new Dictionary<long, object?>(),
             ("XmppChatMgr", "GetDeprecatedPrefsFallback") => null,
-            ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => KeyVal(
-                new()
-                {
-                    ["characterID"] = id,
-                    ["corporationID"] = pilot.CorpId,
-                    ["title"] = "",
-                    ["roles"] = 0,
-                    ["titleMask"] = 0,
-                }
-            ),
+            ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => new CorporationMemberInfo(id, pilot.CorpId),
             ("insuranceSvc", "GetContracts") => new List<object?>(),
-            ("stationSvc", "GetStationItemBits") => new object?[]
-            {
-                pilot.StationOwnerId,
-                pilot.StationId,
-                pilot.OperationId,
-                pilot.StationTypeId,
-            },
-            ("station", "GetGuests") => new List<object?> { new object?[] { pilot.PilotId, pilot.CorpId, null, null } },
+            ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
+            ("station", "GetGuests") => new BlueList<StationGuest>([new(pilot.PilotId, pilot.CorpId)]),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => new Dictionary<string, object?>(),
             ("crimewatch", "GetClientStates") => new object?[]
             {
@@ -215,22 +170,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                     "z",
                     "serviceMask",
                 ],
-                [
-                    pilot.StationId,
-                    pilot.StationTypeId,
-                    pilot.Station.Name,
-                    pilot.HomeSystemId,
-                    pilot.HomeConstellationId,
-                    pilot.HomeRegionId,
-                    pilot.StationOwnerId,
-                    pilot.StationOwnerId,
-                    pilot.OperationId,
-                    pilot.OrbitId,
-                    pilot.X,
-                    pilot.Y,
-                    pilot.Z,
-                    0,
-                ]
+                new StationInfoRow(pilot)
             ),
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),

@@ -37,22 +37,7 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation) : ISele
         }
         if (service == "charMgr" && method == "GetPublicInfo" && args is [long id] && id == pilot.PilotId)
         {
-            var profile = pilot.Profile;
-            return new BlueInstance(
-                "utillib.KeyVal",
-                new Dictionary<string, object?>
-                {
-                    ["characterID"] = id,
-                    ["characterName"] = pilot.Name,
-                    ["corporationID"] = pilot.CorpId,
-                    ["raceID"] = profile.RaceId,
-                    ["bloodlineID"] = profile.BloodlineId,
-                    ["gender"] = profile.GenderId,
-                    ["schoolID"] = profile.SchoolId,
-                    ["ancestryID"] = profile.AncestryId,
-                    ["createDateTime"] = profile.CreatedAt,
-                }
-            );
+            return new PublicCharacterInfo(pilot);
         }
         return PilotCallRouter.Unsupported;
     }

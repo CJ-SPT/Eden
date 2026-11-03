@@ -32,6 +32,11 @@ public enum InventoryLocation
 
 public enum DogmaAttributeId
 {
+    Charisma = 164,
+    Intelligence = 165,
+    Memory = 166,
+    Perception = 167,
+    Willpower = 168,
     IsOnline = 2,
     Damage = 3,
     Mass = 4,

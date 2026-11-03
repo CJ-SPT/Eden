@@ -12,21 +12,18 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
 
     private Cycle? _cycle;
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+    public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycle is { } cycle && cycle.ShipId == pilot.ShipId && cycle.Module.ItemId == module
-            ?
-            [
+            ? new(
                 module,
                 pilot.PilotId,
                 pilot.ShipId,
                 null,
-                null,
-                Array.Empty<object?>(),
-                (int)DogmaEffect.Afterburner,
+                DogmaEffect.Afterburner,
                 cycle.StartTime,
                 cycle.Module.DurationMilliseconds,
-                cycle.Repeats,
-            ]
+                cycle.Repeats
+            )
             : null;
 
     public void RefreshNavigation(PilotCallContext context)

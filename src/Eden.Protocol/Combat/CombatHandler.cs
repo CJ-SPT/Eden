@@ -33,21 +33,18 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         }
     }
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+    public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
-            ?
-            [
+            ? new(
                 module,
                 pilot.PilotId,
                 pilot.ShipId,
                 cycle.Target,
-                null,
-                Array.Empty<object?>(),
-                cycle.Weapon.EffectId,
+                (DogmaEffect)cycle.Weapon.EffectId,
                 cycle.StartTime,
                 cycle.Weapon.CycleMilliseconds,
-                cycle.Repeats,
-            ]
+                cycle.Repeats
+            )
             : null;
 
     public void Advance(PilotCallContext context)

@@ -291,11 +291,11 @@ public sealed class PropulsionTests
         observer.Snapshot();
         observer.Updates.Clear();
         PropulsionHandler handler = new(f.Clock, f.Store);
-        Assert.Null(context.Flight.Call("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
+        Assert.Null(context.Flight.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
         f.Clock.Milliseconds = 1000;
         context.Flight.Checkpoint();
         var velocity = context.Flight.Velocity;
-        Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
         Assert.Equal(velocity, context.Flight.Velocity);
         Assert.True(context.Pilot.Flight.MaxSpeed > 690);
         observer.RefreshPeers();
@@ -304,7 +304,7 @@ public sealed class PropulsionTests
         Assert.Contains(actions, a => Equals(a[0], "SetBallMass"));
         Assert.Contains(actions, a => Equals(a[0], "OnSpecialFX") && Equals(((object?[])a[1]!)[5], PropulsionDefinitions.EffectGraphic));
         Assert.DoesNotContain(actions, a => Equals(a[0], "SetState"));
-        Assert.Null(handler.Call(context, "dogmaIM", "Deactivate", [f.Module, PropulsionDefinitions.EffectName]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Deactivate", [f.Module, PropulsionDefinitions.EffectName]));
         Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
         f.Clock.Milliseconds = 9500;
         handler.Advance(context);
@@ -323,7 +323,7 @@ public sealed class PropulsionTests
         using Fixture f = new();
         using var context = f.Client();
         PropulsionHandler handler = new(f.Clock, f.Store);
-        object? Activate() => handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]);
+        object? Activate() => handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]);
         Assert.Null(Activate());
         double speed = context.Pilot.Flight.MaxSpeed;
         Assert.Null(Activate());
@@ -354,9 +354,9 @@ public sealed class PropulsionTests
         using var context = f.Client();
         PropulsionHandler handler = new(f.Clock, f.Store);
         Assert.IsType<PilotCallRouter.Error>(
-            handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, 999L, 0L])
+            handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, 999L, 0L])
         );
-        Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 0L]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 0L]));
         handler.Cancel(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
         Assert.Equal(339.25, context.Pilot.Flight.MaxSpeed);
@@ -374,10 +374,10 @@ public sealed class PropulsionTests
         using (var context = f.Client(objects: [destination]))
         {
             PropulsionHandler handler = new(f.Clock, f.Store);
-            Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
-            Assert.Null(context.Flight.Call("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
+            Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
+            Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
             Assert.IsType<PilotCallRouter.Error>(
-                handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L])
+                handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L])
             );
             f.Clock.Milliseconds = 9000;
             handler.Advance(context);
@@ -388,8 +388,8 @@ public sealed class PropulsionTests
         f.Db.Store.SetPosition(pilot.ShipId, new(pilot.X + pilot.Flight.StationRadius + 500, pilot.Y, pilot.Z));
         using var docked = f.Client(objects: f.Db.Objects);
         PropulsionHandler active = new(f.Clock, f.Store);
-        Assert.Null(active.Call(docked, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
-        Assert.Null(docked.Flight.Call("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        Assert.Null(active.CallWire(docked, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
+        Assert.Null(docked.Flight.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         active.Advance(docked);
         Assert.Null(active.ActiveEffect(docked.Pilot, f.Module));
         Assert.Null(docked.Pilot.Position);
@@ -403,7 +403,7 @@ public sealed class PropulsionTests
         using Fixture f = new();
         using var context = f.Client();
         PropulsionHandler handler = new(f.Clock, f.Store);
-        Assert.Null(handler.Call(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionDefinitions.EffectName, null, 100L]));
         double before = context.Pilot.Flight.MaxSpeed;
         using (WorldDbContext world = new(f.Db.Path))
         {

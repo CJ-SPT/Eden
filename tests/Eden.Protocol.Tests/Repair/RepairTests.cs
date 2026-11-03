@@ -276,7 +276,7 @@ public sealed class RepairTests
             2,
             []
         );
-        object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
+        object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });
         List<object?> ids = [pilot.ShipId];
         Assert.Same(PilotCallRouter.Unsupported, Call("repairSvc", "GetRepairQuotes", ids));
         context.Select(pilot);

@@ -190,8 +190,8 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
                 throw new InvalidTrainingQueue("SkillInQueueOverAlphaSpTrainingSize");
             }
             // Local accounts are Alpha. Training earns half the Omega rate.
-            double primary = Convert.ToDouble(pilotAttributes[(long)dogma[180]], CultureInfo.InvariantCulture);
-            double secondary = Convert.ToDouble(pilotAttributes[(long)dogma[181]], CultureInfo.InvariantCulture);
+            double primary = Convert.ToDouble(pilotAttributes[(DogmaAttributeId)dogma[180]], CultureInfo.InvariantCulture);
+            double secondary = Convert.ToDouble(pilotAttributes[(DogmaAttributeId)dogma[181]], CultureInfo.InvariantCulture);
             long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / ((primary + secondary / 2) / 2));
             var entry =
                 result.Count == 0 && running is not null

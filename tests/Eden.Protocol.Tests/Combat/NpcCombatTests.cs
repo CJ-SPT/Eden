@@ -489,10 +489,10 @@ public sealed class NpcCombatTests
         context.Select(f.Pilot);
         context.Flight.Snapshot();
         npcCombat.Enter(context);
-        Assert.IsType<object?[]>(targeting.Call(context, "dogmaIM", "AddTarget", [f.Npc.Id]));
+        Assert.IsType<object?[]>(targeting.CallWire(context, "dogmaIM", "AddTarget", [f.Npc.Id]));
         f.Clock.Milliseconds = 5000;
         targeting.Advance(context);
-        Assert.Null(weapons.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
+        Assert.Null(weapons.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
         npcCombat.Advance(context);
         targeting.Advance(context);
         Assert.Contains(context.Notifications, n => n.Name == "OnTarget" && Equals(n.Arguments[0], "otheradd"));
@@ -574,7 +574,7 @@ public sealed class NpcCombatTests
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         using PilotCallContext context = new(1000001, old.Account, [old], p => new(f.Db.Store, p, f.Clock, new(), []), 7, []);
         context.Select(old);
-        object? Call(string service, string method, object?[] args) => router.Call(context, service, method, args, _ => { });
+        object? Call(string service, string method, object?[] args) => router.CallWire(context, service, method, args, _ => { });
         var previous = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [old.ShipId, 0L]));
         f.Aggress();
         f.AlmostLost();

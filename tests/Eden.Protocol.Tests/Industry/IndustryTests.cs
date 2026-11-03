@@ -485,7 +485,7 @@ public sealed class IndustryTests
                 )
             )
         );
-        var connected = Assert.IsType<object?[]>(handler.Call(context, "industryMonitor", "ConnectJob", [request]));
+        var connected = Assert.IsType<object?[]>(handler.CallWire(context, "industryMonitor", "ConnectJob", [request]));
         Assert.Equal(81L, Assert.IsType<Dictionary<long, object?>>(connected[1])[34]);
         request["outputLocation"] = new BlueInstance(
             "utillib.KeyVal",
@@ -496,17 +496,17 @@ public sealed class IndustryTests
                 ["flagID"] = (long)InventoryFlag.Hangar,
             }
         );
-        Assert.IsType<PilotCallRouter.Error>(handler.Call(context, "industryManager", "InstallJob", [request]));
+        Assert.IsType<PilotCallRouter.Error>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
         Assert.Equal(81, f.Quantity(34));
         request["outputLocation"] = request["inputLocation"];
-        long jobId = Assert.IsType<long>(handler.Call(context, "industryManager", "InstallJob", [request]));
+        long jobId = Assert.IsType<long>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
         Assert.Contains(context.Notifications, n => n.Name == "OnIndustryJob");
         handler.Advance(context);
         var materials = Assert.Single(context.Notifications, n => n.Name == "OnIndustryMaterials");
         Assert.Equal(54L, Assert.IsType<Dictionary<long, object?>>(materials.Arguments[1])[34]);
-        Assert.NotEmpty(BlueMarshal.Encode(handler.Call(context, "industryManager", "GetJobsByOwner", [pilot.PilotId, false])));
-        Assert.IsType<PilotCallRouter.Error>(handler.Call(context, "industryManager", "GetJob", [jobId + 1]));
-        Assert.Null(handler.Call(context, "industryMonitor", "DisconnectJob", [connected[0]]));
+        Assert.NotEmpty(BlueMarshal.Encode(handler.CallWire(context, "industryManager", "GetJobsByOwner", [pilot.PilotId, false])));
+        Assert.IsType<PilotCallRouter.Error>(handler.CallWire(context, "industryManager", "GetJob", [jobId + 1]));
+        Assert.Null(handler.CallWire(context, "industryMonitor", "DisconnectJob", [connected[0]]));
         Assert.False(handler.IsMonitoring);
     }
 
@@ -584,7 +584,7 @@ public sealed class IndustryTests
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         object? Check(StationService service, int station) =>
-            router.Call(
+            router.CallWire(
                 context,
                 "corpStationMgr",
                 "MachoBindObject",
@@ -602,7 +602,10 @@ public sealed class IndustryTests
         Assert.IsType<object?[]>(Check(StationService.Laboratory, pilot.StationId));
         Assert.Throws<InvalidDataException>(() => f.Store.Install(pilot.PilotId, f.Request()));
         Assert.Same(PilotCallRouter.Unsupported, Check(StationService.Laboratory, pilot.StationId + 1));
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "industryManager", "ResearchJob", Array.Empty<object?>(), _ => { }));
+        Assert.Same(
+            PilotCallRouter.Unsupported,
+            router.CallWire(context, "industryManager", "ResearchJob", Array.Empty<object?>(), _ => { })
+        );
     }
 
     [Theory]

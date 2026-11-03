@@ -535,9 +535,9 @@ public sealed class MarketTests
                 new Dictionary<string, object?>(),
             },
         ];
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        Assert.Same(PilotCallRouter.Unsupported, router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         context.Select(pilot);
-        var result = Assert.IsType<object?[]>(router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        var result = Assert.IsType<object?[]>(router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         Assert.IsType<BlueObjectReference>(result[0]);
         Assert.Null(result[1]);
         using (WorldDbContext saved = new(f.Db.Path))
@@ -551,7 +551,7 @@ public sealed class MarketTests
         {
             catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{\"services\":[]}}' WHERE Dataset='client/stationoperations'");
         }
-        Assert.IsType<PilotCallRouter.Error>(router.Call(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
+        Assert.IsType<PilotCallRouter.Error>(router.CallWire(context, "corpStationMgr", "MachoBindObject", bind, _ => { }));
         f.Db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
         Assert.Throws<InvalidDataException>(() => f.Store.CheckStation(pilot.PilotId, pilot.StationId));
     }
@@ -571,7 +571,7 @@ public sealed class MarketTests
             1,
             []
         );
-        object? Call(string service, string method, params object?[] args) => router.Call(context, service, method, args, _ => { });
+        object? Call(string service, string method, params object?[] args) => router.CallWire(context, service, method, args, _ => { });
         Assert.Same(PilotCallRouter.Unsupported, Call("marketProxy", "GetOrders", (long)Scordite));
         context.Select(pilot);
         Assert.Null(Call("charMgr", "GetPrivateInfoOnCorpChange", pilot.PilotId));

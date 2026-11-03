@@ -36,54 +36,16 @@ internal sealed class InventoryHandler(
     private readonly HashSet<long> _refittingModules = [];
     private MagazineChange[] _refittingMagazines = [];
 
-    private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
+    internal static BlueConstructor ItemDescriptor() => InventoryWire.Descriptor();
 
-    private static readonly (string Name, int Type)[] s_columns =
-    [
-        ("itemID", 20),
-        ("typeID", 3),
-        ("ownerID", 3),
-        ("locationID", 20),
-        ("flagID", 2),
-        ("quantity", 3),
-        ("groupID", 3),
-        ("categoryID", 3),
-        ("customInfo", 129),
-    ];
+    internal static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
 
-    internal static BlueConstructor ItemDescriptor() =>
-        new(
-            "blue.DBRowDescriptor",
-            [s_columns.Select(column => (object?)new object?[] { column.Name, column.Type }).ToArray()],
-            BlueRowDescriptor.InventoryVirtualColumns()
-        );
-
-    internal static BlueConstructor Item(InventoryItem item) =>
-        new(
-            "blue.DBRow",
-            [
-                ItemDescriptor(),
-                new object?[]
-                {
-                    item.Id,
-                    item.TypeId,
-                    item.OwnerId,
-                    item.LocationId,
-                    item.FlagId,
-                    item.Singleton ? InventoryDefinitions.AssembledQuantity : item.Quantity,
-                    item.GroupId,
-                    item.CategoryId,
-                    "",
-                },
-            ]
-        );
-
-    private List<object?> List(DockedPilot pilot, string service, object?[] args)
+    private BlueList<InventoryRow> List(DockedPilot pilot, string service, object?[] args)
     {
-        List<object?> result = [];
+        List<InventoryRow> result = [];
         if (service == "@hangar" && pilot.Position is not null)
         {
-            return result;
+            return new(result);
         }
         long location = service == "@hangar" ? pilot.StationId : ShipContainer(service, pilot);
         var flag = args.FirstOrDefault() as long?;
@@ -92,7 +54,7 @@ internal sealed class InventoryHandler(
             result.AddRange(fleet.Ships(pilot.PilotId, pilot.StationId).Select(Item));
         }
         result.AddRange(inventory.List(pilot.PilotId, location).Where(i => flag is null || i.FlagId == flag).Select(Item));
-        return result;
+        return new(result);
     }
 
     private static long ShipContainer(string service, DockedPilot pilot) =>
@@ -121,7 +83,6 @@ internal sealed class InventoryHandler(
         {
             return PilotCallRouter.Unsupported;
         }
-        long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
         object? flagValue = keywords?.GetValueOrDefault("flag");
         object? quantityValue = keywords?.GetValueOrDefault("qty");
         if (
@@ -138,6 +99,16 @@ internal sealed class InventoryHandler(
             : service == "@hangar" ? (int)InventoryFlag.Hangar
             : (int)InventoryFlag.Cargo;
         int? quantity = quantityValue is long q ? (int)q : null;
+        return Move(context, service, new InventoryMoveRequest(ids, source, flag, quantity));
+    }
+
+    private object? Move(PilotCallContext context, string service, InventoryMoveRequest request)
+    {
+        var ids = request.ItemIds;
+        long source = request.SourceId;
+        int flag = request.FlagId;
+        int? quantity = request.Quantity;
+        long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
         try
         {
             var previousMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId);
@@ -268,42 +239,42 @@ internal sealed class InventoryHandler(
                     Quantity = change.Previous?.Quantity ?? 0,
                 }
                 : change.Item;
-        Dictionary<long, object?> old = [];
+        Dictionary<InventoryColumn, long> old = [];
         if (change.Previous is not { } previous)
         {
             // A new stack must enter the cached container. A quantity-only change
             // updates capacity but does not insert an unknown item in invCache.
-            old[(long)InventoryColumn.Location] = 0L;
-            old[(long)InventoryColumn.Flag] = 0;
+            old[InventoryColumn.Location] = 0L;
+            old[InventoryColumn.Flag] = 0;
             // Assembled rows encode quantity as -1. invCache rejects a quantity
             // change on that row; stacksize still describes its prior absence.
             if (!item.Singleton)
             {
-                old[(long)InventoryColumn.Quantity] = 0;
+                old[InventoryColumn.Quantity] = 0;
             }
-            old[(long)InventoryColumn.StackSize] = 0;
+            old[InventoryColumn.StackSize] = 0;
         }
         else
         {
             if (previous.LocationId != item.LocationId)
             {
-                old[(long)InventoryColumn.Location] = previous.LocationId;
+                old[InventoryColumn.Location] = previous.LocationId;
             }
             if (previous.FlagId != item.FlagId)
             {
-                old[(long)InventoryColumn.Flag] = previous.FlagId;
+                old[InventoryColumn.Flag] = previous.FlagId;
             }
             if (previous.Singleton != item.Singleton)
             {
-                old[(long)InventoryColumn.Singleton] = previous.Singleton ? 1 : 0;
+                old[InventoryColumn.Singleton] = previous.Singleton ? 1 : 0;
             }
             if (previous.Quantity != item.Quantity)
             {
-                old[(long)InventoryColumn.Quantity] = previous.Quantity;
-                old[(long)InventoryColumn.StackSize] = previous.Quantity;
+                old[InventoryColumn.Quantity] = previous.Quantity;
+                old[InventoryColumn.StackSize] = previous.Quantity;
             }
         }
-        context.Notifications.Add(("OnItemChange", [Item(item), old, null]));
+        context.Notifications.Add(new ItemChanged(Item(item), old));
         if (item.CategoryId == (int)InventoryCategory.Blueprint)
         {
             NotifyBlueprintsUpdated(context, item.OwnerId);
@@ -314,80 +285,70 @@ internal sealed class InventoryHandler(
     {
         // BlueprintSvc memoizes both the owner's list and facility summaries
         // independently of invCache, including an empty list before a purchase.
-        if (!context.Notifications.Any(n => n.Name == "OnBlueprintsUpdated" && Equals(n.Arguments[0], ownerId)))
+        if (!context.Notifications.Any(n => n is BlueprintsUpdated update && update.OwnerId == ownerId))
         {
-            context.Notifications.Add(("OnBlueprintsUpdated", [ownerId]));
+            context.Notifications.Add(new BlueprintsUpdated(ownerId));
         }
     }
 
-    private BlueConstructor Item(DockedPilot pilot, string kind)
-    {
-        object?[] line = kind switch
+    private static InventoryRow Item(DockedPilot pilot, string kind) =>
+        kind switch
         {
-            "ship" =>
-            [
+            "ship" => new(
                 pilot.ShipId,
                 pilot.ShipTypeId,
                 pilot.PilotId,
                 pilot.LocationId,
-                pilot.Position is null ? 4 : 0,
-                -1,
+                pilot.Position is null ? (int)InventoryFlag.Hangar : (int)InventoryFlag.AutoFit,
+                InventoryDefinitions.AssembledQuantity,
                 pilot.ShipGroupId,
-                pilot.ShipCategoryId,
-                "",
-            ],
-            "pilot" => [pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, -1, 1, 1, ""],
-            _ =>
-            [
+                pilot.ShipCategoryId
+            ),
+            // Build 3662168: character inventory type 1373, pilot flag 57, group/category 1.
+            "pilot" => new(pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, InventoryDefinitions.AssembledQuantity, 1, 1),
+            _ => new(
                 pilot.StationId,
                 pilot.StationTypeId,
                 pilot.StationOwnerId,
                 pilot.SystemId,
-                0,
-                -1,
+                (int)InventoryFlag.AutoFit,
+                InventoryDefinitions.AssembledQuantity,
                 pilot.Station.GroupId,
-                pilot.Station.CategoryId,
-                "",
-            ],
-        };
-        return new("blue.DBRow", [ItemDescriptor(), line]);
-    }
-
-    private Dictionary<long, object?> PrimeItem(DockedPilot pilot, long id, string kind)
-    {
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes =
-            kind == "pilot"
-                ? PilotProfile.TrainingAttributes()
-                : fitting.ShipAttributes(pilot.PilotId).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
-        if (kind != "pilot")
-        {
-            var current = health.Read(pilot.PilotId, now);
-            attributes[(long)DogmaAttributeId.Damage] = current.Defense.Structure - current.Remaining.Structure;
-            attributes[(long)DogmaAttributeId.ArmorDamage] = current.Defense.Armor - current.Remaining.Armor;
-            attributes[(long)DogmaAttributeId.CapacitorCharge] = mining.Capacitor(pilot.PilotId, now);
-            attributes[(long)DogmaAttributeId.MaxVelocity] = (double)pilot.Flight.MaxSpeed;
-            attributes[(long)DogmaAttributeId.Mass] = pilot.Flight.Mass;
-            attributes[(long)DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
-            attributes[(long)DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
-        }
-        return new()
-        {
-            [id] = KeyVal(
-                new()
-                {
-                    ["itemID"] = id,
-                    ["invItem"] = Item(pilot, kind),
-                    ["attributes"] = attributes,
-                    ["activeEffects"] = new Dictionary<long, object?>(),
-                    ["time"] = now,
-                    ["wallclockTime"] = now,
-                }
+                pilot.Station.CategoryId
             ),
         };
+
+    private DogmaItemInfo<int> PrimePilot(DockedPilot pilot) =>
+        new(
+            new DogmaItemKey.Item(pilot.PilotId),
+            Item(pilot, "pilot"),
+            PilotProfile.TrainingAttributes(),
+            new Dictionary<DogmaEffect, DogmaActiveEffect>(),
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
+
+    private DogmaItemInfo<double> PrimeShip(DockedPilot pilot)
+    {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var attributes = fitting.ShipAttributes(pilot.PilotId).ToDictionary(a => a.Key, a => a.Value);
+        var current = health.Read(pilot.PilotId, now);
+        attributes[DogmaAttributeId.Damage] = current.Defense.Structure - current.Remaining.Structure;
+        attributes[DogmaAttributeId.ArmorDamage] = current.Defense.Armor - current.Remaining.Armor;
+        attributes[DogmaAttributeId.CapacitorCharge] = mining.Capacitor(pilot.PilotId, now);
+        attributes[DogmaAttributeId.MaxVelocity] = pilot.Flight.MaxSpeed;
+        attributes[DogmaAttributeId.Mass] = pilot.Flight.Mass;
+        attributes[DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
+        attributes[DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
+        return new(
+            new DogmaItemKey.Item(pilot.ShipId),
+            Item(pilot, "ship"),
+            attributes,
+            new Dictionary<DogmaEffect, DogmaActiveEffect>(),
+            now
+        );
     }
 
-    private BlueInstance PrimeModule(DockedPilot pilot, InventoryItem module)
+    private DogmaItemInfo<double> PrimeModule(DockedPilot pilot, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = (
@@ -396,125 +357,65 @@ internal sealed class InventoryHandler(
             : module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun || module.GroupId == CombatDefinitions.HybridWeaponGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
             : mining.ModuleAttributes(pilot.PilotId, module)
-        ).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
-        attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
-        attributes[(long)DogmaAttributeId.Damage] = 0d;
-        Dictionary<long, object?> effects = [];
+        ).ToDictionary(a => a.Key, a => a.Value);
+        attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
+        attributes[DogmaAttributeId.Damage] = 0d;
+        Dictionary<DogmaEffect, DogmaActiveEffect> effects = [];
         if (module.Online)
         {
-            effects[(long)DogmaEffect.Online] = new object?[]
+            effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, pilot.ShipId, null, DogmaEffect.Online, now, null, 0);
+        }
+        foreach (
+            var active in new[]
             {
-                module.Id,
-                pilot.PilotId,
-                pilot.ShipId,
-                null,
-                null,
-                Array.Empty<object?>(),
-                (int)DogmaEffect.Online,
-                now,
-                InventoryDefinitions.InfiniteEffectDuration,
-                0,
-            };
-        }
-        if (miningEffects.ActiveEffect(pilot, module.Id) is { } active)
-        {
-            effects[(long)DogmaEffect.MiningLaser] = active;
-        }
-        if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing)
-        {
-            effects[Convert.ToInt64(firing[6])] = firing;
-        }
-        if (shieldEffects.ActiveEffect(pilot, module.Id) is { } boost)
-        {
-            effects[(long)DogmaEffect.ShieldBoosting] = boost;
-        }
-        if (propulsionEffects.ActiveEffect(pilot, module.Id) is { } propulsionEffect)
-        {
-            effects[(long)DogmaEffect.Afterburner] = propulsionEffect;
-        }
-        return KeyVal(
-            new()
-            {
-                ["itemID"] = module.Id,
-                ["invItem"] = Item(module),
-                ["attributes"] = attributes,
-                ["activeEffects"] = effects,
-                ["time"] = now,
-                ["wallclockTime"] = now,
+                miningEffects.ActiveEffect(pilot, module.Id),
+                combatEffects.ActiveEffect(pilot, module.Id),
+                shieldEffects.ActiveEffect(pilot, module.Id),
+                propulsionEffects.ActiveEffect(pilot, module.Id),
             }
-        );
+        )
+        {
+            if (active is not null)
+            {
+                effects[active.Effect] = active;
+            }
+        }
+        return new(new DogmaItemKey.Item(module.Id), Item(module), attributes, effects, now);
     }
 
-    internal BlueInstance AllInfo(DockedPilot pilot)
+    internal DogmaAllInfo AllInfo(DockedPilot pilot)
     {
         var modules = inventory.List(pilot.PilotId, pilot.ShipId).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
-        var shipInfo = PrimeItem(pilot, pilot.ShipId, "ship");
+        var shipInfo = new Dictionary<long, DogmaItemInfo<double>> { [pilot.ShipId] = PrimeShip(pilot) };
         var current = health.Read(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        Dictionary<long, object?> instances = new()
+        Dictionary<long, DogmaInstanceState> instances = new()
         {
-            [pilot.PilotId] = new object?[] { pilot.PilotId, 0, 0, 0, 0, 0, 0, 0 },
-            [pilot.ShipId] = new object?[]
-            {
+            [pilot.PilotId] = new(pilot.PilotId),
+            [pilot.ShipId] = new(
                 pilot.ShipId,
-                0,
-                current.Defense.Structure - current.Remaining.Structure,
-                mining.Capacitor(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
-                0,
-                current.Defense.Armor - current.Remaining.Armor,
-                current.Remaining.Shield,
-                0,
-            },
+                HullDamage: current.Defense.Structure - current.Remaining.Structure,
+                Capacitor: mining.Capacitor(pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+                ArmorDamage: current.Defense.Armor - current.Remaining.Armor,
+                Shield: current.Remaining.Shield
+            ),
         };
         foreach (var module in modules)
         {
             shipInfo[module.Id] = PrimeModule(pilot, module);
-            instances[module.Id] = new object?[] { module.Id, module.Online ? 1 : 0, 0, 0, 0, 0, 0, 0 };
+            instances[module.Id] = new(module.Id, module.Online);
         }
         var magazines = ammunition.Read(pilot.PilotId, pilot.ShipId);
-        var quantityDescriptor = new BlueConstructor(
-            "blue.DBRowDescriptor",
-            [
-                new object?[]
-                {
-                    new object?[] { "locationID", 20 },
-                    new object?[] { "flagID", 3 },
-                    new object?[] { "typeID", 3 },
-                    new object?[] { "quantity", 3 },
-                },
-            ]
-        );
-        var quantities = magazines.ToDictionary(
-            m => (long)m.FlagId,
-            m =>
-                (object?)new BlueConstructor("blue.DBRow", [quantityDescriptor, new object?[] { m.ShipId, m.FlagId, m.TypeId, m.Quantity }])
-        );
-        object info =
-            magazines.Count == 0
-                ? shipInfo
-                : new BlueDictionary(
-                    shipInfo
-                        .Select(p => ((object?)p.Key, p.Value))
-                        .Concat(magazines.Select(m => ((object?)AmmunitionHandler.Key(m), (object?)ammunitionHandler.Prime(m))))
-                        .ToArray()
-                );
-        return KeyVal(
-            new()
-            {
-                ["shipState"] = new object?[]
-                {
-                    instances,
-                    magazines.Count == 0
-                        ? new Dictionary<long, object?>()
-                        : new Dictionary<long, object?> { [pilot.ShipId] = quantities },
-                    new Dictionary<long, object?>(),
-                    new List<object?>(),
-                },
-                ["structureInfo"] = null,
-                ["shipInfo"] = info,
-                ["charInfo"] = new object?[] { PrimeItem(pilot, pilot.PilotId, "pilot"), brain.Read(pilot.PilotId, pilot.ShipId) },
-                ["shipModifiedCharAttribs"] = null,
-                ["systemWideEffectsOnShip"] = null,
-            }
+        Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
+        if (magazines.Count > 0)
+        {
+            quantities[pilot.ShipId] = magazines.ToDictionary(m => m.FlagId, m => new MagazineQuantity(m));
+        }
+        return new(
+            new(instances, quantities),
+            shipInfo,
+            magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => ammunitionHandler.Prime(m)),
+            PrimePilot(pilot),
+            new PilotCallResult.LegacyReply(brain.Read(pilot.PilotId, pilot.ShipId))
         );
     }
 
@@ -524,22 +425,15 @@ internal sealed class InventoryHandler(
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         var changes = new[] { DogmaAttributeId.CpuLoad, DogmaAttributeId.PowerLoad, DogmaAttributeId.TurretSlotsLeft }
-            .Select(attribute =>
-                (object?)
-                    new object?[]
-                    {
-                        "OnModuleAttributeChange",
-                        context.Pilot.PilotId,
-                        context.Pilot.ShipId,
-                        (int)attribute,
-                        now,
-                        attributes[attribute],
-                        null,
-                        now,
-                    }
-            )
-            .ToList();
-        context.Notifications.Add(("OnModuleAttributeChanges", [changes]));
+            .Select(attribute => new ModuleAttributeChange(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.ShipId),
+                attribute,
+                now,
+                attributes[attribute]
+            ))
+            .ToArray();
+        context.Notifications.Add(new ModuleAttributesChanged(changes));
     }
 
     internal object? SetOnline(PilotCallContext context, long ship, long module, bool online)
@@ -549,22 +443,7 @@ internal sealed class InventoryHandler(
             _ = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             context.Notifications.Add(
-                (
-                    "OnGodmaShipEffect",
-                    [
-                        module,
-                        (int)DogmaEffect.Online,
-                        now,
-                        online,
-                        online,
-                        new object?[] { module, context.Pilot.PilotId, ship, null, null, Array.Empty<object?>(), (int)DogmaEffect.Online },
-                        now,
-                        InventoryDefinitions.InfiniteEffectDuration,
-                        0,
-                        null,
-                        null,
-                    ]
-                )
+                new ShipEffectChanged(new(module, context.Pilot.PilotId, ship, null, DogmaEffect.Online, now, null, 0), now, online, online)
             );
             NotifyShipAttributes(context);
             return null;
@@ -580,11 +459,11 @@ internal sealed class InventoryHandler(
         var pilot = context.Pilot;
         if (id == pilot.ShipId)
         {
-            return PrimeItem(pilot, id, "ship")[id];
+            return PrimeShip(pilot);
         }
         if (id == pilot.PilotId)
         {
-            return PrimeItem(pilot, id, "pilot")[id];
+            return PrimePilot(pilot);
         }
         var module = inventory
             .List(pilot.PilotId, pilot.ShipId)
@@ -664,11 +543,9 @@ internal sealed class InventoryHandler(
                 && flags.All(f => f is long)
             )
             {
-                return inventory
-                    .List(pilot.PilotId, container)
-                    .Where(i => flags.Contains((long)i.FlagId))
-                    .Select(i => (object?)Item(i))
-                    .ToList();
+                return new BlueList<InventoryRow>(
+                    inventory.List(pilot.PilotId, container).Where(i => flags.Contains((long)i.FlagId)).Select(Item).ToArray()
+                );
             }
             if (method == "GetSelfInvItem")
             {

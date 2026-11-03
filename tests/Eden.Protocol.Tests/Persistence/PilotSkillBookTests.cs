@@ -203,9 +203,9 @@ public sealed class PilotSkillBookTests
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         object?[] args = [new List<object?> { f.Book }];
-        Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
+        Assert.Same(PilotCallRouter.Unsupported, router.CallWire(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
         context.Select(pilot);
-        Assert.Null(router.Call(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
+        Assert.Null(router.CallWire(context, "dogmaIM", "InjectSkillIntoBrain", args, _ => { }));
         Assert.Equal(new[] { "OnItemChange", "OnServerSkillsChanged" }, context.Notifications.Select(n => n.Name));
         var item = Assert.IsType<BlueConstructor>(context.Notifications[0].Arguments[0]);
         Assert.NotEmpty(BlueMarshal.Encode(item));

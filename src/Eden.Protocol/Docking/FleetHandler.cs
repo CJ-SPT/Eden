@@ -47,13 +47,13 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
                 {
                     InventoryHandler.NotifyItemChange(context, change);
                 }
-                return result.ShipIds.Cast<object?>().ToList();
+                return new BlueList<long>(result.ShipIds);
             }
             if (method == "Board" && args is [long shipId, long oldShipId])
             {
                 var pilot = fleet.Board(context.Pilot.PilotId, shipId, oldShipId);
                 context.ChangeShip(pilot);
-                return ((Dictionary<string, object?>)inventories.AllInfo(pilot).State!)["shipState"];
+                return inventories.AllInfo(pilot).ShipState;
             }
             return new PilotCallRouter.Error("Unsupported ship assembly or boarding request.");
         }

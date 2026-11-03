@@ -204,7 +204,7 @@ public sealed class AmmunitionTests
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         Assert.Null(
-            router.Call(
+            router.CallWire(
                 context,
                 "@ship",
                 "Add",
@@ -214,11 +214,11 @@ public sealed class AmmunitionTests
             )
         );
         Assert.DoesNotContain(context.Notifications, n => n.Name == "OnGodmaPrimeItem");
-        Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "ItemGetInfo", new object?[] { f.Gun }, _ => { }));
+        Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "ItemGetInfo", new object?[] { f.Gun }, _ => { }));
         if (other.HasValue)
         {
             Assert.DoesNotContain(context.Notifications, n => n.Name == "OnGodmaPrimeItem");
-            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "ItemGetInfo", new object?[] { other.Value }, _ => { }));
+            Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "ItemGetInfo", new object?[] { other.Value }, _ => { }));
         }
         var after = f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId);
         Assert.Equal(
@@ -530,28 +530,29 @@ public sealed class AmmunitionTests
         using var context = f.Context();
         AmmunitionHandler handler = new(f.Clock, f.Ammo, f.Fitting, f.Combat, f.Inventory);
         Assert.Null(
-            handler.Call(
+            handler.CallWire(
                 context,
                 "dogmaIM",
                 "LoadAmmo",
                 [f.Pilot.ShipId, new List<object?> { f.Gun }, new List<object?> { stack }, (long)f.Pilot.StationId]
             )
         );
-        var prime = Assert.IsType<BlueInstance>(Assert.Single(context.Notifications, n => n.Name == "OnGodmaPrimeItem").Arguments[1]);
-        var fields = Assert.IsType<Dictionary<string, object?>>(prime.State);
-        Assert.Equal(new object?[] { f.Pilot.ShipId, (int)InventoryFlag.HighSlot0, 222 }, fields["itemID"]);
-        Assert.Null(fields["invItem"]);
-        Assert.Equal(20d, Assert.IsType<Dictionary<long, object?>>(fields["attributes"])[(long)DogmaAttributeId.Quantity]);
+        var prime = Assert.Single(context.Notifications.OfType<GodmaItemPrimed>()).Item;
+        Assert.Equal(new DogmaItemKey.Charge(f.Pilot.ShipId, (int)InventoryFlag.HighSlot0, 222), prime.Key);
+        Assert.Null(prime.Item);
+        Assert.Equal(20d, prime.Attributes[DogmaAttributeId.Quantity]);
         Assert.Equal("OnGodmaPrimeItem", context.Notifications[0].Name);
         var liveQuantity = Assert.Single(Assert.IsType<List<object?>>(context.Notifications[1].Arguments[0]));
         var quantityChange = Assert.IsType<object?[]>(liveQuantity);
-        Assert.Equal(fields["itemID"], quantityChange[2]);
+        Assert.Equal(prime.Key.ToBlue(), quantityChange[2]);
         Assert.Equal((int)DogmaAttributeId.Quantity, quantityChange[3]);
         Assert.Equal(20d, quantityChange[5]);
         Assert.Contains(context.Notifications, n => n.Name == "OnChargeBeingLoadedToModule" && Equals(n.Arguments[2], 5000d));
         using var scope = f.Db.Services.CreateScope();
         var inventory = scope.ServiceProvider.GetRequiredService<InventoryHandler>();
-        var all = Assert.IsType<Dictionary<string, object?>>(inventory.AllInfo(f.Pilot).State);
+        var all = Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<BlueInstance>(WireAssertions.Materialize(inventory.AllInfo(f.Pilot))).State
+        );
         var character = Assert.IsType<object?[]>(all["charInfo"]);
         var brain = Assert.IsType<object?[]>(character[1]);
         Assert.Equal(3, Assert.IsType<List<object?>>(brain[2]).Count);
@@ -566,7 +567,7 @@ public sealed class AmmunitionTests
         f.Clock.Milliseconds = 5000;
         context.Notifications.Clear();
         Assert.Null(
-            handler.Call(
+            handler.CallWire(
                 context,
                 "dogmaIM",
                 "UnloadAmmo",

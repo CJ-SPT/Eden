@@ -32,7 +32,7 @@ internal sealed class SkillHandler(
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
                 ("expertSystemMgr", "GetMyExpertSystems") => new Dictionary<long, object?>(),
-                ("@skills", "GetAttributes") => PilotProfile.TrainingAttributes(),
+                ("@skills", "GetAttributes") => new BlueMap<DogmaAttributeId, int>(PilotProfile.TrainingAttributes()),
                 ("@skills", "GetFreeSkillPoints") => 0,
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
                 ("@skills", "GetSkillQueueAndFreePoints") => new object?[] { Advance(context), 0 },

@@ -120,14 +120,14 @@ public sealed class MiningTests
                 []
             );
             context.Select(pilot);
-            _ = context.Flight.Call("ship", "Undock", [pilot.ShipId]);
+            _ = context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, fitting, Locks);
             MiningHandler mining = new(Clock, Store, targeting);
             _clients.Add((context, targeting));
             if (locked)
             {
-                _ = targeting.Call(context, "dogmaIM", "AddTarget", [Asteroid]);
+                _ = targeting.CallWire(context, "dogmaIM", "AddTarget", [Asteroid]);
                 Clock.Milliseconds += 4000;
                 targeting.Advance(context);
                 Assert.True(targeting.IsLocked(Asteroid));
@@ -186,7 +186,7 @@ public sealed class MiningTests
         }
         context.ChangeShip(fixture.Db.Store.FindPilot(context.AccountId)!);
         context.Flight.Snapshot();
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, MiningDefinitions.EffectName, Fixture.Asteroid, 0L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, MiningDefinitions.EffectName, Fixture.Asteroid, 0L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
@@ -213,7 +213,9 @@ public sealed class MiningTests
             world.Set<PilotSkill>().Find(context.Pilot.PilotId, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, 1);
             world.SaveChanges();
         }
-        Assert.IsType<PilotCallRouter.Error>(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.IsType<PilotCallRouter.Error>(
+            mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L])
+        );
         Assert.False(mining.IsActive(module));
         Assert.Equal(10000, fixture.Remaining());
         Assert.Equal(130, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
@@ -231,13 +233,13 @@ public sealed class MiningTests
             world.SaveChanges();
         }
         var (context, _, mining, module) = fixture.Client(laser: type);
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
         Assert.Equal(
             130 - capacitor,
             fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
             8
         );
-        Assert.Equal(15000d, mining.ActiveEffect(context.Pilot, module)![8]);
+        Assert.Equal(15000d, mining.ActiveEffect(context.Pilot, module)!.DurationMilliseconds);
         fixture.Clock.Milliseconds += 14999;
         mining.Advance(context);
         Assert.DoesNotContain(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
@@ -256,7 +258,7 @@ public sealed class MiningTests
     {
         using Fixture fixture = new();
         var (context, targeting, mining, module) = fixture.Client();
-        object? Activate() => mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]);
+        object? Activate() => mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]);
         Assert.Null(Activate());
         Assert.True(mining.IsActive(module));
         var inventoryHandler = new InventoryHandler(
@@ -291,7 +293,7 @@ public sealed class MiningTests
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>(),
             new(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
         );
-        var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
+        var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
         Assert.Equal(125, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 8);
@@ -338,18 +340,18 @@ public sealed class MiningTests
     {
         using Fixture fixture = new();
         var (context, _, mining, module) = fixture.Client();
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         Assert.True(mining.IsActive(module));
         fixture.Clock.Milliseconds += 5000;
-        Assert.Null(mining.Call(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
         Assert.False(mining.IsActive(module));
         Assert.Equal(10000 - 63 - 31, fixture.Remaining());
         fixture.Clock.Milliseconds += 60000;
         mining.Advance(context);
         Assert.Equal(9906, fixture.Remaining());
-        Assert.Null(mining.Call(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
         Assert.Equal(9906, fixture.Remaining());
     }
 
@@ -358,24 +360,26 @@ public sealed class MiningTests
     {
         using Fixture fixture = new();
         var (context, targeting, mining, module) = fixture.Client(locked: false);
-        Assert.IsType<PilotCallRouter.Error>(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
-        _ = targeting.Call(context, "dogmaIM", "AddTarget", [Fixture.Asteroid]);
+        Assert.IsType<PilotCallRouter.Error>(
+            mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L])
+        );
+        _ = targeting.CallWire(context, "dogmaIM", "AddTarget", [Fixture.Asteroid]);
         fixture.Clock.Milliseconds += 4000;
         targeting.Advance(context);
         Assert.IsType<PilotCallRouter.Error>(
-            mining.Call(context, "dogmaIM", "Activate", [module + 100, "miningLaser", Fixture.Asteroid, 0L])
+            mining.CallWire(context, "dogmaIM", "Activate", [module + 100, "miningLaser", Fixture.Asteroid, 0L])
         );
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
-        _ = targeting.Call(context, "dogmaIM", "RemoveTarget", [Fixture.Asteroid]);
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
+        _ = targeting.CallWire(context, "dogmaIM", "RemoveTarget", [Fixture.Asteroid]);
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         Assert.False(mining.IsActive(module));
         Assert.Equal(10000, fixture.Remaining());
-        _ = targeting.Call(context, "dogmaIM", "AddTarget", [Fixture.Asteroid]);
+        _ = targeting.CallWire(context, "dogmaIM", "AddTarget", [Fixture.Asteroid]);
         fixture.Clock.Milliseconds += 4000;
         targeting.Advance(context);
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
-        _ = context.Flight.Call("beyonce", "CmdWarpToStuff", ["item", 50001249L]);
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
+        _ = context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", 50001249L]);
         targeting.Advance(context);
         mining.Advance(context);
         Assert.False(mining.IsActive(module));
@@ -404,18 +408,20 @@ public sealed class MiningTests
                 );
             world.SaveChanges();
         }
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         Assert.False(mining.IsActive(module));
         Assert.Equal(9990, fixture.Remaining());
         Assert.Equal(1250, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.TypeId == 1230).Quantity);
-        Assert.IsType<PilotCallRouter.Error>(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.IsType<PilotCallRouter.Error>(
+            mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L])
+        );
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             world.Database.ExecuteSqlRaw("DELETE FROM WorldItem WHERE TypeId=1230; UPDATE WorldAsteroid SET Quantity=7");
         }
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         Assert.Equal(0, fixture.Remaining());
@@ -459,7 +465,7 @@ public sealed class MiningTests
     {
         using Fixture fixture = new();
         var (context, _, mining, module) = fixture.Client();
-        Assert.Null(mining.Call(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         var ore = fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.TypeId == 1230);
@@ -482,7 +488,7 @@ public sealed class MiningTests
         Assert.Throws<InvalidDataException>(() => fixture.Db.Store.Dock(pilot.PilotId, pilot.ShipId, pilot.StationId));
         using FlightSession flight = new(fixture.Db.Store, pilot, fixture.Clock, fixture.Space, objects, docking: fixture.Db.Store);
         flight.Snapshot();
-        Assert.Null(flight.Call("beyonce", "CmdDock", [60000100L, pilot.ShipId]));
+        Assert.Null(flight.CallWire("beyonce", "CmdDock", [60000100L, pilot.ShipId]));
         Assert.Null(flight.Pilot.Position);
         Assert.Equal(60000100, flight.Pilot.StationId);
         Assert.Equal(30000144, flight.Pilot.SystemId);
@@ -494,7 +500,7 @@ public sealed class MiningTests
         _ = new SqliteWorld(fixture.Db.Path);
         Assert.Equal(flight.Pilot, fixture.Db.Store.FindPilot(1000001));
         Assert.Equal(unloaded, Assert.Single(fixture.Inventory.List(pilot.PilotId, 60000100)));
-        Assert.Null(flight.Call("ship", "Undock", [pilot.ShipId]));
+        Assert.Null(flight.CallWire("ship", "Undock", [pilot.ShipId]));
         Assert.Equal(30000144, fixture.Db.Store.FindPilot(1000001)!.SystemId);
         Assert.InRange(flight.Pilot.Position!.DistanceTo(station.Position), station.Radius + 499, station.Radius + 501);
     }
@@ -511,7 +517,7 @@ public sealed class MiningTests
         var (wing, _, _, _) = fixture.Client(1000002);
         wing.Flight.RefreshPeers();
         wing.Flight.Updates.Clear();
-        Assert.Null(mining.Call(pilot, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        Assert.Null(mining.CallWire(pilot, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
         wing.Flight.RefreshPeers();
         var started = wing
             .Flight.Updates.Cast<object?[]>()

@@ -24,21 +24,18 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
 
     public bool IsActive(long module) => _cycles.ContainsKey(module);
 
-    public object?[]? ActiveEffect(DockedPilot pilot, long module) =>
+    public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle)
-            ?
-            [
+            ? new(
                 module,
                 pilot.PilotId,
                 pilot.ShipId,
                 cycle.Target,
-                null,
-                Array.Empty<object?>(),
-                (int)DogmaEffect.MiningLaser,
+                DogmaEffect.MiningLaser,
                 cycle.StartTime,
                 cycle.Laser.DurationMilliseconds,
-                cycle.Repeats,
-            ]
+                cycle.Repeats
+            )
             : null;
 
     public void Advance(PilotCallContext context)
