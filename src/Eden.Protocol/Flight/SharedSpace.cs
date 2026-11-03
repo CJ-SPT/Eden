@@ -10,7 +10,7 @@ internal sealed record MiningContact(long ModuleId, int TypeId, long Target, lon
 internal sealed record WeaponContact(long ModuleId, int TypeId, int ChargeTypeId, long Target, long StartedAt, double Duration, string Graphic = "effects.Laser");
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 internal sealed record PropulsionContact(Afterburner Module, long StartedAt);
-internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0, long FollowTargetId = 0, long? DepartureGate = null, bool Arriving = false, FittedSpaceModule[]? Modules = null, MiningContact[]? Mining = null, ShipHealth? Health = null, WeaponContact[]? Weapons = null, ShieldBoostContact[]? ShieldBoosts = null, PropulsionContact? Propulsion = null);
+internal sealed record ShipContact(DockedPilot Pilot, SpacePosition Velocity, SpacePosition? Heading, double SpeedFraction, double? FollowRange, WarpCourse? Warp = null, SpacePosition? AlignTo = null, int AlignStamp = 0, int WarpFactor = 0, long FollowTargetId = 0, long? DepartureGate = null, bool Arriving = false, FittedSpaceModule[]? Modules = null, MiningContact[]? Mining = null, ShipHealth? Health = null, WeaponContact[]? Weapons = null, ShieldBoostContact[]? ShieldBoosts = null, PropulsionContact? Propulsion = null, DestinyBallMode FollowMode = DestinyBallMode.Follow);
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class SharedSpace
@@ -33,6 +33,6 @@ internal sealed class SharedSpace
 
     public ShipContact[] Peers(DockedPilot pilot) => _ships.Values
         .Where(ship => ship.Pilot.SystemId == pilot.SystemId && ship.Pilot.ShipId != pilot.ShipId &&
-            pilot.Position is { } viewer && ship.Pilot.Position is { } other && viewer.DistanceTo(other) <= 8_000_000)
+            pilot.Position is { } viewer && ship.Pilot.Position is { } other && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance)
         .OrderBy(ship => ship.Pilot.ShipId).ToArray();
 }

@@ -185,7 +185,7 @@ internal static class Ballpark
         var pilot = ship.Pilot;
         var velocity = ship.Velocity;
         var warpTarget = ship.Warp?.Destination ?? ship.AlignTo;
-        var mode = warpTarget is not null ? DestinyBallMode.Warp : ship.FollowRange.HasValue ? DestinyBallMode.Follow : ship.Heading is null ? DestinyBallMode.Stop : DestinyBallMode.Goto;
+        var mode = warpTarget is not null ? DestinyBallMode.Warp : ship.FollowRange.HasValue ? ship.FollowMode : ship.Heading is null ? DestinyBallMode.Stop : DestinyBallMode.Goto;
         // Proper warp temporarily clears the massive flag. Aligning ships still collide.
         var flags = DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);
         WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);

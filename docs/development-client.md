@@ -308,6 +308,16 @@ The server recomputes damage at payment time and caps the charge at the current 
 
 Schema **27** adds saved manufacturing jobs without granting blueprints, materials, skills or ISK. Small Tech I hybrid ammunition originals and current-station personal jobs are supported. Installation fees currently show zero because adjusted industry prices are unavailable, matching the existing missing-price fallback. Cancellation releases the blueprint and slot but consumes the paid materials without output. Research, copies, invention, corporate/remote jobs and other product families remain separate work.
 
+## Orbit a target
+
+1. Select **Eden Pilot**, verify the active ship in Inventory and undock. Warp to a Perimeter belt. A Rookie stays idle until attacked, so it can serve as a peaceful movement target.
+2. Select the Rookie or an asteroid in Overview. Right-click **Orbit** and choose **5,000 m**. The native indication should say Orbiting, the ship should turn and move around the target, and range should settle near the requested surface distance. Orbit does not require a target lock.
+3. Change the orbit range and watch it adjust under inertia. An afterburner increases speed and adds mass, so the actual orbit can widen. Deactivate it and verify that orbiting continues using the ordinary flight properties.
+4. Choose **Keep at Range** on the same object, then choose Orbit again. The client should change the movement mode each time. Press Stop or click the HUD stop control: orbiting must end and the ship should coast to rest. A new heading also replaces the orbit.
+5. Warp or dock while orbiting. The course must end without resuming after arrival. If the target disappears, an orbiter continues along its velocity heading; a Keep at Range follower stops. Restart host and client and compare the saved position, cargo, fitting, wallet and ammunition. No orbit order or offline movement is restored.
+
+Both controls use visible, local targets within **8,000 km** and accept surface ranges up to **1,000 km**. Self, missing and departing targets and invalid ranges are rejected. Nearby pilots receive native Orbit records and streamed course changes. NPC orbiting and object orbiting use the same player controller; autonomous NPC orbit tactics remain separate work.
+
 ## Fit and fly with an afterburner
 
 1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Search the Regional Market for **1MN Afterburner I**, buy one for **1,000 ISK**, and use **Fit to Active Ship** in Item Hangar. This finite starter offer is Eden policy. The module requires Afterburner I, a medium slot, CPU and power grid.

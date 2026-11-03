@@ -32,6 +32,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private SpacePosition? _direction;
     private SpacePosition _velocity = new(0, 0, 0);
     private StaticSpaceObject? _followTarget;
+    private DestinyBallMode _followMode = DestinyBallMode.Follow;
     private sealed record GateTransit(long SourceId, StaticSpaceObject Exit, FlightSystem System, IReadOnlyList<StaticSpaceObject> Objects, int TransferStamp);
     // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
     private const int JumpDurationTicks = 10;
@@ -76,11 +77,19 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
     public IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
 
-    private StaticSpaceObject? NavigationTarget(long id) => objects.FirstOrDefault(o => o.Id == id) ??
-        (_npcs.FirstOrDefault(n => n.Id == id) is { } npc ?
+    private StaticSpaceObject? NavigationTarget(long id)
+    {
+        if (id == Pilot.ShipId || Pilot.Position is not { } position) { return null; }
+        var target = VisibleObjects().FirstOrDefault(o => o.Id == id) ??
+            (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is { } peer ?
+                new StaticSpaceObject(peer.Pilot.ShipId, peer.Pilot.ShipTypeId, peer.Pilot.ShipGroupId, peer.Pilot.ShipCategoryId,
+                    checked((int)peer.Pilot.PilotId), peer.Pilot.Position!, peer.Pilot.Flight.ShipRadius) : null) ??
+            (_npcs.FirstOrDefault(n => n.Id == id) is { } npc ?
             new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius) :
-            _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck ?
-            new(wreck.Id, wreck.TypeId, WreckDefinitions.Group, WreckDefinitions.Category, checked((int)wreck.OwnerId), wreck.Position, wreck.Radius) : null);
+                _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck ?
+                new(wreck.Id, wreck.TypeId, WreckDefinitions.Group, WreckDefinitions.Category, checked((int)wreck.OwnerId), wreck.Position, wreck.Radius) : null);
+        return target is not null && position.DistanceTo(target.Position) <= NavigationDefinitions.MaximumTargetDistance ? target : null;
+    }
 
     private WreckContact[] ReadWrecks() => Pilot.Position is not { } position ? [] :
         (wrecks?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
@@ -267,18 +276,42 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
         if (_followTarget is { } follow)
         {
-            if (_npcs.FirstOrDefault(n => n.Id == follow.Id) is { } npc)
+            if (NavigationTarget(follow.Id) is not { } current)
             {
-                follow = follow with { Position = npc.Position };
-                _followTarget = follow;
+                // Carbon's interactive orbiters keep their heading when a target
+                // leaves. Keep-at-range followers instead coast to a stop.
+                _followTarget = null;
+                if (_followMode == DestinyBallMode.Orbit && _velocity.Length > 0)
+                {
+                    _direction = _lastHeading = _velocity.Unit;
+                    Update("GotoDirection", Pilot.ShipId, _direction.X, _direction.Y, _direction.Z);
+                }
+                else
+                {
+                    _direction = null;
+                    _speedFraction = cruise = 0;
+                    Update("Stop", Pilot.ShipId);
+                }
             }
-            var radial = position - follow.Position;
-            double error = radial.Length - follow.Radius - Pilot.Flight.ShipRadius - _followRange;
-            _direction = radial.Unit * -Math.Sign(error);
-            if (cruise > 0 && Math.Abs(error) < cruise)
+            else
             {
-                // Destiny GotoThrust tapers within one tick's travel distance.
-                cruise *= Math.Pow(error / cruise, 4);
+                _followTarget = current;
+                if (_followMode == DestinyBallMode.Orbit)
+                {
+                    // Destiny evolves behavior at the beginning of each tick.
+                    _direction = OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp - 1, position, current, Pilot.Flight.ShipRadius, _followRange);
+                }
+                else
+                {
+                    var radial = position - current.Position;
+                    double error = radial.Length - current.Radius - Pilot.Flight.ShipRadius - _followRange;
+                    _direction = radial.Unit * -Math.Sign(error);
+                    if (cruise > 0 && Math.Abs(error) < cruise)
+                    {
+                        // Destiny GotoThrust tapers within one tick's travel distance.
+                        cruise *= Math.Pow(error / cruise, 4);
+                    }
+                }
             }
         }
         // Build 3662168 accepts the legacy free-ball layout (no orientation fields).
@@ -314,7 +347,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
         _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
         _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining,
-        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts, _propulsion);
+        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts, _propulsion, _followMode);
 
     public void SetBaseSpeed(double speed)
     {
@@ -467,7 +500,12 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             Update("RemoveBall", departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true);
         }
         // Destiny integrates the same course between changes. Occasionally reconcile drift.
-        bool reconcile = Stamp - _lastPeerSync >= 10;
+        bool reconcile = Stamp - _lastPeerSync >= NavigationDefinitions.ReconciliationTicks;
+        if (reconcile && _followTarget is not null && _followMode == DestinyBallMode.Orbit && Pilot.Position is { } ownPosition)
+        {
+            Update("SetBallPosition", Pilot.ShipId, ownPosition.X, ownPosition.Y, ownPosition.Z);
+            Update("SetBallVelocity", Pilot.ShipId, _velocity.X, _velocity.Y, _velocity.Z);
+        }
         foreach (var ship in current)
         {
             var previous = Array.Find(_peers, peer => peer.Pilot.ShipId == ship.Pilot.ShipId);
@@ -529,7 +567,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 continue;
             }
             if ((ship.FollowRange is null && ship.Heading != previous.Heading) || ship.SpeedFraction != previous.SpeedFraction ||
-                ship.FollowRange != previous.FollowRange || ship.FollowTargetId != previous.FollowTargetId || reconcile)
+                ship.FollowRange != previous.FollowRange || ship.FollowTargetId != previous.FollowTargetId || ship.FollowMode != previous.FollowMode || reconcile)
             {
                 var position = ship.Pilot.Position!;
                 Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
@@ -656,7 +694,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         {
             if (ship.FollowRange is double range)
             {
-                Update("FollowBall", id, ship.FollowTargetId, range);
+                Update(ship.FollowMode == DestinyBallMode.Orbit ? "Orbit" : "FollowBall", id, ship.FollowTargetId, range);
             }
             else
             {
@@ -831,25 +869,28 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("GotoDirection", Pilot.ShipId, x, y, z);
                 Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
                 return null;
-            case "CmdFollowBall" when arguments is [long target, var distance] && NavigationTarget(target) is { } follow &&
+            case "CmdFollowBall" or "CmdOrbit" when arguments is [long target, var distance] && NavigationTarget(target) is { } follow &&
                 distance is double or long:
                 double standOff = Convert.ToDouble(distance);
-                if (standOff is < 0 or > 1_000_000 || !double.IsFinite(standOff))
+                if (standOff < 0 || standOff > NavigationDefinitions.MaximumFollowRange || !double.IsFinite(standOff) || method == "CmdOrbit" && !InBallpark)
                 {
                     return PilotCallRouter.Unsupported;
                 }
                 position = Pilot.Position!;
                 double separation = position.DistanceTo(follow.Position);
-                if (separation > 0)
+                if (separation > 0 || method == "CmdOrbit")
                 {
                     double radius = follow.Radius + Pilot.Flight.ShipRadius + standOff;
                     double sign = separation >= radius ? 1 : -1;
-                    _direction = (follow.Position - position) * (sign / separation);
+                    _followMode = method == "CmdOrbit" ? DestinyBallMode.Orbit : DestinyBallMode.Follow;
+                    _direction = _followMode == DestinyBallMode.Orbit ?
+                        OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow, Pilot.Flight.ShipRadius, standOff) :
+                        (follow.Position - position) * (sign / separation);
                     _lastHeading = _direction;
                     _followTarget = follow;
                     _followRange = standOff;
                     _speedFraction = 1;
-                    Update("FollowBall", Pilot.ShipId, target, standOff);
+                    Update(_followMode == DestinyBallMode.Orbit ? "Orbit" : "FollowBall", Pilot.ShipId, target, standOff);
                     Update("SetSpeedFraction", Pilot.ShipId, 1d);
                 }
                 return null;
