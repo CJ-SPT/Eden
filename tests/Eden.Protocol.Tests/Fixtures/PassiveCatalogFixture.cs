@@ -28,14 +28,18 @@ internal static class PassiveCatalogFixture
 
     // Minimal definitions from the read-only build 3662168 catalog. No world
     // inventory, account, market or resource-cache data is embedded.
-    internal static void Load(string path)
+    internal static void Load(string path) => Load(path, "PassiveCatalog.json", null);
+
+    internal static void LoadTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "PassiveTierCatalog.json", types);
+
+    private static void Load(string path, string resource, IReadOnlySet<int>? types)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Eden.Protocol.Tests.Fixtures.PassiveCatalog.json")!;
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;
         var data = JsonSerializer.Deserialize<Fixture>(stream, JsonSerializerOptions.Web)!;
         Assert.Equal(3662168, data.Build);
         using CatalogDbContext catalog = new(path, writable: true);
         using var transaction = catalog.Database.BeginTransaction();
-        foreach (var type in data.Types)
+        foreach (var type in data.Types.Where(type => types is null || types.Contains(type.Id)))
         {
             catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO ItemCategory VALUES ({type.CategoryId},{type.CategoryId.ToString()})");
             catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO ItemGroup VALUES ({type.GroupId},{type.GroupName},{type.CategoryId})");
@@ -53,6 +57,10 @@ internal static class PassiveCatalogFixture
         }
         foreach (var record in data.Records)
         {
+            if (types is not null && record.Dataset is "client/types" or "client/typedogma" && !types.Contains(record.Key))
+            {
+                continue;
+            }
             string key = record.Key.ToString(CultureInfo.InvariantCulture);
             string json = record.Data.GetRawText();
             catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ({record.Dataset},{key},{json})");

@@ -7,8 +7,7 @@ namespace Eden.Server.Persistence;
 
 internal static class PassiveCatalog
 {
-    private const int TechOne = 1;
-    private const int TechOneMetaGroup = 1;
+    private const int AbyssalMetaGroup = 15;
     private const int SkillLevelEffect = 132;
 
     // Admit a profile only when every fitted/online effect can be evaluated.
@@ -19,11 +18,8 @@ internal static class PassiveCatalog
             return false;
         }
         var type = catalog.Set<SourceRecord>().Find("client/types", Key(typeId))?.Read<ClientTypes>();
-        if (
-            type?.Published != 1
-            || type.MetaGroupID != TechOneMetaGroup
-            || catalog.Set<TypeAttribute>().Find(typeId, (int)DogmaAttributeId.TechLevel)?.Value != TechOne
-        )
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
+        if (type?.Published != 1 || type.MetaGroupID == AbyssalMetaGroup || InventoryDefinitions.RequiresSpecificShip(attributes))
         {
             return false;
         }

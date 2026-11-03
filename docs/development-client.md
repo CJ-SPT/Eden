@@ -107,6 +107,14 @@ Rigs, drone equipment, in-space fitting/online changes and activated variants su
 
 ## Check passive equipment bonuses
 
+The higher-tier expansion now covers 856 unrestricted static profiles across the existing 31 passive families. The earlier Tech I observations do not establish native acceptance of every new tier. Higher-tier native checks are pending while the maintainer's instruction to leave game windows alone is in effect. When testing resumes, select Eden Pilot and verify the active ship in Inventory, then use a copied save and the following comparisons within its CPU/power/slot budget:
+
+- Compare Magnetic Field Stabilizer II, Federation Navy and Cormack's Modified variants on a supported hybrid turret. Their damage multipliers are 1.10, 1.12 and 1.145, and cycle multipliers are 0.895, 0.89 and 0.89. Mixed-tier duplicates share strongest-first diminishing returns regardless of fit order. Heat Sink II, Imperial Navy and Chelm's Modified Heat Sink must leave that hybrid gun unchanged.
+- Compare Small Shield Extender II and Republic Fleet Small Shield Extender. They add 520 and 550 shield HP before hull skills, with +2 m and +1 m signature. Online/offline changes preserve the shield percentage and existing armor/hull damage.
+- Compare Expanded Cargohold II to its offline state. Its online capacity multiplier is 1.275; its fitted speed and structure multipliers are 0.82 and 0.77 even while offline. Do not remove capacity from an overfilled hold. Check a deadspace resistance module with compensation skills, and an ordinary higher-tier Damage Control whose separate resistance multiplication stays exempt.
+
+The complete cohort has automated eligibility coverage. Per-item Abyssal mutations, ship-restricted profiles, six variants with additional drone effects and the active Breach Control still require their separate implementation; buying them does not bypass fitting rejection.
+
 Use the same copied acceptance save and explicitly supplied test modules. Verify Eden Pilot's active Ibis in Inventory. Keep enough CPU/power available and check each module's required skills; these tests do not grant skills or ISK.
 
 1. Fit 75mm Gatling Rail I and note its damage multiplier and cycle in Attributes. Heat Sink I must leave both unchanged: it targets energy weapons. Replace one low-slot module with Magnetic Field Stabilizer I. Online increases the hybrid turret's damage by 7% and multiplies cycle time by 0.92; offline removes both bonuses. The pinned catalog unusually puts all civilian turrets, including Civilian Gatling Railgun, in Energy Weapon group 53; use the standard hybrid turret for this family-isolation check.
