@@ -14,30 +14,75 @@ public sealed record MiningModuleInputs(
 
 public static class MiningRules
 {
-    public sealed record Collection(int Extracted, int CriticalBonus, bool CargoFull);
+    public sealed record Collection(int Extracted, int CriticalBonus, int Residue, bool CargoFull);
 
     public static Collection Collect(
         long remainingUnits,
         double availableVolume,
         double oreVolume,
-        double cycleVolume,
-        double criticalBonus
+        MiningLaser laser,
+        MiningCollection collection
     )
     {
         if (!(oreVolume > 0) || !double.IsFinite(oreVolume))
         {
             throw new InvalidDataException("Invalid ore volume.");
         }
-        if (cycleVolume < 0 || !double.IsFinite(cycleVolume) || criticalBonus < 0 || !double.IsFinite(criticalBonus))
+        if (
+            remainingUnits < 0
+            || availableVolume < 0
+            || !double.IsFinite(availableVolume)
+            || !(laser.Volume > 0)
+            || !double.IsFinite(laser.Volume)
+            || laser.CriticalChance < 0
+            || !double.IsFinite(laser.CriticalChance)
+            || laser.CriticalBonusYield < 0
+            || !double.IsFinite(laser.CriticalBonusYield)
+            || !Probability(laser.ResidueChance)
+            || laser.ResidueMultiplier < 0
+            || !double.IsFinite(laser.ResidueMultiplier)
+            || collection.Fraction < 0
+            || collection.Fraction > 1
+            || !double.IsFinite(collection.Fraction)
+            || (collection.Completed && collection.Fraction != 1)
+            || !Roll(collection.Rolls.Yield)
+            || !Roll(collection.Rolls.Critical)
+            || !Roll(collection.Rolls.CriticalYield)
+            || !Roll(collection.Rolls.Residue)
+            || !Roll(collection.Rolls.ResidueYield)
+        )
         {
             throw new InvalidDataException("Invalid mining yield.");
         }
         int free = (int)Math.Min(int.MaxValue, Math.Floor((availableVolume + InventoryDefinitions.ResourceTolerance) / oreVolume));
-        int extracted = (int)
-            Math.Min(Math.Min(remainingUnits, free), Math.Floor((cycleVolume + InventoryDefinitions.ResourceTolerance) / oreVolume));
+        int planned = Math.Min(free, RoundedUnits(laser.Volume * collection.Fraction / oreVolume, collection.Rolls.Yield));
+        // Residue is removed from the rock first; critical ore never contributes to it.
+        int residue =
+            collection.Rolls.Residue < laser.ResidueChance
+                ? (int)Math.Min(remainingUnits, RoundedUnits(planned * laser.ResidueMultiplier, collection.Rolls.ResidueYield))
+                : 0;
+        int extracted = (int)Math.Min(remainingUnits - residue, planned);
         // Bonus ore does not reduce the deposit, and still occupies the hold.
-        int bonus = (int)Math.Min(free - extracted, Math.Floor(extracted * criticalBonus));
-        return new(extracted, bonus, free <= extracted + bonus);
+        int bonus =
+            collection.Completed && collection.Rolls.Critical < laser.CriticalChance
+                ? Math.Min(free - extracted, RoundedUnits(extracted * laser.CriticalBonusYield, collection.Rolls.CriticalYield))
+                : 0;
+        return new(extracted, bonus, residue, free <= extracted + bonus);
+    }
+
+    private static bool Probability(double value) => double.IsFinite(value) && value >= 0 && value <= 1;
+
+    private static bool Roll(double value) => Probability(value) && value < 1;
+
+    private static int RoundedUnits(double units, double roll)
+    {
+        if (units >= int.MaxValue)
+        {
+            return int.MaxValue;
+        }
+        // Ignore floating-point noise at whole-unit boundaries, not real fractions.
+        double whole = Math.Floor(units + InventoryDefinitions.ResourceTolerance);
+        return checked((int)whole + (roll < units - whole ? 1 : 0));
     }
 
     public static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(MiningModuleInputs inputs)

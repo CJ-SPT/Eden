@@ -78,6 +78,12 @@ internal static class TestCatalog
                 {{"effectID":16,"isDefault":0}},
                 {{"effectID":42,"isDefault":0}},
                 {{"effectID":67,"isDefault":1}}]}}');
+            -- Build 3662168 effect metadata, including the targeted mining contract.
+            INSERT INTO SourceRecord VALUES ('client/dogmaeffects','12','{{"effectID":12,"effectCategory":0}}'),
+                ('client/dogmaeffects','16','{{"effectID":16,"effectCategory":1}}'),
+                ('client/dogmaeffects','42','{{"effectID":42,"effectCategory":0}}'),
+                ('client/dogmaeffects','67','{{"effectID":67,"effectCategory":2,"rangeAttributeID":54,
+                    "dischargeAttributeID":6,"durationAttributeID":73,"isWarpSafe":0}}');
             INSERT INTO SourceRecord VALUES ('client/typedogma','3638',
                 '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
                 {{"effectID":16,"isDefault":0}},

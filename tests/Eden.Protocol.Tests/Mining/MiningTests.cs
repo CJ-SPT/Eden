@@ -232,8 +232,8 @@ public sealed class MiningTests
         mining.Advance(context);
         var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
         Assert.Equal((int)InventoryFlag.GeneralMiningHold, ore.FlagId);
-        Assert.Equal(132, ore.Quantity);
-        Assert.Equal(9868, fixture.Remaining());
+        Assert.InRange(ore.Quantity, 132, 133);
+        Assert.Equal(10000 - ore.Quantity, fixture.Remaining());
         _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
@@ -395,12 +395,13 @@ public sealed class MiningTests
         fixture.Clock.Milliseconds += 5000;
         Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
         Assert.False(mining.IsActive(module));
-        Assert.Equal(10000 - 63 - 31, fixture.Remaining());
+        long remaining = fixture.Remaining();
+        Assert.InRange(remaining, 10000 - 63 - 32, 10000 - 63 - 31);
         fixture.Clock.Milliseconds += 60000;
         mining.Advance(context);
-        Assert.Equal(9906, fixture.Remaining());
+        Assert.Equal(remaining, fixture.Remaining());
         Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
-        Assert.Equal(9906, fixture.Remaining());
+        Assert.Equal(remaining, fixture.Remaining());
     }
 
     [Fact]
@@ -485,6 +486,10 @@ public sealed class MiningTests
     public async Task CompetingPilotsShareOneDepositAndCriticalBonusDoesNotConsumeIt()
     {
         using Fixture fixture = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=0.5 WHERE ItemTypeId=3651 AND AttributeId=5967");
+        }
         var (pilot, _, _, module) = fixture.Client();
         var (wing, _, _, wingModule) = fixture.Client(1000002);
         using (WorldDbContext world = new(fixture.Db.Path))
@@ -492,8 +497,8 @@ public sealed class MiningTests
             world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=100");
         }
         var yields = await Task.WhenAll(
-            Task.Run(() => fixture.Store.Collect(pilot.Pilot.PilotId, module, Fixture.Asteroid, 6.3, 2)),
-            Task.Run(() => fixture.Store.Collect(wing.Pilot.PilotId, wingModule, Fixture.Asteroid, 6.3, 0))
+            Task.Run(() => fixture.Store.Collect(pilot.Pilot.PilotId, module, Fixture.Asteroid, new(1, true, new(.5, 0, .5, .5, .5)))),
+            Task.Run(() => fixture.Store.Collect(wing.Pilot.PilotId, wingModule, Fixture.Asteroid, new(1, true, new(.5, .99, .5, .5, .5))))
         );
         Assert.Equal(100, yields.Sum(y => y.Extracted));
         Assert.Equal(yields[0].Extracted * 2, yields[0].CriticalBonus);

@@ -1,4 +1,3 @@
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 
@@ -12,18 +11,32 @@ public sealed record MiningLaser(
     double Volume,
     double CapacitorNeed,
     double CriticalChance,
-    double CriticalBonusYield
+    double CriticalBonusYield,
+    double ResidueChance = 0,
+    double ResidueMultiplier = 1
 );
 
 public sealed record MiningStart(MiningLaser Laser, double Capacitor);
 
-public sealed record MiningYield(InventoryChange? Cargo, int TypeId, int Extracted, int CriticalBonus, bool Depleted, bool CargoFull);
+public sealed record MiningRolls(double Yield, double Critical, double CriticalYield, double Residue, double ResidueYield);
+
+public sealed record MiningCollection(double Fraction, bool Completed, MiningRolls Rolls);
+
+public sealed record MiningYield(
+    InventoryChange? Cargo,
+    int TypeId,
+    int Extracted,
+    int CriticalBonus,
+    int Residue,
+    bool Depleted,
+    bool CargoFull
+);
 
 public interface IPilotMining
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
     MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now);
-    MiningYield Collect(long pilotId, long moduleId, long asteroidId, double volume, double criticalBonusYield);
+    MiningYield Collect(long pilotId, long moduleId, long asteroidId, MiningCollection collection);
 }
 
 public enum MiningSkill
@@ -44,7 +57,6 @@ public enum MiningLaserType
 
 public static class MiningDefinitions
 {
-    public const int CorvetteGroup = FleetDefinitions.CorvetteGroup;
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;
     public const double CriticalYieldBonusPerSkillLevel = 0.05;

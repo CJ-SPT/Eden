@@ -1,4 +1,4 @@
-using Eden.Gameplay.Docking;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -12,8 +12,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
+internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider clock) : IPilotMining
 {
+    private sealed record ValidatedMining(Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser);
+
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         using WorldDbContext world = new(database.Path);
@@ -42,12 +44,13 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         );
     }
 
-    private static (Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser) Validate(
+    private static ValidatedMining Validate(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
         long moduleId,
-        long asteroidId
+        long asteroidId,
+        long now
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
@@ -60,6 +63,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
             || !module.Singleton
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
             || module.GroupId != InventoryDefinitions.MiningLaserGroup
+            || FittingCatalog.Definition(catalog, module.TypeId) is null
             || asteroid is null
             || asteroid.Quantity <= 0
         )
@@ -68,9 +72,19 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        if (hull.GroupId != MiningDefinitions.CorvetteGroup && hull.Id != (int)StarterShipType.Venture)
+        var ore = catalog.Set<ItemType>().Find(asteroid.TypeId);
+        if (
+            ore is null
+            || catalog.Set<ItemGroup>().Find(ore.GroupId)?.CategoryId != AsteroidDefinitions.Category
+            || !Enum.IsDefined((MiningResourceGroup)ore.GroupId)
+        )
         {
-            throw new InvalidDataException("Mining activation currently supports corvettes and the Venture.");
+            throw new InvalidDataException("Use an ore mining laser on ordinary ore, not ice, gas or Mercoxit.");
+        }
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
+        {
+            throw new InvalidDataException("A destroyed ship cannot mine.");
         }
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         var attributes = ModuleAttributes(world, catalog, pilotId, module);
@@ -91,7 +105,9 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
             attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
             attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance),
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield)
+            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield),
+            attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueChance) / 100,
+            attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueMultiplier, 1)
         );
         if (
             !(laser.DurationMilliseconds > 0 && laser.Volume > 0)
@@ -101,7 +117,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         {
             throw new InvalidDataException("Invalid mining cycle attributes.");
         }
-        return (pilot, asteroid, laser);
+        return new(pilot, asteroid, laser);
     }
 
     private static InventoryFlag OreHold(CatalogDbContext catalog, int hull) =>
@@ -131,7 +147,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId);
+        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -152,16 +168,19 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         return new(laser, charge);
     }
 
-    public MiningYield Collect(long pilotId, long moduleId, long asteroidId, double volume, double criticalBonusYield)
+    public MiningYield Collect(long pilotId, long moduleId, long asteroidId, MiningCollection collection)
     {
-        if (!(volume >= 0) || !double.IsFinite(volume) || !(criticalBonusYield >= 0) || !double.IsFinite(criticalBonusYield))
-        {
-            throw new InvalidDataException("Invalid mining yield.");
-        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var (pilot, asteroid, _) = Validate(world, catalog, pilotId, moduleId, asteroidId);
+        var (pilot, asteroid, laser) = Validate(
+            world,
+            catalog,
+            pilotId,
+            moduleId,
+            asteroidId,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -173,8 +192,8 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
             asteroid.Quantity,
             Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold),
             oreVolume,
-            volume,
-            criticalBonusYield
+            laser,
+            collection
         );
         int extracted = collected.Extracted;
         int bonus = collected.CriticalBonus;
@@ -190,10 +209,10 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
                 asteroid.TypeId,
                 checked(extracted + bonus)
             );
-            asteroid.Quantity -= extracted;
         }
+        asteroid.Quantity -= (long)extracted + collected.Residue;
         world.SaveChanges();
         transaction.Commit();
-        return new(change, asteroid.TypeId, extracted, bonus, asteroid.Quantity == 0, collected.CargoFull);
+        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull);
     }
 }

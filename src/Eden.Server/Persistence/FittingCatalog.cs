@@ -17,6 +17,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == InventoryDefinitions.MiningLaserGroup && !MiningLaserCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (type.GroupId == ShieldBoostDefinitions.Group && !ShieldBoosterCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

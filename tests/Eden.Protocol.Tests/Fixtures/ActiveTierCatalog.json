@@ -506,6 +506,166 @@
       ]
     },
     {
+      "id": 482,
+      "name": "Miner II",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 18.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 4.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 80.0
+        },
+        {
+          "id": 54,
+          "value": 12000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 15.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1768,
+          "value": 11347.0
+        },
+        {
+          "id": 3153,
+          "value": 1.0
+        },
+        {
+          "id": 3154,
+          "value": 34.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 483,
+      "name": "Miner I",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 54,
+          "value": 10000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 10.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
       "id": 523,
       "name": "Small Armor Repairer I",
       "groupId": 62,
@@ -1702,6 +1862,86 @@
       ]
     },
     {
+      "id": 3386,
+      "name": "Mining",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 434,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 3410,
+      "name": "Astrogeology",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3402.0
+        },
+        {
+          "id": 183,
+          "value": 3386.0
+        },
+        {
+          "id": 275,
+          "value": 3.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 4.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 434,
+          "value": 5.0
+        }
+      ]
+    },
+    {
       "id": 3449,
       "name": "Navigation",
       "groupId": 275,
@@ -2686,6 +2926,86 @@
         {
           "id": 1795,
           "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 3651,
+      "name": "Civilian Miner",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 65.0
+        },
+        {
+          "id": 54,
+          "value": 10000.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 77,
+          "value": 6.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
         }
       ]
     },
@@ -3890,6 +4210,246 @@
         {
           "id": 1795,
           "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 5233,
+      "name": "Single Diode Basic Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 2.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 45.0
+        },
+        {
+          "id": 54,
+          "value": 11000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 7.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 5239,
+      "name": "EP-S Gaussian Scoped Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 3.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 65.0
+        },
+        {
+          "id": 54,
+          "value": 16000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 13.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 5245,
+      "name": "Particle Bore Compact Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 55.0
+        },
+        {
+          "id": 54,
+          "value": 11000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 13.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
         }
       ]
     },
@@ -6414,6 +6974,58 @@
       ]
     },
     {
+      "id": 11395,
+      "name": "Deep Core Mining",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 183,
+          "value": 3410.0
+        },
+        {
+          "id": 275,
+          "value": 6.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 543,
+          "value": -10.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 11642,
       "name": "EM Armor Hardener II",
       "groupId": 328,
@@ -7450,6 +8062,98 @@
         {
           "id": 1223,
           "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 12108,
+      "name": "Deep Core Mining Laser I",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 150.0
+        },
+        {
+          "id": 54,
+          "value": 5000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 10.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 183,
+          "value": 11395.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 522,
+          "value": 5.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
         }
       ]
     },
@@ -45394,6 +46098,90 @@
       ]
     },
     {
+      "id": 21841,
+      "name": "Gallente Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 2.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 3.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 54,
+          "value": 10000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 12.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1768,
+          "value": 11330.0
+        },
+        {
+          "id": 3153,
+          "value": 1.0
+        },
+        {
+          "id": 3154,
+          "value": 20.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
       "id": 21853,
       "name": "Civilian Armor Repairer",
       "groupId": 62,
@@ -45790,6 +46578,158 @@
         {
           "id": 1692,
           "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 22921,
+      "name": "'Habitat' Miner I",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 54.0
+        },
+        {
+          "id": 54,
+          "value": 12000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 14.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 22923,
+      "name": "'Wild' Miner I",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 54.0
+        },
+        {
+          "id": 54,
+          "value": 12400.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 15.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
         }
       ]
     },
@@ -46874,6 +47814,186 @@
       ]
     },
     {
+      "id": 28748,
+      "name": "ORE Deep Core Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 2.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 150.0
+        },
+        {
+          "id": 54,
+          "value": 7000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 20.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 183,
+          "value": 11395.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 522,
+          "value": 5.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 28750,
+      "name": "ORE Miner",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 18.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 4.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 80.0
+        },
+        {
+          "id": 54,
+          "value": 16000.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 77,
+          "value": 21.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
       "id": 30342,
       "name": "Civilian Thermal Shield Hardener",
       "groupId": 77,
@@ -47838,6 +48958,262 @@
         {
           "id": 1223,
           "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 37450,
+      "name": "Ice Mining Laser I",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 54,
+          "value": 7000.0
+        },
+        {
+          "id": 73,
+          "value": 360000.0
+        },
+        {
+          "id": 77,
+          "value": 1000.0
+        },
+        {
+          "id": 182,
+          "value": 16281.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1298,
+          "value": 1283.0
+        },
+        {
+          "id": 1302,
+          "value": 91174.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 37451,
+      "name": "Ice Mining Laser II",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 15.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 6.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 54,
+          "value": 8000.0
+        },
+        {
+          "id": 73,
+          "value": 300000.0
+        },
+        {
+          "id": 77,
+          "value": 1000.0
+        },
+        {
+          "id": 182,
+          "value": 16281.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1298,
+          "value": 1283.0
+        },
+        {
+          "id": 1302,
+          "value": 91174.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 1.0
+        },
+        {
+          "id": 3154,
+          "value": 34.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 37452,
+      "name": "ORE Ice Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 15.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 6.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 54,
+          "value": 11000.0
+        },
+        {
+          "id": 73,
+          "value": 300000.0
+        },
+        {
+          "id": 77,
+          "value": 1000.0
+        },
+        {
+          "id": 182,
+          "value": 16281.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1298,
+          "value": 1283.0
+        },
+        {
+          "id": 1302,
+          "value": 91174.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        },
+        {
+          "id": 5967,
+          "value": 0.01
+        },
+        {
+          "id": 5969,
+          "value": 2.0
         }
       ]
     },
@@ -53348,6 +54724,214 @@
           "value": 5.0
         }
       ]
+    },
+    {
+      "id": 90460,
+      "name": "Abyssal Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 90483,
+      "name": "Abyssal Deep Core Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 183,
+          "value": 11395.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 522,
+          "value": 5.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        }
+      ]
+    },
+    {
+      "id": 90502,
+      "name": "Abyssal Ice Mining Laser",
+      "groupId": 54,
+      "groupName": "Mining Laser",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 16281.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1298,
+          "value": 1283.0
+        },
+        {
+          "id": 1302,
+          "value": 91174.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        }
+      ]
+    },
+    {
+      "id": 90727,
+      "name": "Mining Precision",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1047,
+          "value": 0.0
+        },
+        {
+          "id": 6049,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 90728,
+      "name": "Mining Exploitation",
+      "groupId": 1218,
+      "groupName": "Resource Processing",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 165.0
+        },
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 183,
+          "value": 90727.0
+        },
+        {
+          "id": 184,
+          "value": 3410.0
+        },
+        {
+          "id": 275,
+          "value": 6.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 4.0
+        },
+        {
+          "id": 279,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        },
+        {
+          "id": 6050,
+          "value": 5.0
+        }
+      ]
     }
   ],
   "records": [
@@ -53570,6 +55154,78 @@
           },
           {
             "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 482,
+      "data": {
+        "typeID": 482,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 482,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 483,
+      "data": {
+        "typeID": 483,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 483,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
             "isDefault": 1
           }
         ]
@@ -54117,6 +55773,68 @@
     },
     {
       "dataset": "client/types",
+      "key": 3386,
+      "data": {
+        "typeID": 3386,
+        "groupID": 1218,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3386,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 389,
+            "isDefault": 0
+          },
+          {
+            "effectID": 391,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3410,
+      "data": {
+        "typeID": 3410,
+        "groupID": 1218,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3410,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 389,
+            "isDefault": 0
+          },
+          {
+            "effectID": 391,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3449,
       "data": {
         "typeID": 3449,
@@ -54634,6 +56352,42 @@
           {
             "effectID": 3002,
             "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3651,
+      "data": {
+        "typeID": 3651,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3651,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
           }
         ]
       }
@@ -55174,6 +56928,114 @@
           {
             "effectID": 3002,
             "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5233,
+      "data": {
+        "typeID": 5233,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5233,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5239,
+      "data": {
+        "typeID": 5239,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5239,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5245,
+      "data": {
+        "typeID": 5245,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5245,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
           }
         ]
       }
@@ -56347,6 +58209,37 @@
     },
     {
       "dataset": "client/types",
+      "key": 11395,
+      "data": {
+        "typeID": 11395,
+        "groupID": 1218,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11395,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5372,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5373,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 11642,
       "data": {
         "typeID": 11642,
@@ -56788,6 +58681,42 @@
           },
           {
             "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12108,
+      "data": {
+        "typeID": 12108,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12108,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
             "isDefault": 1
           }
         ]
@@ -73152,6 +75081,42 @@
     },
     {
       "dataset": "client/types",
+      "key": 21841,
+      "data": {
+        "typeID": 21841,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21841,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 21853,
       "data": {
         "typeID": 21853,
@@ -73325,6 +75290,76 @@
           {
             "effectID": 3200,
             "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 22921,
+      "data": {
+        "typeID": 22921,
+        "groupID": 54,
+        "published": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 22921,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 22923,
+      "data": {
+        "typeID": 22923,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 22923,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
           }
         ]
       }
@@ -73799,6 +75834,78 @@
     },
     {
       "dataset": "client/types",
+      "key": 28748,
+      "data": {
+        "typeID": 28748,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28748,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28750,
+      "data": {
+        "typeID": 28750,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 1039,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28750,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 30342,
       "data": {
         "typeID": 30342,
@@ -74204,6 +76311,114 @@
           },
           {
             "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37450,
+      "data": {
+        "typeID": 37450,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2151,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37450,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37451,
+      "data": {
+        "typeID": 37451,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 2151,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37451,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37452,
+      "data": {
+        "typeID": 37452,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 2151,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37452,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
             "isDefault": 1
           }
         ]
@@ -76917,6 +79132,173 @@
       }
     },
     {
+      "dataset": "client/types",
+      "key": 90460,
+      "data": {
+        "typeID": 90460,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 90460,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 90483,
+      "data": {
+        "typeID": 90483,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 90483,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 90502,
+      "data": {
+        "typeID": 90502,
+        "groupID": 54,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 90502,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 42,
+            "isDefault": 0
+          },
+          {
+            "effectID": 67,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 90727,
+      "data": {
+        "typeID": 90727,
+        "groupID": 1218,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 90727,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 12754,
+            "isDefault": 0
+          },
+          {
+            "effectID": 12755,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 90728,
+      "data": {
+        "typeID": 90728,
+        "groupID": 1218,
+        "published": 1,
+        "marketGroupID": 1323,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 90728,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 12756,
+            "isDefault": 0
+          },
+          {
+            "effectID": 12757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
       "dataset": "client/dogmaeffects",
       "key": 4,
       "data": {
@@ -76953,6 +79335,27 @@
         "effectName": "loPower",
         "propulsionChance": 0,
         "effectID": 11,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12,
+      "data": {
+        "descriptionID": 107005,
+        "isAssistance": 0,
+        "displayNameID": 109442,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 293,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "hiPower",
+        "propulsionChance": 0,
+        "effectID": 12,
         "guid": "",
         "published": 1
       }
@@ -77018,6 +79421,27 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 42,
+      "data": {
+        "descriptionID": 571926,
+        "isAssistance": 0,
+        "displayNameID": 571927,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 1432,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "turretFitted",
+        "propulsionChance": 0,
+        "effectID": 42,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 48,
       "data": {
         "isAssistance": 0,
@@ -77059,6 +79483,29 @@
         "effectName": "capacitorCapacityMultiply",
         "guid": "",
         "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 67,
+      "data": {
+        "guid": "effects.Laser",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 2,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "sfxName": "None",
+        "effectID": 67,
+        "rangeAttributeID": 54,
+        "propulsionChance": 0,
+        "effectName": "miningLaser",
+        "distribution": 2,
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
         "published": 0
       }
     },
@@ -77317,6 +79764,62 @@
           }
         ],
         "effectName": "highSpeedManuveringCapacitorNeedMultiplierPostPercentCapacitorNeedLocationShipModulesRequiringHighSpeedManuvering",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 389,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 389,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 434,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "astrogeologySkillBoostMiningAmountBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 391,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 391,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 77,
+            "modifyingAttributeID": 434,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3386
+          }
+        ],
+        "effectName": "astrogeologyMiningAmountBonusPostPercentMiningAmountLocationShipModulesRequiringMining",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -77925,6 +80428,60 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 5372,
+      "data": {
+        "descriptionID": 287336,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5372,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 522,
+            "operation": 6,
+            "modifyingAttributeID": 543,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "damageCloudChanceReductionFixed",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5373,
+      "data": {
+        "descriptionID": 287337,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5373,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 543,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "deepCoreMiningSkillBoostDamageCloudChanceReductionMul",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 6730,
       "data": {
         "guid": "effects.MicroWarpDrive",
@@ -77960,6 +80517,128 @@
         "effectName": "moduleBonusAfterburner",
         "dischargeAttributeID": 6,
         "durationAttributeID": 73,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12754,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 12754,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 6049,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "miningCritChanceSkillBoostLevelBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12755,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 12755,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 5967,
+            "modifyingAttributeID": 6049,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3386
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 5967,
+            "modifyingAttributeID": 6049,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 16281
+          }
+        ],
+        "effectName": "miningCritChanceSkillPostPercentLRSMBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12756,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 12756,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 6050,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "miningCritYieldSkillBoostLevelBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 12757,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 12757,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 5969,
+            "modifyingAttributeID": 6050,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3386
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 5969,
+            "modifyingAttributeID": 6050,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 16281
+          }
+        ],
+        "effectName": "miningCritYieldSkillPostPercentLRSMBonus",
+        "propulsionChance": 0,
         "published": 0
       }
     },
@@ -78027,6 +80706,18 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 47,
+      "data": {
+        "attributeID": 47,
+        "name": "slots",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 50,
       "data": {
         "attributeID": 50,
@@ -78035,6 +80726,18 @@
         "dataType": 4,
         "defaultValue": 0.0,
         "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 54,
+      "data": {
+        "attributeID": 54,
+        "name": "maxRange",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
       }
     },
     {
@@ -78083,6 +80786,18 @@
         "dataType": 5,
         "defaultValue": 0.0,
         "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 77,
+      "data": {
+        "attributeID": 77,
+        "name": "miningAmount",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
       }
     },
     {
@@ -78407,12 +81122,48 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 434,
+      "data": {
+        "attributeID": 434,
+        "name": "miningAmountBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 482,
       "data": {
         "attributeID": 482,
         "name": "capacitorCapacity",
         "stackable": 1,
         "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 522,
+      "data": {
+        "attributeID": 522,
+        "name": "damageCloudChance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 543,
+      "data": {
+        "attributeID": 543,
+        "name": "damageCloudChanceReduction",
+        "stackable": 1,
+        "dataType": 4,
         "defaultValue": 0.0,
         "highIsGood": 1
       }
@@ -78743,6 +81494,18 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1302,
+      "data": {
+        "attributeID": 1302,
+        "name": "canFitShipType1",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 1692,
       "data": {
         "attributeID": 1692,
@@ -78751,6 +81514,18 @@
         "dataType": 4,
         "defaultValue": 0.0,
         "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1768,
+      "data": {
+        "attributeID": 1768,
+        "name": "typeColorScheme",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
       }
     },
     {
@@ -78809,6 +81584,81 @@
         "name": "canFitShipGroup08",
         "stackable": 1,
         "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3153,
+      "data": {
+        "attributeID": 3153,
+        "name": "miningWastedVolumeMultiplier",
+        "stackable": 0,
+        "dataType": 2,
+        "defaultValue": 1.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3154,
+      "data": {
+        "attributeID": 3154,
+        "name": "miningWasteProbability",
+        "stackable": 0,
+        "dataType": 2,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 5967,
+      "data": {
+        "attributeID": 5967,
+        "name": "miningCritChance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "maxAttributeID": 5968,
+        "minAttributeID": 2623,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 5969,
+      "data": {
+        "attributeID": 5969,
+        "name": "miningCritBonusYield",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 2623,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6049,
+      "data": {
+        "attributeID": 6049,
+        "name": "miningCritChanceBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6050,
+      "data": {
+        "attributeID": 6050,
+        "name": "miningCritBonusYieldBonus",
+        "stackable": 1,
+        "dataType": 5,
         "defaultValue": 0.0,
         "highIsGood": 1
       }

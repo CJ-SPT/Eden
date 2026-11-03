@@ -11,9 +11,10 @@ internal sealed record OreMined(MiningYield Yield, long AsteroidId, long ModuleI
             {
                 ["oreType"] = Yield.TypeId,
                 ["quantity_added"] = Yield.Extracted + Yield.CriticalBonus,
+                // The native scanner adds amountWasted to quantity_removed itself.
                 ["quantity_removed"] = Yield.Extracted,
                 ["hasRewards"] = false,
-                ["amountWasted"] = 0,
+                ["amountWasted"] = Yield.Residue,
                 ["amountCritBonus"] = Yield.CriticalBonus,
                 ["itemID"] = AsteroidId,
                 ["moduleItemID"] = ModuleId,

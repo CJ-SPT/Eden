@@ -25048,8 +25048,23 @@
       "dataset": "client/dogmaeffects",
       "key": 67,
       "data": {
+        "guid": "effects.Laser",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 2,
-        "effectID": 67
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "sfxName": "None",
+        "effectID": 67,
+        "rangeAttributeID": 54,
+        "propulsionChance": 0,
+        "effectName": "miningLaser",
+        "distribution": 2,
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 0
       }
     },
     {

@@ -46,7 +46,9 @@ public static class ModuleFittingRules
     {
         bool supported = groupId switch
         {
-            InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser),
+            InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+                && attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) == 0,
             ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
             CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                 && effects.Contains(DogmaEffect.CapacitorBoosting),

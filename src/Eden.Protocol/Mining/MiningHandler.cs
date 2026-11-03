@@ -66,8 +66,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             }
             try
             {
-                bool critical = RandomNumberGenerator.GetInt32(ProbabilityResolution) < cycle.Laser.CriticalChance * ProbabilityResolution;
-                var result = Collect(context, cycle, cycle.Laser.Volume, critical ? cycle.Laser.CriticalBonusYield : 0);
+                var result = Collect(context, cycle, 1, true);
                 if (cycle.Repeats > 0 && !result.Depleted && !result.CargoFull)
                 {
                     Start(context, module, cycle.Target, cycle.Repeats - 1, cycle);
@@ -84,14 +83,21 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         }
     }
 
-    private MiningYield Collect(PilotCallContext context, Cycle cycle, double volume, double criticalBonus)
+    private static double Roll() => (double)RandomNumberGenerator.GetInt32(ProbabilityResolution) / ProbabilityResolution;
+
+    private MiningYield Collect(PilotCallContext context, Cycle cycle, double fraction, bool completed)
     {
-        var result = mining.Collect(context.Pilot.PilotId, cycle.Laser.ItemId, cycle.Target, volume, criticalBonus);
+        var result = mining.Collect(
+            context.Pilot.PilotId,
+            cycle.Laser.ItemId,
+            cycle.Target,
+            new(fraction, completed, new(Roll(), Roll(), Roll(), Roll(), Roll()))
+        );
         if (result.Cargo is { } change)
         {
             InventoryChangesWire.NotifyItemChange(context, change);
         }
-        if (result.Extracted > 0)
+        if (result.Extracted > 0 || result.Residue > 0)
         {
             // oreMinedNotificationAdapter in build 3662168 uses these exact keys.
             context.Notifications.Add(new OreMined(result, cycle.Target, cycle.Laser.ItemId));
@@ -220,7 +226,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                         0,
                         1
                     );
-                    _ = Collect(context, cycle, cycle.Laser.Volume * fraction, 0);
+                    _ = Collect(context, cycle, fraction, false);
                     Stop(context, cycle);
                 }
                 return PilotCallResult.None;

@@ -21,6 +21,7 @@ public enum PassiveEffectPhase
 {
     Fitted = 0,
     Active = 1,
+    Targeted = 2,
     Online = 4,
 }
 
