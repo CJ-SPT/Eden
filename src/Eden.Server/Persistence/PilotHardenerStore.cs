@@ -36,7 +36,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
-            throw new InvalidDataException("Use an online fitted Tech I hardener on your active ship in space.");
+            throw new InvalidDataException("Use an online fitted hardener on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));

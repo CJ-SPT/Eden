@@ -43,20 +43,20 @@ public sealed class HardenerTests
         Store(f).Activate(f.PilotId, module, effect, f.Clock.Now);
 
     [Fact]
-    public void OrdinaryTechOneProfilesAreCompleteAndTechTwoRemainsExcluded()
+    public void ExistingHardenerFixturesAdmitTheirTechOneAndTechTwoProfiles()
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(t => t.GroupId == 77 || t.GroupId == 328).ToArray();
         var supported = types.Where(t => FittingCatalog.Definition(catalog, t.Id) is not null).ToArray();
-        Assert.Equal(15, supported.Count(t => t.GroupId == HardenerDefinitions.ShieldGroup));
-        Assert.Equal(12, supported.Count(t => t.GroupId == HardenerDefinitions.ArmorGroup));
+        Assert.Equal(16, supported.Count(t => t.GroupId == HardenerDefinitions.ShieldGroup));
+        Assert.Equal(13, supported.Count(t => t.GroupId == HardenerDefinitions.ArmorGroup));
         Assert.All(
             supported,
             t => Assert.Equal(t.GroupId == 77 ? ModuleRack.Medium : ModuleRack.Low, FittingCatalog.Definition(catalog, t.Id)!.Rack)
         );
-        Assert.Null(FittingCatalog.Definition(catalog, 2301));
-        Assert.Null(FittingCatalog.Definition(catalog, 11642));
+        Assert.NotNull(FittingCatalog.Definition(catalog, 2301));
+        Assert.NotNull(FittingCatalog.Definition(catalog, 11642));
     }
 
     [Theory]

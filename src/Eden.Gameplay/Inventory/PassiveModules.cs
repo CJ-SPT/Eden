@@ -74,6 +74,7 @@ public enum PassiveModuleGroup
 public enum PassiveModuleSkill
 {
     RepairSystems = 3393,
+    CapitalRepairSystems = 21803,
     ShieldUpgrades = 3425,
     EnergyGridUpgrades = 3424,
     ElectronicsUpgrades = 3432,

@@ -7,9 +7,9 @@ namespace Eden.Server.Persistence;
 
 internal static class HardenerCatalog
 {
-    private const int TechOne = 1;
-    private const int TechOneMetaGroup = 1;
+    private const int AbyssalMetaGroup = 15;
     private const int OverloadPhase = 5;
+    private const int ExpectedEffectCount = 4;
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
@@ -20,15 +20,22 @@ internal static class HardenerCatalog
         var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         if (
             type?.Published != 1
-            || type.MetaGroupID != TechOneMetaGroup
-            || catalog.Set<TypeAttribute>().Find(typeId, (int)DogmaAttributeId.TechLevel)?.Value != TechOne
+            || type.MetaGroupID == AbyssalMetaGroup
+            || InventoryDefinitions.RequiresSpecificShip(PilotFittingStore.ReadAttributes(catalog, typeId))
         )
         {
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
-        return effects.Count == FittingCatalog.Effects(catalog, typeId).Count
-            && effects.Any(e => e.EffectID == (int)active && e.EffectCategory == (int)PassiveEffectPhase.Active)
+        return effects.Count == ExpectedEffectCount
+            && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
+            && effects.Any(e =>
+                e.EffectID == (int)active
+                && e.EffectCategory == (int)PassiveEffectPhase.Active
+                && e.DurationAttributeID == (int)DogmaAttributeId.Duration
+                && e.DischargeAttributeID == (int)DogmaAttributeId.CapacitorNeed
+                && e.IsWarpSafe == 1
+            )
             && effects.All(e =>
                 e.EffectID == (int)DogmaEffect.Online
                 || e.EffectCategory == OverloadPhase

@@ -17,6 +17,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == ArmorRepairDefinitions.Group && !ArmorRepairCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (HardenerDefinitions.Effect(type.GroupId) is not null && !HardenerCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

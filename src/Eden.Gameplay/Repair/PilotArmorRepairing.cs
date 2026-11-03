@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Repair;
 
@@ -22,10 +23,12 @@ public interface IPilotArmorRepairing
 public static class ArmorRepairDefinitions
 {
     private const int TechOne = 1;
+    private const int TechTwo = 2;
     public const int Group = 62;
     public const int RepairSystemsSkill = 3393;
     public const int SmallTechOne = 523;
 
     public static bool IsSupported(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == TechOne;
+        attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is TechOne or TechTwo
+        && !InventoryDefinitions.RequiresSpecificShip(attributes);
 }

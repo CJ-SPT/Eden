@@ -20,15 +20,15 @@ namespace Eden.Protocol.Tests.Repair;
 public sealed class ArmorRepairTests
 {
     [Fact]
-    public void OrdinaryTechOneRepairersUseLowSlotsAndTheNativeBrainIncludesRepairSystems()
+    public void ExistingRepairerFixturesUseLowSlotsAndTheNativeBrainIncludesRepairSystems()
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.CatalogPath);
         var repairers = catalog.Set<ItemType>().Where(t => t.GroupId == ArmorRepairDefinitions.Group).ToArray();
         var supported = repairers.Select(t => FittingCatalog.Definition(catalog, t.Id)).OfType<ModuleFittingDefinition>().ToArray();
-        Assert.Equal(12, supported.Length);
+        Assert.Equal(13, supported.Length);
         Assert.All(supported, definition => Assert.Equal(ModuleRack.Low, definition.Rack));
-        Assert.Null(FittingCatalog.Definition(catalog, 1183)); // Small Armor Repairer II.
+        Assert.NotNull(FittingCatalog.Definition(catalog, 1183)); // Small Armor Repairer II.
         f.Train(ArmorRepairDefinitions.RepairSystemsSkill, 3);
         var brain = f.Db.Services.GetRequiredService<PilotBrain>().Read(f.PilotId, f.ShipId);
         Assert.Contains(
@@ -292,6 +292,6 @@ public sealed class ArmorRepairTests
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, f.Inventory.List(f.PilotId, f.ShipId));
         using CatalogDbContext catalog = new(f.CatalogPath);
-        Assert.Null(FittingCatalog.Definition(catalog, 1183));
+        Assert.NotNull(FittingCatalog.Definition(catalog, 1183));
     }
 }

@@ -38,7 +38,7 @@ internal sealed class PilotArmorRepairStore(WorldDatabase database) : IPilotArmo
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
-            throw new InvalidDataException("Use an online fitted Tech I armor repairer on your active ship in space.");
+            throw new InvalidDataException("Use an online fitted armor repairer on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));

@@ -24864,8 +24864,20 @@
       "dataset": "client/dogmaeffects",
       "key": 27,
       "data": {
+        "guid": "effects.ArmorRepair",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 1,
-        "effectID": 27
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 27,
+        "propulsionChance": 0,
+        "effectName": "armorRepair",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 0
       }
     },
     {
