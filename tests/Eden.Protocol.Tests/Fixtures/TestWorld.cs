@@ -2,6 +2,7 @@ using Eden.Gameplay.Flight;
 using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.Server.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Fixtures;
@@ -22,10 +23,23 @@ internal sealed class TestWorld : IDisposable
     public ServiceProvider Services { get; }
     public IReadOnlyList<StaticSpaceObject> Objects => Services.GetRequiredService<ISystemObjects>().Load(30000142);
 
-    public TestWorld()
+    internal const string DropTestingMarketSchema = """
+        DROP TABLE WorldTestingGrant;
+        ALTER TABLE WorldMarketStation DROP COLUMN SeedVersion;
+        DROP INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents;
+        """;
+
+    public TestWorld(bool emptyWallets = true)
     {
         TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
         WorldInitialization.Initialize(new WorldDatabase(Path));
+        if (emptyWallets)
+        {
+            // Feature tests supply their own budgets. Funding/migration tests use
+            // emptyWallets: false to retain the real starting grant and journal.
+            using WorldDbContext world = new(Path);
+            world.Database.ExecuteSqlRaw("DELETE FROM WorldTestingGrant; DELETE FROM WorldWallet");
+        }
         Services = ServerServices.Build(new WorldDatabase(Path));
         Store = Services.GetRequiredService<SqliteWorld>();
     }

@@ -205,7 +205,8 @@ public sealed class PilotFittingTests
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE "
+                TestWorld.DropTestingMarketSchema
+                    + "ALTER TABLE WorldItem DROP COLUMN Singleton; ALTER TABLE WorldItem DROP COLUMN Online; DROP TABLE "
                     + "WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE "
                     + "WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE "
                     + "WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE "

@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 26 migrates to version 27 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 27 migrates to version 28 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -184,22 +184,29 @@ The catalog supplies station efficiency, ore recipes, batch sizes and skill bonu
 3. Right-click a Civilian Miner and choose **Buy This Type**. Buy one at the station. It arrives in Item Hangar; the price is deducted from the same saved wallet. Fit it through the station's circled ship button.
 4. Open Wallet to compare the balance and transaction records. Restart the host and client, then compare wallet balance, owned items and remaining NPC order quantities.
 
-Eden seeds finite starter offers at visited market stations. These local prices are emulator policy:
+Eden's default testing market stocks every pinned client type with `published=1` and a positive `marketGroupID`: **19,727 types**, each sold for **1 ISK per unit**. Docked market access populates the current station. Each sell order displays **1,000,000 units**; supply is restored on access and after purchases, and expired sell orders renew. Larger requests retain partial fills up to that displayed quantity. Old sell-order identities and trade history are retained when a station upgrades to this policy.
+
+Every existing pilot receives an additive **1,000,000 ISK** grant when upgrading to world version 28. New pilots receive it in their creation transaction. Wallet Journal shows **GM Cash Transfer**; reconnecting or restarting does not repeat it. This is explicit testing policy. Availability does not add gameplay support for otherwise unsupported items, hulls or blueprints. Unpublished types and types without a market group remain unavailable through this browser.
+
+NPC buyback orders remain finite, with initial demand of one million units per type. They do not replenish or renew:
 
 | Item | Pilot sells for | Pilot buys for |
 | --- | ---: | ---: |
-| Veldspar | 3.00 ISK | — |
-| Scordite | 5.00 ISK | — |
-| Tritanium | 2.00 ISK | 2.40 ISK |
-| Pyerite | 8.00 ISK | 9.60 ISK |
-| Civilian Miner | — | 100.00 ISK |
-| Miner I | — | 1,000.00 ISK |
-| Miner II | — | 5,000.00 ISK |
-| Venture | — | 10,000.00 ISK |
+| Veldspar | 3.00 ISK | 1.00 ISK |
+| Scordite | 5.00 ISK | 1.00 ISK |
+| Tritanium | 2.00 ISK | 1.00 ISK |
+| Pyerite | 8.00 ISK | 1.00 ISK |
 
-Each buyback order starts with demand for one million units. Mineral offers start with 100,000 units; each laser offer starts with 100 and Venture offers start with 10. Orders last one year and depleted stock does not regenerate after a restart. A later policy can add missing offers to a visited station while retaining its existing quantities, prices and expiry dates. No initial ISK grant is added to existing or new pilots.
+These buyback prices intentionally preserve existing sale tests; this testing market does not model a balanced economy.
 
 Sales tax is currently pinned to the staged client's observed **7.5%** runtime flag, reduced by **11% per Accounting level**. Its packaged fallback is 8%; external flag changes are not yet hosted by Eden. Immediate trades have no broker fee. A half-cent sales tax is rounded to cents before crediting proceeds; the native preview can display a net amount one cent higher because it rounds the unrounded net independently. Regional history comes from actual saved executions, grouped by UTC day with volume-weighted average prices. Open **Price History**, then **Show Table**, to compare quantities and prices. Before an item's first local trade, the client's fallback average can trigger large price warnings even for these documented prices. This history does not supply the separate adjusted prices used for reprocessing fees. Reopen market details or transaction panels to refresh their displayed rows. Trading supports personal immediate orders at the docked station. Player listings and corporation/remote trading remain separate work.
+
+## Verify the full testing market
+
+1. Select **Eden Pilot**, open **Inventory**, and verify the expected active ship. Open Wallet and confirm the one-time GM Cash Transfer and current balance.
+2. Open Regional Market with station range selected. Browse or search for a ship, skillbook, blueprint and ammunition type. Confirm the current-station offer reads **1.00 ISK** and **1,000,000** units.
+3. Buy representative items. Verify the exact quantities in Item Hangar and one ISK per unit deducted from Wallet. Reopen the quote and check that supply remains available. PLEX quotes use the same local testing stock; redemption/account services remain unsupported.
+4. Restart the host and client. Confirm purchased stacks and balances persist and the grant appears once. Repeat a purchase with a pilot docked at a school station that provides market service.
 
 ## Upgrade to a Venture
 
@@ -282,7 +289,7 @@ The server recomputes damage at payment time and caps the charge at the current 
 
 ## Train and use a shield booster
 
-1. Dock at a station with a market and fitting service. Select **Eden Pilot**, open Inventory and verify the active ship. The starter market sells a **Shield Operation** skillbook for **5,000 ISK** and **Small Shield Booster I** for **1,000 ISK**. These prices and finite stocks are Eden policy.
+1. Dock at a station with a market and fitting service. Select **Eden Pilot**, open Inventory and verify the active ship. The testing market sells a **Shield Operation** skillbook for **1 ISK** and **Small Shield Booster I** for **1 ISK**. These prices and replenishing stocks are Eden testing policy.
 2. Buy the skillbook and find it in Item Hangar. Right-click **Inject Skill**. One book should disappear and Shield Operation should appear in the Skill Catalogue at level zero. A stack retains its unused books. Injection grants no SP, and an already injected skill cannot consume another book. Current-ship ordinary cargo also supports injection; remote hangars and specialized holds do not.
 3. Add Shield Operation I to the training queue and start it. Training uses the saved Alpha rate and requires Power Grid Management I. Wait for level I; restarting retains the queue and offline progress. Direct skill purchases from the Skill Catalogue are separate work: use the physical book path.
 4. Buy the booster. Use **Fit to Active Ship** or the station's circled ship **Fitting** button, then verify it is online in a medium slot. The existing high-slot miner and civilian gun must remain fitted. CPU and power grid include all online supported modules; the booster uses no turret hardpoint.
@@ -292,7 +299,7 @@ The server recomputes damage at payment time and caps the charge at the current 
 
 ## Upgrade to an ammunition-fed railgun
 
-1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Buy a **75mm Gatling Rail I** for **1,000 ISK** and small hybrid charges for **1 ISK per round**. Antimatter Charge S and Iron Charge S have separate finite starter stocks. These prices are Eden policy.
+1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Buy a **75mm Gatling Rail I** for **1 ISK** and small hybrid charges for **1 ISK per round**. Antimatter Charge S and Iron Charge S each have replenishing testing stock. These prices are Eden policy.
 2. Free a high slot if needed, then use **Fit to Active Ship** on the new gun. Keep the previous gun in the hangar. Fitting requires Small Hybrid Turret I, Gunnery I, a turret hardpoint, CPU and power grid.
 3. Drag a charge stack onto the gun in Fitting, or carry it in ordinary cargo and use the gun's HUD ammunition menu. The 75mm railgun holds **200 rounds**. A load or ammo change has a saved **5-second** reload deadline; firing during it is rejected. Changing ammo returns the old rounds to the source container.
 4. Carry reserve charges in cargo, undock and lock a Rookie. Activate the new gun. Check its ammo icon/count, cycle ring, capacitor, native turret effect, damage messages and the target's health. Every paid shot consumes the catalog's charge rate, including misses. A gun with no loaded ammunition cannot deal damage.
@@ -301,7 +308,7 @@ The server recomputes damage at payment time and caps the charge at the current 
 
 ## Manufacture ammunition from mined minerals
 
-1. Select **Eden Pilot**, dock at a station with manufacturing and verify the active ship in Inventory. Buy an **Iron Charge S Blueprint** original for **1,000 ISK** from the starter market. This price and finite stock are Eden policy. Keep the original in the current station's **Item Hangar**. Industry I is required; use the pilot's actual trained skills.
+1. Select **Eden Pilot**, dock at a station with manufacturing and verify the active ship in Inventory. Buy an **Iron Charge S Blueprint** original for **1 ISK** from the testing market. This price and replenishing supply are Eden testing policy. Keep the original in the current station's **Item Hangar**. Industry I is required; use the pilot's actual trained skills.
 2. Mine Scordite in a Perimeter belt, unload it into Item Hangar and use **Reprocess** to convert complete batches into Tritanium and Pyerite. One Iron run needs **27 Tritanium and 21 Pyerite**. Mining and reprocessing retain their normal catalog cycle times and yields.
 3. Open the station's **Industry** factory button. In **Blueprints**, double-click the owned Iron original. Choose the current station and personal **Item Hangar** for both input and output. One run should preview **100 Iron Charge S**, using 27 Tritanium and 21 Pyerite, with a base five-minute build reduced to **4 minutes 48 seconds at Industry I**. Materials missing from the hangar should be marked unavailable.
 4. Choose **Start**. Verify the materials leave the hangar, the original becomes unavailable for another job, and **Jobs** shows the countdown. The installed original must remain reserved when a move is attempted. A ready job still occupies the original and slot until delivered or cancelled in this initial Eden policy.
@@ -312,8 +319,8 @@ Schema **27** adds saved manufacturing jobs without granting blueprints, materia
 
 ## Manufacture starter equipment
 
-1. Select **Eden Pilot** and verify the active ship in Inventory. At a manufacturing station, buy a **75mm Gatling Rail I Blueprint** from Regional Market for **1,000 ISK**. Other starter originals are **Miner I**, **Small Shield Booster I** and **1MN Afterburner I**, each at the same Eden price.
-2. Double-click the owned original in Item Hangar. Its Industry preview should show the catalog recipe, one packaged module output and **14 minutes 24 seconds** with Industry I. A railgun requires **231 Tritanium and 220 Pyerite**. Missing materials disable Start. Right-click a missing material and use **Buy This Type** to purchase the shortfall, or supply minerals from reprocessing. The starter market adds **Mexallon at 60 ISK/unit** for the other module recipes; Nocxium remains **100 ISK/unit**.
+1. Select **Eden Pilot** and verify the active ship in Inventory. At a manufacturing station, buy a **75mm Gatling Rail I Blueprint** from Regional Market for **1 ISK**. Other starter originals are **Miner I**, **Small Shield Booster I** and **1MN Afterburner I**, each at the same Eden price.
+2. Double-click the owned original in Item Hangar. Its Industry preview should show the catalog recipe, one packaged module output and **14 minutes 24 seconds** with Industry I. A railgun requires **231 Tritanium and 220 Pyerite**. Missing materials disable Start. Right-click a missing material and use **Buy This Type** to purchase the shortfall, or supply minerals from reprocessing. The testing market sells **Mexallon** and **Nocxium** for **1 ISK/unit**.
 3. Start one run. Check the material stacks, reserved original, occupied slot and countdown. Restart the host/client before completion and verify the same deadline and consumed materials; the new module must not exist early. Industry continues while disconnected.
 4. At the original deadline, choose **Deliver** in Jobs. Exactly one packaged module should appear in Item Hangar and the slot/original should become available. Fit that module to the active ship using an available compatible slot, bring it online, and check the native fitting readout. For the railgun, load supported small hybrid charges and test a paid shot in space.
 5. Dock and restart again. Compare the delivered job, reusable original, new module identity/fitting, consumed materials, ammunition and wallet. Retrying delivery must not produce another module. Existing ships, cargo and other jobs must remain intact.
@@ -332,7 +339,7 @@ Both controls use visible, local targets within **8,000 km** and accept surface 
 
 ## Fit and fly with an afterburner
 
-1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Search the Regional Market for **1MN Afterburner I**, buy one for **1,000 ISK**, and use **Fit to Active Ship** in Item Hangar. This finite starter offer is Eden policy. The module requires Afterburner I, a medium slot, CPU and power grid.
+1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Search the Regional Market for **1MN Afterburner I**, buy one for **1 ISK**, and use **Fit to Active Ship** in Item Hangar. This finite starter offer is Eden policy. The module requires Afterburner I, a medium slot, CPU and power grid.
 2. Open Fitting using the station's **circled ship** button. Check Navigation and hover over the afterburner. An Ibis with Navigation III shows **339.25 m/s** without the module and **691.15 m/s** with it. Afterburner III reduces its base 10-second, 20-GJ cycle to **8.5 seconds / 14 GJ**. Fuel Conservation and Acceleration Control modify cost and speed when trained.
 3. Undock, set a direction in open space and choose full speed. Activate the afterburner on the HUD. Its ring should cycle, capacitor should be spent, and the ship should accelerate above its normal limit. Repeated cycles must retain one bonus and a steady maximum speed, rather than multiplying the speed again.
 4. Click the active module to stop it. It finishes the paid cycle, clears its ring and restores normal speed and mass; actual velocity coasts toward the new limit. Warp prevents starting another afterburner cycle. Docking, hull loss and disconnecting remove the effect.

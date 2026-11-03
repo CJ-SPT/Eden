@@ -38,7 +38,7 @@ public sealed class PilotSkillBookTests
                     """
                     INSERT INTO ItemType(Id,Name,GroupId) VALUES (3416,'Shield Operation',257);
                     INSERT INTO TypeAttribute VALUES (3416,275,1),(3416,180,165),(3416,181,166);
-                    INSERT INTO SourceRecord VALUES ('client/types','3416','{{"volume":0.01,"published":1}}'),
+                    INSERT INTO SourceRecord VALUES ('client/types','3416','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
                         ('client/stationoperations','14','{{"services":[7]}}'),
                         ('client/requiredskillsfortypes','3416','{{"3327":4}}');
                     UPDATE SourceRecord SET Data='{{"skills":[{{"typeID":3327,"level":4}},{{"typeID":3416,"level":5}}]}}'
@@ -90,8 +90,11 @@ public sealed class PilotSkillBookTests
         using WorldDbContext reopened = new(f.Db.Path);
         Assert.Equal(250, reopened.Set<PilotSkill>().Find(Pilot, ShieldOperation)!.Points);
         Assert.Equal(1, reopened.Set<OwnedItem>().Find(f.Book)!.Quantity);
-        Assert.Equal(1000000, reopened.Set<PilotWallet>().Find(Pilot)!.Cents);
-        Assert.Equal(98, f.Db.Services.GetRequiredService<IPilotMarket>().Orders(Pilot).Single(o => o.TypeId == ShieldOperation).Remaining);
+        Assert.Equal(1999800, reopened.Set<PilotWallet>().Find(Pilot)!.Cents);
+        Assert.Equal(
+            1000000,
+            f.Db.Services.GetRequiredService<IPilotMarket>().Orders(Pilot).Single(o => o.TypeId == ShieldOperation).Remaining
+        );
     }
 
     [Theory]

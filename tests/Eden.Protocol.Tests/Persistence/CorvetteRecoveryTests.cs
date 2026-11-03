@@ -39,7 +39,7 @@ public sealed class CorvetteRecoveryTests
             }
             using (WorldDbContext world = new(Db.Path))
             {
-                world.Add(new PilotWallet { PilotId = Pilot.PilotId, Cents = 1000000 });
+                world.Add(new PilotWallet { PilotId = Pilot.PilotId, Cents = 100 });
                 world.SaveChanges();
             }
             var original = Pilot;

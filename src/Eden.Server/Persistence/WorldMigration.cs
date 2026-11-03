@@ -8,12 +8,12 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    public static void Open(WorldDbContext world, CatalogDbContext catalog)
+    public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 27)
+        if (version is < 0 or > 28)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -372,6 +372,29 @@ internal static class WorldMigration
         if (version < 27)
         {
             world.Database.ExecuteSqlRaw("PRAGMA user_version=27");
+        }
+        if (version is >= 6 and < 28)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldMarketStation ADD COLUMN SeedVersion INTEGER NOT NULL DEFAULT 0;
+                CREATE TABLE WorldTestingGrant(
+                    PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL, Time INTEGER NOT NULL,
+                    CONSTRAINT CK_TestingGrant_Amounts CHECK (AmountCents > 0 AND BalanceCents >= 0));
+                CREATE INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents
+                    ON WorldMarketOrder(RegionId,TypeId,Bid,PriceCents);
+                """
+            );
+        }
+        if (version < 28)
+        {
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            foreach (long pilotId in world.Pilots.Select(p => p.Id).ToArray())
+            {
+                TestingWalletFunding.Grant(world, pilotId, now);
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=28");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

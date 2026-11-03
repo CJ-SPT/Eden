@@ -80,7 +80,7 @@ public sealed class ShieldBoostTests
                     INSERT INTO TypeAttribute VALUES (601,11,23),(601,13,2),(601,14,2),(601,48,135),
                         (3651,50,65),(3651,30,2),(399,6,20),(399,30,2),(399,50,25),(399,68,26),(399,73,2000),(399,182,3416),(399,277,1),
                         (3416,275,1),(21059,275,2),(21059,851,-2);
-                    INSERT INTO SourceRecord VALUES ('client/types','399','{{"volume":5}}'),
+                    INSERT INTO SourceRecord VALUES ('client/types','399','{{"published":1,"marketGroupID":1,"volume":5}}'),
                         ('client/stationoperations','14','{{"services":[7,17,13]}}');
                     """
                 );
@@ -149,9 +149,9 @@ public sealed class ShieldBoostTests
         Assert.Equal(1, f.Fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.TurretSlotsLeft]);
         Assert.Equal(90, f.Fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.CpuLoad]);
         Assert.Equal(4, f.Fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.PowerLoad]);
-        Assert.Equal(900000, f.Market.Balance(pilot.PilotId));
+        Assert.Equal(999900, f.Market.Balance(pilot.PilotId));
         _ = WorldInitialization.Open(f.Db.Path);
-        Assert.Equal(99, f.Market.Orders(pilot.PilotId).Single(o => o.TypeId == (int)ShieldBoosterType.SmallI).Remaining);
+        Assert.Equal(1000000, f.Market.Orders(pilot.PilotId).Single(o => o.TypeId == (int)ShieldBoosterType.SmallI).Remaining);
         var change = Assert.Single(f.Inventory.Move(pilot.PilotId, [f.Module], pilot.ShipId, pilot.ShipId, (int)InventoryFlag.Cargo, null));
         Assert.Equal(f.Module, change.Item.Id);
         Assert.True(change.Item.Singleton);
@@ -202,7 +202,7 @@ public sealed class ShieldBoostTests
         Assert.Equal(110, result.Capacitor);
         Assert.Equal(113, result.Health.Remaining.Armor);
         Assert.Equal(166, result.Health.Remaining.Structure);
-        Assert.Equal(900000, f.Market.Balance(f.Pilot.PilotId));
+        Assert.Equal(999900, f.Market.Balance(f.Pilot.PilotId));
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Boost());
         f.Clock.Milliseconds = 2000;
@@ -511,7 +511,8 @@ public sealed class ShieldBoostTests
                 INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
                 UPDATE TypeAttribute SET Value=1000 WHERE ItemTypeId=30380 AND AttributeId=64;
                 UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=54;
-                UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
+                UPDATE SourceRecord SET Data='{{"published":1,"marketGroupID":1,"volume":15000,"wreckTypeID":26510}}'
+                    WHERE Dataset='client/types' AND Key='601';
                 """
             );
         }

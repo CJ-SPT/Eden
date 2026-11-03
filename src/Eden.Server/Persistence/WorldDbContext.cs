@@ -204,6 +204,12 @@ public sealed class WorldDbContext(string path) : DbContext
             .HasKey(w => w.PilotId);
         model.Entity<PilotWallet>().HasOne<Pilot>().WithMany().HasForeignKey(w => w.PilotId);
         model.Entity<MarketStation>().ToTable("WorldMarketStation").HasKey(s => s.StationId);
+        model.Entity<MarketStation>().Property(s => s.SeedVersion).HasDefaultValue(0);
+        model
+            .Entity<TestingWalletGrant>()
+            .ToTable("WorldTestingGrant", t => t.HasCheckConstraint("CK_TestingGrant_Amounts", "AmountCents > 0 AND BalanceCents >= 0"))
+            .HasKey(g => g.PilotId);
+        model.Entity<TestingWalletGrant>().HasOne<Pilot>().WithMany().HasForeignKey(g => g.PilotId);
         model
             .Entity<NpcMarketOrder>()
             .ToTable(
@@ -224,6 +230,15 @@ public sealed class WorldDbContext(string path) : DbContext
             })
             .IsUnique();
         model.Entity<NpcMarketOrder>().HasIndex(o => o.RegionId);
+        model
+            .Entity<NpcMarketOrder>()
+            .HasIndex(o => new
+            {
+                o.RegionId,
+                o.TypeId,
+                o.Bid,
+                o.PriceCents,
+            });
         model
             .Entity<MarketExecution>()
             .ToTable(

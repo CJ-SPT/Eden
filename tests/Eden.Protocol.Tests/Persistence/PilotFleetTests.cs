@@ -56,7 +56,7 @@ public sealed class PilotFleetTests
                 (182,'requiredSkill1'),(277,'requiredSkill1Level');
             INSERT INTO ItemGroup VALUES (25,'Frigate',6);
             INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (32880,'Venture',25,50,1200000,41);
-            INSERT INTO SourceRecord VALUES ('client/types','32880','{{"volume":29500}}');
+            INSERT INTO SourceRecord VALUES ('client/types','32880','{{"published":1,"marketGroupID":1,"volume":29500}}');
             INSERT INTO TypeAttribute SELECT 32880,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
             INSERT OR REPLACE INTO TypeAttribute VALUES (32880,14,3),(32880,102,2),(32880,11,45),(32880,48,240),
                 (32880,1556,5000),(32880,207,2),(32880,1842,5),(32880,182,32918),(32880,277,1);
@@ -228,7 +228,7 @@ public sealed class PilotFleetTests
                 INSERT INTO ItemCategory VALUES (25,'Asteroid');
                 INSERT INTO ItemGroup VALUES (462,'Veldspar',25);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
-                INSERT INTO SourceRecord VALUES ('client/types','1230','{{"volume":0.1}}');
+                INSERT INTO SourceRecord VALUES ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}');
                 """
             );
         }

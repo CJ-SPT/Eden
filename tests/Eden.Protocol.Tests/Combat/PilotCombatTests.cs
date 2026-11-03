@@ -529,7 +529,8 @@ public sealed class PilotCombatTests
             world.SaveChanges();
             world.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).ExecuteDelete();
             world.Database.ExecuteSqlRaw(
-                TestWorld.DropNpcNavigationColumns
+                TestWorld.DropTestingMarketSchema
+                    + TestWorld.DropNpcNavigationColumns
                     + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE "
                     + "WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19"
             );
@@ -549,7 +550,7 @@ public sealed class PilotCombatTests
         Assert.True(
             migrated.Set<OwnedItem>().Where(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun).Min(i => i.Id) > f.Module
         );
-        Assert.Equal(12345, migrated.Set<PilotWallet>().Single().Cents);
+        Assert.Equal(100012345, migrated.Set<PilotWallet>().Find(90000001L)!.Cents);
         Assert.Equal(17, migrated.Set<ShipEnergy>().Single().Charge);
         Assert.Equal(20, migrated.Set<ShipHealthState>().Single().ArmorDamage);
         Assert.Equal(2, migrated.Set<WorldNpc>().Count());

@@ -42,8 +42,10 @@ public sealed class ReprocessingTests
                 INSERT INTO ItemGroup VALUES (459,'Scordite',25),(18,'Mineral',4);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1228,'Scordite',459),(34,'Tritanium',18),(35,'Pyerite',18),
                     (3385,'Reprocessing',257),(3389,'Reprocessing Efficiency',257),(60377,'Simple Ore Processing',257);
-                INSERT INTO SourceRecord VALUES ('client/types','1228','{{"volume":0.15,"portionSize":100}}'),
-                    ('client/types','34','{{"volume":0.01}}'),('client/types','35','{{"volume":0.01}}'),
+                INSERT INTO SourceRecord VALUES
+                    ('client/types','1228','{{"published":1,"marketGroupID":1,"volume":0.15,"portionSize":100}}'),
+                    ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','35','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
                     ('client/typematerials','1228',
                         '{{"materials":[{{"materialTypeID":34,"quantity":150}},{{"materialTypeID":35,"quantity":110}}]}}'),
                     ('sde/npcStations','60003760','{{"operationID":14,"reprocessingEfficiency":0.5,"reprocessingStationsTake":0.05}}'),

@@ -24,6 +24,12 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
 
     private CachedMarketOrders CachedOrders(IBlueWritable result) => new(result, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
 
+    private CachedMarketOrders Book(long pilotId, int typeId)
+    {
+        var book = market.Orders(pilotId, typeId);
+        return CachedOrders(new MarketOrderBook(book.Where(o => !o.Bid).ToArray(), book.Where(o => o.Bid).ToArray()));
+    }
+
     private BlueList<MarketOrderRow> Changed(PilotCallContext context, MarketResult result)
     {
         foreach (var change in result.Changes)
@@ -86,27 +92,28 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
                 case "StartupCheck":
                     return PilotCallResult.None;
                 case "GetOrders" when args is [long type] && type is > 0 and <= int.MaxValue:
-                    var book = market.Orders(context.Pilot.PilotId).Where(o => o.TypeId == type).ToArray();
-                    return CachedOrders(new MarketOrderBook(book.Where(o => !o.Bid).ToArray(), book.Where(o => o.Bid).ToArray()));
-                case "GetStationAsks":
-                case "GetSystemAsks":
-                case "GetRegionBest":
+                    return Book(context.Pilot.PilotId, (int)type);
+                case "GetPlexOrders" when args.Length == 0:
+                    return Book(context.Pilot.PilotId, MarketDefinitions.PlexTypeId);
+                case "GetPlexBest" when args.Length == 0:
                     return new BlueMap<long, MarketOrderRow>(
                         market
-                            .Orders(context.Pilot.PilotId)
-                            .Where(o =>
-                                !o.Bid
-                                && (
-                                    method == "GetRegionBest"
-                                    || (
-                                        method == "GetStationAsks"
-                                            ? o.StationId == context.Pilot.StationId
-                                            : o.SystemId == context.Pilot.SystemId
-                                    )
-                                )
-                            )
-                            .GroupBy(o => o.TypeId)
-                            .ToDictionary(g => (long)g.Key, g => Row(g.OrderBy(o => o.PriceCents).ThenBy(o => o.Id).First()))
+                            .Orders(context.Pilot.PilotId, MarketDefinitions.PlexTypeId)
+                            .Where(o => !o.Bid)
+                            .OrderBy(o => o.PriceCents)
+                            .ThenBy(o => o.Id)
+                            .Take(1)
+                            .ToDictionary(o => (long)o.TypeId, o => Row(o))
+                    );
+                case "GetStationAsks" or "GetSystemAsks" or "GetRegionBest" when args.Length == 0:
+                    var scope = method switch
+                    {
+                        "GetStationAsks" => MarketScope.Station,
+                        "GetSystemAsks" => MarketScope.System,
+                        _ => MarketScope.Region,
+                    };
+                    return new BlueMap<long, MarketOrderRow>(
+                        market.BestAsks(context.Pilot.PilotId, scope).ToDictionary(o => (long)o.TypeId, o => Row(o))
                     );
                 case "GetCharOrders":
                 case "GetCorporationOrders":
@@ -121,7 +128,12 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
                     );
                 case "GetPlexHistory" when args.Length == 0:
                     return new BlueMap<long, MarketHistoryPair>(
-                        new Dictionary<long, MarketHistoryPair> { [MarketDefinitions.PlexTypeId] = HistoryPair([]) }
+                        new Dictionary<long, MarketHistoryPair>
+                        {
+                            [MarketDefinitions.PlexTypeId] = HistoryPair(
+                                market.History(context.Pilot.PilotId, [MarketDefinitions.PlexTypeId])
+                            ),
+                        }
                     );
                 case "PlaceMultiSellOrder" when args is [List<object?> entries, false, 0L, _]:
                     var sales = entries.Select(MarketRequestWire.Sale).ToArray();

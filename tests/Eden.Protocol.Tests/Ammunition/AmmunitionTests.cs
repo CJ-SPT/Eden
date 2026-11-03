@@ -63,8 +63,10 @@ public sealed class AmmunitionTests
                         (222,117,7),(222,118,5),(222,120,0.5),(222,128,1),(222,317,0),
                         (3300,275,1),(3301,275,1),(3316,275,1);
                     UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=263;
-                    INSERT INTO SourceRecord VALUES ('client/types','561','{{"volume":5}}'),('client/types','215','{{"volume":0.0025}}'),
-                        ('client/types','222','{{"volume":0.0025}}'),('client/stationoperations','14','{{"services":[7,17]}}');
+                    INSERT INTO SourceRecord VALUES ('client/types','561','{{"published":1,"marketGroupID":1,"volume":5}}'),
+                        ('client/types','215','{{"published":1,"marketGroupID":1,"volume":0.0025}}'),
+                        ('client/types','222','{{"published":1,"marketGroupID":1,"volume":0.0025}}'),
+                            ('client/stationoperations','14','{{"services":[7,17]}}');
                     """
                 );
             }
@@ -147,7 +149,7 @@ public sealed class AmmunitionTests
             f.Ammo.Unload(f.Pilot.PilotId, f.Pilot.ShipId, [f.Gun], f.Pilot.StationId, (int)InventoryFlag.Hangar, null, f.Clock.Now).Items
         );
         Assert.Equal(250, f.Total(222));
-        Assert.Equal(875000, f.Market.Balance(f.Pilot.PilotId));
+        Assert.Equal(974900, f.Market.Balance(f.Pilot.PilotId));
     }
 
     [Fact]
@@ -433,16 +435,18 @@ public sealed class AmmunitionTests
             world.SaveChanges();
             items = world.Set<OwnedItem>().Count();
             world.Database.ExecuteSqlRaw(
-                TestWorld.DropNpcNavigationColumns + "ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=24"
+                TestWorld.DropTestingMarketSchema
+                    + TestWorld.DropNpcNavigationColumns
+                    + "ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=24"
             );
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(ModuleCooldownKind.Cycle, saved.Set<ModuleCooldown>().Single().Kind);
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, saved.Set<OwnedItem>().Count());
-        Assert.Equal(900000, f.Market.Balance(f.Pilot.PilotId));
+        Assert.Equal(100999900, f.Market.Balance(f.Pilot.PilotId));
     }
 
     [Theory]
@@ -636,7 +640,8 @@ public sealed class AmmunitionTests
                 INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (670,'Capsule',29,32000,2,0),
                     (26510,'Caldari Rookie ship Wreck',186,10000,14,27500);
                 INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
-                UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
+                UPDATE SourceRecord SET Data='{{"published":1,"marketGroupID":1,"volume":15000,"wreckTypeID":26510}}'
+                    WHERE Dataset='client/types' AND Key='601';
                 UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=54;
                 """
             );

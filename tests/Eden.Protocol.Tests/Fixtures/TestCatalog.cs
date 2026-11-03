@@ -90,7 +90,7 @@ internal static class TestCatalog
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (53,'Energy Weapon',7);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3638,'Civilian Gatling Railgun',53);
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3638','{{"volume":5.0}}');
-            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3651','{{"volume":5.0}}'),
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3651','{{"published":1,"marketGroupID":1,"volume":5.0}}'),
                 ('client/types','601','{{"volume":15000.0}}');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (237,'Corvette',6),(15,'Station',3);
             INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES

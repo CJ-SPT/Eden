@@ -4,7 +4,7 @@ namespace Eden.Server.Persistence;
 
 public static class WorldInitialization
 {
-    public static void Initialize(WorldDatabase database)
+    public static void Initialize(WorldDatabase database, TimeProvider? clock = null)
     {
         if (!File.Exists(database.CatalogPath))
         {
@@ -15,7 +15,7 @@ public static class WorldInitialization
         }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        WorldMigration.Open(world, catalog);
+        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System);
     }
 
     // Explicit development/test open: validate and migrate before creating a reader.

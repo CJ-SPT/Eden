@@ -74,7 +74,8 @@ public sealed class MiningTests
                     (90727,'Mining Precision',257),(90728,'Mining Exploitation',257),
                     (3417,'Capacitor Systems Operation',257),(3418,'Capacitor Management',257);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54);
-                INSERT INTO SourceRecord VALUES ('client/types','483','{{"volume":5}}'),('client/types','482','{{"volume":5}}');
+                INSERT INTO SourceRecord VALUES ('client/types','483','{{"published":1,"marketGroupID":1,"volume":5}}'),
+                    ('client/types','482','{{"published":1,"marketGroupID":1,"volume":5}}');
                 INSERT INTO TypeAttribute VALUES (483,50,60),(483,30,2),(483,182,3386),(483,277,1),(483,6,5),(483,54,10000),
                     (483,73,15000),(483,77,10),(483,5967,0),(483,5969,2),
                     (482,50,80),(482,30,4),(482,182,3386),(482,277,4),(482,6,18),(482,54,12000),(482,73,15000),(482,77,15),(482,5967,0),
@@ -84,7 +85,8 @@ public sealed class MiningTests
                 INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
                 INSERT INTO TypeAttribute VALUES (1230,552,100);
-                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','1230','{{"volume":0.1}}');
+                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
+                    ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}');
                 """
             );
             using WorldDbContext world = new(Db.Path);
@@ -617,7 +619,8 @@ public sealed class MiningTests
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                "DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE "
+                TestWorld.DropTestingMarketSchema
+                    + "DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE "
                     + "WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP "
                     + "TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE "
                     + "WorldNpc; DROP TABLE WorldNpcBounty; DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE "

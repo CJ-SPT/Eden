@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
@@ -14,6 +15,7 @@ internal sealed class CharacterSelectionHandler(
     ICharacterCreation creation,
     IPilotSkillReader skills,
     IPilotTraining training,
+    IPilotWalletReader wallet,
     TimeProvider clock
 ) : IPilotCallHandler
 {
@@ -107,6 +109,6 @@ internal sealed class CharacterSelectionHandler(
         long points =
             skills.ReadSkills(pilot.PilotId).Sum(skill => skill.Points)
             + (active is null ? 0 : active.PointsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) - active.StartPoints);
-        return new(pilot, points, active, queue.LastOrDefault()?.EndTime);
+        return new(pilot, points, active, queue.LastOrDefault()?.EndTime, wallet.Balance(pilot.PilotId));
     }
 }

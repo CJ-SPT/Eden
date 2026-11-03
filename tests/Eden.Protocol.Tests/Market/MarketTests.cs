@@ -45,8 +45,10 @@ public sealed class MarketTests
                 INSERT INTO ItemGroup VALUES (460,'Scordite',25),(18,'Mineral',4),(462,'Veldspar',25);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (1228,'Scordite',460),(1230,'Veldspar',462),(34,'Tritanium',18),
                     (35,'Pyerite',18),(16622,'Accounting',257);
-                INSERT INTO SourceRecord VALUES ('client/types','1228','{{"volume":0.15}}'),('client/types','1230','{{"volume":0.1}}'),
-                    ('client/types','34','{{"volume":0.01}}'),('client/types','35','{{"volume":0.01}}'),
+                INSERT INTO SourceRecord VALUES ('client/types','1228','{{"published":1,"marketGroupID":1,"volume":0.15}}'),
+                    ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
+                    ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','35','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
                     ('client/stationoperations','14','{{"services":[5,7,17]}}');
                 INSERT INTO SourceRecord VALUES
                     ('client/accountingentrytypes','2','{{"entryTypeNameID":59794,"name":"Market Transaction"}}'),
@@ -85,18 +87,18 @@ public sealed class MarketTests
     {
         using Fixture f = new();
         Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
-        Assert.Equal(7, f.Store.Orders(f.Pilot.PilotId).Count);
+        Assert.Equal(9, f.Store.Orders(f.Pilot.PilotId).Count);
         var sale = f.Sell();
         Assert.Equal(61512, sale.BalanceCents);
         Assert.Equal(4988, Assert.Single(sale.Trades).TaxCents);
         Assert.Equal(0, Assert.Single(sale.Changes).Item.Quantity);
         Assert.Throws<InvalidDataException>(() => f.Sell());
         var purchase = f.Buy(quantity: 2);
-        Assert.Equal(41512, purchase.BalanceCents);
+        Assert.Equal(61312, purchase.BalanceCents);
         Assert.Equal(2, Assert.Single(purchase.Trades).Quantity);
         Assert.Equal(3, Assert.Single(purchase.Changes).Item.Quantity);
         _ = WorldInitialization.Open(f.Db.Path);
-        Assert.Equal(41512, f.Store.Balance(f.Pilot.PilotId));
+        Assert.Equal(61312, f.Store.Balance(f.Pilot.PilotId));
         Assert.Equal(
             3,
             Assert
@@ -104,12 +106,12 @@ public sealed class MarketTests
                 .Quantity
         );
         var book = f.Store.Orders(f.Pilot.PilotId);
-        Assert.Equal(98, Assert.Single(book, o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
-        Assert.Equal(999867, Assert.Single(book, o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(1000000, Assert.Single(book, o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Equal(999867, Assert.Single(book, o => o.TypeId == Scordite && o.Bid).Remaining);
         Assert.Equal(2, f.Store.Transactions(f.Pilot.PilotId).Count);
         using WorldDbContext world = new(f.Db.Path);
         Assert.Single(world.Set<MarketStation>());
-        Assert.Equal(7, world.Set<NpcMarketOrder>().Count());
+        Assert.Equal(9, world.Set<NpcMarketOrder>().Count());
     }
 
     [Fact]
@@ -133,7 +135,7 @@ public sealed class MarketTests
     }
 
     [Fact]
-    public void NewLaserOffersReachVisitedStationsWithoutRestockingOldOrders()
+    public void NewCatalogRevisionAddsLasersAndRenewsSellOrdersWithoutRefillingNpcDemand()
     {
         using Fixture f = new();
         f.Sell(f.Sale(quantity: 10));
@@ -146,24 +148,35 @@ public sealed class MarketTests
         var original = f.Store.Orders(f.Pilot.PilotId);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54)");
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54);
+                INSERT INTO SourceRecord VALUES ('client/types','483','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','482','{{"published":1,"marketGroupID":1}}');
+                """
+            );
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<MarketStation>().Single().SeedVersion = 0;
+            world.SaveChanges();
         }
         var updated = f.Store.Orders(f.Pilot.PilotId);
-        Assert.Equal(original, updated.Where(o => o.TypeId != (int)MiningLaserType.MinerI && o.TypeId != (int)MiningLaserType.MinerII));
-        Assert.Equal(100000, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerI).PriceCents);
-        Assert.Equal(500000, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerII).PriceCents);
+        Assert.Equal(original.Select(o => o.Id), updated.Where(o => original.Any(old => old.Id == o.Id)).Select(o => o.Id));
+        Assert.Equal(100, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerI).PriceCents);
+        Assert.Equal(100, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerII).PriceCents);
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(updated, f.Store.Orders(f.Pilot.PilotId));
         Assert.Equal(4625, f.Store.Balance(f.Pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<MarketStation>());
-        Assert.Equal(9, saved.Set<NpcMarketOrder>().Count());
-        Assert.Equal(0, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
-        Assert.Equal(999990, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(11, saved.Set<NpcMarketOrder>().Count());
+        Assert.Equal(1000000, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Equal(999990, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite && o.Bid).Remaining);
     }
 
     [Fact]
-    public void ModuleBlueprintsAndMexallonCanBePurchasedWithoutRestockingEarlierOffers()
+    public void CatalogBlueprintsAndMexallonCanBePurchasedAfterPolicyUpgrade()
     {
         using Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
@@ -181,12 +194,22 @@ public sealed class MarketTests
                 INSERT INTO ItemGroup VALUES (167,'Blueprint',9);
                 INSERT INTO ItemType(Id,Name,GroupId) VALUES (785,'Miner I Blueprint',167),(1032,'Small Shield Booster I Blueprint',167),
                     (1072,'1MN Afterburner I Blueprint',167),(1112,'75mm Gatling Rail I Blueprint',167),(36,'Mexallon',18);
-                INSERT INTO SourceRecord VALUES ('client/types','1112','{{"volume":0.01}}'),('client/types','36','{{"volume":0.01}}');
+                INSERT INTO SourceRecord VALUES
+                    ('client/types','785','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','1032','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','1072','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','1112','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','36','{{"published":1,"marketGroupID":1,"volume":0.01}}');
                 """
             );
         }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<MarketStation>().Single().SeedVersion = 0;
+            world.SaveChanges();
+        }
         var book = f.Store.Orders(f.Pilot.PilotId);
-        Assert.Equal(original, book.Where(o => original.Any(old => old.Id == o.Id)));
+        Assert.Equal(original.Select(o => o.Id), book.Where(o => original.Any(old => old.Id == o.Id)).Select(o => o.Id));
         foreach (
             var blueprint in new[]
             {
@@ -199,20 +222,20 @@ public sealed class MarketTests
         {
             var offer = Assert.Single(book, o => o.TypeId == (int)blueprint);
             Assert.False(offer.Bid);
-            Assert.Equal(100000, offer.PriceCents);
-            Assert.Equal(100, offer.Remaining);
+            Assert.Equal(100, offer.PriceCents);
+            Assert.Equal(1000000, offer.Remaining);
         }
         var bought = f.Buy((int)IndustryBlueprintType.GatlingRail75MmI, limit: 100000);
-        Assert.Equal(362500, bought.BalanceCents);
+        Assert.Equal(462400, bought.BalanceCents);
         var blueprintItem = Assert.Single(bought.Changes).Item;
         Assert.Equal((int)InventoryCategory.Blueprint, blueprintItem.CategoryId);
         Assert.False(blueprintItem.Singleton);
-        Assert.Equal(350500, f.Buy(36, 2, 6000).BalanceCents);
+        Assert.Equal(462200, f.Buy(36, 2, 6000).BalanceCents);
         _ = WorldInitialization.Open(f.Db.Path);
         var after = f.Store.Orders(f.Pilot.PilotId);
-        Assert.Equal(99, Assert.Single(after, o => o.TypeId == (int)IndustryBlueprintType.GatlingRail75MmI).Remaining);
-        Assert.Equal(9998, Assert.Single(after, o => o.TypeId == 36).Remaining);
-        Assert.Equal(999000, Assert.Single(after, o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(1000000, Assert.Single(after, o => o.TypeId == (int)IndustryBlueprintType.GatlingRail75MmI).Remaining);
+        Assert.Equal(1000000, Assert.Single(after, o => o.TypeId == 36).Remaining);
+        Assert.Equal(999000, Assert.Single(after, o => o.TypeId == Scordite && o.Bid).Remaining);
         Assert.Equal(blueprintItem, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId), i => i.Id == blueprintItem.Id));
     }
 
@@ -289,9 +312,9 @@ public sealed class MarketTests
         var days = f.Store.History(f.Pilot.PilotId, [Tritanium, Scordite]);
         var tritanium = Assert.Single(days, d => d.TypeId == Tritanium);
         Assert.Equal(DateTime.UtcNow.Date.ToFileTimeUtc(), tritanium.Date);
-        Assert.Equal(200, tritanium.LowPriceCents);
-        Assert.Equal(240, tritanium.HighPriceCents);
-        Assert.Equal(1480m / 7, tritanium.AveragePriceCents);
+        Assert.Equal(100, tritanium.LowPriceCents);
+        Assert.Equal(200, tritanium.HighPriceCents);
+        Assert.Equal(1200m / 7, tritanium.AveragePriceCents);
         Assert.Equal(7, tritanium.Volume);
         Assert.Equal(3, tritanium.Orders);
         Assert.Equal(133, Assert.Single(days, d => d.TypeId == Scordite).Volume);
@@ -336,7 +359,7 @@ public sealed class MarketTests
         Assert.Equal(500, Assert.Single(sale.Trades).PriceCents);
         Assert.Equal(2244, sale.Trades[0].TaxCents);
         Assert.Equal(64256, sale.BalanceCents);
-        Assert.Equal(10000, Assert.Single(f.Buy(limit: 1000000).Trades).PriceCents);
+        Assert.Equal(100, Assert.Single(f.Buy(limit: 1000000).Trades).PriceCents);
     }
 
     [Fact]
@@ -365,7 +388,7 @@ public sealed class MarketTests
             )
         );
         Assert.Equal(balance, f.Store.Balance(f.Pilot.PilotId));
-        Assert.Equal(100, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Equal(1000000, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
     }
 
     [Fact]
@@ -383,7 +406,7 @@ public sealed class MarketTests
         }
         Assert.Throws<OverflowException>(() => f.Buy());
         Assert.Equal(61512, f.Store.Balance(f.Pilot.PilotId));
-        Assert.Equal(100, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
+        Assert.Equal(1000000, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
         Assert.Single(f.Store.Transactions(f.Pilot.PilotId));
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -403,7 +426,7 @@ public sealed class MarketTests
         }
         Assert.Throws<OverflowException>(() => f.Sell(f.Sale(quantity: 1)));
         Assert.Equal(long.MaxValue, f.Store.Balance(f.Pilot.PilotId));
-        Assert.Equal(999867, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(999867, f.Store.Orders(f.Pilot.PilotId).Single(o => o.TypeId == Scordite && o.Bid).Remaining);
         Assert.Equal(1, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Single(i => i.Id == OreId).Quantity);
         Assert.Single(f.Store.Transactions(f.Pilot.PilotId));
     }
@@ -436,27 +459,27 @@ public sealed class MarketTests
     }
 
     [Fact]
-    public void DepletedOrExpiredOrdersDoNotRegenerateAndImmediateFillsCanBePartial()
+    public void DepletedOrExpiredAsksRegenerateAndOversizedImmediateFillsCanBePartial()
     {
         using Fixture f = new();
         f.Sell();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining = 1;
+            var order = world.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType);
+            order.Remaining = 0;
+            order.Issued = DateTime.UtcNow.AddDays(-366).ToFileTimeUtc();
+            world.Set<PilotWallet>().Find(f.Pilot.PilotId)!.Cents = 200000000;
             world.SaveChanges();
         }
-        var bought = f.Buy(quantity: 5);
-        Assert.Equal(1, Assert.Single(bought.Trades).Quantity);
-        Assert.Equal(51512, bought.BalanceCents);
+        var bought = f.Buy(quantity: TestingMarketRules.Stock + 1);
+        Assert.Equal(TestingMarketRules.Stock, Assert.Single(bought.Trades).Quantity);
+        Assert.Equal(100000000, bought.BalanceCents);
         _ = WorldInitialization.Open(f.Db.Path);
-        Assert.DoesNotContain(f.Store.Orders(f.Pilot.PilotId), o => o.TypeId == InventoryDefinitions.CivilianMinerType);
-        Assert.Throws<InvalidDataException>(() => f.Buy());
-        using (WorldDbContext world = new(f.Db.Path))
-        {
-            world.Set<NpcMarketOrder>().Single(o => o.TypeId == Tritanium && !o.Bid).Issued = DateTime.UtcNow.AddDays(-366).ToFileTimeUtc();
-            world.SaveChanges();
-        }
-        Assert.Throws<InvalidDataException>(() => f.Buy(Tritanium, 1, 240));
+        Assert.Equal(
+            TestingMarketRules.Stock,
+            Assert.Single(f.Store.Orders(f.Pilot.PilotId, InventoryDefinitions.CivilianMinerType)).Remaining
+        );
+        Assert.Single(f.Buy().Trades);
     }
 
     [Fact]
@@ -478,7 +501,7 @@ public sealed class MarketTests
                     Quantity = 80,
                 }
             );
-            world.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite).Remaining = 100;
+            world.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite && o.Bid).Remaining = 100;
             world.SaveChanges();
         }
         var results = await Task.WhenAll(
@@ -497,14 +520,15 @@ public sealed class MarketTests
     }
 
     [Fact]
-    public void UpgradeFromVersionSixteenPreservesOreAndDoesNotGrantMoney()
+    public void UpgradeFromVersionSixteenPreservesOreAndAwardsTestingFundsOnce()
     {
         using Fixture f = new();
         var pilot = f.Pilot;
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                "DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE "
+                TestWorld.DropTestingMarketSchema
+                    + "DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE "
                     + "WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP "
                     + "TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; "
                     + "DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=16"
@@ -513,9 +537,9 @@ public sealed class MarketTests
         _ = WorldInitialization.Open(f.Db.Path);
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(pilot, f.Pilot);
-        Assert.Equal(0, f.Store.Balance(pilot.PilotId));
+        Assert.Equal(100000000, f.Store.Balance(pilot.PilotId));
         Assert.Equal(133, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId).Quantity);
-        Assert.Equal(7, f.Store.Orders(pilot.PilotId).Count);
+        Assert.Equal(9, f.Store.Orders(pilot.PilotId).Count);
     }
 
     [Fact]

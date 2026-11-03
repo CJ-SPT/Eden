@@ -3,10 +3,13 @@ using Eden.Gameplay.Repair;
 
 namespace Eden.Gameplay.Market;
 
+public sealed record WalletGrant(long PilotId, long AmountCents, long BalanceCents, long Time);
+
 public sealed record WalletJournal(
     IReadOnlyList<MarketTrade> Trades,
     IReadOnlyList<CombatReward> Rewards,
-    IReadOnlyList<RepairPayment> Repairs
+    IReadOnlyList<RepairPayment> Repairs,
+    IReadOnlyList<WalletGrant> Grants
 );
 
 public interface IPilotWalletReader

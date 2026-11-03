@@ -53,12 +53,20 @@ public interface IPilotMarket
 {
     void CheckStation(long pilotId, int stationId);
     long Balance(long pilotId);
-    IReadOnlyList<MarketOrder> Orders(long pilotId);
+    IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null);
+    IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope);
     IReadOnlyList<MarketTrade> Transactions(long pilotId);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();
     IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds);
     MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items);
     MarketResult Buy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items);
+}
+
+public enum MarketScope
+{
+    Station,
+    System,
+    Region,
 }
 
 public enum MarketSkill
@@ -69,6 +77,7 @@ public enum MarketSkill
 public enum WalletEntryType
 {
     MarketTransaction = 2,
+    GmCashTransfer = 3,
     RepairBill = 15,
     TransactionTax = 54,
     BountyPrizes = 85,
@@ -84,7 +93,7 @@ public static class MarketDefinitions
     // Pinned marketutil.const: station range and Accounting's reduction. Live
     // build 3662168 evaluates market-transaction-tax to 7.5%, overriding its 8%
     // packaged fallback. Pin that observed rate until local flag hosting exists.
-    // Eden gives its finite starter NPC orders a one-year lifetime.
+    // NPC orders carry a one-year issue period; testing asks renew on access.
     public const int StationRange = -1;
     public const int NpcOrderDays = 365;
     public const decimal SalesTaxRate = 0.075m;

@@ -1,24 +1,26 @@
 [
-  { "typeId": 34, "name": "Tritanium", "buyPriceCents": 200, "sellPriceCents": 240, "demand": 1000000, "stock": 100000 },
-  { "typeId": 35, "name": "Pyerite", "buyPriceCents": 800, "sellPriceCents": 960, "demand": 1000000, "stock": 100000 },
-  { "typeId": 36, "name": "Mexallon", "buyPriceCents": null, "sellPriceCents": 6000, "demand": 0, "stock": 10000 },
-  { "typeId": 38, "name": "Nocxium", "buyPriceCents": null, "sellPriceCents": 10000, "demand": 0, "stock": 10000 },
-  { "typeId": 1230, "name": "Veldspar", "buyPriceCents": 300, "sellPriceCents": null, "demand": 1000000, "stock": 0 },
-  { "typeId": 1228, "name": "Scordite", "buyPriceCents": 500, "sellPriceCents": null, "demand": 1000000, "stock": 0 },
-  { "typeId": 3651, "name": "Civilian Miner", "buyPriceCents": null, "sellPriceCents": 10000, "demand": 0, "stock": 100 },
-  { "typeId": 483, "name": "Miner I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 482, "name": "Miner II", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 },
-  { "typeId": 399, "name": "Small Shield Booster I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 439, "name": "1MN Afterburner I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 561, "name": "75mm Gatling Rail I", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 215, "name": "Iron Charge S", "buyPriceCents": null, "sellPriceCents": 100, "demand": 0, "stock": 100000 },
-  { "typeId": 222, "name": "Antimatter Charge S", "buyPriceCents": null, "sellPriceCents": 100, "demand": 0, "stock": 100000 },
-  { "typeId": 1130, "name": "Iron Charge S Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 1137, "name": "Antimatter Charge S Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 785, "name": "Miner I Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 1032, "name": "Small Shield Booster I Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 1072, "name": "1MN Afterburner I Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 1112, "name": "75mm Gatling Rail I Blueprint", "buyPriceCents": null, "sellPriceCents": 100000, "demand": 0, "stock": 100 },
-  { "typeId": 3416, "name": "Shield Operation", "buyPriceCents": null, "sellPriceCents": 500000, "demand": 0, "stock": 100 },
-  { "typeId": 32880, "name": "Venture", "buyPriceCents": null, "sellPriceCents": 1000000, "demand": 0, "stock": 10 }
+  {
+    "typeId": 34,
+    "name": "Tritanium",
+    "buyPriceCents": 200,
+    "demand": 1000000
+  },
+  {
+    "typeId": 35,
+    "name": "Pyerite",
+    "buyPriceCents": 800,
+    "demand": 1000000
+  },
+  {
+    "typeId": 1230,
+    "name": "Veldspar",
+    "buyPriceCents": 300,
+    "demand": 1000000
+  },
+  {
+    "typeId": 1228,
+    "name": "Scordite",
+    "buyPriceCents": 500,
+    "demand": 1000000
+  }
 ]

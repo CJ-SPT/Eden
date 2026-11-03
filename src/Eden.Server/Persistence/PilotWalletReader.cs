@@ -43,7 +43,13 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
         return new(
             PilotMarketStore.Transactions(world, pilotId),
             PilotCombatStore.Rewards(world, pilotId),
-            PilotRepairStore.Payments(world, pilotId)
+            PilotRepairStore.Payments(world, pilotId),
+            world
+                .Set<TestingWalletGrant>()
+                .AsNoTracking()
+                .Where(g => g.PilotId == pilotId)
+                .Select(g => new WalletGrant(g.PilotId, g.AmountCents, g.BalanceCents, g.Time))
+                .ToArray()
         );
     }
 }

@@ -16,7 +16,7 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider clock) : IPilotMarket
 {
-    private sealed record StarterOffer(int TypeId, string Name, long? BuyPriceCents, long? SellPriceCents, int Demand, int Stock);
+    private sealed record StarterOffer(int TypeId, string Name, long? BuyPriceCents, int Demand);
 
     private static readonly StarterOffer[] s_offers = ReadOffers();
 
@@ -56,56 +56,87 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
 
     private void Seed(WorldDbContext world, CatalogDbContext catalog, Station station)
     {
-        // This is Eden's finite starter liquidity, not a Tranquility price feed.
-        // New policy offers may be added to visited stations. Retain every old
-        // order, including empty/expired ones, so no existing stock is replenished.
-        if (world.Set<MarketStation>().Find(station.Id) is null)
+        var marker = world.Set<MarketStation>().Find(station.Id);
+        if (marker?.SeedVersion == TestingMarketRules.SeedVersion)
         {
-            world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now });
+            Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
+            return;
         }
-        var seeded = world
-            .Set<NpcMarketOrder>()
-            .Where(o => o.StationId == station.Id)
-            .Select(o => new { o.TypeId, o.Bid })
-            .AsEnumerable()
-            .Select(o => (o.TypeId, o.Bid))
-            .ToHashSet();
-        foreach (var offer in s_offers)
+        marker ??= world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now }).Entity;
+        var existing = world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id).ToDictionary(o => (o.TypeId, o.Bid));
+        var knownTypes = catalog.Set<ItemType>().Select(t => t.Id).ToHashSet();
+        var types = catalog.Set<SourceRecord>().Where(r => r.Dataset == "client/types").AsEnumerable();
+        foreach (var record in types)
         {
-            if (!catalog.Set<ItemType>().Any(t => t.Id == offer.TypeId))
+            int id = int.Parse(record.Key, CultureInfo.InvariantCulture);
+            var type = record.Read<ClientTypes>();
+            int? group = type.MarketGroupID is > 0 and <= int.MaxValue ? (int)type.MarketGroupID : null;
+            if (!knownTypes.Contains(id) || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group)))
             {
                 continue;
             }
-            foreach (bool bid in new[] { true, false })
+            if (!existing.TryGetValue((id, false), out var order))
             {
-                long? price = bid ? offer.BuyPriceCents : offer.SellPriceCents;
-                int quantity = bid ? offer.Demand : offer.Stock;
-                if (!price.HasValue || seeded.Contains((offer.TypeId, bid)))
-                {
-                    continue;
-                }
-                if (price <= 0 || quantity <= 0)
-                {
-                    throw new InvalidDataException("Invalid starter market price or quantity.");
-                }
-                world.Add(
+                order = AddOrder(id, false);
+            }
+            // Reuse existing identities so the historical execution ledger remains valid.
+            order.PriceCents = TestingMarketRules.PriceCents;
+            order.Remaining = TestingMarketRules.Stock;
+            order.Entered = TestingMarketRules.Stock;
+            order.Issued = Now;
+        }
+        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.Contains(o.TypeId)))
+        {
+            if (existing.ContainsKey((offer.TypeId, true)))
+            {
+                continue;
+            }
+            if (offer.BuyPriceCents <= 0 || offer.Demand <= 0)
+            {
+                throw new InvalidDataException("Invalid NPC market demand.");
+            }
+            var order = AddOrder(offer.TypeId, true);
+            order.PriceCents = offer.BuyPriceCents!.Value;
+            order.Remaining = offer.Demand;
+            order.Entered = offer.Demand;
+        }
+        marker.SeedVersion = TestingMarketRules.SeedVersion;
+        world.SaveChanges();
+
+        NpcMarketOrder AddOrder(int typeId, bool bid) =>
+            world
+                .Add(
                     new NpcMarketOrder
                     {
                         StationId = station.Id,
                         SystemId = station.SolarSystemId,
                         RegionId = station.SolarSystem.Constellation.RegionId,
                         OwnerId = station.OwnerId,
-                        TypeId = offer.TypeId,
+                        TypeId = typeId,
                         Bid = bid,
-                        PriceCents = price.Value,
-                        Remaining = quantity,
-                        Entered = quantity,
                         Issued = Now,
                     }
-                );
-            }
-        }
-        world.SaveChanges();
+                )
+                .Entity;
+    }
+
+    private void Refresh(WorldDbContext world, IQueryable<NpcMarketOrder> orders)
+    {
+        long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
+        long now = Now;
+        // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
+        orders
+            .Where(o =>
+                !o.Bid && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
+            )
+            .Where(o => o.Remaining != TestingMarketRules.Stock || o.PriceCents != TestingMarketRules.PriceCents || o.Issued <= cutoff)
+            .ExecuteUpdate(setters =>
+                setters
+                    .SetProperty(o => o.Remaining, TestingMarketRules.Stock)
+                    .SetProperty(o => o.Entered, TestingMarketRules.Stock)
+                    .SetProperty(o => o.PriceCents, TestingMarketRules.PriceCents)
+                    .SetProperty(o => o.Issued, o => o.Issued <= cutoff ? now : o.Issued)
+            );
     }
 
     public void CheckStation(long pilotId, int stationId)
@@ -119,7 +150,11 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
 
     public IReadOnlyList<WalletEntryDefinition> EntryTypes() => new PilotWalletReader(database).EntryTypes();
 
-    public IReadOnlyList<MarketOrder> Orders(long pilotId)
+    public IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null) => ReadOrders(pilotId, typeId, null);
+
+    public IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope) => ReadOrders(pilotId, null, scope);
+
+    private IReadOnlyList<MarketOrder> ReadOrders(long pilotId, int? typeId, MarketScope? scope)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -132,13 +167,33 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
+        var query = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
+        if (typeId.HasValue)
+        {
+            query = query.Where(o => o.TypeId == typeId.Value);
+        }
+        query = scope switch
+        {
+            MarketScope.Station => query.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.System => query.Where(o => o.SystemId == system && !o.Bid),
+            MarketScope.Region => query.Where(o => !o.Bid),
+            null => query,
+            _ => throw new ArgumentOutOfRangeException(nameof(scope)),
+        };
+        Refresh(world, query);
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        var result = world
-            .Set<NpcMarketOrder>()
-            .AsNoTracking()
-            .Where(o => o.RegionId == region && o.Remaining > 0 && o.Issued > cutoff)
+        query = query.Where(o => o.Remaining > 0 && o.Issued > cutoff);
+        if (scope.HasValue)
+        {
+            var candidates = query;
+            query = query.Where(o =>
+                !candidates.Any(other =>
+                    other.TypeId == o.TypeId && (other.PriceCents < o.PriceCents || (other.PriceCents == o.PriceCents && other.Id < o.Id))
+                )
+            );
+        }
+        var result = query
             .OrderBy(o => o.Id)
-            .AsEnumerable()
             .Select(o => new MarketOrder(
                 o.Id,
                 o.StationId,
@@ -360,7 +415,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
                 throw new InvalidDataException("You do not have enough ISK for this purchase.");
             }
             wallet.Cents -= cost;
-            order.Remaining -= quantity;
+            order.Remaining = TestingMarketRules.Stock;
             changes.Add(
                 InventoryPersistence.MergeOutput(world, catalog, pilotId, stationId, (int)InventoryFlag.Hangar, request.TypeId, quantity)
             );

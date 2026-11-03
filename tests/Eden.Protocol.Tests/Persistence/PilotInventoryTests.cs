@@ -108,7 +108,8 @@ public sealed class PilotInventoryTests
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                "DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE "
+                TestWorld.DropTestingMarketSchema
+                    + "DROP TABLE WorldItem; DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE "
                     + "WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE "
                     + "WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP "
                     + "TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; "

@@ -33,7 +33,8 @@ public sealed class AsteroidFieldTests
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25),(460,'Scordite',25);
             INSERT INTO ItemType(Id,Name,GroupId,Radius) VALUES (1230,'Veldspar',462,1),(1228,'Scordite',460,1);
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
-                ('client/types','1230','{{"volume":0.1}}'),('client/types','1228','{{"volume":0.15}}'),
+                ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
+                    ('client/types','1228','{{"published":1,"marketGroupID":1,"volume":0.15}}'),
                 ('client/asteroidcountbytypeidbeltid','40009232','{{"1230":3,"1228":2}}'),
                 ('client/asteroidcountbytypeidbeltid','40009245','{{"1230":3}}'),
                 ('client/dogmaattributes','552','{{"defaultValue":100}}');
@@ -193,7 +194,8 @@ public sealed class AsteroidFieldTests
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                "DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE "
+                TestWorld.DropTestingMarketSchema
+                    + "DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE "
                     + "WorldMarketOrder; DROP TABLE WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE "
                     + "WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE "
                     + "WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE WorldNpcBounty; DROP "

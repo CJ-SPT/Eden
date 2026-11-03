@@ -52,8 +52,10 @@ public sealed class IndustryTests
                     INSERT INTO TypeAttribute VALUES (215,128,1),(215,422,1),(3380,275,1),(3380,440,-4),(3387,275,2),(3387,450,1),
                         (3388,275,3),(3388,1961,-3),(24625,275,8),(24625,450,1);
                     INSERT INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7,14,17]}}'),
-                        ('client/types','34','{{"volume":0.01}}'),('client/types','35','{{"volume":0.01}}'),
-                        ('client/types','215','{{"volume":0.0025}}'),('client/types','1130','{{"volume":0.01}}'),
+                        ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                            ('client/types','35','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','215','{{"published":1,"marketGroupID":1,"volume":0.0025}}'),
+                            ('client/types','1130','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
                         ('client/blueprints','"1130"','{{"activities":{{"manufacturing":{{"skills":[{{"typeID":3380,"level":1}}],' ||
                             '"materials":[{{"typeID":34,"quantity":27}},{{"typeID":35,"quantity":21}}],' ||
                             '"products":[{{"typeID":215,"quantity":100}}],"time":300}}}},"blueprintTypeID":1130,' ||
@@ -142,11 +144,16 @@ public sealed class IndustryTests
                 INSERT INTO DogmaAttribute(Id,Name) VALUES (13,'medSlots'),(14,'hiSlots');
                 INSERT INTO TypeAttribute VALUES (483,422,1),(399,422,1),(439,422,1),(561,422,1),(561,128,1),
                     (482,422,2),(564,422,1),(564,128,2),(601,13,2),(601,14,2);
-                INSERT INTO SourceRecord VALUES ('client/types','483','{{"volume":5.0}}'),('client/types','399','{{"volume":5.0}}'),
-                    ('client/types','439','{{"volume":5.0}}'),('client/types','561','{{"volume":5.0}}'),
-                    ('client/types','785','{{"volume":0.01}}'),('client/types','1032','{{"volume":0.01}}'),
-                    ('client/types','1072','{{"volume":0.01}}'),('client/types','1112','{{"volume":0.01}}'),
-                    ('client/types','36','{{"volume":0.01}}'),('client/types','38','{{"volume":0.01}}');
+                INSERT INTO SourceRecord VALUES ('client/types','483','{{"published":1,"marketGroupID":1,"volume":5.0}}'),
+                    ('client/types','399','{{"published":1,"marketGroupID":1,"volume":5.0}}'),
+                    ('client/types','439','{{"published":1,"marketGroupID":1,"volume":5.0}}'),
+                        ('client/types','561','{{"published":1,"marketGroupID":1,"volume":5.0}}'),
+                    ('client/types','785','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','1032','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                    ('client/types','1072','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','1112','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                    ('client/types','36','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                        ('client/types','38','{{"published":1,"marketGroupID":1,"volume":0.01}}');
                 """
             );
             using WorldDbContext world = new(Db.Path);
@@ -714,11 +721,11 @@ public sealed class IndustryTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             items = JsonSerializer.Serialize(world.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id).ToArray());
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldIndustryJob; PRAGMA user_version=26");
+            world.Database.ExecuteSqlRaw(TestWorld.DropTestingMarketSchema + "DROP TABLE WorldIndustryJob; PRAGMA user_version=26");
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Empty(saved.Set<IndustryJob>());
         Assert.Equal(items, JsonSerializer.Serialize(saved.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id).ToArray()));
     }

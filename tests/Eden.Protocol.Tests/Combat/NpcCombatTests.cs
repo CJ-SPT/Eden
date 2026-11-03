@@ -58,8 +58,9 @@ public sealed class NpcCombatTests
                         (670,55,187500),(670,479,625000),(670,102,0),(670,14,0),(670,37,150),(670,70,2),(670,600,4),(670,552,25);
                     INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES
                         (26510,'Caldari Rookie ship Wreck',186,27500,10000,14);
-                    INSERT INTO SourceRecord VALUES ('client/types','26510','{{"volume":27500}}');
-                    UPDATE SourceRecord SET Data='{{"volume":15000,"wreckTypeID":26510}}' WHERE Dataset='client/types' AND Key='601';
+                    INSERT INTO SourceRecord VALUES ('client/types','26510','{{"published":1,"marketGroupID":1,"volume":27500}}');
+                    UPDATE SourceRecord SET Data='{{"published":1,"marketGroupID":1,"volume":15000,"wreckTypeID":26510}}'
+                        WHERE Dataset='client/types' AND Key='601';
                     """
                 );
             }
@@ -379,7 +380,8 @@ public sealed class NpcCombatTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
-                TestWorld.DropNpcNavigationColumns
+                TestWorld.DropTestingMarketSchema
+                    + TestWorld.DropNpcNavigationColumns
                     + "DROP TABLE WorldWreck; DROP TABLE WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE "
                     + "WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20"
             );
@@ -387,9 +389,9 @@ public sealed class NpcCombatTests
         _ = WorldInitialization.Open(f.Db.Path);
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
-        Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
+        Assert.Equal(100012345, saved.Set<PilotWallet>().Find(90000001L)!.Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);
         Assert.Equal(130, saved.Set<ShipEnergy>().Single().Charge);
         Assert.NotNull(saved.Set<OwnedItem>().Find(f.Module));

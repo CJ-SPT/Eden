@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
@@ -70,7 +71,8 @@ internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnly
         };
 }
 
-internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd) : BlueModel
+internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd, long BalanceCents)
+    : BlueModel
 {
     // Existing selection-card placeholder; this is not a persisted logoff timestamp.
     private const long PlaceholderLogoffDate = 134000000000000000L;
@@ -89,7 +91,7 @@ internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoint
                 ["corporationID"] = Pilot.CorpId,
                 ["allianceID"] = null,
                 ["factionID"] = null,
-                ["balance"] = 0,
+                ["balance"] = (double)BalanceCents / MarketDefinitions.CentsPerIsk,
                 ["balanceChange"] = 0,
                 ["skillPoints"] = SkillPoints,
                 ["finishedSkills"] = 0,

@@ -51,7 +51,8 @@ public sealed class WorldMigrationTests
         connection.Open();
         using var command = connection.CreateCommand();
         command.CommandText =
-            """
+            TestWorld.DropTestingMarketSchema
+            + """
                 DROP INDEX IX_WorldPilot_Name;
                 ALTER TABLE WorldPilot DROP COLUMN Appearance;
                 ALTER TABLE WorldPilot DROP COLUMN Portrait;
@@ -82,7 +83,7 @@ public sealed class WorldMigrationTests
         Assert.Equal(30000142, pilot.SystemId);
         Assert.Null(world.FindPilot(1000002)!.Position);
         command.CommandText = "PRAGMA user_version";
-        Assert.Equal(27L, command.ExecuteScalar());
+        Assert.Equal(28L, command.ExecuteScalar());
         Assert.Equal(19, pilot.Profile.SchoolId);
         Assert.Equal("Eden Wing", world.FindPilot(1000002)!.Account.UserName);
     }
@@ -97,20 +98,22 @@ public sealed class WorldMigrationTests
         using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
         connection.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
-            DROP INDEX IX_WorldPilot_Name;
-            DROP INDEX IX_WorldPilot_AccountId;
-            CREATE UNIQUE INDEX IX_WorldPilot_AccountId ON WorldPilot(AccountId);
-            ALTER TABLE WorldPilot DROP COLUMN Appearance;
-            ALTER TABLE WorldPilot DROP COLUMN Portrait;
-            UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
-            DROP TABLE WorldItem;
-            DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE
-                WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE
-                WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE
-                WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
-            PRAGMA user_version=11;
-            """;
+        command.CommandText =
+            TestWorld.DropTestingMarketSchema
+            + """
+                DROP INDEX IX_WorldPilot_Name;
+                DROP INDEX IX_WorldPilot_AccountId;
+                CREATE UNIQUE INDEX IX_WorldPilot_AccountId ON WorldPilot(AccountId);
+                ALTER TABLE WorldPilot DROP COLUMN Appearance;
+                ALTER TABLE WorldPilot DROP COLUMN Portrait;
+                UPDATE WorldPilotSkill SET Points=12345 WHERE PilotId=90000001;
+                DROP TABLE WorldItem;
+                DROP TABLE WorldAsteroid; DROP TABLE WorldShipEnergy; DROP TABLE WorldMarketTrade; DROP TABLE WorldMarketOrder; DROP TABLE
+                    WorldMarketStation; DROP TABLE WorldWallet; DROP TABLE WorldShipHealth; DROP TABLE WorldWreck; DROP TABLE
+                    WorldRepairPayment; DROP TABLE WorldNpcAggression; DROP TABLE WorldShipLoss; DROP TABLE WorldNpc; DROP TABLE
+                    WorldNpcBounty; DROP TABLE WorldWeaponCooldown;
+                PRAGMA user_version=11;
+                """;
         command.ExecuteNonQuery();
         var migrated = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, Assert.Single(migrated.ListPilots(1000001)));

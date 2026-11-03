@@ -111,6 +111,24 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                 )
             );
         }
+        foreach (var grant in journal.Grants)
+        {
+            if (filter.Includes(grant.Time, clock.GetUtcNow().UtcDateTime))
+            {
+                entries.Add(
+                    new(
+                        TestingMarketRules.FirstGrantJournalId + grant.PilotId,
+                        grant.Time,
+                        WalletEntryType.GmCashTransfer,
+                        MarketDefinitions.SccCorporationId,
+                        grant.PilotId,
+                        grant.PilotId,
+                        grant.AmountCents,
+                        grant.BalanceCents
+                    )
+                );
+            }
+        }
         return new BlueList<WalletJournalEntry>(entries.OrderByDescending(entry => entry.Time).ToArray());
     }
 

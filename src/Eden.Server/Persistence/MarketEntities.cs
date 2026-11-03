@@ -10,6 +10,7 @@ public sealed class MarketStation
 {
     public int StationId { get; set; }
     public long CreatedAt { get; set; }
+    public int SeedVersion { get; set; }
 }
 
 public sealed class NpcMarketOrder
@@ -39,6 +40,14 @@ public sealed class MarketExecution
     public int Quantity { get; set; }
     public long PriceCents { get; set; }
     public long TaxCents { get; set; }
+    public long BalanceCents { get; set; }
+    public long Time { get; set; }
+}
+
+public sealed class TestingWalletGrant
+{
+    public long PilotId { get; set; }
+    public long AmountCents { get; set; }
     public long BalanceCents { get; set; }
     public long Time { get; set; }
 }
