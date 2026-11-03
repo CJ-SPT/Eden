@@ -28,7 +28,7 @@ public sealed class PilotInventoryTests
         var moved = Assert.Single(inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, 5, null));
         Assert.Equal(item, moved.Previous);
         Assert.Equal(item with { LocationId = pilot.ShipId, FlagId = 5 }, moved.Item);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal((int)CombatWeaponType.CivilianGatlingRailgun, Assert.Single(inventory.List(pilot.PilotId, pilot.StationId)).TypeId);
         Assert.Equal(moved.Item, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
         Assert.Single(inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
@@ -115,8 +115,8 @@ public sealed class PilotInventoryTests
                     + "DROP TABLE WorldWeaponCooldown; PRAGMA user_version=12"
             );
         }
-        _ = new SqliteWorld(db.Path);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
         using WorldDbContext saved = new(db.Path);
         Assert.Equal(4, saved.Set<OwnedItem>().Count());

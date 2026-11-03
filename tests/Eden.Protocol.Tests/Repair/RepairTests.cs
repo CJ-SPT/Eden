@@ -83,7 +83,7 @@ public sealed class RepairTests
         var repaired = f.Run();
         Assert.Equal(97000, repaired.BalanceCents);
         Assert.Equal(new ShipRepair(f.Pilot.ShipId, 10, 20), Assert.Single(repaired.Ships));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         var paid = Assert.Single(f.Store.Payments(f.Pilot.PilotId));
         Assert.Equal(3000, paid.AmountCents);
         Assert.Equal(97000, paid.BalanceCents);
@@ -256,8 +256,8 @@ public sealed class RepairTests
                     + "DroppedItemIdsJson; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=21"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(f.Store.Payments(f.Pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());

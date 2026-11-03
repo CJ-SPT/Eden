@@ -135,7 +135,7 @@ public sealed class ReprocessingTests
         Assert.Equal(3, result.Changes.Count);
         Assert.Equal(133, result.Changes[0].Previous!.Quantity);
         Assert.Equal(33, result.Changes[0].Item.Quantity);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         var saved = f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId);
         Assert.Equal(33, saved.Single(i => i.Id == OreId).Quantity);
         Assert.Equal(75, saved.Single(i => i.TypeId == TritaniumType).Quantity);

@@ -13,19 +13,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Mining;
 
 public sealed class AsteroidFieldTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public long Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-    }
-
     private static void Prepare(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
@@ -78,7 +71,7 @@ public sealed class AsteroidFieldTests
                 AsteroidDefinitions.OuterFieldRadius + AsteroidDefinitions.FieldThickness
             );
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(loads[0], new AsteroidFieldStore(new(db.Path)).List(30000144));
     }
 
@@ -94,7 +87,7 @@ public sealed class AsteroidFieldTests
             world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=0 WHERE BeltId=40009232");
         }
         Assert.Equal(3, field.List(30000144).Count);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(3, new AsteroidFieldStore(new(db.Path)).List(30000144).Count);
         using WorldDbContext saved = new(db.Path);
         Assert.Equal(8, saved.Set<WorldAsteroid>().Count());
@@ -207,7 +200,7 @@ public sealed class AsteroidFieldTests
                     + "TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=14"
             );
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
         Assert.Equal(cargo, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
         using WorldDbContext saved = new(db.Path);

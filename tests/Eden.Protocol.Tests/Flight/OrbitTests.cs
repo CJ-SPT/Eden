@@ -10,19 +10,12 @@ using Eden.Protocol.Propulsion;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed class OrbitTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public long Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-    }
-
     private sealed class Encounters : INpcEncounters
     {
         public NpcContact[] Contacts { get; set; } = [];
@@ -258,7 +251,7 @@ public sealed class OrbitTests
             Assert.Null(session.CallWire("beyonce", "CmdStop", []));
             saved = session.Pilot.Position!;
         }
-        var reopened = new SqliteWorld(db.Path).FindPilot(1000001)!;
+        var reopened = WorldInitialization.Open(db.Path).FindPilot(1000001)!;
         Assert.Equal(saved, reopened.Position);
         SharedSpace space = new();
         using FlightSession restarted = new(db.Store, reopened, clock, space, [target]);

@@ -12,19 +12,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcEncounterTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public long Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-    }
-
     private static readonly long s_now = DateTime.UtcNow.ToFileTimeUtc();
 
     internal static void Prepare(TestWorld db)
@@ -84,7 +77,7 @@ public sealed class NpcEncounterTests
                 Assert.True(n.Id >= NpcEncounterDefinitions.FirstNpcId);
             }
         );
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(results[0], new NpcEncounterStore(new(db.Path)).List(30000144, s_now));
         using WorldDbContext world = new(db.Path);
         Assert.Equal(2, world.Set<WorldNpc>().Count());
@@ -107,7 +100,7 @@ public sealed class NpcEncounterTests
             world.Set<WorldNpc>().Find(initial[1].Id)!.DestroyedAt = s_now;
             world.SaveChanges();
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         var survivor = Assert.Single(encounters.List(30000144, s_now + TimeSpan.TicksPerMinute));
         Assert.Equal(initial[0].Id, survivor.Id);
         Assert.InRange(survivor.Health.Remaining.Shield, 0.1, 20);
@@ -294,7 +287,7 @@ public sealed class NpcEncounterTests
                 """
             );
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         using WorldDbContext migrated = new(db.Path);
         Assert.Empty(migrated.Set<WorldNpc>());
         Assert.Equal(20, migrated.Set<ShipHealthState>().Single().ArmorDamage);

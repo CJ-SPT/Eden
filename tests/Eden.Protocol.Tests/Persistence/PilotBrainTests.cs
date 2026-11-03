@@ -9,18 +9,12 @@ using Eden.Protocol.Industry;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class PilotBrainTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public DateTimeOffset Now { get; set; } = new(2026, 11, 2, 0, 0, 0, TimeSpan.Zero);
-
-        public override DateTimeOffset GetUtcNow() => Now;
-    }
-
     private sealed class Skills : IPilotSkillReader, IPilotIndustrySkills, IPilotNavigationSkills
     {
         public IReadOnlyList<TrainedSkill> Values { get; set; } = [];
@@ -57,9 +51,9 @@ public sealed class PilotBrainTests
                 new(3327, 256000, 1),
             ],
         };
-        Clock clock = new();
+        Clock clock = new(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero));
         var brain = new PilotBrain(skills, clock, skills, skills).Read(90000001, 1000000000001);
-        Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), brain.Version);
+        Assert.Equal(clock.UtcNow.UtcDateTime.ToFileTimeUtc(), brain.Version);
         var effects = Assert
             .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.ShipEffects)))
             .Select(State)
@@ -92,12 +86,12 @@ public sealed class PilotBrainTests
     public void BrainUpdatesCarryVersionedGrayMatterAndRecomputeEarnedLevels()
     {
         Skills skills = new() { Values = [new((int)CombatSkill.Gunnery, 250, 1)] };
-        Clock clock = new();
+        Clock clock = new(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero));
         PilotBrain source = new(skills, clock, skills, skills);
         var first = source.Update(90000001, 1000000000001);
         var firstMatter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(first.GrayMatter)));
         Assert.Equal(-2d, State(Assert.Single(Assert.IsType<List<object?>>(firstMatter[1])))["value"]);
-        clock.Now = clock.Now.AddSeconds(1000);
+        clock.UtcNow = clock.UtcNow.AddSeconds(1000);
         skills.Values = [new((int)CombatSkill.Gunnery, 1415, 1)];
         var next = source.Update(90000001, 1000000000001);
         Assert.True(Assert.IsType<long>(next.Version) > Assert.IsType<long>(first.Version));

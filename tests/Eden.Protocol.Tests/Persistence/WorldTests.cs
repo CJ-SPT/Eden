@@ -20,7 +20,7 @@ public sealed class WorldTests
             world.Set<PilotSkill>().Find(90000002L, 3327)!.Points = 1415;
             world.SaveChanges();
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         var reader = db.Services.GetRequiredService<IPilotSkillReader>();
         var pilot = Assert.Single(reader.ReadSkills(90000001));
         var wing = Assert.Single(reader.ReadSkills(90000002));
@@ -45,7 +45,7 @@ public sealed class WorldTests
         using var command = connection.CreateCommand();
         command.CommandText = "UPDATE WorldPilot SET name='Persisted' WHERE id=90000001";
         Assert.Equal(1, command.ExecuteNonQuery());
-        SqliteWorld reopened = new(db.Path);
+        SqliteWorld reopened = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot with { Name = "Persisted" }, reopened.FindPilot(1000001));
         Assert.Equal(1000000000002L, reopened.FindPilot(1000002)!.ShipId);
         Assert.Null(reopened.FindPilot(1000003));

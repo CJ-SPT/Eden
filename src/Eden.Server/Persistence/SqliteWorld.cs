@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
@@ -19,23 +20,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
 {
     private readonly WorldDatabase _database;
 
-    public SqliteWorld(WorldDatabase database)
-    {
-        _database = database;
-        if (!File.Exists(database.CatalogPath))
-        {
-            throw new FileNotFoundException(
-                "Build the local game catalog with tools/catalog/build.py before starting Eden.",
-                database.CatalogPath
-            );
-        }
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        WorldMigration.Open(world, catalog);
-    }
-
-    public SqliteWorld(string path)
-        : this(new WorldDatabase(path)) { }
+    public SqliteWorld(WorldDatabase database) => _database = database;
 
     public void SetPosition(long shipId, SpacePosition? position, int? systemId = null)
     {
@@ -132,14 +117,14 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
                 .ThenInclude(s => s.Constellation)
             .Single(s => s.Id == ship.StationId);
         var system = station.SolarSystem;
-        double Attribute(int id) => type.Attributes.Single(a => a.AttributeId == id).Value;
+        double Attribute(DogmaAttributeId id) => type.Attributes.Single(a => a.AttributeId == (int)id).Value;
         var flight = new FlightProperties(
             (float)station.Type.Radius!.Value,
             (float)type.Radius!.Value,
             type.Mass!.Value,
-            (float)Attribute(70),
-            (float)PilotPropulsionStore.NavigationSpeed(world, catalog, pilot.Id, Attribute(37)),
-            Attribute(1281) * Attribute(600)
+            (float)Attribute(DogmaAttributeId.Agility),
+            (float)PilotPropulsionStore.NavigationSpeed(world, catalog, pilot.Id, Attribute(DogmaAttributeId.MaxVelocity)),
+            Attribute(DogmaAttributeId.BaseWarpSpeed) * Attribute(DogmaAttributeId.WarpSpeedMultiplier)
         );
         var designation = catalog.Set<StationDesignation>().Single(s => s.StationId == station.Id);
         var identity = new StationIdentity(
@@ -147,7 +132,14 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
             station.Type.GroupId,
             station.Type.Group.CategoryId
         );
-        var hull = new HullProperties(Attribute(9), Attribute(482), Attribute(55), Attribute(263), Attribute(265), Attribute(479));
+        var hull = new HullProperties(
+            Attribute(DogmaAttributeId.StructureHitPoints),
+            Attribute(DogmaAttributeId.CapacitorCapacity),
+            Attribute(DogmaAttributeId.CapacitorRechargeTime),
+            Attribute(DogmaAttributeId.ShieldCapacity),
+            Attribute(DogmaAttributeId.ArmorHitPoints),
+            Attribute(DogmaAttributeId.ShieldRechargeTime)
+        );
         return new(
             new(
                 pilot.Id,
@@ -163,7 +155,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
                 type.Group.CategoryId,
                 ship.Name,
                 type.Capacity!.Value,
-                checked((int)Attribute(102)),
+                checked((int)Attribute(DogmaAttributeId.TurretSlotsLeft)),
                 flight,
                 hull
             ),

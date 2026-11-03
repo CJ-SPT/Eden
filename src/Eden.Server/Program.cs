@@ -55,7 +55,7 @@ internal static class Program
             return;
         }
         Directory.CreateDirectory(directory);
-        services.GetRequiredService<SqliteWorld>();
+        WorldInitialization.Initialize(new WorldDatabase(worldPath));
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>());
         await gateway.StartAsync();
         try

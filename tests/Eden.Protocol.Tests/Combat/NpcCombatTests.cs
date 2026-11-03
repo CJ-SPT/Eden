@@ -20,29 +20,18 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcCombatTests
 {
-    internal sealed class Clock : TimeProvider
-    {
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() => DateTimeOffset.UnixEpoch.AddYears(56).AddMilliseconds(Milliseconds);
-
-        public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
-    }
-
     internal sealed class Fixture : IDisposable
     {
         public const long PilotId = 90000001;
         public const long ShipId = 1000000000001;
         public TestWorld Db { get; } = new();
-        public Clock Clock { get; } = new();
+        public Clock Clock { get; } = new(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         public IShipLootRoll LootRoll { get; set; } = new FixedLootRoll(true);
         public INpcCombat Combat => new NpcCombatStore(new(Db.Path), Db.Store, LootRoll);
         public IPilotCombat Weapons => Db.Services.GetRequiredService<IPilotCombat>();
@@ -137,7 +126,7 @@ public sealed class NpcCombatTests
         Assert.Equal(562, shot.Weapon.TurretTypeId);
         Assert.Equal(2500, shot.Weapon.Duration);
         Assert.Null(shot.Capsule);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Null(f.Fire());
         f.Clock.Milliseconds = 10000;
         Assert.NotNull(f.Fire());
@@ -238,7 +227,7 @@ public sealed class NpcCombatTests
                 }
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
         f.Db.Store.SetPosition(capsule.ShipId, null);
         var recovery = f.Db.Services.GetRequiredService<IPilotFleet>().RecoverCorvette(Fixture.PilotId, capsule.ShipId, capsule.StationId);
@@ -252,7 +241,7 @@ public sealed class NpcCombatTests
         var contact = Assert.Single(wrecks.List(capsule.SystemId, f.Clock.Now));
         var loot = wrecks.Read(Fixture.PilotId, contact.Id, f.Clock.Now).Items;
         wrecks.Take(Fixture.PilotId, recovery.Pilot.ShipId, contact.Id, loot.Select(i => i.Id).ToArray(), null, f.Clock.Now);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext restored = new(f.Db.Path);
         var module = restored.Set<OwnedItem>().Find(f.Module)!;
         Assert.Equal(recovery.Pilot.ShipId, module.LocationId);
@@ -350,7 +339,7 @@ public sealed class NpcCombatTests
         f.AlmostLost();
         f.Clock.Milliseconds = 7500;
         Assert.NotNull(f.Fire()!.Capsule);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Null(f.Fire());
         var contact = Assert.Single(f.Db.Services.GetRequiredService<IWrecks>().List(f.Npc.SystemId, f.Clock.Now));
         Assert.True(contact.Empty);
@@ -395,8 +384,8 @@ public sealed class NpcCombatTests
                     + "WorldShipLoss; ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=20"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);

@@ -22,6 +22,7 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Repair;
 
@@ -50,19 +51,6 @@ public sealed class ShieldBoostTests
         Assert.Equal(health, f.Health.Read(f.Pilot.PilotId, f.Clock.Now));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Empty(saved.Set<ModuleCooldown>());
-    }
-
-    private sealed class Clock : TimeProvider
-    {
-        private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
-
-        public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
     }
 
     private sealed class Fixture : IDisposable
@@ -162,7 +150,7 @@ public sealed class ShieldBoostTests
         Assert.Equal(90, f.Fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.CpuLoad]);
         Assert.Equal(4, f.Fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.PowerLoad]);
         Assert.Equal(900000, f.Market.Balance(pilot.PilotId));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(99, f.Market.Orders(pilot.PilotId).Single(o => o.TypeId == (int)ShieldBoosterType.SmallI).Remaining);
         var change = Assert.Single(f.Inventory.Move(pilot.PilotId, [f.Module], pilot.ShipId, pilot.ShipId, (int)InventoryFlag.Cargo, null));
         Assert.Equal(f.Module, change.Item.Id);
@@ -215,7 +203,7 @@ public sealed class ShieldBoostTests
         Assert.Equal(113, result.Health.Remaining.Armor);
         Assert.Equal(166, result.Health.Remaining.Structure);
         Assert.Equal(900000, f.Market.Balance(f.Pilot.PilotId));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Boost());
         f.Clock.Milliseconds = 2000;
         Assert.Equal(0, f.Boost().Restored);

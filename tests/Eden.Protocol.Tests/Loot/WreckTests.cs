@@ -14,6 +14,7 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Loot;
 
@@ -21,16 +22,6 @@ public sealed class WreckTests
 {
     private static readonly DateTimeOffset s_start = DateTimeOffset.UtcNow;
     private static long Now => s_start.UtcDateTime.ToFileTimeUtc();
-
-    private sealed class Clock : TimeProvider
-    {
-        public int Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-
-        public override DateTimeOffset GetUtcNow() => s_start.AddSeconds(Seconds);
-    }
 
     private sealed class Fixture : IDisposable
     {
@@ -75,7 +66,7 @@ public sealed class WreckTests
         Assert.Equal(WreckDefinitions.StarterLootType, Assert.Single(inventory.Items).TypeId);
         Assert.Equal(100, inventory.Items[0].Quantity);
         Assert.False(f.Wreck.Empty);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(inventory.Container, f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Container);
         Assert.Equal(inventory.Items, f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
         Assert.Equal(f.Wreck, Assert.Single(f.Store.List(f.Wreck.SystemId, Now)));
@@ -95,7 +86,7 @@ public sealed class WreckTests
         Assert.Empty(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
         Assert.True(Assert.Single(f.Store.List(f.Wreck.SystemId, Now)).Empty);
         Assert.Throws<InvalidDataException>(() => f.Store.Take(f.Pilot.PilotId, f.Pilot.ShipId, f.Wreck.Id, [id], null, Now));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.Id == id).Quantity);
         Assert.Equal(f.Pilot.ShipId, saved.Set<OwnedItem>().Find(id)!.LocationId);
@@ -216,7 +207,7 @@ public sealed class WreckTests
     public void NativeLootCallsMoveInventoryAndUpdateTheEmptyWreckSlimAndExpireTheBinding()
     {
         using Fixture f = new();
-        Clock clock = new();
+        Clock clock = new(s_start);
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         var pilot = f.Pilot;
@@ -280,7 +271,7 @@ public sealed class WreckTests
     public void StreamingUnloadsExpiredWrecksWithoutReplacingTheBallpark()
     {
         using Fixture f = new();
-        Clock clock = new();
+        Clock clock = new(s_start);
         using FlightSession flight = new(f.Db.Store, f.Pilot, clock, new(), [], wrecks: f.Store);
         flight.Snapshot();
         Assert.Single(flight.VisibleWrecks);
@@ -307,7 +298,7 @@ public sealed class WreckTests
                     + "WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=22"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(f.Store.List(f.Wreck.SystemId, Now));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.NotNull(saved.Set<WorldNpc>().Find(f.Wreck.SourceId)!.DestroyedAt);
@@ -348,8 +339,8 @@ public sealed class WreckTests
                 """
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(f.Wreck, Assert.Single(f.Store.List(f.Wreck.SystemId, Now)));
         Assert.Equal(itemId, Assert.Single(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items).Id);
         using WorldDbContext saved = new(f.Db.Path);

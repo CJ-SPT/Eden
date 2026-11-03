@@ -181,7 +181,7 @@ public sealed class NpcOrbitTests
         f.Clock.Milliseconds = 8500;
         f.Fire();
         var before = Contact(f);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(before, Contact(f));
         using (WorldDbContext world = new(f.Db.Path))
         {

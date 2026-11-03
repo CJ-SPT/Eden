@@ -11,19 +11,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Targeting;
 
 public sealed class TargetingTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public long Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-    }
-
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();

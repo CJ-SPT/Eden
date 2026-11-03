@@ -146,7 +146,7 @@ public sealed class NpcPursuitTests
         Assert.Equal(2, saved.Set<WorldNpc>().Count());
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<ShipLoss>());
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(returned, Contact(f));
     }
 
@@ -271,7 +271,7 @@ public sealed class NpcPursuitTests
             deadline = world.Set<NpcAggression>().Single().ReadyAt;
             world.Database.ExecuteSqlRaw(TestWorld.DropNpcNavigationColumns + "PRAGMA user_version=25");
         }
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         var npc = saved.Set<WorldNpc>().Find(f.Npc.Id)!;
         Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());

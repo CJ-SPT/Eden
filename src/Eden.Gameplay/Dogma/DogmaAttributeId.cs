@@ -3,6 +3,8 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    BaseWarpSpeed = 1281,
+    WarpSpeedMultiplier = 600,
     PrimaryAttribute = 180,
     SecondaryAttribute = 181,
     Charisma = 164,

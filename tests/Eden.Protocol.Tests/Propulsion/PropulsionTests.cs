@@ -16,24 +16,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Propulsion;
 
 public sealed class PropulsionTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
-
-        public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
-    }
-
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
@@ -197,7 +185,7 @@ public sealed class PropulsionTests
                 )
         );
         Assert.Single(results, r => r is not null);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now));
         Assert.Equal(
             116,

@@ -103,7 +103,7 @@ public sealed class CorvetteRecoveryTests
         Assert.Equal(0, saved.Set<PilotWallet>().Single().Cents);
         Assert.Equal(20, saved.Set<ShipHealthState>().Single().StructureDamage);
         Assert.Empty(saved.Set<ShipHealthState>().Where(h => h.ShipId == recovery.Pilot.ShipId));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(recovery.Pilot.ShipId, f.Pilot.ShipId);
         Assert.Empty(f.Recover().Changes);
     }

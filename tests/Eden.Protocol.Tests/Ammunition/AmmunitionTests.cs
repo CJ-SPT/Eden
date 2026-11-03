@@ -19,24 +19,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Ammunition;
 
 public sealed class AmmunitionTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
-
-        public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
-    }
-
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
@@ -144,7 +132,7 @@ public sealed class AmmunitionTests
         Assert.Equal(f.Clock.Now + 5000 * TimeSpan.TicksPerMillisecond, magazine.ReadyAt);
         Assert.Equal(50, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId), i => i.TypeId == 222).Quantity);
         Assert.Equal(250, f.Total(222));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(magazine, Assert.Single(f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId)));
         Assert.Throws<InvalidDataException>(() =>
             f.Ammo.Unload(f.Pilot.PilotId, f.Pilot.ShipId, [f.Gun], f.Pilot.ShipId, (int)InventoryFlag.Cargo, null, f.Clock.Now)
@@ -298,7 +286,7 @@ public sealed class AmmunitionTests
         Assert.All(context.Notifications, n => Assert.NotEmpty(BlueMarshal.Encode(n.Arguments)));
         Assert.Empty(f.Fitting.Fit(f.Pilot.PilotId, [f.Gun], f.Pilot.ShipId, (int)InventoryFlag.HighSlot1));
         Assert.Empty(f.Fitting.Fit(f.Pilot.PilotId, [f.Gun], f.Pilot.ShipId, (int)InventoryFlag.AutoFit));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(after, f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId));
         Assert.Equal(expected, f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId));
         f.Space();
@@ -448,7 +436,7 @@ public sealed class AmmunitionTests
                 TestWorld.DropNpcNavigationColumns + "ALTER TABLE WorldWeaponCooldown DROP COLUMN Kind; PRAGMA user_version=24"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(ModuleCooldownKind.Cycle, saved.Set<ModuleCooldown>().Single().Kind);

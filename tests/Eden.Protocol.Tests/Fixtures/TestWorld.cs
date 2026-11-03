@@ -25,6 +25,7 @@ internal sealed class TestWorld : IDisposable
     public TestWorld()
     {
         TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
+        WorldInitialization.Initialize(new WorldDatabase(Path));
         Services = ServerServices.Build(new WorldDatabase(Path));
         Store = Services.GetRequiredService<SqliteWorld>();
     }

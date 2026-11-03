@@ -23,7 +23,7 @@ public sealed class WorldMigrationTests
             var file = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));
             TestCatalog.Create(file.CatalogPath);
             CreateLegacy(file.Path, version);
-            var world = new SqliteWorld(file);
+            var world = WorldInitialization.Open(file);
             var pilot = Assert.IsType<DockedPilot>(world.FindPilot(1000001));
             Assert.Equal("Original Pilot", pilot.Name);
             Assert.Equal(version == 1 ? "Ibis" : "Original Ship", pilot.ShipName);
@@ -31,7 +31,7 @@ public sealed class WorldMigrationTests
             Assert.Equal(version >= 4 ? new SpacePosition(1, 2, 3) : null, pilot.Position);
             var wing = Assert.IsType<DockedPilot>(world.FindPilot(1000002));
             Assert.Equal(version == 5 ? "Original Wing" : "Eden Wing", wing.Name);
-            Assert.Equal(pilot, new SqliteWorld(file).FindPilot(1000001));
+            Assert.Equal(pilot, WorldInitialization.Open(file).FindPilot(1000001));
         }
         finally
         {
@@ -76,7 +76,7 @@ public sealed class WorldMigrationTests
             + $"PRAGMA user_version={version}";
         command.ExecuteNonQuery();
 
-        var world = new SqliteWorld(db.Path);
+        var world = WorldInitialization.Open(db.Path);
         var pilot = world.FindPilot(1000001)!;
         Assert.Equal(position, pilot.Position);
         Assert.Equal(30000142, pilot.SystemId);
@@ -112,7 +112,7 @@ public sealed class WorldMigrationTests
             PRAGMA user_version=11;
             """;
         command.ExecuteNonQuery();
-        var migrated = new SqliteWorld(db.Path);
+        var migrated = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, Assert.Single(migrated.ListPilots(1000001)));
         Assert.Equal(wing, Assert.Single(migrated.ListPilots(1000002)));
         command.CommandText = "SELECT Points FROM WorldPilotSkill WHERE PilotId=90000001";
@@ -135,7 +135,7 @@ public sealed class WorldMigrationTests
             using var command = connection.CreateCommand();
             command.CommandText = "UPDATE pilot SET corporation=999 WHERE account=1000001";
             command.ExecuteNonQuery();
-            Assert.Throws<InvalidDataException>(() => new SqliteWorld(file));
+            Assert.Throws<InvalidDataException>(() => WorldInitialization.Open(file));
             command.CommandText = "PRAGMA user_version";
             Assert.Equal(3L, command.ExecuteScalar());
             command.CommandText = "SELECT name FROM ship WHERE owner=90000001";

@@ -19,24 +19,12 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Combat;
 
 public sealed class PilotCombatTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() => _start.AddMilliseconds(Milliseconds);
-
-        public long Now => GetUtcNow().UtcDateTime.ToFileTimeUtc();
-    }
-
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
@@ -142,7 +130,7 @@ public sealed class PilotCombatTests
         Assert.Equal(20132, shot.Weapon.ChargeTypeId);
         Assert.Equal(129, shot.Capacitor);
         Assert.False(shot.Destroyed);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Fire());
         using WorldDbContext world = new(f.Db.Path);
         Assert.Equal(129, world.Set<ShipEnergy>().Single().Charge);
@@ -214,7 +202,7 @@ public sealed class PilotCombatTests
         var kill = Assert.Single(results.OfType<CombatShot>());
         Assert.True(kill.Destroyed);
         Assert.Equal(300000, kill.Reward!.AmountCents);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<NpcBounty>());
         var wreck = Assert.Single(saved.Set<WorldWreck>());
@@ -546,8 +534,8 @@ public sealed class PilotCombatTests
                     + "WorldShipLoss; DROP TABLE WorldWeaponCooldown; DROP TABLE WorldNpcBounty; PRAGMA user_version=19"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext migrated = new(f.Db.Path);
         Assert.Equal(2, migrated.Set<OwnedItem>().Count(i => i.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun));
         Assert.Equal(2, migrated.Set<OwnedItem>().Count(i => i.TypeId == InventoryDefinitions.CivilianMinerType));

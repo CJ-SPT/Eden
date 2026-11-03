@@ -30,7 +30,7 @@ public sealed class CharacterCreationTests
         var creation = db.Services.GetRequiredService<ICharacterCreation>();
         var character = new NewCharacter("New Pilot", race, bloodline, 0, 64, [1, 2], [3, 4], school);
         long id = creation.Create(1000001, character);
-        var reopened = new SqliteWorld(db.Path);
+        var reopened = WorldInitialization.Open(db.Path);
         var pilot = Assert.Single(reopened.ListPilots(1000001), p => p.PilotId == id);
         Assert.Equal((station, system, hull, 1000044), (pilot.StationId, pilot.SystemId, pilot.ShipTypeId, pilot.CorpId));
         Assert.Null(pilot.Position);

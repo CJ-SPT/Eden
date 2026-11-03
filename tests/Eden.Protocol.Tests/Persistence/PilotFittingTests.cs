@@ -54,7 +54,7 @@ public sealed class PilotFittingTests
         fitting.SetOnline(pilot.PilotId, pilot.ShipId, module.Id, true);
         Assert.Equal(65, fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.CpuLoad]);
         Assert.Equal(2, fitting.ShipAttributes(pilot.PilotId)[DogmaAttributeId.PowerLoad]);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.True(Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)).Online);
         fitting.Fit(pilot.PilotId, [stack.Id], pilot.StationId, (int)InventoryFlag.AutoFit);
         Assert.Throws<InvalidDataException>(() => fitting.Fit(pilot.PilotId, [stack.Id], pilot.StationId, (int)InventoryFlag.AutoFit));
@@ -177,7 +177,7 @@ public sealed class PilotFittingTests
             Assert.Equal(online ? 1d : 0d, attributes[(long)DogmaAttributeId.IsOnline]);
             Assert.NotEmpty(BlueMarshal.Encode(info));
         }
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         var all = Assert.IsType<Dictionary<string, object?>>(
             Assert.IsType<BlueInstance>(router.CallWire(context, "dogmaIM", "GetAllInfo", Array.Empty<object?>(), _ => { })).State
         );
@@ -213,8 +213,8 @@ public sealed class PilotFittingTests
                     + "TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=13"
             );
         }
-        _ = new SqliteWorld(db.Path);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(moved, Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId)));
         Assert.DoesNotContain(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Single(inventory.List(90000002, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);

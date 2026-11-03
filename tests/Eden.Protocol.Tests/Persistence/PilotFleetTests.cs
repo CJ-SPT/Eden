@@ -116,7 +116,7 @@ public sealed class PilotFleetTests
         Assert.Equal(first, f.Fleet.Board(original.PilotId, first, original.ShipId).ShipId);
         Assert.Single(f.Inventory.List(original.PilotId, original.ShipId));
         Assert.Empty(f.Inventory.List(original.PilotId, first));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(first, f.Pilot.ShipId);
         Assert.Equal(original.ShipId, f.Fleet.Board(original.PilotId, original.ShipId, first).ShipId);
         using WorldDbContext saved = new(f.Db.Path);

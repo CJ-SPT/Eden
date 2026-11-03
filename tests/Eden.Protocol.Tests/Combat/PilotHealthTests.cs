@@ -42,7 +42,7 @@ public sealed class PilotHealthTests
         var result = Hit(db, new(0, 0, 400, 0), s_now);
         Assert.Equal(new HullDamage(0, 0, 100), result.Remaining);
         Assert.Equal(result.Remaining, health.Read(PilotId, s_now).Remaining);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         var later = health.Read(PilotId, s_now + TimeSpan.TicksPerMinute);
         Assert.InRange(later.Remaining.Shield, 1, 200);
         Assert.Equal(0, later.Remaining.Armor);
@@ -212,8 +212,8 @@ public sealed class PilotHealthTests
             );
         }
         var pilot = db.Store.FindPilot(1000001)!;
-        _ = new SqliteWorld(db.Path);
-        _ = new SqliteWorld(db.Path);
+        _ = WorldInitialization.Open(db.Path);
+        _ = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
         using WorldDbContext reopened = new(db.Path);
         Assert.Equal(12345, reopened.Set<PilotWallet>().Find(PilotId)!.Cents);

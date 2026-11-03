@@ -23,6 +23,7 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Mining;
 
@@ -45,21 +46,10 @@ public sealed class MiningTests
         Assert.Equal(before, fixture.Store.ModuleAttributes(pilot.PilotId, module)[DogmaAttributeId.MiningAmount]);
     }
 
-    private sealed class Clock : TimeProvider
-    {
-        public long Milliseconds { get; set; }
-        public override long TimestampFrequency => 1000;
-
-        public override long GetTimestamp() => Milliseconds;
-
-        public override DateTimeOffset GetUtcNow() =>
-            new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero).AddMilliseconds(Milliseconds);
-    }
-
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
-        public Clock Clock { get; } = new();
+        public Clock Clock { get; } = new(new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
         public SharedSpace Space { get; } = new();
         public SharedTargetLocks Locks { get; } = new();
         public IPilotMining Store => Db.Services.GetRequiredService<IPilotMining>();
@@ -222,7 +212,7 @@ public sealed class MiningTests
         Assert.Equal((int)InventoryFlag.GeneralMiningHold, ore.FlagId);
         Assert.Equal(132, ore.Quantity);
         Assert.Equal(9868, fixture.Remaining());
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -285,7 +275,7 @@ public sealed class MiningTests
         Assert.Equal(expectedOre, ore.Quantity);
         Assert.Equal(10000 - expectedOre, fixture.Remaining());
         Assert.False(mining.IsActive(module));
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -366,7 +356,7 @@ public sealed class MiningTests
         );
         Assert.Equal(63, message["quantity_added"]);
         Assert.NotEmpty(BlueMarshal.Encode(message));
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -464,7 +454,7 @@ public sealed class MiningTests
         Assert.Equal(7, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.TypeId == 1230).Quantity);
         context.Flight.RefreshAsteroids(fixture.Db.Services.GetRequiredService<IAsteroidField>().List(context.Pilot.SystemId));
         Assert.Null(context.Flight.FindTarget(Fixture.Asteroid));
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Empty(new AsteroidFieldStore(new(fixture.Db.Path)).List(context.Pilot.SystemId));
     }
 
@@ -532,7 +522,7 @@ public sealed class MiningTests
             .Item;
         Assert.Equal(63, unloaded.Quantity);
         Assert.Equal(ore.Id, unloaded.Id);
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(flight.Pilot, fixture.Db.Store.FindPilot(1000001));
         Assert.Equal(unloaded, Assert.Single(fixture.Inventory.List(pilot.PilotId, 60000100)));
         Assert.Null(flight.CallWire("ship", "Undock", [pilot.ShipId]));
@@ -596,7 +586,7 @@ public sealed class MiningTests
             8
         );
         Assert.Throws<InvalidDataException>(() => fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now));
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(
             0,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
@@ -634,7 +624,7 @@ public sealed class MiningTests
                     + "TypeId=3638; PRAGMA user_version=15"
             );
         }
-        _ = new SqliteWorld(fixture.Db.Path);
+        _ = WorldInitialization.Open(fixture.Db.Path);
         Assert.Equal(
             149.5,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),

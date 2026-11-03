@@ -14,6 +14,7 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Persistence;
 
@@ -21,13 +22,6 @@ public sealed class PilotSkillBookTests
 {
     private const long Pilot = 90000001;
     private const int ShieldOperation = 3416;
-
-    private sealed class Clock : TimeProvider
-    {
-        public DateTimeOffset Now { get; set; } = DateTimeOffset.UtcNow;
-
-        public override DateTimeOffset GetUtcNow() => Now;
-    }
 
     private sealed class Fixture : IDisposable
     {
@@ -90,9 +84,9 @@ public sealed class PilotSkillBookTests
         }
         var queue = training.Save(Pilot, [new(ShieldOperation, 1)], true);
         Assert.Equal(250, Assert.Single(queue.Queue).EndPoints);
-        clock.Now = new DateTimeOffset(DateTime.FromFileTimeUtc(queue.Queue[0].EndTime!.Value));
+        clock.UtcNow = new DateTimeOffset(DateTime.FromFileTimeUtc(queue.Queue[0].EndTime!.Value));
         Assert.Contains(ShieldOperation, new PilotTrainingStore(new(f.Db.Path), clock).Advance(Pilot).ChangedSkills);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext reopened = new(f.Db.Path);
         Assert.Equal(250, reopened.Set<PilotSkill>().Find(Pilot, ShieldOperation)!.Points);
         Assert.Equal(1, reopened.Set<OwnedItem>().Find(f.Book)!.Quantity);

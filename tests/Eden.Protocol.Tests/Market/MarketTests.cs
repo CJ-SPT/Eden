@@ -95,7 +95,7 @@ public sealed class MarketTests
         Assert.Equal(41512, purchase.BalanceCents);
         Assert.Equal(2, Assert.Single(purchase.Trades).Quantity);
         Assert.Equal(3, Assert.Single(purchase.Changes).Item.Quantity);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(41512, f.Store.Balance(f.Pilot.PilotId));
         Assert.Equal(
             3,
@@ -152,7 +152,7 @@ public sealed class MarketTests
         Assert.Equal(original, updated.Where(o => o.TypeId != (int)MiningLaserType.MinerI && o.TypeId != (int)MiningLaserType.MinerII));
         Assert.Equal(100000, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerI).PriceCents);
         Assert.Equal(500000, Assert.Single(updated, o => o.TypeId == (int)MiningLaserType.MinerII).PriceCents);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(updated, f.Store.Orders(f.Pilot.PilotId));
         Assert.Equal(4625, f.Store.Balance(f.Pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
@@ -208,7 +208,7 @@ public sealed class MarketTests
         Assert.Equal((int)InventoryCategory.Blueprint, blueprintItem.CategoryId);
         Assert.False(blueprintItem.Singleton);
         Assert.Equal(350500, f.Buy(36, 2, 6000).BalanceCents);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         var after = f.Store.Orders(f.Pilot.PilotId);
         Assert.Equal(99, Assert.Single(after, o => o.TypeId == (int)IndustryBlueprintType.GatlingRail75MmI).Remaining);
         Assert.Equal(9998, Assert.Single(after, o => o.TypeId == 36).Remaining);
@@ -296,7 +296,7 @@ public sealed class MarketTests
         Assert.Equal(3, tritanium.Orders);
         Assert.Equal(133, Assert.Single(days, d => d.TypeId == Scordite).Volume);
         Assert.Empty(f.Store.History(f.Pilot.PilotId, [(int)MiningLaserType.MinerII]));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(days, f.Store.History(f.Pilot.PilotId, [Tritanium, Scordite]));
     }
 
@@ -309,7 +309,7 @@ public sealed class MarketTests
         Assert.True(first.Id > OreId);
         MarketSale sale = new(first.Id, f.Pilot.StationId, Tritanium, 200, 1);
         f.Sell(sale);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         var second = Assert.Single(f.Buy(Tritanium, 1, 240).Changes).Item;
         Assert.True(second.Id > first.Id);
         Assert.Throws<InvalidDataException>(() => f.Sell(sale));
@@ -448,7 +448,7 @@ public sealed class MarketTests
         var bought = f.Buy(quantity: 5);
         Assert.Equal(1, Assert.Single(bought.Trades).Quantity);
         Assert.Equal(51512, bought.BalanceCents);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.DoesNotContain(f.Store.Orders(f.Pilot.PilotId), o => o.TypeId == InventoryDefinitions.CivilianMinerType);
         Assert.Throws<InvalidDataException>(() => f.Buy());
         using (WorldDbContext world = new(f.Db.Path))
@@ -510,8 +510,8 @@ public sealed class MarketTests
                     + "DROP TABLE WorldWeaponCooldown; DELETE FROM WorldItem WHERE TypeId=3638; PRAGMA user_version=16"
             );
         }
-        _ = new SqliteWorld(f.Db.Path);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(pilot, f.Pilot);
         Assert.Equal(0, f.Store.Balance(pilot.PilotId));
         Assert.Equal(133, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId).Quantity);

@@ -7,19 +7,12 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed class FlightSessionTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public long Seconds { get; set; }
-        public override long TimestampFrequency => 1;
-
-        public override long GetTimestamp() => Seconds;
-    }
-
     [Fact]
     public void PeersReceiveEachOthersCoursesAndLeaveIndependently()
     {
@@ -157,7 +150,7 @@ public sealed class FlightSessionTests
         wing.Checkpoint();
         wing.RefreshPeers();
         Assert.Equal(PilotContact.From(pilot.Pilot), Assert.Single(space.Peers(wing.Pilot)).Pilot);
-        Assert.Equal(wing.Pilot, new SqliteWorld(db.Path).FindPilot(1000002));
+        Assert.Equal(wing.Pilot, WorldInitialization.Open(db.Path).FindPilot(1000002));
         Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)pilot.Pilot.StationId]));
         clock.Seconds += 8;
         pilot.Checkpoint();
@@ -341,7 +334,7 @@ public sealed class FlightSessionTests
         session.Checkpoint();
         Assert.Equal(153, session.Pilot.Position!.X, 8);
         Assert.False(session.Moving);
-        Assert.Equal(session.Pilot.Position, new SqliteWorld(db.Path).FindPilot(1000001)!.Position);
+        Assert.Equal(session.Pilot.Position, WorldInitialization.Open(db.Path).FindPilot(1000001)!.Position);
     }
 
     [Fact]
@@ -444,7 +437,7 @@ public sealed class FlightSessionTests
         Assert.False(session.InBallpark);
         Assert.Equal(gate.DestinationSystemId, session.Pilot.SystemId);
         Assert.Equal(pilot.HomeSystemId, session.Pilot.HomeSystemId);
-        Assert.Equal(session.Pilot, new SqliteWorld(db.Path).FindPilot(1000001));
+        Assert.Equal(session.Pilot, WorldInitialization.Open(db.Path).FindPilot(1000001));
         session.Updates.Clear();
         session.Snapshot();
         Assert.Equal(new[] { "effects.JumpIn" }, EffectArguments(session).Select(a => a[5]));
@@ -517,14 +510,14 @@ public sealed class FlightSessionTests
         Assert.Equal(spawn.X, stopped.X);
         clock.Seconds = 60;
         session.Checkpoint();
-        var reopened = new SqliteWorld(db.Path);
+        var reopened = WorldInitialization.Open(db.Path);
         Assert.Equal(session.Pilot, reopened.FindPilot(1000001));
         Assert.Empty(session.WireUpdates());
         Assert.True(session.Pilot.Position!.Y > stopped.Y);
         Assert.False(session.Moving);
         var resumed = new FlightSession(reopened, reopened.FindPilot(1000001)!, clock, new(), db.Objects);
         Assert.Null(resumed.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
-        Assert.Equal(pilot, new SqliteWorld(db.Path).FindPilot(1000001));
+        Assert.Equal(pilot, WorldInitialization.Open(db.Path).FindPilot(1000001));
     }
 
     [Fact]

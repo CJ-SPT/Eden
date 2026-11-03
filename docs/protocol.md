@@ -1038,3 +1038,13 @@ Added the native BalanceResponse and Currency.total_in_cents (sint64) shapes fro
 Automated: restore/build, 417 .NET tests, 3 catalog Python tests, 9 formatting-policy Python tests and formatting verification passed. The regression verifies response identity, native type URL, explicit Currency presence and exact empty-balance bytes.
 
 Live: restarted WalletBalance with the isolated audit-flight save, selected Eden Pilot in space and brought Wallet forward. Exactly one LP Corporations row and one EverMarks row appeared. PLEX displayed 0; the existing 22,686 ISK balance and market/bounty journal entries remained visible. Inventory showed active Ibis with 100 Tritanium and one Civilian Miner in cargo.
+
+## Architecture audit milestone 12
+
+World initialization is explicit: Program calls WorldInitialization.Initialize before starting the gateway and session listener. SqliteWorld construction only captures its database configuration. Fixtures initialize deliberately, and restart/migration probes call WorldInitialization.Open. A regression verifies that resolving the reader creates no world file and that explicit initialization is idempotent.
+
+The shared TestClock replaces 16 duplicated feature clocks and offers independent wall-clock and elapsed-time advancement while retaining paired advancement where existing cycle tests require it. A regression verifies both independent controls. Production FlightSessionFactory integration coverage was added in milestone 10. SqliteWorld's authored dogma lookups now use named attributes, including the pinned catalog's baseWarpSpeed (1281) and warpSpeedMultiplier (600). README describes the resulting ownership and startup/fixture conventions.
+
+Automated final baseline: pinned tool restore, solution restore, build with zero warnings/errors, all **419 .NET tests**, **3 catalog Python tests**, **9 formatting-policy Python tests**, and formatting verification passed. Formatting covers 267 authored files; git diff whitespace validation passed.
+
+Live final host: launched ArchitectureFinal against the isolated audit-flight world through its normal entry point. It initialized successfully, listened on loopback and accepted the pinned client's encrypted login. The connected Eden Pilot window showed the Ibis docked at Jita IV Moon 4. Inventory retained 100 Iron Charge S and its original blueprint in Item hangar. Wallet showed the existing 22,686 ISK balance and saved journal, PLEX 0, and one LP Corporations row plus one EverMarks row. The final client was left open on that copied save. Automated checks and the narrower live actions recorded above remain distinct: the complete warp/gate/fatal-combat matrix was not manually repeated for this refactor.

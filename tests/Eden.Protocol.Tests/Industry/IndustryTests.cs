@@ -22,23 +22,17 @@ using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Industry;
 
 public sealed class IndustryTests
 {
-    private sealed class Clock : TimeProvider
-    {
-        public DateTimeOffset Now { get; set; } = new(2026, 11, 2, 0, 0, 0, TimeSpan.Zero);
-
-        public override DateTimeOffset GetUtcNow() => Now;
-    }
-
     private sealed class Fixture : IDisposable
     {
         public const long BlueprintId = InventoryDefinitions.FirstOwnedItemId + 100;
         public TestWorld Db { get; } = new();
-        public Clock Clock { get; } = new();
+        public Clock Clock { get; } = new(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero));
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public PilotIndustryStore Store => new(new(Db.Path), Clock);
 
@@ -246,9 +240,9 @@ public sealed class IndustryTests
         Assert.Equal(result.Job.Id, f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).JobId);
         Assert.True(f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).Item.Singleton);
         Assert.Throws<InvalidDataException>(() => f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(result.Job, f.Store.Job(f.Pilot.PilotId, result.Job.Id));
-        f.Clock.Now = f.Clock.Now.AddSeconds(288);
+        f.Clock.UtcNow = f.Clock.UtcNow.AddSeconds(288);
         Assert.Equal(IndustryJobStatus.Ready, f.Store.Job(f.Pilot.PilotId, result.Job.Id).Status);
         var delivered = f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId);
         Assert.Equal(IndustryJobStatus.Delivered, delivered.Job.Status);
@@ -256,7 +250,7 @@ public sealed class IndustryTests
         Assert.Equal(100, Assert.Single(delivered.Changes).Item.Quantity);
         Assert.Null(f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).JobId);
         Assert.Empty(f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId).Changes);
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(f.Store.Jobs(f.Pilot.PilotId, false));
         Assert.Single(f.Store.Jobs(f.Pilot.PilotId, true));
         Assert.Equal(100, f.Quantity(215));
@@ -371,7 +365,7 @@ public sealed class IndustryTests
             });
         var installed = Assert.Single(await Task.WhenAll(Install(), Install()), r => r is not null)!;
         Assert.Equal(54, f.Quantity(34));
-        f.Clock.Now = f.Clock.Now.AddDays(1);
+        f.Clock.UtcNow = f.Clock.UtcNow.AddDays(1);
         var deliveries = await Task.WhenAll(
             Enumerable.Range(0, 2).Select(_ => Task.Run(() => f.Store.Deliver(f.Pilot.PilotId, installed.Job.Id, f.Pilot.SystemId)))
         );
@@ -657,9 +651,9 @@ public sealed class IndustryTests
             Assert.Equal(before[material.Key] - material.Value, f.Quantity(material.Key));
         }
         Assert.Throws<InvalidDataException>(() => f.Store.Deliver(f.Pilot.PilotId, job.Id, f.Pilot.SystemId));
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(job, f.Store.Job(f.Pilot.PilotId, job.Id));
-        f.Clock.Now = f.Clock.Now.AddSeconds(job.DurationSeconds);
+        f.Clock.UtcNow = f.Clock.UtcNow.AddSeconds(job.DurationSeconds);
         var delivered = Assert.Single(f.Store.Deliver(f.Pilot.PilotId, job.Id, f.Pilot.SystemId).Changes).Item;
         Assert.False(delivered.Singleton);
         Assert.False(delivered.Online);
@@ -722,7 +716,7 @@ public sealed class IndustryTests
             items = JsonSerializer.Serialize(world.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id).ToArray());
             world.Database.ExecuteSqlRaw("DROP TABLE WorldIndustryJob; PRAGMA user_version=26");
         }
-        _ = new SqliteWorld(f.Db.Path);
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Empty(saved.Set<IndustryJob>());
