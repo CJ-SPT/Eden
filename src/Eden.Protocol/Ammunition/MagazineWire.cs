@@ -66,12 +66,14 @@ internal sealed class MagazineWire(TimeProvider clock, IPilotFitting fitting, IP
             var magazine = change.Current ?? change.Previous!;
             var module = inventory
                 .List(context.Pilot.PilotId, context.Pilot.ShipId)
-                .SingleOrDefault(i => i.Id == magazine.ModuleId && InventoryDefinitions.IsHighSlot(i.FlagId));
+                .SingleOrDefault(i => i.Id == magazine.ModuleId && InventoryDefinitions.IsFittedSlot(i.FlagId));
             if (module is null)
             {
                 continue;
             }
-            var attributes = combat.ModuleAttributes(context.Pilot.PilotId, module);
+            var attributes = InventoryDefinitions.IsHighSlot(module.FlagId)
+                ? combat.ModuleAttributes(context.Pilot.PilotId, module)
+                : fitting.ModuleAttributes(context.Pilot.PilotId, module);
             var values = new[] { DogmaAttributeId.MaxRange, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.NextActivationTime }
                 .Select(attribute => new ModuleAttributeChange(
                     context.Pilot.PilotId,

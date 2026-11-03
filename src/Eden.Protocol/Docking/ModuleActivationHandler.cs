@@ -3,6 +3,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -22,7 +23,8 @@ internal sealed class ModuleActivationHandler(
     FittingOperations inventory,
     PropulsionHandler propulsion,
     ArmorRepairHandler armor,
-    HardenerHandler hardeners
+    HardenerHandler hardeners,
+    CapacitorBoosterHandler capacitorBoosters
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -44,6 +46,7 @@ internal sealed class ModuleActivationHandler(
             CombatWireDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
             ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
             ArmorRepairWireDefinitions.EffectName => armor.Call(context, service, method, args),
+            CapacitorBoosterHandler.EffectName => capacitorBoosters.Call(context, service, method, args),
             HardenerWireDefinitions.ShieldEffectName or HardenerWireDefinitions.ArmorEffectName => hardeners.Call(
                 context,
                 service,

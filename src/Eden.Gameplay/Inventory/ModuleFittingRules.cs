@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Inventory;
 
@@ -47,6 +48,8 @@ public static class ModuleFittingRules
         {
             InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser),
             ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
+            CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
+                && effects.Contains(DogmaEffect.CapacitorBoosting),
             ArmorRepairDefinitions.Group => ArmorRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.ArmorRepair),
             HardenerDefinitions.ShieldGroup => effects.Contains(DogmaEffect.ActiveShieldResistance),
             HardenerDefinitions.ArmorGroup => effects.Contains(DogmaEffect.ActiveArmorResistance),

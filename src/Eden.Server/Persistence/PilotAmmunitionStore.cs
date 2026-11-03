@@ -2,6 +2,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
@@ -41,7 +42,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             .Where(i =>
                 i.OwnerId == pilot.Id
                 && i.LocationId == shipId
-                && i.FlagId >= (int)InventoryFlag.HighSlot0
+                && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             )
             .OrderBy(i => i.FlagId)
@@ -76,7 +77,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         {
             throw new InvalidDataException("Select distinct fitted weapons.");
         }
-        int firstFlag = (int)(unloading ? InventoryFlag.LowSlot0 : InventoryFlag.HighSlot0);
+        int firstFlag = (int)InventoryFlag.LowSlot0;
         var modules = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -98,7 +99,12 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
-                !CombatDefinitions.IsSupportedHybrid(group, attributes)
+                !(CombatDefinitions.IsSupportedHybrid(group, attributes) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(
+                    CapacitorBoosterDefinitions.IsSupported(group, attributes)
+                    && InventoryDefinitions.IsMediumSlot(module.FlagId)
+                    && FittingCatalog.Definition(catalog, module.TypeId) is not null
+                )
                 && !(
                     unloading
                     // The native unfit path first requests UnloadAmmo even for empty passive modules.
@@ -169,11 +175,17 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
         var chargeAttributes = Attributes(catalog, typeId);
         if (
-            chargeType.GroupId != AmmunitionDefinitions.HybridChargeGroup
-            || chargeAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize
+            !(
+                chargeType.GroupId == AmmunitionDefinitions.HybridChargeGroup
+                && chargeAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
+            )
+            && !(
+                chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
+                && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0
+            )
         )
         {
-            throw new InvalidDataException("Use small hybrid charges in these weapons.");
+            throw new InvalidDataException("Use supported hybrid ammunition or capacitor booster charges.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
         double volume = PilotInventoryStore.Volume(catalog, typeId);

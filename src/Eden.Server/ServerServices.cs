@@ -8,11 +8,11 @@ namespace Eden.Server;
 
 internal static class ServerServices
 {
-    public static ServiceProvider Build(WorldDatabase database)
+    public static ServiceProvider Build(WorldDatabase database, TimeProvider? clock = null)
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
-        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton(clock ?? TimeProvider.System);
         foreach (Assembly assembly in new[] { typeof(ServerServices).Assembly, typeof(InjectableAttribute).Assembly })
         {
             foreach (Type implementation in assembly.GetTypes())

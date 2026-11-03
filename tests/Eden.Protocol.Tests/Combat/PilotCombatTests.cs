@@ -262,7 +262,8 @@ public sealed class PilotCombatTests
             activationScope.ServiceProvider.GetRequiredService<FittingOperations>(),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotHardening>())
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotHardening>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotCapacitorBoosting>())
         );
         object? Activate() => activation.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());

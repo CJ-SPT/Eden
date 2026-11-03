@@ -53,6 +53,7 @@ public enum DogmaEffect
     MediumPower = 13,
     Online = 16,
     ArmorRepair = 27,
+    CapacitorBoosting = 48,
     ActiveShieldResistance = 5230,
     ActiveArmorResistance = 5231,
     LauncherFitted = 40,

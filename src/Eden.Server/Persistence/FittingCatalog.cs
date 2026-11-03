@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
@@ -16,6 +17,14 @@ internal static class FittingCatalog
             return null;
         }
         if (HardenerDefinitions.Effect(type.GroupId) is not null && !HardenerCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
+        if (
+            type.GroupId == CapacitorBoosterDefinitions.Group
+            && catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>()
+                is not { Published: 1, MetaGroupID: 1 }
+        )
         {
             return null;
         }

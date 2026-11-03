@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Mining;
@@ -18,7 +19,8 @@ internal sealed class PilotUpdateCoordinator(
     IndustryHandler industry,
     NpcCombatHandler npcCombat,
     ArmorRepairHandler armor,
-    HardenerHandler hardeners
+    HardenerHandler hardeners,
+    CapacitorBoosterHandler capacitorBoosters
 )
 {
     public bool IsMonitoring => industry.IsMonitoring;
@@ -32,6 +34,7 @@ internal sealed class PilotUpdateCoordinator(
     public DockedPilot? Advance(PilotCallContext context)
     {
         targeting.Advance(context);
+        capacitorBoosters.Advance(context);
         hardeners.Advance(context);
         mining.Advance(context);
         combat.Advance(context);

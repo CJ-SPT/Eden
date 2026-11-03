@@ -14,7 +14,7 @@ public sealed class PassiveFittingTests
 {
     internal sealed class Fixture : IDisposable
     {
-        internal TestWorld Db { get; } = new();
+        internal TestWorld Db { get; }
         internal TestClock Clock { get; } = new();
         internal PilotFittingStore Fitting { get; }
         internal PilotInventoryStore Inventory { get; }
@@ -25,6 +25,7 @@ public sealed class PassiveFittingTests
 
         internal Fixture()
         {
+            Db = new(clock: Clock);
             PassiveCatalogFixture.Load(CatalogPath);
             Fitting = new(new(Db.Path), Clock);
             Inventory = new(new(Db.Path), Clock);

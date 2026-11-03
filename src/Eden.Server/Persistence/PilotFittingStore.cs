@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Targeting;
 using Eden.Protocol;
@@ -363,9 +364,17 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
-        return calculation.Modules.Any(m => m.Item.Id == module.Id)
-            ? calculation.Graph.Attributes(module.Id)
-            : ReadAttributes(catalog, module.TypeId);
+        var attributes = (
+            calculation.Modules.Any(m => m.Item.Id == module.Id)
+                ? calculation.Graph.Attributes(module.Id)
+                : ReadAttributes(catalog, module.TypeId)
+        ).ToDictionary();
+        if (module.GroupId == CapacitorBoosterDefinitions.Group)
+        {
+            var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
+            attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;
+        }
+        return attributes;
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)

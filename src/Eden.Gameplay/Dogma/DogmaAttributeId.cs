@@ -36,6 +36,7 @@ public enum DogmaAttributeId
     CapacitorRechargeTime = 55,
     DamageMultiplier = 64,
     DurationBonus = 66,
+    CapacitorBonus = 67,
     ShieldBonus = 68,
     Agility = 70,
     Duration = 73,

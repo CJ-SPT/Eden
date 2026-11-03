@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -15,7 +16,8 @@ internal sealed class ShipLossCoordinator(
     PropulsionHandler propulsion,
     DeferredRefitPrimes refits,
     ArmorRepairHandler armor,
-    HardenerHandler hardeners
+    HardenerHandler hardeners,
+    CapacitorBoosterHandler capacitorBoosters
 )
 {
     internal void Replace(PilotCallContext context, DockedPilot capsule)
@@ -26,6 +28,7 @@ internal sealed class ShipLossCoordinator(
         shields.Cancel(context);
         armor.Cancel(context);
         hardeners.Cancel(context);
+        capacitorBoosters.Cancel(context);
         propulsion.Cancel(context);
         refits.Clear();
         // Wreck.Prepare needs the still-loaded hull for rotation/explosion timing.
