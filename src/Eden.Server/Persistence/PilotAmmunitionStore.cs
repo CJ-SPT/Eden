@@ -99,7 +99,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
-                !(HybridWeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                !(TurretWeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
@@ -175,7 +175,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
         var chargeAttributes = Attributes(catalog, typeId);
         if (
-            !(HybridChargeCatalog.Supported(catalog, typeId, chargeType.GroupId))
+            !(TurretChargeCatalog.Supported(catalog, typeId, chargeType.GroupId))
             && !(
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                 && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0
@@ -205,7 +205,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             bool compatible =
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
-                    : AmmunitionDefinitions.CompatibleHybridCharge(attributes, chargeType.GroupId, chargeAttributes);
+                    : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);
             if (!compatible)
             {
                 throw new InvalidDataException("The ammunition group or size does not match the weapon.");

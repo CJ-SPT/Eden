@@ -4,6 +4,7 @@ namespace Eden.Gameplay.Dogma;
 // supported passive profiles are admitted at the catalog boundary.
 public enum DogmaOperation
 {
+    PreAssignment = -1,
     PreMultiply = 0,
     Add = 2,
     PostMultiply = 4,
@@ -44,6 +45,18 @@ public sealed class DogmaGraph
 
     // stackingNurfedAttribute.pyj: exp((index / 2.67) ** 2).
     private const double StackingDivisor = 2.67;
+
+    // Native precedence puts -1 first. Enum.GetValues sorts negative IDs as
+    // unsigned values, so it cannot supply the operator order.
+    private static readonly DogmaOperation[] s_operationOrder =
+    [
+        DogmaOperation.PreAssignment,
+        DogmaOperation.PreMultiply,
+        DogmaOperation.Add,
+        DogmaOperation.PostMultiply,
+        DogmaOperation.PostPercent,
+        DogmaOperation.PostAssignment,
+    ];
     private readonly IReadOnlyDictionary<long, DogmaNode> _items;
     private readonly IReadOnlyDictionary<DogmaAttributeId, DogmaAttributeDefinition> _definitions;
     private readonly ILookup<(long Item, DogmaAttributeId Attribute), DogmaModifier> _incoming;
@@ -93,10 +106,10 @@ public sealed class DogmaGraph
             {
                 value = Math.Max(value, Read(itemId, minimum));
             }
-            foreach (var operation in Enum.GetValues<DogmaOperation>())
+            foreach (var operation in s_operationOrder)
             {
                 var modifiers = _incoming[key].Where(m => m.Operation == operation).ToArray();
-                if (operation == DogmaOperation.PostAssignment)
+                if (operation is DogmaOperation.PreAssignment or DogmaOperation.PostAssignment)
                 {
                     foreach (var modifier in modifiers)
                     {

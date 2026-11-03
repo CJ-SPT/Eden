@@ -59,9 +59,9 @@ internal sealed record FittingCalculation(
         var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
         foreach (var module in modules)
         {
-            if (HybridWeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            if (TurretWeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
-                foreach (var modifier in HybridWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
+                foreach (var modifier in TurretWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
                     Add(module.Item.Id, modifier, true);
                 }

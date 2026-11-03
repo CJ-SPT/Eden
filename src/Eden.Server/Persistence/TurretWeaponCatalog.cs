@@ -5,7 +5,7 @@ using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
 
-internal static class HybridWeaponCatalog
+internal static class TurretWeaponCatalog
 {
     private const int AbyssalMetaGroup = 15;
     private const int OverloadRate = 3001;
@@ -13,10 +13,13 @@ internal static class HybridWeaponCatalog
     private const int OverloadPhase = 5;
     private const int HullResistanceOverride = 5994;
     private const int ShieldArmorResistanceOverride = 5995;
+    private const int BarrageDamageDerivation = 253;
+    private const int BarrageFalloffDerivation = 254;
+    private const int LegacyBarrage = 263;
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
-        if (group != CombatDefinitions.HybridWeaponGroup)
+        if (group is not (CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup))
         {
             return false;
         }
@@ -24,7 +27,8 @@ internal static class HybridWeaponCatalog
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
-            || !CombatDefinitions.IsSupportedHybrid(group, PilotFittingStore.ReadAttributes(catalog, typeId))
+            || !CombatDefinitions.IsSupportedAmmoTurret(group, PilotFittingStore.ReadAttributes(catalog, typeId))
+            || FittingCatalog.DefaultEffect(catalog, typeId) != DogmaEffect.ProjectileFired
         )
         {
             return false;
@@ -42,6 +46,10 @@ internal static class HybridWeaponCatalog
             }.All(ids.Contains)
             || ids.Contains(OverloadRate) == ids.Contains(OverloadDamage)
             || ids.Contains(HullResistanceOverride) != ids.Contains(ShieldArmorResistanceOverride)
+            || (
+                group == CombatDefinitions.ProjectileWeaponGroup
+                && !new long[] { BarrageDamageDerivation, BarrageFalloffDerivation, LegacyBarrage }.All(ids.Contains)
+            )
         )
         {
             return false;
@@ -65,9 +73,37 @@ internal static class HybridWeaponCatalog
                     or (int)DogmaEffect.ProjectileFired => (e.ModifierInfo ?? []).Length == 0,
                     OverloadRate or OverloadDamage => e.EffectCategory == OverloadPhase,
                     HullResistanceOverride or ShieldArmorResistanceOverride => ValidOverride(e),
+                    BarrageDamageDerivation => group == CombatDefinitions.ProjectileWeaponGroup
+                        && ValidDerivation(
+                            e,
+                            DogmaAttributeId.BarrageDamageMultiplier,
+                            DogmaAttributeId.DamageMultiplier,
+                            DogmaAttributeId.BarrageDamageBonus
+                        ),
+                    BarrageFalloffDerivation => group == CombatDefinitions.ProjectileWeaponGroup
+                        && ValidDerivation(
+                            e,
+                            DogmaAttributeId.BarrageFalloff,
+                            DogmaAttributeId.AccuracyFalloff,
+                            DogmaAttributeId.BarrageFalloffBonus
+                        ),
+                    LegacyBarrage => group == CombatDefinitions.ProjectileWeaponGroup
+                        && e.EffectCategory == (int)PassiveEffectPhase.Targeted
+                        && e.DurationAttributeID == (int)DogmaAttributeId.WeaponCycleTime
+                        && e.FalloffAttributeID == (int)DogmaAttributeId.BarrageFalloff,
                     _ => false,
                 }
             );
+    }
+
+    private static bool ValidDerivation(ClientDogmaeffects effect, DogmaAttributeId target, DogmaAttributeId basis, DogmaAttributeId bonus)
+    {
+        var modifiers = effect.ModifierInfo ?? [];
+        return effect.EffectCategory == (int)PassiveEffectPhase.Fitted
+            && modifiers.Length == 2
+            && modifiers.All(m => m.Domain == "itemID" && m.Func == "ItemModifier" && m.ModifiedAttributeID == (int)target)
+            && modifiers.Any(m => m.Operation == (int)DogmaOperation.PreAssignment && m.ModifyingAttributeID == (int)basis)
+            && modifiers.Any(m => m.Operation == (int)DogmaOperation.PostPercent && m.ModifyingAttributeID == (int)bonus);
     }
 
     private static bool ValidOverride(ClientDogmaeffects effect)

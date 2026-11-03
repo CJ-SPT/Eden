@@ -37,17 +37,17 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         var levels = Enum.GetValues<CombatSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
         var loaded = PilotAmmunitionStore.Contents(world, module.Id);
         var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
+        var hull = PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId);
         return WeaponRules.ModuleAttributes(
             new(
                 module.TypeId,
                 module.GroupId,
                 PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
                 levels,
-                PilotFittingStore
-                    .ReadAttributes(catalog, pilot.ActiveShip.TypeId)
-                    .GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus),
+                hull.GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus),
                 loaded is null ? null : PilotFittingStore.ReadAttributes(catalog, loaded.TypeId),
-                cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0
+                cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0,
+                hull.GetValueOrDefault(DogmaAttributeId.RookieProjectileDamageBonus)
             )
         );
     }
@@ -72,9 +72,9 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         var npc = world.Set<WorldNpc>().Find(targetId);
-        bool hybrid =
+        bool ammoFed =
             module is not null
-            && CombatDefinitions.IsSupportedHybrid(
+            && CombatDefinitions.IsSupportedAmmoTurret(
                 catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId,
                 PilotFittingStore.ReadAttributes(catalog, module.TypeId)
             );
@@ -83,7 +83,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             || module is null
             || module.OwnerId != pilotId
             || module.LocationId != pilot.ActiveShipId
-            || (!hybrid && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
+            || (!ammoFed && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
@@ -94,7 +94,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
         }
-        if (activation is not null && activation != (hybrid ? WeaponActivation.Hybrid : WeaponActivation.Civilian))
+        if (activation is not null && activation != (ammoFed ? WeaponActivation.AmmoFed : WeaponActivation.Civilian))
         {
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
@@ -119,25 +119,25 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         {
             throw new InvalidDataException("The weapon is still cycling.");
         }
-        var loadedAmmo = hybrid ? PilotAmmunitionStore.Contents(world, moduleId) : null;
-        if (hybrid && loadedAmmo is null)
+        var loadedAmmo = ammoFed ? PilotAmmunitionStore.Contents(world, moduleId) : null;
+        if (ammoFed && loadedAmmo is null)
         {
             throw new InvalidDataException("Load ammunition before firing the weapon.");
         }
         var damageAttributes = loadedAmmo is null ? attributes : PilotFittingStore.ReadAttributes(catalog, loadedAmmo.TypeId);
-        int rounds = hybrid ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)) : 0;
+        int rounds = ammoFed ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)) : 0;
         if (
-            hybrid
+            ammoFed
             && (
                 rounds <= 0
                 || rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)
                 || loadedAmmo!.Quantity < rounds
-                || !AmmunitionDefinitions.CompatibleHybridCharge(
+                || !AmmunitionDefinitions.CompatibleTurretCharge(
                     attributes,
                     catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo!.TypeId).GroupId,
                     damageAttributes
                 )
-                || !HybridChargeCatalog.Supported(
+                || !TurretChargeCatalog.Supported(
                     catalog,
                     loadedAmmo!.TypeId,
                     catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId
@@ -185,7 +185,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed),
             attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            (int)(hybrid ? DogmaEffect.ProjectileFired : DogmaEffect.CivilianWeapon)
+            (int)(ammoFed ? DogmaEffect.ProjectileFired : DogmaEffect.CivilianWeapon)
         );
         var target = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         var defense = ShipHealth.DefenseFrom(target);

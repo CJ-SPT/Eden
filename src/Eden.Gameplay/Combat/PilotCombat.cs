@@ -9,7 +9,7 @@ namespace Eden.Gameplay.Combat;
 public enum WeaponActivation
 {
     Civilian,
-    Hybrid,
+    AmmoFed,
 }
 
 public sealed record CombatWeapon(

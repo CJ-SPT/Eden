@@ -65,8 +65,10 @@ public static class ModuleFittingRules
                     && !effects.Contains(DogmaEffect.Afterburner)
                     && PropulsionDefinitions.IsSupportedMicrowarpdrive(attributes)
                 ),
-            CombatDefinitions.HybridWeaponGroup => CombatDefinitions.IsSupportedHybrid(groupId, attributes)
-                && effects.Contains(DogmaEffect.ProjectileFired),
+            CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup => CombatDefinitions.IsSupportedAmmoTurret(
+                groupId,
+                attributes
+            ) && effects.Contains(DogmaEffect.ProjectileFired),
             _ => typeId == (int)CombatWeaponType.CivilianGatlingRailgun && effects.Contains(DogmaEffect.CivilianWeapon),
         };
         if ((!supported && !passive) || !effects.Contains(DogmaEffect.Online))

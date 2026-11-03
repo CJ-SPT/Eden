@@ -5,21 +5,20 @@ using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
 
-internal static class HybridChargeCatalog
+internal static class TurretChargeCatalog
 {
     private const int AbyssalMetaGroup = 15;
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
-        if (!AmmunitionDefinitions.HybridGroup(group))
+        if (!AmmunitionDefinitions.IsTurretChargeGroup(group))
         {
             return false;
         }
         var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
-            !AmmunitionDefinitions.HybridGroup(group)
-            || type?.Published != 1
+            type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
             || !AmmunitionDefinitions.ValidSize(attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize))
         )
@@ -27,13 +26,28 @@ internal static class HybridChargeCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
-        return effects.Count >= 2
+        HashSet<TurretChargeEffect> expectedEffects = group switch
+        {
+            AmmunitionDefinitions.HybridChargeGroup => [TurretChargeEffect.Range, TurretChargeEffect.Capacitor],
+            AmmunitionDefinitions.ProjectileChargeGroup =>
+            [
+                TurretChargeEffect.Range,
+                TurretChargeEffect.Tracking,
+                TurretChargeEffect.EntityFlyRange,
+            ],
+            _ => [TurretChargeEffect.Range, TurretChargeEffect.Tracking, TurretChargeEffect.Falloff, TurretChargeEffect.EntityFlyRange],
+        };
+        if (group == AmmunitionDefinitions.AdvancedRailgunChargeGroup || attributes.ContainsKey(DogmaAttributeId.CapacitorNeedBonus))
+        {
+            expectedEffects.Add(TurretChargeEffect.Capacitor);
+        }
+        return effects.Count == expectedEffects.Count
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
-            && effects.Any(e => e.EffectID == (int)HybridChargeEffect.Range)
             && effects.All(e =>
             {
-                var expected = AmmunitionDefinitions.HybridModifiers.SingleOrDefault(m => (int)m.Effect == e.EffectID);
+                var expected = AmmunitionDefinitions.TurretModifiers.SingleOrDefault(m => (int)m.Effect == e.EffectID);
                 return expected is not null
+                    && expectedEffects.Contains(expected.Effect)
                     && e.EffectCategory == (int)PassiveEffectPhase.Fitted
                     && e.ModifierInfo is [{ } modifier]
                     && modifier.Func == "ItemModifier"

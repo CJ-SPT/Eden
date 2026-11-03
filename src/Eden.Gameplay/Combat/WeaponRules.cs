@@ -11,7 +11,8 @@ public sealed record WeaponModuleInputs(
     IReadOnlyDictionary<CombatSkill, int> Levels,
     double HullOptimalBonus,
     IReadOnlyDictionary<DogmaAttributeId, double>? ChargeAttributes,
-    long ReloadReadyAt
+    long ReloadReadyAt,
+    double HullProjectileDamageBonus = 0
 );
 
 public static class WeaponRules
@@ -21,8 +22,8 @@ public static class WeaponRules
     public static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(WeaponModuleInputs inputs)
     {
         var attributes = inputs.Attributes.ToDictionary();
-        bool hybrid = CombatDefinitions.IsSupportedHybrid(inputs.GroupId, attributes);
-        if (!hybrid && inputs.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
+        bool ammoFed = CombatDefinitions.IsSupportedAmmoTurret(inputs.GroupId, attributes);
+        if (!ammoFed && inputs.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
         {
             return attributes;
         }
@@ -40,7 +41,7 @@ public static class WeaponRules
                 attributes.GetValueOrDefault(modifier.Attribute)
                 * (1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill));
         }
-        if (hybrid)
+        if (ammoFed)
         {
             if (
                 InventoryDefinitions.RequiredSkills.Any(pair =>
@@ -52,7 +53,7 @@ public static class WeaponRules
             }
             if (inputs.ChargeAttributes is { } charge)
             {
-                foreach (var modifier in AmmunitionDefinitions.HybridModifiers)
+                foreach (var modifier in AmmunitionDefinitions.TurretModifiers)
                 {
                     if (charge.TryGetValue(modifier.Source, out double value))
                     {
@@ -62,6 +63,23 @@ public static class WeaponRules
                 }
             }
             attributes[DogmaAttributeId.NextActivationTime] = inputs.ReloadReadyAt;
+            if (inputs.GroupId == CombatDefinitions.ProjectileWeaponGroup)
+            {
+                if (
+                    InventoryDefinitions.RequiredSkills.Any(pair =>
+                        attributes.GetValueOrDefault(pair.Skill) == (int)CombatSkill.SmallProjectileTurret
+                    )
+                )
+                {
+                    attributes[DogmaAttributeId.DamageMultiplier] *= 1 + inputs.HullProjectileDamageBonus / Percent;
+                }
+                attributes[DogmaAttributeId.BarrageDamageMultiplier] =
+                    attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)
+                    * (1 + attributes.GetValueOrDefault(DogmaAttributeId.BarrageDamageBonus) / Percent);
+                attributes[DogmaAttributeId.BarrageFalloff] =
+                    attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff)
+                    * (1 + attributes.GetValueOrDefault(DogmaAttributeId.BarrageFalloffBonus) / Percent);
+            }
         }
         return attributes;
     }

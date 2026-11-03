@@ -111,7 +111,7 @@ public sealed class PilotBrainTests
             .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.ShipEffects)))
             .Select(State)
             .ToArray();
-        Assert.Equal(2, effects.Length);
+        Assert.Equal(3, effects.Length);
         Assert.All(
             effects,
             e =>
@@ -122,7 +122,12 @@ public sealed class PilotBrainTests
             }
         );
         Assert.Equal(
-            new object?[] { CombatDefinitions.EnergyWeaponGroup, CombatDefinitions.HybridWeaponGroup },
+            new object?[]
+            {
+                CombatDefinitions.EnergyWeaponGroup,
+                CombatDefinitions.HybridWeaponGroup,
+                CombatDefinitions.ProjectileWeaponGroup,
+            },
             effects.Select(e => Assert.Single(Assert.IsType<object?[]>(e["extras"])))
         );
     }

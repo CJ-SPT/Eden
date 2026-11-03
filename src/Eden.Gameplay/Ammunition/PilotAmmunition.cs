@@ -49,7 +49,7 @@ public enum ChargeSize
     ExtraLarge = 4,
 }
 
-public enum HybridChargeEffect
+public enum TurretChargeEffect
 {
     Range = 596,
     Falloff = 599,
@@ -58,8 +58,8 @@ public enum HybridChargeEffect
     EntityFlyRange = 1173,
 }
 
-public sealed record HybridChargeModifier(
-    HybridChargeEffect Effect,
+public sealed record TurretChargeModifier(
+    TurretChargeEffect Effect,
     DogmaAttributeId Attribute,
     DogmaAttributeId Source,
     DogmaOperation Operation,
@@ -71,6 +71,9 @@ public static class AmmunitionDefinitions
     public const int HybridChargeGroup = 85;
     public const int AdvancedRailgunChargeGroup = 373;
     public const int AdvancedBlasterChargeGroup = 377;
+    public const int ProjectileChargeGroup = 83;
+    public const int AdvancedAutocannonChargeGroup = 372;
+    public const int AdvancedArtilleryChargeGroup = 376;
     public const int SmallChargeSize = (int)ChargeSize.Small;
     public const int TechOne = 1;
     public const int TechTwo = 2;
@@ -78,14 +81,21 @@ public static class AmmunitionDefinitions
     public static bool ValidSize(double size) =>
         size is (int)ChargeSize.Small or (int)ChargeSize.Medium or (int)ChargeSize.Large or (int)ChargeSize.ExtraLarge;
 
-    public static bool HybridGroup(int group) => group is HybridChargeGroup or AdvancedRailgunChargeGroup or AdvancedBlasterChargeGroup;
+    public static bool IsTurretChargeGroup(int group) =>
+        group
+            is HybridChargeGroup
+                or AdvancedRailgunChargeGroup
+                or AdvancedBlasterChargeGroup
+                or ProjectileChargeGroup
+                or AdvancedAutocannonChargeGroup
+                or AdvancedArtilleryChargeGroup;
 
-    public static bool CompatibleHybridCharge(
+    public static bool CompatibleTurretCharge(
         IReadOnlyDictionary<DogmaAttributeId, double> weapon,
         int group,
         IReadOnlyDictionary<DogmaAttributeId, double> charge
     ) =>
-        HybridGroup(group)
+        IsTurretChargeGroup(group)
         && ValidSize(charge.GetValueOrDefault(DogmaAttributeId.ChargeSize))
         && weapon.GetValueOrDefault(DogmaAttributeId.ChargeSize) == charge.GetValueOrDefault(DogmaAttributeId.ChargeSize)
         && (
@@ -95,24 +105,24 @@ public static class AmmunitionDefinitions
 
     // Build 3662168 fitted charge effects. Effect 1173 affects sentry/NPC orbit
     // range, not player turret optimal; its native default is 500 metres.
-    public static IReadOnlyList<HybridChargeModifier> HybridModifiers { get; } =
+    public static IReadOnlyList<TurretChargeModifier> TurretModifiers { get; } =
     [
-        new(HybridChargeEffect.Range, DogmaAttributeId.MaxRange, DogmaAttributeId.WeaponRangeMultiplier, DogmaOperation.PreMultiply),
+        new(TurretChargeEffect.Range, DogmaAttributeId.MaxRange, DogmaAttributeId.WeaponRangeMultiplier, DogmaOperation.PreMultiply),
         new(
-            HybridChargeEffect.Falloff,
+            TurretChargeEffect.Falloff,
             DogmaAttributeId.AccuracyFalloff,
             DogmaAttributeId.ChargeFalloffMultiplier,
             DogmaOperation.PostMultiply
         ),
         new(
-            HybridChargeEffect.Tracking,
+            TurretChargeEffect.Tracking,
             DogmaAttributeId.TrackingSpeed,
             DogmaAttributeId.ChargeTrackingMultiplier,
             DogmaOperation.PostMultiply
         ),
-        new(HybridChargeEffect.Capacitor, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.CapacitorNeedBonus, DogmaOperation.PostPercent),
+        new(TurretChargeEffect.Capacitor, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.CapacitorNeedBonus, DogmaOperation.PostPercent),
         new(
-            HybridChargeEffect.EntityFlyRange,
+            TurretChargeEffect.EntityFlyRange,
             DogmaAttributeId.EntityFlyRange,
             DogmaAttributeId.EntityFlyRangeMultiplier,
             DogmaOperation.PreMultiply,

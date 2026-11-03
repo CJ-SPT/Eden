@@ -98,7 +98,7 @@ public sealed class AmmunitionTests
         public void Space() => Db.Store.SetPosition(Pilot.ShipId, Npc.Position + new SpacePosition(1000, 0, 0), Npc.SystemId);
 
         public CombatShot Fire(double roll = 0.5) =>
-            Combat.Fire(Pilot.PilotId, Gun, Npc.Id, SpacePosition.Zero, Clock.Now, roll, WeaponActivation.Hybrid);
+            Combat.Fire(Pilot.PilotId, Gun, Npc.Id, SpacePosition.Zero, Clock.Now, roll, WeaponActivation.AmmoFed);
 
         public int Total(int type)
         {

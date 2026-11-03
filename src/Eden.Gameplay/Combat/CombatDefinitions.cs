@@ -14,6 +14,18 @@ public enum CombatSkill
 {
     Gunnery = 3300,
     SmallHybridTurret = 3301,
+    SmallProjectileTurret = 3302,
+    MediumProjectileTurret = 3305,
+    LargeProjectileTurret = 3308,
+    CapitalProjectileTurret = 21667,
+    SmallAutocannonSpecialization = 11084,
+    MediumAutocannonSpecialization = 12208,
+    LargeAutocannonSpecialization = 12209,
+    SmallArtillerySpecialization = 12201,
+    MediumArtillerySpecialization = 12202,
+    LargeArtillerySpecialization = 12203,
+    CapitalAutocannonSpecialization = 41403,
+    CapitalArtillerySpecialization = 41404,
     MediumHybridTurret = 3304,
     LargeHybridTurret = 3307,
     CapitalHybridTurret = 21666,
@@ -45,9 +57,10 @@ public static class CombatDefinitions
 {
     public const int EnergyWeaponGroup = 53;
     public const int HybridWeaponGroup = 74;
+    public const int ProjectileWeaponGroup = 55;
 
-    public static bool IsSupportedHybrid(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        group == HybridWeaponGroup
+    public static bool IsSupportedAmmoTurret(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        group is HybridWeaponGroup or ProjectileWeaponGroup
         && AmmunitionDefinitions.ValidSize(attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize))
         && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is AmmunitionDefinitions.TechOne or AmmunitionDefinitions.TechTwo
         && !InventoryDefinitions.RequiresSpecificShip(attributes);
@@ -77,6 +90,69 @@ public static class CombatDefinitions
             new(CombatSkill.MotionPrediction, DogmaAttributeId.TrackingSpeed, WeaponSkillBonus),
             new(CombatSkill.SurgicalStrike, DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: EnergyWeaponGroup),
             new(CombatSkill.SurgicalStrike, DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: HybridWeaponGroup),
+            new(CombatSkill.SurgicalStrike, DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: ProjectileWeaponGroup),
+            new(CombatSkill.SmallProjectileTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.SmallProjectileTurret),
+            new(
+                CombatSkill.MediumProjectileTurret,
+                DogmaAttributeId.DamageMultiplier,
+                WeaponSkillBonus,
+                CombatSkill.MediumProjectileTurret
+            ),
+            new(CombatSkill.LargeProjectileTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.LargeProjectileTurret),
+            new(
+                CombatSkill.CapitalProjectileTurret,
+                DogmaAttributeId.DamageMultiplier,
+                WeaponSkillBonus,
+                CombatSkill.CapitalProjectileTurret
+            ),
+            new(
+                CombatSkill.SmallAutocannonSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallAutocannonSpecialization
+            ),
+            new(
+                CombatSkill.MediumAutocannonSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumAutocannonSpecialization
+            ),
+            new(
+                CombatSkill.LargeAutocannonSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargeAutocannonSpecialization
+            ),
+            new(
+                CombatSkill.SmallArtillerySpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallArtillerySpecialization
+            ),
+            new(
+                CombatSkill.MediumArtillerySpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumArtillerySpecialization
+            ),
+            new(
+                CombatSkill.LargeArtillerySpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargeArtillerySpecialization
+            ),
+            new(
+                CombatSkill.CapitalAutocannonSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalAutocannonSpecialization
+            ),
+            new(
+                CombatSkill.CapitalArtillerySpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalArtillerySpecialization
+            ),
             new(CombatSkill.ControlledBursts, DogmaAttributeId.CapacitorNeed, -WeaponSkillBonus),
             new(CombatSkill.SmallHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.SmallHybridTurret),
             new(CombatSkill.MediumHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.MediumHybridTurret),

@@ -70,7 +70,7 @@ public sealed class HybridTierTests
         PassiveCatalogFixture.LoadWeaponTiers(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var guns = catalog.Set<ItemType>().Where(t => t.GroupId == CombatDefinitions.HybridWeaponGroup).ToArray();
-        var supported = guns.Where(t => HybridWeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
+        var supported = guns.Where(t => TurretWeaponCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
         var charges = catalog
             .Set<ItemType>()
             .Where(t =>
@@ -82,7 +82,7 @@ public sealed class HybridTierTests
         Assert.Equal(223, guns.Length);
         Assert.Equal(216, supported.Length);
         Assert.Equal(224, charges.Length);
-        Assert.All(charges, t => Assert.True(HybridChargeCatalog.Supported(catalog, t.Id, t.GroupId)));
+        Assert.All(charges, t => Assert.True(TurretChargeCatalog.Supported(catalog, t.Id, t.GroupId)));
         var chargeAttributes = charges.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));
         Assert.All(
             supported,
@@ -91,7 +91,7 @@ public sealed class HybridTierTests
                 Assert.Equal(ModuleRack.High, FittingCatalog.Definition(catalog, t.Id)!.Rack);
                 Assert.True(FittingCatalog.Definition(catalog, t.Id)!.Turret);
                 var attributes = PilotFittingStore.ReadAttributes(catalog, t.Id);
-                Assert.Contains(charges, c => AmmunitionDefinitions.CompatibleHybridCharge(attributes, c.GroupId, chargeAttributes[c.Id]));
+                Assert.Contains(charges, c => AmmunitionDefinitions.CompatibleTurretCharge(attributes, c.GroupId, chargeAttributes[c.Id]));
             }
         );
         Assert.All(guns.Except(supported), t => Assert.Null(FittingCatalog.Definition(catalog, t.Id)));
@@ -147,7 +147,7 @@ public sealed class HybridTierTests
                     or (int)CombatSkill.CapitalBlasterSpecialization
         );
         double multiplier = damage * 1.25 * 1.15 * (specialized ? 1.1 : 1);
-        var result = Combat(f).Fire(f.PilotId, gun, npc.Id, SpacePosition.Zero, f.Clock.Now, .5, WeaponActivation.Hybrid);
+        var result = Combat(f).Fire(f.PilotId, gun, npc.Id, SpacePosition.Zero, f.Clock.Now, .5, WeaponActivation.AmmoFed);
         Assert.Equal(cycle * .9 * .8, result.Weapon.CycleMilliseconds, 8);
         Assert.Equal(cost * .75 * (1 + ammo.GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus) / 100), result.Weapon.CapacitorNeed, 8);
         Assert.Equal(ArtificialBudget - result.Weapon.CapacitorNeed, result.Capacitor, 6);

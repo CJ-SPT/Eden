@@ -13,6 +13,7 @@
     <EmbeddedResource Include="Fixtures/PassiveTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/ActiveTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/HybridTierCatalog.json" />
+    <EmbeddedResource Include="Fixtures/ProjectileTierCatalog.json" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

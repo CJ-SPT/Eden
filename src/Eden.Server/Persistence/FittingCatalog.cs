@@ -18,7 +18,10 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (type.GroupId == CombatDefinitions.HybridWeaponGroup && !HybridWeaponCatalog.Supported(catalog, typeId, type.GroupId))
+        if (
+            type.GroupId is CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup
+            && !TurretWeaponCatalog.Supported(catalog, typeId, type.GroupId)
+        )
         {
             return null;
         }
@@ -79,4 +82,17 @@ internal static class FittingCatalog
             .DogmaEffects?.Select(e => (DogmaEffect)checked((int)e.EffectID!.Value))
             .ToHashSet()
         ?? [];
+
+    internal static DogmaEffect? DefaultEffect(CatalogDbContext catalog, int typeId)
+    {
+        var effects =
+            catalog
+                .Set<SourceRecord>()
+                .Find("client/typedogma", PassiveCatalog.Key(typeId))
+                ?.Read<ClientTypedogma>()
+                .DogmaEffects?.Where(e => e.IsDefault == 1)
+                .ToArray()
+            ?? [];
+        return effects is [{ EffectID: long effect }] ? (DogmaEffect)checked((int)effect) : null;
+    }
 }

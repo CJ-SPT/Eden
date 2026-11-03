@@ -4,6 +4,23 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class DogmaGraphTests
 {
+    [Fact]
+    public void PreAssignmentReplacesTheBaseBeforeAdditionAndPercentModifiers()
+    {
+        var attribute = DogmaAttributeId.DamageMultiplier;
+        DogmaNode[] nodes = [new(1, new Dictionary<DogmaAttributeId, double> { [attribute] = 10 })];
+        DogmaModifier[] modifiers =
+        [
+            new(1, attribute, DogmaOperation.PostPercent, new DogmaValue.Constant(50)),
+            new(1, attribute, DogmaOperation.Add, new DogmaValue.Constant(20)),
+            new(1, attribute, DogmaOperation.PreAssignment, new DogmaValue.Constant(100)),
+        ];
+        Assert.Equal(
+            180,
+            new DogmaGraph(nodes, modifiers, new Dictionary<DogmaAttributeId, DogmaAttributeDefinition>()).Read(1, attribute)
+        );
+    }
+
     [Theory]
     [InlineData(200, 100)]
     [InlineData(-200, 10)]

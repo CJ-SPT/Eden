@@ -100,7 +100,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             now,
             RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
             effectName is null ? null
-                : effectName == CombatWireDefinitions.HybridWeaponEffect ? WeaponActivation.Hybrid
+                : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
                 : WeaponActivation.Civilian
         );
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats);
@@ -209,7 +209,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             if (
                 method == "Activate"
                 && args is [long module, var effect, long target, long repeats]
-                && BlueMarshal.Text(effect) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.HybridWeaponEffect
+                && BlueMarshal.Text(effect) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -227,7 +227,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.HybridWeaponEffect
+                && BlueMarshal.Text(effectName) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect
             )
             {
                 // Turret damage is paid at cycle start; stop repeating after the
