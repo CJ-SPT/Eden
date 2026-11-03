@@ -150,7 +150,8 @@ internal static class Ballpark
         // Entity ships share the free-ball movement layout with player ships.
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;
-        var mode = course is null ? DestinyBallMode.Stop : course.TargetId != 0 ? DestinyBallMode.Follow : DestinyBallMode.Goto;
+        var mode = course is null ? DestinyBallMode.Stop : course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit :
+            course.TargetId != 0 ? DestinyBallMode.Follow : DestinyBallMode.Goto;
         WriteBallHeader(writer, npc.Id, (byte)mode, npc.Radius, npc.Position,
             (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive));
         writer.Write(npc.Mass);

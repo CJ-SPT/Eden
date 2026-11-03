@@ -43,8 +43,8 @@ public sealed class NpcEncounterTests
             INSERT INTO DogmaAttribute(Id,Name) VALUES (51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),
                 (114,'emDamage'),(116,'explosiveDamage'),(117,'kineticDamage'),(118,'thermalDamage'),(158,'falloff'),
                 (160,'trackingSpeed'),(245,'gfxTurretID'),(247,'entityAttackRange'),(475,'entityAttackDelayMin'),(620,'optimalSigRadius');
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (416,'entityFlyRange'),(508,'entityCruiseSpeed');
-            INSERT INTO TypeAttribute VALUES (30380,416,1250),(30380,508,220);
+            INSERT INTO DogmaAttribute(Id,Name) VALUES (416,'entityFlyRange'),(508,'entityCruiseSpeed'),(665,'entityChaseMaxDistance');
+            INSERT INTO TypeAttribute VALUES (30380,416,1250),(30380,508,220),(30380,665,1875);
             INSERT INTO TypeAttribute VALUES (30380,51,2500),(30380,54,500),(30380,64,0.625),
                 (30380,114,0),(30380,116,0),(30380,117,2),(30380,118,2),(30380,158,3000),
                 (30380,160,0.365),(30380,245,562),(30380,247,3125),(30380,475,7500),(30380,620,40);

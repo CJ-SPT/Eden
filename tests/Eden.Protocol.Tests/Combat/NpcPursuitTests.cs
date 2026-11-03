@@ -46,7 +46,9 @@ public sealed class NpcPursuitTests
         }
         var npc = Contact(f);
         double surfaceRange = npc.Position.DistanceTo(f.Pilot.Position!) - npc.Radius - f.Pilot.Flight.ShipRadius;
-        Assert.InRange(surfaceRange, 1225, 1275);
+        Assert.InRange(surfaceRange, 1100, 1600);
+        Assert.Equal(NpcNavigationState.Orbiting, npc.Navigation!.State);
+        Assert.InRange(npc.Navigation.Velocity.Length, 180, 220);
         Assert.NotEmpty(shots);
         Assert.InRange(npc.Navigation!.Velocity.DistanceTo(SpacePosition.Zero), 0, 220);
         Assert.True(f.Health.Read(NpcCombatTests.Fixture.PilotId, f.Clock.Now).Remaining.Shield < 200);

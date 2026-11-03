@@ -41,7 +41,7 @@ public sealed class OrbitTests
         double tau = 13 * (double)0.9f, decay = Math.Exp(-1 / tau);
         for (int stamp = 0; stamp < expected.Length; stamp++)
         {
-            var terminalVelocity = OrbitCourse.Direction(2, stamp, position, target, 2, 1) * (10 * (double)0.95f);
+            var terminalVelocity = OrbitCourse.Direction(2, stamp, position, target.Position, 5) * (10 * (double)0.95f);
             position += terminalVelocity + (velocity - terminalVelocity) * (tau * (1 - decay));
             velocity = terminalVelocity + (velocity - terminalVelocity) * decay;
             Assert.InRange(position.DistanceTo(expected[stamp]), 0, 0.000001);
@@ -171,8 +171,8 @@ public sealed class OrbitTests
         npc = npc with { Position = npc.Position + new SpacePosition(0, 3000, 0) };
         encounters.Contacts = [npc];
         session.RefreshNpcs();
-        var expectedThrust = OrbitCourse.Direction(pilot.ShipId, 2, session.Pilot.Position!,
-            new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius), pilot.Flight.ShipRadius, 5000) * pilot.Flight.MaxSpeed;
+        var expectedThrust = OrbitCourse.Direction(pilot.ShipId, 2, session.Pilot.Position!, npc.Position,
+            pilot.Flight.ShipRadius + npc.Radius + 5000) * pilot.Flight.MaxSpeed;
         double decay = Math.Exp(-1 / pilot.Flight.InertiaTime);
         var expectedVelocity = expectedThrust + (session.Velocity - expectedThrust) * decay;
         clock.Seconds = 2;

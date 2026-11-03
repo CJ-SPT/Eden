@@ -75,7 +75,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
         var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id).ToArray();
         foreach (var npc in npcs)
         {
-            if (npc.Navigation == NpcNavigationState.Pursuing && !aggression.ContainsKey(npc.Id)) { NpcMotion.Return(npc); }
+            if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id)) { NpcMotion.Return(npc); }
             if (npc.Navigation == NpcNavigationState.Returning)
             {
                 NpcMotion.Advance(npc, NpcMotion.Home(belts.Single(b => b.Id == npc.BeltId)), type, attributes, now, returning: true);

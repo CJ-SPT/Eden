@@ -70,7 +70,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         transaction.Commit();
     }
 
-    public NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll)
+    public NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll, int destinyStamp)
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1 || !double.IsFinite(velocity.DistanceTo(SpacePosition.Zero)))
         {
@@ -108,8 +108,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
             transaction.Commit();
             return null;
         }
-        if (npc.Navigation != NpcNavigationState.Pursuing && now < aggression.ReadyAt) { return null; }
-        NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now);
+        if (!NpcMotion.Engaged(npc) && now < aggression.ReadyAt) { return null; }
+        NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now, destinyStamp);
         var separation = targetPosition - NpcMotion.Position(npc);
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
         if (range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange) || now < aggression.ReadyAt)

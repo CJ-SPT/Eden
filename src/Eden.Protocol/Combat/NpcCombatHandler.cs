@@ -58,7 +58,7 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             var shot = combat.Fire(context.Pilot.PilotId, _shipId, npc, context.Flight.Velocity, now,
-                RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution);
+                RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution, context.Flight.CurrentStamp);
             if (shot is null) { continue; }
             context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Incoming(shot)]));
             context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);

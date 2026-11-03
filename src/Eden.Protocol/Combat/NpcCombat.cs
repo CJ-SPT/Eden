@@ -11,6 +11,6 @@ public interface INpcCombat
 {
     void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now);
     IReadOnlyList<long> Aggressors(long shipId);
-    NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll);
+    NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll, int destinyStamp);
     void Disengage(long shipId, long? npcId = null);
 }

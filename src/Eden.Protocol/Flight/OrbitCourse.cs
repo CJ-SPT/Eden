@@ -4,19 +4,20 @@ namespace Eden.Protocol.Flight;
 
 // Adapted from Carbon Destiny 27ee40b, Ballpark::EvolveOldStyleOrbit.
 // This is the reference's default orbit mode; see docs/carbon-license.md.
-internal static class OrbitCourse
+public static class OrbitCourse
 {
     private const double PlanePrecession = 0.001;
     private const double DecimalPrecision = 10_000_000;
     private const double TransitionWidthSquared = 40_000;
 
-    internal static SpacePosition Direction(long shipId, int stamp, SpacePosition position,
-        StaticSpaceObject target, float shipRadius, double range)
+    // The center radius includes the requested surface range and both radii.
+    public static SpacePosition Direction(long shipId, int stamp, SpacePosition position,
+        SpacePosition target, double centerRadius)
     {
-        var offset = target.Position - position;
+        var offset = target - position;
         double distance = offset.Length;
         var toward = distance > 0 ? offset.Unit : new(0, 0, 1);
-        double radius = range + shipRadius + target.Radius;
+        double radius = centerRadius;
         double phase = stamp * PlanePrecession;
         double identityPhase = (shipId & ushort.MaxValue) + phase;
         SpacePosition normal = new(Truncate(Math.Cos(phase) * Math.Cos(identityPhase)),

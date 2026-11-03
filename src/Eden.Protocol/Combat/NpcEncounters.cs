@@ -11,10 +11,11 @@ public enum NpcNavigationState
     Idle = 0,
     Pursuing = 1,
     Returning = 2,
+    Orbiting = 3,
 }
 
 public sealed record NpcNavigationContact(SpacePosition Velocity, double SpeedFraction, long TargetId, double FollowRange,
-    SpacePosition? Destination = null);
+    SpacePosition? Destination = null, NpcNavigationState State = NpcNavigationState.Pursuing);
 
 public interface INpcEncounters
 {

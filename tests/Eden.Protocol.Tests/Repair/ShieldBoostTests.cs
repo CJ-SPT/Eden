@@ -209,7 +209,7 @@ public sealed class ShieldBoostTests
             world.Add(new NpcAggression { NpcId = npc.Id, TargetShipId = f.Pilot.ShipId });
             world.SaveChanges();
         }
-        var incoming = Task.Run(() => f.Db.Services.GetRequiredService<INpcCombat>().Fire(f.Pilot.PilotId, f.Pilot.ShipId, npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5));
+        var incoming = Task.Run(() => f.Db.Services.GetRequiredService<INpcCombat>().Fire(f.Pilot.PilotId, f.Pilot.ShipId, npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1));
         var boost = Task.Run(f.Boost);
         await Task.WhenAll(incoming, boost);
         Assert.Equal(51 - (await incoming)!.Applied, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);

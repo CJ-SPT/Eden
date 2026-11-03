@@ -114,6 +114,7 @@ public enum DogmaAttributeId
     EntityKillBounty = 481,
     CapacitorCapacity = 482,
     EntityCruiseSpeed = 508,
+    EntityChaseMaxDistance = 665,
     SignatureRadius = 552,
     ScanResolution = 564,
     SpeedBoostFactor = 567,

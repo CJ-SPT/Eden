@@ -69,7 +69,7 @@ public sealed class NpcCombatTests
         }
 
         public void Aggress() => Weapons.Fire(PilotId, Module, Npc.Id, SpacePosition.Zero, Clock.Now, 0.5);
-        public NpcShot? Fire(double roll = 0.5) => Combat.Fire(PilotId, ShipId, Npc.Id, SpacePosition.Zero, Clock.Now, roll);
+        public NpcShot? Fire(double roll = 0.5) => Combat.Fire(PilotId, ShipId, Npc.Id, SpacePosition.Zero, Clock.Now, roll, 1 + checked((int)(Clock.Milliseconds / 1000)));
         public void AlmostLost()
         {
             using WorldDbContext world = new(Db.Path);
@@ -377,7 +377,7 @@ public sealed class NpcCombatTests
         f.Weapons.Fire(wing.PilotId, module, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5);
         Assert.Empty(f.Combat.Aggressors(wing.ShipId));
         f.Clock.Milliseconds = 7500;
-        Assert.Null(f.Combat.Fire(wing.PilotId, wing.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5));
+        Assert.Null(f.Combat.Fire(wing.PilotId, wing.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1));
         Assert.NotNull(f.Fire());
         Assert.Equal(200, f.Health.Read(wing.PilotId, f.Clock.Now).Remaining.Shield);
     }

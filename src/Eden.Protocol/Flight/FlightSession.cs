@@ -28,6 +28,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
     private int Stamp => space.Stamp(clock);
+    internal int CurrentStamp => Stamp;
     private SpacePosition _lastHeading = new(1, 0, 0);
     private SpacePosition? _direction;
     private SpacePosition _velocity = new(0, 0, 0);
@@ -136,7 +137,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 Update("SetBallPosition", npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z);
                 if (npc.Navigation is { } course)
                 {
-                    if (course.TargetId != 0) { Update("FollowBall", npc.Id, course.TargetId, course.FollowRange); }
+                    if (course.TargetId != 0) { Update(course.State == NpcNavigationState.Orbiting ? "Orbit" : "FollowBall", npc.Id, course.TargetId, course.FollowRange); }
                     else if (course.Destination is { } destination) { Update("GotoPoint", npc.Id, destination.X, destination.Y, destination.Z); }
                     Update("SetSpeedFraction", npc.Id, course.SpeedFraction);
                     Update("SetBallVelocity", npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z);
@@ -299,7 +300,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 if (_followMode == DestinyBallMode.Orbit)
                 {
                     // Destiny evolves behavior at the beginning of each tick.
-                    _direction = OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp - 1, position, current, Pilot.Flight.ShipRadius, _followRange);
+                    _direction = OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp - 1, position, current.Position, Pilot.Flight.ShipRadius + current.Radius + _followRange);
                 }
                 else
                 {
@@ -884,7 +885,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                     double sign = separation >= radius ? 1 : -1;
                     _followMode = method == "CmdOrbit" ? DestinyBallMode.Orbit : DestinyBallMode.Follow;
                     _direction = _followMode == DestinyBallMode.Orbit ?
-                        OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow, Pilot.Flight.ShipRadius, standOff) :
+                        OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow.Position, radius) :
                         (follow.Position - position) * (sign / separation);
                     _lastHeading = _direction;
                     _followTarget = follow;

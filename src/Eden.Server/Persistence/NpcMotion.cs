@@ -1,5 +1,6 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
@@ -24,25 +25,38 @@ internal static class NpcMotion
     }
 
     internal static void Return(WorldNpc npc) => npc.Navigation = NpcNavigationState.Returning;
+    internal static bool Engaged(WorldNpc npc) => npc.Navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting;
 
     internal static void Pursue(WorldNpc npc, SpacePosition target, double targetRadius, ItemType type,
-        IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now)
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now, int destinyStamp)
     {
-        if (npc.Navigation != NpcNavigationState.Pursuing)
+        if (!Engaged(npc))
         {
             npc.Navigation = NpcNavigationState.Pursuing;
             npc.MotionAt = now;
         }
         var radial = Position(npc) - target;
         double distance = radial.DistanceTo(SpacePosition.Zero);
-        double standOff = attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange) + (type.Radius ?? 0) + targetRadius;
+        double range = attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange);
+        double radii = (type.Radius ?? 0) + targetRadius;
+        double standOff = range + radii;
         if (!double.IsFinite(standOff) || standOff < 0) { throw new InvalidDataException("Invalid NPC follow range."); }
+        double surfaceRange = Math.Max(0, distance - radii);
+        // Eden uses catalog chase/attack ranges as hysteresis thresholds. This
+        // keeps an orbit from switching modes on every small radial overshoot.
+        double entry = Math.Max(range, attributes.GetValueOrDefault(DogmaAttributeId.EntityChaseMaxDistance, range));
+        double exit = Math.Max(entry, attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange, entry));
+        if (!double.IsFinite(entry) || !double.IsFinite(exit)) { throw new InvalidDataException("Invalid NPC orbit thresholds."); }
+        if (npc.Navigation == NpcNavigationState.Pursuing && surfaceRange <= entry) { npc.Navigation = NpcNavigationState.Orbiting; }
+        else if (npc.Navigation == NpcNavigationState.Orbiting && surfaceRange > exit) { npc.Navigation = NpcNavigationState.Pursuing; }
         var destination = target + (distance > 0 ? radial * (1 / distance) : new SpacePosition(1, 0, 0)) * standOff;
-        Advance(npc, destination, type, attributes, now);
+        var orbitDirection = npc.Navigation == NpcNavigationState.Orbiting
+            ? OrbitCourse.Direction(npc.Id, destinyStamp - 1, Position(npc), target, standOff) : null;
+        Advance(npc, destination, type, attributes, now, orbitDirection: orbitDirection);
     }
 
     internal static void Advance(WorldNpc npc, SpacePosition destination, ItemType type,
-        IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now, bool returning = false)
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now, bool returning = false, SpacePosition? orbitDirection = null)
     {
         if (npc.MotionAt == 0) { npc.MotionAt = now; }
         // Share wall-clock second boundaries so small scheduling differences
@@ -64,7 +78,7 @@ internal static class NpcMotion
             throw new InvalidDataException("Invalid NPC movement geometry or inertia.");
         }
         SpacePosition next;
-        if (distance <= NpcEncounterDefinitions.ArrivalTolerance && velocity.DistanceTo(SpacePosition.Zero) <= NpcEncounterDefinitions.ArrivalSpeed)
+        if (orbitDirection is null && distance <= NpcEncounterDefinitions.ArrivalTolerance && velocity.DistanceTo(SpacePosition.Zero) <= NpcEncounterDefinitions.ArrivalSpeed)
         {
             // The native fourth-power homing thrust approaches asymptotically.
             // End a slow arrival within tolerance without snapping its position.
@@ -78,7 +92,7 @@ internal static class NpcMotion
             // tapers within one tick's travel distance. Integrate the same drag
             // used by player flight, preserving velocity while turning around.
             double throttle = Math.Min(1, Math.Pow(distance / (cruise * seconds), 4));
-            var desired = distance > 0 ? delta * (cruise * throttle / distance) : SpacePosition.Zero;
+            var desired = orbitDirection is not null ? orbitDirection * cruise : distance > 0 ? delta * (cruise * throttle / distance) : SpacePosition.Zero;
             double decay = Math.Exp(-seconds / inertia);
             next = position + desired * seconds + (velocity - desired) * (inertia * (1 - decay));
             velocity = desired + (velocity - desired) * decay;
@@ -99,8 +113,9 @@ internal static class NpcMotion
         npc.Navigation switch
         {
             NpcNavigationState.Idle => null,
-            NpcNavigationState.Pursuing when target != 0 => new(Velocity(npc), SpeedFraction(attributes), target, attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange)),
-            NpcNavigationState.Returning => new(Velocity(npc), SpeedFraction(attributes), 0, 0, home),
+            NpcNavigationState.Pursuing or NpcNavigationState.Orbiting when target != 0 => new(Velocity(npc), SpeedFraction(attributes), target,
+                attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange), State: npc.Navigation),
+            NpcNavigationState.Returning => new(Velocity(npc), SpeedFraction(attributes), 0, 0, home, NpcNavigationState.Returning),
             _ => throw new InvalidDataException("Invalid NPC navigation state."),
         };
 }
