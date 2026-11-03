@@ -21,11 +21,18 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class FittingOperations(TimeProvider clock, IPilotFitting fitting, IPilotInventory inventory, IPilotShipResources resources)
+internal sealed class FittingOperations(
+    TimeProvider clock,
+    IPilotFitting fitting,
+    IPilotInventory inventory,
+    IPilotShipResources resources,
+    ShipDogmaBuilder dogma
+)
 {
     internal void NotifyShipAttributes(PilotCallContext context)
     {
-        context.Flight.RefreshModules(inventory.List(context.Pilot.PilotId, context.Pilot.ShipId));
+        var modules = inventory.List(context.Pilot.PilotId, context.Pilot.ShipId);
+        context.Flight.RefreshModules(modules);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var snapshot = resources.Read(context.Pilot.PilotId, context.Pilot.ShipId, now);
         var attributes = snapshot.Attributes.ToDictionary();
@@ -36,7 +43,14 @@ internal sealed class FittingOperations(TimeProvider clock, IPilotFitting fittin
         attributes[DogmaAttributeId.Damage] = snapshot.Health.Defense.Structure - snapshot.Health.Remaining.Structure;
         var changes = attributes
             .Select(a => new ModuleAttributeChange(context.Pilot.PilotId, new DogmaItemKey.Item(context.Pilot.ShipId), a.Key, now, a.Value))
-            .ToArray();
+            .ToList();
+        // Passive equipment changes existing modules as well as the hull. The
+        // native client keeps its primed values until it receives these updates.
+        foreach (var module in modules.Where(m => InventoryDefinitions.IsFittedSlot(m.FlagId)))
+        {
+            var info = dogma.PrimeModule(context.Pilot, module);
+            changes.AddRange(info.Attributes.Select(a => new ModuleAttributeChange(context.Pilot.PilotId, info.Key, a.Key, now, a.Value)));
+        }
         context.Notifications.Add(new ModuleAttributesChanged(changes));
         context.Flight.NotifyHealth(snapshot.Health);
     }

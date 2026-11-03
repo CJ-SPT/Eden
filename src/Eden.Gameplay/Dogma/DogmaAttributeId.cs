@@ -63,6 +63,7 @@ public enum DogmaAttributeId
     RequiredSkill3 = 184,
     MaxLockedTargets = 192,
     MiningRoleYieldMultiplier = 207,
+    MissileDamageMultiplier = 212,
     EntityTurretType = 245,
     EntityAttackRange = 247,
     ManufactureSlotLimit = 196,

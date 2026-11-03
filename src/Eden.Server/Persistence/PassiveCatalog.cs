@@ -11,8 +11,7 @@ internal static class PassiveCatalog
     private const int TechOneMetaGroup = 1;
     private const int SkillLevelEffect = 132;
 
-    // The equipment-bonus milestone extends this boundary after its consumers
-    // are integrated; a mixed profile is never partially enabled.
+    // Admit a profile only when every fitted/online effect can be evaluated.
     internal static bool Supported(CatalogDbContext catalog, int typeId, int groupId)
     {
         if (!PassiveModules.Groups.Contains(groupId))
@@ -35,9 +34,7 @@ internal static class PassiveCatalog
                 e.EffectID == (int)DogmaEffect.Online
                 || (
                     e.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online
-                    && (e.ModifierInfo ?? []).All(m =>
-                        Parse(m, e.EffectCategory!.Value) is { Domain: ModifierDomain.Ship, Selector: ModifierSelector.Item }
-                    )
+                    && (e.ModifierInfo ?? []).All(m => Parse(m, e.EffectCategory!.Value) is not null)
                 )
             );
     }
@@ -50,7 +47,7 @@ internal static class PassiveCatalog
             .Cast<ClientDogmaeffects>()
             .ToArray();
 
-    internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId, bool skill = false) =>
+    internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>
         Effects(catalog, typeId)
             .Where(e =>
                 e.EffectID != SkillLevelEffect && e.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online

@@ -91,6 +91,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         return ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
     }
@@ -98,6 +99,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     public double SignatureRadius(long itemId, int typeId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (world.Ships.Find(itemId) is not { } ship)
         {
@@ -346,6 +348,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         return FittingCalculation.Read(world, catalog, pilot).SkillBonuses;
@@ -368,6 +371,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         return ReadModuleAttributes(world, catalog, pilotId, module);
     }

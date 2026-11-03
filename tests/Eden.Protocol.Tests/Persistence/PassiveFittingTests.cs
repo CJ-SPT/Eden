@@ -94,12 +94,14 @@ public sealed class PassiveFittingTests
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(t => PassiveModules.Groups.Contains(t.GroupId)).ToArray();
-        Assert.Equal(107, types.Count(t => PassiveCatalog.Supported(catalog, t.Id, t.GroupId)));
+        var supported = types.Where(t => PassiveCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
+        Assert.Equal(130, supported.Length);
+        Assert.Equal(31, supported.Select(t => t.GroupId).Distinct().Count());
         Assert.Null(FittingCatalog.Definition(catalog, 47254)); // Assault Damage Control I.
         Assert.Null(FittingCatalog.Definition(catalog, 40714)); // Emergency hull energizer.
         Assert.Null(FittingCatalog.Definition(catalog, 434)); // Microwarpdrive.
         Assert.NotNull(FittingCatalog.Definition(catalog, 2046)); // Ordinary damage control.
-        Assert.Null(FittingCatalog.Definition(catalog, 1445)); // Mixed capacitor / booster profile waits for equipment bonuses.
+        Assert.NotNull(FittingCatalog.Definition(catalog, 1445)); // Both capacitor and booster modifiers are implemented.
     }
 
     [Fact]

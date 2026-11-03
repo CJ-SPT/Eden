@@ -72,6 +72,7 @@ public sealed class PilotTrainingTests
         var training = new PilotTrainingStore(new(db.Path), clock);
         var pilot = db.Store.FindPilot(1000001)!;
         var skills = db.Services.GetRequiredService<IPilotSkillReader>();
+        using var scope = db.Services.CreateScope();
         SkillHandler handler = new(
             skills,
             training,
@@ -84,7 +85,7 @@ public sealed class PilotTrainingTests
                 db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
             ),
             new(clock, db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
-            db.Services.GetRequiredService<Eden.Protocol.Docking.FittingOperations>()
+            scope.ServiceProvider.GetRequiredService<Eden.Protocol.Docking.FittingOperations>()
         );
         using (WorldDbContext world = new(db.Path))
         {

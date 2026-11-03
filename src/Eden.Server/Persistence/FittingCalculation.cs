@@ -82,7 +82,7 @@ internal sealed record FittingCalculation(
             var attributes = PilotFittingStore.ReadAttributes(catalog, skill).ToDictionary();
             attributes[DogmaAttributeId.SkillLevel] = level;
             nodes.Add(new(skill, attributes));
-            foreach (var modifier in PassiveCatalog.Modifiers(catalog, skill, skill: true))
+            foreach (var modifier in PassiveCatalog.Modifiers(catalog, skill))
             {
                 Add(skill, modifier, true);
                 if (modifier.Domain != ModifierDomain.Item)

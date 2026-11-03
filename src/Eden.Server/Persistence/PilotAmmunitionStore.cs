@@ -76,6 +76,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         {
             throw new InvalidDataException("Select distinct fitted weapons.");
         }
+        int firstFlag = (int)(unloading ? InventoryFlag.LowSlot0 : InventoryFlag.HighSlot0);
         var modules = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -83,7 +84,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 && i.OwnerId == pilot.Id
                 && i.LocationId == pilot.ActiveShipId
                 && i.Singleton
-                && i.FlagId >= (int)InventoryFlag.HighSlot0
+                && i.FlagId >= firstFlag
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             )
             .OrderBy(i => i.FlagId)
@@ -100,7 +101,8 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 !CombatDefinitions.IsSupportedHybrid(group, attributes)
                 && !(
                     unloading
-                    && (group == InventoryDefinitions.MiningLaserGroup || module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun)
+                    // The native unfit path first requests UnloadAmmo even for empty passive modules.
+                    && FittingCatalog.Definition(catalog, module.TypeId) is not null
                     && Contents(world, module.Id) is null
                 )
             )

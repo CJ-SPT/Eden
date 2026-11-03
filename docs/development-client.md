@@ -105,6 +105,16 @@ Use a copied acceptance save and the ordinary build 3662168 catalog. Supply the 
 
 Rigs, drone equipment, in-space fitting/online changes and activated variants such as Assault Damage Controls are outside this milestone. Some supported stat families have no active combat counterpart yet; this does not enable additional weapons.
 
+## Check passive equipment bonuses
+
+Use the same copied acceptance save and explicitly supplied test modules. Verify Eden Pilot's active Ibis in Inventory. Keep enough CPU/power available and check each module's required skills; these tests do not grant skills or ISK.
+
+1. Fit 75mm Gatling Rail I and note its damage multiplier and cycle in Attributes. Heat Sink I must leave both unchanged: it targets energy weapons. Replace one low-slot module with Magnetic Field Stabilizer I. Online increases the hybrid turret's damage by 7% and multiplies cycle time by 0.92; offline removes both bonuses. The pinned catalog unusually puts all civilian turrets, including Civilian Gatling Railgun, in Energy Weapon group 53; use the standard hybrid turret for this family-isolation check.
+2. Fit Tracking Enhancer I and compare the turret's optimal, falloff and tracking. It does not increase a mining laser's range. Repeated penalized bonuses use the catalog's stacking rules: the second equal modifier contributes about 86.9% of its listed bonus, the third about 57.1%. Two Tracking Enhancer I modules multiply optimal range by 1.14007951, rather than 1.15025625 without the penalty. Reopen the gun's Attributes window after fitting changes; the stock information panel retains its displayed rows while open.
+3. With the required skills trained, fit Mining Laser Upgrade I. Its CPU penalty applies while fitted, including offline; its 5% yield bonus requires online state. Mining Upgrades reduces the penalty. Check actual ore gains as well as tooltips when testing mining.
+4. Fit Small Shield Booster I and Shield Boost Amplifier I. The amplifier's online 30% boost bonus affects restored shields. Capacitor Power Relay I improves capacitor recharge but applies its online 10% shield-boost penalty to that same booster. Offline state removes their online bonuses and penalties.
+5. Restart host/client and compare the modules and bonuses again. Missile guidance and ballistic-control modifiers can be fitted and evaluated; missile firing remains outside the implemented weapon families.
+
 ## Fly two pilots in Jita
 
 Start one server. From the repository root, launch both clients against it.
