@@ -43,6 +43,7 @@ internal sealed class FlightSession(
     private ShieldBoostContact[] _shieldBoosts = [];
     private LocalRepairContact[] _localRepairs = [];
     private HardenerContact[] _hardeners = [];
+    private SupportContact[] _support = [];
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
@@ -390,6 +391,7 @@ internal sealed class FlightSession(
         _shieldBoosts = [];
         _localRepairs = [];
         _hardeners = [];
+        _support = [];
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -498,7 +500,8 @@ internal sealed class FlightSession(
             _propulsion,
             _navigation.FollowMode,
             _localRepairs,
-            _hardeners
+            _hardeners,
+            _support
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -624,6 +627,19 @@ internal sealed class FlightSession(
             .Concat(active ? [effect] : Array.Empty<HardenerContact>())
             .ToArray();
         Effects.HardenerEffect(Pilot.ShipId, effect, active);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
+
+    public void SetSupportEffect(SupportContact effect, bool active)
+    {
+        _support = _support
+            .Where(h => h.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<SupportContact>())
+            .ToArray();
+        Effects.SupportEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -777,6 +793,7 @@ internal sealed class FlightSession(
         _shieldBoosts = [];
         _localRepairs = [];
         _hardeners = [];
+        _support = [];
         _wrecks = [];
         space.Leave(Pilot.ShipId);
     }

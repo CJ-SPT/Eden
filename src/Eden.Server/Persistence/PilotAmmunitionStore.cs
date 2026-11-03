@@ -123,6 +123,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
@@ -139,6 +140,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 throw new InvalidDataException("This module does not use supported ammunition.");
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilot.Id, module.TypeId);
+            if (SupportModuleDefinitions.Effect(group) is not null && world.Set<ActiveFittedModule>().Find(module.Id) is not null)
+            {
+                throw new InvalidDataException("Deactivate the support module and finish its paid cycle before changing scripts.");
+            }
             if (world.Set<ModuleCooldown>().Find(module.Id) is { } cooldown && now < cooldown.ReadyAt)
             {
                 throw new InvalidDataException("Wait for the weapon's current cycle or reload to finish.");
@@ -199,6 +204,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             !(
                 TurretChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
                 || MissileChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
+                || ScriptCatalog.Supported(catalog, typeId, chargeType.GroupId)
             )
             && !(
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
@@ -206,9 +212,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             )
         )
         {
-            throw new InvalidDataException("Use supported weapon ammunition or capacitor booster charges.");
+            throw new InvalidDataException("Use supported ammunition, capacitor booster charges or module scripts.");
         }
         bool crystal = AmmunitionDefinitions.IsCrystalGroup(chargeType.GroupId);
+        bool script = SupportModuleDefinitions.IsScript(chargeType.GroupId);
         if (sources.Any(s => s.Singleton && (!crystal || s.Quantity != 1)))
         {
             throw new InvalidDataException("Only individual frequency crystals can be loaded from singleton items.");
@@ -231,8 +238,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 break;
             }
             var attributes = Attributes(catalog, module.TypeId);
+            int moduleGroup = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             bool compatible =
-                chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
+                script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
+                : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
                 : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
                     ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId)
@@ -243,7 +252,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             }
             double capacity = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).Capacity ?? 0;
             int limit = checked((int)Math.Floor(capacity / volume + InventoryDefinitions.ResourceTolerance));
-            if (crystal)
+            if (crystal || script)
             {
                 limit = Math.Min(limit, 1);
             }

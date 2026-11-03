@@ -50,6 +50,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadMissileTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "MissileTierCatalog.json", types);
 
+    internal static void LoadSupportTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "SupportTierCatalog.json", types);
+
     private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true)
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;

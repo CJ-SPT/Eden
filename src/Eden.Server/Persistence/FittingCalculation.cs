@@ -76,6 +76,38 @@ internal sealed record FittingCalculation(
         nodes.AddRange(loaded.Select(i => new DogmaNode(i.Id, chargeAttributes[i.TypeId])));
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
         List<DogmaModifier> modifiers = [];
+        foreach (var charge in charges.Where(c => SupportModuleDefinitions.IsScript(c.GroupId)))
+        {
+            var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
+            if (
+                !SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                || !ScriptCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
+                || !SupportModuleDefinitions.CompatibleScript(
+                    parent.GroupId,
+                    charge.GroupId,
+                    moduleAttributes[parent.Item.TypeId],
+                    chargeAttributes[charge.Item.TypeId]
+                )
+                || charge.Item.Quantity != 1
+            )
+            {
+                throw new InvalidDataException("Invalid fitted support module script.");
+            }
+            foreach (var modifier in ScriptCatalog.Modifiers(catalog, charge.Item.TypeId))
+            {
+                // Scripts modify their containing module, independently of the
+                // stacking sequence applied by that module to equipment/ship.
+                modifiers.Add(
+                    new(
+                        parent.Item.Id,
+                        modifier.Attribute,
+                        modifier.Operation,
+                        new DogmaValue.Attribute(charge.Item.Id, modifier.SourceAttribute),
+                        true
+                    )
+                );
+            }
+        }
         foreach (var role in FittingRules.RookieResistanceModifiers)
         {
             hullAttributes.TryAdd(role.Resonance, 1);
@@ -102,6 +134,17 @@ internal sealed record FittingCalculation(
         var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
         foreach (var module in modules)
         {
+            if (
+                module.Item.Online
+                && activeModules.Contains(module.Item.Id)
+                && SupportModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+            )
+            {
+                foreach (var modifier in SupportModuleCatalog.Modifiers(catalog, module.Item.TypeId, module.GroupId))
+                {
+                    Add(module.Item.Id, modifier, false);
+                }
+            }
             if (WeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
                 foreach (var modifier in WeaponCatalog.Modifiers(catalog, module.Item.TypeId))

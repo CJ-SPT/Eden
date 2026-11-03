@@ -45,7 +45,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            MissileDefinitions.SupportedLauncher(groupId, attributes) && effects.Contains(DogmaEffect.UseMissiles)
+            SupportModuleDefinitions.Effect(groupId) is { } support
+                && effects.Contains(support)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+            || MissileDefinitions.SupportedLauncher(groupId, attributes) && effects.Contains(DogmaEffect.UseMissiles)
             || groupId switch
             {
                 InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser)

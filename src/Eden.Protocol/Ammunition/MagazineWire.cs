@@ -109,6 +109,7 @@ internal sealed class MagazineWire(
                 DogmaAttributeId.CapacitorNeed,
                 DogmaAttributeId.NextActivationTime,
             }
+                .Concat(SupportModuleDefinitions.Effect(module.GroupId) is not null ? SupportModuleDefinitions.BonusAttributes : [])
                 .Select(attribute => new ModuleAttributeChange(
                     context.Pilot.PilotId,
                     new DogmaItemKey.Item(magazine.ModuleId),

@@ -1,0 +1,8323 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 601,
+      "name": "Ibis",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "categoryId": 6,
+      "mass": 1163000.0,
+      "radius": 47.0,
+      "capacity": 125.0,
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 175.0
+        },
+        {
+          "id": 11,
+          "value": 23.0
+        },
+        {
+          "id": 12,
+          "value": 2.0
+        },
+        {
+          "id": 13,
+          "value": 2.0
+        },
+        {
+          "id": 14,
+          "value": 2.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 295.0
+        },
+        {
+          "id": 48,
+          "value": 135.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 65000.0
+        },
+        {
+          "id": 70,
+          "value": 4.5
+        },
+        {
+          "id": 76,
+          "value": 27000.0
+        },
+        {
+          "id": 79,
+          "value": 6000.0
+        },
+        {
+          "id": 101,
+          "value": 2.0
+        },
+        {
+          "id": 102,
+          "value": 2.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 9.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 8.66e-07
+        },
+        {
+          "id": 182,
+          "value": 3327.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 3.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 6.0
+        },
+        {
+          "id": 217,
+          "value": 395.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 200.0
+        },
+        {
+          "id": 265,
+          "value": 125.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.55
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 860000.0
+        },
+        {
+          "id": 482,
+          "value": 130.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 52.0
+        },
+        {
+          "id": 564,
+          "value": 475.0
+        },
+        {
+          "id": 600,
+          "value": 3.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 1.0
+        },
+        {
+          "id": 1259,
+          "value": 0.25
+        },
+        {
+          "id": 1261,
+          "value": 0.25
+        },
+        {
+          "id": 1262,
+          "value": 0.25
+        },
+        {
+          "id": 1271,
+          "value": 5.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1768,
+          "value": 11324.0
+        },
+        {
+          "id": 1826,
+          "value": 20.0
+        },
+        {
+          "id": 1827,
+          "value": 10.0
+        },
+        {
+          "id": 1828,
+          "value": 30.0
+        },
+        {
+          "id": 1829,
+          "value": -8.0
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 5978,
+          "value": 1.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 1952,
+      "name": "Sensor Booster II",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 12.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 309,
+          "value": 30.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 566,
+          "value": 30.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1027,
+          "value": 48.0
+        },
+        {
+          "id": 1028,
+          "value": 48.0
+        },
+        {
+          "id": 1029,
+          "value": 48.0
+        },
+        {
+          "id": 1030,
+          "value": 48.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 1973,
+      "name": "Sensor Booster I",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 12.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 25.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 25.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1027,
+          "value": 40.0
+        },
+        {
+          "id": 1028,
+          "value": 40.0
+        },
+        {
+          "id": 1029,
+          "value": 40.0
+        },
+        {
+          "id": 1030,
+          "value": 40.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 1977,
+      "name": "Tracking Computer I",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 32.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 10.0
+        },
+        {
+          "id": 351,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 767,
+          "value": 10.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 1978,
+      "name": "Tracking Computer II",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 35.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 349,
+          "value": 15.0
+        },
+        {
+          "id": 351,
+          "value": 7.5
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 767,
+          "value": 15.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 3317,
+      "name": "Trajectory Analysis",
+      "groupId": 255,
+      "groupName": "Gunnery",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3300.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 349,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 3428,
+      "name": "Long Range Targeting",
+      "groupId": 1213,
+      "groupName": "Targeting",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3426.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 2.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 309,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 6159,
+      "name": "Alumel-Wired Enduring Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 6.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 12.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 27.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 27.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1027,
+          "value": 44.0
+        },
+        {
+          "id": 1028,
+          "value": 44.0
+        },
+        {
+          "id": 1029,
+          "value": 44.0
+        },
+        {
+          "id": 1030,
+          "value": 44.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 6160,
+      "name": "F-90 Compact Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 10.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 27.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 27.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1027,
+          "value": 44.0
+        },
+        {
+          "id": 1028,
+          "value": 44.0
+        },
+        {
+          "id": 1029,
+          "value": 44.0
+        },
+        {
+          "id": 1030,
+          "value": 44.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 6173,
+      "name": "Optical Compact Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 12.0
+        },
+        {
+          "id": 351,
+          "value": 6.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 767,
+          "value": 12.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 6176,
+      "name": "F-12 Enduring Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 4.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 32.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 12.0
+        },
+        {
+          "id": 351,
+          "value": 6.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 767,
+          "value": 12.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 12441,
+      "name": "Missile Bombardment",
+      "groupId": 256,
+      "groupName": "Missiles",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 167.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3319.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 557,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 14236,
+      "name": "Shadow Serpentis Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 9.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 9.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 32.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 32.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1027,
+          "value": 50.0
+        },
+        {
+          "id": 1028,
+          "value": 50.0
+        },
+        {
+          "id": 1029,
+          "value": 50.0
+        },
+        {
+          "id": 1030,
+          "value": 50.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 14238,
+      "name": "Shadow Serpentis Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 16.0
+        },
+        {
+          "id": 351,
+          "value": 8.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 767,
+          "value": 17.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15276,
+      "name": "Brynn's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 34.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 34.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 1027,
+          "value": 54.0
+        },
+        {
+          "id": 1028,
+          "value": 54.0
+        },
+        {
+          "id": 1029,
+          "value": 54.0
+        },
+        {
+          "id": 1030,
+          "value": 54.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15278,
+      "name": "Tuvan's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 18.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 36.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 36.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 1027,
+          "value": 56.0
+        },
+        {
+          "id": 1028,
+          "value": 56.0
+        },
+        {
+          "id": 1029,
+          "value": 56.0
+        },
+        {
+          "id": 1030,
+          "value": 56.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15280,
+      "name": "Setele's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 20.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 37.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 37.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 1027,
+          "value": 58.0
+        },
+        {
+          "id": 1028,
+          "value": 58.0
+        },
+        {
+          "id": 1029,
+          "value": 58.0
+        },
+        {
+          "id": 1030,
+          "value": 58.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15282,
+      "name": "Cormack's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 22.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 39.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 39.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 1027,
+          "value": 60.0
+        },
+        {
+          "id": 1028,
+          "value": 60.0
+        },
+        {
+          "id": 1029,
+          "value": 60.0
+        },
+        {
+          "id": 1030,
+          "value": 60.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15284,
+      "name": "Brynn's Modified Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 11.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 32.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 17.4
+        },
+        {
+          "id": 351,
+          "value": 8.7
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 767,
+          "value": 18.4
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15286,
+      "name": "Tuvan's Modified Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 12.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 18.2
+        },
+        {
+          "id": 351,
+          "value": 9.1
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 767,
+          "value": 19.3
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15288,
+      "name": "Setele's Modified Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 13.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 34.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 19.0
+        },
+        {
+          "id": 351,
+          "value": 9.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 767,
+          "value": 20.1
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15290,
+      "name": "Cormack's Modified Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 14.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 35.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 19.8
+        },
+        {
+          "id": 351,
+          "value": 9.9
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 767,
+          "value": 21.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 15792,
+      "name": "Federation Navy Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 16.0
+        },
+        {
+          "id": 351,
+          "value": 8.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 767,
+          "value": 17.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 17520,
+      "name": "Federation Navy Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 9.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 9.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 32.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 32.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1027,
+          "value": 50.0
+        },
+        {
+          "id": 1028,
+          "value": 50.0
+        },
+        {
+          "id": 1029,
+          "value": 50.0
+        },
+        {
+          "id": 1030,
+          "value": 50.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 22895,
+      "name": "'Shady' Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 5.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 9.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 30.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 30.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1027,
+          "value": 48.0
+        },
+        {
+          "id": 1028,
+          "value": 48.0
+        },
+        {
+          "id": 1029,
+          "value": 48.0
+        },
+        {
+          "id": 1030,
+          "value": 48.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 22929,
+      "name": "'Marketeer' Tracking Computer",
+      "groupId": 213,
+      "groupName": "Tracking Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 4.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 26.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3317.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 349,
+          "value": 15.0
+        },
+        {
+          "id": 351,
+          "value": 7.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 604,
+          "value": 907.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 767,
+          "value": 15.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 28999,
+      "name": "Optimal Range Script",
+      "groupId": 907,
+      "groupName": "Tracking Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 213.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 602,
+          "value": 209.0
+        },
+        {
+          "id": 603,
+          "value": 646.0
+        },
+        {
+          "id": 1315,
+          "value": 100.0
+        },
+        {
+          "id": 1316,
+          "value": -100.0
+        },
+        {
+          "id": 1332,
+          "value": 100.0
+        },
+        {
+          "id": 2023,
+          "value": -100.0
+        },
+        {
+          "id": 2024,
+          "value": -100.0
+        }
+      ]
+    },
+    {
+      "id": 29001,
+      "name": "Tracking Speed Script",
+      "groupId": 907,
+      "groupName": "Tracking Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 213.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 602,
+          "value": 209.0
+        },
+        {
+          "id": 603,
+          "value": 646.0
+        },
+        {
+          "id": 1315,
+          "value": -100.0
+        },
+        {
+          "id": 1316,
+          "value": 100.0
+        },
+        {
+          "id": 1332,
+          "value": -100.0
+        },
+        {
+          "id": 2023,
+          "value": 100.0
+        },
+        {
+          "id": 2024,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29009,
+      "name": "Targeting Range Script",
+      "groupId": 910,
+      "groupName": "Sensor Booster Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 212.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 602,
+          "value": 290.0
+        },
+        {
+          "id": 1313,
+          "value": 100.0
+        },
+        {
+          "id": 1314,
+          "value": -100.0
+        },
+        {
+          "id": 2282,
+          "value": -100.0
+        }
+      ]
+    },
+    {
+      "id": 29011,
+      "name": "Scan Resolution Script",
+      "groupId": 910,
+      "groupName": "Sensor Booster Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 212.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 602,
+          "value": 290.0
+        },
+        {
+          "id": 1313,
+          "value": -100.0
+        },
+        {
+          "id": 1314,
+          "value": 100.0
+        },
+        {
+          "id": 2282,
+          "value": -100.0
+        }
+      ]
+    },
+    {
+      "id": 35788,
+      "name": "Missile Guidance Computer I",
+      "groupId": 1396,
+      "groupName": "Missile Guidance Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 12441.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 547,
+          "value": 4.0
+        },
+        {
+          "id": 596,
+          "value": 4.0
+        },
+        {
+          "id": 604,
+          "value": 1400.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 847,
+          "value": 5.5
+        },
+        {
+          "id": 848,
+          "value": -5.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 35789,
+      "name": "Astro-Inertial Compact Missile Guidance Computer",
+      "groupId": 1396,
+      "groupName": "Missile Guidance Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 24.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 12441.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 547,
+          "value": 4.5
+        },
+        {
+          "id": 596,
+          "value": 4.5
+        },
+        {
+          "id": 604,
+          "value": 1400.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 847,
+          "value": 6.6
+        },
+        {
+          "id": 848,
+          "value": -6.6
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 35790,
+      "name": "Missile Guidance Computer II",
+      "groupId": 1396,
+      "groupName": "Missile Guidance Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 35.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 12441.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 547,
+          "value": 5.5
+        },
+        {
+          "id": 596,
+          "value": 5.5
+        },
+        {
+          "id": 604,
+          "value": 1400.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 847,
+          "value": 8.25
+        },
+        {
+          "id": 848,
+          "value": -8.25
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 35794,
+      "name": "Missile Range Script",
+      "groupId": 1400,
+      "groupName": "Missile Guidance Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 1396.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 2023,
+          "value": -100.0
+        },
+        {
+          "id": 2024,
+          "value": -100.0
+        },
+        {
+          "id": 2025,
+          "value": 100.0
+        },
+        {
+          "id": 2026,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 35795,
+      "name": "Missile Precision Script",
+      "groupId": 1400,
+      "groupName": "Missile Guidance Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 1396.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 2023,
+          "value": 100.0
+        },
+        {
+          "id": 2024,
+          "value": 100.0
+        },
+        {
+          "id": 2025,
+          "value": -100.0
+        },
+        {
+          "id": 2026,
+          "value": -100.0
+        }
+      ]
+    },
+    {
+      "id": 41155,
+      "name": "ECCM Script",
+      "groupId": 910,
+      "groupName": "Sensor Booster Script",
+      "categoryId": 8,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 124,
+          "value": 11646664.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 137,
+          "value": 212.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 602,
+          "value": 290.0
+        },
+        {
+          "id": 1313,
+          "value": -100.0
+        },
+        {
+          "id": 1314,
+          "value": -100.0
+        },
+        {
+          "id": 2282,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 41191,
+      "name": "Sentient Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 9.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 9.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 32.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 32.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 1027,
+          "value": 50.0
+        },
+        {
+          "id": 1028,
+          "value": 50.0
+        },
+        {
+          "id": 1029,
+          "value": 50.0
+        },
+        {
+          "id": 1030,
+          "value": 50.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 41192,
+      "name": "Unit D-34343's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 34.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 34.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 1027,
+          "value": 54.0
+        },
+        {
+          "id": 1028,
+          "value": 54.0
+        },
+        {
+          "id": 1029,
+          "value": 54.0
+        },
+        {
+          "id": 1030,
+          "value": 54.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 41193,
+      "name": "Unit F-435454's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 18.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 36.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 36.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 1027,
+          "value": 56.0
+        },
+        {
+          "id": 1028,
+          "value": 56.0
+        },
+        {
+          "id": 1029,
+          "value": 56.0
+        },
+        {
+          "id": 1030,
+          "value": 56.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 41194,
+      "name": "Unit P-343554's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 20.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 37.5
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 37.5
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 1027,
+          "value": 58.0
+        },
+        {
+          "id": 1028,
+          "value": 58.0
+        },
+        {
+          "id": 1029,
+          "value": 58.0
+        },
+        {
+          "id": 1030,
+          "value": 58.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 41195,
+      "name": "Unit W-634's Modified Sensor Booster",
+      "groupId": 212,
+      "groupName": "Sensor Booster",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 22.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3428.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 309,
+          "value": 39.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 566,
+          "value": 39.0
+        },
+        {
+          "id": 604,
+          "value": 910.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 1027,
+          "value": 60.0
+        },
+        {
+          "id": 1028,
+          "value": 60.0
+        },
+        {
+          "id": 1029,
+          "value": 60.0
+        },
+        {
+          "id": 1030,
+          "value": 60.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1936,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 94063,
+      "name": "Caldari Navy Missile Guidance Computer",
+      "groupId": 1396,
+      "groupName": "Missile Guidance Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 12441.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 547,
+          "value": 6.5
+        },
+        {
+          "id": 596,
+          "value": 6.5
+        },
+        {
+          "id": 604,
+          "value": 1400.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 847,
+          "value": 8.25
+        },
+        {
+          "id": 848,
+          "value": -8.25
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    },
+    {
+      "id": 94064,
+      "name": "Republic Fleet Missile Guidance Computer",
+      "groupId": 1396,
+      "groupName": "Missile Guidance Computer",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 128,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 12441.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 547,
+          "value": 5.5
+        },
+        {
+          "id": 596,
+          "value": 5.5
+        },
+        {
+          "id": 604,
+          "value": 1400.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 847,
+          "value": 9.5
+        },
+        {
+          "id": 848,
+          "value": -9.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1211,
+          "value": 3.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1795,
+          "value": 0.01
+        },
+        {
+          "id": 1935,
+          "value": 15.0
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/types",
+      "key": 601,
+      "data": {
+        "typeID": 601,
+        "groupID": 237,
+        "published": 1,
+        "marketGroupID": 1817,
+        "volume": 15000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 601,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 4999,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5000,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5008,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5009,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5011,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5012,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5028,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1952,
+      "data": {
+        "typeID": 1952,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 1952,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1973,
+      "data": {
+        "typeID": 1973,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 1973,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1977,
+      "data": {
+        "typeID": 1977,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 1977,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1978,
+      "data": {
+        "typeID": 1978,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 1978,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3317,
+      "data": {
+        "typeID": 3317,
+        "groupID": 255,
+        "published": 1,
+        "marketGroupID": 364,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3317,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 297,
+            "isDefault": 0
+          },
+          {
+            "effectID": 298,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3428,
+      "data": {
+        "typeID": 3428,
+        "groupID": 1213,
+        "published": 1,
+        "marketGroupID": 1748,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3428,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 206,
+            "isDefault": 0
+          },
+          {
+            "effectID": 507,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 6159,
+      "data": {
+        "typeID": 6159,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 6159,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 6160,
+      "data": {
+        "typeID": 6160,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 6160,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 6173,
+      "data": {
+        "typeID": 6173,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 6173,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 6176,
+      "data": {
+        "typeID": 6176,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 6176,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12441,
+      "data": {
+        "typeID": 12441,
+        "groupID": 256,
+        "published": 1,
+        "marketGroupID": 373,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12441,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 663,
+            "isDefault": 0
+          },
+          {
+            "effectID": 784,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14236,
+      "data": {
+        "typeID": 14236,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14236,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14238,
+      "data": {
+        "typeID": 14238,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14238,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15276,
+      "data": {
+        "typeID": 15276,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15276,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15278,
+      "data": {
+        "typeID": 15278,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15278,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15280,
+      "data": {
+        "typeID": 15280,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15280,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15282,
+      "data": {
+        "typeID": 15282,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15282,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15284,
+      "data": {
+        "typeID": 15284,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15284,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15286,
+      "data": {
+        "typeID": 15286,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15286,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15288,
+      "data": {
+        "typeID": 15288,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15288,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15290,
+      "data": {
+        "typeID": 15290,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15290,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15792,
+      "data": {
+        "typeID": 15792,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15792,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17520,
+      "data": {
+        "typeID": 17520,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17520,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 22895,
+      "data": {
+        "typeID": 22895,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 22895,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 22929,
+      "data": {
+        "typeID": 22929,
+        "groupID": 213,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 706,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 22929,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 4559,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5754,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28999,
+      "data": {
+        "typeID": 28999,
+        "groupID": 907,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28999,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 3599,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3600,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3686,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6128,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6129,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 29001,
+      "data": {
+        "typeID": 29001,
+        "groupID": 907,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 29001,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 3599,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3600,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3686,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6128,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6129,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 29009,
+      "data": {
+        "typeID": 29009,
+        "groupID": 910,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 29009,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 3597,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3598,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6488,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 29011,
+      "data": {
+        "typeID": 29011,
+        "groupID": 910,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 29011,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 3597,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3598,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6488,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35788,
+      "data": {
+        "typeID": 35788,
+        "groupID": 1396,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2032,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35788,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6135,
+            "isDefault": 1
+          },
+          {
+            "effectID": 6144,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35789,
+      "data": {
+        "typeID": 35789,
+        "groupID": 1396,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2032,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35789,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6135,
+            "isDefault": 1
+          },
+          {
+            "effectID": 6144,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35790,
+      "data": {
+        "typeID": 35790,
+        "groupID": 1396,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 2032,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35790,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6135,
+            "isDefault": 1
+          },
+          {
+            "effectID": 6144,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35794,
+      "data": {
+        "typeID": 35794,
+        "groupID": 1400,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35794,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 6128,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6129,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6130,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6131,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35795,
+      "data": {
+        "typeID": 35795,
+        "groupID": 1400,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35795,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 6128,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6129,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6130,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6131,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41155,
+      "data": {
+        "typeID": 41155,
+        "groupID": 910,
+        "published": 1,
+        "marketGroupID": 1094,
+        "volume": 1.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41155,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 3597,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3598,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6488,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41191,
+      "data": {
+        "typeID": 41191,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41191,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41192,
+      "data": {
+        "typeID": 41192,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41192,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41193,
+      "data": {
+        "typeID": 41193,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41193,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41194,
+      "data": {
+        "typeID": 41194,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41194,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41195,
+      "data": {
+        "typeID": 41195,
+        "groupID": 212,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 671,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41195,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2670,
+            "isDefault": 1
+          },
+          {
+            "effectID": 5757,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 94063,
+      "data": {
+        "typeID": 94063,
+        "groupID": 1396,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 2032,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 94063,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6135,
+            "isDefault": 1
+          },
+          {
+            "effectID": 6144,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 94064,
+      "data": {
+        "typeID": 94064,
+        "groupID": 1396,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 2032,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 94064,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6135,
+            "isDefault": 1
+          },
+          {
+            "effectID": 6144,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 13,
+      "data": {
+        "descriptionID": 107006,
+        "isAssistance": 0,
+        "displayNameID": 109443,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 294,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "medPower",
+        "propulsionChance": 0,
+        "effectID": 13,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 16,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 16,
+        "propulsionChance": 0,
+        "effectName": "online",
+        "guid": "",
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 132,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 132,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 280,
+            "operation": 2,
+            "modifyingAttributeID": 276,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 280,
+            "operation": 9,
+            "modifyingAttributeID": 275,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillEffect",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 206,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 206,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 309,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "longRangeTargetingSkillBoostMaxTargetRangeBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 297,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 297,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 349,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillBoostFalloffBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 298,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 298,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 158,
+            "modifyingAttributeID": 349,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3300
+          }
+        ],
+        "effectName": "surgicalStrikeFalloffBonusPostPercentFalloffLocationShipModulesRequiringGunnery",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 507,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 507,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 76,
+            "operation": 6,
+            "modifyingAttributeID": 309,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "longRangeTargetingMaxTargetRangeBonusPostPercentMaxTargetRangeLocationShipGroupElectronic",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 663,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 663,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 557,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "heavyMissilesSkillBoostMaxflightTimeBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 784,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 784,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 281,
+            "modifyingAttributeID": 557,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          }
+        ],
+        "effectName": "missileBombardmentMaxFlightTimeBonusPostPercentExplosionDelayOwnerCharModulesRequiringMissileLauncherOperation",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 2670,
+      "data": {
+        "guid": "effects.ElectronicAttributeModifyActivate",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 2670,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 564,
+            "operation": 6,
+            "modifyingAttributeID": 566,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 76,
+            "operation": 6,
+            "modifyingAttributeID": 309,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 211,
+            "operation": 6,
+            "modifyingAttributeID": 1027,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 210,
+            "operation": 6,
+            "modifyingAttributeID": 1029,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 208,
+            "operation": 6,
+            "modifyingAttributeID": 1030,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 209,
+            "operation": 6,
+            "modifyingAttributeID": 1028,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "sensorBoosterActivePercentage",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3597,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3597,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 566,
+            "operation": 6,
+            "modifyingAttributeID": 1314,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptSensorBoosterScanResolutionBonusBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3598,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3598,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 309,
+            "operation": 6,
+            "modifyingAttributeID": 1313,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptSensorBoosterMaxTargetRangeBonusBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3599,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3599,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 767,
+            "operation": 6,
+            "modifyingAttributeID": 1316,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptTrackingComputerTrackingSpeedBonusBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3600,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3600,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 351,
+            "operation": 6,
+            "modifyingAttributeID": 1315,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptTrackingComputerMaxRangeBonusBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3686,
+      "data": {
+        "isAssistance": 1,
+        "isOffensive": 1,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3686,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 349,
+            "operation": 6,
+            "modifyingAttributeID": 1332,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptTrackingComputerFalloffBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 4559,
+      "data": {
+        "guid": "effects.TurretWeaponRangeTrackingSpeedMultiplyActivate",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 4559,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 158,
+            "modifyingAttributeID": 349,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3300
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 54,
+            "modifyingAttributeID": 351,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3300
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 160,
+            "modifyingAttributeID": 767,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3300
+          }
+        ],
+        "effectName": "gunneryMaxRangeFalloffTrackingSpeedBonus",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 4999,
+      "data": {
+        "descriptionID": 280643,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 4999,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 54,
+            "modifyingAttributeID": 1826,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3301
+          }
+        ],
+        "effectName": "shipHybridRangeBonusRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5000,
+      "data": {
+        "descriptionID": 280644,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5000,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 117,
+            "modifyingAttributeID": 1827,
+            "func": "OwnerRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          }
+        ],
+        "effectName": "shipMissileKineticDamageRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5008,
+      "data": {
+        "descriptionID": 280650,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5008,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 271,
+            "operation": 6,
+            "modifyingAttributeID": 1829,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipShieldEMResistanceRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5009,
+      "data": {
+        "descriptionID": 280651,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5009,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 272,
+            "operation": 6,
+            "modifyingAttributeID": 1829,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipShieldExplosiveResistanceRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5011,
+      "data": {
+        "descriptionID": 280653,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5011,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 273,
+            "operation": 6,
+            "modifyingAttributeID": 1829,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipShieldKineticResistanceRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5012,
+      "data": {
+        "descriptionID": 280654,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5012,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 274,
+            "operation": 6,
+            "modifyingAttributeID": 1829,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "shipShieldThermalResistanceRookie",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5028,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5028,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 238,
+            "modifyingAttributeID": 1828,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 201
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 240,
+            "modifyingAttributeID": 1828,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 201
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 239,
+            "modifyingAttributeID": 1828,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 201
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 241,
+            "modifyingAttributeID": 1828,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 201
+          }
+        ],
+        "effectName": "shipECMScanStrengthBonusRookie",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5754,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5754,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 351,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 349,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 767,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfTrackingModuleBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5757,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5757,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 309,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 566,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1027,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1028,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1029,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1030,
+            "operation": 6,
+            "modifyingAttributeID": 1936,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfSensorModuleBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6128,
+      "data": {
+        "descriptionID": 309650,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6128,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 848,
+            "operation": 6,
+            "modifyingAttributeID": 2023,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptMissileGuidanceComputerAOECloudSizeBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6129,
+      "data": {
+        "descriptionID": 309651,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6129,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 847,
+            "operation": 6,
+            "modifyingAttributeID": 2024,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptMissileGuidanceComputerAOEVelocityBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6130,
+      "data": {
+        "descriptionID": 309652,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6130,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 547,
+            "operation": 6,
+            "modifyingAttributeID": 2025,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptMissileGuidanceComputerMissileVelocityBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6131,
+      "data": {
+        "descriptionID": 309653,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6131,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 596,
+            "operation": 6,
+            "modifyingAttributeID": 2026,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptMissileGuidanceComputerExplosionDelayBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6135,
+      "data": {
+        "guid": "effects.TurretWeaponRangeTrackingSpeedMultiplyActivate",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6135,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 37,
+            "modifyingAttributeID": 547,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 281,
+            "modifyingAttributeID": 596,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 653,
+            "modifyingAttributeID": 847,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 654,
+            "modifyingAttributeID": 848,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3319
+          }
+        ],
+        "effectName": "missileGuidanceComputerBonus4",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6144,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6144,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 306,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 847,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 848,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 596,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 547,
+            "operation": 6,
+            "modifyingAttributeID": 1935,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfMissileGuidanceBonus5",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6488,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6488,
+        "modifierInfo": [
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 1030,
+            "operation": 6,
+            "modifyingAttributeID": 2282,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 1029,
+            "operation": 6,
+            "modifyingAttributeID": 2282,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 1028,
+            "operation": 6,
+            "modifyingAttributeID": 2282,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "otherID",
+            "modifiedAttributeID": 1027,
+            "operation": 6,
+            "modifyingAttributeID": 2282,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "scriptSensorBoosterSensorStrengthBonusBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 3,
+      "data": {
+        "attributeID": 3,
+        "name": "damage",
+        "stackable": 1,
+        "dataType": 1,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6,
+      "data": {
+        "attributeID": 6,
+        "name": "capacitorNeed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 9,
+      "data": {
+        "attributeID": 9,
+        "name": "hp",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 11,
+      "data": {
+        "attributeID": 11,
+        "name": "powerOutput",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 12,
+      "data": {
+        "attributeID": 12,
+        "name": "lowSlots",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 13,
+      "data": {
+        "attributeID": 13,
+        "name": "medSlots",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 14,
+      "data": {
+        "attributeID": 14,
+        "name": "hiSlots",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 15,
+      "data": {
+        "attributeID": 15,
+        "name": "powerLoad",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 19,
+      "data": {
+        "attributeID": 19,
+        "name": "powerToSpeed",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 21,
+      "data": {
+        "attributeID": 21,
+        "name": "warpFactor",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 30,
+      "data": {
+        "attributeID": 30,
+        "name": "power",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 37,
+      "data": {
+        "attributeID": 37,
+        "name": "maxVelocity",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "maxAttributeID": 2033,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 48,
+      "data": {
+        "attributeID": 48,
+        "name": "cpuOutput",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 49,
+      "data": {
+        "attributeID": 49,
+        "name": "cpuLoad",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 50,
+      "data": {
+        "attributeID": 50,
+        "name": "cpu",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 54,
+      "data": {
+        "attributeID": 54,
+        "name": "maxRange",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 55,
+      "data": {
+        "attributeID": 55,
+        "name": "rechargeRate",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 70,
+      "data": {
+        "attributeID": 70,
+        "name": "agility",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 73,
+      "data": {
+        "attributeID": 73,
+        "name": "duration",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 76,
+      "data": {
+        "attributeID": 76,
+        "name": "maxTargetRange",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "maxAttributeID": 797,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 79,
+      "data": {
+        "attributeID": 79,
+        "name": "scanSpeed",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 101,
+      "data": {
+        "attributeID": 101,
+        "name": "launcherSlotsLeft",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 102,
+      "data": {
+        "attributeID": 102,
+        "name": "turretSlotsLeft",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 109,
+      "data": {
+        "attributeID": 109,
+        "name": "kineticDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 2770,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 110,
+      "data": {
+        "attributeID": 110,
+        "name": "thermalDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 2769,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 111,
+      "data": {
+        "attributeID": 111,
+        "name": "explosiveDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 2771,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 113,
+      "data": {
+        "attributeID": 113,
+        "name": "emDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 2768,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 117,
+      "data": {
+        "attributeID": 117,
+        "name": "kineticDamage",
+        "stackable": 1,
+        "dataType": 8,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 124,
+      "data": {
+        "attributeID": 124,
+        "name": "mainColor",
+        "stackable": 1,
+        "dataType": 7,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 128,
+      "data": {
+        "attributeID": 128,
+        "name": "chargeSize",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 129,
+      "data": {
+        "attributeID": 129,
+        "name": "maxPassengers",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 136,
+      "data": {
+        "attributeID": 136,
+        "name": "uniformity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 137,
+      "data": {
+        "attributeID": 137,
+        "name": "launcherGroup",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 153,
+      "data": {
+        "attributeID": 153,
+        "name": "warpCapacitorNeed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 158,
+      "data": {
+        "attributeID": 158,
+        "name": "falloff",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 160,
+      "data": {
+        "attributeID": 160,
+        "name": "trackingSpeed",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 180,
+      "data": {
+        "attributeID": 180,
+        "name": "primaryAttribute",
+        "stackable": 1,
+        "dataType": 10,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 181,
+      "data": {
+        "attributeID": 181,
+        "name": "secondaryAttribute",
+        "stackable": 1,
+        "dataType": 10,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 182,
+      "data": {
+        "attributeID": 182,
+        "name": "requiredSkill1",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 188,
+      "data": {
+        "attributeID": 188,
+        "name": "cargoScanResistance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 192,
+      "data": {
+        "attributeID": 192,
+        "name": "maxLockedTargets",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 208,
+      "data": {
+        "attributeID": 208,
+        "name": "scanRadarStrength",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 209,
+      "data": {
+        "attributeID": 209,
+        "name": "scanLadarStrength",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 210,
+      "data": {
+        "attributeID": 210,
+        "name": "scanMagnetometricStrength",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 211,
+      "data": {
+        "attributeID": 211,
+        "name": "scanGravimetricStrength",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 217,
+      "data": {
+        "attributeID": 217,
+        "name": "propulsionGraphicID",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 238,
+      "data": {
+        "attributeID": 238,
+        "name": "scanGravimetricStrengthBonus",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 239,
+      "data": {
+        "attributeID": 239,
+        "name": "scanLadarStrengthBonus",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 240,
+      "data": {
+        "attributeID": 240,
+        "name": "scanMagnetometricStrengthBonus",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 241,
+      "data": {
+        "attributeID": 241,
+        "name": "scanRadarStrengthBonus",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 246,
+      "data": {
+        "attributeID": 246,
+        "name": "gfxBoosterID",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 263,
+      "data": {
+        "attributeID": 263,
+        "name": "shieldCapacity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 265,
+      "data": {
+        "attributeID": 265,
+        "name": "armorHP",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 267,
+      "data": {
+        "attributeID": 267,
+        "name": "armorEmDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1527,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 268,
+      "data": {
+        "attributeID": 268,
+        "name": "armorExplosiveDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1527,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 269,
+      "data": {
+        "attributeID": 269,
+        "name": "armorKineticDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1527,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 270,
+      "data": {
+        "attributeID": 270,
+        "name": "armorThermalDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1527,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 271,
+      "data": {
+        "attributeID": 271,
+        "name": "shieldEmDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1528,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 272,
+      "data": {
+        "attributeID": 272,
+        "name": "shieldExplosiveDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1528,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 273,
+      "data": {
+        "attributeID": 273,
+        "name": "shieldKineticDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1528,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 274,
+      "data": {
+        "attributeID": 274,
+        "name": "shieldThermalDamageResonance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "maxAttributeID": 1528,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 275,
+      "data": {
+        "attributeID": 275,
+        "name": "skillTimeConstant",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 276,
+      "data": {
+        "attributeID": 276,
+        "name": "skillPoints",
+        "stackable": 1,
+        "dataType": 1,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 277,
+      "data": {
+        "attributeID": 277,
+        "name": "requiredSkill1Level",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 280,
+      "data": {
+        "attributeID": 280,
+        "name": "skillLevel",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 281,
+      "data": {
+        "attributeID": 281,
+        "name": "explosionDelay",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 283,
+      "data": {
+        "attributeID": 283,
+        "name": "droneCapacity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 306,
+      "data": {
+        "attributeID": 306,
+        "name": "maxVelocityModifier",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 309,
+      "data": {
+        "attributeID": 309,
+        "name": "maxTargetRangeBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 6205,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 349,
+      "data": {
+        "attributeID": 349,
+        "name": "falloffBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 6205,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 351,
+      "data": {
+        "attributeID": 351,
+        "name": "maxRangeBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 6205,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 422,
+      "data": {
+        "attributeID": 422,
+        "name": "techLevel",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 479,
+      "data": {
+        "attributeID": 479,
+        "name": "shieldRechargeRate",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 482,
+      "data": {
+        "attributeID": 482,
+        "name": "capacitorCapacity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 484,
+      "data": {
+        "attributeID": 484,
+        "name": "shieldUniformity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 524,
+      "data": {
+        "attributeID": 524,
+        "name": "armorUniformity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 525,
+      "data": {
+        "attributeID": 525,
+        "name": "structureUniformity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 547,
+      "data": {
+        "attributeID": 547,
+        "name": "missileVelocityBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 552,
+      "data": {
+        "attributeID": 552,
+        "name": "signatureRadius",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 100.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 557,
+      "data": {
+        "attributeID": 557,
+        "name": "maxFlightTimeBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 564,
+      "data": {
+        "attributeID": 564,
+        "name": "scanResolution",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 566,
+      "data": {
+        "attributeID": 566,
+        "name": "scanResolutionBonus",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 6205,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 596,
+      "data": {
+        "attributeID": 596,
+        "name": "explosionDelayBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 600,
+      "data": {
+        "attributeID": 600,
+        "name": "warpSpeedMultiplier",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 3.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 602,
+      "data": {
+        "attributeID": 602,
+        "name": "launcherGroup2",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 603,
+      "data": {
+        "attributeID": 603,
+        "name": "launcherGroup3",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 604,
+      "data": {
+        "attributeID": 604,
+        "name": "chargeGroup1",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 633,
+      "data": {
+        "attributeID": 633,
+        "name": "metaLevelOld",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 653,
+      "data": {
+        "attributeID": 653,
+        "name": "aoeVelocity",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 654,
+      "data": {
+        "attributeID": 654,
+        "name": "aoeCloudSize",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 767,
+      "data": {
+        "attributeID": 767,
+        "name": "trackingSpeedBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "minAttributeID": 6205,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 797,
+      "data": {
+        "attributeID": 797,
+        "name": "maximumRangeCap",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 300000.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 847,
+      "data": {
+        "attributeID": 847,
+        "name": "aoeVelocityBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 848,
+      "data": {
+        "attributeID": 848,
+        "name": "aoeCloudSizeBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1027,
+      "data": {
+        "attributeID": 1027,
+        "name": "scanGravimetricStrengthPercent",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1028,
+      "data": {
+        "attributeID": 1028,
+        "name": "scanLadarStrengthPercent",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1029,
+      "data": {
+        "attributeID": 1029,
+        "name": "scanMagnetometricStrengthPercent",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1030,
+      "data": {
+        "attributeID": 1030,
+        "name": "scanRadarStrengthPercent",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1132,
+      "data": {
+        "attributeID": 1132,
+        "name": "upgradeCapacity",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1154,
+      "data": {
+        "attributeID": 1154,
+        "name": "upgradeSlotsLeft",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1178,
+      "data": {
+        "attributeID": 1178,
+        "name": "heatCapacityHi",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1179,
+      "data": {
+        "attributeID": 1179,
+        "name": "heatDissipationRateHi",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1180,
+      "data": {
+        "attributeID": 1180,
+        "name": "heatAbsorbtionRateModifier",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1196,
+      "data": {
+        "attributeID": 1196,
+        "name": "heatDissipationRateMed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1198,
+      "data": {
+        "attributeID": 1198,
+        "name": "heatDissipationRateLow",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1199,
+      "data": {
+        "attributeID": 1199,
+        "name": "heatCapacityMed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1200,
+      "data": {
+        "attributeID": 1200,
+        "name": "heatCapacityLow",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1211,
+      "data": {
+        "attributeID": 1211,
+        "name": "heatDamage",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1212,
+      "data": {
+        "attributeID": 1212,
+        "name": "requiredThermoDynamicsSkill",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1224,
+      "data": {
+        "attributeID": 1224,
+        "name": "heatGenerationMultiplier",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1259,
+      "data": {
+        "attributeID": 1259,
+        "name": "heatAttenuationHi",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1261,
+      "data": {
+        "attributeID": 1261,
+        "name": "heatAttenuationMed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1262,
+      "data": {
+        "attributeID": 1262,
+        "name": "heatAttenuationLow",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1271,
+      "data": {
+        "attributeID": 1271,
+        "name": "droneBandwidth",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1281,
+      "data": {
+        "attributeID": 1281,
+        "name": "baseWarpSpeed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1313,
+      "data": {
+        "attributeID": 1313,
+        "name": "maxTargetRangeBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1314,
+      "data": {
+        "attributeID": 1314,
+        "name": "scanResolutionBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1315,
+      "data": {
+        "attributeID": 1315,
+        "name": "maxRangeBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1316,
+      "data": {
+        "attributeID": 1316,
+        "name": "trackingSpeedBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1332,
+      "data": {
+        "attributeID": 1332,
+        "name": "falloffBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1399.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1527,
+      "data": {
+        "attributeID": 1527,
+        "name": "armorMaxDamageResonance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1528,
+      "data": {
+        "attributeID": 1528,
+        "name": "shieldMaxDamageResonance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1692,
+      "data": {
+        "attributeID": 1692,
+        "name": "metaGroupID",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1768,
+      "data": {
+        "attributeID": 1768,
+        "name": "typeColorScheme",
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1795,
+      "data": {
+        "attributeID": 1795,
+        "name": "reloadTime",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 10000.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1826,
+      "data": {
+        "attributeID": 1826,
+        "name": "rookieSHTOptimalBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1827,
+      "data": {
+        "attributeID": 1827,
+        "name": "rookieMissileKinDamageBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1828,
+      "data": {
+        "attributeID": 1828,
+        "name": "rookieECMStrengthBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1829,
+      "data": {
+        "attributeID": 1829,
+        "name": "rookieShieldResistBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1935,
+      "data": {
+        "attributeID": 1935,
+        "name": "overloadTrackingModuleStrengthBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1936,
+      "data": {
+        "attributeID": 1936,
+        "name": "overloadSensorModuleStrengthBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2023,
+      "data": {
+        "attributeID": 2023,
+        "name": "aoeCloudSizeBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1399.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2024,
+      "data": {
+        "attributeID": 2024,
+        "name": "aoeVelocityBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1399.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2025,
+      "data": {
+        "attributeID": 2025,
+        "name": "missileVelocityBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1399.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2026,
+      "data": {
+        "attributeID": 2026,
+        "name": "explosionDelayBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1399.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2033,
+      "data": {
+        "attributeID": 2033,
+        "name": "speedLimit",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1000000.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2045,
+      "data": {
+        "attributeID": 2045,
+        "name": "energyWarfareResistance",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2112,
+      "data": {
+        "attributeID": 2112,
+        "name": "sensorDampenerResistance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2113,
+      "data": {
+        "attributeID": 2113,
+        "name": "weaponDisruptionResistance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2115,
+      "data": {
+        "attributeID": 2115,
+        "name": "stasisWebifierResistance",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2282,
+      "data": {
+        "attributeID": 2282,
+        "name": "sensorStrengthBonusBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2768,
+      "data": {
+        "attributeID": 2768,
+        "name": "emDamageResonanceMax",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2769,
+      "data": {
+        "attributeID": 2769,
+        "name": "thermalDamageResonanceMax",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2770,
+      "data": {
+        "attributeID": 2770,
+        "name": "kineticDamageResonanceMax",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 2771,
+      "data": {
+        "attributeID": 2771,
+        "name": "explosiveDamageResonanceMax",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 5796,
+      "data": {
+        "attributeID": 5796,
+        "name": "maxDirectionalScanRange",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 2147483648000.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 5978,
+      "data": {
+        "attributeID": 5978,
+        "name": "integratedMiningScanner",
+        "stackable": 0,
+        "dataType": 3,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6205,
+      "data": {
+        "attributeID": 6205,
+        "name": "ConstantMinusNinetyNine",
+        "stackable": 0,
+        "dataType": 5,
+        "defaultValue": -99.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6364,
+      "data": {
+        "attributeID": 6364,
+        "name": "baseJumpBridgeCapacitorCost",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    }
+  ]
+}

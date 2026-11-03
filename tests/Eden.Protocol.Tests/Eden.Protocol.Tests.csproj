@@ -17,6 +17,7 @@
     <EmbeddedResource Include="Fixtures/EnergyTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/HullRepairTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/MissileTierCatalog.json" />
+    <EmbeddedResource Include="Fixtures/SupportTierCatalog.json" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

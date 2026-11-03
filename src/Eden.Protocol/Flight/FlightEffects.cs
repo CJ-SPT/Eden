@@ -1,3 +1,4 @@
+using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 
@@ -12,6 +13,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshShieldBoosts(ship, previous);
         RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
+        RefreshSupport(ship, previous);
         RefreshPropulsion(ship, previous);
     }
 
@@ -155,6 +157,35 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         foreach (var effect in (ship.Hardeners ?? []).Except(previous?.Hardeners ?? []))
         {
             HardenerEffect(ship.Pilot.ShipId, effect, true);
+        }
+    }
+
+    internal void SupportEffect(long shipId, SupportContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                shipId,
+                null,
+                SupportModuleWire.Graphic(effect.Module.Effect),
+                false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.StartedAt
+            )
+        );
+
+    private void RefreshSupport(ShipContact ship, ShipContact? previous)
+    {
+        foreach (var effect in (previous?.Support ?? []).Except(ship.Support ?? []))
+        {
+            SupportEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.Support ?? []).Except(previous?.Support ?? []))
+        {
+            SupportEffect(ship.Pilot.ShipId, effect, true);
         }
     }
 

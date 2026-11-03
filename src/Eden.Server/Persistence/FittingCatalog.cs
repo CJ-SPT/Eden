@@ -18,6 +18,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (SupportModuleDefinitions.Effect(type.GroupId) is not null && !SupportModuleCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (
             (
                 type.GroupId
