@@ -8,6 +8,24 @@ namespace Eden.Protocol.Tests.Gateway;
 public sealed class GatewayRequestsTests
 {
     [Fact]
+    public void LocalPlexBalanceUsesTheNativeSuccessShapeInsteadOfWalletFailureCallback()
+    {
+        var request = new Request
+        {
+            CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.plex.vault.api.BalanceRequest" },
+        };
+        var response = new GatewayRequests(TimeProvider.System).Handle(request);
+        Assert.Equal(200u, response.StatusCode);
+        Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal("type.googleapis.com/eve_public.plex.vault.api.BalanceResponse", response.Payload.TypeUrl);
+        var balance = response.Payload.Unpack<Protocol.Gateway.PlexVault.BalanceResponse>();
+        Assert.NotNull(balance.Balance);
+        Assert.Equal(0, balance.Balance.TotalInCents);
+        Assert.Equal(new byte[] { 0x0a, 0x00 }, response.Payload.Value.ToByteArray());
+    }
+
+    [Fact]
     public void AmsenReportsNoPirateCorruptionToTheLocationPanel()
     {
         var request = new Request

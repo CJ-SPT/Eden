@@ -10,6 +10,7 @@
       ProtoRoot="Gateway"
       GrpcServices="None"
     />
+    <Protobuf Include="Gateway/plex.proto;Gateway/plex_vault.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
   </ItemGroup>
 </Project>

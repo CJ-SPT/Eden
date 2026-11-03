@@ -1,0 +1,8 @@
+syntax = "proto3";
+package eve_public.plex;
+option csharp_namespace = "Eden.Protocol.Gateway.Plex";
+
+// Build 3662168 eve_public/plex/plex.proto: Currency.total_in_cents is sint64.
+message Currency {
+  sint64 total_in_cents = 1;
+}

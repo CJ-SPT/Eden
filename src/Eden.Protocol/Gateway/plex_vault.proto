@@ -1,0 +1,9 @@
+syntax = "proto3";
+package eve_public.plex.vault.api;
+option csharp_namespace = "Eden.Protocol.Gateway.PlexVault";
+
+import "plex.proto";
+
+message BalanceResponse {
+  eve_public.plex.Currency balance = 1;
+}

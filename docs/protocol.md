@@ -1028,3 +1028,13 @@ FlightEffects owns the ordered mining, weapon, shield and propulsion replay used
 Automated: restore/build, all 416 .NET tests, 3 catalog Python tests, 9 formatting-policy Python tests and formatting verification passed. New tests cover single health sampling, production flight-factory wiring, docked disengagement and effect replay order. Existing two-pilot warp/gate/orbit, NPC competing-viewer movement and hull-loss/module cancellation regressions pass.
 
 Live: restarted FlightBoundary on the isolated audit-flight save. Eden Pilot undocked in Ibis at Jita IV Moon 4. Launched Eden Wing afterward and undocked it; Wing's Overview displayed Eden Pilot's Ibis at 1,406 m, and its own HUD was at 0.0 m/s. This verifies late peer arrival through the production client. Warp, gates and fatal combat were covered automatically, not repeated manually. An unrelated native wallet initialization problem became visible during acceptance: the unsupported PLEX balance response can re-enter PersonalWalletPanel.Load and duplicate LP/EverMarks summary tabs; it is being investigated separately.
+
+## Architecture audit milestone 11: wallet header duplication
+
+The pinned client's PersonalWalletPanel.Load checks isInitialized before constructing tabs but only sets it afterward. PlexTab starts an asynchronous balance read during construction; its failure signal selects the ISK tab and can re-enter Load before initialization completes, appending the LP/EverMarks tabs again. The local gateway's 501 for eve_public.plex.vault.api.BalanceRequest triggered that path. This was visible during undocking and also reported by the maintainer's screenshot.
+
+Added the native BalanceResponse and Currency.total_in_cents (sint64) shapes from build 3662168's eve_public/plex/vault/api/requests.proto and eve_public/plex/plex.proto descriptors. Local accounts have no PLEX holdings; a successful explicit zero balance avoids the failure callback. No PLEX purchasing service or currency grants are added.
+
+Automated: restore/build, 417 .NET tests, 3 catalog Python tests, 9 formatting-policy Python tests and formatting verification passed. The regression verifies response identity, native type URL, explicit Currency presence and exact empty-balance bytes.
+
+Live: restarted WalletBalance with the isolated audit-flight save, selected Eden Pilot in space and brought Wallet forward. Exactly one LP Corporations row and one EverMarks row appeared. PLEX displayed 0; the existing 22,686 ISK balance and market/bounty journal entries remained visible. Inventory showed active Ibis with 100 Tritanium and one Civilian Miner in cargo.

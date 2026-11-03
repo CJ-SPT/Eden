@@ -28,6 +28,10 @@ public sealed class GatewayRequests(TimeProvider clock)
                 EveContribution = new Fraction { Denominator = 1 },
                 VanguardContribution = new Fraction { Denominator = 1 },
             },
+            // Local accounts have no PLEX holdings or purchasing service. A valid
+            // zero balance avoids the stock wallet's failure callback re-entering
+            // PersonalWalletPanel.Load while its tabs are still being constructed.
+            "eve_public.plex.vault.api.BalanceRequest" => new PlexVault.BalanceResponse { Balance = new Plex.Currency() },
             _ => null,
         };
         var response = new Response
