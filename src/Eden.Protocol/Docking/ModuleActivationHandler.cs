@@ -24,7 +24,8 @@ internal sealed class ModuleActivationHandler(
     PropulsionHandler propulsion,
     LocalRepairHandler repairs,
     HardenerHandler hardeners,
-    CapacitorBoosterHandler capacitorBoosters
+    CapacitorBoosterHandler capacitorBoosters,
+    MissileHandler? missiles = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -44,6 +45,7 @@ internal sealed class ModuleActivationHandler(
             MiningWireDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
+            MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,
             ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
             ArmorRepairWireDefinitions.EffectName or LocalRepairWireDefinitions.HullEffectName => repairs.Call(
                 context,

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Combat;
 
@@ -6,6 +7,26 @@ public sealed record MissileWarhead(DamageVector Damage, double ExplosionRadius,
 
 public static class MissileRules
 {
+    public static long? AcquireAggressor(SpacePosition origin, double maximumRange, IReadOnlyList<MissileAggressor> aggressors)
+    {
+        if (
+            !double.IsFinite(origin.Length)
+            || !double.IsFinite(maximumRange)
+            || maximumRange <= 0
+            || aggressors.Any(a => a.Id <= 0 || !double.IsFinite(a.Position.Length))
+        )
+        {
+            throw new InvalidDataException("Invalid automatic missile acquisition geometry.");
+        }
+        return aggressors
+            .Select(a => (a.Id, Distance: origin.DistanceTo(a.Position)))
+            .Where(a => a.Distance <= maximumRange)
+            .OrderBy(a => a.Distance)
+            .ThenBy(a => a.Id)
+            .Select(a => (long?)a.Id)
+            .FirstOrDefault();
+    }
+
     public static MissileWarhead Warhead(IReadOnlyDictionary<DogmaAttributeId, double> attributes, double damageMultiplier = 1)
     {
         MissileWarhead result = new(

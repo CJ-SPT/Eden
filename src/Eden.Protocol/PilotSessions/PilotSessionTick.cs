@@ -35,6 +35,7 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         {
             flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
             flight.RefreshWrecks();
+            flight.RefreshMissiles();
             flight.RefreshNpcs();
             flight.RefreshPeers();
             await output.FlushFlightUpdatesAsync();

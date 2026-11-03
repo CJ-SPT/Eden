@@ -197,17 +197,6 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             (int)(ammoFed && !energy ? DogmaEffect.ProjectileFired : DogmaEffect.LaserFired)
         );
         var target = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
-        var defense = ShipHealth.DefenseFrom(target);
-        HullDamage health = new(
-            ChargedResource.Recharged(
-                npc.ShieldCharge,
-                defense.Shield,
-                defense.ShieldRechargeMilliseconds,
-                Math.Max(0, (now - npc.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
-            ),
-            Math.Max(0, defense.Armor - npc.ArmorDamage),
-            Math.Max(0, defense.Structure - npc.StructureDamage)
-        );
         double chance = CombatDamage.HitChance(
             distance,
             CombatDamage.AngularVelocity(separation, velocity - NpcMotion.Velocity(npc)),
@@ -218,58 +207,20 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             weapon.SignatureResolution
         );
         double quality = CombatDamage.ShotQuality(chance, roll);
-        var result = CombatDamage.Apply(health, defense, weapon.Damage.Scale(quality));
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, weapon.CapacitorNeed, now);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
-        npc.ShieldCharge = result.Remaining.Shield;
-        npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
-        npc.StructureDamage = defense.Structure - result.Remaining.Structure;
-        npc.UpdatedAt = Math.Max(now, npc.UpdatedAt);
-        NpcBounty? reward = null;
-        var aggression = world.Set<NpcAggression>().Find(npc.Id);
-        if (result.Remaining.Destroyed)
-        {
-            if (aggression is not null)
-            {
-                world.Remove(aggression);
-            }
-            npc.DestroyedAt = now;
-            WreckStore.Create(world, catalog, npc, pilot, now);
-            double bounty = target.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);
-            if (!double.IsFinite(bounty) || bounty < 0)
-            {
-                throw new InvalidDataException("Invalid NPC bounty.");
-            }
-            long cents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));
-            if (cents > 0)
-            {
-                var wallet = world.Set<PilotWallet>().Find(pilotId) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilotId }).Entity;
-                wallet.Cents = checked(wallet.Cents + cents);
-                reward = world
-                    .Set<NpcBounty>()
-                    .Add(
-                        new()
-                        {
-                            PilotId = pilotId,
-                            NpcId = npc.Id,
-                            TypeId = npc.TypeId,
-                            SystemId = npc.SystemId,
-                            Time = now,
-                            AmountCents = cents,
-                            BalanceCents = wallet.Cents,
-                        }
-                    )
-                    .Entity;
-            }
-        }
-        else if (aggression is null && target.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
-        {
-            // A player attack can claim an idle NPC before its detection tick.
-            // Existing targets and their paid reaction/cycle deadlines persist.
-            world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, pilot.ActiveShipId, delay, now));
-        }
+        var settlement = NpcDamagePersistence.Apply(
+            world,
+            catalog,
+            npc,
+            pilot,
+            pilot.ActiveShipId,
+            target,
+            weapon.Damage.Scale(quality),
+            now
+        );
         Magazine? magazine = null;
         if (loadedAmmo is not null)
         {
@@ -310,18 +261,17 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         transaction.Commit();
         return new(
             weapon,
-            result.Applied,
+            settlement.Applied,
             quality,
-            new(npc.Id, defense, result.Remaining),
+            settlement.Health,
             capacitor,
-            result.Remaining.Destroyed,
-            reward is null ? null : Read(reward),
+            settlement.Destroyed,
+            settlement.Reward is null ? null : Read(settlement.Reward),
             magazine
         );
     }
 
-    private static CombatReward Read(NpcBounty b) =>
-        new(b.Id, b.PilotId, b.NpcId, b.TypeId, b.SystemId, b.Time, b.AmountCents, b.BalanceCents);
+    private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);
 
     public IReadOnlyList<CombatReward> Rewards(long pilotId)
     {

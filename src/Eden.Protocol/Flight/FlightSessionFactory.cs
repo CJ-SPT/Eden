@@ -18,7 +18,8 @@ internal sealed class FlightSessionFactory(
     IStationDocking docking,
     IPilotHealth health,
     INpcEncounters encounters,
-    IWrecks wrecks
+    IWrecks wrecks,
+    IPilotMissiles? missiles = null
 )
 {
     public FlightSession Create(DockedPilot pilot) =>
@@ -36,6 +37,7 @@ internal sealed class FlightSessionFactory(
             docking,
             health,
             encounters,
-            wrecks
+            wrecks,
+            missiles
         );
 }

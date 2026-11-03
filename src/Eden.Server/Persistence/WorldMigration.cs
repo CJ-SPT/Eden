@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
@@ -8,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 33;
+    internal const int CurrentVersion = 34;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -440,9 +441,41 @@ internal static class WorldMigration
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldArmorRepair ADD COLUMN Layer INTEGER NOT NULL DEFAULT 0");
         }
+        if (version is >= 6 and < 34)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE IF NOT EXISTS WorldMissile(
+                    Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    SourceShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE,
+                    ModuleId INTEGER NOT NULL, LauncherTypeId INTEGER NOT NULL, ChargeTypeId INTEGER NOT NULL,
+                    GroupId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                    TargetId INTEGER NOT NULL REFERENCES WorldNpc(Id) ON DELETE CASCADE, TargetRadius REAL NOT NULL,
+                    CorporationId INTEGER NOT NULL, LaunchStamp INTEGER NOT NULL,
+                    LaunchedAt INTEGER NOT NULL, UpdatedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL, EndedAt INTEGER,
+                    Status INTEGER NOT NULL, Reported INTEGER NOT NULL, Snapshot TEXT NOT NULL, Outcome TEXT);
+                CREATE INDEX IF NOT EXISTS IX_WorldMissile_SystemId_Status_UpdatedAt ON WorldMissile(SystemId,Status,UpdatedAt);
+                CREATE INDEX IF NOT EXISTS IX_WorldMissile_PilotId_Reported ON WorldMissile(PilotId,Reported);
+                """
+            );
+        }
+        if (version < 34)
+        {
+            // Keep the projectile identity range separate from ships, owned
+            // items, NPCs and wrecks; AUTOINCREMENT preserves it after cleanup.
+            long sequence = MissileDefinitions.FirstProjectileId - 1;
+            world.Database.ExecuteSql($"UPDATE sqlite_sequence SET seq=MAX(seq,{sequence}) WHERE name='WorldMissile'");
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO sqlite_sequence(name,seq)
+                    SELECT 'WorldMissile',{sequence} WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name='WorldMissile');
+                """
+            );
+        }
         if (version < CurrentVersion)
         {
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=33");
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=34");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

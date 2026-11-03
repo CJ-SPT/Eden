@@ -71,6 +71,7 @@ public enum MissileChargeGroup
 
 public static class MissileDefinitions
 {
+    public const long FirstProjectileId = 6_000_000_000_000;
     public const int CivilianLauncher = 32461;
     public static IReadOnlySet<int> LauncherGroups { get; } = Enum.GetValues<MissileLauncherGroup>().Select(g => (int)g).ToHashSet();
     public static IReadOnlySet<int> ChargeGroups { get; } = Enum.GetValues<MissileChargeGroup>().Select(g => (int)g).ToHashSet();

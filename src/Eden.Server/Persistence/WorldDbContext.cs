@@ -132,6 +132,22 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WorldMissile>().ToTable("WorldMissile").HasKey(m => m.Id);
+        model.Entity<WorldMissile>().Property(m => m.Id).ValueGeneratedOnAdd();
+        model.Entity<WorldMissile>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId);
+        model.Entity<WorldMissile>().HasOne<Ship>().WithMany().HasForeignKey(m => m.SourceShipId);
+        model.Entity<WorldMissile>().HasOne<WorldNpc>().WithMany().HasForeignKey(m => m.TargetId);
+        // A launched projectile retains its module identity after destruction
+        // or unfitting; ModuleId deliberately has no inventory foreign key.
+        model
+            .Entity<WorldMissile>()
+            .HasIndex(m => new
+            {
+                m.SystemId,
+                m.Status,
+                m.UpdatedAt,
+            });
+        model.Entity<WorldMissile>().HasIndex(m => new { m.PilotId, m.Reported });
         model
             .Entity<IndustryJob>()
             .ToTable(

@@ -29,7 +29,8 @@ internal sealed class FlightSession(
     IStationDocking? docking = null,
     IPilotHealth? health = null,
     INpcEncounters? encounters = null,
-    IWrecks? wrecks = null
+    IWrecks? wrecks = null,
+    IPilotMissiles? missiles = null
 ) : IDisposable
 {
     private FlightEffects? _effects;
@@ -46,6 +47,7 @@ internal sealed class FlightSession(
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
     private WreckContact[] _wrecks = [];
+    private MissileContact[] _missiles = [];
     private bool _destroying;
     private int _lastPeerSync;
     private int _lastNpcSync;
@@ -123,6 +125,49 @@ internal sealed class FlightSession(
 
     public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
     public IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
+    public IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
+
+    private MissileContact[] ReadMissiles() =>
+        Pilot.Position is not { } position
+            ? []
+            : (missiles?.List(Pilot.SystemId) ?? [])
+                .Where(m => position.DistanceTo(m.Flight.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                .ToArray();
+
+    public void RefreshMissiles()
+    {
+        if (!InBallpark)
+        {
+            return;
+        }
+        var current = ReadMissiles();
+        foreach (var departed in _missiles.ExceptBy(current.Select(m => m.Id), m => m.Id))
+        {
+            Update(new DestinyCommand.RemoveBall(departed.Id, missiles?.Impacted(departed.Id) == true));
+        }
+        var added = current.ExceptBy(_missiles.Select(m => m.Id), m => m.Id).ToArray();
+        if (added.Length > 0)
+        {
+            Update(new DestinyCommand.AddBalls(Ballpark.AddMissiles(added, Stamp)));
+        }
+        foreach (var missile in current)
+        {
+            var previous = _missiles.FirstOrDefault(m => m.Id == missile.Id);
+            if (previous is not null && previous.Flight.ElapsedSeconds != missile.Flight.ElapsedSeconds)
+            {
+                var position = missile.Flight.Position;
+                var velocity = missile.Flight.Velocity;
+                Update(new DestinyCommand.SetBallPosition(missile.Id, position.X, position.Y, position.Z));
+                Update(new DestinyCommand.SetBallVelocity(missile.Id, velocity.X, velocity.Y, velocity.Z));
+            }
+            if (previous is not null && missile.Flight.Orphaned && !previous.Flight.Orphaned)
+            {
+                var point = missile.Flight.Goto;
+                Update(new DestinyCommand.GotoPoint(missile.Id, point.X, point.Y, point.Z));
+            }
+        }
+        _missiles = current;
+    }
 
     private StaticSpaceObject? NavigationTarget(long id)
     {
@@ -321,6 +366,7 @@ internal sealed class FlightSession(
 
     public void BeginShipLoss()
     {
+        missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         _destroying = true;
         space.Leave(Pilot.ShipId);
     }
@@ -338,6 +384,7 @@ internal sealed class FlightSession(
         _propulsion = null;
         modules = [];
         _navigation.AdoptHull();
+        _missiles = [];
         _mining = [];
         _weapons = [];
         _shieldBoosts = [];
@@ -717,6 +764,8 @@ internal sealed class FlightSession(
 
     private void LeaveSpace()
     {
+        missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        _missiles = [];
         _propulsion = null;
         Pilot = Pilot with { Flight = _baseFlight };
         InBallpark = false;
@@ -791,8 +840,9 @@ internal sealed class FlightSession(
         var visible = VisibleObjects();
         _npcs = ReadNpcs();
         _wrecks = ReadWrecks();
+        _missiles = ReadMissiles();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(own, stamp, visible, peers, _npcs, _wrecks))));
+        Updates.Add(new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(own, stamp, visible, peers, _npcs, _wrecks, _missiles))));
         foreach (var npc in _npcs.Where(n => n.Weapon is not null))
         {
             NpcWeaponEffect(npc.Id, npc.Weapon!, true);
@@ -878,6 +928,7 @@ internal sealed class FlightSession(
         // Keep the source balls alive while the jump camera turns, fades the UI, and enters the tunnel.
         _arrivalStamp = null;
         _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
+        missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
         DepartureEffect(Pilot.ShipId, source.Id, systemId);
@@ -921,6 +972,7 @@ internal sealed class FlightSession(
         {
             return PilotCallResult.Unsupported;
         }
+        missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         var contact = CreateContact();
         ApplyCourse(contact);
         // WarpLoop prepares the tunnel while aligning, then observes Destiny's positive

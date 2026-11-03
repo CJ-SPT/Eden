@@ -122,6 +122,8 @@ public enum DogmaAttributeId
     ChargeGroup5 = 608,
     ChargeGroup6 = 609,
     MissileFlightTime = 281,
+    AimedMissileLaunch = 644,
+    AutoTargetingMissileRange = 2700,
     ExplosionVelocity = 653,
     ExplosionRadius = 654,
     MissileReductionExponent = 1353,
