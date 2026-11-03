@@ -21,9 +21,9 @@ public sealed class HardenerTests
 {
     private static IPilotHardening Store(Fixture f) => f.Db.Services.GetRequiredService<IPilotHardening>();
 
-    private static PilotCallContext Client(Fixture f, SharedSpace? space = null)
+    private static PilotCallContext Client(Fixture f, SharedSpace? space = null, SpacePosition? position = null)
     {
-        f.Db.Store.SetPosition(f.ShipId, SpacePosition.Zero);
+        f.Db.Store.SetPosition(f.ShipId, position ?? SpacePosition.Zero);
         var pilot = f.Db.Store.FindPilot(1000001)!;
         PilotCallContext context = new(
             1000001,
@@ -214,9 +214,13 @@ public sealed class HardenerTests
     {
         using Fixture f = new();
         long module = f.Fit(2293);
-        using var context = Client(f);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using var context = Client(f, position: new SpacePosition(pilot.X + 1000000, pilot.Y, pilot.Z));
         using HardenerHandler handler = new(f.Clock, Store(f));
         Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)context.Pilot.StationId]));
+        f.Clock.Seconds += 10;
+        context.Flight.Checkpoint();
+        Assert.True(context.Flight.InWarp);
         Assert.False(context.Flight.CanTarget);
         Assert.IsType<PilotCallResult.Success>(
             handler.Call(context, "dogmaIM", "Activate", [module, HardenerWireDefinitions.ShieldEffectName, null, 100L])
@@ -240,7 +244,8 @@ public sealed class HardenerTests
             saved.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             saved.SaveChanges();
             saved.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                TestWorld.DropSafetySchema
+                    + "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
                     + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; PRAGMA user_version=29"
             );
         }

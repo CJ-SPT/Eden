@@ -459,7 +459,8 @@ public sealed class EnergyTierTests
         {
             id = world.Set<OwnedItem>().Single(i => i.LocationId == gun).Id;
             world.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                TestWorld.DropSafetySchema
+                    + "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
                     + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; PRAGMA user_version=31"
             );
         }

@@ -28,9 +28,9 @@ public sealed class MicrowarpdriveTests
         return module;
     }
 
-    private static PilotCallContext Client(Fixture f, SharedSpace? space = null)
+    private static PilotCallContext Client(Fixture f, SharedSpace? space = null, SpacePosition? position = null)
     {
-        f.Db.Store.SetPosition(f.ShipId, SpacePosition.Zero);
+        f.Db.Store.SetPosition(f.ShipId, position ?? SpacePosition.Zero);
         var pilot = f.Db.Store.FindPilot(1000001)!;
         PilotCallContext context = new(
             1000001,
@@ -238,11 +238,17 @@ public sealed class MicrowarpdriveTests
     {
         using Fixture f = new();
         long module = Fit(f);
-        using var context = Client(f);
+        // Start clear of the synthetic moon at the catalog origin so alignment
+        // can finish and this checks actual warp, rather than its initial order.
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        SpacePosition station = new(pilot.X, pilot.Y, pilot.Z);
+        using var context = Client(f, position: station + new SpacePosition(1000000, 0, 0));
         using PropulsionHandler handler = new(f.Clock, Store(f));
         _ = handler.Call(context, "dogmaIM", "Activate", [module, PropulsionWireDefinitions.MicrowarpdriveEffectName, null, 100L]);
         Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)context.Pilot.StationId]));
-        f.Clock.Milliseconds += 10000;
+        f.Clock.Milliseconds += 15000;
+        context.Flight.Checkpoint();
+        Assert.True(context.Flight.InWarp);
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, module));
         Assert.IsType<PilotCallResult.Failure>(
@@ -310,14 +316,15 @@ public sealed class MicrowarpdriveTests
         {
             deadline = saved.Set<ModuleCooldown>().Single().ReadyAt;
             saved.Database.ExecuteSqlRaw(
-                """
-                ALTER TABLE WorldArmorRepair DROP COLUMN Layer;
-                ALTER TABLE WorldItem DROP COLUMN CrystalDamage;
-                DROP INDEX IX_WorldActiveModule_ShipId;
-                ALTER TABLE WorldActiveModule RENAME TO WorldActiveHardener;
-                CREATE INDEX IX_WorldActiveHardener_ShipId ON WorldActiveHardener(ShipId);
-                PRAGMA user_version=30;
-                """
+                TestWorld.DropSafetySchema
+                    + """
+                    ALTER TABLE WorldArmorRepair DROP COLUMN Layer;
+                    ALTER TABLE WorldItem DROP COLUMN CrystalDamage;
+                    DROP INDEX IX_WorldActiveModule_ShipId;
+                    ALTER TABLE WorldActiveModule RENAME TO WorldActiveHardener;
+                    CREATE INDEX IX_WorldActiveHardener_ShipId ON WorldActiveHardener(ShipId);
+                    PRAGMA user_version=30;
+                    """
             );
         }
         _ = WorldInitialization.Open(f.Db.Path);

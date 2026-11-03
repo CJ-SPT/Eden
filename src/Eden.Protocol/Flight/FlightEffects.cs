@@ -1,3 +1,4 @@
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
@@ -14,6 +15,14 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
         RefreshSupport(ship, previous);
+        foreach (var effect in (previous?.Tackle ?? []).Except(ship.Tackle ?? []))
+        {
+            TackleEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.Tackle ?? []).Except(previous?.Tackle ?? []))
+        {
+            TackleEffect(ship.Pilot.ShipId, effect, true);
+        }
         RefreshPropulsion(ship, previous);
     }
 
@@ -27,6 +36,23 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 null,
                 PropulsionWireDefinitions.Graphic(effect.Module.Effect),
                 false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.StartedAt
+            )
+        );
+
+    internal void TackleEffect(long shipId, TackleContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                effect.TargetId,
+                null,
+                TackleWire.Graphic(effect.Module.Effect),
+                TackleDefinitions.Targeted(effect.Module.Effect),
                 active,
                 active,
                 effect.Module.DurationMilliseconds,

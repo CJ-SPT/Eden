@@ -25,15 +25,20 @@ internal sealed class TestWorld : IDisposable
 
     // These fixtures replay pre-version-28 migrations; remove the newer live
     // module table as well, so version 31 can rename the historical table.
-    internal const string DropTestingMarketSchema = """
-        DROP TABLE WorldMissile;
-        ALTER TABLE WorldArmorRepair DROP COLUMN Layer;
-        ALTER TABLE WorldItem DROP COLUMN CrystalDamage;
-        DROP TABLE WorldActiveModule;
-        DROP TABLE WorldTestingGrant;
-        ALTER TABLE WorldMarketStation DROP COLUMN SeedVersion;
-        DROP INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents;
-        """;
+    internal const string DropCloneGradeSchema = "ALTER TABLE WorldAccount DROP COLUMN CloneGrade; ";
+    internal const string DropSafetySchema = DropCloneGradeSchema + "ALTER TABLE WorldPilot DROP COLUMN SafetyLevel; ";
+    internal const string DropTestingMarketSchema =
+        DropSafetySchema
+        + """
+            DROP TABLE WorldMissile;
+            DROP TABLE WorldTackle;
+            ALTER TABLE WorldArmorRepair DROP COLUMN Layer;
+            ALTER TABLE WorldItem DROP COLUMN CrystalDamage;
+            DROP TABLE WorldActiveModule;
+            DROP TABLE WorldTestingGrant;
+            ALTER TABLE WorldMarketStation DROP COLUMN SeedVersion;
+            DROP INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents;
+            """;
 
     public TestWorld(bool emptyWallets = true, TimeProvider? clock = null)
     {

@@ -28,6 +28,16 @@ public abstract record DogmaValue
     public sealed record Constant(double Value) : DogmaValue;
 
     public sealed record Attribute(long ItemId, DogmaAttributeId AttributeId) : DogmaValue;
+
+    public sealed record Product(DogmaValue Left, DogmaValue Right) : DogmaValue;
+
+    public static IEnumerable<Attribute> References(DogmaValue value) =>
+        value switch
+        {
+            Attribute attribute => [attribute],
+            Product product => References(product.Left).Concat(References(product.Right)),
+            _ => [],
+        };
 }
 
 public sealed record DogmaModifier(
@@ -79,6 +89,7 @@ public sealed class DogmaGraph
         {
             DogmaValue.Constant constant => constant.Value,
             DogmaValue.Attribute attribute => Read(attribute.ItemId, attribute.AttributeId),
+            DogmaValue.Product product => Read(product.Left) * Read(product.Right),
             _ => throw new InvalidDataException("Unsupported dogma value."),
         };
 

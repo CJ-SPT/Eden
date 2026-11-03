@@ -35,6 +35,8 @@ internal sealed record LocalRepairContact(
 
 internal sealed record SupportContact(SupportModule Module, long StartedAt);
 
+internal sealed record TackleContact(TackleModule Module, long TargetId, long StartedAt);
+
 internal sealed record HardenerContact(Hardener Module, long StartedAt);
 
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
@@ -103,7 +105,8 @@ internal sealed record ShipContact(
     NavigationMode FollowMode = NavigationMode.Follow,
     LocalRepairContact[]? LocalRepairs = null,
     HardenerContact[]? Hardeners = null,
-    SupportContact[]? Support = null
+    SupportContact[]? Support = null,
+    TackleContact[]? Tackle = null
 );
 
 [Injectable(InjectionType.Singleton)]

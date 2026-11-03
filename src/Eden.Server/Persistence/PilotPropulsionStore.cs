@@ -135,6 +135,10 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var item = PilotInventoryStore.Read(catalog, module);
         var attributes = ModuleAttributes(world, catalog, pilotId, item);
+        if (attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlocked) > 0)
+        {
+            throw new InvalidDataException("A warp scrambler is blocking the microwarpdrive.");
+        }
         PropulsionModule burner = new(
             moduleId,
             module.TypeId,

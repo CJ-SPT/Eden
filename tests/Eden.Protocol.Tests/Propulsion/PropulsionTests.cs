@@ -404,10 +404,13 @@ public sealed class PropulsionTests
             PropulsionHandler handler = new(f.Clock, f.Store);
             Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionWireDefinitions.EffectName, null, 100L]));
             Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
+            Assert.True(context.Flight.CanTarget);
+            f.Clock.Milliseconds = 15000;
+            context.Flight.Checkpoint();
+            Assert.True(context.Flight.InWarp);
             Assert.IsType<PilotCallResult.Failure>(
                 handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionWireDefinitions.EffectName, null, 100L])
             );
-            f.Clock.Milliseconds = 9000;
             handler.Advance(context);
             Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
             Assert.Equal(339.25, context.Pilot.Flight.MaxSpeed);

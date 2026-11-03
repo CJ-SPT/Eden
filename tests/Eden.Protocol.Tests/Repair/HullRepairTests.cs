@@ -471,7 +471,9 @@ public sealed class HullRepairTests
         var paid = Store(f).Start(f.PilotId, armor, f.Clock.Now);
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldArmorRepair DROP COLUMN Layer; PRAGMA user_version=32");
+            world.Database.ExecuteSqlRaw(
+                TestWorld.DropSafetySchema + "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; PRAGMA user_version=32"
+            );
         }
         _ = WorldInitialization.Open(f.Db.Path);
         _ = WorldInitialization.Open(f.Db.Path);

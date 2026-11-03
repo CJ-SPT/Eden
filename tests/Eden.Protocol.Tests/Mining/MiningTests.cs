@@ -134,7 +134,8 @@ public sealed class MiningTests
         public (PilotCallContext Context, TargetingHandler Targeting, MiningHandler Mining, long Module) Client(
             long account = 1000001,
             bool locked = true,
-            MiningLaserType laser = MiningLaserType.Civilian
+            MiningLaserType laser = MiningLaserType.Civilian,
+            StaticSpaceObject? warpDestination = null
         )
         {
             var pilot = Db.Store.FindPilot(account)!;
@@ -151,7 +152,10 @@ public sealed class MiningTests
             }
             long module = fitting.Fit(pilot.PilotId, [item.Id], pilot.StationId, (int)InventoryFlag.AutoFit).Last().Item.Id;
             fitting.SetOnline(pilot.PilotId, pilot.ShipId, module, true);
-            var objects = Db.Objects.Concat(Db.Services.GetRequiredService<IAsteroidField>().List(pilot.SystemId)).ToArray();
+            var objects = Db
+                .Objects.Concat(Db.Services.GetRequiredService<IAsteroidField>().List(pilot.SystemId))
+                .Concat(warpDestination is null ? [] : new[] { warpDestination })
+                .ToArray();
             PilotCallContext context = new(
                 account,
                 pilot.Account,
@@ -408,7 +412,9 @@ public sealed class MiningTests
     public void TargetLossWarpAndInvalidActivationDoNotProduceOre()
     {
         using Fixture fixture = new();
-        var (context, targeting, mining, module) = fixture.Client(locked: false);
+        var pilot = fixture.Db.Store.FindPilot(1000001)!;
+        StaticSpaceObject destination = new(999, 0, 0, 0, 0, new(pilot.X + pilot.Flight.StationRadius + 500, pilot.Y + 1e9, pilot.Z), 1);
+        var (context, targeting, mining, module) = fixture.Client(locked: false, warpDestination: destination);
         Assert.IsType<PilotCallResult.Failure>(
             mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L])
         );
@@ -428,7 +434,10 @@ public sealed class MiningTests
         fixture.Clock.Milliseconds += 4000;
         targeting.Advance(context);
         Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 1000L]));
-        _ = context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", 50001249L]);
+        Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", destination.Id]));
+        fixture.Clock.Seconds += 10;
+        context.Flight.Checkpoint();
+        Assert.True(context.Flight.InWarp);
         targeting.Advance(context);
         mining.Advance(context);
         Assert.False(mining.IsActive(module));

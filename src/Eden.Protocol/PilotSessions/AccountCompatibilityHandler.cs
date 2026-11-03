@@ -35,7 +35,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
             ("config", "GetAverageMarketPrices") => BlueEmpty.IndexedDictionary,
             ("air_npe", "is_air_npe_enabled") => false,
-            ("subscriptionMgr", "GetCloneGrade") => 0,
+            ("subscriptionMgr", "GetCloneGrade") => (int)context.Account.CloneGrade,
             ("map", "GetSecurityModifiedSystems") => new CompatibilityRowset(["solarSystemID", "security", "modifiedSecurity"], []),
             ("userSvc", "GetRedeemTokens") => BlueEmpty.List,
             ("seasonalLoginCampaignManager", "get_active_campaign") => new SeasonalCampaignState(),

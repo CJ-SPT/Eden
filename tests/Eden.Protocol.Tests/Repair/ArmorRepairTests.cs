@@ -284,7 +284,8 @@ public sealed class ArmorRepairTests
             world.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             world.SaveChanges();
             world.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                TestWorld.DropSafetySchema
+                    + "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
                     + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; "
                     + "DROP TABLE WorldArmorRepair; PRAGMA user_version=28"
             );

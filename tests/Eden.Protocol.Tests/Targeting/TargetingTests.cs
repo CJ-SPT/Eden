@@ -223,6 +223,15 @@ public sealed class TargetingTests
             fixture.Db.Store.SetPosition(1000000000001, point);
             fixture.Db.Store.SetPosition(1000000000002, point + new SpacePosition(0, 1500, 0));
         }
+        else if (action is "warp" or "ownwarp")
+        {
+            var saved = fixture.Db.Store.FindPilot(1000001)!;
+            SpacePosition station = new(saved.X, saved.Y, saved.Z);
+            var gate = fixture.Objects.First(o => o.DestinationGateId.HasValue);
+            var point = station + (gate.Position - station).Unit * (saved.Flight.StationRadius + 50000);
+            fixture.Db.Store.SetPosition(1000000000001, point);
+            fixture.Db.Store.SetPosition(1000000000002, point + new SpacePosition(0, 1500, 0));
+        }
         var (pilot, targeting) = fixture.Client(1000001);
         var (wing, observed) = fixture.Client(1000002);
         _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [wing.Pilot.ShipId]);
@@ -237,10 +246,16 @@ public sealed class TargetingTests
             case "warp":
                 var gate = fixture.Objects.First(o => o.DestinationGateId.HasValue);
                 Assert.Null(wing.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)gate.Id]));
+                Assert.True(targeting.IsLocked(wing.Pilot.ShipId));
+                fixture.Clock.Seconds += 10;
+                wing.Flight.Checkpoint();
                 break;
             case "ownwarp":
                 var destination = fixture.Objects.First(o => o.DestinationGateId.HasValue);
                 Assert.Null(pilot.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)destination.Id]));
+                Assert.True(targeting.IsLocked(wing.Pilot.ShipId));
+                fixture.Clock.Seconds += 10;
+                pilot.Flight.Checkpoint();
                 break;
             case "jump":
                 var source = fixture.Objects.First(o => o.DestinationGateId.HasValue);

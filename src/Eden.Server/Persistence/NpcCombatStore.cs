@@ -134,7 +134,9 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         var npc = world.Set<WorldNpc>().Find(npcId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var source = npc is null ? null : catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
-        var attributes = npc is null ? new Dictionary<DogmaAttributeId, double>() : PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+        var attributes = npc is null
+            ? new Dictionary<DogmaAttributeId, double>()
+            : PilotTackleStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         if (

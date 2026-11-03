@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
@@ -18,6 +19,7 @@ internal sealed class PilotSessionCalls(
     long clientId
 )
 {
+    private const int SlowCallMilliseconds = 250;
     private bool _initialStateSent;
 
     public async Task ProcessAsync(object? incoming)
@@ -50,14 +52,24 @@ internal sealed class PilotSessionCalls(
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
         report($"Call {service}.{method}.");
+        long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
         PilotCallResult result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+        var dispatchTime = Stopwatch.GetElapsedTime(started);
         if (!selected && context.Selected)
         {
             updates.Enter(context);
         }
         updates.Advance(context);
+        var elapsed = Stopwatch.GetElapsedTime(started);
+        if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
+        {
+            report(
+                $"Slow call {service}.{method}: {elapsed.TotalMilliseconds:F0} ms before reply; "
+                    + $"{dispatchTime.TotalMilliseconds:F0} ms dispatch, {(elapsed - dispatchTime).TotalMilliseconds:F0} ms updates."
+            );
+        }
         // A timer-driven loss can happen while rejecting an unrelated RPC.
         // Its durable capsule transition still has to reach the client.
         if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))

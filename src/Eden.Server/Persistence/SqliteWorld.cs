@@ -47,7 +47,11 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
     public AccountProfile ReadAccount(long accountId)
     {
         using WorldDbContext world = new(_database.Path);
-        return world.Set<Account>().Where(a => a.Id == accountId).Select(a => new AccountProfile(a.UserName, a.CreatedAt)).Single();
+        return world
+            .Set<Account>()
+            .Where(a => a.Id == accountId)
+            .Select(a => new AccountProfile(a.UserName, a.CreatedAt, a.CloneGrade))
+            .Single();
     }
 
     public DockedPilot Dock(long pilotId, long shipId, int stationId)
@@ -125,7 +129,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
             fitted.GetValueOrDefault(DogmaAttributeId.Mass),
             (float)fitted.GetValueOrDefault(DogmaAttributeId.Agility),
             (float)fitted.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-            Attribute(DogmaAttributeId.BaseWarpSpeed) * Attribute(DogmaAttributeId.WarpSpeedMultiplier)
+            fitted.GetValueOrDefault(DogmaAttributeId.BaseWarpSpeed) * fitted.GetValueOrDefault(DogmaAttributeId.WarpSpeedMultiplier)
         );
         var designation = catalog.Set<StationDesignation>().Single(s => s.StationId == station.Id);
         var identity = new StationIdentity(
@@ -146,7 +150,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
                 pilot.Id,
                 pilot.Name,
                 pilot.CorporationId,
-                new(pilot.Account.UserName, pilot.Account.CreatedAt),
+                new(pilot.Account.UserName, pilot.Account.CreatedAt, pilot.Account.CloneGrade),
                 new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt)
             ),
             new(

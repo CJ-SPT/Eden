@@ -369,6 +369,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 ? calculation.Graph.Attributes(module.Id)
                 : ReadAttributes(catalog, module.TypeId)
         ).ToDictionary();
+        if (module.GroupId == TackleDefinitions.WarpCoreStabilizerGroup)
+        {
+            attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;
+        }
         if (module.GroupId == CapacitorBoosterDefinitions.Group || MissileDefinitions.LauncherGroups.Contains(module.GroupId))
         {
             var cooldown = world.Set<ModuleCooldown>().Find(module.Id);

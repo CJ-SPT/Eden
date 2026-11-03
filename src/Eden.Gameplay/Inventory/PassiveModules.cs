@@ -72,6 +72,7 @@ public enum PassiveModuleGroup
     ReactorControlUnit = 769,
     ShieldFluxCoil = 770,
     MissileGuidanceEnhancer = 1395,
+    HyperspatialAccelerator = 1289,
 }
 
 public enum PassiveModuleSkill
@@ -93,6 +94,7 @@ public enum PassiveModuleSkill
     ThermalShieldCompensation = 11566,
     WeaponUpgrades = 3318,
     AdvancedWeaponUpgrades = 11207,
+    PropulsionJamming = 3435,
 }
 
 public static class PassiveModules

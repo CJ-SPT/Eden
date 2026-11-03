@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Flight;
@@ -9,6 +10,8 @@ namespace Eden.Protocol.PilotSessions;
 
 internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinator updates, SkillHandler skills, IAsteroidField asteroids)
 {
+    private const int SlowUpdateMilliseconds = 250;
+
     public async Task AdvanceAsync(
         PilotCallContext context,
         PilotSessionOutput output,
@@ -17,6 +20,7 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         long clientId
     )
     {
+        long started = Stopwatch.GetTimestamp();
         var flight = context.Flight;
         if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
         {
@@ -47,5 +51,10 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         }
         await output.FlushFlightUpdatesAsync();
         await output.FlushNotificationsAsync();
+        var elapsed = Stopwatch.GetElapsedTime(started);
+        if (elapsed.TotalMilliseconds >= SlowUpdateMilliseconds)
+        {
+            report($"Slow pilot update: {elapsed.TotalMilliseconds:F0} ms.");
+        }
     }
 }

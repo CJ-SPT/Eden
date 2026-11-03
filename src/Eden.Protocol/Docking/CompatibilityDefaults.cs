@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
@@ -52,7 +53,7 @@ internal sealed record ContactListState() : BlueModel
         );
 }
 
-internal sealed record CrimewatchClientState() : BlueModel
+internal sealed record CrimewatchClientState(ShipSafetyLevel Safety) : BlueModel
 {
     public override object ToBlue() =>
         new object?[]
@@ -60,7 +61,7 @@ internal sealed record CrimewatchClientState() : BlueModel
             Enumerable.Range(0, 5).Select(_ => (object?)new object?[] { null, null }).ToArray(),
             new Dictionary<string, object?>(),
             new object?[] { new List<object?>(), new List<object?>() },
-            2,
+            (int)Safety,
         };
 }
 

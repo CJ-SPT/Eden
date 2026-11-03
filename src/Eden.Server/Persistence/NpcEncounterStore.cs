@@ -105,6 +105,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                 : null;
         }
         var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id).ToArray();
+        var effective = npcs.ToDictionary(n => n.Id, n => PilotTackleStore.NpcAttributes(world, n.Id, attributes));
         foreach (var npc in npcs)
         {
             if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
@@ -113,7 +114,14 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
             }
             if (npc.Navigation == NpcNavigationState.Returning)
             {
-                NpcMotion.Advance(npc, NpcMotion.Home(belts.Single(b => b.Id == npc.BeltId)), type, attributes, now, returning: true);
+                NpcMotion.Advance(
+                    npc,
+                    NpcMotion.Home(belts.Single(b => b.Id == npc.BeltId)),
+                    type,
+                    effective[npc.Id],
+                    now,
+                    returning: true
+                );
             }
         }
         world.SaveChanges();
@@ -131,7 +139,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                         new(n.X, n.Y, n.Z),
                         type.Mass ?? 0,
                         (float)(type.Radius ?? 0),
-                        (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                        (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
                         NpcMotion.Agility(attributes),
                         new(
                             n.Id,
@@ -150,7 +158,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                         Weapon(n.Id),
                         NpcMotion.Contact(
                             n,
-                            attributes,
+                            effective[n.Id],
                             aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
                             NpcMotion.Home(belts.Single(b => b.Id == n.BeltId))
                         )

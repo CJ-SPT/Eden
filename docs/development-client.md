@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 27 migrates to version 28 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 36 migrates to version 37 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -507,3 +507,12 @@ Deployment/native acceptance for these modules is pending. Keep current game win
 5. Repeat several paid cycles without HUD-ring resets, stop manually during an interval and check that bonuses last through that payment. Repeat with insufficient capacitor: failure to buy another interval must remove the bonus. Check warp-safe operation, docking, gate/ship-loss transitions and reconnecting. On restart, scripts/capacitor expenditure/deadlines remain, while active bonuses clear. Compare visuals with an existing observer and a fresh snapshot; native OnSpecialFX visibility still requires this direct check.
 
 Record each action, fitted type/skill/script, displayed values and visible result separately from automated checks. Overheating and remote tracking/sensor/guidance families require their own implementations and acceptance.
+
+
+## Check tackle and warp navigation
+
+Use a copied acceptance save beside the matching catalog. Legal Ibis fits can exercise Webifier II/Scrambler I on Eden Pilot and a 5MN MWD/Disruptor I/Aura stabilizer on Eden Wing, with Prototype Hyperspatial Accelerators in available low slots and the required skills. Select Eden Pilot and confirm the active Ibis in Inventory first. The accelerator should show 3.30 AU/s rather than the Ibis's base 3.00 AU/s. Native acceptance of other tiers remains separate from automated catalog coverage.
+
+Undock both ships, move clear of the station's collision volume, and keep them within tackle range. For high security player-versus-player acceptance, use Omega accounts in the copied test save; Alpha is restricted from disabling safety by the pinned client. Normal accounts remain Alpha by default. Use the native safety selector to choose yellow, green and red; reconnect to confirm the saved choice. Red is needed for offensive player-versus-player tackle in Jita. Lock Wing, run the web and compare Wing's maximum speed and EWAR indicator; a Tech II web reduces speed by 60%. Check several repeats and a paid manual stop. Start Wing's MWD, then apply Pilot's scrambler: the MWD must stop, refuse reactivation, and return when the scrambler ends. A disruptor alone must leave the MWD available.
+
+With Scrambler I's two points active, attempt warp and verify rejection. Activate Aura's -2 core strength and retry warp during its 18-second cycle: the tie permits warp while MWD blocking remains in effect. A further point must block it again. The stabilizer must run one cycle and refuse reactivation until its saved delay ends. Verify target/source lock loss, docking, gate travel, disconnect and restart cleanup without refunds. Web an NPC to check actual motion as well as the graphic. Record only the actions visibly exercised; automated cases do not establish native acceptance of every tier.

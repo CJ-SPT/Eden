@@ -180,7 +180,8 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
                 );
             }
         );
-        return TrainingRules.Plan(targets, new(inputs), activate, running, now);
+        var grade = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single();
+        return TrainingRules.Plan(targets, new(inputs, grade), activate, running, now);
     }
 
     private static void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>

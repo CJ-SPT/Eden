@@ -26,7 +26,8 @@ internal sealed class ModuleActivationHandler(
     HardenerHandler hardeners,
     CapacitorBoosterHandler capacitorBoosters,
     MissileHandler? missiles = null,
-    SupportModuleHandler? support = null
+    SupportModuleHandler? support = null,
+    TackleHandler? tackle = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -68,6 +69,8 @@ internal sealed class ModuleActivationHandler(
                 args
             ),
             var name when SupportModuleWire.Effect(name) is not null => support?.Call(context, service, method, args)
+                ?? PilotCallResult.Unsupported,
+            var name when TackleWire.Effect(name) is not null => tackle?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,

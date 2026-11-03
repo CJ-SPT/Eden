@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet fleet) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet fleet, IPilotSafety safety) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
@@ -108,7 +109,8 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("station", "GetGuests") => new BlueList<StationGuest>([new(pilot.PilotId, pilot.CorpId)]),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
-            ("crimewatch", "GetClientStates") => new CrimewatchClientState(), // Full ship safety is required by the flight HUD.
+            ("crimewatch", "GetClientStates") when args.Length == 0 => new CrimewatchClientState(safety.Read(pilot.PilotId)),
+            ("crimewatch", "SetSafetyLevel") => SetSafety(pilot.PilotId, args),
             ("jumpCloneSvc", "GetCloneState") => new JumpCloneState(),
             ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
@@ -175,5 +177,17 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             or ("calendarProxy", "GetEventList") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };
+    }
+
+    private PilotCallResult SetSafety(long pilotId, object?[] args)
+    {
+        if (args is not [long level] || level is < (long)ShipSafetyLevel.Disabled or > (long)ShipSafetyLevel.Full)
+        {
+            return new PilotCallResult.Failure("Choose full, partial or disabled ship safety.");
+        }
+        safety.Set(pilotId, (ShipSafetyLevel)level);
+        // The pinned client applies its selection and emits OnSafetyLevelChanged
+        // after this RPC succeeds. A separate server event would duplicate it.
+        return PilotCallResult.None;
     }
 }

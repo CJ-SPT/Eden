@@ -1,3 +1,5 @@
+using Eden.Gameplay.Docking;
+
 namespace Eden.Gameplay.Skills;
 
 public sealed record TrainingSkill(
@@ -9,7 +11,7 @@ public sealed record TrainingSkill(
     IReadOnlyList<TrainingTarget> Prerequisites
 );
 
-public sealed record TrainingInputs(IReadOnlyDictionary<int, TrainingSkill> Skills);
+public sealed record TrainingInputs(IReadOnlyDictionary<int, TrainingSkill> Skills, AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha);
 
 public static class TrainingRules
 {
@@ -33,6 +35,11 @@ public static class TrainingRules
         var points = inputs.Skills.ToDictionary(s => s.Key, s => s.Value.Points);
         long start = now;
         long total = points.Values.Sum();
+        if (!Enum.IsDefined(inputs.CloneGrade))
+        {
+            throw new InvalidDataException("Unknown account clone grade.");
+        }
+        bool alpha = inputs.CloneGrade == AccountCloneGrade.Alpha;
 
         foreach (var target in targets)
         {
@@ -50,7 +57,7 @@ public static class TrainingRules
             {
                 throw new InvalidTrainingQueue("QueueInvalidSkillLevel");
             }
-            if (activate && target.Level > skill.AlphaLevel)
+            if (activate && alpha && target.Level > skill.AlphaLevel)
             {
                 throw new InvalidTrainingQueue("SkillInQueueRequiresOmegaCloneState");
             }
@@ -68,14 +75,14 @@ public static class TrainingRules
             }
             long after = TrainedSkill.PointsForLevel(rank, target.Level);
             total += after - before;
-            if (activate && total > MaximumAlphaPoints)
+            if (activate && alpha && total > MaximumAlphaPoints)
             {
                 throw new InvalidTrainingQueue("SkillInQueueOverAlphaSpTrainingSize");
             }
-            // Local accounts are Alpha. Training earns half the Omega rate.
             double primary = skill.PrimaryAttribute;
             double secondary = skill.SecondaryAttribute;
-            long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / ((primary + secondary / 2) / 2));
+            double rate = (primary + secondary / 2) * (alpha ? .5 : 1);
+            long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / rate);
             var entry =
                 result.Count == 0 && running is not null
                     ? running

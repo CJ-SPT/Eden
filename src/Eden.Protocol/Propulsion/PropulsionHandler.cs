@@ -68,6 +68,12 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
             Stop(context, cycle);
             return;
         }
+        context.Flight.RefreshTackle();
+        if (cycle.Module.Effect == DogmaEffect.Microwarpdrive && context.Flight.MicrowarpdriveBlocked)
+        {
+            Stop(context, cycle);
+            return;
+        }
         if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Module.DurationMilliseconds)
         {
             return;

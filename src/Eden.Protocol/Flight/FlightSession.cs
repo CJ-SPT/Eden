@@ -30,7 +30,8 @@ internal sealed class FlightSession(
     IPilotHealth? health = null,
     INpcEncounters? encounters = null,
     IWrecks? wrecks = null,
-    IPilotMissiles? missiles = null
+    IPilotMissiles? missiles = null,
+    IPilotTackle? tackle = null
 ) : IDisposable
 {
     private FlightEffects? _effects;
@@ -44,6 +45,10 @@ internal sealed class FlightSession(
     private LocalRepairContact[] _localRepairs = [];
     private HardenerContact[] _hardeners = [];
     private SupportContact[] _support = [];
+    private TackleContact[] _tackleEffects = [];
+    private TackleEffect[] _incomingTackle = [];
+    private bool _warpBlocked;
+    private bool _mwdBlocked;
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
@@ -74,13 +79,10 @@ internal sealed class FlightSession(
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
-    public bool CanTarget =>
-        InBallpark
-        && !_destroying
-        && Pilot.Position is not null
-        && _jump is null
-        && _navigation.Warp is null
-        && _navigation.WarpDestination is null;
+    public bool CanTarget => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _navigation.Warp is null;
+
+    public bool InWarp => _navigation.Warp is not null;
+    public bool MicrowarpdriveBlocked => _mwdBlocked;
 
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
     // the terminal hull transition still prevent local module activations.
@@ -94,12 +96,7 @@ internal sealed class FlightSession(
         {
             return null;
         }
-        if (
-            space
-                .Peers(Pilot)
-                .FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null) is
-            { } ship
-        )
+        if (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
@@ -276,6 +273,10 @@ internal sealed class FlightSession(
         foreach (var npc in current)
         {
             var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
+            if (previous is not null && previous.MaxSpeed != npc.MaxSpeed)
+            {
+                Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));
+            }
             if (
                 previous is not null
                 && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null)
@@ -368,6 +369,7 @@ internal sealed class FlightSession(
     public void BeginShipLoss()
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         _destroying = true;
         space.Leave(Pilot.ShipId);
     }
@@ -392,6 +394,10 @@ internal sealed class FlightSession(
         _localRepairs = [];
         _hardeners = [];
         _support = [];
+        _tackleEffects = [];
+        _incomingTackle = [];
+        _warpBlocked = false;
+        _mwdBlocked = false;
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -429,6 +435,7 @@ internal sealed class FlightSession(
 
     public void Checkpoint()
     {
+        RefreshTackle();
         int now = Stamp;
         var previous = Pilot.Position;
         while (_simulatedStamp < now && Moving && Pilot.Position is { } position)
@@ -440,6 +447,33 @@ internal sealed class FlightSession(
         if (Pilot.Position != previous)
         {
             world.SetPosition(Pilot.ShipId, Pilot.Position);
+        }
+    }
+
+    public void RefreshTackle(bool force = false)
+    {
+        if (tackle is null || !InBallpark || Pilot.Position is null || _destroying)
+        {
+            return;
+        }
+        tackle.Sweep(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        var incoming = tackle.Incoming(Pilot.ShipId).ToArray();
+        if (!force && _incomingTackle.SequenceEqual(incoming) && _navigation.WarpDestination is null)
+        {
+            return;
+        }
+        _incomingTackle = incoming;
+        var attributes = tackle.ShipAttributes(Pilot.PilotId);
+        _warpBlocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
+        _mwdBlocked = incoming.Any(t => t.Module.MwdBlock > 0);
+        _baseFlight = _baseFlight with { MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity) };
+        ApplyFlightProperties();
+        if (_warpBlocked && _navigation.WarpDestination is not null)
+        {
+            _navigation.CancelAlignment();
+            _navigation.Stop();
+            WarpEffect(Pilot.ShipId, false);
+            Update(new DestinyCommand.Stop(Pilot.ShipId));
         }
     }
 
@@ -501,7 +535,8 @@ internal sealed class FlightSession(
             _navigation.FollowMode,
             _localRepairs,
             _hardeners,
-            _support
+            _support,
+            _tackleEffects
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -510,6 +545,9 @@ internal sealed class FlightSession(
         _baseFlight = _baseFlight with
         {
             MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+            WarpSpeed =
+                attributes.GetValueOrDefault(DogmaAttributeId.BaseWarpSpeed)
+                * attributes.GetValueOrDefault(DogmaAttributeId.WarpSpeedMultiplier),
             Mass = attributes.GetValueOrDefault(DogmaAttributeId.Mass),
             Agility = (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility),
         };
@@ -564,7 +602,8 @@ internal sealed class FlightSession(
 
     private void ApplyFlightProperties()
     {
-        var properties = _propulsion?.Module.Apply(_baseFlight) ?? _baseFlight;
+        var running = _mwdBlocked && _propulsion?.Module.Effect == DogmaEffect.Microwarpdrive ? null : _propulsion;
+        var properties = running?.Module.Apply(_baseFlight) ?? _baseFlight;
         if (Pilot.Flight == properties)
         {
             return;
@@ -585,6 +624,19 @@ internal sealed class FlightSession(
     {
         _mining = _mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
         Effects.MiningEffect(Pilot.ShipId, effect, active);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
+
+    public void SetTackleEffect(TackleContact effect, bool active)
+    {
+        _tackleEffects = _tackleEffects
+            .Where(t => t.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<TackleContact>())
+            .ToArray();
+        Effects.TackleEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -781,6 +833,14 @@ internal sealed class FlightSession(
     private void LeaveSpace()
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        if (tackle is not null && _incomingTackle.Length > 0)
+        {
+            _baseFlight = _baseFlight with
+            {
+                MaxSpeed = (float)tackle.ShipAttributes(Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+            };
+        }
         _missiles = [];
         _propulsion = null;
         Pilot = Pilot with { Flight = _baseFlight };
@@ -794,6 +854,10 @@ internal sealed class FlightSession(
         _localRepairs = [];
         _hardeners = [];
         _support = [];
+        _tackleEffects = [];
+        _incomingTackle = [];
+        _warpBlocked = false;
+        _mwdBlocked = false;
         _wrecks = [];
         space.Leave(Pilot.ShipId);
     }
@@ -946,6 +1010,7 @@ internal sealed class FlightSession(
         _arrivalStamp = null;
         _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
         DepartureEffect(Pilot.ShipId, source.Id, systemId);
@@ -980,6 +1045,11 @@ internal sealed class FlightSession(
 
     private PilotCallResult StartWarp(long target, double range)
     {
+        RefreshTackle(true);
+        if (_warpBlocked)
+        {
+            return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
+        }
         var body = objects.FirstOrDefault(item => item.Id == target);
         if (body is null)
         {

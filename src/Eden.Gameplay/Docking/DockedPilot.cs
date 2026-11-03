@@ -125,7 +125,14 @@ public sealed record DockedPilot(PilotIdentity Identity, PilotShip Ship, PilotSt
     public int LocationId => Position is null ? StationId : SystemId;
 }
 
-public sealed record AccountProfile(string UserName, long CreatedAt);
+// Pinned clonegrade.const CLONE_STATE_ALPHA/OMEGA values.
+public enum AccountCloneGrade
+{
+    Alpha = 0,
+    Omega = 1,
+}
+
+public sealed record AccountProfile(string UserName, long CreatedAt, AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha);
 
 public sealed record PilotProfile(int RaceId, int BloodlineId, int GenderId, int AncestryId, int SchoolId, long CreatedAt)
 {

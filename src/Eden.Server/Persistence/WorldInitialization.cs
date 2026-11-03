@@ -21,6 +21,7 @@ public static class WorldInitialization
         // Live module bonuses belong to a connection. A restart retains paid
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
+        world.Set<WorldTackle>().ExecuteDelete();
         // Downtime cancels live projectiles without refunding ammunition or
         // cooldowns. Saved impacts and rewards are never applied again.
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();

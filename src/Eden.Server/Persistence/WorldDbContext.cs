@@ -1,3 +1,5 @@
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Repair;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +11,7 @@ public sealed class Account
     public string UserName { get; set; } = "";
     public long CreatedAt { get; set; }
     public long Id { get; set; }
+    public AccountCloneGrade CloneGrade { get; set; } = AccountCloneGrade.Alpha;
 }
 
 public sealed class Pilot
@@ -27,6 +30,7 @@ public sealed class Pilot
     public byte[]? Appearance { get; set; }
     public byte[]? Portrait { get; set; }
     public long ActiveShipId { get; set; }
+    public ShipSafetyLevel SafetyLevel { get; set; } = ShipSafetyLevel.Full;
     public Ship ActiveShip { get; set; } = null!;
 }
 
@@ -132,6 +136,12 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WorldTackle>().ToTable("WorldTackle").HasKey(t => t.ModuleId);
+        model.Entity<WorldTackle>().HasOne<OwnedItem>().WithMany().HasForeignKey(t => t.ModuleId);
+        model.Entity<WorldTackle>().HasOne<Pilot>().WithMany().HasForeignKey(t => t.PilotId);
+        model.Entity<WorldTackle>().HasOne<Ship>().WithMany().HasForeignKey(t => t.SourceShipId);
+        // Targets may be ships or NPCs. Their availability is checked by the owning operation.
+        model.Entity<WorldTackle>().HasIndex(t => new { t.TargetId, t.TargetKind });
         model.Entity<WorldMissile>().ToTable("WorldMissile").HasKey(m => m.Id);
         model.Entity<WorldMissile>().Property(m => m.Id).ValueGeneratedOnAdd();
         model.Entity<WorldMissile>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId);
@@ -300,7 +310,9 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<OwnedItem>().HasOne<Pilot>().WithMany().HasForeignKey(i => i.OwnerId);
         model.Entity<OwnedItem>().HasIndex(i => new { i.OwnerId, i.LocationId });
         model.Entity<Account>().ToTable("WorldAccount");
+        model.Entity<Account>().Property(a => a.CloneGrade).HasDefaultValue(AccountCloneGrade.Alpha);
         model.Entity<Pilot>().ToTable("WorldPilot");
+        model.Entity<Pilot>().Property(p => p.SafetyLevel).HasDefaultValue(ShipSafetyLevel.Full);
         // Defaults preserve the identities previously returned by character selection.
         model.Entity<Account>().Property(a => a.UserName).HasDefaultValue("Eden");
         model.Entity<Account>().Property(a => a.CreatedAt).HasDefaultValue(134000000000000000L);

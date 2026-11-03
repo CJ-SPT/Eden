@@ -206,8 +206,13 @@ public sealed class CapacitorBoosterTests
     {
         using Fixture f = new();
         long module = Prepare(f);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        f.Db.Store.SetPosition(f.ShipId, new(pilot.X + 1000000, pilot.Y, pilot.Z));
         using var context = Client(f);
         Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)context.Pilot.StationId]));
+        f.Clock.Seconds += 10;
+        context.Flight.Checkpoint();
+        Assert.True(context.Flight.InWarp);
         Assert.False(context.Flight.CanTarget);
         CapacitorBoosterHandler handler = new(f.Clock, Boosting(f));
         Assert.IsType<PilotCallResult.Success>(

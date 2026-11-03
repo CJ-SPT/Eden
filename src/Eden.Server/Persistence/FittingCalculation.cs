@@ -1,7 +1,9 @@
+using System.Data;
 using System.Globalization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +23,12 @@ internal sealed record FittingCalculation(
 {
     internal static FittingCalculation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
     {
+        // A fitting graph reads many static rows. Keep this nonpooled connection
+        // open for its owning context instead of reopening SQLite for every query.
+        if (catalog.Database.GetDbConnection().State != ConnectionState.Open)
+        {
+            catalog.Database.OpenConnection();
+        }
         ship ??= pilot.ActiveShip;
         var hull = catalog.Set<ItemType>().Find(ship.TypeId)!;
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
@@ -132,8 +140,44 @@ internal sealed record FittingCalculation(
             );
         }
         var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
+        var incoming = world
+            .Set<WorldTackle>()
+            .Where(t => t.TargetId == ship.Id && t.TargetKind == TackleTargetKind.Ship)
+            .AsEnumerable()
+            .Select(t => t.Module())
+            .ToArray();
+        modifiers.AddRange(TackleDefinitions.Modifiers(ship.Id, incoming));
+        foreach (var module in modules.Where(m => m.Item.Online && incoming.Any(t => t.MwdBlock > 0)))
+        {
+            if (FittingCatalog.Effects(catalog, module.Item.TypeId).Contains(DogmaEffect.Microwarpdrive))
+            {
+                modifiers.Add(
+                    new(
+                        module.Item.Id,
+                        DogmaAttributeId.ActivationBlocked,
+                        DogmaOperation.Add,
+                        new DogmaValue.Constant(incoming.Sum(t => t.MwdBlock)),
+                        true
+                    )
+                );
+            }
+        }
         foreach (var module in modules)
         {
+            if (
+                module.Item.Online
+                && module.GroupId == TackleDefinitions.WarpCoreStabilizerGroup
+                && TackleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+            )
+            {
+                foreach (var modifier in TackleCatalog.CoreModifiers(catalog, module.Item.TypeId))
+                {
+                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.Contains(module.Item.Id))
+                    {
+                        Add(module.Item.Id, modifier, false);
+                    }
+                }
+            }
             if (
                 module.Item.Online
                 && activeModules.Contains(module.Item.Id)
@@ -214,7 +258,7 @@ internal sealed record FittingCalculation(
         }
         var requested = modifiers
             .Select(m => m.Attribute)
-            .Concat(modifiers.Select(m => m.Source).OfType<DogmaValue.Attribute>().Select(v => v.AttributeId))
+            .Concat(modifiers.SelectMany(m => DogmaValue.References(m.Source)).Select(v => v.AttributeId))
             .ToHashSet();
         Dictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions = [];
         while (requested.Count > 0)

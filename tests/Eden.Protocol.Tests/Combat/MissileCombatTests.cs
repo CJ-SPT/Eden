@@ -437,7 +437,7 @@ public sealed class MissileCombatTests
         var before = Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId));
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldMissile; PRAGMA user_version=33");
+            world.Database.ExecuteSqlRaw(TestWorld.DropSafetySchema + "DROP TABLE WorldMissile; PRAGMA user_version=33");
         }
         WorldInitialization.Open(f.Db.Path);
         Assert.Equal(before, Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId)));

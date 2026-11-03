@@ -45,7 +45,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            SupportModuleDefinitions.Effect(groupId) is { } support
+            groupId is TackleDefinitions.WebifierGroup or TackleDefinitions.WarpDisruptionGroup or TackleDefinitions.WarpCoreStabilizerGroup
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+                && effects.Any(e => TackleDefinitions.Targeted(e) || e == DogmaEffect.WarpCoreStabilizer)
+            || SupportModuleDefinitions.Effect(groupId) is { } support
                 && effects.Contains(support)
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
             || MissileDefinitions.SupportedLauncher(groupId, attributes) && effects.Contains(DogmaEffect.UseMissiles)

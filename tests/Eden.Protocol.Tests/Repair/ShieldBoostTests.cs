@@ -508,8 +508,13 @@ public sealed class ShieldBoostTests
     public void BoosterIsWarpSafeButStopsWhenItsHullBeginsDestruction()
     {
         using Fixture f = new();
+        var pilot = f.Pilot;
+        f.Db.Store.SetPosition(pilot.ShipId, new(pilot.X + 1000000, pilot.Y, pilot.Z));
         using var context = f.Client();
         Assert.Null(context.Flight.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)context.Pilot.StationId]));
+        f.Clock.Seconds += 10;
+        context.Flight.Checkpoint();
+        Assert.True(context.Flight.InWarp);
         Assert.False(context.Flight.CanTarget);
         Assert.True(context.Flight.CanUseSelfModules);
         ShieldBoostHandler handler = new(f.Clock, f.Boosting);

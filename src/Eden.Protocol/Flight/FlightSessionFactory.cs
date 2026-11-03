@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
 
@@ -19,7 +20,8 @@ internal sealed class FlightSessionFactory(
     IPilotHealth health,
     INpcEncounters encounters,
     IWrecks wrecks,
-    IPilotMissiles? missiles = null
+    IPilotMissiles? missiles = null,
+    IPilotTackle? tackle = null
 )
 {
     public FlightSession Create(DockedPilot pilot) =>
@@ -38,6 +40,7 @@ internal sealed class FlightSessionFactory(
             health,
             encounters,
             wrecks,
-            missiles
+            missiles,
+            tackle
         );
 }
