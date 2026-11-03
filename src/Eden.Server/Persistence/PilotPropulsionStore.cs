@@ -119,6 +119,8 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
             || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup
+            || !FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.Afterburner)
+            || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.Microwarpdrive)
         )
         {
             throw new InvalidDataException("Use an online fitted afterburner on your active ship in space.");

@@ -141,11 +141,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         }
         return type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
-            || CombatDefinitions.IsSupportedHybrid(type.GroupId, attributes)
-            || type.GroupId
-                is InventoryDefinitions.MiningLaserGroup
-                    or ShieldBoostDefinitions.Group
-                    or PropulsionDefinitions.AfterburnerGroup;
+            || FittingCatalog.Definition(catalog, type.Id) is not null;
     }
 
     public IReadOnlyList<int> ProductTypes()

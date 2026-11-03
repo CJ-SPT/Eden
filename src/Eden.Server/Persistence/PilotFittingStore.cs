@@ -71,7 +71,7 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             .Where(i =>
                 i.OwnerId == pilot.Id
                 && i.LocationId == ship.Id
-                && i.FlagId >= (int)InventoryFlag.MediumSlot0
+                && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             )
             .ToArray();
@@ -86,7 +86,9 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
                 m.FlagId,
                 m.Online,
                 Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu),
-                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Power)
+                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Power),
+                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.TurretFitted),
+                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted)
             ))
             .ToArray();
         return FittingRules.Apply(attributes, skills, usage);
@@ -125,7 +127,7 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
                 && (
                     sourceId == ship.Id
                         ? i.FlagId == (int)InventoryFlag.Cargo
-                            || (i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                            || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
                         : i.FlagId == (int)InventoryFlag.Hangar
                 )
             )
@@ -139,9 +141,13 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
         var hull = Attributes(catalog, ship.TypeId);
         var rack = world
             .Set<OwnedItem>()
-            .Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+            .Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
             .ToArray();
         var occupied = rack.Select(i => i.FlagId).ToHashSet();
+        var equipment = rack.Select(i =>
+                (i.TypeId, GroupId: catalog.Set<ItemType>().Find(i.TypeId)!.GroupId, Effects: FittingCatalog.Effects(catalog, i.TypeId))
+            )
+            .ToList();
         long nextId = InventoryPersistence.NextId(world);
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
@@ -200,6 +206,26 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             {
                 throw new InvalidDataException("No compatible module slot is available.");
             }
+            var definition = FittingCatalog.Definition(catalog, item.TypeId)!;
+            int group = catalog.Set<ItemType>().Find(item.TypeId)!.GroupId;
+            if (
+                (
+                    definition.Turret
+                    && equipment.Count(e => e.Effects.Contains(DogmaEffect.TurretFitted))
+                        >= hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)
+                )
+                || (
+                    definition.Launcher
+                    && equipment.Count(e => e.Effects.Contains(DogmaEffect.LauncherFitted))
+                        >= hull.GetValueOrDefault(DogmaAttributeId.LauncherSlotsLeft)
+                )
+                || (definition.MaximumGroup > 0 && equipment.Count(e => e.GroupId == group) >= definition.MaximumGroup)
+                || (definition.MaximumType > 0 && equipment.Count(e => e.TypeId == item.TypeId) >= definition.MaximumType)
+            )
+            {
+                throw new InvalidDataException("The hull has no compatible hardpoint or module allowance remaining.");
+            }
+            equipment.Add((item.TypeId, group, FittingCatalog.Effects(catalog, item.TypeId)));
             var previous = before[item.Id];
             OwnedItem fitted = item;
             if (item.Quantity > 1)
@@ -246,33 +272,12 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
 
         (int First, int Count) SlotsFor(int typeId)
         {
-            int group = catalog.Set<ItemType>().Single(t => t.Id == typeId).GroupId;
-            bool medium = group is ShieldBoostDefinitions.Group or PropulsionDefinitions.AfterburnerGroup;
-            if (
-                group != InventoryDefinitions.MiningLaserGroup
-                && !medium
-                && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, typeId))
-                && typeId != (int)CombatWeaponType.CivilianGatlingRailgun
-            )
-            {
-                throw new InvalidDataException("This module family is not supported yet.");
-            }
+            var definition =
+                FittingCatalog.Definition(catalog, typeId)
+                ?? throw new InvalidDataException("This module family or effect is not supported yet.");
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
-            int first = (int)(medium ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
-            int slots = Math.Clamp(
-                checked(
-                    (int)(
-                        medium
-                            ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots)
-                            : Math.Min(
-                                hull.GetValueOrDefault(DogmaAttributeId.HighSlots),
-                                hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)
-                            )
-                    )
-                ),
-                0,
-                InventoryDefinitions.SlotsPerRack
-            );
+            int first = definition.FirstFlag;
+            int slots = Math.Clamp(checked((int)hull.GetValueOrDefault(definition.SlotAttribute)), 0, InventoryDefinitions.SlotsPerRack);
             return (first, slots);
         }
     }
@@ -289,7 +294,7 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
                 i.Id == itemId
                 && i.OwnerId == pilotId
                 && i.LocationId == shipId
-                && i.FlagId >= (int)InventoryFlag.MediumSlot0
+                && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             );
         if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null)

@@ -4,7 +4,7 @@ using Eden.Gameplay.Targeting;
 
 namespace Eden.Gameplay.Inventory;
 
-public sealed record FittedResourceUsage(int FlagId, bool Online, double Cpu, double Power);
+public sealed record FittedResourceUsage(int FlagId, bool Online, double Cpu, double Power, bool Turret, bool Launcher);
 
 public static class FittingRules
 {
@@ -85,7 +85,11 @@ public static class FittingRules
         attributes[DogmaAttributeId.PowerLoad] = modules.Where(m => m.Online).Sum(m => m.Power);
         attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(
             0,
-            attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - modules.Count(m => InventoryDefinitions.IsHighSlot(m.FlagId))
+            attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - modules.Count(m => m.Turret)
+        );
+        attributes[DogmaAttributeId.LauncherSlotsLeft] = Math.Max(
+            0,
+            attributes.GetValueOrDefault(DogmaAttributeId.LauncherSlotsLeft) - modules.Count(m => m.Launcher)
         );
         return attributes;
     }

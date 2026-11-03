@@ -21,6 +21,8 @@ public enum InventoryFlag
     AutoFit = 0,
     Hangar = 4,
     Cargo = 5,
+    LowSlot0 = 11,
+    LowSlot7 = 18,
     MediumSlot0 = 19,
     MediumSlot7 = 26,
     HighSlot0 = 27,
@@ -46,7 +48,13 @@ public enum DogmaEffect
 {
     ShieldBoosting = 4,
     CivilianWeapon = 10,
+    LowPower = 11,
+    HighPower = 12,
+    MediumPower = 13,
     Online = 16,
+    LauncherFitted = 40,
+    TurretFitted = 42,
+    Microwarpdrive = 6730,
     ProjectileFired = 34,
     MiningLaser = 67,
     Afterburner = 6731,
@@ -71,11 +79,13 @@ public static class InventoryDefinitions
     public const long FirstOwnedItemId = 2000000000000;
     public const int SlotsPerRack = 8; // Pinned inventory flags reserve eight slots per rack.
 
+    public static bool IsLowSlot(int flag) => flag is >= (int)InventoryFlag.LowSlot0 and <= (int)InventoryFlag.LowSlot7;
+
     public static bool IsHighSlot(int flag) => flag is >= (int)InventoryFlag.HighSlot0 and <= (int)InventoryFlag.HighSlot7;
 
     public static bool IsMediumSlot(int flag) => flag is >= (int)InventoryFlag.MediumSlot0 and <= (int)InventoryFlag.MediumSlot7;
 
-    public static bool IsFittedSlot(int flag) => IsHighSlot(flag) || IsMediumSlot(flag);
+    public static bool IsFittedSlot(int flag) => IsLowSlot(flag) || IsHighSlot(flag) || IsMediumSlot(flag);
 
     public static readonly (DogmaAttributeId Skill, DogmaAttributeId Level)[] RequiredSkills =
     [

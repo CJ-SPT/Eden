@@ -68,7 +68,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
                     sourceId == ship.Id
                         ? i.FlagId == (int)InventoryFlag.Cargo
                             || i.FlagId == (int)InventoryFlag.GeneralMiningHold
-                            || (i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                            || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
                         : i.FlagId == (int)InventoryFlag.Hangar
                 )
             )

@@ -73,6 +73,39 @@ internal static class TestCatalog
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('sde/_sde','"sde"','{{"buildNumber":3662168}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/races','1','{{"shipTypeID":601,"skills":{{"3327":3}}}}');
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/clonegrades','"1"','{{"skills":[{{"typeID":3327,"level":4}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','3651',
+                '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":42,"isDefault":0}},
+                {{"effectID":67,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','3638',
+                '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":42,"isDefault":0}},
+                {{"effectID":10,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','483',
+                '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":42,"isDefault":0}},
+                {{"effectID":67,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','482',
+                '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":42,"isDefault":0}},
+                {{"effectID":67,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','561',
+                '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":42,"isDefault":0}},
+                {{"effectID":34,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','399',
+                '{{"dogmaEffects":[{{"effectID":13,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":4,"isDefault":1}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','439',
+                '{{"dogmaEffects":[{{"effectID":13,"isDefault":0}},
+                {{"effectID":16,"isDefault":0}},
+                {{"effectID":6731,"isDefault":1}}]}}');
             CREATE VIEW records_client_clonegrades AS SELECT Key,Data FROM SourceRecord WHERE Dataset='client/clonegrades';
             CREATE VIEW records_client_requiredskillsfortypes AS SELECT Key,Data FROM SourceRecord WHERE
                 Dataset='client/requiredskillsfortypes';
