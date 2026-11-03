@@ -33,6 +33,20 @@ public sealed class NpcAggression
     public long TargetShipId { get; set; }
     public long ReadyAt { get; set; }
     public long? LastShotAt { get; set; }
+
+    internal static NpcAggression Start(long npcId, long targetShipId, double delayMilliseconds, long now)
+    {
+        if (!double.IsFinite(delayMilliseconds) || delayMilliseconds < 0)
+        {
+            throw new InvalidDataException("Invalid NPC reaction delay.");
+        }
+        return new()
+        {
+            NpcId = npcId,
+            TargetShipId = targetShipId,
+            ReadyAt = checked(now + (long)Math.Ceiling(delayMilliseconds * TimeSpan.TicksPerMillisecond)),
+        };
+    }
 }
 
 public sealed class ShipLoss

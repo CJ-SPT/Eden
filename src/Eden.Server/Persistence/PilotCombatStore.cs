@@ -151,15 +151,9 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         }
         else if (aggression is null && target.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
         {
-            // Eden's initial AI retaliates against the first attacker, using the
-            // catalog's minimum reaction delay. Arrival alone does not aggress.
-            if (!double.IsFinite(delay) || delay < 0) { throw new InvalidDataException("Invalid NPC reaction delay."); }
-            world.Set<NpcAggression>().Add(new()
-            {
-                NpcId = npc.Id,
-                TargetShipId = pilot.ActiveShipId,
-                ReadyAt = checked(now + (long)Math.Ceiling(delay * TimeSpan.TicksPerMillisecond)),
-            });
+            // A player attack can claim an idle NPC before its detection tick.
+            // Existing targets and their paid reaction/cycle deadlines persist.
+            world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, pilot.ActiveShipId, delay, now));
         }
         Magazine? magazine = null;
         if (loadedAmmo is not null)

@@ -10,6 +10,48 @@ namespace Eden.Server.Persistence;
 [Injectable]
 internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitting, SqliteWorld lookup, IShipLootRoll lootRoll) : INpcCombat
 {
+    public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
+    {
+        if (candidates.Count == 0) { return; }
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var requested = candidates.ToHashSet();
+        var pilotIds = requested.Select(c => c.PilotId).ToArray();
+        var pilots = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position)
+            .Where(p => pilotIds.Contains(p.Id) && p.ActiveShip.Position != null).ToArray();
+        var targets = pilots.Where(p => requested.Contains(new(p.Id, p.ActiveShipId)))
+            .Select(p => (Pilot: p, Hull: catalog.Set<ItemType>().Single(t => t.Id == p.ActiveShip.TypeId)))
+            .Where(t => t.Hull.GroupId != FleetDefinitions.CapsuleGroup &&
+                (t.Pilot.ActiveShip.Position!.SystemId ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId) == NpcEncounterDefinitions.PerimeterSystem)
+            .ToArray();
+        if (targets.Length == 0) { return; }
+        var occupied = world.Set<NpcAggression>().Select(a => a.NpcId).ToArray();
+        var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == NpcEncounterDefinitions.PerimeterSystem &&
+            n.DestroyedAt == null && n.Navigation == NpcNavigationState.Idle && !occupied.Contains(n.Id)).OrderBy(n => n.Id).ToArray();
+        foreach (var npc in npcs)
+        {
+            var attributes = fitting.Attributes(npc.TypeId);
+            if (!attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)) { continue; }
+            var type = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+            var home = NpcMotion.Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+            var target = targets.Select(t =>
+            {
+                var saved = t.Pilot.ActiveShip.Position!;
+                SpacePosition position = new(saved.X, saved.Y, saved.Z);
+                return (t.Pilot.ActiveShipId, Position: position, Range: Math.Max(0,
+                    position.DistanceTo(NpcMotion.Position(npc)) - (type.Radius ?? 0) - (t.Hull.Radius ?? 0)));
+            }).Where(t => t.Range <= NpcEncounterDefinitions.DetectionRange && t.Position.DistanceTo(home) <= NpcEncounterDefinitions.ChaseLeash)
+                .OrderBy(t => t.Range).ThenBy(t => t.ActiveShipId).FirstOrDefault();
+            if (target.Position is null) { continue; }
+            // One NPC retains one target until disengagement. Serializing the
+            // selection with its row prevents competing viewers resetting delay.
+            world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, target.ActiveShipId, delay, now));
+        }
+        world.SaveChanges();
+        transaction.Commit();
+    }
+
     public IReadOnlyList<long> Aggressors(long shipId)
     {
         using WorldDbContext world = new(database.Path);

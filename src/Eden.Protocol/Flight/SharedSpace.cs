@@ -31,6 +31,12 @@ internal sealed class SharedSpace
     public void Publish(ShipContact ship) => _ships[ship.Pilot.ShipId] = ship;
     public void Leave(long shipId) => _ships.TryRemove(shipId, out _);
 
+    public NpcTargetCandidate[] NpcTargets(int systemId) => _ships.Values
+        .Where(ship => ship.Pilot.SystemId == systemId && ship.Pilot.Position is not null &&
+            ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup && ship.Warp is null && ship.AlignTo is null &&
+            ship.DepartureGate is null && !ship.Arriving && ship.Health?.Remaining.Destroyed != true)
+        .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId)).ToArray();
+
     public ShipContact[] Peers(DockedPilot pilot) => _ships.Values
         .Where(ship => ship.Pilot.SystemId == pilot.SystemId && ship.Pilot.ShipId != pilot.ShipId &&
             pilot.Position is { } viewer && ship.Pilot.Position is { } other && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance)

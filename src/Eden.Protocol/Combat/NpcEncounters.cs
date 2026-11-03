@@ -25,8 +25,8 @@ public interface INpcEncounters
 public static class NpcEncounterDefinitions
 {
     // Eden's first encounter placement policy, rather than catalog spawn data.
-    // Catalog Guristas Rookies wait at Perimeter's belt anchors; merely arriving
-    // does not start a fight. Pursuit is bounded to the local belt encounter.
+    // Catalog Guristas Rookies guard Perimeter's belt anchors. Detection and
+    // pursuit boundaries are Eden encounter policy, not catalog AI parameters.
     public const int PerimeterSystem = 30000144;
     public const int GuristasRookieType = 30380;
     public const int GuristasCorporation = 1000127;
@@ -35,6 +35,7 @@ public static class NpcEncounterDefinitions
     public const double VisibilityRange = 250_000;
     public const int RespawnSeconds = 600;
     public const double ChaseLeash = 50_000;
+    public const double DetectionRange = 20_000;
     public const double ArrivalTolerance = 25;
     public const double ArrivalSpeed = 1;
     public const double InertiaMassScale = 1_000_000;

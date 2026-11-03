@@ -409,7 +409,7 @@ public sealed class ShieldBoostTests
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
         using NpcCombatHandler combat = new(f.Clock, f.Db.Services.GetRequiredService<INpcCombat>(), locks,
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), shields, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), shields, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()), new());
         combat.Enter(context);
         using (WorldDbContext world = new(f.Db.Path))
         {

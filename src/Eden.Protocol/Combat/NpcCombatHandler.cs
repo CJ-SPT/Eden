@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
@@ -10,7 +11,7 @@ namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
 internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, SharedTargetLocks locks,
-    MiningHandler mining, CombatHandler weapons, ShieldBoostHandler shields, PropulsionHandler propulsion) : IDisposable
+    MiningHandler mining, CombatHandler weapons, ShieldBoostHandler shields, PropulsionHandler propulsion, SharedSpace space) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
     private long _shipId;
@@ -18,8 +19,8 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
 
     public void Enter(PilotCallContext context)
     {
-        // Reconnecting starts without an offline fight or overdue burst. A new
-        // player attack must establish aggression for this connected session.
+        // Reconnecting starts without an offline fight or overdue burst. Local
+        // detection can establish a fresh fight with a new reaction interval.
         combat.Disengage(context.Pilot.ShipId);
         _shipId = context.Pilot.ShipId;
     }
@@ -43,6 +44,10 @@ internal sealed class NpcCombatHandler(TimeProvider clock, INpcCombat combat, Sh
         {
             Clear();
             return;
+        }
+        if (context.Pilot.SystemId == NpcEncounterDefinitions.PerimeterSystem)
+        {
+            combat.Acquire(space.NpcTargets(context.Pilot.SystemId), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
         foreach (long npc in combat.Aggressors(_shipId))
         {
