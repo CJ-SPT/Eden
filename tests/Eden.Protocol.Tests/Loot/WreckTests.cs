@@ -312,6 +312,7 @@ public sealed class WreckTests
     {
         using Fixture f = new();
         long itemId = f.Item;
+        var pilot = f.Pilot;
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
@@ -337,7 +338,7 @@ public sealed class WreckTests
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldShipLoss(ShipId,PilotId,NpcId,CapsuleId,TypeId,SystemId,Time,Name,ItemsJson,X,Y,Z)
-                    VALUES (123,{f.Pilot.PilotId},{f.Wreck.SourceId},124,601,{f.Wreck.SystemId},{Now},'Earlier loss','[]',0,0,0)
+                    VALUES (123,{pilot.PilotId},{f.Wreck.SourceId},124,601,{f.Wreck.SystemId},{Now},'Earlier loss','[]',0,0,0)
                 """
             );
         }

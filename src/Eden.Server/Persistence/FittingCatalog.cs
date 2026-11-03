@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Server.Catalog;
@@ -17,6 +18,14 @@ internal static class FittingCatalog
             return null;
         }
         if (HardenerDefinitions.Effect(type.GroupId) is not null && !HardenerCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
+        if (
+            type.GroupId == PropulsionDefinitions.AfterburnerGroup
+            && Effects(catalog, typeId).Contains(DogmaEffect.Microwarpdrive)
+            && !MicrowarpdriveCatalog.Supported(catalog, typeId, type.GroupId)
+        )
         {
             return null;
         }

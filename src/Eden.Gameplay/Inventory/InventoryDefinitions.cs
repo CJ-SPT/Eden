@@ -54,6 +54,7 @@ public enum DogmaEffect
     Online = 16,
     ArmorRepair = 27,
     CapacitorBoosting = 48,
+    CapacitorCapacityMultiply = 58,
     ActiveShieldResistance = 5230,
     ActiveArmorResistance = 5231,
     LauncherFitted = 40,
@@ -76,6 +77,45 @@ public enum StationService
 
 public static class InventoryDefinitions
 {
+    public static IReadOnlyList<DogmaAttributeId> ShipRestrictions { get; } =
+    [
+        DogmaAttributeId.CanFitShipGroup1,
+        DogmaAttributeId.CanFitShipGroup2,
+        DogmaAttributeId.CanFitShipGroup3,
+        DogmaAttributeId.CanFitShipGroup4,
+        DogmaAttributeId.CanFitShipGroup5,
+        DogmaAttributeId.CanFitShipGroup6,
+        DogmaAttributeId.CanFitShipGroup7,
+        DogmaAttributeId.CanFitShipGroup8,
+        DogmaAttributeId.CanFitShipGroup9,
+        DogmaAttributeId.CanFitShipGroup10,
+        DogmaAttributeId.CanFitShipGroup11,
+        DogmaAttributeId.CanFitShipGroup12,
+        DogmaAttributeId.CanFitShipGroup13,
+        DogmaAttributeId.CanFitShipGroup14,
+        DogmaAttributeId.CanFitShipGroup15,
+        DogmaAttributeId.CanFitShipGroup16,
+        DogmaAttributeId.CanFitShipGroup17,
+        DogmaAttributeId.CanFitShipGroup18,
+        DogmaAttributeId.CanFitShipGroup19,
+        DogmaAttributeId.CanFitShipGroup20,
+        DogmaAttributeId.CanFitShipType1,
+        DogmaAttributeId.CanFitShipType2,
+        DogmaAttributeId.CanFitShipType3,
+        DogmaAttributeId.CanFitShipType4,
+        DogmaAttributeId.CanFitShipType5,
+        DogmaAttributeId.CanFitShipType6,
+        DogmaAttributeId.CanFitShipType7,
+        DogmaAttributeId.CanFitShipType8,
+        DogmaAttributeId.CanFitShipType9,
+        DogmaAttributeId.CanFitShipType10,
+        DogmaAttributeId.CanFitShipType11,
+        DogmaAttributeId.CanFitShipType12,
+    ];
+
+    public static bool RequiresSpecificShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        ShipRestrictions.Any(attribute => attributes.GetValueOrDefault(attribute) > 0);
+
     public const int MiningLaserGroup = 54;
     public const int CivilianMinerType = 3651;
     public const double OutputBonusPerSkillLevel = 0.05;

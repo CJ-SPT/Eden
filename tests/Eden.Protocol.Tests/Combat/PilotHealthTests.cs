@@ -198,6 +198,7 @@ public sealed class PilotHealthTests
     public void VersionSeventeenUpgradePreservesShipsItemsWalletAndEnergyWithoutInventingDamage()
     {
         using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw(
@@ -212,7 +213,6 @@ public sealed class PilotHealthTests
                     """
             );
         }
-        var pilot = db.Store.FindPilot(1000001)!;
         _ = WorldInitialization.Open(db.Path);
         _ = WorldInitialization.Open(db.Path);
         Assert.Equal(pilot, db.Store.FindPilot(1000001));

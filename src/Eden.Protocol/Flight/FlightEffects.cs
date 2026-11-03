@@ -23,7 +23,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.Module.TypeId,
                 shipId,
                 null,
-                PropulsionWireDefinitions.EffectGraphic,
+                PropulsionWireDefinitions.Graphic(effect.Module.Effect),
                 false,
                 active,
                 active,

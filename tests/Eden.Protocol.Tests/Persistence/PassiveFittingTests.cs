@@ -100,7 +100,7 @@ public sealed class PassiveFittingTests
         Assert.Equal(31, supported.Select(t => t.GroupId).Distinct().Count());
         Assert.Null(FittingCatalog.Definition(catalog, 47254)); // Assault Damage Control I.
         Assert.Null(FittingCatalog.Definition(catalog, 40714)); // Emergency hull energizer.
-        Assert.Null(FittingCatalog.Definition(catalog, 434)); // Microwarpdrive.
+        Assert.NotNull(FittingCatalog.Definition(catalog, 434)); // Ordinary Tech I microwarpdrive.
         Assert.NotNull(FittingCatalog.Definition(catalog, 2046)); // Ordinary damage control.
         Assert.NotNull(FittingCatalog.Definition(catalog, 1445)); // Both capacitor and booster modifiers are implemented.
     }

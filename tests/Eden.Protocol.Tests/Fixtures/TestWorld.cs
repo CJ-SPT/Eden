@@ -23,7 +23,10 @@ internal sealed class TestWorld : IDisposable
     public ServiceProvider Services { get; }
     public IReadOnlyList<StaticSpaceObject> Objects => Services.GetRequiredService<ISystemObjects>().Load(30000142);
 
+    // These fixtures replay pre-version-28 migrations; remove the newer live
+    // module table as well, so version 31 can rename the historical table.
     internal const string DropTestingMarketSchema = """
+        DROP TABLE WorldActiveModule;
         DROP TABLE WorldTestingGrant;
         ALTER TABLE WorldMarketStation DROP COLUMN SeedVersion;
         DROP INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents;

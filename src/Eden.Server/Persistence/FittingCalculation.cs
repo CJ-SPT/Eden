@@ -51,18 +51,29 @@ internal sealed record FittingCalculation(
         List<DogmaNode> nodes = [new(ship.Id, hullAttributes), new(pilot.Id, new Dictionary<DogmaAttributeId, double>())];
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
         List<DogmaModifier> modifiers = [];
-        var activeHardeners = world.Set<ActiveHardener>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
+        var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
         foreach (var module in modules)
         {
             if (
                 module.Item.Online
-                && activeHardeners.Contains(module.Item.Id)
+                && activeModules.Contains(module.Item.Id)
                 && HardenerCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
             )
             {
                 foreach (var modifier in HardenerCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
                     Add(module.Item.Id, modifier, false);
+                }
+            }
+            if (module.Item.Online && MicrowarpdriveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            {
+                foreach (var modifier in PassiveCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, false);
+                }
+                if (activeModules.Contains(module.Item.Id))
+                {
+                    Add(module.Item.Id, MicrowarpdriveCatalog.SignatureModifier, false);
                 }
             }
             if (!PassiveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))

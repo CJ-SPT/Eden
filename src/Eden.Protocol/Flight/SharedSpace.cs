@@ -30,7 +30,7 @@ internal sealed record HardenerContact(Hardener Module, long StartedAt);
 
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 
-internal sealed record PropulsionContact(Afterburner Module, long StartedAt);
+internal sealed record PropulsionContact(PropulsionModule Module, long StartedAt);
 
 internal sealed record PilotContact(
     long PilotId,

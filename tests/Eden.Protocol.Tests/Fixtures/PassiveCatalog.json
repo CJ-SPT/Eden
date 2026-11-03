@@ -14612,6 +14612,7238 @@
           "value": 0.5
         }
       ]
+    },
+    {
+      "id": 5945,
+      "name": "500MN Cold-Gas Enduring Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 220.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 5971,
+      "name": "5MN Cold-Gas Enduring Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 5973,
+      "name": "5MN Y-T8 Compact Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 14.0
+        },
+        {
+          "id": 50,
+          "value": 21.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 5975,
+      "name": "50MN Cold-Gas Enduring Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 130.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 12052,
+      "name": "50MN Microwarpdrive I",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 500.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 12054,
+      "name": "500MN Microwarpdrive I",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 500.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 35658,
+      "name": "5MN Quad LiF Restrained Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 35659,
+      "name": "50MN Y-T8 Compact Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 135.0
+        },
+        {
+          "id": 50,
+          "value": 43.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 35660,
+      "name": "50MN Quad LiF Restrained Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 35661,
+      "name": "500MN Y-T8 Compact Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 64.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 35662,
+      "name": "500MN Quad LiF Restrained Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 41249,
+      "name": "50000MN Microwarpdrive I",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 500.0
+        },
+        {
+          "id": 30,
+          "value": 70000.0
+        },
+        {
+          "id": 50,
+          "value": 100.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 41250,
+      "name": "50000MN Y-T8 Compact Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 60000.0
+        },
+        {
+          "id": 50,
+          "value": 85.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 41251,
+      "name": "50000MN Quad LiF Restrained Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 70000.0
+        },
+        {
+          "id": 50,
+          "value": 100.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 41252,
+      "name": "50000MN Cold-Gas Enduring Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 505.0
+        },
+        {
+          "id": 30,
+          "value": 70000.0
+        },
+        {
+          "id": 50,
+          "value": 100.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.75
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 3454,
+      "name": "High Speed Maneuvering",
+      "groupId": 275,
+      "groupName": "Navigation",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 167.0
+        },
+        {
+          "id": 182,
+          "value": 3449.0
+        },
+        {
+          "id": 183,
+          "value": 3450.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 317,
+          "value": -5.0
+        }
+      ]
+    },
+    {
+      "id": 438,
+      "name": "1MN Afterburner II",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 22.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 135.0
+        },
+        {
+          "id": 30,
+          "value": 11.0
+        },
+        {
+          "id": 50,
+          "value": 15.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3450.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 9.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 440,
+      "name": "5MN Microwarpdrive II",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 17.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 3451,
+      "name": "Fuel Conservation",
+      "groupId": 275,
+      "groupName": "Navigation",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 167.0
+        },
+        {
+          "id": 182,
+          "value": 3449.0
+        },
+        {
+          "id": 183,
+          "value": 3450.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 2.0
+        },
+        {
+          "id": 278,
+          "value": 2.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 317,
+          "value": -10.0
+        }
+      ]
+    },
+    {
+      "id": 3452,
+      "name": "Acceleration Control",
+      "groupId": 275,
+      "groupName": "Navigation",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 167.0
+        },
+        {
+          "id": 182,
+          "value": 3449.0
+        },
+        {
+          "id": 275,
+          "value": 4.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 318,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 12076,
+      "name": "50MN Microwarpdrive II",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 165.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 12084,
+      "name": "500MN Microwarpdrive II",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 290.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 1375.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 14114,
+      "name": "Domination 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 1375.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14116,
+      "name": "Shadow Serpentis 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 83.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14118,
+      "name": "Domination 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 165.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14120,
+      "name": "Shadow Serpentis 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 55.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14122,
+      "name": "Domination 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 17.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14124,
+      "name": "Shadow Serpentis 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14492,
+      "name": "Mizuro's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 1294.0
+        },
+        {
+          "id": 50,
+          "value": 68.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14494,
+      "name": "Hakim's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 1350.0
+        },
+        {
+          "id": 50,
+          "value": 68.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14496,
+      "name": "Gotan's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 1407.0
+        },
+        {
+          "id": 50,
+          "value": 68.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14498,
+      "name": "Tobias' Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 1463.0
+        },
+        {
+          "id": 50,
+          "value": 68.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 350.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14508,
+      "name": "Brynn's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 77.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 11.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14510,
+      "name": "Tuvan's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 81.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 13.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14512,
+      "name": "Setele's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 85.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 14514,
+      "name": "Cormack's Modified 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 88.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 17.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        },
+        {
+          "id": 1692,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 15747,
+      "name": "Republic Fleet 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 17.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 15751,
+      "name": "Republic Fleet 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 165.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 15755,
+      "name": "Republic Fleet 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 1375.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 15759,
+      "name": "Federation Navy 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 15764,
+      "name": "Federation Navy 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 55.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 15768,
+      "name": "Federation Navy 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 83.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 19313,
+      "name": "Coreli C-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 29.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19315,
+      "name": "Corelum C-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 58.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19317,
+      "name": "Core C-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 86.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19319,
+      "name": "Coreli B-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19321,
+      "name": "Corelum B-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19323,
+      "name": "Core B-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 90.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19325,
+      "name": "Coreli A-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 31.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19327,
+      "name": "Corelum A-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 63.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19329,
+      "name": "Core A-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 94.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19335,
+      "name": "Core X-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 280.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 1250.0
+        },
+        {
+          "id": 50,
+          "value": 98.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 16.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19337,
+      "name": "Gistii C-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 17.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19339,
+      "name": "Gistum C-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 173.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19341,
+      "name": "Gist C-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 514.0
+        },
+        {
+          "id": 30,
+          "value": 1438.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.93
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 430.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 10.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19343,
+      "name": "Gistii B-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 18.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19345,
+      "name": "Gistum B-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 180.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19347,
+      "name": "Gist B-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 516.0
+        },
+        {
+          "id": 30,
+          "value": 1500.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.95
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 410.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 12.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19349,
+      "name": "Gistii A-Type 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 19.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19351,
+      "name": "Gistum A-Type 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 188.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19353,
+      "name": "Gist A-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 518.0
+        },
+        {
+          "id": 30,
+          "value": 1563.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.97
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 14.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 19359,
+      "name": "Gist X-Type 500MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 320.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 1625.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 350.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 16.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 21476,
+      "name": "5MN Digital Booster Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 35.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 14.0
+        },
+        {
+          "id": 50,
+          "value": 21.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.85
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 21478,
+      "name": "50MN Digital Booster Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 140.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 135.0
+        },
+        {
+          "id": 50,
+          "value": 43.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.85
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 21480,
+      "name": "500MN Digital Booster Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 260.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 1125.0
+        },
+        {
+          "id": 50,
+          "value": 64.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.85
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 500.0
+        },
+        {
+          "id": 567,
+          "value": 150000000.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 50000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 8.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 41253,
+      "name": "50000MN Microwarpdrive II",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 9000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 510.0
+        },
+        {
+          "id": 30,
+          "value": 80000.0
+        },
+        {
+          "id": 50,
+          "value": 100.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.8
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 41254,
+      "name": "Domination 50000MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 80000.0
+        },
+        {
+          "id": 50,
+          "value": 100.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 450.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 41255,
+      "name": "Shadow Serpentis 50000MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10000.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 512.0
+        },
+        {
+          "id": 30,
+          "value": 70000.0
+        },
+        {
+          "id": 50,
+          "value": 110.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 147,
+          "value": 0.9
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 475.0
+        },
+        {
+          "id": 567,
+          "value": 1500000000.0
+        },
+        {
+          "id": 633,
+          "value": 8.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 6.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 50.0
+        },
+        {
+          "id": 1298,
+          "value": 547.0
+        },
+        {
+          "id": 1299,
+          "value": 485.0
+        },
+        {
+          "id": 1300,
+          "value": 1538.0
+        },
+        {
+          "id": 1301,
+          "value": 659.0
+        },
+        {
+          "id": 1692,
+          "value": 4.0
+        },
+        {
+          "id": 1872,
+          "value": 30.0
+        },
+        {
+          "id": 1879,
+          "value": 883.0
+        },
+        {
+          "id": 1880,
+          "value": 4594.0
+        },
+        {
+          "id": 1881,
+          "value": 5120.0
+        }
+      ]
+    },
+    {
+      "id": 47408,
+      "name": "50MN Abyssal Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47740,
+      "name": "5MN Abyssal Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47745,
+      "name": "500MN Abyssal Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 56306,
+      "name": "50000MN Abyssal Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 84962,
+      "name": "Asine's Modified 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 15.0
+        },
+        {
+          "id": 50,
+          "value": 32.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.99
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        }
+      ]
+    },
+    {
+      "id": 84963,
+      "name": "Ramaku's Modified 5MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 45.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 20.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.99
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 370.0
+        },
+        {
+          "id": 567,
+          "value": 1500000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 500000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 19.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        }
+      ]
+    },
+    {
+      "id": 84964,
+      "name": "Sila's Modified 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 180.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 195.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.99
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 370.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        }
+      ]
+    },
+    {
+      "id": 84965,
+      "name": "Gara's Modified 50MN Microwarpdrive",
+      "groupId": 46,
+      "groupName": "Propulsion Module",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 20,
+          "value": 520.0
+        },
+        {
+          "id": 30,
+          "value": 150.0
+        },
+        {
+          "id": 50,
+          "value": 66.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 147,
+          "value": 0.99
+        },
+        {
+          "id": 182,
+          "value": 3454.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 554,
+          "value": 390.0
+        },
+        {
+          "id": 567,
+          "value": 15000000.0
+        },
+        {
+          "id": 633,
+          "value": 15.0
+        },
+        {
+          "id": 669,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 1.0
+        },
+        {
+          "id": 796,
+          "value": 5000000.0
+        },
+        {
+          "id": 801,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.04
+        },
+        {
+          "id": 1211,
+          "value": 11.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1223,
+          "value": 60.0
+        }
+      ]
     }
   ],
   "records": [
@@ -29131,6 +36363,3156 @@
         "dataType": 5,
         "defaultValue": 1.0,
         "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5945,
+      "data": {
+        "typeID": 5945,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5945,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5971,
+      "data": {
+        "typeID": 5971,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5971,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5973,
+      "data": {
+        "typeID": 5973,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5973,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5975,
+      "data": {
+        "typeID": 5975,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5975,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12052,
+      "data": {
+        "typeID": 12052,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 25.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12052,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12054,
+      "data": {
+        "typeID": 12054,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12054,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35658,
+      "data": {
+        "typeID": 35658,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35658,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35659,
+      "data": {
+        "typeID": 35659,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35659,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35660,
+      "data": {
+        "typeID": 35660,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35660,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35661,
+      "data": {
+        "typeID": 35661,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35661,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35662,
+      "data": {
+        "typeID": 35662,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35662,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41249,
+      "data": {
+        "typeID": 41249,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41249,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41250,
+      "data": {
+        "typeID": 41250,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41250,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41251,
+      "data": {
+        "typeID": 41251,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41251,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41252,
+      "data": {
+        "typeID": 41252,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41252,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3454,
+      "data": {
+        "typeID": 3454,
+        "groupID": 275,
+        "published": 1,
+        "marketGroupID": 374,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3454,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 243,
+            "isDefault": 0
+          },
+          {
+            "effectID": 244,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 438,
+      "data": {
+        "typeID": 438,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 542,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 438,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6731,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 243,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 243,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 317,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "highSpeedManuveringSkillBoostCapacitorNeedMultiplier",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 244,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 244,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3454
+          }
+        ],
+        "effectName": "highSpeedManuveringCapacitorNeedMultiplierPostPercentCapacitorNeedLocationShipModulesRequiringHighSpeedManuvering",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1881,
+      "data": {
+        "attributeID": 1881,
+        "name": "canFitShipGroup08",
+        "stackable": 1,
+        "dataType": 12,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 440,
+      "data": {
+        "typeID": 440,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 440,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3451,
+      "data": {
+        "typeID": 3451,
+        "groupID": 275,
+        "published": 1,
+        "marketGroupID": 374,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3451,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 225,
+            "isDefault": 0
+          },
+          {
+            "effectID": 506,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3452,
+      "data": {
+        "typeID": 3452,
+        "groupID": 275,
+        "published": 1,
+        "marketGroupID": 374,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3452,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 228,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1176,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 228,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 228,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 318,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "accerationControlSkillBoostSpeedFBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1176,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1176,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 20,
+            "modifyingAttributeID": 318,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 46
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 20,
+            "modifyingAttributeID": 318,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 475
+          }
+        ],
+        "effectName": "accerationControlSkillAb&MwdSpeedBoost",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 318,
+      "data": {
+        "attributeID": 318,
+        "name": "speedFBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12076,
+      "data": {
+        "typeID": 12076,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12076,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 12084,
+      "data": {
+        "typeID": 12084,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 12084,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14114,
+      "data": {
+        "typeID": 14114,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14114,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14116,
+      "data": {
+        "typeID": 14116,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14116,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14118,
+      "data": {
+        "typeID": 14118,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14118,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14120,
+      "data": {
+        "typeID": 14120,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14120,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14122,
+      "data": {
+        "typeID": 14122,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14122,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14124,
+      "data": {
+        "typeID": 14124,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14124,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14492,
+      "data": {
+        "typeID": 14492,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14492,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14494,
+      "data": {
+        "typeID": 14494,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14494,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14496,
+      "data": {
+        "typeID": 14496,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14496,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14498,
+      "data": {
+        "typeID": 14498,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14498,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14508,
+      "data": {
+        "typeID": 14508,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14508,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14510,
+      "data": {
+        "typeID": 14510,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14510,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14512,
+      "data": {
+        "typeID": 14512,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14512,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14514,
+      "data": {
+        "typeID": 14514,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14514,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15747,
+      "data": {
+        "typeID": 15747,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15747,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15751,
+      "data": {
+        "typeID": 15751,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15751,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15755,
+      "data": {
+        "typeID": 15755,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15755,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15759,
+      "data": {
+        "typeID": 15759,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15759,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15764,
+      "data": {
+        "typeID": 15764,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15764,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 15768,
+      "data": {
+        "typeID": 15768,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 15768,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19313,
+      "data": {
+        "typeID": 19313,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19313,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19315,
+      "data": {
+        "typeID": 19315,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19315,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19317,
+      "data": {
+        "typeID": 19317,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19317,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19319,
+      "data": {
+        "typeID": 19319,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19319,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19321,
+      "data": {
+        "typeID": 19321,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19321,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19323,
+      "data": {
+        "typeID": 19323,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19323,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19325,
+      "data": {
+        "typeID": 19325,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19325,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19327,
+      "data": {
+        "typeID": 19327,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19327,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19329,
+      "data": {
+        "typeID": 19329,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19329,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19335,
+      "data": {
+        "typeID": 19335,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19335,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19337,
+      "data": {
+        "typeID": 19337,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19337,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19339,
+      "data": {
+        "typeID": 19339,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19339,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19341,
+      "data": {
+        "typeID": 19341,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19341,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19343,
+      "data": {
+        "typeID": 19343,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19343,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19345,
+      "data": {
+        "typeID": 19345,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19345,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19347,
+      "data": {
+        "typeID": 19347,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19347,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19349,
+      "data": {
+        "typeID": 19349,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19349,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19351,
+      "data": {
+        "typeID": 19351,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19351,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19353,
+      "data": {
+        "typeID": 19353,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19353,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 19359,
+      "data": {
+        "typeID": 19359,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 6,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 19359,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21476,
+      "data": {
+        "typeID": 21476,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21476,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21478,
+      "data": {
+        "typeID": 21478,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21478,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21480,
+      "data": {
+        "typeID": 21480,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21480,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41253,
+      "data": {
+        "typeID": 41253,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41253,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41254,
+      "data": {
+        "typeID": 41254,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41254,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41255,
+      "data": {
+        "typeID": 41255,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 4,
+        "marketGroupID": 131,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41255,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47408,
+      "data": {
+        "typeID": 47408,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47408,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47740,
+      "data": {
+        "typeID": 47740,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47740,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47745,
+      "data": {
+        "typeID": 47745,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47745,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56306,
+      "data": {
+        "typeID": 56306,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 15,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56306,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 84962,
+      "data": {
+        "typeID": 84962,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 84962,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 84963,
+      "data": {
+        "typeID": 84963,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 84963,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 84964,
+      "data": {
+        "typeID": 84964,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 25.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 84964,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 84965,
+      "data": {
+        "typeID": 84965,
+        "groupID": 46,
+        "published": 1,
+        "metaGroupID": 5,
+        "marketGroupID": 131,
+        "volume": 25.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 84965,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 58,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3175,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6730,
+            "isDefault": 1
+          }
+        ]
       }
     }
   ]

@@ -53,8 +53,14 @@ public static class ModuleFittingRules
             ArmorRepairDefinitions.Group => ArmorRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.ArmorRepair),
             HardenerDefinitions.ShieldGroup => effects.Contains(DogmaEffect.ActiveShieldResistance),
             HardenerDefinitions.ArmorGroup => effects.Contains(DogmaEffect.ActiveArmorResistance),
-            PropulsionDefinitions.AfterburnerGroup => effects.Contains(DogmaEffect.Afterburner)
-                && !effects.Contains(DogmaEffect.Microwarpdrive),
+            PropulsionDefinitions.AfterburnerGroup => (
+                effects.Contains(DogmaEffect.Afterburner) && !effects.Contains(DogmaEffect.Microwarpdrive)
+            )
+                || (
+                    effects.Contains(DogmaEffect.Microwarpdrive)
+                    && !effects.Contains(DogmaEffect.Afterburner)
+                    && PropulsionDefinitions.IsSupportedMicrowarpdrive(attributes)
+                ),
             CombatDefinitions.HybridWeaponGroup => CombatDefinitions.IsSupportedHybrid(groupId, attributes)
                 && effects.Contains(DogmaEffect.ProjectileFired),
             _ => typeId == (int)CombatWeaponType.CivilianGatlingRailgun && effects.Contains(DogmaEffect.CivilianWeapon),

@@ -8,14 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
-// Connection-owned activation markers are cleared on shutdown or explicit
-// world initialization. Cooldowns and capacitor remain durable independently.
-public sealed class ActiveHardener
-{
-    public long ModuleId { get; set; }
-    public long ShipId { get; set; }
-}
-
 [Injectable]
 internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardening
 {
@@ -60,9 +52,9 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
             throw new InvalidDataException("A destroyed ship cannot activate a hardener.");
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, hardener.CapacitorNeed, now);
-        if (world.Set<ActiveHardener>().Find(moduleId) is null)
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is null)
         {
-            world.Add(new ActiveHardener { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
+            world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
         }
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
@@ -83,7 +75,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
         {
             return new Dictionary<DogmaAttributeId, double>();
         }
-        var active = world.Set<ActiveHardener>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
+        var active = world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
         if (active is not null)
         {
             world.Remove(active);

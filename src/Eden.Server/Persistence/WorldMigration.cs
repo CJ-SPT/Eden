@@ -8,7 +8,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 30;
+    internal const int CurrentVersion = 31;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -411,20 +411,30 @@ internal static class WorldMigration
                 """
             );
         }
+        if (version is >= 6 and < 30)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE IF NOT EXISTS WorldActiveHardener(
+                    ModuleId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE,
+                    ShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE);
+                CREATE INDEX IF NOT EXISTS IX_WorldActiveHardener_ShipId ON WorldActiveHardener(ShipId);
+                """
+            );
+        }
+        if (version is >= 6 and < 31)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldActiveHardener RENAME TO WorldActiveModule;
+                DROP INDEX IF EXISTS IX_WorldActiveHardener_ShipId;
+                CREATE INDEX IX_WorldActiveModule_ShipId ON WorldActiveModule(ShipId);
+                """
+            );
+        }
         if (version < CurrentVersion)
         {
-            if (version >= 6)
-            {
-                world.Database.ExecuteSqlRaw(
-                    """
-                    CREATE TABLE IF NOT EXISTS WorldActiveHardener(
-                        ModuleId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE,
-                        ShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE);
-                    CREATE INDEX IF NOT EXISTS IX_WorldActiveHardener_ShipId ON WorldActiveHardener(ShipId);
-                    """
-                );
-            }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=30");
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=31");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

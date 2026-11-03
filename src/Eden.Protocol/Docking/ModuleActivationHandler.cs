@@ -53,7 +53,12 @@ internal sealed class ModuleActivationHandler(
                 method,
                 args
             ),
-            PropulsionWireDefinitions.EffectName => propulsion.Call(context, service, method, args),
+            PropulsionWireDefinitions.EffectName or PropulsionWireDefinitions.MicrowarpdriveEffectName => propulsion.Call(
+                context,
+                service,
+                method,
+                args
+            ),
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,
         };

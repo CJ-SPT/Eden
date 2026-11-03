@@ -74,6 +74,12 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
                 Bonus(world, catalog, pilotId, NavigationSkill.AccelerationControl, DogmaAttributeId.SpeedFactorBonus),
                 Group: PropulsionDefinitions.AfterburnerGroup
             ),
+            new(
+                (int)NavigationSkill.HighSpeedManeuvering,
+                DogmaAttributeId.CapacitorNeed,
+                Bonus(world, catalog, pilotId, NavigationSkill.HighSpeedManeuvering, DogmaAttributeId.CapacitorNeedBonus),
+                (int)NavigationSkill.HighSpeedManeuvering
+            ),
         }
             .Where(b => b.Percent != 0)
             .ToArray();
@@ -101,13 +107,15 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         );
     }
 
-    public PropulsionCycle Activate(long pilotId, long moduleId, long now)
+    public PropulsionCycle Activate(long pilotId, long moduleId, long now, DogmaEffect? effect = null)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
+        HashSet<DogmaEffect> effects = module is null ? [] : FittingCatalog.Effects(catalog, module.TypeId);
+        var activation = effects.Contains(DogmaEffect.Microwarpdrive) ? DogmaEffect.Microwarpdrive : DogmaEffect.Afterburner;
         if (
             pilot.ActiveShip.Position is null
             || module is null
@@ -117,23 +125,25 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
             || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup
-            || !FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.Afterburner)
-            || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.Microwarpdrive)
+            || !effects.Contains(activation)
+            || effect is not null && activation != effect
+            || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
-            throw new InvalidDataException("Use an online fitted afterburner on your active ship in space.");
+            throw new InvalidDataException("Use an online fitted propulsion module on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var item = PilotInventoryStore.Read(catalog, module);
         var attributes = ModuleAttributes(world, catalog, pilotId, item);
-        Afterburner burner = new(
+        PropulsionModule burner = new(
             moduleId,
             module.TypeId,
             attributes.GetValueOrDefault(DogmaAttributeId.Duration),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
             attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor),
             attributes.GetValueOrDefault(DogmaAttributeId.SpeedBoostFactor),
-            attributes.GetValueOrDefault(DogmaAttributeId.MassAddition)
+            attributes.GetValueOrDefault(DogmaAttributeId.MassAddition),
+            activation
         );
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         double mass = ship.GetValueOrDefault(DogmaAttributeId.Mass);
@@ -141,7 +151,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)
         {
-            throw new InvalidDataException("The afterburner is still cycling.");
+            throw new InvalidDataException("The propulsion module is still cycling.");
         }
         var groupTypes = catalog
             .Set<ItemType>()
@@ -156,18 +166,54 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxGroupActive, 1));
         if (limit <= 0 || world.Set<ModuleCooldown>().Count(c => groupModules.Contains(c.ModuleId) && c.ReadyAt > now) >= limit)
         {
-            throw new InvalidDataException("Only one afterburner can run at a time.");
+            throw new InvalidDataException("Only one propulsion module can run at a time.");
         }
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
-            throw new InvalidDataException("A destroyed ship cannot activate its afterburner.");
+            throw new InvalidDataException("A destroyed ship cannot activate a propulsion module.");
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, burner.CapacitorNeed, now);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(burner.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is null)
+        {
+            world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
+        }
         world.SaveChanges();
+        double signature = PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
         transaction.Commit();
-        return new(burner, capacitor);
+        return new(burner, capacitor, signature);
+    }
+
+    public double SignatureRadius(long pilotId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+    }
+
+    public double Stop(long pilotId, long shipId, long moduleId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var ship = world.Ships.SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+        if (ship is null)
+        {
+            return 0;
+        }
+        var active = world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
+        if (active is not null)
+        {
+            world.Remove(active);
+            world.SaveChanges();
+        }
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        double signature = PilotFittingStore
+            .ShipAttributes(world, catalog, pilot, ship)
+            .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+        transaction.Commit();
+        return signature;
     }
 }

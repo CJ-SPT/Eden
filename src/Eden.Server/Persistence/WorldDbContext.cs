@@ -180,9 +180,9 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<PendingArmorRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
         model.Entity<PendingArmorRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
         model.Entity<PendingArmorRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
-        model.Entity<ActiveHardener>().ToTable("WorldActiveHardener").HasKey(h => h.ModuleId);
-        model.Entity<ActiveHardener>().HasOne<OwnedItem>().WithMany().HasForeignKey(h => h.ModuleId);
-        model.Entity<ActiveHardener>().HasOne<Ship>().WithMany().HasForeignKey(h => h.ShipId);
+        model.Entity<ActiveFittedModule>().ToTable("WorldActiveModule").HasKey(h => h.ModuleId);
+        model.Entity<ActiveFittedModule>().HasOne<OwnedItem>().WithMany().HasForeignKey(h => h.ModuleId);
+        model.Entity<ActiveFittedModule>().HasOne<Ship>().WithMany().HasForeignKey(h => h.ShipId);
         model.Entity<ModuleCooldown>().ToTable("WorldWeaponCooldown").HasKey(w => w.ModuleId);
         model.Entity<ModuleCooldown>().HasOne<OwnedItem>().WithMany().HasForeignKey(w => w.ModuleId);
         model

@@ -370,7 +370,17 @@ Both controls use visible, local targets within **8,000 km** and accept surface 
 4. Click the active module to stop it. It finishes the paid cycle, clears its ring and restores normal speed and mass; actual velocity coasts toward the new limit. Warp prevents starting another afterburner cycle. Docking, hull loss and disconnecting remove the effect.
 5. Restart both host and client on the same save. Confirm the module remains fitted and online, the wallet retains the purchase, and cargo and ammunition are unchanged. The speed bonus must be absent until a new paid activation. An unexpired saved cooldown still prevents immediate reactivation; disconnected time grants no propulsion cycles.
 
-Afterburners use the existing saved capacitor and module cooldown records; world version remains **27** and no equipment, skills or ISK are granted. Microwarpdrives, overheating, implants and other navigation bonuses remain separate work. Nearby pilots receive the changed speed, mass and native propulsion effect; peer behavior has automated coverage.
+Afterburners originally used world version **27** and the existing saved capacitor and module cooldown records; no equipment, skills or ISK were granted. Nearby pilots receive the changed speed, mass and native propulsion effect; peer behavior has automated coverage. Microwarpdrives now use the additional live-module markers described below. Overheating, implants and other navigation bonuses remain separate work.
+
+## Fit and fly with a microwarpdrive
+
+Native acceptance is pending: the maintainer asked that game windows be left alone. The following is a future acceptance procedure, not a recorded live result. It covers unrestricted static drives; capital drives with ship-group restrictions and Abyssal instance mutations are deferred.
+
+1. Select **Eden Pilot**, verify the active ship in Inventory and dock at a fitting station. Obtain a **5MN Microwarpdrive I**, train **High Speed Maneuvering I** and fit it in a medium slot with enough CPU and power grid. Keep other equipment within the hull's fitting budget.
+2. Online the inactive drive. Its 25% capacitor-capacity penalty should apply, preserving the existing capacitor percentage. Signature radius and speed must remain normal until activation. Taking it offline restores capacity. Other tiers use their own catalog penalty, speed factor, signature bonus, cost and skills.
+3. Undock and activate it on the HUD. With Navigation III, High Speed Maneuvering III and no other bonuses, the Ibis should have a **10-second / 38.25 GJ** cycle, approximately **1,869 m/s** maximum speed, **1,663,000 kg** mass and **312 m** signature radius. The ordinary signature is 52 m. Repeats retain one bonus and a continuous HUD cycle.
+4. Click the drive to stop it. Its paid cycle finishes before normal speed, mass and signature return. Attempting to run an afterburner at the same time must fail. Warp blocks a new activation and the next repeat; docking, loss and disconnect remove the live bonus.
+5. Restart only when authorized, using a copied save. Version **31** renames the hardener activation table to shared `WorldActiveModule`. It clears live markers while retaining equipment, online capacity penalties, spent capacitor and paid cooldowns. Reconnecting grants no offline propulsion and cannot bypass an unexpired cooldown. Compare a Tech II or faction drive to confirm its distinct attributes and skill requirement.
 
 ## Fit and use an armor repairer
 

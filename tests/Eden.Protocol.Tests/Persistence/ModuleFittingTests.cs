@@ -12,7 +12,7 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class ModuleFittingTests
 {
     [Fact]
-    public void PropulsionGroupDoesNotGrantAnUnsupportedActivation()
+    public void PropulsionGroupRequiresASupportedCatalogActivation()
     {
         DogmaEffect[] rack = [DogmaEffect.MediumPower, DogmaEffect.Online];
         Assert.Null(
@@ -20,6 +20,22 @@ public sealed class ModuleFittingTests
                 434,
                 PropulsionDefinitions.AfterburnerGroup,
                 new Dictionary<DogmaAttributeId, double>(),
+                rack.Append(DogmaEffect.Microwarpdrive).ToHashSet()
+            )
+        );
+        Assert.NotNull(
+            ModuleFittingRules.Define(
+                434,
+                PropulsionDefinitions.AfterburnerGroup,
+                new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.TechLevel] = 1 },
+                rack.Append(DogmaEffect.Microwarpdrive).ToHashSet()
+            )
+        );
+        Assert.NotNull(
+            ModuleFittingRules.Define(
+                440,
+                PropulsionDefinitions.AfterburnerGroup,
+                new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.TechLevel] = 2 },
                 rack.Append(DogmaEffect.Microwarpdrive).ToHashSet()
             )
         );

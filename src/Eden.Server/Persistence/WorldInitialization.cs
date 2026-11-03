@@ -17,9 +17,9 @@ public static class WorldInitialization
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System);
-        // Live hardening belongs to a connection. A restart retains paid
-        // capacitor/cooldowns but never leaves an orphaned resistance bonus.
-        world.Set<ActiveHardener>().ExecuteDelete();
+        // Live module bonuses belong to a connection. A restart retains paid
+        // capacitor/cooldowns but never leaves an orphaned active bonus.
+        world.Set<ActiveFittedModule>().ExecuteDelete();
     }
 
     // Explicit development/test open: validate and migrate before creating a reader.

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Propulsion;
 
@@ -15,7 +16,13 @@ public static class PropulsionRules
         var attributes = basis.ToDictionary();
         if (group == PropulsionDefinitions.AfterburnerGroup)
         {
-            foreach (var bonus in bonuses.Where(b => b.RequiredSkill.HasValue || b.Group == group))
+            foreach (
+                var bonus in bonuses.Where(b =>
+                    b.Group == group
+                    || b.RequiredSkill is int required
+                        && InventoryDefinitions.RequiredSkills.Any(pair => basis.GetValueOrDefault(pair.Skill) == required)
+                )
+            )
             {
                 attributes[bonus.Attribute] =
                     attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Percent / PropulsionDefinitions.Percent);

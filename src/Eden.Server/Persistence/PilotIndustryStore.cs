@@ -148,7 +148,9 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                         or ShieldBoostDefinitions.Group
                         or PropulsionDefinitions.AfterburnerGroup
                         or CombatDefinitions.HybridWeaponGroup
-                ) && FittingCatalog.Definition(catalog, type.Id) is not null
+                )
+                && FittingCatalog.Definition(catalog, type.Id) is not null
+                && !FittingCatalog.Effects(catalog, type.Id).Contains(DogmaEffect.Microwarpdrive)
             );
     }
 

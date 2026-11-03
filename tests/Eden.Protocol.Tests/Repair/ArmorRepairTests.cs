@@ -283,7 +283,7 @@ public sealed class ArmorRepairTests
         {
             world.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             world.SaveChanges();
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldArmorRepair; PRAGMA user_version=28");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldActiveModule; DROP TABLE WorldArmorRepair; PRAGMA user_version=28");
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);

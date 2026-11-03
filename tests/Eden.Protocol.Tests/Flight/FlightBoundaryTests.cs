@@ -98,7 +98,7 @@ public sealed class FlightBoundaryTests
             Mining: [new(11, 1, 99, 1, 1000)],
             Weapons: [new(12, 2, 3, 99, 1, 2000)],
             ShieldBoosts: [new(13, 4, 1, 3000)],
-            Propulsion: new(new Afterburner(14, 5, 4000, 1, 1, 1, 1), 1)
+            Propulsion: new(new PropulsionModule(14, 5, 4000, 1, 1, 1, 1), 1)
         );
         List<DestinyCommand> commands = [];
         FlightEffects effects = new(commands.Add);

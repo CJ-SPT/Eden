@@ -89,7 +89,7 @@ public sealed class HardenerTests
         var restored = Store(f).Stop(f.PilotId, f.ShipId, module);
         Assert.Equal(before[resistance], restored[resistance], 8);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<ActiveHardener>());
+        Assert.Empty(saved.Set<ActiveFittedModule>());
         Assert.Equal(capacitor - cost, saved.Set<ShipEnergy>().Single().Charge, 8);
         Assert.Equal(f.Clock.Now + duration * TimeSpan.TicksPerMillisecond, saved.Set<ModuleCooldown>().Single().ReadyAt);
     }
@@ -187,7 +187,7 @@ public sealed class HardenerTests
         handler.Dispose();
         Assert.Equal(basis, f.Fitting.ShipAttributes(f.PilotId)[DogmaAttributeId.ShieldEmResonance], 8);
         using WorldDbContext check = new(f.Db.Path);
-        Assert.Empty(check.Set<ActiveHardener>());
+        Assert.Empty(check.Set<ActiveFittedModule>());
         Assert.Equal(80, check.Set<ShipEnergy>().Single().Charge, 8);
         Assert.True(check.Set<ModuleCooldown>().Single().ReadyAt > f.Clock.Now);
     }
@@ -204,7 +204,7 @@ public sealed class HardenerTests
         Assert.Equal(basis, f.Fitting.ShipAttributes(f.PilotId)[DogmaAttributeId.ShieldEmResonance], 8);
         Assert.Throws<InvalidDataException>(() => Activate(f, module));
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<ActiveHardener>());
+        Assert.Empty(saved.Set<ActiveFittedModule>());
         Assert.Equal(paid.Capacitor, saved.Set<ShipEnergy>().Single().Charge);
         Assert.True(saved.Set<ModuleCooldown>().Single().ReadyAt > f.Clock.Now);
     }
@@ -225,7 +225,7 @@ public sealed class HardenerTests
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, module));
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<ActiveHardener>());
+        Assert.Empty(saved.Set<ActiveFittedModule>());
     }
 
     [Fact]
@@ -239,12 +239,12 @@ public sealed class HardenerTests
         {
             saved.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             saved.SaveChanges();
-            saved.Database.ExecuteSqlRaw("DROP TABLE WorldActiveHardener; PRAGMA user_version=29");
+            saved.Database.ExecuteSqlRaw("DROP TABLE WorldActiveModule; PRAGMA user_version=29");
         }
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(before, f.Inventory.List(f.PilotId, f.ShipId));
         using WorldDbContext check = new(f.Db.Path);
-        Assert.Empty(check.Set<ActiveHardener>());
+        Assert.Empty(check.Set<ActiveFittedModule>());
         Assert.Equal(deadline, check.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(WorldMigration.CurrentVersion, check.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
@@ -291,7 +291,7 @@ public sealed class HardenerTests
         var effect = reason == "effect" ? DogmaEffect.ActiveArmorResistance : DogmaEffect.ActiveShieldResistance;
         Assert.Throws<InvalidDataException>(() => Activate(f, module, effect));
         using WorldDbContext check = new(f.Db.Path);
-        Assert.Empty(check.Set<ActiveHardener>());
+        Assert.Empty(check.Set<ActiveFittedModule>());
         Assert.Empty(check.Set<ShipEnergy>());
         Assert.Empty(check.Set<ModuleCooldown>());
     }
