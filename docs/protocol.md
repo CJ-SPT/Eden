@@ -916,3 +916,13 @@ On 2026-11-03, PilotServices delegated flight construction to FlightSessionFacto
 Automated acceptance passed restore, build with zero warnings, all 383 .NET tests, both Python suites (3 and 9 tests) and formatting verification. Existing session tests cover account calls before selection, bound inventory routing, notification ordering, rejected calls and recovery hull announcements.
 
 Live acceptance restarted the staged client against the milestone build and the isolated architecture save. Eden Pilot re-entered the belt with Ibis inventory and health rings visible. Double-clicking open space issued CmdGotoDirection. The ship turned, the speed display reached 133 m/s, and wreck ranges changed during timer updates without further calls.
+
+## Navigation boundary milestone 3
+
+On 2026-11-03, FlightRequestWire became the decoding boundary for undock, heading, speed, follow, orbit, warp, docking and gate commands. FlightSession now accepts named FlightCommand records. Gameplay owns NavigationState, typed NavigationTick and NavigationChange results, orbit and warp courses, collision integration, warp-in calculations, static object models and the narrow system/position interfaces. FlightSession retains the connection's single navigation instance and translates its tick changes into DestinyCommand records. Visibility comparison, peer reconciliation and client snapshots remain in Protocol. Immutable ShipContact samples still cross connection boundaries through SharedSpace.
+
+The extracted formulas retain the existing Carbon Destiny reference at revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f, including alignment, warp acceleration and deceleration, old-style orbit and collision integration. See the source links in the flight sections above. Existing flight tests now pass raw test calls through the same request adapter used by production handlers.
+
+Automated acceptance passed restore, build with zero warnings, all 383 .NET tests, 3 catalog setup Python tests, 9 formatting policy Python tests and formatting verification. Coverage includes invalid headings/ranges, warp state, gate transitions, collision/approach, orbit, peer snapshots and native Destiny arguments.
+
+Live acceptance used both staged clients on the isolated architecture save. Eden Pilot warped from Perimeter II belt 1 to the Jita gate, played the gate flash and tunnel, and arrived in Jita beside the Perimeter gate. The server recorded transfer from system 30000144 to 30000142. Eden Wing undocked from Jita IV - Moon 4. Eden Pilot warped to that station and coasted out of warp. Pilot's Overview showed Eden Wing in an Ibis at 183 km, and Wing's Overview showed Eden Pilot in an Ibis at the same distance.

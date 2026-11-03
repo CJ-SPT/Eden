@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
@@ -11,8 +12,9 @@ internal sealed class FlightCallHandler(ISystemObjects systems) : ISelectedPilot
         string method,
         object?[] args,
         Dictionary<string, object?>? keywords = null
-    ) =>
-        service == "beyonce" && method == "CmdStargateJump"
-            ? context.Flight.StartJump(args, systems)
-            : context.Flight.Call(service, method, args, keywords);
+    )
+    {
+        var command = FlightRequestWire.Read(service, method, args, keywords);
+        return command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
+    }
 }

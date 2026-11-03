@@ -119,13 +119,13 @@ public sealed class OrbitTests
         Assert.Contains(Actions(observer), a => Equals(a[0], "Orbit") && Equals(((object?[])a[1]!)[1], wing.ShipId));
         Assert.DoesNotContain(Actions(observer), a => Equals(a[0], "SetState"));
         var contact = Assert.Single(space.Peers(wing));
-        Assert.Equal(DestinyBallMode.Orbit, contact.FollowMode);
+        Assert.Equal(NavigationMode.Orbit, contact.FollowMode);
         var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddShip(contact, 42)));
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());
         Assert.Equal(pilot.ShipId, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Orbit, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Orbit, reader.ReadByte());
         reader.ReadBytes(
             sizeof(float)
                 + 3 * sizeof(double)
@@ -148,7 +148,7 @@ public sealed class OrbitTests
         observer.Updates.Clear();
         observer.RefreshPeers();
         Assert.Contains(Actions(observer), a => Equals(a[0], "FollowBall"));
-        Assert.Equal(DestinyBallMode.Follow, Assert.Single(space.Peers(wing)).FollowMode);
+        Assert.Equal(NavigationMode.Follow, Assert.Single(space.Peers(wing)).FollowMode);
     }
 
     [Theory]

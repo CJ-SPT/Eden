@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;

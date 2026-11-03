@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;

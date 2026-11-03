@@ -132,7 +132,7 @@ public sealed class AsteroidFieldTests
         Assert.Equal(0, reader.ReadByte());
         _ = reader.ReadInt32();
         Assert.Equal(nearby[0].Id, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Rigid, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Rigid, reader.ReadByte());
         Assert.Equal(nearby[0].Radius, reader.ReadSingle());
         Assert.Equal(nearby[0].Position.X, reader.ReadDouble());
         Assert.Equal(nearby[0].Position.Y, reader.ReadDouble());

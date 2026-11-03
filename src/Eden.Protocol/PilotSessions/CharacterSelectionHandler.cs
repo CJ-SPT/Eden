@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;

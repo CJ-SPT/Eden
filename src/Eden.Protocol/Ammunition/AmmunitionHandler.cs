@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -25,6 +26,7 @@ internal sealed class FlightSession(
     IWrecks? wrecks = null
 ) : IDisposable
 {
+    private readonly NavigationState _navigation = new();
     private ShipContact[] _peers = [];
     private StaticSpaceObject[] _visibleAsteroids = [];
     private MiningContact[] _mining = [];
@@ -42,11 +44,6 @@ internal sealed class FlightSession(
     private int _simulatedStamp = space.Stamp(clock);
     private int Stamp => space.Stamp(clock);
     internal int CurrentStamp => Stamp;
-    private SpacePosition _lastHeading = new(1, 0, 0);
-    private SpacePosition? _direction;
-    private SpacePosition _velocity = new(0, 0, 0);
-    private StaticSpaceObject? _followTarget;
-    private DestinyBallMode _followMode = DestinyBallMode.Follow;
 
     private sealed record GateTransit(
         long SourceId,
@@ -61,22 +58,21 @@ internal sealed class FlightSession(
     private GateTransit? _jump;
     private bool _awaitingArrival;
     private int? _arrivalStamp;
-    private double _followRange;
-    private SpacePosition? _warpDestination;
-    private (long Target, double Range)? _warpOrder;
-    private int _alignStamp;
-    private WarpCourse? _warp;
-    private double _speedFraction;
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<StampedDestinyUpdate> Updates { get; } = [];
-    public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
+    public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     public bool CanTarget =>
-        InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
+        InBallpark
+        && !_destroying
+        && Pilot.Position is not null
+        && _jump is null
+        && _navigation.Warp is null
+        && _navigation.WarpDestination is null;
 
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
     // the terminal hull transition still prevent local module activations.
     public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null;
-    public SpacePosition Velocity => _velocity;
+    public SpacePosition Velocity => _navigation.Velocity;
     public float BaseSpeed => _baseFlight.MaxSpeed;
 
     public TargetContact? FindTarget(long id)
@@ -236,7 +232,7 @@ internal sealed class FlightSession(
                     {
                         Update(
                             new DestinyCommand.Follow(
-                                course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit : DestinyBallMode.Follow,
+                                course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit : NavigationMode.Follow,
                                 npc.Id,
                                 course.TargetId,
                                 course.FollowRange
@@ -331,13 +327,13 @@ internal sealed class FlightSession(
         _baseFlight = capsule.Flight;
         _propulsion = null;
         modules = [];
-        _velocity = SpacePosition.Zero;
-        _direction = null;
-        _speedFraction = 0;
-        _followTarget = null;
-        _warp = null;
-        _warpDestination = null;
-        _warpOrder = null;
+        _navigation.Velocity = SpacePosition.Zero;
+        _navigation.Direction = null;
+        _navigation.SpeedFraction = 0;
+        _navigation.FollowTarget = null;
+        _navigation.Warp = null;
+        _navigation.WarpDestination = null;
+        _navigation.WarpOrder = null;
         _mining = [];
         _weapons = [];
         _shieldBoosts = [];
@@ -393,123 +389,51 @@ internal sealed class FlightSession(
 
     private void Evolve(SpacePosition position)
     {
-        if (_warpDestination is { } destination)
+        var tick = _navigation.Advance(
+            Pilot.ShipId,
+            _simulatedStamp,
+            Pilot.Flight,
+            position,
+            NavigationTarget,
+            objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray()
+        );
+        Pilot = Pilot with { Position = tick.Position };
+        foreach (var change in tick.Changes)
         {
-            _direction = (destination - position).Unit;
-            double speed = _velocity.Length;
-            if ((speed > Pilot.Flight.MaxSpeed * 0.75 && _velocity.Unit.Dot(_direction) > 0.99) || _simulatedStamp - _alignStamp > 180)
+            switch (change)
             {
-                _warp = new(position, destination, _simulatedStamp, Pilot.Flight, speed);
-                _warpDestination = null;
-                _direction = null;
-            }
-        }
-        bool justExited = false;
-        if (_warp is { } warp)
-        {
-            var sample = warp.Sample(_simulatedStamp, Math.Min(Pilot.Flight.MaxSpeed / 2, 100));
-            position = sample.Position;
-            Pilot = Pilot with { Position = position };
-            _velocity = sample.Velocity;
-            if (!sample.Exited)
-            {
-                return;
-            }
-            _warp = null;
-            _speedFraction = 0;
-            justExited = true;
-            WarpEffect(Pilot.ShipId, false);
-        }
-
-        double cruise = Pilot.Flight.MaxSpeed * _speedFraction;
-        if (_followTarget is { } follow)
-        {
-            if (NavigationTarget(follow.Id) is not { } current)
-            {
-                // Carbon's interactive orbiters keep their heading when a target
-                // leaves. Keep-at-range followers instead coast to a stop.
-                _followTarget = null;
-                if (_followMode == DestinyBallMode.Orbit && _velocity.Length > 0)
-                {
-                    _direction = _lastHeading = _velocity.Unit;
-                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, _direction.X, _direction.Y, _direction.Z));
-                }
-                else
-                {
-                    _direction = null;
-                    _speedFraction = cruise = 0;
+                case NavigationChange.WarpExited:
+                    WarpEffect(Pilot.ShipId, false);
+                    break;
+                case NavigationChange.Heading heading:
+                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, heading.Direction.X, heading.Direction.Y, heading.Direction.Z));
+                    break;
+                case NavigationChange.Stopped:
                     Update(new DestinyCommand.Stop(Pilot.ShipId));
-                }
-            }
-            else
-            {
-                _followTarget = current;
-                if (_followMode == DestinyBallMode.Orbit)
-                {
-                    // Destiny evolves behavior at the beginning of each tick.
-                    _direction = OrbitCourse.Direction(
-                        Pilot.ShipId,
-                        _simulatedStamp - 1,
-                        position,
-                        current.Position,
-                        Pilot.Flight.ShipRadius + current.Radius + _followRange
+                    break;
+                case NavigationChange.Collision collision:
+                    Update(
+                        new DestinyCommand.SetBallPosition(Pilot.ShipId, collision.Position.X, collision.Position.Y, collision.Position.Z)
                     );
-                }
-                else
-                {
-                    var radial = position - current.Position;
-                    double error = radial.Length - current.Radius - Pilot.Flight.ShipRadius - _followRange;
-                    _direction = radial.Unit * -Math.Sign(error);
-                    if (cruise > 0 && Math.Abs(error) < cruise)
-                    {
-                        // Destiny GotoThrust tapers within one tick's travel distance.
-                        cruise *= Math.Pow(error / cruise, 4);
-                    }
-                }
+                    Update(new DestinyCommand.Stop(Pilot.ShipId));
+                    Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
+                    break;
             }
         }
-        // Build 3662168 accepts the legacy free-ball layout (no orientation fields).
-        // EvolveStop damps Y before drag on each STOP tick, except the warp-exit integration.
-        if (_direction is null && !justExited)
-        {
-            _velocity = _velocity with { Y = _velocity.Y * (0.93 / 1.07) };
-        }
-        double tau = Pilot.Flight.InertiaTime;
-        double decay = Math.Exp(-1 / tau);
-        var targetVelocity = (_direction ?? SpacePosition.Zero) * cruise;
-        var next = position + (targetVelocity + (_velocity - targetVelocity) * (tau * (1 - decay)));
-        _velocity = targetVelocity + (_velocity - targetVelocity) * decay;
-        if (FirstContact(position, next) is { } contact)
-        {
-            next = contact;
-            _velocity = SpacePosition.Zero;
-            if (_warpDestination is null)
-            {
-                Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, contact.X, contact.Y, contact.Z));
-                Update(new DestinyCommand.Stop(Pilot.ShipId));
-                Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
-                SetAtRest();
-            }
-        }
-        else if ((_direction is null || _speedFraction == 0) && _velocity.Length < 0.01)
-        {
-            SetAtRest();
-        }
-        Pilot = Pilot with { Position = next };
     }
 
     private ShipContact Sample =>
         new(
             Pilot,
-            _velocity,
-            _direction,
-            _speedFraction,
-            _followTarget is null ? null : _followRange,
-            _warp,
-            _warpDestination,
-            _alignStamp,
+            _navigation.Velocity,
+            _navigation.Direction,
+            _navigation.SpeedFraction,
+            _navigation.FollowTarget is null ? null : _navigation.FollowRange,
+            _navigation.Warp,
+            _navigation.WarpDestination,
+            _navigation.AlignStamp,
             (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
-            _followTarget?.Id ?? 0,
+            _navigation.FollowTarget?.Id ?? 0,
             _jump?.SourceId,
             Stamp - _arrivalStamp < 8,
             modules,
@@ -518,7 +442,7 @@ internal sealed class FlightSession(
             _weapons,
             _shieldBoosts,
             _propulsion,
-            _followMode
+            _navigation.FollowMode
         );
 
     public void SetBaseSpeed(double speed)
@@ -736,30 +660,6 @@ internal sealed class FlightSession(
         }
     }
 
-    private SpacePosition? FirstContact(SpacePosition start, SpacePosition end)
-    {
-        var delta = end - start;
-        double lengthSquared = delta.Dot(delta);
-        double earliest = double.PositiveInfinity;
-        foreach (var body in objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
-        {
-            var radial = start - body.Position;
-            double along = radial.Dot(delta);
-            if (along >= 0)
-            {
-                continue;
-            }
-            double radius = body.Radius + Pilot.Flight.ShipRadius;
-            double clearance = Math.Max(0, radial.Dot(radial) - radius * radius);
-            double discriminant = along * along - lengthSquared * clearance;
-            if (discriminant > 0)
-            {
-                earliest = Math.Min(earliest, clearance / (-along + Math.Sqrt(discriminant)));
-            }
-        }
-        return earliest <= 1 ? start + delta * earliest : null;
-    }
-
     public void RefreshPeers()
     {
         space.Publish(Sample);
@@ -783,10 +683,17 @@ internal sealed class FlightSession(
         }
         // Destiny integrates the same course between changes. Occasionally reconcile drift.
         bool reconcile = Stamp - _lastPeerSync >= NavigationDefinitions.ReconciliationTicks;
-        if (reconcile && _followTarget is not null && _followMode == DestinyBallMode.Orbit && Pilot.Position is { } ownPosition)
+        if (
+            reconcile
+            && _navigation.FollowTarget is not null
+            && _navigation.FollowMode == NavigationMode.Orbit
+            && Pilot.Position is { } ownPosition
+        )
         {
             Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, ownPosition.X, ownPosition.Y, ownPosition.Z));
-            Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, _velocity.X, _velocity.Y, _velocity.Z));
+            Update(
+                new DestinyCommand.SetBallVelocity(Pilot.ShipId, _navigation.Velocity.X, _navigation.Velocity.Y, _navigation.Velocity.Z)
+            );
         }
         foreach (var ship in current)
         {
@@ -987,7 +894,7 @@ internal sealed class FlightSession(
             RefreshShieldBoosts(peer, null);
             RefreshPropulsion(peer, null);
         }
-        if (_warp is not null || _warpDestination is not null)
+        if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);
         }
@@ -1028,26 +935,22 @@ internal sealed class FlightSession(
         Update(new DestinyCommand.SpecialEffect(id, null, null, null, null, "effects.Warping", false, start, true));
     }
 
-    private void SetAtRest()
-    {
-        _direction = null;
-        _followTarget = null;
-        _velocity = new(0, 0, 0);
-        _speedFraction = 0;
-    }
+    private void SetAtRest() => _navigation.SetAtRest();
 
     private void Update(DestinyCommand command) => Updates.Add(new(_simulatedStamp, command));
 
-    public PilotCallResult StartJump(object?[] args, ISystemObjects systems)
+    public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems)
     {
+        long sourceId = request.SourceId;
+        long exitId = request.ExitId;
+        long shipId = request.ShipId;
         Checkpoint();
         if (
             !InBallpark
             || Pilot.Position is not { } position
             || _jump is not null
-            || _warp is not null
-            || _warpDestination is not null
-            || args is not [long sourceId, long exitId, long shipId]
+            || _navigation.Warp is not null
+            || _navigation.WarpDestination is not null
             || shipId != Pilot.ShipId
             || objects.FirstOrDefault(o => o.Id == sourceId) is not { DestinationSystemId: int systemId } source
             || source.DestinationGateId != exitId
@@ -1106,30 +1009,10 @@ internal sealed class FlightSession(
         {
             return PilotCallResult.Unsupported;
         }
-        if (!InBallpark || !double.IsFinite(range) || range is < 0 or > 100_000)
+        if (!InBallpark || !_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, body, range, _simulatedStamp))
         {
             return PilotCallResult.Unsupported;
         }
-        var origin = Pilot.Position!;
-        var anchor = CelestialWarpPoint.Resolve(body, origin);
-        if (origin.DistanceTo(anchor) - Pilot.Flight.ShipRadius < 150_000)
-        {
-            return PilotCallResult.Unsupported;
-        }
-        var toward = (anchor - origin).Unit;
-        double standOff = range + Pilot.Flight.ShipRadius + (Pilot.ShipId % 2 == 0 ? 1500 : 500);
-        var end = anchor - toward * standOff;
-        if (origin.DistanceTo(end) < 101_000)
-        {
-            return PilotCallResult.Unsupported;
-        }
-        _warpDestination = end;
-        _warpOrder = (target, range);
-        _alignStamp = _simulatedStamp;
-        _direction = toward;
-        _lastHeading = _direction;
-        _speedFraction = 1;
-        _followTarget = null;
         ApplyCourse(Sample);
         // WarpLoop prepares the tunnel while aligning, then observes Destiny's positive
         // effect stamp to trigger the camera and acceleration sequence on the client.
@@ -1138,123 +1021,93 @@ internal sealed class FlightSession(
         return PilotCallResult.None;
     }
 
-    public PilotCallResult Call(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
+    public PilotCallResult Execute(FlightCommand command)
     {
-        if (service == "ship" && method == "Undock" && Pilot.Position is null && arguments is [long id, ..] && id == Pilot.ShipId)
+        if (command is FlightCommand.Undock undock && Pilot.Position is null && undock.ShipId == Pilot.ShipId)
         {
             // Separate the two local launch lanes even on simultaneous undocks.
             double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
             SetPosition(new(Pilot.X + Pilot.Flight.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
             return PilotCallResult.None;
         }
-        if (service != "beyonce" || Pilot.Position is not { } position)
+        if (command is FlightCommand.Undock or FlightCommand.Unsupported { Advance: false } || Pilot.Position is not { } position)
         {
             return PilotCallResult.Unsupported;
         }
         Checkpoint();
-        if (_warpDestination is not null && method == "CmdStop")
+        if (_navigation.WarpDestination is not null && command is FlightCommand.Stop)
         {
-            _warpDestination = null;
+            _navigation.WarpDestination = null;
             WarpEffect(Pilot.ShipId, false);
         }
-        if ((_jump is not null || _warp is not null || _warpDestination is not null) && method != "UpdateStateRequest")
+        if (
+            (_jump is not null || _navigation.Warp is not null || _navigation.WarpDestination is not null)
+            && command is not FlightCommand.RefreshState
+        )
         {
             // The native docking navigator retries its warp order on a timer.
             // Acknowledge the same destination without restarting the active course.
-            if (
-                _jump is null
-                && method == "CmdWarpToStuff"
-                && arguments is [string or byte[], long retryTarget]
-                && BlueMarshal.Text(arguments[0]) == "item"
-                && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long
-            )
+            if (_jump is null && command is FlightCommand.WarpTo retry)
             {
-                return _warpOrder == (retryTarget, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L))
-                    ? PilotCallResult.None
-                    : PilotCallResult.Unsupported;
+                return _navigation.WarpOrder == (retry.TargetId, retry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
             }
             return PilotCallResult.Unsupported;
         }
-        switch (method)
+        switch (command)
         {
-            case "CmdWarpToStuff" when arguments is [string or byte[], long targetId] && BlueMarshal.Text(arguments[0]) == "item":
-                var range = keywords?.GetValueOrDefault("minRange") ?? 0L;
-                return range is double or long ? StartWarp(targetId, Convert.ToDouble(range)) : PilotCallResult.Unsupported;
-            case "UpdateStateRequest":
+            case FlightCommand.WarpTo warp:
+                return StartWarp(warp.TargetId, warp.Range);
+            case FlightCommand.RefreshState:
                 Snapshot();
                 return PilotCallResult.None;
-            case "CmdGotoDirection" when arguments is [double x, double y, double z]:
-                double length = Math.Sqrt(x * x + y * y + z * z);
-                if (!(length > 0) || !double.IsFinite(length))
+            case FlightCommand.Heading(var x, var y, var z):
+                if (!_navigation.SetHeading(x, y, z))
                 {
                     return PilotCallResult.Unsupported;
-                }
-                _followTarget = null;
-                _lastHeading = new(x / length, y / length, z / length);
-                _direction = _lastHeading;
-                if (_speedFraction == 0)
-                {
-                    _speedFraction = 1;
                 }
                 Update(new DestinyCommand.GotoDirection(Pilot.ShipId, x, y, z));
-                Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _speedFraction));
+                Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _navigation.SpeedFraction));
                 return PilotCallResult.None;
-            case "CmdFollowBall"
-            or "CmdOrbit"
-                when arguments is [long target, var distance] && NavigationTarget(target) is { } follow && distance is double or long:
-                double standOff = Convert.ToDouble(distance);
-                if (
-                    standOff < 0
-                    || standOff > NavigationDefinitions.MaximumFollowRange
-                    || !double.IsFinite(standOff)
-                    || method == "CmdOrbit" && !InBallpark
-                )
+            case FlightCommand.Follow(var target, var standOff, var orbit) when NavigationTarget(target) is { } follow:
+                var followed = _navigation.Follow(
+                    Pilot.ShipId,
+                    _simulatedStamp,
+                    Pilot.Position!,
+                    Pilot.Flight.ShipRadius,
+                    follow,
+                    standOff,
+                    orbit,
+                    InBallpark
+                );
+                if (followed == NavigationOrderResult.Rejected)
                 {
                     return PilotCallResult.Unsupported;
                 }
-                position = Pilot.Position!;
-                double separation = position.DistanceTo(follow.Position);
-                if (separation > 0 || method == "CmdOrbit")
+                if (followed == NavigationOrderResult.Applied)
                 {
-                    double radius = follow.Radius + Pilot.Flight.ShipRadius + standOff;
-                    double sign = separation >= radius ? 1 : -1;
-                    _followMode = method == "CmdOrbit" ? DestinyBallMode.Orbit : DestinyBallMode.Follow;
-                    _direction =
-                        _followMode == DestinyBallMode.Orbit
-                            ? OrbitCourse.Direction(Pilot.ShipId, _simulatedStamp, position, follow.Position, radius)
-                            : (follow.Position - position) * (sign / separation);
-                    _lastHeading = _direction;
-                    _followTarget = follow;
-                    _followRange = standOff;
-                    _speedFraction = 1;
-                    Update(new DestinyCommand.Follow(_followMode, Pilot.ShipId, target, standOff));
+                    Update(new DestinyCommand.Follow(_navigation.FollowMode, Pilot.ShipId, target, standOff));
                     Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, 1d));
                 }
                 return PilotCallResult.None;
-            case "CmdSetSpeedFraction" when arguments is [var speed] && speed is double or long:
-                double fraction = Convert.ToDouble(speed);
-                if (!(fraction >= 0 && fraction <= 1))
+            case FlightCommand.Speed(var fraction):
+                bool resumeHeading = _navigation.Direction is null && fraction > 0;
+                if (!_navigation.SetSpeed(fraction))
                 {
                     return PilotCallResult.Unsupported;
                 }
-                if (_direction is null && fraction > 0)
+                if (resumeHeading)
                 {
-                    _direction = _lastHeading;
-                    _followTarget = null;
-                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, _lastHeading.X, _lastHeading.Y, _lastHeading.Z));
+                    var heading = _navigation.LastHeading;
+                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, heading.X, heading.Y, heading.Z));
                 }
-                _speedFraction = fraction;
                 Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, fraction));
                 return PilotCallResult.None;
-            case "CmdStop":
-                _direction = null;
-                _followTarget = null;
-                _speedFraction = 0;
+            case FlightCommand.Stop:
+                _navigation.Stop();
                 Update(new DestinyCommand.Stop(Pilot.ShipId));
                 return PilotCallResult.None;
-            case "CmdDock"
-                when arguments is [long station, long ship]
-                    && ship == Pilot.ShipId
+            case FlightCommand.Dock(var station, var ship)
+                when ship == Pilot.ShipId
                     && station is > 0 and <= int.MaxValue
                     && objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
                 position = Pilot.Position!;
@@ -1275,11 +1128,11 @@ internal sealed class FlightSession(
                     SetPosition(null);
                 }
                 LeaveSpace();
-                _direction = null;
-                _velocity = new(0, 0, 0);
-                _followTarget = null;
-                _speedFraction = 1;
-                _lastHeading = new(1, 0, 0);
+                _navigation.Direction = null;
+                _navigation.Velocity = new(0, 0, 0);
+                _navigation.FollowTarget = null;
+                _navigation.SpeedFraction = 1;
+                _navigation.LastHeading = new(1, 0, 0);
                 return PilotCallResult.None;
             default:
                 return PilotCallResult.Unsupported;

@@ -127,7 +127,7 @@ public sealed class NpcEncounterTests
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());
         Assert.Equal(npc.Id, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Stop, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Stop, reader.ReadByte());
         Assert.Equal(npc.Radius, reader.ReadSingle());
         Assert.Equal(npc.Position, new(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble()));
         Assert.Equal((byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive), reader.ReadByte());

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -18,7 +19,7 @@ public sealed class TypedFlightTests
     [Fact]
     public void StampedCommandsKeepNamesArgumentOrderAndIntegerWarpFactor()
     {
-        StampedDestinyUpdate update = new(42, new DestinyCommand.Follow(DestinyBallMode.Orbit, 10, 20, 1000));
+        StampedDestinyUpdate update = new(42, new DestinyCommand.Follow(NavigationMode.Orbit, 10, 20, 1000));
         Assert.IsType<DestinyCommand.Follow>(update.Command);
         Equal(new object?[] { 42, new object?[] { "Orbit", new object?[] { 10L, 20L, 1000d } } }, update);
         Equal(new object?[] { "WarpTo", new object?[] { 10L, 1d, 2d, 3d, 0d, 3000 } }, new DestinyCommand.WarpTo(10, 1, 2, 3, 0, 3000));

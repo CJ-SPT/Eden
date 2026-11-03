@@ -1,7 +1,7 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 
-namespace Eden.Protocol.Docking;
+namespace Eden.Gameplay.Docking;
 
 public interface IPilotLookup
 {

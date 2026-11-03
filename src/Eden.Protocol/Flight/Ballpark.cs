@@ -64,7 +64,7 @@ internal static class Ballpark
         var flags =
             (body.GroupId == AsteroidDefinitions.BeltGroup ? DestinyBallFlags.None : DestinyBallFlags.Massive)
             | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
-        WriteBallHeader(writer, body.Id, (byte)DestinyBallMode.Rigid, body.Radius, body.Position, (byte)flags);
+        WriteBallHeader(writer, body.Id, (byte)NavigationMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
         return new StaticSlimItem(body);
     }
@@ -120,7 +120,7 @@ internal static class Ballpark
         WriteBallHeader(
             writer,
             wreck.Id,
-            (byte)DestinyBallMode.Stop,
+            (byte)NavigationMode.Stop,
             wreck.Radius,
             wreck.Position,
             (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive)
@@ -146,10 +146,10 @@ internal static class Ballpark
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;
         var mode =
-            course is null ? DestinyBallMode.Stop
-            : course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit
-            : course.TargetId != 0 ? DestinyBallMode.Follow
-            : DestinyBallMode.Goto;
+            course is null ? NavigationMode.Stop
+            : course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit
+            : course.TargetId != 0 ? NavigationMode.Follow
+            : NavigationMode.Goto;
         WriteBallHeader(
             writer,
             npc.Id,
@@ -186,10 +186,10 @@ internal static class Ballpark
         var velocity = ship.Velocity;
         var warpTarget = ship.Warp?.Destination ?? ship.AlignTo;
         var mode =
-            warpTarget is not null ? DestinyBallMode.Warp
+            warpTarget is not null ? NavigationMode.Warp
             : ship.FollowRange.HasValue ? ship.FollowMode
-            : ship.Heading is null ? DestinyBallMode.Stop
-            : DestinyBallMode.Goto;
+            : ship.Heading is null ? NavigationMode.Stop
+            : NavigationMode.Goto;
         // Proper warp temporarily clears the massive flag. Aligning ships still collide.
         var flags =
             DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);

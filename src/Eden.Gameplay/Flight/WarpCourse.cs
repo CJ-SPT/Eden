@@ -1,9 +1,9 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Flight;
+namespace Eden.Gameplay.Flight;
 
-internal sealed class WarpCourse
+public sealed class WarpCourse
 {
     private readonly SpacePosition _origin;
     private readonly SpacePosition _direction;

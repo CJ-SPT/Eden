@@ -1,12 +1,12 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Flight;
+namespace Eden.Gameplay.Flight;
 
-internal static class CelestialWarpPoint
+public static class CelestialWarpPoint
 {
     // EVE's published warp-in formulas use system coordinates and radii in metres.
-    internal static SpacePosition Resolve(StaticSpaceObject body, SpacePosition origin)
+    public static SpacePosition Resolve(StaticSpaceObject body, SpacePosition origin)
     {
         var center = body.Position;
         double radius = body.Radius;

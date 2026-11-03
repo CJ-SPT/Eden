@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Flight;
 
 namespace Eden.Protocol.Mining;

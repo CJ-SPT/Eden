@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -258,7 +259,7 @@ public sealed class WreckTests
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(10, reader.ReadInt32());
         Assert.Equal(f.Wreck.Id, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Stop, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Stop, reader.ReadByte());
         Assert.Equal(14, reader.ReadSingle());
         Assert.Equal(f.Wreck.Position.X, reader.ReadDouble());
         Assert.Equal(f.Wreck.Position.Y, reader.ReadDouble());

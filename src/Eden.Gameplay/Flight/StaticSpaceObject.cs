@@ -1,7 +1,7 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Flight;
+namespace Eden.Gameplay.Flight;
 
 public sealed record StaticSpaceObject(
     long Id,

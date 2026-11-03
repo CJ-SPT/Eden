@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -91,8 +92,8 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Snapshot];
     }
 
-    internal sealed record Follow(DestinyBallMode Mode, long Id, long TargetId, double Range)
-        : DestinyCommand(Mode == DestinyBallMode.Orbit ? "Orbit" : "FollowBall")
+    internal sealed record Follow(NavigationMode Mode, long Id, long TargetId, double Range)
+        : DestinyCommand(Mode == NavigationMode.Orbit ? "Orbit" : "FollowBall")
     {
         protected override object?[] Arguments => [Id, TargetId, Range];
     }

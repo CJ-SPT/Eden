@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;

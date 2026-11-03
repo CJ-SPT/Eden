@@ -1,7 +1,7 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Flight;
+namespace Eden.Gameplay.Flight;
 
 // Adapted from Carbon Destiny 27ee40b, Ballpark::EvolveOldStyleOrbit.
 // This is the reference's default orbit mode; see docs/carbon-license.md.

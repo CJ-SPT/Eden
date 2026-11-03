@@ -201,7 +201,7 @@ public sealed class NpcPursuitTests
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());
         Assert.Equal(npc.Id, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Follow, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Follow, reader.ReadByte());
         reader.ReadBytes(
             sizeof(float)
                 + 3 * sizeof(double)

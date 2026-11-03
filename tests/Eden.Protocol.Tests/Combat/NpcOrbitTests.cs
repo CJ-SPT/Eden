@@ -125,7 +125,7 @@ public sealed class NpcOrbitTests
         reader.ReadByte();
         reader.ReadInt32();
         Assert.Equal(npc.Id, reader.ReadInt64());
-        Assert.Equal((byte)DestinyBallMode.Orbit, reader.ReadByte());
+        Assert.Equal((byte)NavigationMode.Orbit, reader.ReadByte());
         reader.ReadBytes(
             sizeof(float)
                 + 3 * sizeof(double)

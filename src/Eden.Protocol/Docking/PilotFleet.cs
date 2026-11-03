@@ -1,3 +1,5 @@
+using Eden.Gameplay.Docking;
+
 namespace Eden.Protocol.Docking;
 
 public sealed record ShipAssembly(IReadOnlyList<long> ShipIds, IReadOnlyList<InventoryChange> Changes);
