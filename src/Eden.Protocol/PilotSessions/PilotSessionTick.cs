@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Mining;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Skills;

@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -39,8 +40,11 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             ?? 0;
         // Pinned effects 1499/1500 multiply shield-booster capacitor need by the
         // trained Shield Compensation level and its catalog percent bonus.
-        attributes[DogmaAttributeId.CapacitorNeed] =
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed) * (1 + bonus * level / 100);
+        attributes[DogmaAttributeId.CapacitorNeed] = ShieldBoostRules.CapacitorNeed(
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
+            bonus,
+            level
+        );
         return attributes;
     }
 
@@ -73,15 +77,6 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             attributes.GetValueOrDefault(DogmaAttributeId.ShieldBonus),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed)
         );
-        if (
-            !double.IsFinite(booster.DurationMilliseconds)
-            || booster.DurationMilliseconds <= 0
-            || !double.IsFinite(booster.ShieldAmount)
-            || booster.ShieldAmount <= 0
-        )
-        {
-            throw new InvalidDataException("Invalid shield booster cycle attributes.");
-        }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)
         {
@@ -93,8 +88,8 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         {
             throw new InvalidDataException("A destroyed ship cannot boost its shields.");
         }
+        double shield = ShieldBoostRules.RestoredShield(health, booster);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, booster.CapacitorNeed, now);
-        double shield = Math.Min(health.Defense.Shield, health.Remaining.Shield + booster.ShieldAmount);
         var saved =
             world.Set<ShipHealthState>().Find(pilot.ActiveShipId)
             ?? world.Set<ShipHealthState>().Add(new() { ShipId = pilot.ActiveShipId }).Entity;

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;

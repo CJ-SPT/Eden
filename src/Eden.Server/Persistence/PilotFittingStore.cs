@@ -2,7 +2,10 @@ using System.Globalization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Targeting;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -63,76 +66,6 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             pilot.Id,
             attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity)
         );
-        // Catalog corvette role effects multiply the corresponding resonances.
-        // A -8 percent bonus means 0.92 times damage, not eight resistance points.
-        foreach (
-            var (bonus, resonances) in new[]
-            {
-                (
-                    DogmaAttributeId.RookieShieldResistanceBonus,
-                    new[]
-                    {
-                        DogmaAttributeId.ShieldEmResonance,
-                        DogmaAttributeId.ShieldExplosiveResonance,
-                        DogmaAttributeId.ShieldKineticResonance,
-                        DogmaAttributeId.ShieldThermalResonance,
-                    }
-                ),
-                (
-                    DogmaAttributeId.RookieArmorResistanceBonus,
-                    new[]
-                    {
-                        DogmaAttributeId.ArmorEmResonance,
-                        DogmaAttributeId.ArmorExplosiveResonance,
-                        DogmaAttributeId.ArmorKineticResonance,
-                        DogmaAttributeId.ArmorThermalResonance,
-                    }
-                ),
-            }
-        )
-        {
-            foreach (var resonance in resonances)
-            {
-                attributes[resonance] = attributes.GetValueOrDefault(resonance, 1) * (1 + attributes.GetValueOrDefault(bonus) / 100);
-            }
-        }
-        // These skills each grant five percent per trained level to their hull attribute.
-        foreach (
-            var (skill, output) in new[]
-            {
-                ((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput),
-                ((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput),
-                ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity),
-                ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
-                ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),
-                ((int)DefenseSkill.Mechanics, DogmaAttributeId.StructureHitPoints),
-                ((int)DefenseSkill.HullUpgrades, DogmaAttributeId.ArmorHitPoints),
-                ((int)DefenseSkill.ShieldManagement, DogmaAttributeId.ShieldCapacity),
-            }
-        )
-        {
-            attributes[output] =
-                attributes.GetValueOrDefault(output)
-                * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, skill));
-        }
-        attributes[DogmaAttributeId.CapacitorRechargeTime] =
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime)
-            * (
-                1
-                - InventoryDefinitions.OutputBonusPerSkillLevel
-                    * SkillLevel(world, catalog, pilot.Id, (int)FittingSkill.CapacitorSystemsOperation)
-            );
-        attributes[DogmaAttributeId.ShieldRechargeTime] =
-            attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
-            * (1 - InventoryDefinitions.OutputBonusPerSkillLevel * SkillLevel(world, catalog, pilot.Id, (int)DefenseSkill.ShieldOperation));
-        int targetLimit =
-            TargetingDefinitions.BasePilotTargetLimit
-            + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.TargetManagement)
-            + SkillLevel(world, catalog, pilot.Id, (int)TargetingSkill.AdvancedTargetManagement);
-        attributes[DogmaAttributeId.MaxLockedTargets] = Math.Min(
-            attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets),
-            targetLimit
-        );
         var fitted = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -142,21 +75,22 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             )
             .ToArray();
-        attributes[DogmaAttributeId.CpuLoad] = fitted
-            .Where(i => i.Online)
-            .Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu));
-        attributes[DogmaAttributeId.PowerLoad] = fitted
-            .Where(i => i.Online)
-            .Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.Power));
-        attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(
-            0,
-            attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - fitted.Count(i => InventoryDefinitions.IsHighSlot(i.FlagId))
-        );
-        return attributes;
+        var skills = Enum.GetValues<FittingSkill>()
+            .Select(s => (int)s)
+            .Concat(Enum.GetValues<DefenseSkill>().Select(s => (int)s))
+            .Concat(Enum.GetValues<TargetingSkill>().Select(s => (int)s))
+            .Distinct()
+            .ToDictionary(id => id, id => PilotSkillReader.Level(world, catalog, pilot.Id, id));
+        var usage = fitted
+            .Select(m => new FittedResourceUsage(
+                m.FlagId,
+                m.Online,
+                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu),
+                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Power)
+            ))
+            .ToArray();
+        return FittingRules.Apply(attributes, skills, usage);
     }
-
-    private static int SkillLevel(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill) =>
-        PilotSkillReader.Level(world, catalog, pilotId, skill);
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {

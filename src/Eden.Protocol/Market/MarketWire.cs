@@ -1,3 +1,4 @@
+using Eden.Gameplay.Market;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Market;

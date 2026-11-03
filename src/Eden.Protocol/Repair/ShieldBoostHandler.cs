@@ -1,6 +1,7 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -139,7 +140,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             if (
                 method == "Activate"
                 && args is [long module, var effect, var target, long repeats]
-                && BlueMarshal.Text(effect) == ShieldBoostDefinitions.EffectName
+                && BlueMarshal.Text(effect) == ShieldBoostWireDefinitions.EffectName
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -153,7 +154,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                 }
                 return PilotCallResult.None;
             }
-            if (method == "Deactivate" && args is [long item, var name] && BlueMarshal.Text(name) == ShieldBoostDefinitions.EffectName)
+            if (method == "Deactivate" && args is [long item, var name] && BlueMarshal.Text(name) == ShieldBoostWireDefinitions.EffectName)
             {
                 // Shields and capacitor are applied at cycle start; finish the
                 // paid cycle but do not begin another one after a manual stop.

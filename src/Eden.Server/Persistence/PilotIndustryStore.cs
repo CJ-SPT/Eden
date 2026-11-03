@@ -1,9 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;

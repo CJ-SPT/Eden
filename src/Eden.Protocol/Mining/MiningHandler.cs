@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -172,7 +173,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             if (
                 method == "Activate"
                 && args is [long module, var effect, long target, long repeats]
-                && BlueMarshal.Text(effect) == MiningDefinitions.EffectName
+                && BlueMarshal.Text(effect) == MiningWireDefinitions.EffectName
                 && repeats >= 0
                 && repeats <= int.MaxValue
             )
@@ -193,7 +194,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) == MiningDefinitions.EffectName
+                && BlueMarshal.Text(effectName) == MiningWireDefinitions.EffectName
             )
             {
                 if (_cycles.TryGetValue(item, out var cycle))

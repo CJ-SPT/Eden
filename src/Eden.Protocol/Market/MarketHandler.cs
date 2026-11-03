@@ -1,4 +1,7 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;

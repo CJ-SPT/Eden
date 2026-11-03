@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -96,7 +98,9 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             context.Flight.Velocity,
             now,
             RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
-            effectName
+            effectName is null ? null
+                : effectName == CombatWireDefinitions.HybridWeaponEffect ? WeaponActivation.Hybrid
+                : WeaponActivation.Civilian
         );
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, clock.GetTimestamp(), now, repeats);
         _cycles.Add(module, cycle);
@@ -197,7 +201,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             if (
                 method == "Activate"
                 && args is [long module, var effect, long target, long repeats]
-                && BlueMarshal.Text(effect) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect
+                && BlueMarshal.Text(effect) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.HybridWeaponEffect
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -215,7 +219,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) is CombatDefinitions.CivilianWeaponEffect or CombatDefinitions.HybridWeaponEffect
+                && BlueMarshal.Text(effectName) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.HybridWeaponEffect
             )
             {
                 // Turret damage is paid at cycle start; stop repeating after the

@@ -2,6 +2,10 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Loot;
@@ -504,7 +508,7 @@ internal sealed class FlightSession(
                 effect.Module.TypeId,
                 shipId,
                 null,
-                PropulsionDefinitions.EffectGraphic,
+                PropulsionWireDefinitions.EffectGraphic,
                 false,
                 active,
                 active,
@@ -640,7 +644,7 @@ internal sealed class FlightSession(
                 effect.TypeId,
                 shipId,
                 null,
-                ShieldBoostDefinitions.EffectGraphic,
+                ShieldBoostWireDefinitions.EffectGraphic,
                 false,
                 active,
                 active,

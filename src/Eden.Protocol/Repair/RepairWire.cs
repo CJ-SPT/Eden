@@ -1,3 +1,4 @@
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Repair;

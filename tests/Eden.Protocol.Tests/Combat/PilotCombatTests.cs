@@ -1,6 +1,10 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -233,9 +237,9 @@ public sealed class PilotCombatTests
         ModuleActivationHandler activation = new(
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
             combat,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>()),
             activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
         );
         object? Activate() => activation.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());

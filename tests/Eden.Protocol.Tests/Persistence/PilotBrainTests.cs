@@ -1,5 +1,7 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;

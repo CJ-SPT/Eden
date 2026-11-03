@@ -1,4 +1,5 @@
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -86,9 +87,9 @@ public sealed class PilotTrainingTests
                 skills,
                 clock,
                 db.Services.GetRequiredService<IPilotIndustrySkills>(),
-                db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()
+                db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
             ),
-            new(clock, db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+            new(clock, db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
         );
         using (WorldDbContext world = new(db.Path))
         {

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 

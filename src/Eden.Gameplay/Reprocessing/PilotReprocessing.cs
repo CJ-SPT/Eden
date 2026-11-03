@@ -1,7 +1,6 @@
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Reprocessing;
+namespace Eden.Gameplay.Reprocessing;
 
 public sealed record RecoveredMaterial(int TypeId, int Quantity, long Unrecoverable);
 

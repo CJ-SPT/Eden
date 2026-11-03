@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
@@ -32,41 +33,23 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         InventoryItem module
     )
     {
-        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
-        bool hybrid = CombatDefinitions.IsSupportedHybrid(module.GroupId, attributes);
-        if (!hybrid && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
-        {
-            return attributes;
-        }
-        int Level(CombatSkill skill) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
-        // Pinned effects 414/582, 290, 2847, 587, 287 and 298 apply to this
-        // Energy Weapon's Gunnery requirement, not Small Hybrid Turret skills.
-        foreach (
-            var modifier in CombatDefinitions.SkillModifiers.Where(m =>
-                (hybrid || m.RequiredSkill == CombatSkill.Gunnery) && (m.GroupId is null || m.GroupId == module.GroupId)
-            )
-        )
-        {
-            attributes[modifier.Attribute] *= 1 + modifier.PerLevel * Level(modifier.Skill);
-        }
-        if (hybrid)
-        {
-            var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-            attributes[DogmaAttributeId.MaxRange] *=
-                1
-                + PilotFittingStore
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var levels = Enum.GetValues<CombatSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
+        var loaded = PilotAmmunitionStore.Contents(world, module.Id);
+        var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
+        return WeaponRules.ModuleAttributes(
+            new(
+                module.TypeId,
+                module.GroupId,
+                PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+                levels,
+                PilotFittingStore
                     .ReadAttributes(catalog, pilot.ActiveShip.TypeId)
-                    .GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus) / 100;
-            if (PilotAmmunitionStore.Contents(world, module.Id) is { } loaded)
-            {
-                var charge = PilotFittingStore.ReadAttributes(catalog, loaded.TypeId);
-                attributes[DogmaAttributeId.MaxRange] *= charge.GetValueOrDefault(DogmaAttributeId.WeaponRangeMultiplier, 1);
-                attributes[DogmaAttributeId.CapacitorNeed] *= 1 + charge.GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus) / 100;
-            }
-            var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
-            attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;
-        }
-        return attributes;
+                    .GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus),
+                loaded is null ? null : PilotFittingStore.ReadAttributes(catalog, loaded.TypeId),
+                cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0
+            )
+        );
     }
 
     public CombatShot Fire(
@@ -76,7 +59,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         SpacePosition velocity,
         long now,
         double roll,
-        string? effectName = null
+        WeaponActivation? activation = null
     )
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1)
@@ -110,10 +93,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
         }
-        if (
-            effectName is not null
-            && effectName != (hybrid ? CombatDefinitions.HybridWeaponEffect : CombatDefinitions.CivilianWeaponEffect)
-        )
+        if (activation is not null && activation != (hybrid ? WeaponActivation.Hybrid : WeaponActivation.Civilian))
         {
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }

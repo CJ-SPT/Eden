@@ -1,6 +1,7 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Loot;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -23,9 +24,9 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             id = (long)args[0]!;
         }
         else if (
-            !service.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)
+            !service.StartsWith(WreckWireDefinitions.BindingPrefix, StringComparison.Ordinal)
             || !long.TryParse(
-                service.AsSpan(WreckDefinitions.BindingPrefix.Length),
+                service.AsSpan(WreckWireDefinitions.BindingPrefix.Length),
                 NumberStyles.None,
                 CultureInfo.InvariantCulture,
                 out id
@@ -49,7 +50,7 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             if (bind)
             {
                 return context.Reference(
-                    WreckDefinitions.BindingPrefix + id.ToString(CultureInfo.InvariantCulture),
+                    WreckWireDefinitions.BindingPrefix + id.ToString(CultureInfo.InvariantCulture),
                     PilotBindingLifetime.Location
                 );
             }

@@ -1,6 +1,8 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Loot;
@@ -41,7 +43,7 @@ public sealed class WreckTests
         public Fixture()
         {
             NpcEncounterTests.Prepare(Db);
-            var npc = Db.Services.GetRequiredService<Eden.Protocol.Combat.INpcEncounters>().List(30000144, Now)[0];
+            var npc = Db.Services.GetRequiredService<Eden.Gameplay.Combat.INpcEncounters>().List(30000144, Now)[0];
             Db.Store.SetPosition(Pilot.ShipId, npc.Position + new SpacePosition(1000, 0, 0), npc.SystemId);
             using (WorldDbContext world = new(Db.Path))
             using (var transaction = world.Database.BeginTransaction())

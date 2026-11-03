@@ -1,6 +1,6 @@
-using Eden.Protocol.Mining;
+using Eden.Gameplay.Mining;
 
-namespace Eden.Protocol.Targeting;
+namespace Eden.Gameplay.Targeting;
 
 public enum TargetingSkill
 {

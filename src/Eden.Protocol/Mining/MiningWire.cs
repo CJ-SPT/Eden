@@ -1,3 +1,4 @@
+using Eden.Gameplay.Mining;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Mining;

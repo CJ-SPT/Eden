@@ -1,8 +1,13 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
@@ -210,7 +215,7 @@ public sealed class MiningTests
         }
         context.ChangeShip(fixture.Db.Store.FindPilot(context.AccountId)!);
         context.Flight.Snapshot();
-        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, MiningDefinitions.EffectName, Fixture.Asteroid, 0L]));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, MiningWireDefinitions.EffectName, Fixture.Asteroid, 0L]));
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(context);
         var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
@@ -292,18 +297,18 @@ public sealed class MiningTests
             fixture.Store,
             fixture.Db.Services.GetRequiredService<IPilotFleet>(),
             fixture.Db.Services.GetRequiredService<IPilotHealth>(),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Loot.IWrecks>(),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotCombat>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Loot.IWrecks>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>(),
             fixture.Db.Services.GetRequiredService<IPilotAmmunition>(),
             new Eden.Protocol.Ammunition.MagazineWire(
                 fixture.Clock,
                 fixture.Db.Services.GetRequiredService<IPilotFitting>(),
-                fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
+                fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotCombat>(),
                 fixture.Inventory
             ),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>(),
             [mining]
         );
         var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));

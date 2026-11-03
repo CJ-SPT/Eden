@@ -2,7 +2,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 
-namespace Eden.Protocol.Combat;
+namespace Eden.Gameplay.Combat;
 
 public enum CombatWeaponType
 {
@@ -32,8 +32,6 @@ public sealed record WeaponSkillModifier(
 
 public static class CombatDefinitions
 {
-    public const string CivilianWeaponEffect = "targetAttack";
-    public const string HybridWeaponEffect = "projectileFired";
     public const int EnergyWeaponGroup = 53;
     public const int HybridWeaponGroup = 74;
 

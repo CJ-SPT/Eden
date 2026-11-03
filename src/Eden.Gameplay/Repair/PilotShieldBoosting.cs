@@ -1,10 +1,8 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Repair;
+namespace Eden.Gameplay.Repair;
 
 public sealed record ShieldBooster(long ItemId, int TypeId, double DurationMilliseconds, double ShieldAmount, double CapacitorNeed);
 
@@ -30,6 +28,4 @@ public enum ShieldBoostSkill
 public static class ShieldBoostDefinitions
 {
     public const int Group = 40;
-    public const string EffectName = "shieldBoosting";
-    public const string EffectGraphic = "effects.ShieldBoosting";
 }

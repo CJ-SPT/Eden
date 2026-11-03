@@ -1,9 +1,8 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Combat;
+namespace Eden.Gameplay.Combat;
 
 public sealed record NpcWeaponContact(long TargetId, int TurretTypeId, long StartedAt, double Duration);
 

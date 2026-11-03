@@ -1,6 +1,6 @@
-using Eden.Protocol.Market;
+using Eden.Gameplay.Market;
 
-namespace Eden.Protocol.Repair;
+namespace Eden.Gameplay.Repair;
 
 public sealed record RepairQuote(long ItemId, int TypeId, int GroupId, double Damage, double MaxHealth);
 

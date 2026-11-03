@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -24,8 +25,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         * (catalog.Set<TypeAttribute>().Find((int)skill, (int)source)?.Value ?? 0);
 
     internal static double NavigationSpeed(WorldDbContext world, CatalogDbContext catalog, long pilotId, double speed) =>
-        speed
-        * (1 + Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus) / PropulsionDefinitions.Percent);
+        PropulsionRules.NavigationSpeed(speed, Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus));
 
     public double MaxSpeed(long pilotId)
     {
@@ -96,18 +96,11 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         InventoryItem module
     )
     {
-        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
-        if (module.GroupId == PropulsionDefinitions.AfterburnerGroup)
-        {
-            foreach (
-                var bonus in NavigationBonuses(world, catalog, pilotId).Where(b => b.RequiredSkill.HasValue || b.Group == module.GroupId)
-            )
-            {
-                attributes[bonus.Attribute] =
-                    attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Percent / PropulsionDefinitions.Percent);
-            }
-        }
-        return attributes;
+        return PropulsionRules.ModuleAttributes(
+            module.GroupId,
+            PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+            NavigationBonuses(world, catalog, pilotId)
+        );
     }
 
     public PropulsionCycle Activate(long pilotId, long moduleId, long now)

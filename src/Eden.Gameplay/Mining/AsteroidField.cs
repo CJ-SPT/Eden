@@ -1,7 +1,6 @@
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Flight;
 
-namespace Eden.Protocol.Mining;
+namespace Eden.Gameplay.Mining;
 
 public interface IAsteroidField
 {

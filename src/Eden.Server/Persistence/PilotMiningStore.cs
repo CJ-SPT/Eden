@@ -1,6 +1,8 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
@@ -27,36 +29,17 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         InventoryItem module
     )
     {
-        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
-        if (module.GroupId != InventoryDefinitions.MiningLaserGroup)
-        {
-            return attributes;
-        }
-        int Level(MiningSkill skill)
-        {
-            return PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
-        }
-        attributes[DogmaAttributeId.MiningAmount] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount)
-            * (1 + MiningDefinitions.YieldBonusPerSkillLevel * Level(MiningSkill.Mining))
-            * (1 + MiningDefinitions.YieldBonusPerSkillLevel * Level(MiningSkill.Astrogeology));
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        if (pilot.ActiveShip.TypeId == (int)StarterShipType.Venture)
-        {
-            // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
-            // 207, then apply attribute 1842 percent for each Mining Frigate level.
-            var hull = PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId);
-            attributes[DogmaAttributeId.MiningAmount] *=
-                hull.GetValueOrDefault(DogmaAttributeId.MiningRoleYieldMultiplier, 1)
-                * (1 + hull.GetValueOrDefault(DogmaAttributeId.MiningFrigateYieldBonus) * Level(MiningSkill.Frigate) / 100);
-        }
-        attributes[DogmaAttributeId.MiningCriticalChance] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance)
-            * (1 + MiningDefinitions.CriticalChanceBonusPerSkillLevel * Level(MiningSkill.Precision));
-        attributes[DogmaAttributeId.MiningCriticalBonusYield] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield)
-            * (1 + MiningDefinitions.CriticalYieldBonusPerSkillLevel * Level(MiningSkill.Exploitation));
-        return attributes;
+        var levels = Enum.GetValues<MiningSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
+        return MiningRules.ModuleAttributes(
+            new(
+                module.GroupId,
+                pilot.ActiveShip.TypeId,
+                PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+                PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId),
+                levels
+            )
+        );
     }
 
     public double Capacitor(long pilotId, long now)
@@ -195,18 +178,15 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         {
             throw new InvalidDataException("Invalid ore volume.");
         }
-        int free = (int)
-            Math.Min(
-                int.MaxValue,
-                Math.Floor(
-                    (Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold) + InventoryDefinitions.ResourceTolerance)
-                        / oreVolume
-                )
-            );
-        int extracted = (int)
-            Math.Min(Math.Min(asteroid.Quantity, free), Math.Floor((volume + InventoryDefinitions.ResourceTolerance) / oreVolume));
-        // Critical successes add bonus ore without reducing the remaining deposit.
-        int bonus = (int)Math.Min(free - extracted, Math.Floor(extracted * criticalBonusYield));
+        var collected = MiningRules.Collect(
+            asteroid.Quantity,
+            Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold),
+            oreVolume,
+            volume,
+            criticalBonusYield
+        );
+        int extracted = collected.Extracted;
+        int bonus = collected.CriticalBonus;
         InventoryChange? change = null;
         if (extracted + bonus > 0)
         {
@@ -241,6 +221,6 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(change, asteroid.TypeId, extracted, bonus, asteroid.Quantity == 0, free <= extracted + bonus);
+        return new(change, asteroid.TypeId, extracted, bonus, asteroid.Quantity == 0, collected.CargoFull);
     }
 }

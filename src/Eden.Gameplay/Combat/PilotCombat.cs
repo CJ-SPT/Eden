@@ -3,10 +3,14 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Ammunition;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Combat;
+namespace Eden.Gameplay.Combat;
+
+public enum WeaponActivation
+{
+    Civilian,
+    Hybrid,
+}
 
 public sealed record CombatWeapon(
     long ItemId,
@@ -47,6 +51,14 @@ public sealed record CombatShot(
 public interface IPilotCombat
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
-    CombatShot Fire(long pilotId, long moduleId, long targetId, SpacePosition velocity, long now, double roll, string? effectName = null);
+    CombatShot Fire(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null
+    );
     IReadOnlyList<CombatReward> Rewards(long pilotId);
 }

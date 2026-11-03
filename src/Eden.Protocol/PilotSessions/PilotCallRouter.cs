@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Loot;

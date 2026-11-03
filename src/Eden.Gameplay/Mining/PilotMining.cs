@@ -1,8 +1,8 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Mining;
+namespace Eden.Gameplay.Mining;
 
 public sealed record MiningLaser(
     long ItemId,
@@ -45,7 +45,6 @@ public enum MiningLaserType
 
 public static class MiningDefinitions
 {
-    public const string EffectName = "miningLaser";
     public const int CorvetteGroup = FleetDefinitions.CorvetteGroup;
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;

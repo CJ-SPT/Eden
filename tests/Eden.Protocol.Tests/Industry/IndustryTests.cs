@@ -1,8 +1,12 @@
 using System.Text.Json;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -430,7 +434,7 @@ public sealed class IndustryTests
             f.Db.Services.GetRequiredService<IPilotSkillReader>(),
             f.Clock,
             f.Store,
-            f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
         ).Read(f.Pilot.PilotId, f.Pilot.ShipId);
         var effects = Assert
             .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.CharacterEffects)))

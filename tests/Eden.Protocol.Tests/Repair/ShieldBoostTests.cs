@@ -3,6 +3,10 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -391,10 +395,10 @@ public sealed class ShieldBoostTests
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
             handler,
             activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
         );
         object? Activate() =>
-            activation.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]);
+            activation.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]);
         Assert.Null(Activate());
         Assert.Null(Activate());
         Assert.Equal(51, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);
@@ -402,8 +406,11 @@ public sealed class ShieldBoostTests
         observer.RefreshPeers();
         var actions = observer.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(actions, a => Equals(a[0], "OnDamageStateChange") && Equals(((object?[])a[1]!)[0], context.Pilot.ShipId));
-        Assert.Contains(actions, a => Equals(a[0], "OnSpecialFX") && Equals(((object?[])a[1]!)[5], ShieldBoostDefinitions.EffectGraphic));
-        Assert.Null(activation.CallWire(context, "dogmaIM", "Deactivate", [f.Module, ShieldBoostDefinitions.EffectName]));
+        Assert.Contains(
+            actions,
+            a => Equals(a[0], "OnSpecialFX") && Equals(((object?[])a[1]!)[5], ShieldBoostWireDefinitions.EffectGraphic)
+        );
+        Assert.Null(activation.CallWire(context, "dogmaIM", "Deactivate", [f.Module, ShieldBoostWireDefinitions.EffectName]));
         Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
         f.Clock.Milliseconds = 2000;
         handler.Advance(context);
@@ -421,7 +428,7 @@ public sealed class ShieldBoostTests
         using Fixture f = new();
         using var context = f.Client();
         ShieldBoostHandler handler = new(f.Clock, f.Boosting);
-        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]));
         f.Clock.Milliseconds = 60000;
         handler.Advance(context);
         Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
@@ -454,7 +461,7 @@ public sealed class ShieldBoostTests
                 context,
                 "dogmaIM",
                 "Activate",
-                new object?[] { f.Module, ShieldBoostDefinitions.EffectName, null, 0L },
+                new object?[] { f.Module, ShieldBoostWireDefinitions.EffectName, null, 0L },
                 _ => { }
             )
         );
@@ -481,13 +488,13 @@ public sealed class ShieldBoostTests
         Assert.False(context.Flight.CanTarget);
         Assert.True(context.Flight.CanUseSelfModules);
         ShieldBoostHandler handler = new(f.Clock, f.Boosting);
-        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]));
         Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
         context.Flight.BeginShipLoss();
         handler.Advance(context);
         Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
         Assert.IsType<PilotCallResult.Failure>(
-            handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 0L])
+            handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 0L])
         );
     }
 
@@ -525,7 +532,7 @@ public sealed class ShieldBoostTests
         context.Select(pilot);
         context.Flight.Snapshot();
         ShieldBoostHandler shields = new(f.Clock, f.Boosting);
-        Assert.Null(shields.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]));
+        Assert.Null(shields.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]));
         SharedTargetLocks locks = new();
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
         using NpcCombatHandler combat = new(
@@ -535,7 +542,7 @@ public sealed class ShieldBoostTests
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
             shields,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
             new()
         );
         combat.Enter(context);

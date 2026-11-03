@@ -1,9 +1,8 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Propulsion;
+namespace Eden.Gameplay.Propulsion;
 
 public enum NavigationSkill
 {
@@ -78,6 +77,4 @@ public static class PropulsionDefinitions
 {
     public const int AfterburnerGroup = 46;
     public const double Percent = 100;
-    public const string EffectName = "moduleBonusAfterburner";
-    public const string EffectGraphic = "effects.Afterburner";
 }

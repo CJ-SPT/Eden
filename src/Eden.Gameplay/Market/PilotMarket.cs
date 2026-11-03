@@ -1,7 +1,6 @@
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Market;
+namespace Eden.Gameplay.Market;
 
 public sealed record MarketOrder(
     long Id,

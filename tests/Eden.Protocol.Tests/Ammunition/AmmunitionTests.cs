@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -105,7 +107,7 @@ public sealed class AmmunitionTests
         public void Space() => Db.Store.SetPosition(Pilot.ShipId, Npc.Position + new SpacePosition(1000, 0, 0), Npc.SystemId);
 
         public CombatShot Fire(double roll = 0.5) =>
-            Combat.Fire(Pilot.PilotId, Gun, Npc.Id, SpacePosition.Zero, Clock.Now, roll, CombatDefinitions.HybridWeaponEffect);
+            Combat.Fire(Pilot.PilotId, Gun, Npc.Id, SpacePosition.Zero, Clock.Now, roll, WeaponActivation.Hybrid);
 
         public int Total(int type)
         {

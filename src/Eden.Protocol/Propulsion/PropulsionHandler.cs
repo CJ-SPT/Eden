@@ -1,6 +1,7 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -156,7 +157,7 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
             if (
                 method == "Activate"
                 && args is [long module, var effect, var target, long repeats]
-                && BlueMarshal.Text(effect) == PropulsionDefinitions.EffectName
+                && BlueMarshal.Text(effect) == PropulsionWireDefinitions.EffectName
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -176,7 +177,7 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) == PropulsionDefinitions.EffectName
+                && BlueMarshal.Text(effectName) == PropulsionWireDefinitions.EffectName
             )
             {
                 if (_cycle is { } current && current.Module.ItemId == item)

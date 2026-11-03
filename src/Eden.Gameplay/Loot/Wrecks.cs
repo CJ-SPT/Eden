@@ -1,8 +1,7 @@
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Loot;
+namespace Eden.Gameplay.Loot;
 
 public sealed record WreckContact(
     long Id,
@@ -31,7 +30,6 @@ public static class WreckDefinitions
 {
     public const int Group = 186;
     public const int Category = 2;
-    public const string BindingPrefix = "@wreck:";
     public const long FirstWreckId = 8_000_000_000_000;
 
     // Player wreck identities use the lost hull's persistent ID in a separate

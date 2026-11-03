@@ -1,4 +1,8 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -33,11 +37,11 @@ internal sealed class ModuleActivationHandler(
         }
         return BlueMarshal.Text(args[1]) switch
         {
-            MiningDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
-            CombatDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
-            CombatDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
-            ShieldBoostDefinitions.EffectName => shields.Call(context, service, method, args),
-            PropulsionDefinitions.EffectName => propulsion.Call(context, service, method, args),
+            MiningWireDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
+            CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
+            CombatWireDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
+            ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
+            PropulsionWireDefinitions.EffectName => propulsion.Call(context, service, method, args),
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,
         };

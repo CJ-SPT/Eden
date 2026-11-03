@@ -1,3 +1,4 @@
+using Eden.Gameplay.Reprocessing;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Reprocessing;
