@@ -189,7 +189,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
         }
         if (outputLocationId == ship.Id)
         {
-            double capacity = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId).Capacity ?? 0;
+            double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, ship.Id, (int)InventoryFlag.Cargo);
             double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.Cargo);
             double removed = items
                 .Zip(quotes)

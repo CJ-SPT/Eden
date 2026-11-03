@@ -41,7 +41,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             new(
                 module.TypeId,
                 module.GroupId,
-                PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+                PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
                 levels,
                 PilotFittingStore
                     .ReadAttributes(catalog, pilot.ActiveShip.TypeId)

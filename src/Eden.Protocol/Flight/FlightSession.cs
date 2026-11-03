@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -446,6 +447,33 @@ internal sealed class FlightSession(
             _propulsion,
             _navigation.FollowMode
         );
+
+    public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        Checkpoint();
+        _baseFlight = _baseFlight with
+        {
+            MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+            Mass = attributes.GetValueOrDefault(DogmaAttributeId.Mass),
+            Agility = (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility),
+        };
+        Pilot = Pilot with
+        {
+            Ship = Pilot.Ship with
+            {
+                CargoCapacity = attributes.GetValueOrDefault(DogmaAttributeId.CargoCapacity),
+                Hull = new(
+                    attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
+                    attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity),
+                    attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime),
+                    attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
+                    attributes.GetValueOrDefault(DogmaAttributeId.ArmorHitPoints),
+                    attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
+                ),
+            },
+        };
+        ApplyFlightProperties();
+    }
 
     public void SetBaseSpeed(double speed)
     {

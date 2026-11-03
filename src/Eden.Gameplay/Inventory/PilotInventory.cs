@@ -34,8 +34,11 @@ public interface IPilotFitting
 {
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId);
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
+    double SignatureRadius(long itemId, int typeId);
     IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId);
-    InventoryChange SetOnline(long pilotId, long shipId, long itemId, bool online);
+    IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId);
+    IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
+    IReadOnlyList<InventoryChange> SetOnline(long pilotId, long shipId, long itemId, bool online);
 }
 
 public static class PilotInventoryMoves

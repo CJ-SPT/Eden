@@ -94,6 +94,17 @@ World version 14 adds assembled and online state to owned items without repeatin
 
 To rearrange a fitting, drag the fitted module onto an empty compatible slot, or onto another fitted module in the same rack to exchange their slots. Equipment stays in its catalog rack. Slot positions and turret hardpoints are checked independently. A loaded gun's icon drags its charges in this client; drag the other unloaded module onto that gun to swap them while retaining its ammunition. Loaded charges and paid cycle/reload deadlines follow the module identity, without creating ammunition or restarting a reload. Check both module tooltips after a swap and bring either module online through its menu if the client took it offline during the drag. Undock and verify that the new HUD order activates the intended module, then dock and restart to check the saved layout.
 
+## Check hull passive modules
+
+Use a copied acceptance save and the ordinary build 3662168 catalog. Supply the test modules explicitly; this fitting milestone does not add market offers or blueprints. Select Eden Pilot and verify the active Ibis in Inventory before opening Fitting.
+
+1. Fit Expanded Cargohold I in a low slot. With the existing starter skills, cargo rises from 125 to 146.875 m³, maximum speed becomes about 288.4 m/s and structure falls to about 161 HP. Put it offline: cargo returns to 125 m³ while the fitted penalties remain. Unfit it to remove those penalties. Offlining or removing it with more than the resulting capacity aboard must fail without losing cargo.
+2. Fit Co-Processor I and compare CPU output: the seeded pilot's Ibis changes from 162 to 174.96. Fit Small Shield Extender I: Shield Management II gives 660 HP total shield and Shield Upgrades II reduces its power need to 1.8. Check the navigation signature readout as well; the extender adds 2 m.
+3. Fit 200mm Steel Plates I in the other low slot. Hull Upgrades II gives 632.5 HP armor, and the hull mass becomes 1,303,000 kg before any Armor Layering reduction. Native Fitting truncates some HP readouts. Check skills before fitting other sizes or modules.
+4. Undock, fly and dock with the passive equipment. Restart both the server and client against the same copied save, then compare module identities, slots, online state, cargo, defenses and navigation. Output reductions may automatically offline the largest consumer of the most overloaded resource; an unaffordable explicit online request is rejected instead.
+
+Rigs, drone equipment, in-space fitting/online changes and activated variants such as Assault Damage Controls are outside this milestone. Some supported stat families have no active combat counterpart yet; this does not enable additional weapons.
+
 ## Fly two pilots in Jita
 
 Start one server. From the repository root, launch both clients against it.

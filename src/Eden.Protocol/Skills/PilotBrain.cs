@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Combat;
@@ -12,7 +13,9 @@ namespace Eden.Protocol.Skills;
 
 internal enum BrainOperation
 {
+    PreMultiply = 0,
     Add = 2,
+    PostMultiply = 4,
     PostPercent = 6,
 }
 
@@ -21,7 +24,8 @@ internal sealed class PilotBrain(
     IPilotSkillReader skills,
     TimeProvider clock,
     IPilotIndustrySkills industry,
-    IPilotNavigationSkills navigation
+    IPilotNavigationSkills navigation,
+    IPilotFitting? fitting = null
 )
 {
     private const double Percent = 100;
@@ -58,6 +62,22 @@ internal sealed class PilotBrain(
                     [bonus.SkillId],
                     bonus.Percent
                 ))
+        );
+        effects.AddRange(
+            (fitting?.SkillBonuses(pilotId) ?? []).Select(bonus => new BrainEffect(
+                shipId,
+                bonus.Modifier.Selector switch
+                {
+                    ModifierSelector.Group => BrainModifier.LocationGroup,
+                    ModifierSelector.RequiredSkill => BrainModifier.LocationRequiredSkill,
+                    _ => BrainModifier.Item,
+                },
+                bonus.Modifier.Attribute,
+                (BrainOperation)bonus.Modifier.Operation,
+                bonus.Modifier.SelectionId is int selected ? [selected] : [],
+                [bonus.SkillId],
+                bonus.Value
+            ))
         );
         var character = industry
             .CharacterBonuses(pilotId)

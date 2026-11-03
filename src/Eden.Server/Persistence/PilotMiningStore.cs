@@ -35,7 +35,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
             new(
                 module.GroupId,
                 pilot.ActiveShip.TypeId,
-                PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+                PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
                 PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId),
                 levels
             )
@@ -133,7 +133,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         using CatalogDbContext catalog = new(database.CatalogPath);
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
-        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
         if (available + InventoryDefinitions.ResourceTolerance < volume)
@@ -163,7 +163,7 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         using CatalogDbContext catalog = new(database.CatalogPath);
         var (pilot, asteroid, _) = Validate(world, catalog, pilotId, moduleId, asteroidId);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
-        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         if (!(oreVolume > 0))
         {

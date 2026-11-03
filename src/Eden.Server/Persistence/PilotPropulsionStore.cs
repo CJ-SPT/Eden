@@ -31,9 +31,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        int typeId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShip.TypeId).Single();
-        double speed = catalog.Set<TypeAttribute>().Find(typeId, (int)DogmaAttributeId.MaxVelocity)?.Value ?? 0;
-        return NavigationSpeed(world, catalog, pilotId, speed);
+        return PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity);
     }
 
     public IReadOnlyList<NavigationBonus> NavigationBonuses(long pilotId)
@@ -98,7 +96,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
     {
         return PropulsionRules.ModuleAttributes(
             module.GroupId,
-            PilotFittingStore.ReadAttributes(catalog, module.TypeId),
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
             NavigationBonuses(world, catalog, pilotId)
         );
     }
@@ -138,7 +136,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
             attributes.GetValueOrDefault(DogmaAttributeId.MassAddition)
         );
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
-        double mass = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Mass ?? 0;
+        double mass = ship.GetValueOrDefault(DogmaAttributeId.Mass);
         _ = burner.Apply(new(0, 0, mass, 1, (float)ship.GetValueOrDefault(DogmaAttributeId.MaxVelocity), 1));
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)

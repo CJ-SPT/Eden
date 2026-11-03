@@ -7,6 +7,7 @@ using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
@@ -20,36 +21,54 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class FittingOperations(TimeProvider clock, IPilotFitting fitting, IPilotInventory inventory)
+internal sealed class FittingOperations(TimeProvider clock, IPilotFitting fitting, IPilotInventory inventory, IPilotShipResources resources)
 {
     internal void NotifyShipAttributes(PilotCallContext context)
     {
         context.Flight.RefreshModules(inventory.List(context.Pilot.PilotId, context.Pilot.ShipId));
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
-        var changes = new[] { DogmaAttributeId.CpuLoad, DogmaAttributeId.PowerLoad, DogmaAttributeId.TurretSlotsLeft }
-            .Select(attribute => new ModuleAttributeChange(
-                context.Pilot.PilotId,
-                new DogmaItemKey.Item(context.Pilot.ShipId),
-                attribute,
-                now,
-                attributes[attribute]
-            ))
+        var snapshot = resources.Read(context.Pilot.PilotId, context.Pilot.ShipId, now);
+        var attributes = snapshot.Attributes.ToDictionary();
+        context.Flight.RefreshFitting(attributes);
+        attributes[DogmaAttributeId.CapacitorCharge] = snapshot.Capacitor;
+        attributes[DogmaAttributeId.ShieldCharge] = snapshot.Health.Remaining.Shield;
+        attributes[DogmaAttributeId.ArmorDamage] = snapshot.Health.Defense.Armor - snapshot.Health.Remaining.Armor;
+        attributes[DogmaAttributeId.Damage] = snapshot.Health.Defense.Structure - snapshot.Health.Remaining.Structure;
+        var changes = attributes
+            .Select(a => new ModuleAttributeChange(context.Pilot.PilotId, new DogmaItemKey.Item(context.Pilot.ShipId), a.Key, now, a.Value))
             .ToArray();
         context.Notifications.Add(new ModuleAttributesChanged(changes));
+        context.Flight.NotifyHealth(snapshot.Health);
+    }
+
+    internal void NotifyOnlineChanges(PilotCallContext context, IReadOnlyList<InventoryChange> changes)
+    {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        foreach (var change in changes.Where(c => c.Item.Online != (c.Previous?.Online ?? false)))
+        {
+            context.Notifications.Add(
+                new ShipEffectChanged(
+                    new(change.Item.Id, context.Pilot.PilotId, context.Pilot.ShipId, null, DogmaEffect.Online, now, null, 0),
+                    now,
+                    change.Item.Online,
+                    change.Item.Online
+                )
+            );
+        }
     }
 
     internal PilotCallResult SetOnline(PilotCallContext context, long ship, long module, bool online)
     {
         try
         {
-            _ = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
-            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-            context.Notifications.Add(
-                new ShipEffectChanged(new(module, context.Pilot.PilotId, ship, null, DogmaEffect.Online, now, null, 0), now, online, online)
-            );
+            var changes = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
+            NotifyOnlineChanges(context, changes);
             NotifyShipAttributes(context);
             return PilotCallResult.None;
+        }
+        catch (CargoCapacityException error)
+        {
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (InvalidDataException error)
         {

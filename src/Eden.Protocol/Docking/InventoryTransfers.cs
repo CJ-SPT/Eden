@@ -104,6 +104,7 @@ internal sealed class InventoryTransfers(
                 // Let OnItemChange fetch the module through ItemGetInfo. A live
                 // OnGodmaPrimeItem replaces its inventory row with an incompatible
                 // godma row in build 3662168, removing it from clientDogmaLocation.
+                fittingOperations.NotifyOnlineChanges(context, changes);
                 fittingOperations.NotifyShipAttributes(context);
             }
             var movedMagazines = changedMagazines

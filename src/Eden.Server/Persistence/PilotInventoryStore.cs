@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInventory
+internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider clock) : IPilotInventory
 {
     public IReadOnlyList<InventoryItem> List(long pilotId, long locationId)
     {
@@ -83,6 +83,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             throw new InvalidDataException("Deliver or cancel the manufacturing job before moving its blueprint.");
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var checkpoint = unfittedIds.Length > 0 ? FittingChanges.Capture(world, catalog, pilot, now) : null;
         var magazines = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && unfittedIds.Contains(i.LocationId))
@@ -90,7 +92,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             .ToArray();
         if (destinationId == ship.Id)
         {
-            double capacity = HoldCapacity(catalog, ship.TypeId, flagId);
+            double capacity = HoldCapacity(world, catalog, pilotId, ship.Id, flagId);
             if (
                 flagId == (int)InventoryFlag.GeneralMiningHold
                 && (capacity <= 0 || items.Any(i => Read(catalog, i).CategoryId != (int)InventoryCategory.Asteroid))
@@ -154,6 +156,10 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             }
         }
         world.SaveChanges();
+        if (checkpoint is not null)
+        {
+            changes.AddRange(FittingChanges.Finish(world, catalog, pilot, checkpoint, now));
+        }
         transaction.Commit();
         return changes;
     }
@@ -174,6 +180,15 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             item.Singleton,
             item.Online
         );
+    }
+
+    internal static double HoldCapacity(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, int flagId)
+    {
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var ship = world.Ships.Find(shipId) ?? throw new InvalidDataException("The ship is unavailable.");
+        return flagId == (int)InventoryFlag.GeneralMiningHold
+            ? HoldCapacity(catalog, ship.TypeId, flagId)
+            : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.CargoCapacity);
     }
 
     internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId) =>

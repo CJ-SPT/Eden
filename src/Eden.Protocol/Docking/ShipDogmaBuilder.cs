@@ -25,6 +25,7 @@ internal sealed class ShipDogmaBuilder(
     TimeProvider clock,
     IPilotInventory inventory,
     IPilotShipResources resources,
+    IPilotFitting fitting,
     IPilotMining mining,
     IPilotCombat combat,
     IPilotShieldBoosting boosting,
@@ -108,7 +109,8 @@ internal sealed class ShipDogmaBuilder(
             : module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module)
             : module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun || module.GroupId == CombatDefinitions.HybridWeaponGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
-            : mining.ModuleAttributes(pilot.PilotId, module)
+            : module.GroupId == InventoryDefinitions.MiningLaserGroup ? mining.ModuleAttributes(pilot.PilotId, module)
+            : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[DogmaAttributeId.Damage] = 0d;

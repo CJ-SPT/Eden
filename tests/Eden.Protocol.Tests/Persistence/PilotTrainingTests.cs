@@ -83,7 +83,8 @@ public sealed class PilotTrainingTests
                 db.Services.GetRequiredService<IPilotIndustrySkills>(),
                 db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
             ),
-            new(clock, db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
+            new(clock, db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+            db.Services.GetRequiredService<Eden.Protocol.Docking.FittingOperations>()
         );
         using (WorldDbContext world = new(db.Path))
         {
@@ -103,7 +104,7 @@ public sealed class PilotTrainingTests
         clock.UtcNow = clock.UtcNow.AddSeconds(1000);
         Assert.Empty(handler.Advance(context));
         Assert.Equal(
-            new[] { "OnServerSkillsChanged", "OnServerBrainUpdated", "OnNewSkillQueueSaved" },
+            new[] { "OnServerSkillsChanged", "OnServerBrainUpdated", "OnModuleAttributeChanges", "OnNewSkillQueueSaved" },
             context.Notifications.Select(n => n.Name)
         );
         var notification = Assert.Single(context.Notifications, n => n.Name == "OnServerBrainUpdated");

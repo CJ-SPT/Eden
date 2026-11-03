@@ -294,6 +294,7 @@ public sealed class MiningTests
             fixture.Clock,
             fixture.Inventory,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>(),
+            fixture.Db.Services.GetRequiredService<IPilotFitting>(),
             fixture.Store,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotCombat>(),
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>(),

@@ -9,6 +9,7 @@
     <ProjectReference Include="../../src/Eden.Protocol/Eden.Protocol.csproj" />
     <ProjectReference Include="../../src/Eden.Server/Eden.Server.csproj" />
     <EmbeddedResource Include="Fixtures/LegacyWorldV3.sql" />
+    <EmbeddedResource Include="Fixtures/PassiveCatalog.json" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

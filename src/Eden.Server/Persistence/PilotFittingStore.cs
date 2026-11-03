@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
+internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {
@@ -55,26 +55,20 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
         WorldDbContext world,
         CatalogDbContext catalog,
         Pilot pilot,
-        Ship? ship = null
+        Ship? ship = null,
+        FittingCalculation? calculation = null
     )
     {
         ship ??= pilot.ActiveShip;
-        var attributes = Attributes(catalog, ship.TypeId);
+        calculation ??= FittingCalculation.Read(world, catalog, pilot, ship);
+        var attributes = calculation.Graph.Attributes(ship.Id);
         attributes[DogmaAttributeId.MaxVelocity] = PilotPropulsionStore.NavigationSpeed(
             world,
             catalog,
             pilot.Id,
             attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity)
         );
-        var fitted = world
-            .Set<OwnedItem>()
-            .Where(i =>
-                i.OwnerId == pilot.Id
-                && i.LocationId == ship.Id
-                && i.FlagId >= (int)InventoryFlag.LowSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
-            )
-            .ToArray();
+        var fitted = calculation.Modules.Select(m => m.Item).ToArray();
         var skills = Enum.GetValues<FittingSkill>()
             .Select(s => (int)s)
             .Concat(Enum.GetValues<DefenseSkill>().Select(s => (int)s))
@@ -85,8 +79,8 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             .Select(m => new FittedResourceUsage(
                 m.FlagId,
                 m.Online,
-                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Cpu),
-                Attributes(catalog, m.TypeId).GetValueOrDefault(DogmaAttributeId.Power),
+                calculation.Graph.Read(m.Id, DogmaAttributeId.Cpu),
+                calculation.Graph.Read(m.Id, DogmaAttributeId.Power),
                 FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.TurretFitted),
                 FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted)
             ))
@@ -99,6 +93,18 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         return ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
+    }
+
+    public double SignatureRadius(long itemId, int typeId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        if (world.Ships.Find(itemId) is not { } ship)
+        {
+            return ReadAttributes(catalog, typeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+        }
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.OwnerId);
+        return ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
     }
 
     public IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId)
@@ -137,6 +143,8 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
         var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
         var hull = Attributes(catalog, ship.TypeId);
         var rack = world
@@ -267,8 +275,9 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
                 c.Previous
             ))
             .ToArray();
+        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         transaction.Commit();
-        return result;
+        return result.Concat(cascaded).ToArray();
 
         (int First, int Count) SlotsFor(int typeId)
         {
@@ -282,7 +291,7 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
         }
     }
 
-    public InventoryChange SetOnline(long pilotId, long shipId, long itemId, bool online)
+    public IReadOnlyList<InventoryChange> SetOnline(long pilotId, long shipId, long itemId, bool online)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -302,23 +311,64 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             throw new InvalidDataException("Change module online state on your docked active ship.");
         }
         var previous = PilotInventoryStore.List(world, catalog, pilotId, shipId).Single(i => i.Id == itemId);
-        if (online && !item.Online)
+        if (item.Online == online)
         {
-            var ship = ShipAttributes(world, catalog, pilot);
-            var module = Attributes(catalog, item.TypeId);
+            return [];
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
+        if (online)
+        {
+            _ =
+                FittingCatalog.Definition(catalog, item.TypeId)
+                ?? throw new InvalidDataException("This module effect is not supported yet.");
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        }
+        item.Online = online;
+        if (online)
+        {
+            var attributes = ShipAttributes(world, catalog, pilot);
             if (
-                ship[DogmaAttributeId.CpuLoad] + module.GetValueOrDefault(DogmaAttributeId.Cpu)
-                    > ship[DogmaAttributeId.CpuOutput] + InventoryDefinitions.ResourceTolerance
-                || ship[DogmaAttributeId.PowerLoad] + module.GetValueOrDefault(DogmaAttributeId.Power)
-                    > ship[DogmaAttributeId.PowerOutput] + InventoryDefinitions.ResourceTolerance
+                attributes[DogmaAttributeId.CpuLoad] > attributes[DogmaAttributeId.CpuOutput] + InventoryDefinitions.ResourceTolerance
+                || attributes[DogmaAttributeId.PowerLoad]
+                    > attributes[DogmaAttributeId.PowerOutput] + InventoryDefinitions.ResourceTolerance
             )
             {
                 throw new InvalidDataException("Insufficient CPU or power grid to bring this module online.");
             }
         }
-        item.Online = online;
         world.SaveChanges();
+        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         transaction.Commit();
-        return new(previous with { Online = online }, previous);
+        return new[] { new InventoryChange(previous with { Online = online }, previous) }.Concat(cascaded).ToArray();
+    }
+
+    public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        return FittingCalculation.Read(world, catalog, pilot).SkillBonuses;
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadModuleAttributes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        InventoryItem module
+    )
+    {
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        return calculation.Modules.Any(m => m.Item.Id == module.Id)
+            ? calculation.Graph.Attributes(module.Id)
+            : ReadAttributes(catalog, module.TypeId);
+    }
+
+    public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return ReadModuleAttributes(world, catalog, pilotId, module);
     }
 }

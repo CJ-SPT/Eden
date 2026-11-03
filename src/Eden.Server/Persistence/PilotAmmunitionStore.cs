@@ -121,7 +121,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
 
     private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
-        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)InventoryFlag.Cargo);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
         double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
         if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {

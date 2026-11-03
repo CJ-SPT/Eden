@@ -85,6 +85,7 @@ public enum DogmaAttributeId
     ShieldKineticResonance = 273,
     ShieldThermalResonance = 274,
     SkillTimeConstant = 275,
+    SkillLevel = 280,
     RefiningYieldMutator = 379,
     RequiredSkill1Level = 277,
     RequiredSkill2Level = 278,

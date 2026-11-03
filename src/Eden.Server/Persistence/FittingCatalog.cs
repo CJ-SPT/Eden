@@ -18,7 +18,13 @@ internal static class FittingCatalog
             .Set<TypeAttribute>()
             .Where(a => a.ItemTypeId == typeId)
             .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
-        return ModuleFittingRules.Define(typeId, type.GroupId, attributes, Effects(catalog, typeId));
+        return ModuleFittingRules.Define(
+            typeId,
+            type.GroupId,
+            attributes,
+            Effects(catalog, typeId),
+            PassiveCatalog.Supported(catalog, typeId, type.GroupId)
+        );
     }
 
     internal static HashSet<DogmaEffect> Effects(CatalogDbContext catalog, int typeId) =>

@@ -281,7 +281,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         {
             throw new InvalidDataException("The requested wreck contents are no longer available.");
         }
-        double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)InventoryFlag.Cargo);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
         double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)InventoryFlag.Cargo);
         double added = items.Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * (quantity ?? i.Quantity));
         if (added > capacity - used + InventoryDefinitions.ResourceTolerance)

@@ -39,7 +39,8 @@ public static class ModuleFittingRules
         int typeId,
         int groupId,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
-        IReadOnlySet<DogmaEffect> effects
+        IReadOnlySet<DogmaEffect> effects,
+        bool passive = false
     )
     {
         bool supported = groupId switch
@@ -52,7 +53,7 @@ public static class ModuleFittingRules
                 && effects.Contains(DogmaEffect.ProjectileFired),
             _ => typeId == (int)CombatWeaponType.CivilianGatlingRailgun && effects.Contains(DogmaEffect.CivilianWeapon),
         };
-        if (!supported || !effects.Contains(DogmaEffect.Online))
+        if ((!supported && !passive) || !effects.Contains(DogmaEffect.Online))
         {
             return null;
         }

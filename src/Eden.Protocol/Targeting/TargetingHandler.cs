@@ -131,7 +131,7 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         }
         double seconds = TargetingDefinitions.LockSeconds(
             attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
-            fitting.Attributes(target.TypeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius)
+            fitting.SignatureRadius(target.Id, target.TypeId)
         );
         if (!(seconds > 0) || !double.IsFinite(seconds))
         {

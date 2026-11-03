@@ -118,12 +118,13 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
             .Single(s => s.Id == ship.StationId);
         var system = station.SolarSystem;
         double Attribute(DogmaAttributeId id) => type.Attributes.Single(a => a.AttributeId == (int)id).Value;
+        var fitted = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var flight = new FlightProperties(
             (float)station.Type.Radius!.Value,
             (float)type.Radius!.Value,
-            type.Mass!.Value,
-            (float)Attribute(DogmaAttributeId.Agility),
-            (float)PilotPropulsionStore.NavigationSpeed(world, catalog, pilot.Id, Attribute(DogmaAttributeId.MaxVelocity)),
+            fitted.GetValueOrDefault(DogmaAttributeId.Mass),
+            (float)fitted.GetValueOrDefault(DogmaAttributeId.Agility),
+            (float)fitted.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
             Attribute(DogmaAttributeId.BaseWarpSpeed) * Attribute(DogmaAttributeId.WarpSpeedMultiplier)
         );
         var designation = catalog.Set<StationDesignation>().Single(s => s.StationId == station.Id);
@@ -133,12 +134,12 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
             station.Type.Group.CategoryId
         );
         var hull = new HullProperties(
-            Attribute(DogmaAttributeId.StructureHitPoints),
-            Attribute(DogmaAttributeId.CapacitorCapacity),
-            Attribute(DogmaAttributeId.CapacitorRechargeTime),
-            Attribute(DogmaAttributeId.ShieldCapacity),
-            Attribute(DogmaAttributeId.ArmorHitPoints),
-            Attribute(DogmaAttributeId.ShieldRechargeTime)
+            fitted.GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
+            fitted.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity),
+            fitted.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime),
+            fitted.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
+            fitted.GetValueOrDefault(DogmaAttributeId.ArmorHitPoints),
+            fitted.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
         );
         return new(
             new(
@@ -154,7 +155,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
                 type.GroupId,
                 type.Group.CategoryId,
                 ship.Name,
-                type.Capacity!.Value,
+                fitted.GetValueOrDefault(DogmaAttributeId.CargoCapacity),
                 checked((int)Attribute(DogmaAttributeId.TurretSlotsLeft)),
                 flight,
                 hull

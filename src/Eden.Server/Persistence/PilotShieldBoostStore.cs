@@ -29,7 +29,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         InventoryItem module
     )
     {
-        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
+        var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module).ToDictionary();
         if (module.GroupId != ShieldBoostDefinitions.Group)
         {
             return attributes;
