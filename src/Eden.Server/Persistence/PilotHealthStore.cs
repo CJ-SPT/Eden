@@ -4,6 +4,7 @@ using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
@@ -18,7 +19,7 @@ public sealed class ShipHealthState
 }
 
 [Injectable]
-internal sealed class PilotHealthStore(WorldDatabase database, IPilotFitting fitting) : IPilotHealth
+internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
 {
     public bool WasDestroyed(long shipId)
     {
@@ -29,8 +30,10 @@ internal sealed class PilotHealthStore(WorldDatabase database, IPilotFitting fit
     public ShipHealth Read(long pilotId, long now)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
         long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-        return Read(world, shipId, ShipHealth.DefenseFrom(fitting.ShipAttributes(pilotId)), now);
+        return Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
     }
 
     internal static ShipHealth Read(WorldDbContext world, long shipId, HullDefense defense, long now)

@@ -23,6 +23,23 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTests
 {
+    [Fact]
+    public void AttributeReadsUseTheOwningTransactionsTrackedSkillState()
+    {
+        using Fixture fixture = new();
+        var pilot = fixture.Db.Store.FindPilot(1000001)!;
+        var module = fixture.Inventory.List(pilot.PilotId, pilot.StationId).First(i => i.TypeId == InventoryDefinitions.CivilianMinerType);
+        double before = fixture.Store.ModuleAttributes(pilot.PilotId, module)[DogmaAttributeId.MiningAmount];
+        using WorldDbContext world = new(fixture.Db.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        world.Set<PilotSkill>().Find(pilot.PilotId, (int)MiningSkill.Mining)!.Points = TrainedSkill.PointsForLevel(1, 5);
+        double changed = PilotMiningStore.ModuleAttributes(world, catalog, pilot.PilotId, module)[DogmaAttributeId.MiningAmount];
+        Assert.True(changed > before);
+        transaction.Rollback();
+        Assert.Equal(before, fixture.Store.ModuleAttributes(pilot.PilotId, module)[DogmaAttributeId.MiningAmount]);
+    }
+
     private sealed class Clock : TimeProvider
     {
         public long Milliseconds { get; set; }

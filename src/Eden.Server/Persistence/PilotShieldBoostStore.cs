@@ -11,17 +11,28 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFitting fitting) : IPilotShieldBoosting
+internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShieldBoosting
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return ModuleAttributes(world, catalog, pilotId, module);
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        InventoryItem module
+    )
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
         if (module.GroupId != ShieldBoostDefinitions.Group)
         {
             return attributes;
         }
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
         int level = PilotSkillReader.Level(world, catalog, pilotId, (int)ShieldBoostSkill.Compensation);
         double bonus =
             catalog.Set<TypeAttribute>().Find((int)ShieldBoostSkill.Compensation, (int)DogmaAttributeId.ShieldBoostCapacitorBonus)?.Value
@@ -54,7 +65,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
             throw new InvalidDataException("Use an online fitted shield booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
-        var attributes = ModuleAttributes(pilotId, PilotInventoryStore.Read(catalog, module));
+        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
         ShieldBooster booster = new(
             moduleId,
             module.TypeId,
@@ -76,7 +87,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database, IPilotFittin
         {
             throw new InvalidDataException("The shield booster is still cycling.");
         }
-        var ship = fitting.ShipAttributes(pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now);
         if (health.Remaining.Destroyed)
         {

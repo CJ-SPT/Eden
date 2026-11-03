@@ -15,13 +15,24 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fitting) : IPilotCombat
+internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        return ModuleAttributes(world, catalog, pilotId, module);
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        InventoryItem module
+    )
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
         bool hybrid = CombatDefinitions.IsSupportedHybrid(module.GroupId, attributes);
         if (!hybrid && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
         {
@@ -42,10 +53,13 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         {
             var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
             attributes[DogmaAttributeId.MaxRange] *=
-                1 + fitting.Attributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus) / 100;
+                1
+                + PilotFittingStore
+                    .ReadAttributes(catalog, pilot.ActiveShip.TypeId)
+                    .GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus) / 100;
             if (PilotAmmunitionStore.Contents(world, module.Id) is { } loaded)
             {
-                var charge = fitting.Attributes(loaded.TypeId);
+                var charge = PilotFittingStore.ReadAttributes(catalog, loaded.TypeId);
                 attributes[DogmaAttributeId.MaxRange] *= charge.GetValueOrDefault(DogmaAttributeId.WeaponRangeMultiplier, 1);
                 attributes[DogmaAttributeId.CapacitorNeed] *= 1 + charge.GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus) / 100;
             }
@@ -79,7 +93,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
             module is not null
             && CombatDefinitions.IsSupportedHybrid(
                 catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId,
-                fitting.Attributes(module.TypeId)
+                PilotFittingStore.ReadAttributes(catalog, module.TypeId)
             );
         if (
             pilot.ActiveShip.Position is not { } position
@@ -109,12 +123,12 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var separation = new SpacePosition(npc.X - position.X, npc.Y - position.Y, npc.Z - position.Z);
         double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (npcType.Radius ?? 0));
-        var ship = fitting.ShipAttributes(pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         if (npc.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
             throw new InvalidDataException("The NPC is outside targeting range.");
         }
-        var attributes = ModuleAttributes(pilotId, PilotInventoryStore.Read(catalog, module));
+        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
         if (attributes.Values.Any(v => !double.IsFinite(v)) || attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) <= 0)
         {
             throw new InvalidDataException("Invalid weapon cycle attributes.");
@@ -129,7 +143,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
         {
             throw new InvalidDataException("Load ammunition before firing the weapon.");
         }
-        var damageAttributes = loadedAmmo is null ? attributes : fitting.Attributes(loadedAmmo.TypeId);
+        var damageAttributes = loadedAmmo is null ? attributes : PilotFittingStore.ReadAttributes(catalog, loadedAmmo.TypeId);
         int rounds = hybrid ? checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)) : 0;
         if (
             hybrid
@@ -176,7 +190,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, IPilotFitting fit
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
             (int)(hybrid ? DogmaEffect.ProjectileFired : DogmaEffect.CivilianWeapon)
         );
-        var target = fitting.Attributes(npc.TypeId);
+        var target = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         var defense = ShipHealth.DefenseFrom(target);
         HullDamage health = new(
             ChargedResource.Recharged(

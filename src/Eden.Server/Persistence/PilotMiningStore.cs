@@ -10,17 +10,28 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory inventory, IPilotFitting fitting) : IPilotMining
+internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return ModuleAttributes(world, catalog, pilotId, module);
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        InventoryItem module
+    )
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
         if (module.GroupId != InventoryDefinitions.MiningLaserGroup)
         {
             return attributes;
         }
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
         int Level(MiningSkill skill)
         {
             return PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
@@ -34,7 +45,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         {
             // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
             // 207, then apply attribute 1842 percent for each Mining Frigate level.
-            var hull = fitting.Attributes(pilot.ActiveShip.TypeId);
+            var hull = PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId);
             attributes[DogmaAttributeId.MiningAmount] *=
                 hull.GetValueOrDefault(DogmaAttributeId.MiningRoleYieldMultiplier, 1)
                 * (1 + hull.GetValueOrDefault(DogmaAttributeId.MiningFrigateYieldBonus) * Level(MiningSkill.Frigate) / 100);
@@ -51,19 +62,22 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
     public double Capacitor(long pilotId, long now)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        return ShipResources.Capacitor(world, pilot.ActiveShipId, fitting.ShipAttributes(pilotId), now);
+        return ShipResources.Capacitor(world, pilot.ActiveShipId, PilotFittingStore.ShipAttributes(world, catalog, pilotId), now);
     }
 
-    private (Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser) Validate(
+    private static (Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser) Validate(
         WorldDbContext world,
+        CatalogDbContext catalog,
         long pilotId,
         long moduleId,
         long asteroidId
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var module = inventory.List(pilotId, pilot.ActiveShipId).SingleOrDefault(i => i.Id == moduleId);
+        var module = PilotInventoryStore.List(world, catalog, pilotId, pilot.ActiveShipId).SingleOrDefault(i => i.Id == moduleId);
         var asteroid = world.Set<WorldAsteroid>().Find(asteroidId);
         if (
             pilot.ActiveShip.Position is not { } position
@@ -78,7 +92,6 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         {
             throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         if (hull.GroupId != MiningDefinitions.CorvetteGroup && hull.Id != (int)StarterShipType.Venture)
@@ -86,7 +99,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
             throw new InvalidDataException("Mining activation currently supports corvettes and the Venture.");
         }
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
-        var attributes = ModuleAttributes(pilotId, module);
+        var attributes = ModuleAttributes(world, catalog, pilotId, module);
         double range = attributes.GetValueOrDefault(DogmaAttributeId.MaxRange);
         double distance =
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(asteroid.X, asteroid.Y, asteroid.Z))
@@ -122,24 +135,44 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
             ? InventoryFlag.GeneralMiningHold
             : InventoryFlag.Cargo;
 
-    private double Available(long pilotId, long shipId, double capacity, InventoryFlag hold) =>
-        Math.Max(0, capacity - inventory.List(pilotId, shipId).Where(i => i.FlagId == (int)hold).Sum(i => i.Volume * i.Quantity));
+    private static double Available(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        double capacity,
+        InventoryFlag hold
+    ) =>
+        Math.Max(
+            0,
+            capacity
+                - PilotInventoryStore
+                    .List(world, catalog, pilotId, shipId)
+                    .Where(i => i.FlagId == (int)hold)
+                    .Sum(i => i.Volume * i.Quantity)
+        );
 
     public MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        var (pilot, asteroid, laser) = Validate(world, pilotId, moduleId, asteroidId);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
-        double available = Available(pilotId, pilot.ActiveShipId, capacity, hold);
+        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
         if (available + InventoryDefinitions.ResourceTolerance < volume)
         {
             throw new CargoCapacityException(available, volume);
         }
-        double charge = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, fitting.ShipAttributes(pilotId), laser.CapacitorNeed, now);
+        double charge = ShipResources.SpendCapacitor(
+            world,
+            pilot.ActiveShipId,
+            PilotFittingStore.ShipAttributes(world, catalog, pilotId),
+            laser.CapacitorNeed,
+            now
+        );
         world.SaveChanges();
         transaction.Commit();
         return new(laser, charge);
@@ -153,8 +186,8 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        var (pilot, asteroid, _) = Validate(world, pilotId, moduleId, asteroidId);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var (pilot, asteroid, _) = Validate(world, catalog, pilotId, moduleId, asteroidId);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -165,7 +198,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, IPilotInventory i
         int free = (int)
             Math.Min(
                 int.MaxValue,
-                Math.Floor((Available(pilotId, pilot.ActiveShipId, capacity, hold) + InventoryDefinitions.ResourceTolerance) / oreVolume)
+                Math.Floor(
+                    (Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold) + InventoryDefinitions.ResourceTolerance)
+                        / oreVolume
+                )
             );
         int extracted = (int)
             Math.Min(Math.Min(asteroid.Quantity, free), Math.Floor((volume + InventoryDefinitions.ResourceTolerance) / oreVolume));

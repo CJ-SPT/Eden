@@ -16,9 +16,13 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return List(world, catalog, pilotId, locationId);
+    }
+
+    internal static IReadOnlyList<InventoryItem> List(WorldDbContext world, CatalogDbContext catalog, long pilotId, long locationId)
+    {
         return world
             .Set<OwnedItem>()
-            .AsNoTracking()
             .Where(i => i.OwnerId == pilotId && i.LocationId == locationId)
             .OrderBy(i => i.Id)
             .AsEnumerable()

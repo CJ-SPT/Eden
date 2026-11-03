@@ -16,11 +16,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory inventory) : IPilotFitting
+internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return ReadAttributes(catalog, typeId);
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadAttributes(CatalogDbContext catalog, int typeId)
+    {
         var attributes = Attributes(catalog, typeId);
         if (
             !attributes.ContainsKey(DogmaAttributeId.SignatureRadius)
@@ -39,6 +44,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
 
     private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+
+    internal static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, long pilotId) =>
+        ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
 
     internal static Dictionary<DogmaAttributeId, double> ShipAttributes(
         WorldDbContext world,
@@ -193,7 +201,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
-        var before = inventory.List(pilotId, sourceId).ToDictionary(i => i.Id);
+        var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
         var hull = Attributes(catalog, ship.TypeId);
         var rack = world
             .Set<OwnedItem>()
@@ -354,7 +362,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         {
             throw new InvalidDataException("Change module online state on your docked active ship.");
         }
-        var previous = inventory.List(pilotId, shipId).Single(i => i.Id == itemId);
+        var previous = PilotInventoryStore.List(world, catalog, pilotId, shipId).Single(i => i.Id == itemId);
         if (online && !item.Online)
         {
             var ship = ShipAttributes(world, catalog, pilot);

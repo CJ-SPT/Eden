@@ -40,7 +40,7 @@ public sealed class NpcCombatTests
         public TestWorld Db { get; } = new();
         public Clock Clock { get; } = new();
         public IShipLootRoll LootRoll { get; set; } = new FixedLootRoll(true);
-        public INpcCombat Combat => new NpcCombatStore(new(Db.Path), Db.Services.GetRequiredService<IPilotFitting>(), Db.Store, LootRoll);
+        public INpcCombat Combat => new NpcCombatStore(new(Db.Path), Db.Store, LootRoll);
         public IPilotCombat Weapons => Db.Services.GetRequiredService<IPilotCombat>();
         public IPilotHealth Health => Db.Services.GetRequiredService<IPilotHealth>();
         public NpcContact Npc { get; }

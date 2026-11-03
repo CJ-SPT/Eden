@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitting, SqliteWorld lookup, IShipLootRoll lootRoll) : INpcCombat
+internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup, IShipLootRoll lootRoll) : INpcCombat
 {
     public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
@@ -58,7 +58,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
             .ToArray();
         foreach (var npc in npcs)
         {
-            var attributes = fitting.Attributes(npc.TypeId);
+            var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
             if (!attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
             {
                 continue;
@@ -133,7 +133,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         var npc = world.Set<WorldNpc>().Find(npcId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var source = npc is null ? null : catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
-        var attributes = npc is null ? new Dictionary<DogmaAttributeId, double>() : fitting.Attributes(npc.TypeId);
+        var attributes = npc is null ? new Dictionary<DogmaAttributeId, double>() : PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         if (
@@ -185,7 +185,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, IPilotFitting fitti
         {
             throw new InvalidDataException("Invalid NPC weapon cycle attributes.");
         }
-        var target = fitting.ShipAttributes(pilotId);
+        var target = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         var defense = ShipHealth.DefenseFrom(target);
         DamageVector damage = new(
             attributes.GetValueOrDefault(DogmaAttributeId.EmDamage),

@@ -635,7 +635,7 @@ public sealed class AmmunitionTests
             world.Add(new NpcAggression { NpcId = f.Npc.Id, TargetShipId = pilot.ShipId });
             world.SaveChanges();
         }
-        INpcCombat combat = new NpcCombatStore(new(f.Db.Path), f.Fitting, f.Db.Store, new FixedLoot(survives));
+        INpcCombat combat = new NpcCombatStore(new(f.Db.Path), f.Db.Store, new FixedLoot(survives));
         Assert.NotNull(combat.Fire(pilot.PilotId, pilot.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1)!.Capsule);
         using WorldDbContext saved = new(f.Db.Path);
         var loss = Assert.Single(saved.Set<ShipLoss>());

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting) : IPilotPropulsion
+internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropulsion
 {
     private static double Bonus(
         WorldDbContext world,
@@ -40,6 +40,11 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return NavigationBonuses(world, catalog, pilotId);
+    }
+
+    internal static IReadOnlyList<NavigationBonus> NavigationBonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)
+    {
         return new NavigationBonus[]
         {
             new(
@@ -78,10 +83,25 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return ModuleAttributes(world, catalog, pilotId, module);
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        InventoryItem module
+    )
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId).ToDictionary();
         if (module.GroupId == PropulsionDefinitions.AfterburnerGroup)
         {
-            foreach (var bonus in NavigationBonuses(pilotId).Where(b => b.RequiredSkill.HasValue || b.Group == module.GroupId))
+            foreach (
+                var bonus in NavigationBonuses(world, catalog, pilotId).Where(b => b.RequiredSkill.HasValue || b.Group == module.GroupId)
+            )
             {
                 attributes[bonus.Attribute] =
                     attributes.GetValueOrDefault(bonus.Attribute) * (1 + bonus.Percent / PropulsionDefinitions.Percent);
@@ -112,7 +132,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var item = PilotInventoryStore.Read(catalog, module);
-        var attributes = ModuleAttributes(pilotId, item);
+        var attributes = ModuleAttributes(world, catalog, pilotId, item);
         Afterburner burner = new(
             moduleId,
             module.TypeId,
@@ -122,7 +142,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
             attributes.GetValueOrDefault(DogmaAttributeId.SpeedBoostFactor),
             attributes.GetValueOrDefault(DogmaAttributeId.MassAddition)
         );
-        var ship = fitting.ShipAttributes(pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         double mass = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Mass ?? 0;
         _ = burner.Apply(new(0, 0, mass, 1, (float)ship.GetValueOrDefault(DogmaAttributeId.MaxVelocity), 1));
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
