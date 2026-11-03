@@ -48,9 +48,16 @@ internal sealed class PilotCallContext(
 
     public void ChangeShip(DockedPilot pilot)
     {
+        bool sameStation =
+            ActiveFlight?.Pilot is { Position: null } previous && pilot.Position is null && previous.StationId == pilot.StationId;
         DestroyedShip = null;
         ActiveFlight?.Dispose();
-        ReleaseLocationReferences();
+        // The client binds the incoming ship's inventory before Board. Keep
+        // station inventories usable through boarding, including that binding.
+        if (!sameStation)
+        {
+            ReleaseLocationReferences();
+        }
         ActiveFlight = startFlight(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }

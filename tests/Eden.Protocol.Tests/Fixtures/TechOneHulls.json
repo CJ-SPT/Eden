@@ -1,0 +1,4051 @@
+{
+  "build": 3662168,
+  "hulls": [
+    {
+      "id": 582,
+      "name": "Bantam",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5103,
+        5104,
+        6368
+      ]
+    },
+    {
+      "id": 583,
+      "name": "Condor",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        898,
+        3495
+      ]
+    },
+    {
+      "id": 584,
+      "name": "Griffin",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1996,
+        2734
+      ]
+    },
+    {
+      "id": 585,
+      "name": "Slasher",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        508,
+        1099,
+        3495
+      ]
+    },
+    {
+      "id": 586,
+      "name": "Probe",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4166,
+        5051,
+        5460
+      ]
+    },
+    {
+      "id": 587,
+      "name": "Rifter",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5779,
+        7248
+      ]
+    },
+    {
+      "id": 588,
+      "name": "Reaper",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        5018,
+        5019,
+        5020,
+        5021
+      ]
+    },
+    {
+      "id": 589,
+      "name": "Executioner",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        511,
+        514,
+        3495
+      ]
+    },
+    {
+      "id": 590,
+      "name": "Inquisitor",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        2135,
+        5109,
+        5110,
+        6373
+      ]
+    },
+    {
+      "id": 591,
+      "name": "Tormentor",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        511,
+        514
+      ]
+    },
+    {
+      "id": 592,
+      "name": "Navitas",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        2135,
+        5107,
+        5108,
+        6373
+      ]
+    },
+    {
+      "id": 593,
+      "name": "Tristan",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        2504,
+        5087,
+        5111
+      ]
+    },
+    {
+      "id": 594,
+      "name": "Incursus",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        512,
+        4934
+      ]
+    },
+    {
+      "id": 596,
+      "name": "Impairor",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        4990,
+        4991,
+        4994,
+        4995,
+        4996,
+        4997,
+        5795
+      ]
+    },
+    {
+      "id": 597,
+      "name": "Punisher",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        511,
+        1804,
+        1805,
+        1806,
+        1807
+      ]
+    },
+    {
+      "id": 598,
+      "name": "Breacher",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5090,
+        5778
+      ]
+    },
+    {
+      "id": 599,
+      "name": "Burst",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5105,
+        5106,
+        6368
+      ]
+    },
+    {
+      "id": 601,
+      "name": "Ibis",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        4999,
+        5000,
+        5008,
+        5009,
+        5011,
+        5012,
+        5028
+      ]
+    },
+    {
+      "id": 602,
+      "name": "Kestrel",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5080,
+        5234,
+        5237,
+        5240,
+        5243
+      ]
+    },
+    {
+      "id": 603,
+      "name": "Merlin",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1816,
+        1817,
+        1819,
+        1820,
+        4941
+      ]
+    },
+    {
+      "id": 605,
+      "name": "Heron",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4165,
+        5045,
+        5460
+      ]
+    },
+    {
+      "id": 606,
+      "name": "Velator",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        5013,
+        5014,
+        5015,
+        5016,
+        5017,
+        5030,
+        5035
+      ]
+    },
+    {
+      "id": 607,
+      "name": "Imicus",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4167,
+        5048,
+        5460
+      ]
+    },
+    {
+      "id": 608,
+      "name": "Atron",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        512,
+        1773,
+        3495
+      ]
+    },
+    {
+      "id": 609,
+      "name": "Maulus",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        3366,
+        3588,
+        3589
+      ]
+    },
+    {
+      "id": 615,
+      "name": "Immolator",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        4991,
+        5021,
+        5205,
+        5206
+      ]
+    },
+    {
+      "id": 617,
+      "name": "Echo",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        5020,
+        5217,
+        5218,
+        5219
+      ]
+    },
+    {
+      "id": 620,
+      "name": "Osprey",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1964,
+        2133,
+        2134,
+        5121,
+        5126,
+        6368
+      ]
+    },
+    {
+      "id": 621,
+      "name": "Caracal",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1024,
+        2809,
+        5131
+      ]
+    },
+    {
+      "id": 622,
+      "name": "Stabber",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        602,
+        5132
+      ]
+    },
+    {
+      "id": 623,
+      "name": "Moa",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1812,
+        1813,
+        1814,
+        1815,
+        5133
+      ]
+    },
+    {
+      "id": 624,
+      "name": "Maller",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        958,
+        959,
+        960,
+        961,
+        5136
+      ]
+    },
+    {
+      "id": 625,
+      "name": "Augoror",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        2133,
+        2135,
+        5121,
+        5123,
+        5124,
+        6373
+      ]
+    },
+    {
+      "id": 626,
+      "name": "Vexor",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        562,
+        2179,
+        2188,
+        2250
+      ]
+    },
+    {
+      "id": 627,
+      "name": "Thorax",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        562,
+        919
+      ]
+    },
+    {
+      "id": 628,
+      "name": "Arbitrator",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        2181,
+        2189,
+        2249,
+        6395
+      ]
+    },
+    {
+      "id": 629,
+      "name": "Rupture",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        3706,
+        4472
+      ]
+    },
+    {
+      "id": 630,
+      "name": "Bellicose",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        3703,
+        5129,
+        7247
+      ]
+    },
+    {
+      "id": 631,
+      "name": "Scythe",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        2134,
+        3172,
+        3173,
+        5122,
+        5127,
+        6368,
+        6374
+      ]
+    },
+    {
+      "id": 632,
+      "name": "Blackbird",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1442,
+        2756,
+        4370
+      ]
+    },
+    {
+      "id": 633,
+      "name": "Celestis",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        3587,
+        3590,
+        5128,
+        5187
+      ]
+    },
+    {
+      "id": 634,
+      "name": "Exequror",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1969,
+        2135,
+        3172,
+        3173,
+        5125,
+        6373,
+        6374
+      ]
+    },
+    {
+      "id": 635,
+      "name": "Opux Luxury Yacht",
+      "groupId": 5087,
+      "groupName": "Special Edition Yachts",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 638,
+      "name": "Raven",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        891,
+        892,
+        1885,
+        1886,
+        5618,
+        8377
+      ]
+    },
+    {
+      "id": 639,
+      "name": "Tempest",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        549,
+        604,
+        8377
+      ]
+    },
+    {
+      "id": 640,
+      "name": "Scorpion",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        1434,
+        1441,
+        2812,
+        4372,
+        8377
+      ]
+    },
+    {
+      "id": 641,
+      "name": "Megathron",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2503,
+        5424,
+        8377
+      ]
+    },
+    {
+      "id": 642,
+      "name": "Apocalypse",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        3677,
+        8377,
+        11424,
+        12573
+      ]
+    },
+    {
+      "id": 643,
+      "name": "Armageddon",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        5417,
+        5418,
+        5419,
+        5420,
+        6253,
+        6256,
+        6257,
+        6260,
+        8377
+      ]
+    },
+    {
+      "id": 644,
+      "name": "Typhoon",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        5429,
+        5430,
+        5620,
+        5621,
+        5622,
+        8377
+      ]
+    },
+    {
+      "id": 645,
+      "name": "Dominix",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2186,
+        2187,
+        5427,
+        5428,
+        8377
+      ]
+    },
+    {
+      "id": 648,
+      "name": "Badger",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        727,
+        5468,
+        6789,
+        7117
+      ]
+    },
+    {
+      "id": 649,
+      "name": "Tayra",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        727,
+        730,
+        6789
+      ]
+    },
+    {
+      "id": 650,
+      "name": "Nereus",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        726,
+        5470,
+        6789,
+        7117
+      ]
+    },
+    {
+      "id": 651,
+      "name": "Hoarder",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        527,
+        5477,
+        6789,
+        8275
+      ]
+    },
+    {
+      "id": 652,
+      "name": "Mammoth",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        527,
+        728,
+        6789
+      ]
+    },
+    {
+      "id": 653,
+      "name": "Wreathe",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        728,
+        5469,
+        6789,
+        7117
+      ]
+    },
+    {
+      "id": 654,
+      "name": "Kryos",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        729,
+        5479,
+        6789,
+        8199
+      ]
+    },
+    {
+      "id": 655,
+      "name": "Epithal",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        729,
+        5478,
+        6789
+      ]
+    },
+    {
+      "id": 656,
+      "name": "Miasmos",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        729,
+        6789,
+        8323
+      ]
+    },
+    {
+      "id": 657,
+      "name": "Iteron Mark V",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        726,
+        729,
+        6789
+      ]
+    },
+    {
+      "id": 670,
+      "name": "Capsule",
+      "groupId": 29,
+      "groupName": "Capsule",
+      "acquisition": "recovery-or-developer-fixture",
+      "effects": []
+    },
+    {
+      "id": 671,
+      "name": "Erebus",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6636,
+        6640,
+        6641,
+        6649,
+        6654,
+        6783
+      ]
+    },
+    {
+      "id": 672,
+      "name": "Caldari Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 1944,
+      "name": "Bestower",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        529,
+        732,
+        6789
+      ]
+    },
+    {
+      "id": 2006,
+      "name": "Omen",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        516,
+        907
+      ]
+    },
+    {
+      "id": 2078,
+      "name": "Zephyr",
+      "groupId": 1022,
+      "groupName": "Prototype Exploration Ship",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 2161,
+      "name": "Crucifier",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5827,
+        6354
+      ]
+    },
+    {
+      "id": 2863,
+      "name": "Primae",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        6789
+      ]
+    },
+    {
+      "id": 2998,
+      "name": "Noctis",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        4667,
+        4668,
+        4669,
+        4670,
+        6789
+      ]
+    },
+    {
+      "id": 3514,
+      "name": "Revenant",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6591,
+        6592,
+        6603,
+        6604,
+        6611,
+        6612,
+        6613,
+        6614,
+        6639,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 3532,
+      "name": "Echelon",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 3756,
+      "name": "Gnosis",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        1233,
+        3483,
+        5014,
+        5030,
+        5035,
+        5220,
+        5221,
+        5222,
+        5223,
+        5224,
+        5225,
+        5226,
+        5227,
+        5228,
+        5229,
+        6783
+      ]
+    },
+    {
+      "id": 3764,
+      "name": "Leviathan",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6635,
+        6638,
+        6640,
+        6641,
+        6648,
+        6657,
+        6783
+      ]
+    },
+    {
+      "id": 3766,
+      "name": "Vigil",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1551,
+        5066
+      ]
+    },
+    {
+      "id": 4302,
+      "name": "Oracle",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        4820,
+        4823,
+        4826,
+        5354,
+        5355
+      ]
+    },
+    {
+      "id": 4306,
+      "name": "Naga",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        4821,
+        4824,
+        4827,
+        5356,
+        5357
+      ]
+    },
+    {
+      "id": 4308,
+      "name": "Talos",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        1387,
+        4821,
+        4824,
+        4827,
+        5358,
+        5359
+      ]
+    },
+    {
+      "id": 4310,
+      "name": "Tornado",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        4822,
+        4825,
+        5360,
+        5361
+      ]
+    },
+    {
+      "id": 4363,
+      "name": "Miasmos Quafe Ultra Edition",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        726,
+        729,
+        6789
+      ]
+    },
+    {
+      "id": 4388,
+      "name": "Miasmos Quafe Ultramarine Edition",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        726,
+        729,
+        6789
+      ]
+    },
+    {
+      "id": 11011,
+      "name": "Guardian-Vexor",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        562,
+        918
+      ]
+    },
+    {
+      "id": 11129,
+      "name": "Gallente Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 11132,
+      "name": "Minmatar Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 11134,
+      "name": "Amarr Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 11567,
+      "name": "Avatar",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6634,
+        6640,
+        6641,
+        6647,
+        6653,
+        6783
+      ]
+    },
+    {
+      "id": 11936,
+      "name": "Apocalypse Imperial Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        542,
+        736,
+        8377
+      ]
+    },
+    {
+      "id": 11938,
+      "name": "Armageddon Imperial Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        542,
+        887,
+        8377
+      ]
+    },
+    {
+      "id": 11940,
+      "name": "Gold Magnate",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        511,
+        514,
+        2131,
+        4994,
+        4995,
+        4996,
+        4997
+      ]
+    },
+    {
+      "id": 11942,
+      "name": "Silver Magnate",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        511,
+        514,
+        2131,
+        4994,
+        4995,
+        4996,
+        4997
+      ]
+    },
+    {
+      "id": 13202,
+      "name": "Megathron Federate Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        550,
+        2503,
+        8377
+      ]
+    },
+    {
+      "id": 16227,
+      "name": "Ferox",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5334,
+        6173,
+        6177,
+        6783
+      ]
+    },
+    {
+      "id": 16229,
+      "name": "Brutix",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5341,
+        5342,
+        6173,
+        6783
+      ]
+    },
+    {
+      "id": 16231,
+      "name": "Cyclone",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5349,
+        5350,
+        5351,
+        6175,
+        6783
+      ]
+    },
+    {
+      "id": 16233,
+      "name": "Prophecy",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5322,
+        5323,
+        5324,
+        5325,
+        5326,
+        5331,
+        6176,
+        6783
+      ]
+    },
+    {
+      "id": 16236,
+      "name": "Coercer",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2131,
+        5293,
+        5294
+      ]
+    },
+    {
+      "id": 16238,
+      "name": "Cormorant",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2130,
+        5303,
+        5304
+      ]
+    },
+    {
+      "id": 16240,
+      "name": "Catalyst",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2130,
+        5309,
+        5310
+      ]
+    },
+    {
+      "id": 16242,
+      "name": "Thrasher",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2132,
+        5317,
+        5318
+      ]
+    },
+    {
+      "id": 17476,
+      "name": "Covetor",
+      "groupId": 463,
+      "groupName": "Mining Barge",
+      "acquisition": "market",
+      "effects": [
+        8224,
+        8227,
+        8228,
+        8229,
+        8230,
+        8231,
+        8300,
+        8303,
+        8304,
+        8305
+      ]
+    },
+    {
+      "id": 17478,
+      "name": "Retriever",
+      "groupId": 463,
+      "groupName": "Mining Barge",
+      "acquisition": "market",
+      "effects": [
+        5067,
+        8223,
+        8224,
+        8227,
+        8228,
+        8229,
+        8300
+      ]
+    },
+    {
+      "id": 17480,
+      "name": "Procurer",
+      "groupId": 463,
+      "groupName": "Mining Barge",
+      "acquisition": "market",
+      "effects": [
+        5068,
+        8225,
+        8226,
+        8227,
+        8228,
+        8229
+      ]
+    },
+    {
+      "id": 17619,
+      "name": "Caldari Navy Hookbill",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5080,
+        5234,
+        5240,
+        5243,
+        6350
+      ]
+    },
+    {
+      "id": 17634,
+      "name": "Caracal Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        5131,
+        5387,
+        5388
+      ]
+    },
+    {
+      "id": 17636,
+      "name": "Raven Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        891,
+        892,
+        5444,
+        5445,
+        8377
+      ]
+    },
+    {
+      "id": 17703,
+      "name": "Imperial Navy Slicer",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        757,
+        4482
+      ]
+    },
+    {
+      "id": 17709,
+      "name": "Omen Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        5136,
+        5382
+      ]
+    },
+    {
+      "id": 17713,
+      "name": "Stabber Fleet Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        602,
+        3706,
+        12213
+      ]
+    },
+    {
+      "id": 17715,
+      "name": "Gila",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1812,
+        1813,
+        1814,
+        1815,
+        5821,
+        5825,
+        5826,
+        7184,
+        7185,
+        7186
+      ]
+    },
+    {
+      "id": 17718,
+      "name": "Phantasm",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        3483,
+        3484,
+        5820
+      ]
+    },
+    {
+      "id": 17720,
+      "name": "Cynabal",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        968,
+        1232,
+        4512,
+        7117,
+        12887
+      ]
+    },
+    {
+      "id": 17722,
+      "name": "Vigilant",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1233,
+        4510,
+        4516
+      ]
+    },
+    {
+      "id": 17726,
+      "name": "Apocalypse Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        3677,
+        8377,
+        11424,
+        12573
+      ]
+    },
+    {
+      "id": 17728,
+      "name": "Megathron Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2503,
+        5424,
+        8377,
+        12579
+      ]
+    },
+    {
+      "id": 17732,
+      "name": "Tempest Fleet Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        549,
+        604,
+        8377
+      ]
+    },
+    {
+      "id": 17736,
+      "name": "Nightmare",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        3478,
+        3480,
+        5802,
+        8377
+      ]
+    },
+    {
+      "id": 17738,
+      "name": "Machariel",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        549,
+        1239,
+        4484,
+        7117,
+        8377,
+        12887
+      ]
+    },
+    {
+      "id": 17740,
+      "name": "Vindicator",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        553,
+        1240,
+        4485,
+        8377
+      ]
+    },
+    {
+      "id": 17812,
+      "name": "Republic Fleet Firetail",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        508,
+        1099,
+        12038
+      ]
+    },
+    {
+      "id": 17841,
+      "name": "Federation Navy Comet",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        512,
+        2504
+      ]
+    },
+    {
+      "id": 17843,
+      "name": "Vexor Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        562,
+        2179,
+        2188,
+        5958,
+        7230,
+        7231
+      ]
+    },
+    {
+      "id": 17918,
+      "name": "Rattlesnake",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2602,
+        2603,
+        2604,
+        2605,
+        5803,
+        5804,
+        5805,
+        5806,
+        5807,
+        5808,
+        5809,
+        5810,
+        5811,
+        5812,
+        8377
+      ]
+    },
+    {
+      "id": 17920,
+      "name": "Bhaalgorn",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        1219,
+        1221,
+        3297,
+        3478,
+        5854,
+        8377
+      ]
+    },
+    {
+      "id": 17922,
+      "name": "Ashimmu",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1220,
+        1222,
+        3298,
+        3483,
+        5854,
+        6299,
+        6305,
+        12739,
+        12740
+      ]
+    },
+    {
+      "id": 17924,
+      "name": "Succubus",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        3487,
+        3489,
+        4990,
+        5813
+      ]
+    },
+    {
+      "id": 17926,
+      "name": "Cruor",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1215,
+        3299,
+        3487,
+        4471,
+        5854,
+        6281,
+        6285,
+        6287,
+        6291
+      ]
+    },
+    {
+      "id": 17928,
+      "name": "Daredevil",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1218,
+        1773,
+        4513
+      ]
+    },
+    {
+      "id": 17930,
+      "name": "Worm",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1816,
+        1817,
+        1819,
+        1820,
+        5814,
+        5815,
+        5816,
+        5817,
+        5818,
+        5819
+      ]
+    },
+    {
+      "id": 17932,
+      "name": "Dramiel",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1228,
+        2215,
+        4515,
+        7117,
+        12887
+      ]
+    },
+    {
+      "id": 19720,
+      "name": "Revelation",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6501,
+        6502,
+        6503
+      ]
+    },
+    {
+      "id": 19722,
+      "name": "Naglfar",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6509,
+        6510,
+        6511
+      ]
+    },
+    {
+      "id": 19724,
+      "name": "Moros",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6506,
+        6507,
+        6508
+      ]
+    },
+    {
+      "id": 19726,
+      "name": "Phoenix",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6504,
+        6505,
+        6620
+      ]
+    },
+    {
+      "id": 19744,
+      "name": "Sigil",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        529,
+        5471,
+        6789,
+        7117
+      ]
+    },
+    {
+      "id": 20183,
+      "name": "Providence",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1668,
+        1672,
+        5901
+      ]
+    },
+    {
+      "id": 20185,
+      "name": "Charon",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1669,
+        1673,
+        5901
+      ]
+    },
+    {
+      "id": 20187,
+      "name": "Obelisk",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1670,
+        1674,
+        5901
+      ]
+    },
+    {
+      "id": 20189,
+      "name": "Fenrir",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1671,
+        1675,
+        5901
+      ]
+    },
+    {
+      "id": 21097,
+      "name": "Goru's Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 21628,
+      "name": "Guristas Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 22852,
+      "name": "Hel",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6594,
+        6606,
+        6610,
+        6613,
+        6614,
+        6618,
+        6624,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 23757,
+      "name": "Archon",
+      "groupId": 547,
+      "groupName": "Carrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6595,
+        6599,
+        6619,
+        6625,
+        6783,
+        12098,
+        12592,
+        12869
+      ]
+    },
+    {
+      "id": 23773,
+      "name": "Ragnarok",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6637,
+        6640,
+        6641,
+        6650,
+        6655,
+        6783
+      ]
+    },
+    {
+      "id": 23911,
+      "name": "Thanatos",
+      "groupId": 547,
+      "groupName": "Carrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6597,
+        6601,
+        6619,
+        6627,
+        6662,
+        6783,
+        12098,
+        12594,
+        12869
+      ]
+    },
+    {
+      "id": 23913,
+      "name": "Nyx",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6593,
+        6605,
+        6609,
+        6613,
+        6614,
+        6617,
+        6623,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 23915,
+      "name": "Chimera",
+      "groupId": 547,
+      "groupName": "Carrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6596,
+        6600,
+        6619,
+        6626,
+        6783,
+        12098,
+        12593,
+        12869
+      ]
+    },
+    {
+      "id": 23917,
+      "name": "Wyvern",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6592,
+        6604,
+        6608,
+        6613,
+        6614,
+        6616,
+        6622,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 23919,
+      "name": "Aeon",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6591,
+        6603,
+        6607,
+        6613,
+        6614,
+        6615,
+        6621,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 24483,
+      "name": "Nidhoggur",
+      "groupId": 547,
+      "groupName": "Carrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6598,
+        6602,
+        6619,
+        6628,
+        6661,
+        6783,
+        12098,
+        12595,
+        12869
+      ]
+    },
+    {
+      "id": 24688,
+      "name": "Rokh",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        1412,
+        2602,
+        2603,
+        2604,
+        2605,
+        8377
+      ]
+    },
+    {
+      "id": 24690,
+      "name": "Hyperion",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        550,
+        5367,
+        8377
+      ]
+    },
+    {
+      "id": 24692,
+      "name": "Abaddon",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2465,
+        2805,
+        8377
+      ]
+    },
+    {
+      "id": 24694,
+      "name": "Maelstrom",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        4950,
+        8106,
+        8377
+      ]
+    },
+    {
+      "id": 24696,
+      "name": "Harbinger",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5332,
+        5333,
+        6172,
+        6783
+      ]
+    },
+    {
+      "id": 24698,
+      "name": "Drake",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5335,
+        5336,
+        5337,
+        5338,
+        5339,
+        5340,
+        6175,
+        6783
+      ]
+    },
+    {
+      "id": 24700,
+      "name": "Myrmidon",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5342,
+        5343,
+        5348,
+        6176,
+        6783
+      ]
+    },
+    {
+      "id": 24702,
+      "name": "Hurricane",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5352,
+        5353,
+        6174,
+        6783
+      ]
+    },
+    {
+      "id": 26840,
+      "name": "Raven State Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        891,
+        892,
+        1885,
+        1886,
+        8377
+      ]
+    },
+    {
+      "id": 26842,
+      "name": "Tempest Tribal Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        549,
+        604,
+        8377
+      ]
+    },
+    {
+      "id": 28352,
+      "name": "Rorqual",
+      "groupId": 883,
+      "groupName": "Capital Industrial Ship",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        2134,
+        2251,
+        3267,
+        3493,
+        6104,
+        6783,
+        6793,
+        6794,
+        8264,
+        8296,
+        8297,
+        8309,
+        8470
+      ]
+    },
+    {
+      "id": 28606,
+      "name": "Orca",
+      "groupId": 941,
+      "groupName": "Industrial Command Ship",
+      "acquisition": "market",
+      "effects": [
+        2134,
+        2251,
+        3739,
+        3740,
+        3744,
+        6783,
+        6786,
+        6789,
+        8261,
+        8263,
+        8264,
+        8278,
+        8279,
+        8294,
+        8295,
+        8311
+      ]
+    },
+    {
+      "id": 29248,
+      "name": "Magnate",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5036,
+        5119,
+        5460
+      ]
+    },
+    {
+      "id": 29266,
+      "name": "Apotheosis",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 29336,
+      "name": "Scythe Fleet Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        602,
+        6088,
+        6093,
+        6096
+      ]
+    },
+    {
+      "id": 29337,
+      "name": "Augoror Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        909,
+        5136
+      ]
+    },
+    {
+      "id": 29340,
+      "name": "Osprey Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        1024,
+        2809,
+        5383,
+        5384,
+        5385,
+        6351
+      ]
+    },
+    {
+      "id": 29344,
+      "name": "Exequror Navy Issue",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        562,
+        11416,
+        11417
+      ]
+    },
+    {
+      "id": 30842,
+      "name": "InterBus Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 32305,
+      "name": "Armageddon Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        6253,
+        6256,
+        6257,
+        6260,
+        8377,
+        11421,
+        11422,
+        11423,
+        11424,
+        11425,
+        11426
+      ]
+    },
+    {
+      "id": 32307,
+      "name": "Dominix Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        550,
+        2186,
+        2187,
+        8377,
+        11419,
+        11420
+      ]
+    },
+    {
+      "id": 32309,
+      "name": "Scorpion Navy Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2602,
+        2603,
+        2604,
+        2605,
+        5456,
+        5457,
+        5619,
+        8377
+      ]
+    },
+    {
+      "id": 32311,
+      "name": "Typhoon Fleet Issue",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        604,
+        5628,
+        5629,
+        5630,
+        5631,
+        5632,
+        5633,
+        5634,
+        5635,
+        5636,
+        5637,
+        5638,
+        5639,
+        8377,
+        11428,
+        11429,
+        11430
+      ]
+    },
+    {
+      "id": 32811,
+      "name": "Miasmos Amastris Edition",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        726,
+        729,
+        6789
+      ]
+    },
+    {
+      "id": 32872,
+      "name": "Algos",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        5165,
+        5310,
+        5311,
+        5316
+      ]
+    },
+    {
+      "id": 32874,
+      "name": "Dragoon",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        5165,
+        5295,
+        5300,
+        6241,
+        6242,
+        6245,
+        6246
+      ]
+    },
+    {
+      "id": 32876,
+      "name": "Corax",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        1234,
+        5153,
+        5305,
+        5306,
+        5307,
+        5308
+      ]
+    },
+    {
+      "id": 32878,
+      "name": "Talwar",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        1234,
+        5153,
+        5319,
+        5320,
+        5321
+      ]
+    },
+    {
+      "id": 32880,
+      "name": "Venture",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        3526,
+        5058,
+        5139,
+        8313,
+        8315
+      ]
+    },
+    {
+      "id": 33079,
+      "name": "Hematos",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        4990,
+        4991,
+        5207,
+        5208,
+        5209
+      ]
+    },
+    {
+      "id": 33081,
+      "name": "Taipan",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        5008,
+        5009,
+        5011,
+        5012,
+        5014,
+        5030,
+        5035,
+        5212,
+        5213,
+        5214
+      ]
+    },
+    {
+      "id": 33083,
+      "name": "Violator",
+      "groupId": 237,
+      "groupName": "Corvette",
+      "acquisition": "market",
+      "effects": [
+        5013,
+        5209,
+        5215,
+        5216
+      ]
+    },
+    {
+      "id": 33151,
+      "name": "Brutix Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5341,
+        5380,
+        6173,
+        6783
+      ]
+    },
+    {
+      "id": 33153,
+      "name": "Drake Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5378,
+        5379,
+        6175,
+        6783,
+        7031,
+        7032,
+        7033,
+        7034,
+        7035,
+        7036,
+        7037,
+        7038
+      ]
+    },
+    {
+      "id": 33155,
+      "name": "Harbinger Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5333,
+        5381,
+        6172,
+        6783,
+        12296
+      ]
+    },
+    {
+      "id": 33157,
+      "name": "Hurricane Fleet Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5352,
+        6174,
+        6178,
+        6783
+      ]
+    },
+    {
+      "id": 33328,
+      "name": "Capsule - Genolution 'Auroral' 197-variant",
+      "groupId": 29,
+      "groupName": "Capsule",
+      "acquisition": "recovery-or-developer-fixture",
+      "effects": []
+    },
+    {
+      "id": 33395,
+      "name": "Moracha",
+      "groupId": 833,
+      "groupName": "Force Recon Ship",
+      "acquisition": "market",
+      "effects": [
+        968,
+        1232,
+        1921,
+        2252,
+        4512,
+        5259,
+        7117,
+        12887
+      ]
+    },
+    {
+      "id": 33397,
+      "name": "Chremoas",
+      "groupId": 830,
+      "groupName": "Covert Ops",
+      "acquisition": "market",
+      "effects": [
+        1228,
+        2215,
+        2252,
+        2253,
+        4168,
+        4515,
+        5260,
+        5460,
+        5485,
+        7117,
+        12887
+      ]
+    },
+    {
+      "id": 33468,
+      "name": "Astero",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1804,
+        1805,
+        1806,
+        1807,
+        2252,
+        5087,
+        5229,
+        5460,
+        5647
+      ]
+    },
+    {
+      "id": 33470,
+      "name": "Stratios",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        2179,
+        2188,
+        2252,
+        3483,
+        4640,
+        5229,
+        5460,
+        5721
+      ]
+    },
+    {
+      "id": 33472,
+      "name": "Nestor",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        2186,
+        2187,
+        2465,
+        5460,
+        5725,
+        5726,
+        5737,
+        5738,
+        8377
+      ]
+    },
+    {
+      "id": 33513,
+      "name": "Leopard",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": [
+        7117
+      ]
+    },
+    {
+      "id": 33553,
+      "name": "Stratios Emergency Responder",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "recovery-or-developer-fixture",
+      "effects": [
+        2179,
+        2188,
+        2252,
+        3483,
+        4640,
+        5229,
+        5460,
+        5721
+      ]
+    },
+    {
+      "id": 33816,
+      "name": "Garmur",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1230,
+        1862,
+        1863,
+        1864,
+        4620,
+        5079,
+        5867
+      ]
+    },
+    {
+      "id": 33818,
+      "name": "Orthrus",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        899,
+        1230,
+        4626,
+        5383,
+        5384,
+        5385,
+        5867
+      ]
+    },
+    {
+      "id": 33820,
+      "name": "Barghest",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        1230,
+        5862,
+        5863,
+        5864,
+        5865,
+        5866,
+        5867,
+        8377
+      ]
+    },
+    {
+      "id": 34328,
+      "name": "Bowhead",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        5998,
+        6001
+      ]
+    },
+    {
+      "id": 34496,
+      "name": "Council Diplomatic Shuttle",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 34590,
+      "name": "Victorieux Luxury Yacht",
+      "groupId": 5087,
+      "groupName": "Special Edition Yachts",
+      "acquisition": "market",
+      "effects": [
+        5647,
+        7117,
+        8120
+      ]
+    },
+    {
+      "id": 35779,
+      "name": "Imp",
+      "groupId": 831,
+      "groupName": "Interceptor",
+      "acquisition": "market",
+      "effects": [
+        3487,
+        3489,
+        3495,
+        3514,
+        3766,
+        5813,
+        6170,
+        7117,
+        8120
+      ]
+    },
+    {
+      "id": 35781,
+      "name": "Fiend",
+      "groupId": 894,
+      "groupName": "Heavy Interdiction Cruiser",
+      "acquisition": "market",
+      "effects": [
+        3468,
+        3483,
+        3484,
+        5008,
+        5009,
+        5011,
+        5012,
+        5820,
+        6166
+      ]
+    },
+    {
+      "id": 37453,
+      "name": "Crucifier Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        757,
+        6352,
+        6353,
+        6354
+      ]
+    },
+    {
+      "id": 37454,
+      "name": "Vigil Fleet Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        6359,
+        6360,
+        6361,
+        6362
+      ]
+    },
+    {
+      "id": 37455,
+      "name": "Griffin Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4941,
+        8100,
+        8101,
+        8102
+      ]
+    },
+    {
+      "id": 37456,
+      "name": "Maulus Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        5087,
+        5111,
+        6357,
+        6358
+      ]
+    },
+    {
+      "id": 37604,
+      "name": "Apostle",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6526,
+        6527,
+        6533,
+        6537,
+        6580,
+        6681,
+        6783,
+        8029,
+        12836
+      ]
+    },
+    {
+      "id": 37605,
+      "name": "Minokawa",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6536,
+        6537,
+        6545,
+        6546,
+        6580,
+        6681,
+        6783,
+        8029,
+        12835
+      ]
+    },
+    {
+      "id": 37606,
+      "name": "Lif",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6534,
+        6537,
+        6551,
+        6552,
+        6580,
+        6681,
+        6783,
+        8029,
+        12837
+      ]
+    },
+    {
+      "id": 37607,
+      "name": "Ninazu",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6535,
+        6537,
+        6548,
+        6549,
+        6580,
+        6681,
+        6783,
+        8029,
+        8091
+      ]
+    },
+    {
+      "id": 42124,
+      "name": "Vehement",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6507,
+        6709,
+        6710
+      ]
+    },
+    {
+      "id": 42125,
+      "name": "Vendetta",
+      "groupId": 659,
+      "groupName": "Supercarrier",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6593,
+        6594,
+        6605,
+        6613,
+        6614,
+        6623,
+        6624,
+        6713,
+        6783,
+        12098,
+        12869
+      ]
+    },
+    {
+      "id": 42126,
+      "name": "Vanquisher",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6640,
+        6641,
+        6649,
+        6650,
+        6654,
+        6711,
+        6712,
+        6783
+      ]
+    },
+    {
+      "id": 42241,
+      "name": "Molok",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        5854,
+        6104,
+        6640,
+        6641,
+        6647,
+        6650,
+        6783,
+        6851,
+        6852,
+        6853
+      ]
+    },
+    {
+      "id": 42242,
+      "name": "Dagon",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        5854,
+        6104,
+        6537,
+        6580,
+        6681,
+        6783,
+        6857,
+        6858,
+        6859,
+        6861,
+        6862,
+        6883,
+        8029,
+        12836
+      ]
+    },
+    {
+      "id": 42243,
+      "name": "Chemosh",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        5854,
+        6104,
+        6851,
+        6855,
+        6856,
+        12267
+      ]
+    },
+    {
+      "id": 42244,
+      "name": "Porpoise",
+      "groupId": 941,
+      "groupName": "Industrial Command Ship",
+      "acquisition": "market",
+      "effects": [
+        2134,
+        2251,
+        3739,
+        3740,
+        3744,
+        6214,
+        6789,
+        8261,
+        8264,
+        8278,
+        8279,
+        8294,
+        8295,
+        8311
+      ]
+    },
+    {
+      "id": 42685,
+      "name": "Sunesis",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        1218,
+        2215,
+        3487,
+        5014,
+        5035,
+        5229,
+        6083
+      ]
+    },
+    {
+      "id": 45645,
+      "name": "Loggerhead",
+      "groupId": 1538,
+      "groupName": "Force Auxiliary",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6537,
+        6546,
+        6681,
+        6783,
+        6986,
+        6987,
+        8029,
+        8091
+      ]
+    },
+    {
+      "id": 45647,
+      "name": "Caiman",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6505,
+        6984,
+        6985,
+        12869
+      ]
+    },
+    {
+      "id": 45649,
+      "name": "Komodo",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6638,
+        6640,
+        6641,
+        6648,
+        6649,
+        6783,
+        6981,
+        6982,
+        6983,
+        6984,
+        12869
+      ]
+    },
+    {
+      "id": 47269,
+      "name": "Damavik",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        7088,
+        7092,
+        7093,
+        7094,
+        7112,
+        7204,
+        7205,
+        7206,
+        7207
+      ]
+    },
+    {
+      "id": 47270,
+      "name": "Vedmak",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        7085,
+        7092,
+        7093,
+        7094,
+        7112,
+        8074
+      ]
+    },
+    {
+      "id": 47271,
+      "name": "Leshak",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        7079,
+        7080,
+        7092,
+        7093,
+        7094,
+        7112,
+        8377
+      ]
+    },
+    {
+      "id": 47466,
+      "name": "Praxis",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        5014,
+        5030,
+        5035,
+        5229,
+        7055
+      ]
+    },
+    {
+      "id": 49710,
+      "name": "Kikimora",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        7092,
+        7093,
+        7094,
+        7112,
+        7154,
+        7156,
+        7157
+      ]
+    },
+    {
+      "id": 49711,
+      "name": "Drekavac",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        6783,
+        7092,
+        7093,
+        7094,
+        7112,
+        7155,
+        7158,
+        7159,
+        7160,
+        7161,
+        7162
+      ]
+    },
+    {
+      "id": 49712,
+      "name": "Rodiva",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        7091,
+        7093,
+        7167,
+        7168,
+        7169,
+        7170
+      ]
+    },
+    {
+      "id": 52907,
+      "name": "Zirnitra",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        7092,
+        7093,
+        7094,
+        7112,
+        7238,
+        7239,
+        7240
+      ]
+    },
+    {
+      "id": 54731,
+      "name": "Skybreaker",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        8047,
+        8048
+      ]
+    },
+    {
+      "id": 54732,
+      "name": "Stormbringer",
+      "groupId": 26,
+      "groupName": "Cruiser",
+      "acquisition": "market",
+      "effects": [
+        8052,
+        8053
+      ]
+    },
+    {
+      "id": 54733,
+      "name": "Thunderchild",
+      "groupId": 27,
+      "groupName": "Battleship",
+      "acquisition": "market",
+      "effects": [
+        8054,
+        8056,
+        8377
+      ]
+    },
+    {
+      "id": 60764,
+      "name": "Laelaps",
+      "groupId": 894,
+      "groupName": "Heavy Interdiction Cruiser",
+      "acquisition": "market",
+      "effects": [
+        899,
+        912,
+        1230,
+        3468,
+        5008,
+        5009,
+        5011,
+        5012,
+        5383,
+        5384,
+        5385,
+        5867,
+        8360,
+        8362
+      ]
+    },
+    {
+      "id": 60765,
+      "name": "Raiju",
+      "groupId": 893,
+      "groupName": "Electronic Attack Ship",
+      "acquisition": "market",
+      "effects": [
+        1230,
+        1862,
+        1863,
+        1864,
+        3366,
+        3367,
+        3371,
+        3588,
+        3589,
+        5079,
+        5867
+      ]
+    },
+    {
+      "id": 64034,
+      "name": "Boobook",
+      "groupId": 31,
+      "groupName": "Shuttle",
+      "acquisition": "market",
+      "effects": []
+    },
+    {
+      "id": 72811,
+      "name": "Cyclone Fleet Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5349,
+        5350,
+        6175,
+        6783,
+        11055,
+        11056,
+        11358
+      ]
+    },
+    {
+      "id": 72812,
+      "name": "Ferox Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        6173,
+        6177,
+        6783,
+        11057,
+        11059,
+        11359
+      ]
+    },
+    {
+      "id": 72869,
+      "name": "Myrmidon Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5341,
+        5342,
+        5343,
+        5348,
+        6176,
+        6783,
+        11060,
+        11061,
+        12565
+      ]
+    },
+    {
+      "id": 72872,
+      "name": "Prophecy Navy Issue",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5326,
+        5331,
+        6176,
+        6783,
+        11063,
+        11064,
+        11065,
+        11067
+      ]
+    },
+    {
+      "id": 72903,
+      "name": "Probe Fleet Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4166,
+        5460,
+        11068,
+        11069
+      ]
+    },
+    {
+      "id": 72904,
+      "name": "Heron Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4165,
+        5460,
+        11069,
+        11070
+      ]
+    },
+    {
+      "id": 72907,
+      "name": "Magnate Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        514,
+        5119,
+        5460,
+        11069
+      ]
+    },
+    {
+      "id": 72913,
+      "name": "Imicus Navy Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        4167,
+        5087,
+        5111,
+        5460,
+        11069,
+        11072
+      ]
+    },
+    {
+      "id": 73787,
+      "name": "Naglfar Fleet Issue",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6509,
+        6510,
+        11373,
+        11454
+      ]
+    },
+    {
+      "id": 73789,
+      "name": "Coercer Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        11404,
+        11405,
+        11406,
+        11407,
+        11408,
+        11410,
+        11450
+      ]
+    },
+    {
+      "id": 73790,
+      "name": "Revelation Navy Issue",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6501,
+        6502,
+        6503,
+        11374
+      ]
+    },
+    {
+      "id": 73792,
+      "name": "Moros Navy Issue",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6507,
+        6508,
+        11376,
+        11380,
+        11381,
+        11446,
+        11452
+      ]
+    },
+    {
+      "id": 73793,
+      "name": "Phoenix Navy Issue",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6504,
+        6505,
+        6620,
+        11382
+      ]
+    },
+    {
+      "id": 73794,
+      "name": "Thrasher Fleet Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        11398,
+        11399,
+        11400,
+        11401,
+        11402
+      ]
+    },
+    {
+      "id": 73795,
+      "name": "Cormorant Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        11391,
+        11392,
+        11395,
+        11396,
+        11397
+      ]
+    },
+    {
+      "id": 73796,
+      "name": "Catalyst Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        11387,
+        11388,
+        11390,
+        11393,
+        11394
+      ]
+    },
+    {
+      "id": 77114,
+      "name": "Metamorphosis",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        1218,
+        2215,
+        2252,
+        3487,
+        5460,
+        6083,
+        8226,
+        11528,
+        11529,
+        11530,
+        11531,
+        11532
+      ]
+    },
+    {
+      "id": 78333,
+      "name": "Mekubal",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2215,
+        7117,
+        11743,
+        11919,
+        12567,
+        12887
+      ]
+    },
+    {
+      "id": 78366,
+      "name": "Alligator",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5821,
+        6176,
+        6783,
+        7184,
+        7185,
+        7186,
+        11745,
+        11746,
+        11747,
+        11748,
+        11750,
+        11751,
+        11752,
+        11753
+      ]
+    },
+    {
+      "id": 78367,
+      "name": "Mamba",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        5816,
+        5817,
+        5818,
+        5819,
+        11938,
+        11939,
+        11940,
+        11941,
+        11942,
+        11943,
+        12566
+      ]
+    },
+    {
+      "id": 78369,
+      "name": "Khizriel",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        5352,
+        6174,
+        6783,
+        7117,
+        11763,
+        11764,
+        12887
+      ]
+    },
+    {
+      "id": 78576,
+      "name": "Azariel",
+      "groupId": 30,
+      "groupName": "Titan",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6637,
+        6640,
+        6641,
+        6649,
+        6650,
+        6655,
+        6783,
+        7117,
+        11944,
+        11945,
+        12887
+      ]
+    },
+    {
+      "id": 81008,
+      "name": "Squall",
+      "groupId": 28,
+      "groupName": "Hauler",
+      "acquisition": "market",
+      "effects": [
+        6789,
+        7117,
+        12050,
+        12051,
+        12052,
+        12053,
+        12054,
+        12127
+      ]
+    },
+    {
+      "id": 81040,
+      "name": "Avalanche",
+      "groupId": 513,
+      "groupName": "Freighter",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        12057,
+        12058,
+        12060,
+        12061,
+        12062,
+        12063,
+        12069,
+        12071
+      ]
+    },
+    {
+      "id": 85086,
+      "name": "Cenotaph",
+      "groupId": 419,
+      "groupName": "Combat Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        2252,
+        5647,
+        6174,
+        6175,
+        6783,
+        12189,
+        12191,
+        12193,
+        12195
+      ]
+    },
+    {
+      "id": 85087,
+      "name": "Tholos",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        2252,
+        5647,
+        12188,
+        12190,
+        12192,
+        12194
+      ]
+    },
+    {
+      "id": 87381,
+      "name": "Sarathiel",
+      "groupId": 485,
+      "groupName": "Dreadnought",
+      "acquisition": "market",
+      "effects": [
+        1615,
+        1617,
+        6104,
+        6509,
+        7117,
+        12244,
+        12245,
+        12246,
+        12887
+      ]
+    },
+    {
+      "id": 89240,
+      "name": "Pioneer",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        12329,
+        12330,
+        12331,
+        12557,
+        12596
+      ]
+    },
+    {
+      "id": 89607,
+      "name": "Odysseus",
+      "groupId": 4902,
+      "groupName": "Expedition Command Ship",
+      "acquisition": "market",
+      "effects": [
+        2251,
+        2252,
+        5229,
+        5460,
+        5721,
+        6783,
+        12249,
+        12251,
+        12529,
+        12537,
+        12538,
+        12539,
+        12540,
+        12541,
+        12543
+      ]
+    },
+    {
+      "id": 89647,
+      "name": "Pioneer Consortium Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        12329,
+        12330,
+        12331,
+        12557,
+        12559,
+        12560,
+        12596,
+        12753
+      ]
+    },
+    {
+      "id": 89648,
+      "name": "Venture Consortium Issue",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "acquisition": "market",
+      "effects": [
+        3526,
+        5058,
+        5139,
+        8313,
+        8315,
+        12560,
+        12563,
+        12753
+      ]
+    },
+    {
+      "id": 89807,
+      "name": "Anhinga",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        12758,
+        12764,
+        12766,
+        12790
+      ]
+    },
+    {
+      "id": 91174,
+      "name": "Perseverance",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        12771,
+        12772,
+        12773,
+        12774
+      ]
+    },
+    {
+      "id": 91775,
+      "name": "Dragoon Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        5165,
+        5295,
+        5300,
+        6241,
+        6242,
+        6245,
+        6246,
+        12807,
+        12808
+      ]
+    },
+    {
+      "id": 91849,
+      "name": "Algos Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        5165,
+        5310,
+        5311,
+        12810,
+        12843,
+        12908
+      ]
+    },
+    {
+      "id": 91857,
+      "name": "Corax Navy Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        1234,
+        5153,
+        12812,
+        12813,
+        12815
+      ]
+    },
+    {
+      "id": 91858,
+      "name": "Talwar Fleet Issue",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "acquisition": "market",
+      "effects": [
+        1234,
+        5153,
+        12817,
+        12818,
+        12819
+      ]
+    },
+    {
+      "id": 92282,
+      "name": "Tenzin YC128 Campaign Bus",
+      "groupId": 5087,
+      "groupName": "Special Edition Yachts",
+      "acquisition": "market",
+      "effects": [
+        5647,
+        7117,
+        8120
+      ]
+    },
+    {
+      "id": 92283,
+      "name": "Moreau YC128 Campaign Bus",
+      "groupId": 5087,
+      "groupName": "Special Edition Yachts",
+      "acquisition": "market",
+      "effects": [
+        5647,
+        7117,
+        8120
+      ]
+    },
+    {
+      "id": 92284,
+      "name": "Roden YC128 Campaign Bus",
+      "groupId": 5087,
+      "groupName": "Special Edition Yachts",
+      "acquisition": "market",
+      "effects": [
+        5647,
+        7117,
+        8120
+      ]
+    },
+    {
+      "id": 95741,
+      "name": "Akoman",
+      "groupId": 1201,
+      "groupName": "Attack Battlecruiser",
+      "acquisition": "market",
+      "effects": [
+        4820,
+        4823,
+        4826,
+        5854,
+        12949,
+        12950,
+        12951,
+        12952,
+        12953
+      ]
+    }
+  ]
+}

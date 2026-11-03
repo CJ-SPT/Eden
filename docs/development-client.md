@@ -249,7 +249,7 @@ Sales tax is currently pinned to the staged client's observed **7.5%** runtime f
 4. Undock, warp to a Perimeter belt, lock a nearby asteroid and activate the laser. Ore should accumulate in Mining Hold while ordinary cargo remains separate. With Mining III and Mining Frigate I, a noncritical full Miner I cycle yields 241 Veldspar; a civilian laser yields 144 per full cycle. The calculation floors whole ore units after applying yield bonuses.
 5. Dock and drag ore from Mining Hold into Item Hangar to sell it, or reprocess directly from the hold with **Item Hangar** selected for output. The pinned client does not offer Sell This Item from Mining Hold. Minerals belong in ordinary cargo or Item Hangar. Restart the host and client and compare ship names, active hull, fitting, hold contents and wallet.
 
-Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Venture assembly is the first supported purchased hull. Repackaging, assembled-ship sales and boarding in space remain unavailable.
+Ship switching preserves each hull's items and capacitor. The server requires ownership, an assembled hull in the same station, a docked pilot and the catalog's required skills. Inventory bindings retain the ship ID they were opened for; activate a ship before changing its contents. Purchased hull assembly supports the Venture, Merlin, Punisher, Incursus and Rifter. Repackaging, assembled-ship sales and boarding in space remain unavailable.
 
 ## Board a recovery corvette
 
@@ -522,3 +522,19 @@ With Scrambler I's two points active, attempt warp and verify rejection. Activat
 Use a copied save beside the matching catalog and launch the host with EDEN_TRACE_MOTION=1 in its process environment. The server prints the committed Destiny tick and surface range for each nearby player/player or player/NPC pair.
 
 Launch the normal development client once with -Login -Pilot Pilot and once with -Login -Pilot Wing. Select Eden Pilot and Eden Wing. Place the two ships in clear space, select the other ship in both overviews and use Approach on one pilot. Watch the moving ship contact the stopped ship, then stop both ships. Compare both overview ranges with the logged server surface range, allowing the labels to refresh. Watch for at least twenty seconds after settling to catch delayed corrections. Repeat with the other pilot approaching, then approach a Perimeter belt NPC while the second pilot observes. Record actual visible movement, any snap, settled ranges and the matching server ticks separately from automated test results.
+
+## Fly the four racial Tech I frigates
+
+Use a copied save and the normal pinned catalog. Buy Merlin, Punisher, Incursus and Rifter hulls from the station testing market, assemble them in Ship Hangar, name them and board each. The catalog required racial Frigate skills remain mandatory. Select Eden Pilot and check the active hull in Inventory after every boarding.
+
+With racial Frigate III, Merlin receives 15% small-hybrid damage and 12% shield resistance bonuses. Punisher receives 30% small-energy capacitor reduction and 12% armor resistance bonuses. Incursus receives 15% small-hybrid damage and 22.5% local armor repair amount bonuses. Rifter receives 30% small-projectile falloff and 22.5% cycle-time reduction. Fit and use a compatible weapon with its ammunition, preserving the real CPU, power and hardpoint budgets. Check Fitting and the weapon or repairer attributes, then defeat a Perimeter belt NPC in each hull.
+
+Switch back to the starting ship and verify its original cargo and fit. Restart the host and client against the same copied save, reselect Eden Pilot, and check the last active hull, name, fit, loaded ammunition and damage. The Incursus drone bay awaits drone control. These hulls also retain the existing wider gaps for rigs, heat and unsupported module families.
+
+Reproduce the full 275-ID Tech I inventory and first-cohort fixtures with the following command.
+
+```powershell
+python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures
+```
+
+The first-cohort acceptance used a copied Perimeter save, racial Frigate III and trained test-equipment prerequisites. All four ships were bought at the existing 1 ISK offers and assembled, named, boarded and fitted through native controls. Each destroyed a belt Rookie and redocked. The native weapon context menus loaded cargo ammunition. The armor repairer displayed 113 HP per 4.5 seconds and visibly consumed capacitor. Returning to the original Ibis showed its empty 125 m³ hold. Restarting the host/client retained the named Rifter, three loaded guns, 20.1 DPS in Fitting and 400 spare rounds in Inventory. The [protocol acceptance record](protocol.md#tech-i-hull-expansion-milestone-1) separates exact automated checks from these observations and describes the copied-save ammunition preparation and the station-alignment limitation.

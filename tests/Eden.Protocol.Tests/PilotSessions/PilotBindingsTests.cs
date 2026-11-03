@@ -9,7 +9,7 @@ public sealed class PilotBindingsTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void LocationChangesAndBoardingRetireSyntheticInventoryBindings(bool boarding)
+    public void DockedBoardingRetainsLocationBindingsUntilDeparture(bool boarding)
     {
         using TestWorld world = new();
         var pilot = world.Store.FindPilot(1000001)!;
@@ -28,11 +28,10 @@ public sealed class PilotBindingsTests
         if (boarding)
         {
             context.ChangeShip(pilot);
+            Assert.Equal("@hangar", context.ResolveReference(hangar.Id));
+            Assert.Equal($"@ship:{pilot.ShipId}", context.ResolveReference(ship.Id));
         }
-        else
-        {
-            context.ReleaseLocationReferences();
-        }
+        context.ReleaseLocationReferences();
         Assert.Null(context.ResolveReference(hangar.Id));
         Assert.Null(context.ResolveReference(ship.Id));
         Assert.Equal("@skills", context.ResolveReference(skills.Id));

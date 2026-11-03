@@ -230,17 +230,22 @@ internal sealed record FittingCalculation(
                 }
             }
         }
+        foreach (var modifier in HullCatalog.Modifiers(catalog, ship.TypeId))
+        {
+            Add(ship.Id, modifier, true);
+        }
         List<(int Skill, PassiveModifier Modifier)> skillModifiers = [];
-        var relevantSkills = PassiveModules.Skills.Concat(MissileDefinitions.Skills).Distinct().ToArray();
+        var hullSkills = HullCatalog.Skills(catalog, ship.TypeId);
+        var relevantSkills = PassiveModules.Skills.Concat(MissileDefinitions.Skills).Concat(hullSkills).Distinct().ToArray();
         var trained = world
             .Set<PilotSkill>()
             .Where(s => s.PilotId == pilot.Id && relevantSkills.Contains(s.TypeId))
             .Select(s => s.TypeId)
             .ToHashSet();
-        foreach (int skill in relevantSkills.Where(trained.Contains))
+        foreach (int skill in relevantSkills.Where(skill => trained.Contains(skill) || hullSkills.Contains(skill)))
         {
             int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
-            if (level == 0)
+            if (level == 0 && !hullSkills.Contains(skill))
             {
                 continue;
             }

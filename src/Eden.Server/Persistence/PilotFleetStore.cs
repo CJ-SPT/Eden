@@ -107,7 +107,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                 throw new InvalidDataException("The packaged ship is unavailable in your current hangar.");
             }
             var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
-            if (type.Group.CategoryId != (int)InventoryCategory.Ship || type.Id != (int)StarterShipType.Venture)
+            if (!HullCatalog.CanAssemble(catalog, type, type.Group.CategoryId))
             {
                 throw new InvalidDataException("This hull is not supported for assembly yet.");
             }
