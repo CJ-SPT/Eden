@@ -37,16 +37,19 @@ public sealed class NpcEncounterTests
             INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius) VALUES (30380,'Guristas Rookie',286,1500100,50),(15,'Belt',9,0,1);
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
                 (40009232,30000144,15,9,1e10,2e10,3e10),(40009245,30000144,15,9,2e10,2e10,3e10);
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
+            INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
                 (564,'scanResolution');
-            INSERT INTO TypeAttribute VALUES (30380,9,20),(30380,263,20),(30380,265,15),(30380,479,2000000),(30380,37,440),(30380,552,33);
-            INSERT INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),
+            INSERT OR IGNORE INTO TypeAttribute VALUES (30380,9,20),(30380,263,20),(30380,265,15),(30380,479,2000000),
+                (30380,37,440),(30380,552,33);
+            INSERT OR IGNORE INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
+            INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (51,'speed'),(54,'maxRange'),(64,'damageMultiplier'),
                 (114,'emDamage'),(116,'explosiveDamage'),(117,'kineticDamage'),(118,'thermalDamage'),(158,'falloff'),
-                (160,'trackingSpeed'),(245,'gfxTurretID'),(247,'entityAttackRange'),(475,'entityAttackDelayMin'),(620,'optimalSigRadius');
-            INSERT INTO DogmaAttribute(Id,Name) VALUES (416,'entityFlyRange'),(508,'entityCruiseSpeed'),(665,'entityChaseMaxDistance');
-            INSERT INTO TypeAttribute VALUES (30380,416,1250),(30380,508,220),(30380,665,1875);
-            INSERT INTO TypeAttribute VALUES (30380,51,2500),(30380,54,500),(30380,64,0.625),
+                (160,'trackingSpeed'),(245,'gfxTurretID'),(247,'entityAttackRange'),(475,'entityAttackDelayMin'),
+                (620,'optimalSigRadius');
+            INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (416,'entityFlyRange'),(508,'entityCruiseSpeed'),
+                (665,'entityChaseMaxDistance');
+            INSERT OR IGNORE INTO TypeAttribute VALUES (30380,416,1250),(30380,508,220),(30380,665,1875);
+            INSERT OR IGNORE INTO TypeAttribute VALUES (30380,51,2500),(30380,54,500),(30380,64,0.625),
                 (30380,114,0),(30380,116,0),(30380,117,2),(30380,118,2),(30380,158,3000),
                 (30380,160,0.365),(30380,245,562),(30380,247,3125),(30380,475,7500),(30380,620,40);
             """

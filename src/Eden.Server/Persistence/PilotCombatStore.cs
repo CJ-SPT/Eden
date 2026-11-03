@@ -87,6 +87,7 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
+            || FittingCatalog.Definition(catalog, module.TypeId) is null
             || npc is null
             || npc.DestroyedAt.HasValue
         )
@@ -131,12 +132,28 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
                 rounds <= 0
                 || rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)
                 || loadedAmmo!.Quantity < rounds
-                || damageAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize
-                || catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId != AmmunitionDefinitions.HybridChargeGroup
+                || !AmmunitionDefinitions.CompatibleHybridCharge(
+                    attributes,
+                    catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo!.TypeId).GroupId,
+                    damageAttributes
+                )
+                || !HybridChargeCatalog.Supported(
+                    catalog,
+                    loadedAmmo!.TypeId,
+                    catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId
+                )
             )
         )
         {
             throw new InvalidDataException("Load enough compatible ammunition before firing the weapon.");
+        }
+        if (loadedAmmo is not null)
+        {
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, loadedAmmo.TypeId);
+        }
+        if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
+        {
+            throw new InvalidDataException("A destroyed ship cannot fire its weapons.");
         }
         if (
             damageAttributes.Values.Any(v => !double.IsFinite(v))

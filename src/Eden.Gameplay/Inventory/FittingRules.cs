@@ -6,8 +6,23 @@ namespace Eden.Gameplay.Inventory;
 
 public sealed record FittedResourceUsage(int FlagId, bool Online, double Cpu, double Power, bool Turret, bool Launcher);
 
+public sealed record RookieResistanceModifier(DogmaAttributeId Bonus, DogmaAttributeId Resonance);
+
 public static class FittingRules
 {
+    // Corvette roles are exempt graph modifiers, before any final resistance override.
+    public static IReadOnlyList<RookieResistanceModifier> RookieResistanceModifiers { get; } =
+    [
+        new(DogmaAttributeId.RookieShieldResistanceBonus, DogmaAttributeId.ShieldEmResonance),
+        new(DogmaAttributeId.RookieShieldResistanceBonus, DogmaAttributeId.ShieldExplosiveResonance),
+        new(DogmaAttributeId.RookieShieldResistanceBonus, DogmaAttributeId.ShieldKineticResonance),
+        new(DogmaAttributeId.RookieShieldResistanceBonus, DogmaAttributeId.ShieldThermalResonance),
+        new(DogmaAttributeId.RookieArmorResistanceBonus, DogmaAttributeId.ArmorEmResonance),
+        new(DogmaAttributeId.RookieArmorResistanceBonus, DogmaAttributeId.ArmorExplosiveResonance),
+        new(DogmaAttributeId.RookieArmorResistanceBonus, DogmaAttributeId.ArmorKineticResonance),
+        new(DogmaAttributeId.RookieArmorResistanceBonus, DogmaAttributeId.ArmorThermalResonance),
+    ];
+
     public static Dictionary<DogmaAttributeId, double> Apply(
         IReadOnlyDictionary<DogmaAttributeId, double> basis,
         IReadOnlyDictionary<int, int> levels,
@@ -15,39 +30,6 @@ public static class FittingRules
     )
     {
         var attributes = basis.ToDictionary();
-        // Catalog corvette role effects multiply the corresponding resonances.
-        // A -8 percent bonus means 0.92 times damage, not eight resistance points.
-        foreach (
-            var (bonus, resonances) in new[]
-            {
-                (
-                    DogmaAttributeId.RookieShieldResistanceBonus,
-                    new[]
-                    {
-                        DogmaAttributeId.ShieldEmResonance,
-                        DogmaAttributeId.ShieldExplosiveResonance,
-                        DogmaAttributeId.ShieldKineticResonance,
-                        DogmaAttributeId.ShieldThermalResonance,
-                    }
-                ),
-                (
-                    DogmaAttributeId.RookieArmorResistanceBonus,
-                    new[]
-                    {
-                        DogmaAttributeId.ArmorEmResonance,
-                        DogmaAttributeId.ArmorExplosiveResonance,
-                        DogmaAttributeId.ArmorKineticResonance,
-                        DogmaAttributeId.ArmorThermalResonance,
-                    }
-                ),
-            }
-        )
-        {
-            foreach (var resonance in resonances)
-            {
-                attributes[resonance] = attributes.GetValueOrDefault(resonance, 1) * (1 + attributes.GetValueOrDefault(bonus) / 100);
-            }
-        }
         // These skills each grant five percent per trained level to their hull attribute.
         foreach (
             var (skill, output) in new[]

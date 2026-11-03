@@ -139,6 +139,14 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             return false;
         }
+        // Manufacturing expansion is separate from fitting/firing new weapon sizes.
+        if (
+            type.GroupId == CombatDefinitions.HybridWeaponGroup
+            && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize
+        )
+        {
+            return false;
+        }
         return type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
             || (

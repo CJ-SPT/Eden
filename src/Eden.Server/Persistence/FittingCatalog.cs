@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -14,6 +15,10 @@ internal static class FittingCatalog
     {
         var type = catalog.Set<ItemType>().Find(typeId);
         if (type is null)
+        {
+            return null;
+        }
+        if (type.GroupId == CombatDefinitions.HybridWeaponGroup && !HybridWeaponCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

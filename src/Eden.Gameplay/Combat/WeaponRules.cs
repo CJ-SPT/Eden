@@ -1,4 +1,6 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Combat;
 
@@ -26,19 +28,38 @@ public static class WeaponRules
         }
         foreach (
             var modifier in CombatDefinitions.SkillModifiers.Where(m =>
-                (hybrid || m.RequiredSkill == CombatSkill.Gunnery) && (m.GroupId is null || m.GroupId == inputs.GroupId)
+                (
+                    m.GroupId is int group
+                        ? group == inputs.GroupId
+                        : InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == (int)m.RequiredSkill)
+                )
             )
         )
         {
-            attributes[modifier.Attribute] *= 1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill);
+            attributes[modifier.Attribute] =
+                attributes.GetValueOrDefault(modifier.Attribute)
+                * (1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill));
         }
         if (hybrid)
         {
-            attributes[DogmaAttributeId.MaxRange] *= 1 + inputs.HullOptimalBonus / Percent;
+            if (
+                InventoryDefinitions.RequiredSkills.Any(pair =>
+                    attributes.GetValueOrDefault(pair.Skill) == (int)CombatSkill.SmallHybridTurret
+                )
+            )
+            {
+                attributes[DogmaAttributeId.MaxRange] *= 1 + inputs.HullOptimalBonus / Percent;
+            }
             if (inputs.ChargeAttributes is { } charge)
             {
-                attributes[DogmaAttributeId.MaxRange] *= charge.GetValueOrDefault(DogmaAttributeId.WeaponRangeMultiplier, 1);
-                attributes[DogmaAttributeId.CapacitorNeed] *= 1 + charge.GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus) / Percent;
+                foreach (var modifier in AmmunitionDefinitions.HybridModifiers)
+                {
+                    if (charge.TryGetValue(modifier.Source, out double value))
+                    {
+                        double factor = modifier.Operation == DogmaOperation.PostPercent ? 1 + value / Percent : value;
+                        attributes[modifier.Attribute] = attributes.GetValueOrDefault(modifier.Attribute, modifier.DefaultValue) * factor;
+                    }
+                }
             }
             attributes[DogmaAttributeId.NextActivationTime] = inputs.ReloadReadyAt;
         }

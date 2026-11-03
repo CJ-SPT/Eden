@@ -103,7 +103,10 @@ internal static class TestCatalog
                 '{{"dogmaEffects":[{{"effectID":12,"isDefault":0}},
                 {{"effectID":16,"isDefault":0}},
                 {{"effectID":42,"isDefault":0}},
-                {{"effectID":34,"isDefault":1}}]}}');
+                {{"effectID":34,"isDefault":1}},{{"effectID":3001,"isDefault":0}}]}}');
+            INSERT INTO SourceRecord VALUES ('client/typedogma','215',
+                '{{"dogmaEffects":[{{"effectID":596}},{{"effectID":804}}]}}'),
+                ('client/typedogma','222','{{"dogmaEffects":[{{"effectID":596}},{{"effectID":804}}]}}');
             INSERT INTO SourceRecord VALUES ('client/typedogma','399',
                 '{{"dogmaEffects":[{{"effectID":13,"isDefault":0}},
                 {{"effectID":16,"isDefault":0}},
@@ -164,5 +167,6 @@ internal static class TestCatalog
                 VALUES (60003760,52678,1000035,30000142,14,40009087,-107303362560,-18744975360,436489052160);
             """
         );
+        PassiveCatalogFixture.LoadWeaponMetadata(path, new HashSet<int>());
     }
 }

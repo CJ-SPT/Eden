@@ -1,6 +1,6 @@
 using Eden.Gameplay.Ammunition;
-using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Combat;
 
@@ -14,6 +14,17 @@ public enum CombatSkill
 {
     Gunnery = 3300,
     SmallHybridTurret = 3301,
+    MediumHybridTurret = 3304,
+    LargeHybridTurret = 3307,
+    CapitalHybridTurret = 21666,
+    SmallRailgunSpecialization = 11082,
+    MediumRailgunSpecialization = 12206,
+    LargeRailgunSpecialization = 12207,
+    SmallBlasterSpecialization = 12210,
+    MediumBlasterSpecialization = 12211,
+    LargeBlasterSpecialization = 12212,
+    CapitalBlasterSpecialization = 41405,
+    CapitalRailgunSpecialization = 41406,
     ControlledBursts = 3316,
     RapidFiring = 3310,
     Sharpshooter = 3311,
@@ -37,8 +48,9 @@ public static class CombatDefinitions
 
     public static bool IsSupportedHybrid(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         group == HybridWeaponGroup
-        && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == Eden.Gameplay.Ammunition.AmmunitionDefinitions.SmallChargeSize
-        && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == Eden.Gameplay.Ammunition.AmmunitionDefinitions.TechOne;
+        && AmmunitionDefinitions.ValidSize(attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize))
+        && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is AmmunitionDefinitions.TechOne or AmmunitionDefinitions.TechTwo
+        && !InventoryDefinitions.RequiresSpecificShip(attributes);
 
     public const double WreckingChance = CombatDamage.WreckingChance;
     public const double WreckingMultiplier = CombatDamage.WreckingMultiplier;
@@ -51,6 +63,7 @@ public static class CombatDefinitions
     public const double RapidFiringCycleReduction = 0.04;
     public const double SurgicalStrikeDamageBonus = 0.03;
     public const double WeaponSkillBonus = 0.05;
+    public const double SpecializationDamageBonus = 0.02;
 
     // The native pilot brain and authoritative shot calculation share these
     // pinned skill effects, including their required-skill or group targets.
@@ -66,6 +79,57 @@ public static class CombatDefinitions
             new(CombatSkill.SurgicalStrike, DogmaAttributeId.DamageMultiplier, SurgicalStrikeDamageBonus, GroupId: HybridWeaponGroup),
             new(CombatSkill.ControlledBursts, DogmaAttributeId.CapacitorNeed, -WeaponSkillBonus),
             new(CombatSkill.SmallHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.SmallHybridTurret),
+            new(CombatSkill.MediumHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.MediumHybridTurret),
+            new(CombatSkill.LargeHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.LargeHybridTurret),
+            new(CombatSkill.CapitalHybridTurret, DogmaAttributeId.DamageMultiplier, WeaponSkillBonus, CombatSkill.CapitalHybridTurret),
+            new(
+                CombatSkill.SmallRailgunSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallRailgunSpecialization
+            ),
+            new(
+                CombatSkill.MediumRailgunSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumRailgunSpecialization
+            ),
+            new(
+                CombatSkill.LargeRailgunSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargeRailgunSpecialization
+            ),
+            new(
+                CombatSkill.SmallBlasterSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.SmallBlasterSpecialization
+            ),
+            new(
+                CombatSkill.MediumBlasterSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.MediumBlasterSpecialization
+            ),
+            new(
+                CombatSkill.LargeBlasterSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.LargeBlasterSpecialization
+            ),
+            new(
+                CombatSkill.CapitalBlasterSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalBlasterSpecialization
+            ),
+            new(
+                CombatSkill.CapitalRailgunSpecialization,
+                DogmaAttributeId.DamageMultiplier,
+                SpecializationDamageBonus,
+                CombatSkill.CapitalRailgunSpecialization
+            ),
         };
     public const int ConcordCorporation = 1000125;
     public const long FirstBountyJournalId = 6_000_000_000_000;

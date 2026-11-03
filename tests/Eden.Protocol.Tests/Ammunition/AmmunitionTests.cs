@@ -53,12 +53,13 @@ public sealed class AmmunitionTests
                         (3316,'Controlled Bursts',257);
                     INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (6,'capacitorNeed'),(11,'powerOutput'),(14,'hiSlots'),(30,'power'),
                         (48,'cpuOutput'),(50,'cpu'),(56,'chargeRate'),(120,'weaponRangeMultiplier'),(128,'chargeSize'),
-                            (182,'requiredSkill1'),
+                            (182,'requiredSkill1'),(183,'requiredSkill2'),(278,'requiredSkill2Level'),
                         (277,'requiredSkill1Level'),(317,'capNeedBonus'),(422,'techLevel'),(604,'chargeGroup1'),(805,'quantity'),
                             (1795,'reloadTime'),(1826,'rookieSHTOptimalBonus');
                     INSERT INTO TypeAttribute VALUES (601,11,23),(601,14,2),(601,48,135),(601,1826,20),
                         (561,6,1.169),(561,30,2),(561,50,5),(561,51,2600),(561,54,6000),(561,56,1),(561,64,1.65),(561,128,1),
-                        (561,158,3000),(561,160,136.5),(561,182,3301),(561,277,1),(561,422,1),(561,604,85),(561,620,40000),(561,1795,5000),
+                        (561,158,3000),(561,160,136.5),(561,182,3301),(561,183,3300),(561,277,1),(561,278,1),(561,422,1),
+                        (561,604,85),(561,620,40000),(561,1795,5000),
                         (215,117,3),(215,118,2),(215,120,1.6),(215,128,1),(215,317,-30),
                         (222,117,7),(222,118,5),(222,120,0.5),(222,128,1),(222,317,0),
                         (3300,275,1),(3301,275,1),(3316,275,1);

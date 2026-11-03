@@ -24896,8 +24896,24 @@
       "dataset": "client/dogmaeffects",
       "key": 34,
       "data": {
+        "rangeChance": 0,
+        "guid": "effects.ProjectileFired",
+        "isAssistance": 0,
+        "isOffensive": 1,
         "effectCategory": 2,
-        "effectID": 34
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "published": 0,
+        "disallowAutoRepeat": 0,
+        "trackingSpeedAttributeID": 160,
+        "effectID": 34,
+        "rangeAttributeID": 54,
+        "propulsionChance": 0,
+        "effectName": "projectileFired",
+        "distribution": 2,
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 51,
+        "falloffAttributeID": 158
       }
     },
     {
@@ -26822,7 +26838,15 @@
       "dataset": "client/dogmaeffects",
       "key": 3001,
       "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
         "effectID": 3001,
         "modifierInfo": [
           {
@@ -26832,7 +26856,11 @@
             "modifyingAttributeID": 1205,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "effectName": "overloadRofBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -39587,6 +39615,159 @@
             "isDefault": 1
           }
         ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3025,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3025,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 64,
+            "operation": 6,
+            "modifyingAttributeID": 1210,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfDamageBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5994,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5994,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 111,
+            "operation": 7,
+            "modifyingAttributeID": 1979,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 113,
+            "operation": 7,
+            "modifyingAttributeID": 1979,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 110,
+            "operation": 7,
+            "modifyingAttributeID": 1979,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 109,
+            "operation": 7,
+            "modifyingAttributeID": 1979,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "resistanceKillerHullAll",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5995,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5995,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 273,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 274,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 272,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 271,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 270,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 269,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 268,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 267,
+            "operation": 7,
+            "modifyingAttributeID": 1978,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "resistanceKillerShieldArmorAll",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     }
   ]

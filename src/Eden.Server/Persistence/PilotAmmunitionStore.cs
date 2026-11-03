@@ -99,7 +99,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
-                !(CombatDefinitions.IsSupportedHybrid(group, attributes) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                !(HybridWeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
@@ -113,7 +113,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 )
             )
             {
-                throw new InvalidDataException("This weapon does not use supported small hybrid charges.");
+                throw new InvalidDataException("This module does not use supported ammunition.");
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilot.Id, module.TypeId);
             if (world.Set<ModuleCooldown>().Find(module.Id) is { } cooldown && now < cooldown.ReadyAt)
@@ -175,10 +175,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
         var chargeAttributes = Attributes(catalog, typeId);
         if (
-            !(
-                chargeType.GroupId == AmmunitionDefinitions.HybridChargeGroup
-                && chargeAttributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
-            )
+            !(HybridChargeCatalog.Supported(catalog, typeId, chargeType.GroupId))
             && !(
                 chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                 && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0
@@ -205,9 +202,13 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 break;
             }
             var attributes = Attributes(catalog, module.TypeId);
-            if (attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) != chargeType.GroupId)
+            bool compatible =
+                chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
+                    ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
+                    : AmmunitionDefinitions.CompatibleHybridCharge(attributes, chargeType.GroupId, chargeAttributes);
+            if (!compatible)
             {
-                throw new InvalidDataException("The ammunition group does not match the weapon.");
+                throw new InvalidDataException("The ammunition group or size does not match the weapon.");
             }
             double capacity = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).Capacity ?? 0;
             int limit = checked((int)Math.Floor(capacity / volume + InventoryDefinitions.ResourceTolerance));

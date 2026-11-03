@@ -8,6 +8,7 @@ public enum DogmaOperation
     Add = 2,
     PostMultiply = 4,
     PostPercent = 6,
+    PostAssignment = 7,
 }
 
 public sealed record DogmaAttributeDefinition(
@@ -95,6 +96,14 @@ public sealed class DogmaGraph
             foreach (var operation in Enum.GetValues<DogmaOperation>())
             {
                 var modifiers = _incoming[key].Where(m => m.Operation == operation).ToArray();
+                if (operation == DogmaOperation.PostAssignment)
+                {
+                    foreach (var modifier in modifiers)
+                    {
+                        value = Read(modifier.Source);
+                    }
+                    continue;
+                }
                 if (operation == DogmaOperation.Add)
                 {
                     value += modifiers.Sum(m => Read(m.Source));
@@ -123,6 +132,15 @@ public sealed class DogmaGraph
                         value *= 1 + (factor - 1) / Math.Exp(Math.Pow(index++ / StackingDivisor, 2));
                     }
                 }
+            }
+            // Attribute.Update clamps both the base and the final modified value.
+            if (definition.Maximum is { } finalMaximum)
+            {
+                value = Math.Min(value, Read(itemId, finalMaximum));
+            }
+            if (definition.Minimum is { } finalMinimum)
+            {
+                value = Math.Max(value, Read(itemId, finalMinimum));
             }
             if (definition.Integer)
             {

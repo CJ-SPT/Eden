@@ -51,9 +51,21 @@ internal sealed record FittingCalculation(
         List<DogmaNode> nodes = [new(ship.Id, hullAttributes), new(pilot.Id, new Dictionary<DogmaAttributeId, double>())];
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
         List<DogmaModifier> modifiers = [];
+        foreach (var role in FittingRules.RookieResistanceModifiers)
+        {
+            hullAttributes.TryAdd(role.Resonance, 1);
+            modifiers.Add(new(ship.Id, role.Resonance, DogmaOperation.PostPercent, new DogmaValue.Attribute(ship.Id, role.Bonus), true));
+        }
         var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
         foreach (var module in modules)
         {
+            if (HybridWeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            {
+                foreach (var modifier in HybridWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, true);
+                }
+            }
             if (
                 module.Item.Online
                 && activeModules.Contains(module.Item.Id)
