@@ -2,12 +2,13 @@ using System.Net;
 using System.Net.Sockets;
 using Eden.Protocol;
 using Eden.Protocol.Transport;
+using Eden.Server.Launcher;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class LoopbackServer(ConnectionRunner connections)
+internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptions? options = null)
 {
     public async Task RunAsync()
     {
@@ -18,7 +19,7 @@ internal sealed class LoopbackServer(ConnectionRunner connections)
             shutdown.Cancel();
         }
 
-        using TcpListener listener = new(IPAddress.Loopback, 26000);
+        using TcpListener listener = new(IPAddress.Parse((options ?? new()).ListenAddress), (options ?? new()).GamePort);
         listener.Start();
         Console.WriteLine($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
         Console.CancelKeyPress += OnCancel;

@@ -3,11 +3,12 @@ using System.Security.Cryptography;
 using System.Text;
 using Eden.Protocol;
 using Eden.Protocol.PilotSessions;
+using Eden.Server.Launcher;
 
 namespace Eden.Server.Authentication;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, IDisposable
+internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore accounts, LauncherOptions options) : ILoginIdentity, IDisposable
 {
     private const string KeyName = "Eden.LocalLogin.3662168";
     private const string ManifestHash = "895B2827174D7BDDC54870763E9D5AEA056066C01E3D56F0DDF76927DCD3AA26";
@@ -84,6 +85,14 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
 
     public long? ValidateTicket(string ticket)
     {
+        if (ticket.StartsWith("eden3.", StringComparison.Ordinal))
+        {
+            return accounts.ConsumeTicket(ticket);
+        }
+        if (!options.DevelopmentLogin)
+        {
+            return null;
+        }
         string[] parts = ticket.Split('.');
         // Version 1 tickets identify the original account until their normal expiry.
         long? account = parts switch
@@ -114,4 +123,38 @@ internal sealed class DevelopmentIdentity(TimeProvider clock) : ILoginIdentity, 
             ? account
             : null;
     }
+
+    internal byte[] SignManifest(string encodedPrefix)
+    {
+        byte[] prefix;
+        try
+        {
+            prefix = Convert.FromBase64String(encodedPrefix);
+        }
+        catch (FormatException)
+        {
+            throw new LauncherException("invalid_manifest", "Invalid manifest prefix.");
+        }
+        const int prefixLength = 17769;
+        const string prefixHash = "04EB4A00671E7289BF14AAFBEE6849D490678A291DAD0DF333E519913921C631";
+        if (prefix.Length != prefixLength || Convert.ToHexString(SHA256.HashData(prefix)) != prefixHash)
+        {
+            throw new LauncherException("invalid_manifest", "Only the original build 3662168 manifest is supported.");
+        }
+        lock (Key)
+        {
+            using MemoryStream buffer = new();
+            using BinaryWriter writer = new(buffer);
+            writer.Write(prefix);
+            byte[] pem = Encoding.ASCII.GetBytes(Key.ExportSubjectPublicKeyInfoPem() + "\n");
+            writer.Write(pem.Length);
+            writer.Write(pem);
+            byte[] signature = Key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            writer.Write(signature.Length);
+            writer.Write(signature);
+            return buffer.ToArray();
+        }
+    }
+
+    public long ReadRoles(long accountId) => accounts.ReadRoles(accountId);
 }

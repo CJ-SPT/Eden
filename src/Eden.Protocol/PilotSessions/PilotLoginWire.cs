@@ -67,12 +67,12 @@ internal sealed record LoginChallenge(byte[] Challenge, SignedSettings Expressio
         };
 }
 
-internal sealed record LoginSession(long AccountId, long ClientId) : BlueModel
+internal sealed record LoginSession(long AccountId, long ClientId, long Roles = (long)PilotRole.Player) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
-            ["session_init"] = new AccountSessionState(AccountId),
+            ["session_init"] = new AccountSessionState(AccountId, Roles),
             ["session_id"] = ClientId,
             ["sessionID"] = ClientId,
             ["clientID"] = ClientId,

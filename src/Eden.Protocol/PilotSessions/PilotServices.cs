@@ -14,7 +14,8 @@ internal sealed class PilotServices(
     FlightSessionFactory flights,
     PilotUpdateCoordinator updates,
     SkillHandler skills,
-    IAsteroidField asteroids
+    IAsteroidField asteroids,
+    ILoginIdentity identity
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -34,7 +35,10 @@ internal sealed class PilotServices(
             flights.Create,
             clientId,
             signedSettings
-        );
+        )
+        {
+            Roles = identity.ReadRoles(accountId),
+        };
         PilotSessionOutput output = new(context, accountId, clientId, write, report);
         PilotSessionCalls calls = new(context, output, router, updates, skills, clock, report, accountId, clientId);
         PilotSessionTick tick = new(clock, updates, skills, asteroids);

@@ -67,7 +67,7 @@ $start.UseShellExecute = $false
 $start.WindowStyle = if ($Hidden) { 'Hidden' } else { 'Normal' }
 if ($Login) {
     $project = Join-Path $PSScriptRoot '../src/Eden.Server'
-    $ticket = & dotnet run --no-build --project $project -- --prepare-login $root $Pilot
+    $ticket = & dotnet run --no-build --project $project -- --prepare-login $root $Pilot --development-login
     if ($LASTEXITCODE -or $ticket -notmatch '^eden2\.100000[12]\.[0-9]+\.[A-F0-9]+\.[A-F0-9]+$') {
         throw 'Could not provision the development login. Build the solution first.'
     }

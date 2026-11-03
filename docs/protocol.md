@@ -1,5 +1,17 @@
 # Startup protocol and milestones
 
+## Launcher accounts and developer roles
+
+API v1 adds registration, launcher sessions, rotating remembered sessions, logout and single-use 180-second game tickets. Credentials and token hashes use additive Launcher tables; account/pilot identities and gameplay schema versions are preserved. The RSA/AES/challenge exchange remains unchanged. Manifest signing accepts only the exact fingerprinted 17,769-byte build 3662168 prefix. Private keys never leave the host.
+
+Consulted [Carbon Blue crypto.cpp at af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/crypto.cpp) for manifest-backed RSA and SHA-256 behavior. Pinned publicGateway/grpc/connectionConfig.pyj confirms that EVE_PUBLIC_GATEWAY_ADDRESS selects cleartext. The launcher uses a loopback relay with certificate-validated HTTP/2 TLS upstream for remote gateways.
+
+Pinned carbon/common/script/sys/serviceConst.pyj gives WORLDMOD at bit 12, PROGRAMMER at bit 51, QA at bit 52, GMH at bit 53, GML at bit 54, and PLAYER at bit 61. Developer accounts receive those six roles; QA satisfies the Insider elevated-player mask and GML enables GM/WM Extras. The stored mask is sent in both login session_init and SessionInitialStateNotification. Standard accounts receive PLAYER. Developer registration requires a server-controlled invitation. Missing slash commands and privileged services remain unsupported.
+
+Automated: all 501 tests passed after integration with the committed hardener release, including launcher accounts, developer roles, HTTP throttling and the QA starter-system compatibility response.
+
+Live: the Avalonia launcher created an invitation-protected developer account over the same PC's LAN HTTPS endpoint. Its prepared client connected on TCP 26200, verified build 3662168 and completed encrypted login/challenge verification. The client displayed character creation. The maintainer advanced to naming, where QA-only GetQAStarterSystemIDs was exposed. Pinned ccSvc._QAPickStarterSystem returns None for an empty system list, preserving normal school allocation; QA callers now receive that empty list, while standard callers remain unsupported. The underlying CreateCharacterWithDoll call retains ten arguments with a None override. Computer Use was stopped by the user with Escape after the fix was rebuilt; completion of developer creation, station entry, Insider/GM menus and the remaining native acceptance checks are unverified. The test topology used a non-loopback address and TLS on one machine, not a second-machine deployment.
+
 The startup configuration identifies release 24.01, codename `V24.01`, region `ccp`, and port 26000. The client's packaged MachoNet version module specifies **496**. The installed GPS transport and the build-matched Blue marshaller supplied the message order, field types, and serialization rules. [Blue marshal implementation](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
 
 Each startup frame begins with a four-byte little-endian payload length. Blue marshal version 0 starts with `7e` and a four-byte shared-object count. The verified startup frames use zero shared objects. Eden accepts unflagged frames up to 16 KiB during this phase and reads each frame to completion before processing it. [Carbon transport flags](https://github.com/carbonengine/io/blob/8d8f339fd19f2e8095fcd90ad5415cb4ca00c331/src/protocol.h)

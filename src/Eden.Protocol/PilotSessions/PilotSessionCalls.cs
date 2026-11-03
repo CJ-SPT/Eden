@@ -110,7 +110,7 @@ internal sealed class PilotSessionCalls(
         if (!_initialStateSent && service == "machoNet" && method == "GetServiceInfo")
         {
             _initialStateSent = true;
-            await output.WriteAsync(InitialState(accountId, clientId));
+            await output.WriteAsync(InitialState(accountId, clientId, context.Roles));
         }
     }
 }

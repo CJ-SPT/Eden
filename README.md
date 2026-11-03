@@ -1,5 +1,7 @@
 # Eden
 
+The separate [Avalonia desktop launcher](https://github.com/CJ-SPT/Eden-Launcher) supports account registration and local/remote launching through API v1. See [launcher hosting](docs/launcher.md) for server configuration, existing account passwords and developer invitations. The default launcher API address is `http://127.0.0.1:26002`.
+
 Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Two local pilots can fly together using separate Windows clients.
 
 ## Current status

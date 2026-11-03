@@ -53,7 +53,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
 
         authenticated?.Invoke(accountId);
         long clientId = Interlocked.Increment(ref s_nextClientId);
-        await packets.WriteAsync(new LoginSession(accountId, clientId));
+        await packets.WriteAsync(new LoginSession(accountId, clientId, identity.ReadRoles(accountId)));
         report("Authenticated local pilot account; session established.");
 
         // Build 3662168 expects a signed Python 2.7 function body for its optional settings statistics.
