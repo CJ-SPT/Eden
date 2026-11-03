@@ -38,8 +38,6 @@ internal sealed class CharacterSelectionHandler(
             if (
                 arguments is not object?[] { Length: 10 } fields
                 || fields[0] is not (byte[] or string)
-                || !IsAvatarData(fields[5])
-                || !IsAvatarData(fields[6])
                 || fields[8] is not null
                 || fields[9] is not null
                 || new[] { 1, 2, 3, 4, 7 }.Any(i => fields[i] is not long number || number < 0 || number > int.MaxValue)
@@ -58,8 +56,8 @@ internal sealed class CharacterSelectionHandler(
                         Number(2),
                         Number(3),
                         Number(4),
-                        BlueMarshal.Encode(fields[5]),
-                        BlueMarshal.Encode(fields[6]),
+                        AvatarWire.Encode(fields[5]),
+                        AvatarWire.Encode(fields[6]),
                         Number(7)
                     )
                 );
@@ -86,20 +84,6 @@ internal sealed class CharacterSelectionHandler(
             _ => PilotCallResult.Unsupported,
         };
     }
-
-    private static bool IsAvatarData(object? value) =>
-        value is BlueInstance { Name: "utillib.KeyVal", State: Dictionary<string, object?> fields } && fields.Values.All(IsAvatarField);
-
-    private static bool IsAvatarField(object? value) =>
-        value switch
-        {
-            null or bool or long or double or string or byte[] or PaperDollRow => true,
-            object?[] items => items.All(IsAvatarField),
-            List<object?> items => items.All(IsAvatarField),
-            Dictionary<string, object?> fields => fields.Values.All(IsAvatarField),
-            BlueInstance => IsAvatarData(value),
-            _ => false,
-        };
 
     private static bool IsPilotLoadSlot(object? value, long pilotId) =>
         value is object?[] { Length: 2 } args
