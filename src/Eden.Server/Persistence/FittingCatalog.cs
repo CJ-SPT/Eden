@@ -37,6 +37,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == HullRepairDefinitions.Group && !HullRepairCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (type.GroupId == ArmorRepairDefinitions.Group && !ArmorRepairCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

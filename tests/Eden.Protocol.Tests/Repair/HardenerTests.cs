@@ -240,7 +240,8 @@ public sealed class HardenerTests
             saved.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             saved.SaveChanges();
             saved.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; PRAGMA user_version=29"
+                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                    + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; PRAGMA user_version=29"
             );
         }
         _ = WorldInitialization.Open(f.Db.Path);

@@ -22,7 +22,7 @@ internal sealed class ModuleActivationHandler(
     ShieldBoostHandler shields,
     FittingOperations inventory,
     PropulsionHandler propulsion,
-    ArmorRepairHandler armor,
+    LocalRepairHandler repairs,
     HardenerHandler hardeners,
     CapacitorBoosterHandler capacitorBoosters
 ) : ISelectedPilotCallHandler
@@ -45,7 +45,12 @@ internal sealed class ModuleActivationHandler(
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
             ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
-            ArmorRepairWireDefinitions.EffectName => armor.Call(context, service, method, args),
+            ArmorRepairWireDefinitions.EffectName or LocalRepairWireDefinitions.HullEffectName => repairs.Call(
+                context,
+                service,
+                method,
+                args
+            ),
             CapacitorBoosterHandler.EffectName => capacitorBoosters.Call(context, service, method, args),
             HardenerWireDefinitions.ShieldEffectName or HardenerWireDefinitions.ArmorEffectName => hardeners.Call(
                 context,

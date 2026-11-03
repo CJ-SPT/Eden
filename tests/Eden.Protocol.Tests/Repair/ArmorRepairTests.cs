@@ -52,7 +52,7 @@ public sealed class ArmorRepairTests
         return module;
     }
 
-    private static IPilotArmorRepairing Store(Fixture f) => f.Db.Services.GetRequiredService<IPilotArmorRepairing>();
+    private static IPilotLocalRepairing Store(Fixture f) => f.Db.Services.GetRequiredService<IPilotLocalRepairing>();
 
     private static ShipHealth Health(Fixture f) => f.Db.Services.GetRequiredService<IPilotHealth>().Read(f.PilotId, f.Clock.Now);
 
@@ -93,7 +93,7 @@ public sealed class ArmorRepairTests
         Assert.Equal(31, completed.Defense.Armor - completed.Remaining.Armor, 8);
         Assert.Equal(9, completed.Defense.Structure - completed.Remaining.Structure, 8);
         using WorldDbContext world = new(f.Db.Path);
-        Assert.Empty(world.Set<PendingArmorRepair>());
+        Assert.Empty(world.Set<PendingLocalRepair>());
         Assert.Equal(paid.Schedule.CompletesAt, world.Set<ModuleCooldown>().Single().ReadyAt);
         f.Clock.Milliseconds += 600000;
         Assert.Equal(31, Health(f).Defense.Armor - Health(f).Remaining.Armor, 8);
@@ -108,7 +108,7 @@ public sealed class ArmorRepairTests
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => Store(f).Start(f.PilotId, module, f.Clock.Now));
         using var context = Client(f);
-        ArmorRepairHandler restored = new(f.Clock, Store(f));
+        LocalRepairHandler restored = new(f.Clock, Store(f));
         restored.Enter(context);
         var effect = restored.ActiveEffect(context.Pilot, module)!;
         Assert.Equal(paid.Schedule.StartedAt, effect.StartTime);
@@ -118,7 +118,7 @@ public sealed class ArmorRepairTests
         Assert.Null(restored.ActiveEffect(context.Pilot, module));
         Assert.Equal(31, Health(f).Defense.Armor - Health(f).Remaining.Armor, 8);
         using WorldDbContext world = new(f.Db.Path);
-        Assert.Empty(world.Set<PendingArmorRepair>());
+        Assert.Empty(world.Set<PendingLocalRepair>());
         Assert.Equal(paid.Schedule.StartedAt, world.Set<ShipEnergy>().Single().UpdatedAt);
     }
 
@@ -128,7 +128,7 @@ public sealed class ArmorRepairTests
         using Fixture f = new();
         long module = Prepare(f);
         using var context = Client(f);
-        ArmorRepairHandler handler = new(f.Clock, Store(f));
+        LocalRepairHandler handler = new(f.Clock, Store(f));
         _ = handler.Call(context, "dogmaIM", "Activate", [module, ArmorRepairWireDefinitions.EffectName, null, 100L]);
         handler.Cancel(context);
         f.Db.Store.SetPosition(f.ShipId, null);
@@ -139,7 +139,7 @@ public sealed class ArmorRepairTests
         f.Clock.Milliseconds += 600000;
         Assert.Equal(31, Health(f).Defense.Armor - Health(f).Remaining.Armor, 8);
         using WorldDbContext world = new(f.Db.Path);
-        Assert.Empty(world.Set<PendingArmorRepair>());
+        Assert.Empty(world.Set<PendingLocalRepair>());
         Assert.Equal(f.Clock.Now - 605100 * TimeSpan.TicksPerMillisecond, world.Set<ShipEnergy>().Single().UpdatedAt);
     }
 
@@ -149,7 +149,7 @@ public sealed class ArmorRepairTests
         using Fixture f = new();
         long module = Prepare(f);
         using var context = Client(f);
-        ArmorRepairHandler handler = new(f.Clock, Store(f));
+        LocalRepairHandler handler = new(f.Clock, Store(f));
         Assert.IsType<PilotCallResult.Success>(
             handler.Call(context, "dogmaIM", "Activate", [module, ArmorRepairWireDefinitions.EffectName, null, 100L])
         );
@@ -229,7 +229,7 @@ public sealed class ArmorRepairTests
         }
         Assert.Throws<InvalidDataException>(() => Store(f).Start(f.PilotId, module, f.Clock.Now));
         using WorldDbContext check = new(f.Db.Path);
-        Assert.Empty(check.Set<PendingArmorRepair>());
+        Assert.Empty(check.Set<PendingLocalRepair>());
         Assert.Empty(check.Set<ModuleCooldown>());
         if (reason != "capacitor")
         {
@@ -269,7 +269,7 @@ public sealed class ArmorRepairTests
         Assert.True(Health(f).Remaining.Destroyed);
         Assert.Equal(100, Health(f).Defense.Armor - Health(f).Remaining.Armor);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<PendingArmorRepair>());
+        Assert.Empty(saved.Set<PendingLocalRepair>());
     }
 
     [Fact]
@@ -284,14 +284,15 @@ public sealed class ArmorRepairTests
             world.Add(new ModuleCooldown { ModuleId = module, ReadyAt = deadline });
             world.SaveChanges();
             world.Database.ExecuteSqlRaw(
-                "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; "
+                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                    + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; DROP TABLE WorldActiveModule; "
                     + "DROP TABLE WorldArmorRepair; PRAGMA user_version=28"
             );
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
-        Assert.Empty(saved.Set<PendingArmorRepair>());
+        Assert.Empty(saved.Set<PendingLocalRepair>());
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, f.Inventory.List(f.PilotId, f.ShipId));
         using CatalogDbContext catalog = new(f.CatalogPath);

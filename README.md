@@ -66,6 +66,8 @@ Rejected gameplay actions show their reason in the client's native **Information
 
 At a station with **Repair Facilities**, quote owned assembled ships and pay for full or partial armor/hull repairs. Eden charges **1 ISK per rounded damage point**; partial payments repair the same fraction of each selected hull's damage. Payments and wallet journal entries survive restarts. Repairs preserve shields, capacitor, cargo and fitting. Module heat/damage and structure repair services remain future work.
 
+Local hull repairers support **all 25 published profiles** across small, medium, large and capital Tech I/named, Tech II and storyline variants. They use medium slots, spend capacitor at cycle start and repair hull at cycle end. Repair Systems reduces their duration; capital hull repairers also receive Capital Repair Systems because they require both skills. Multiple repairers complete independently, clip to missing hull and cannot revive a destroyed ship. Paid completion and deadlines survive shutdown, docking, moving a module to another ship and restarting. World version 33 preserves existing paid armor repairs. Overheating and native acceptance remain pending while game-window testing is on hold.
+
 ## Local game data
 
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.

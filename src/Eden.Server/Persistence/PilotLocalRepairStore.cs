@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
-public sealed class PendingArmorRepair
+public sealed class PendingLocalRepair
 {
+    public RepairLayer Layer { get; set; }
     public long ModuleId { get; set; }
     public long ShipId { get; set; }
     public long StartedAt { get; set; }
@@ -17,10 +18,11 @@ public sealed class PendingArmorRepair
 }
 
 [Injectable]
-internal sealed class PilotArmorRepairStore(WorldDatabase database) : IPilotArmorRepairing
+internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLocalRepairing
 {
-    public ArmorRepairActivation Start(long pilotId, long moduleId, long now)
+    public LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor)
     {
+        var profile = LocalRepairDefinitions.Profile(layer);
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -33,28 +35,45 @@ internal sealed class PilotArmorRepairStore(WorldDatabase database) : IPilotArmo
             || module.LocationId != pilot.ActiveShipId
             || !module.Singleton
             || !module.Online
-            || !InventoryDefinitions.IsLowSlot(module.FlagId)
-            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ArmorRepairDefinitions.Group
+            || !(
+                profile.Rack == ModuleRack.Low
+                    ? InventoryDefinitions.IsLowSlot(module.FlagId)
+                    : InventoryDefinitions.IsMediumSlot(module.FlagId)
+            )
+            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != profile.GroupId
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
-            throw new InvalidDataException("Use an online fitted armor repairer on your active ship in space.");
+            throw new InvalidDataException("Use an online fitted local repairer of the requested kind on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
-        var repairer = ArmorRepairRules.Define(moduleId, module.TypeId, attributes);
+        var repairer = LocalRepairRules.Define(moduleId, module.TypeId, attributes, layer);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)
         {
-            throw new InvalidDataException("The armor repairer is still cycling.");
+            throw new InvalidDataException("The repairer is still cycling.");
+        }
+        if (world.Set<PendingLocalRepair>().Find(moduleId) is { } prior && prior.ShipId != pilot.ActiveShipId)
+        {
+            if (prior.CompletesAt > now)
+            {
+                throw new InvalidDataException("The repairer still has a paid cycle on its previous ship.");
+            }
+            // An unfitted module keeps its paid completion on the original hull.
+            // Settle that debt before the same module can start on another ship.
+            var previous = world.Ships.Find(prior.ShipId)!;
+            var owner = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == previous.OwnerId);
+            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, owner, previous));
+            _ = PilotHealthStore.Read(world, previous.Id, defense, now);
         }
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now);
         if (health.Remaining.Destroyed)
         {
-            throw new InvalidDataException("A destroyed ship cannot repair its armor.");
+            throw new InvalidDataException("A destroyed ship cannot run a repairer.");
         }
-        long completes = checked(now + (long)Math.Ceiling(repairer.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        long completes = LocalRepairRules.CompletesAt(now, repairer);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, repairer.CapacitorNeed, now);
         if (world.Set<ShipHealthState>().Find(pilot.ActiveShipId) is null)
         {
@@ -68,13 +87,14 @@ internal sealed class PilotArmorRepairStore(WorldDatabase database) : IPilotArmo
             );
         }
         world.Add(
-            new PendingArmorRepair
+            new PendingLocalRepair
             {
                 ModuleId = moduleId,
                 ShipId = pilot.ActiveShipId,
                 StartedAt = now,
                 CompletesAt = completes,
-                Amount = repairer.ArmorAmount,
+                Amount = repairer.Amount,
+                Layer = layer,
             }
         );
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
@@ -82,25 +102,35 @@ internal sealed class PilotArmorRepairStore(WorldDatabase database) : IPilotArmo
         cooldown.ReadyAt = completes;
         world.SaveChanges();
         transaction.Commit();
-        return new(new(moduleId, module.TypeId, now, completes), capacitor);
+        return new(new(moduleId, module.TypeId, now, completes, layer), capacitor);
     }
 
-    public IReadOnlyList<ArmorRepairSchedule> Read(long pilotId, long shipId, long now)
+    public IReadOnlyList<LocalRepairSchedule> Read(long pilotId, long shipId, long now)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var schedules = (
-            from repair in world.Set<PendingArmorRepair>()
+            from repair in world.Set<PendingLocalRepair>()
             join item in world.Set<OwnedItem>() on repair.ModuleId equals item.Id
             where
                 repair.ShipId == shipId
                 && item.OwnerId == pilotId
                 && item.LocationId == shipId
                 && item.Online
-                && item.FlagId >= (int)InventoryFlag.LowSlot0
-                && item.FlagId <= (int)InventoryFlag.LowSlot7
+                && (
+                    (
+                        repair.Layer == RepairLayer.Armor
+                        && item.FlagId >= (int)InventoryFlag.LowSlot0
+                        && item.FlagId <= (int)InventoryFlag.LowSlot7
+                    )
+                    || (
+                        repair.Layer == RepairLayer.Hull
+                        && item.FlagId >= (int)InventoryFlag.MediumSlot0
+                        && item.FlagId <= (int)InventoryFlag.MediumSlot7
+                    )
+                )
                 && repair.CompletesAt > now
-            select new ArmorRepairSchedule(item.Id, item.TypeId, repair.StartedAt, repair.CompletesAt)
+            select new LocalRepairSchedule(item.Id, item.TypeId, repair.StartedAt, repair.CompletesAt, repair.Layer)
         ).ToArray();
         return schedules;
     }

@@ -52,6 +52,7 @@ public enum DogmaEffect
     HighPower = 12,
     MediumPower = 13,
     Online = 16,
+    StructureRepair = 26,
     ArmorRepair = 27,
     CapacitorBoosting = 48,
     CapacitorCapacityMultiply = 58,

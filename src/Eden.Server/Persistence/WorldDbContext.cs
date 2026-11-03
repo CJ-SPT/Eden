@@ -1,3 +1,4 @@
+using Eden.Gameplay.Repair;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -174,13 +175,16 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<ShipLoss>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId);
         model.Entity<ShipLoss>().HasOne<WorldNpc>().WithMany().HasForeignKey(l => l.NpcId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<ShipLoss>().HasIndex(l => new { l.PilotId, l.Time });
+        // Retain the historical table name; version 33 adds the repaired layer
+        // without replacing already paid armor schedules.
         model
-            .Entity<PendingArmorRepair>()
+            .Entity<PendingLocalRepair>()
             .ToTable("WorldArmorRepair", t => t.HasCheckConstraint("CK_ArmorRepair_Amount", "Amount > 0"))
             .HasKey(r => r.ModuleId);
-        model.Entity<PendingArmorRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
-        model.Entity<PendingArmorRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
-        model.Entity<PendingArmorRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
+        model.Entity<PendingLocalRepair>().Property(r => r.Layer).HasDefaultValue(RepairLayer.Armor);
+        model.Entity<PendingLocalRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
+        model.Entity<PendingLocalRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
+        model.Entity<PendingLocalRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
         model.Entity<ActiveFittedModule>().ToTable("WorldActiveModule").HasKey(h => h.ModuleId);
         model.Entity<ActiveFittedModule>().HasOne<OwnedItem>().WithMany().HasForeignKey(h => h.ModuleId);
         model.Entity<ActiveFittedModule>().HasOne<Ship>().WithMany().HasForeignKey(h => h.ShipId);

@@ -40,7 +40,7 @@ internal sealed class FlightSession(
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
     private ShieldBoostContact[] _shieldBoosts = [];
-    private ArmorRepairContact[] _armorRepairs = [];
+    private LocalRepairContact[] _localRepairs = [];
     private HardenerContact[] _hardeners = [];
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
@@ -341,7 +341,7 @@ internal sealed class FlightSession(
         _mining = [];
         _weapons = [];
         _shieldBoosts = [];
-        _armorRepairs = [];
+        _localRepairs = [];
         _hardeners = [];
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
@@ -450,7 +450,7 @@ internal sealed class FlightSession(
             _shieldBoosts,
             _propulsion,
             _navigation.FollowMode,
-            _armorRepairs,
+            _localRepairs,
             _hardeners
         );
 
@@ -557,13 +557,13 @@ internal sealed class FlightSession(
         }
     }
 
-    public void SetArmorRepairEffect(ArmorRepairContact effect, bool active)
+    public void SetLocalRepairEffect(LocalRepairContact effect, bool active)
     {
-        _armorRepairs = _armorRepairs
+        _localRepairs = _localRepairs
             .Where(r => r.ModuleId != effect.ModuleId)
-            .Concat(active ? [effect] : Array.Empty<ArmorRepairContact>())
+            .Concat(active ? [effect] : Array.Empty<LocalRepairContact>())
             .ToArray();
-        Effects.ArmorRepairEffect(Pilot.ShipId, effect, active);
+        Effects.LocalRepairEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -726,7 +726,7 @@ internal sealed class FlightSession(
         _weapons = [];
         _npcs = [];
         _shieldBoosts = [];
-        _armorRepairs = [];
+        _localRepairs = [];
         _hardeners = [];
         _wrecks = [];
         space.Leave(Pilot.ShipId);

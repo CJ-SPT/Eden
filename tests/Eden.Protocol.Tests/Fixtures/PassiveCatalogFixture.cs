@@ -43,6 +43,9 @@ internal static class PassiveCatalogFixture
     internal static void LoadProjectileTiers(string path, IReadOnlySet<int>? types = null) =>
         Load(path, "ProjectileTierCatalog.json", types);
 
+    internal static void LoadHullRepairTiers(string path, IReadOnlySet<int>? types = null) =>
+        Load(path, "HullRepairTierCatalog.json", types);
+
     internal static void LoadEnergyTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "EnergyTierCatalog.json", types);
 
     private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true)

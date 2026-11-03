@@ -29,7 +29,7 @@ public sealed class RepairTierTests
         return fixture;
     }
 
-    private static IPilotArmorRepairing Repairing(Fixture f) => f.Db.Services.GetRequiredService<IPilotArmorRepairing>();
+    private static IPilotLocalRepairing Repairing(Fixture f) => f.Db.Services.GetRequiredService<IPilotLocalRepairing>();
 
     private static IPilotHardening Hardening(Fixture f) => f.Db.Services.GetRequiredService<IPilotHardening>();
 
@@ -102,7 +102,7 @@ public sealed class RepairTierTests
         Assert.Equal(duration, paid.Schedule.DurationMilliseconds);
         using (WorldDbContext scheduled = new(f.Db.Path))
         {
-            Assert.Equal(amount, scheduled.Set<PendingArmorRepair>().Single().Amount);
+            Assert.Equal(amount, scheduled.Set<PendingLocalRepair>().Single().Amount);
         }
         var before = Repairing(f).Complete(f.PilotId, f.ShipId, paid.Schedule.CompletesAt - 1);
         Assert.Equal(100, before.Defense.Armor - before.Remaining.Armor, 8);
@@ -112,13 +112,13 @@ public sealed class RepairTierTests
         var duplicate = Repairing(f).Complete(f.PilotId, f.ShipId, paid.Schedule.CompletesAt + 1);
         Assert.Equal(after.Remaining.Armor, duplicate.Remaining.Armor);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<PendingArmorRepair>());
+        Assert.Empty(saved.Set<PendingLocalRepair>());
         Assert.Equal(capacitor - cost, saved.Set<ShipEnergy>().Single().Charge, 8);
         Assert.Equal(paid.Schedule.CompletesAt, saved.Set<ModuleCooldown>().Single().ReadyAt);
     }
 
     [Fact]
-    public void CapitalRepairSystemsSelectsCapitalRepairersWithoutDoubleApplyingOrdinaryRepairSystems()
+    public void CapitalArmorRepairersUseTheirOwnSkillWithoutApplyingOrdinaryRepairSystems()
     {
         int capitalSkill = (int)PassiveModuleSkill.CapitalRepairSystems;
         using Fixture f = WithTiers(CapitalArmorRepairerTwo, SmallArmorRepairerTwo, capitalSkill);
@@ -154,7 +154,7 @@ public sealed class RepairTierTests
         Assert.Equal(24000, paid.Schedule.DurationMilliseconds);
         using (WorldDbContext saved = new(f.Db.Path))
         {
-            Assert.Equal(11520, saved.Set<PendingArmorRepair>().Single().Amount);
+            Assert.Equal(11520, saved.Set<PendingLocalRepair>().Single().Amount);
         }
         var completed = Repairing(f).Complete(f.PilotId, f.ShipId, paid.Schedule.CompletesAt);
         Assert.Equal(completed.Defense.Armor, completed.Remaining.Armor);
@@ -243,7 +243,7 @@ public sealed class RepairTierTests
         }
         Assert.Equal(before, f.Db.Services.GetRequiredService<IPilotShipResources>().Capacitor(f.PilotId, f.Clock.Now), 8);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Empty(saved.Set<PendingArmorRepair>());
+        Assert.Empty(saved.Set<PendingLocalRepair>());
         Assert.Empty(saved.Set<ActiveFittedModule>());
         Assert.Empty(saved.Set<ModuleCooldown>());
     }
@@ -311,7 +311,7 @@ public sealed class RepairTierTests
         Assert.Equal(.5, f.Fitting.ShipAttributes(f.PilotId)[DogmaAttributeId.ArmorEmResonance], 8);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Empty(saved.Set<ActiveFittedModule>());
-        Assert.Empty(saved.Set<PendingArmorRepair>());
+        Assert.Empty(saved.Set<PendingLocalRepair>());
         Assert.Equal(paidHardener.Capacitor, saved.Set<ShipEnergy>().Single().Charge, 8);
         Assert.Equal(2, saved.Set<ModuleCooldown>().Count());
     }

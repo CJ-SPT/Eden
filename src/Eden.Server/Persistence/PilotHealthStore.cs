@@ -58,16 +58,23 @@ internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
                     Math.Max(0, defense.Structure - saved.StructureDamage)
                 )
         );
-        var repairs = world.Set<PendingArmorRepair>().Where(r => r.ShipId == shipId && r.CompletesAt <= now).ToArray();
+        var repairs = world.Set<PendingLocalRepair>().Where(r => r.ShipId == shipId && r.CompletesAt <= now).ToArray();
         if (repairs.Length > 0)
         {
             foreach (var repair in repairs)
             {
-                current = ArmorRepairRules.Apply(current, repair.Amount);
+                current = LocalRepairRules.Apply(current, repair.Amount, repair.Layer);
             }
-            if (saved is not null)
+            if (saved is not null && !current.Remaining.Destroyed)
             {
-                saved.ArmorDamage = Math.Max(0, defense.Armor - current.Remaining.Armor);
+                if (repairs.Any(r => r.Layer == RepairLayer.Armor))
+                {
+                    saved.ArmorDamage = Math.Max(0, defense.Armor - current.Remaining.Armor);
+                }
+                if (repairs.Any(r => r.Layer == RepairLayer.Hull))
+                {
+                    saved.StructureDamage = Math.Max(0, defense.Structure - current.Remaining.Structure);
+                }
             }
             world.RemoveRange(repairs);
             // Every caller owns a world transaction. Settle the single paid

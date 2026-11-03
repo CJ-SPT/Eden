@@ -52,6 +52,7 @@ public static class ModuleFittingRules
             ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
             CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                 && effects.Contains(DogmaEffect.CapacitorBoosting),
+            HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.StructureRepair),
             ArmorRepairDefinitions.Group => ArmorRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.ArmorRepair),
             HardenerDefinitions.ShieldGroup => effects.Contains(DogmaEffect.ActiveShieldResistance),
             HardenerDefinitions.ArmorGroup => effects.Contains(DogmaEffect.ActiveArmorResistance),

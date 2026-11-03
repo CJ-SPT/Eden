@@ -458,7 +458,10 @@ public sealed class EnergyTierTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             id = world.Set<OwnedItem>().Single(i => i.LocationId == gun).Id;
-            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem DROP COLUMN CrystalDamage; PRAGMA user_version=31");
+            world.Database.ExecuteSqlRaw(
+                "ALTER TABLE WorldArmorRepair DROP COLUMN Layer; "
+                    + "ALTER TABLE WorldItem DROP COLUMN CrystalDamage; PRAGMA user_version=31"
+            );
         }
         _ = WorldInitialization.Open(f.Db.Path);
         _ = WorldInitialization.Open(f.Db.Path);

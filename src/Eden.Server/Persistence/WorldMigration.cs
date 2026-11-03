@@ -8,7 +8,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 32;
+    internal const int CurrentVersion = 33;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -436,9 +436,13 @@ internal static class WorldMigration
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem ADD COLUMN CrystalDamage REAL NOT NULL DEFAULT 0");
         }
+        if (version is >= 6 and < 33)
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldArmorRepair ADD COLUMN Layer INTEGER NOT NULL DEFAULT 0");
+        }
         if (version < CurrentVersion)
         {
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=32");
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=33");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

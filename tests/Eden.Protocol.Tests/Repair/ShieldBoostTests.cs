@@ -418,7 +418,7 @@ public sealed class ShieldBoostTests
             handler,
             activationScope.ServiceProvider.GetRequiredService<FittingOperations>(),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotLocalRepairing>()),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotHardening>()),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotCapacitorBoosting>())
         );
@@ -579,7 +579,7 @@ public sealed class ShieldBoostTests
                     ),
                     f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
                 ),
-                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>()),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotLocalRepairing>()),
                 new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotHardening>()),
                 new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotCapacitorBoosting>())
             ),

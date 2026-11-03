@@ -1,0 +1,3664 @@
+{
+  "build": 3662168,
+  "types": [
+    {
+      "id": 524,
+      "name": "Small Hull Repairer I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 83,
+          "value": 25.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 13.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2355,
+      "name": "Small Hull Repairer II",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 30.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 2.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 13.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 3392,
+      "name": "Mechanics",
+      "groupId": 1210,
+      "groupName": "Armor",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 327,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 3393,
+      "name": "Repair Systems",
+      "groupId": 1210,
+      "groupName": "Armor",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3392.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 312,
+          "value": -5.0
+        }
+      ]
+    },
+    {
+      "id": 3653,
+      "name": "Medium Hull Repairer I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 83,
+          "value": 50.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 8.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 3655,
+      "name": "Medium Hull Repairer II",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 66.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 60.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 2.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 8.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 3663,
+      "name": "Large Hull Repairer I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 120.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 83,
+          "value": 100.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 3665,
+      "name": "Large Hull Repairer II",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 132.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 120.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 2.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5683,
+      "name": "Medium Inefficient Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 54.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 60.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 4.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 6.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5693,
+      "name": "Small Inefficient Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 27.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 30.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 4.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 10.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5697,
+      "name": "Large Inefficient Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 108.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 83,
+          "value": 120.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 4.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 4.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5719,
+      "name": "Medium 'Hope' Hull Reconstructor I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 48.0
+        },
+        {
+          "id": 73,
+          "value": 25500.0
+        },
+        {
+          "id": 83,
+          "value": 57.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 3.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 6.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5721,
+      "name": "Medium Automated Structural Restoration",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 57.0
+        },
+        {
+          "id": 73,
+          "value": 28500.0
+        },
+        {
+          "id": 83,
+          "value": 52.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 7.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5723,
+      "name": "Medium I-b Polarized Structural Regenerator",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50.0
+        },
+        {
+          "id": 50,
+          "value": 51.0
+        },
+        {
+          "id": 73,
+          "value": 27000.0
+        },
+        {
+          "id": 83,
+          "value": 55.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 2.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 7.2
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5743,
+      "name": "Small 'Hope' Hull Reconstructor I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 24.0
+        },
+        {
+          "id": 73,
+          "value": 25500.0
+        },
+        {
+          "id": 83,
+          "value": 28.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 3.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 11.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5745,
+      "name": "Small Automated Structural Restoration",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 28.0
+        },
+        {
+          "id": 73,
+          "value": 28500.0
+        },
+        {
+          "id": 83,
+          "value": 26.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 12.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5747,
+      "name": "Small I-b Polarized Structural Regenerator",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 27000.0
+        },
+        {
+          "id": 83,
+          "value": 27.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 2.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 12.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5755,
+      "name": "Large 'Hope' Hull Reconstructor I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 96.0
+        },
+        {
+          "id": 73,
+          "value": 25500.0
+        },
+        {
+          "id": 83,
+          "value": 115.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 3.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 4.9
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5757,
+      "name": "Large Automated Structural Restoration",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 114.0
+        },
+        {
+          "id": 73,
+          "value": 28500.0
+        },
+        {
+          "id": 83,
+          "value": 105.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 5759,
+      "name": "Large I-b Polarized Structural Regenerator",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 250.0
+        },
+        {
+          "id": 50,
+          "value": 102.0
+        },
+        {
+          "id": 73,
+          "value": 27000.0
+        },
+        {
+          "id": 83,
+          "value": 110.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 2.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.1
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 21504,
+      "name": "Small 'Integrative' Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 9.0
+        },
+        {
+          "id": 50,
+          "value": 26.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 83,
+          "value": 45.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 8.9
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 21506,
+      "name": "Medium 'Integrative' Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 60.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 45.0
+        },
+        {
+          "id": 50,
+          "value": 51.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 83,
+          "value": 90.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 21508,
+      "name": "Large 'Integrative' Hull Repair Unit",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 120.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 225.0
+        },
+        {
+          "id": 50,
+          "value": 102.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 83,
+          "value": 180.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 3.8
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1692,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 21803,
+      "name": "Capital Repair Systems",
+      "groupId": 1210,
+      "groupName": "Armor",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3392.0
+        },
+        {
+          "id": 183,
+          "value": 3394.0
+        },
+        {
+          "id": 184,
+          "value": 3393.0
+        },
+        {
+          "id": 275,
+          "value": 8.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 312,
+          "value": -5.0
+        },
+        {
+          "id": 1047,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 41511,
+      "name": "Capital Hull Repairer I",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 720.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50000.0
+        },
+        {
+          "id": 50,
+          "value": 180.0
+        },
+        {
+          "id": 73,
+          "value": 60000.0
+        },
+        {
+          "id": 83,
+          "value": 1800.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 184,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 41512,
+      "name": "Capital I-b Enduring Hull Repairer",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 576.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 50000.0
+        },
+        {
+          "id": 50,
+          "value": 180.0
+        },
+        {
+          "id": 73,
+          "value": 60000.0
+        },
+        {
+          "id": 83,
+          "value": 1980.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 184,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 41513,
+      "name": "Capital IEF Compact Hull Repairer",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 720.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 45000.0
+        },
+        {
+          "id": 50,
+          "value": 144.0
+        },
+        {
+          "id": 73,
+          "value": 60000.0
+        },
+        {
+          "id": 83,
+          "value": 1980.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 184,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 41514,
+      "name": "Capital Hull Repairer II",
+      "groupId": 63,
+      "groupName": "Hull Repair Unit",
+      "categoryId": 7,
+      "mass": 1000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 864.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 55000.0
+        },
+        {
+          "id": 50,
+          "value": 198.0
+        },
+        {
+          "id": 73,
+          "value": 60000.0
+        },
+        {
+          "id": 83,
+          "value": 2160.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 184,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 279,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/types",
+      "key": 524,
+      "data": {
+        "typeID": 524,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1053,
+        "volume": 12.5
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 524,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2355,
+      "data": {
+        "typeID": 2355,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2355,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3392,
+      "data": {
+        "typeID": 3392,
+        "groupID": 1210,
+        "published": 1,
+        "marketGroupID": 1745,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3392,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 251,
+            "isDefault": 0
+          },
+          {
+            "effectID": 392,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3393,
+      "data": {
+        "typeID": 3393,
+        "groupID": 1210,
+        "published": 1,
+        "marketGroupID": 1745,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3393,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 216,
+            "isDefault": 0
+          },
+          {
+            "effectID": 272,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3653,
+      "data": {
+        "typeID": 3653,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1054,
+        "volume": 25.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3653,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3655,
+      "data": {
+        "typeID": 3655,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3655,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3663,
+      "data": {
+        "typeID": 3663,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3663,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3665,
+      "data": {
+        "typeID": 3665,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3665,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5683,
+      "data": {
+        "typeID": 5683,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5683,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5693,
+      "data": {
+        "typeID": 5693,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5693,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5697,
+      "data": {
+        "typeID": 5697,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5697,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5719,
+      "data": {
+        "typeID": 5719,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5719,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5721,
+      "data": {
+        "typeID": 5721,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5721,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5723,
+      "data": {
+        "typeID": 5723,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5723,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5743,
+      "data": {
+        "typeID": 5743,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5743,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5745,
+      "data": {
+        "typeID": 5745,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5745,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5747,
+      "data": {
+        "typeID": 5747,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5747,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5755,
+      "data": {
+        "typeID": 5755,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5755,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5757,
+      "data": {
+        "typeID": 5757,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5757,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 5759,
+      "data": {
+        "typeID": 5759,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 5759,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21504,
+      "data": {
+        "typeID": 21504,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1053,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21504,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21506,
+      "data": {
+        "typeID": 21506,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1054,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21506,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21508,
+      "data": {
+        "typeID": 21508,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 3,
+        "marketGroupID": 1055,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21508,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 21803,
+      "data": {
+        "typeID": 21803,
+        "groupID": 1210,
+        "published": 1,
+        "marketGroupID": 1745,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 21803,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 216,
+            "isDefault": 0
+          },
+          {
+            "effectID": 1635,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41511,
+      "data": {
+        "typeID": 41511,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2244,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41511,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41512,
+      "data": {
+        "typeID": 41512,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2244,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41512,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41513,
+      "data": {
+        "typeID": 41513,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 1,
+        "marketGroupID": 2244,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41513,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41514,
+      "data": {
+        "typeID": 41514,
+        "groupID": 63,
+        "published": 1,
+        "metaGroupID": 2,
+        "marketGroupID": 2244,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41514,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 26,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3002,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 13,
+      "data": {
+        "descriptionID": 107006,
+        "isAssistance": 0,
+        "displayNameID": 109443,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 294,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "medPower",
+        "propulsionChance": 0,
+        "effectID": 13,
+        "guid": "",
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 16,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 16,
+        "propulsionChance": 0,
+        "effectName": "online",
+        "guid": "",
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 26,
+      "data": {
+        "guid": "effects.StructureRepair",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 26,
+        "propulsionChance": 0,
+        "effectName": "structureRepair",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 132,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 132,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 280,
+            "operation": 2,
+            "modifyingAttributeID": 276,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 280,
+            "operation": 9,
+            "modifyingAttributeID": 275,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillEffect",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 216,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 216,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 312,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "electronicWarfareSkillBoostDurationBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 251,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 251,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 327,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "hullUpgradesSkillBoostHullHpBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 272,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 272,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 312,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3393
+          }
+        ],
+        "effectName": "repairSystemsDurationBonusPostPercentDurationLocationShipModulesRequiringRepairSystems",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 392,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 392,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 9,
+            "operation": 6,
+            "modifyingAttributeID": 327,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "mechanicHullHpBonusPostPercentHpShip",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 1635,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 1635,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 312,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 21803
+          }
+        ],
+        "effectName": "capitalRepairSystemsSkillDurationBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3002,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3002,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 73,
+            "operation": 6,
+            "modifyingAttributeID": 1206,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfDurationBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 6,
+      "data": {
+        "attributeID": 6,
+        "name": "capacitorNeed",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 9,
+      "data": {
+        "attributeID": 9,
+        "name": "hp",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 30,
+      "data": {
+        "attributeID": 30,
+        "name": "power",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 50,
+      "data": {
+        "attributeID": 50,
+        "name": "cpu",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 73,
+      "data": {
+        "attributeID": 73,
+        "name": "duration",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 83,
+      "data": {
+        "attributeID": 83,
+        "name": "structureDamageAmount",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 180,
+      "data": {
+        "attributeID": 180,
+        "name": "primaryAttribute",
+        "stackable": 1,
+        "dataType": 10,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 181,
+      "data": {
+        "attributeID": 181,
+        "name": "secondaryAttribute",
+        "stackable": 1,
+        "dataType": 10,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 182,
+      "data": {
+        "attributeID": 182,
+        "name": "requiredSkill1",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 183,
+      "data": {
+        "attributeID": 183,
+        "name": "requiredSkill2",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 184,
+      "data": {
+        "attributeID": 184,
+        "name": "requiredSkill3",
+        "stackable": 1,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 275,
+      "data": {
+        "attributeID": 275,
+        "name": "skillTimeConstant",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 276,
+      "data": {
+        "attributeID": 276,
+        "name": "skillPoints",
+        "stackable": 1,
+        "dataType": 1,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 277,
+      "data": {
+        "attributeID": 277,
+        "name": "requiredSkill1Level",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 278,
+      "data": {
+        "attributeID": 278,
+        "name": "requiredSkill2Level",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 279,
+      "data": {
+        "attributeID": 279,
+        "name": "requiredSkill3Level",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 280,
+      "data": {
+        "attributeID": 280,
+        "name": "skillLevel",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 312,
+      "data": {
+        "attributeID": 312,
+        "name": "durationSkillBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 327,
+      "data": {
+        "attributeID": 327,
+        "name": "hullHpBonus",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 422,
+      "data": {
+        "attributeID": 422,
+        "name": "techLevel",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 633,
+      "data": {
+        "attributeID": 633,
+        "name": "metaLevelOld",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1047,
+      "data": {
+        "attributeID": 1047,
+        "name": "canNotBeTrainedOnTrial",
+        "stackable": 1,
+        "dataType": 3,
+        "defaultValue": 1.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1180,
+      "data": {
+        "attributeID": 1180,
+        "name": "heatAbsorbtionRateModifier",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1206,
+      "data": {
+        "attributeID": 1206,
+        "name": "overloadSelfDurationBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1211,
+      "data": {
+        "attributeID": 1211,
+        "name": "heatDamage",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1212,
+      "data": {
+        "attributeID": 1212,
+        "name": "requiredThermoDynamicsSkill",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1692,
+      "data": {
+        "attributeID": 1692,
+        "name": "metaGroupID",
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    }
+  ]
+}

@@ -243,7 +243,7 @@ public sealed class NpcAggressionTests
                     ),
                     f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
                 ),
-                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>()),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotLocalRepairing>()),
                 new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotHardening>()),
                 new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotCapacitorBoosting>())
             ),

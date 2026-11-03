@@ -15,7 +15,7 @@ internal sealed class ShipLossCoordinator(
     ShieldBoostHandler shields,
     PropulsionHandler propulsion,
     DeferredRefitPrimes refits,
-    ArmorRepairHandler armor,
+    LocalRepairHandler repairs,
     HardenerHandler hardeners,
     CapacitorBoosterHandler capacitorBoosters
 )
@@ -26,7 +26,7 @@ internal sealed class ShipLossCoordinator(
         mining.Cancel(context);
         weapons.Cancel(context);
         shields.Cancel(context);
-        armor.Cancel(context);
+        repairs.Cancel(context);
         hardeners.Cancel(context);
         capacitorBoosters.Cancel(context);
         propulsion.Cancel(context);

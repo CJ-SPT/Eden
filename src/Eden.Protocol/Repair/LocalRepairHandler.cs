@@ -11,9 +11,9 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Repair;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairing repairing) : IModuleEffectSource
+internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairing repairing) : IModuleEffectSource
 {
-    private sealed record Cycle(long ShipId, ArmorRepairSchedule Schedule, long Repeats, bool Stopping = false);
+    private sealed record Cycle(long ShipId, LocalRepairSchedule Schedule, long Repeats, bool Stopping = false);
 
     private readonly Dictionary<long, Cycle> _cycles = [];
     private long _restoredShip;
@@ -41,7 +41,7 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
             Cycle cycle = new(context.Pilot.ShipId, schedule, 0);
             _cycles.Add(schedule.ItemId, cycle);
             NotifyEffect(context, cycle, true);
-            context.Flight.SetArmorRepairEffect(Contact(cycle), true);
+            context.Flight.SetLocalRepairEffect(Contact(cycle), true);
         }
     }
 
@@ -73,12 +73,12 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
                 continue;
             }
             var health = repairing.Complete(context.Pilot.PilotId, cycle.ShipId, Now());
-            NotifyHealth(context, health);
+            NotifyHealth(context, health, cycle.Schedule.Layer);
             if (!cycle.Stopping && cycle.Repeats > 0)
             {
                 try
                 {
-                    Start(context, cycle.Schedule.ItemId, cycle.Repeats - 1, cycle);
+                    Start(context, cycle.Schedule.ItemId, cycle.Repeats - 1, cycle.Schedule.Layer, cycle);
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException) { }
@@ -87,9 +87,9 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         }
     }
 
-    private void Start(PilotCallContext context, long module, long repeats, Cycle? previous = null)
+    private void Start(PilotCallContext context, long module, long repeats, RepairLayer layer, Cycle? previous = null)
     {
-        var result = repairing.Start(context.Pilot.PilotId, module, Now());
+        var result = repairing.Start(context.Pilot.PilotId, module, Now(), layer);
         Cycle cycle = new(context.Pilot.ShipId, result.Schedule, repeats);
         _cycles[module] = cycle;
         if (previous is null)
@@ -98,9 +98,9 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         }
         else
         {
-            context.Flight.SetArmorRepairEffect(Contact(previous), false);
+            context.Flight.SetLocalRepairEffect(Contact(previous), false);
         }
-        context.Flight.SetArmorRepairEffect(Contact(cycle), true);
+        context.Flight.SetLocalRepairEffect(Contact(cycle), true);
         context.Notifications.Add(
             new ModuleAttributesChanged([
                 new(
@@ -114,7 +114,7 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         );
     }
 
-    private void NotifyHealth(PilotCallContext context, ShipHealth health)
+    private void NotifyHealth(PilotCallContext context, ShipHealth health, RepairLayer layer)
     {
         context.Flight.NotifyHealth(health);
         context.Notifications.Add(
@@ -122,9 +122,11 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
                 new(
                     context.Pilot.PilotId,
                     new DogmaItemKey.Item(health.ShipId),
-                    DogmaAttributeId.ArmorDamage,
+                    LocalRepairWireDefinitions.DamageAttribute(layer),
                     Now(),
-                    health.Defense.Armor - health.Remaining.Armor
+                    layer == RepairLayer.Armor
+                        ? health.Defense.Armor - health.Remaining.Armor
+                        : health.Defense.Structure - health.Remaining.Structure
                 ),
             ])
         );
@@ -135,15 +137,30 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         if (_cycles.Remove(cycle.Schedule.ItemId))
         {
             NotifyEffect(context, cycle, false);
-            context.Flight.SetArmorRepairEffect(Contact(cycle), false);
+            context.Flight.SetLocalRepairEffect(Contact(cycle), false);
         }
     }
 
-    private static ArmorRepairContact Contact(Cycle cycle) =>
-        new(cycle.Schedule.ItemId, cycle.Schedule.TypeId, cycle.Schedule.StartedAt, cycle.Schedule.DurationMilliseconds);
+    private static LocalRepairContact Contact(Cycle cycle) =>
+        new(
+            cycle.Schedule.ItemId,
+            cycle.Schedule.TypeId,
+            cycle.Schedule.StartedAt,
+            cycle.Schedule.DurationMilliseconds,
+            cycle.Schedule.Layer
+        );
 
-    private static DogmaActiveEffect Effect(long pilot, long ship, ArmorRepairSchedule schedule, long repeats) =>
-        new(schedule.ItemId, pilot, ship, null, DogmaEffect.ArmorRepair, schedule.StartedAt, schedule.DurationMilliseconds, repeats);
+    private static DogmaActiveEffect Effect(long pilot, long ship, LocalRepairSchedule schedule, long repeats) =>
+        new(
+            schedule.ItemId,
+            pilot,
+            ship,
+            null,
+            LocalRepairWireDefinitions.Effect(schedule.Layer),
+            schedule.StartedAt,
+            schedule.DurationMilliseconds,
+            repeats
+        );
 
     private void NotifyEffect(PilotCallContext context, Cycle cycle, bool active) =>
         context.Notifications.Add(
@@ -164,6 +181,10 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         {
             return PilotCallResult.Unsupported;
         }
+        if (args.Length < 2 || LocalRepairWireDefinitions.Layer(BlueMarshal.Text(args[1])) is not { } layer)
+        {
+            return PilotCallResult.Unsupported;
+        }
         context.Flight.Checkpoint();
         Advance(context);
         try
@@ -171,28 +192,36 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
             if (
                 method == "Activate"
                 && args is [long module, var effect, var target, long repeats]
-                && BlueMarshal.Text(effect) == ArmorRepairWireDefinitions.EffectName
+                && LocalRepairWireDefinitions.Layer(BlueMarshal.Text(effect)) == layer
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
                 if (!context.Flight.CanUseSelfModules || target is not null && !Equals(target, context.Pilot.ShipId))
                 {
-                    return new PilotCallResult.Failure("Activate the armor repairer on your own ship in space.");
+                    return new PilotCallResult.Failure("Activate the local repairer on your own ship in space.");
+                }
+                if (_cycles.TryGetValue(module, out var running) && running.Schedule.Layer != layer)
+                {
+                    return new PilotCallResult.Failure("Use the repairer's own activation effect.");
                 }
                 if (!_cycles.ContainsKey(module))
                 {
-                    Start(context, module, repeats);
+                    Start(context, module, repeats, layer);
                 }
                 return PilotCallResult.None;
             }
             if (
                 method == "Deactivate"
                 && args is [long moduleId, var name]
-                && BlueMarshal.Text(name) == ArmorRepairWireDefinitions.EffectName
+                && LocalRepairWireDefinitions.Layer(BlueMarshal.Text(name)) == layer
             )
             {
                 if (_cycles.TryGetValue(moduleId, out var cycle))
                 {
+                    if (cycle.Schedule.Layer != layer)
+                    {
+                        return new PilotCallResult.Failure("Use the repairer's own activation effect.");
+                    }
                     _cycles[moduleId] = cycle with { Stopping = true };
                 }
                 return PilotCallResult.None;
@@ -205,7 +234,7 @@ internal sealed class ArmorRepairHandler(TimeProvider clock, IPilotArmorRepairin
         }
         catch (OverflowException)
         {
-            return new PilotCallResult.Failure("The armor repair exceeded the local cycle limit.");
+            return new PilotCallResult.Failure("The repair exceeded the local cycle limit.");
         }
     }
 }

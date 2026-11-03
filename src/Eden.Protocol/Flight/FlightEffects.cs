@@ -10,7 +10,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshMining(ship, previous);
         RefreshWeapons(ship, previous);
         RefreshShieldBoosts(ship, previous);
-        RefreshArmorRepairs(ship, previous);
+        RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
         RefreshPropulsion(ship, previous);
     }
@@ -112,7 +112,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
     }
 
-    internal void ArmorRepairEffect(long shipId, ArmorRepairContact effect, bool active) =>
+    internal void LocalRepairEffect(long shipId, LocalRepairContact effect, bool active) =>
         emit(
             new DestinyCommand.TimedSpecialEffect(
                 shipId,
@@ -120,7 +120,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.TypeId,
                 shipId,
                 null,
-                ArmorRepairWireDefinitions.EffectGraphic,
+                LocalRepairWireDefinitions.Graphic(effect.Layer),
                 false,
                 active,
                 active,
@@ -158,15 +158,15 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
     }
 
-    private void RefreshArmorRepairs(ShipContact ship, ShipContact? previous)
+    private void RefreshLocalRepairs(ShipContact ship, ShipContact? previous)
     {
-        foreach (var effect in (previous?.ArmorRepairs ?? []).Except(ship.ArmorRepairs ?? []))
+        foreach (var effect in (previous?.LocalRepairs ?? []).Except(ship.LocalRepairs ?? []))
         {
-            ArmorRepairEffect(ship.Pilot.ShipId, effect, false);
+            LocalRepairEffect(ship.Pilot.ShipId, effect, false);
         }
-        foreach (var effect in (ship.ArmorRepairs ?? []).Except(previous?.ArmorRepairs ?? []))
+        foreach (var effect in (ship.LocalRepairs ?? []).Except(previous?.LocalRepairs ?? []))
         {
-            ArmorRepairEffect(ship.Pilot.ShipId, effect, true);
+            LocalRepairEffect(ship.Pilot.ShipId, effect, true);
         }
     }
 

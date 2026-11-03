@@ -24,7 +24,13 @@ internal sealed record WeaponContact(
     string Graphic = "effects.Laser"
 );
 
-internal sealed record ArmorRepairContact(long ModuleId, int TypeId, long StartedAt, double Duration);
+internal sealed record LocalRepairContact(
+    long ModuleId,
+    int TypeId,
+    long StartedAt,
+    double Duration,
+    RepairLayer Layer = RepairLayer.Armor
+);
 
 internal sealed record HardenerContact(Hardener Module, long StartedAt);
 
@@ -92,7 +98,7 @@ internal sealed record ShipContact(
     ShieldBoostContact[]? ShieldBoosts = null,
     PropulsionContact? Propulsion = null,
     NavigationMode FollowMode = NavigationMode.Follow,
-    ArmorRepairContact[]? ArmorRepairs = null,
+    LocalRepairContact[]? LocalRepairs = null,
     HardenerContact[]? Hardeners = null
 );
 

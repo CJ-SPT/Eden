@@ -311,6 +311,7 @@ public sealed class MicrowarpdriveTests
             deadline = saved.Set<ModuleCooldown>().Single().ReadyAt;
             saved.Database.ExecuteSqlRaw(
                 """
+                ALTER TABLE WorldArmorRepair DROP COLUMN Layer;
                 ALTER TABLE WorldItem DROP COLUMN CrystalDamage;
                 DROP INDEX IX_WorldActiveModule_ShipId;
                 ALTER TABLE WorldActiveModule RENAME TO WorldActiveHardener;
