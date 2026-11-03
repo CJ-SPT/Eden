@@ -9,7 +9,8 @@ public sealed record MiningModuleInputs(
     int HullTypeId,
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     IReadOnlyDictionary<DogmaAttributeId, double> HullAttributes,
-    IReadOnlyDictionary<MiningSkill, int> Levels
+    IReadOnlyDictionary<MiningSkill, int> Levels,
+    bool CatalogHullBonuses = false
 );
 
 public static class MiningRules
@@ -96,7 +97,7 @@ public static class MiningRules
             attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount)
             * (1 + MiningDefinitions.YieldBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Mining))
             * (1 + MiningDefinitions.YieldBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Astrogeology));
-        if (inputs.HullTypeId == (int)StarterShipType.Venture)
+        if (!inputs.CatalogHullBonuses && inputs.HullTypeId == (int)StarterShipType.Venture)
         {
             // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
             // 207, then apply attribute 1842 percent for each Mining Frigate level.

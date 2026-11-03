@@ -32,6 +32,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadFrigateHulls(string path) => Load(path, "FrigateHullCatalog.json", null);
 
+    internal static void LoadSmallHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "SmallHullCatalog.json", types);
+
     internal static void LoadTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "PassiveTierCatalog.json", types);
 
     internal static void LoadActiveTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "ActiveTierCatalog.json", types);

@@ -1,0 +1,173 @@
+using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
+using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Catalog;
+using Eden.Server.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
+
+namespace Eden.Protocol.Tests.Persistence;
+
+public sealed class SmallHullBonusTests
+{
+    private sealed record Probe(int ModuleType, int? ChargeType = null);
+
+    [Theory]
+    [MemberData(nameof(SmallHullTests.Hulls), MemberType = typeof(SmallHullTests))]
+    public void EveryOperationalBonusChangesItsCatalogTargetByItsEarnedSkillAndRoleAmount(int type)
+    {
+        using Fixture f = new();
+        PassiveCatalogFixture.LoadSmallHulls(f.CatalogPath);
+        long ship = SmallHullTests.Board(f, type);
+        IReadOnlyList<PassiveModifier> modifiers;
+        Dictionary<DogmaAttributeId, double> sources;
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            modifiers = HullCatalog.Modifiers(catalog, type);
+            sources = PilotFittingStore.ReadAttributes(catalog, type).ToDictionary();
+            foreach (int skill in HullCatalog.Skills(catalog, type))
+            {
+                foreach (
+                    var modifier in PassiveCatalog
+                        .Modifiers(catalog, skill)
+                        .Where(m =>
+                            m.Domain == ModifierDomain.Ship
+                            && m.Selector == ModifierSelector.Item
+                            && m.SourceAttribute == DogmaAttributeId.SkillLevel
+                        )
+                )
+                {
+                    Assert.Contains(modifier.Operation, new[] { DogmaOperation.PreMultiply, DogmaOperation.PostMultiply });
+                    sources[modifier.Attribute] = sources.GetValueOrDefault(modifier.Attribute) * 5;
+                }
+            }
+        }
+        foreach (var probe in modifiers.Select(ProbeFor).Distinct())
+        {
+            InventoryItem? module = null;
+            long target = ship;
+            if (probe.ModuleType != 0)
+            {
+                long fitted = f.Fit(probe.ModuleType, online: false);
+                module = Assert.Single(f.Inventory.List(f.PilotId, ship), item => item.Id == fitted);
+                target = fitted;
+                if (probe.ChargeType is int chargeType)
+                {
+                    long charge = f.Grant(chargeType, 10);
+                    f.Db.Services.GetRequiredService<IPilotAmmunition>()
+                        .Load(f.PilotId, ship, [fitted], [charge], f.StationId, f.Clock.Now);
+                    using WorldDbContext world = new(f.Db.Path);
+                    target = Assert.Single(world.Set<OwnedItem>(), item => item.LocationId == fitted).Id;
+                }
+            }
+            var enhanced = Attributes(f, target);
+            string definition;
+            using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+            {
+                var source = catalog.Set<SourceRecord>().Find("client/typedogma", PassiveCatalog.Key(type))!;
+                definition = source.Data;
+                string empty = "{\"dogmaEffects\":[]}";
+                string key = PassiveCatalog.Key(type);
+                catalog.Database.ExecuteSql($"UPDATE SourceRecord SET Data={empty} WHERE Dataset='client/typedogma' AND Key={key}");
+            }
+            var baseline = Attributes(f, target);
+            using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+            {
+                string key = PassiveCatalog.Key(type);
+                catalog.Database.ExecuteSql($"UPDATE SourceRecord SET Data={definition} WHERE Dataset='client/typedogma' AND Key={key}");
+            }
+            foreach (var group in modifiers.Where(m => Matches(f, m, probe)).GroupBy(m => m.Attribute))
+            {
+                double expected = baseline.GetValueOrDefault(group.Key);
+                foreach (var modifier in group.OrderBy(m => (int)m.Operation))
+                {
+                    double amount = sources.GetValueOrDefault(modifier.SourceAttribute);
+                    expected = modifier.Operation switch
+                    {
+                        DogmaOperation.PreMultiply or DogmaOperation.PostMultiply => expected * amount,
+                        DogmaOperation.Add => expected + amount,
+                        DogmaOperation.PostPercent => expected * (1 + amount / 100),
+                        _ => throw new InvalidDataException("Unexpected operational hull operator."),
+                    };
+                }
+                Assert.True(
+                    Math.Abs(expected - enhanced.GetValueOrDefault(group.Key)) <= Math.Max(1, Math.Abs(expected)) * 1e-9,
+                    $"Hull {type}, module {probe.ModuleType}, charge {probe.ChargeType}, {group.Key}: "
+                        + $"expected {expected}, actual {enhanced.GetValueOrDefault(group.Key)}"
+                );
+            }
+            if (module is not null)
+            {
+                f.Inventory.Move(f.PilotId, [module.Id], ship, f.StationId, (int)InventoryFlag.Hangar, null);
+            }
+        }
+    }
+
+    private static Dictionary<DogmaAttributeId, double> Attributes(Fixture f, long target)
+    {
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        using WorldDbContext world = new(f.Db.Path);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == f.PilotId);
+        return FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(target);
+    }
+
+    private static bool Matches(Fixture f, PassiveModifier modifier, Probe probe)
+    {
+        if (modifier.Selector == ModifierSelector.Item)
+        {
+            return probe.ModuleType == 0;
+        }
+        if (probe.ModuleType == 0)
+        {
+            return false;
+        }
+        if ((modifier.Selector == ModifierSelector.OwnerRequiredSkill) != probe.ChargeType.HasValue)
+        {
+            return false;
+        }
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        int type = probe.ChargeType ?? probe.ModuleType;
+        if (modifier.Selector == ModifierSelector.Group)
+        {
+            return catalog.Set<ItemType>().Find(type)!.GroupId == modifier.SelectionId;
+        }
+        var attributes = PilotFittingStore.ReadAttributes(catalog, type);
+        return InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == modifier.SelectionId);
+    }
+
+    private static Probe ProbeFor(PassiveModifier modifier) =>
+        modifier.Selector switch
+        {
+            ModifierSelector.Item => new(0),
+            ModifierSelector.OwnerRequiredSkill => modifier.SelectionId == (int)MissileSkill.LightMissiles
+                ? new(499, 210)
+                : new(10629, 266),
+            ModifierSelector.Group => (HullBonusEquipmentGroup?)modifier.SelectionId switch
+            {
+                HullBonusEquipmentGroup.ProjectileWeapon => new(484),
+                HullBonusEquipmentGroup.WarpScrambler => new(447),
+                HullBonusEquipmentGroup.StasisWeb => new(527),
+                HullBonusEquipmentGroup.ArmorPlate => new(11293),
+                _ => throw new InvalidDataException($"No operational group probe for {modifier.SelectionId}."),
+            },
+            ModifierSelector.RequiredSkill => (HullBonusSkill?)modifier.SelectionId switch
+            {
+                HullBonusSkill.SmallHybridTurret => new(561),
+                HullBonusSkill.SmallProjectileTurret => new(484),
+                HullBonusSkill.SmallEnergyTurret => new(450),
+                HullBonusSkill.MissileLauncherOperation => new(499),
+                HullBonusSkill.Mining => new(482),
+                HullBonusSkill.RepairSystems => new(523),
+                HullBonusSkill.ShieldOperation => new(399),
+                HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => new(447),
+                HullBonusSkill.Afterburner => new(439),
+                HullBonusSkill.HighSpeedManeuvering => new(434),
+                _ => throw new InvalidDataException($"No operational skill probe for {modifier.SelectionId}."),
+            },
+            _ => throw new InvalidDataException("No operational hull probe."),
+        };
+}

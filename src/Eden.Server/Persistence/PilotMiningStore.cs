@@ -39,7 +39,8 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
                 pilot.ActiveShip.TypeId,
                 PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
                 PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId),
-                levels
+                levels,
+                HullCatalog.UsesCatalogBonuses(catalog, pilot.ActiveShip.TypeId)
             )
         );
     }

@@ -39,7 +39,9 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         var levels = Enum.GetValues<CombatSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
         var loaded = PilotAmmunitionStore.Contents(world, module.Id);
         var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
-        var hull = PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId);
+        IReadOnlyDictionary<DogmaAttributeId, double> hull = HullCatalog.UsesCatalogBonuses(catalog, pilot.ActiveShip.TypeId)
+            ? new Dictionary<DogmaAttributeId, double>()
+            : PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId);
         return WeaponRules.ModuleAttributes(
             new(
                 module.TypeId,

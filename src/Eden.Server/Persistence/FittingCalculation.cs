@@ -116,7 +116,8 @@ internal sealed record FittingCalculation(
                 );
             }
         }
-        foreach (var role in FittingRules.RookieResistanceModifiers)
+        bool catalogHull = HullCatalog.UsesCatalogBonuses(catalog, ship.TypeId);
+        foreach (var role in catalogHull ? [] : FittingRules.RookieResistanceModifiers)
         {
             hullAttributes.TryAdd(role.Resonance, 1);
             modifiers.Add(new(ship.Id, role.Resonance, DogmaOperation.PostPercent, new DogmaValue.Attribute(ship.Id, role.Bonus), true));
@@ -125,7 +126,9 @@ internal sealed record FittingCalculation(
         // missile ammunition, independently of launcher damage upgrades.
         foreach (
             var charge in charges.Where(c =>
-                MissileDefinitions.ChargeGroups.Contains(c.GroupId) && c.RequiredSkills.Contains((int)MissileSkill.MissileLauncherOperation)
+                !catalogHull
+                && MissileDefinitions.ChargeGroups.Contains(c.GroupId)
+                && c.RequiredSkills.Contains((int)MissileSkill.MissileLauncherOperation)
             )
         )
         {

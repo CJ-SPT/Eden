@@ -21,6 +21,7 @@
     <EmbeddedResource Include="Fixtures/SupportTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/TackleTierCatalog.json" />
     <EmbeddedResource Include="Fixtures/FrigateHullCatalog.json" />
+    <EmbeddedResource Include="Fixtures/SmallHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/TechOneHulls.json" />
     <Using Include="Xunit" />
   </ItemGroup>

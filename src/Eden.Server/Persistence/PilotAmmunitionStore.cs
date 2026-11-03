@@ -188,6 +188,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             throw new InvalidDataException("Load distinct ammunition stacks from your cargo or current docked station hangar.");
         }
         var modules = Modules(world, catalog, pilot, moduleIds, now);
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
         var sources = world
             .Set<OwnedItem>()
             .Where(i => chargeIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == sourceId && i.FlagId == sourceFlag)
@@ -315,7 +316,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                     break;
                 }
             }
-            double reload = attributes.GetValueOrDefault(DogmaAttributeId.ReloadTime);
+            double reload = fitting.Graph.Attributes(module.Id).GetValueOrDefault(DogmaAttributeId.ReloadTime);
             if (!double.IsFinite(reload) || reload < 0)
             {
                 throw new InvalidDataException("Invalid weapon reload duration.");

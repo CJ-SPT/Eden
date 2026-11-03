@@ -40,6 +40,11 @@ internal static class Program
             CatalogSources.Verify(path);
             return;
         }
+        if (args is ["--export-hull-coverage", var hullCatalog, var hullOutput])
+        {
+            HullSupportAudit.Export(hullCatalog, hullOutput);
+            return;
+        }
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
         string worldPath = args is ["--world", var save] ? Path.GetFullPath(save) : Path.Combine(directory, "world.sqlite");
         using var services = ServerServices.Build(new WorldDatabase(worldPath));

@@ -538,3 +538,19 @@ python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sql
 ```
 
 The first-cohort acceptance used a copied Perimeter save, racial Frigate III and trained test-equipment prerequisites. All four ships were bought at the existing 1 ISK offers and assembled, named, boarded and fitted through native controls. Each destroyed a belt Rookie and redocked. The native weapon context menus loaded cargo ammunition. The armor repairer displayed 113 HP per 4.5 seconds and visibly consumed capacitor. Returning to the original Ibis showed its empty 125 m³ hold. Restarting the host/client retained the named Rifter, three loaded guns, 20.1 DPS in Fitting and 400 spare rounds in Inventory. The [protocol acceptance record](protocol.md#tech-i-hull-expansion-milestone-1) separates exact automated checks from these observations and describes the copied-save ammunition preparation and the station-alignment limitation.
+
+
+## Small Tech I hull acceptance
+
+Use the copied-world procedure above. This cohort includes all 99 qualifying frigates, destroyers, shuttles, corvettes and small specialist-group entries. Read [the per-hull capability record](tech-one-hulls.json) before selecting a role: flight support does not enable its listed drone, probe, analyzer or other deferred systems.
+
+Reproduce the small-hull definitions and the coverage record from the pinned catalog:
+
+```powershell
+python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures --cohort small
+dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage "$env:LOCALAPPDATA/Eden/catalog.sqlite" docs/tech-one-hulls.json
+```
+
+For native acceptance, select Eden Pilot and verify the active hull in Inventory after each boarding. Exercise a no-rack shuttle, Zephyr's one-high/no-hardpoint layout, Echelon's one-medium layout, a destroyer and representative supported hull bonuses. Use legal CPU, power, slots and hardpoints. Compare fitted attributes with the operation that uses them: Leopard warp speed, Succubus afterburner speed, Daredevil web strength, projectile reload, missile flight/damage, Venture Consortium Issue's mining hold/yield/shield boost, Fleet Thrasher's MWD and Navy Catalyst's armor-plate mass. Keep each previously flown hull's inventory separate and reconnect to check persistence. Use the station's Board my Corvette recovery control as a regression.
+
+The verified run flew eleven additional small hull types, recovered the racial Ibis and restarted the copied host/client with Consortium active. Inventory retained 2,573 Veldspar in its 6,250 m³ Mining Hold and Fitting retained its miner and shield booster. The [protocol record](protocol.md#tech-i-hull-expansion-milestone-2) separates the native observations from automated-only hulls and role gaps. Full repository checks run separately from the interactive game session.

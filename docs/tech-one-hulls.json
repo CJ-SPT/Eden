@@ -1,0 +1,4437 @@
+{
+  "build": 3662168,
+  "catalogHullCount": 275,
+  "hulls": [
+    {
+      "typeId": 582,
+      "name": "Bantam",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 270,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5103,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5104,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 583,
+      "name": "Condor",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 898,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 3495,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 584,
+      "name": "Griffin",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 5,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 260,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1996,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 2734,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 585,
+      "name": "Slasher",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 2,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 120,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 508,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1099,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3495,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 586,
+      "name": "Probe",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4166,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5051,
+          "capability": "Salvaging",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Salvaging",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 587,
+      "name": "Rifter",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 140,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5779,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7248,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 588,
+      "name": "Reaper",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 2,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 120,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5018,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5019,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5020,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5021,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 589,
+      "name": "Executioner",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 3,
+        "low": 3,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 115,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 511,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 514,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3495,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 590,
+      "name": "Inquisitor",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 2,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5109,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5110,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 591,
+      "name": "Tormentor",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 511,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 514,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 592,
+      "name": "Navitas",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 280,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5107,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5108,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 593,
+      "name": "Tristan",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 140,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2504,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5087,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5111,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 594,
+      "name": "Incursus",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 165,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 512,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4934,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 596,
+      "name": "Impairor",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 2,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 115,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4990,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4991,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4994,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4995,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4996,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4997,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5795,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 597,
+      "name": "Punisher",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 2,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 511,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1804,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1805,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1806,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1807,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 598,
+      "name": "Breacher",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 175,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5090,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 5778,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 599,
+      "name": "Burst",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 260,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5105,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5106,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 601,
+      "name": "Ibis",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 2,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 125,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4999,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5000,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5008,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5009,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5011,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5012,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5028,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 602,
+      "name": "Kestrel",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 160,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5080,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5237,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5240,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5243,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 603,
+      "name": "Merlin",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 150,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1816,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1817,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1819,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1820,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4941,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 605,
+      "name": "Heron",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4165,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5045,
+          "capability": "Salvaging",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Salvaging",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 606,
+      "name": "Velator",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 2,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5013,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5014,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5015,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5016,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5017,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 5030,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5035,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 607,
+      "name": "Imicus",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4167,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5048,
+          "capability": "Salvaging",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Salvaging",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 608,
+      "name": "Atron",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 3,
+        "low": 3,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 145,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 512,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1773,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3495,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 609,
+      "name": "Maulus",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 275,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3366,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3588,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3589,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 615,
+      "name": "Immolator",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 3,
+        "low": 2,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 115,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4991,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5021,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 5205,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5206,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 617,
+      "name": "Echo",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 3,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 120,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5020,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5217,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5218,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5219,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 672,
+      "name": "Caldari Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 2078,
+      "name": "Zephyr",
+      "class": "PrototypeExploration",
+      "acquisition": "market",
+      "fitting": {
+        "high": 1,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": [
+        "Probes"
+      ]
+    },
+    {
+      "typeId": 2161,
+      "name": "Crucifier",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 265,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5827,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6354,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 3532,
+      "name": "Echelon",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": [
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 3766,
+      "name": "Vigil",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 5,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1551,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5066,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 11129,
+      "name": "Gallente Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 11132,
+      "name": "Minmatar Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 11134,
+      "name": "Amarr Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 11940,
+      "name": "Gold Magnate",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 6,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 300,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 511,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 514,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2131,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4994,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4995,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4996,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4997,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 11942,
+      "name": "Silver Magnate",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 511,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 514,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2131,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4994,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4995,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4996,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 4997,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 16236,
+      "name": "Coercer",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 2,
+        "low": 3,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33091
+      ],
+      "cargoCapacity": 375,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2131,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5293,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5294,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 16238,
+      "name": "Cormorant",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 3,
+        "low": 2,
+        "turrets": 7,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33092
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2130,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5303,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5304,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 16240,
+      "name": "Catalyst",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 2,
+        "low": 3,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33093
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2130,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5309,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5310,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 16242,
+      "name": "Thrasher",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 3,
+        "low": 2,
+        "turrets": 7,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2132,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5317,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5318,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17619,
+      "name": "Caldari Navy Hookbill",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 140,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5080,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5240,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5243,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6350,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17703,
+      "name": "Imperial Navy Slicer",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 2,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 757,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4482,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17812,
+      "name": "Republic Fleet Firetail",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 508,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1099,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12038,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17841,
+      "name": "Federation Navy Comet",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 145,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 512,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2504,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17924,
+      "name": "Succubus",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3330,
+        3331
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3487,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3489,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4990,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5813,
+          "capability": "Propulsion",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17926,
+      "name": "Cruor",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 3,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3329,
+        3331
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1215,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3299,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3487,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4471,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 5854,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6281,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6285,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6287,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6291,
+          "capability": "EnergyWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 17928,
+      "name": "Daredevil",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328,
+        3329
+      ],
+      "cargoCapacity": 140,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1218,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1773,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4513,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 17930,
+      "name": "Worm",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3328,
+        3330
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1816,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1817,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1819,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1820,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5814,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5815,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5816,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5817,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5818,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5819,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17932,
+      "name": "Dramiel",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3328,
+        3329
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1228,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4515,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 21097,
+      "name": "Goru\u0027s Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 21628,
+      "name": "Guristas Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 29248,
+      "name": "Magnate",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5036,
+          "capability": "Salvaging",
+          "operational": false
+        },
+        {
+          "effectId": 5119,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Salvaging",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 29266,
+      "name": "Apotheosis",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 30842,
+      "name": "InterBus Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 20,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 32872,
+      "name": "Algos",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 3,
+        "low": 3,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33093
+      ],
+      "cargoCapacity": 350,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5165,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5310,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5311,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5316,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 32874,
+      "name": "Dragoon",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        33091
+      ],
+      "cargoCapacity": 300,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5165,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5295,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5300,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6241,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6242,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6245,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6246,
+          "capability": "EnergyWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 32876,
+      "name": "Corax",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 7
+      },
+      "requiredSkills": [
+        33092
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5153,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5305,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5306,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5307,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5308,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 32878,
+      "name": "Talwar",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 3,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 7
+      },
+      "requiredSkills": [
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5153,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5319,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5320,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5321,
+          "capability": "Propulsion",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 32880,
+      "name": "Venture",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 1,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        32918
+      ],
+      "cargoCapacity": 50,
+      "generalMiningHoldCapacity": 5000,
+      "effects": [
+        {
+          "effectId": 3526,
+          "capability": "CynosuralFields",
+          "operational": false
+        },
+        {
+          "effectId": 5058,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 5139,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 8313,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 8315,
+          "capability": "GasMining",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CynosuralFields",
+        "GasMining"
+      ]
+    },
+    {
+      "typeId": 33079,
+      "name": "Hematos",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 3,
+        "low": 2,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 115,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4990,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4991,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5207,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5208,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5209,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 33081,
+      "name": "Taipan",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 3,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 125,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5008,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5009,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5011,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5012,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5014,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5030,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5035,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5212,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5213,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5214,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 33083,
+      "name": "Violator",
+      "class": "Corvette",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 2,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 135,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5013,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5209,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 5215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5216,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 33397,
+      "name": "Chremoas",
+      "class": "CovertOps",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3328,
+        3329,
+        12093
+      ],
+      "cargoCapacity": 190,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1228,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 2253,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 4168,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 4515,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5260,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 5485,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Cloaking",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 33468,
+      "name": "Astero",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 4,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328,
+        3331
+      ],
+      "cargoCapacity": 210,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1804,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1805,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1806,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1807,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 5087,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 5647,
+          "capability": "Cloaking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Cloaking",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 33513,
+      "name": "Leopard",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 33816,
+      "name": "Garmur",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3328,
+        3330
+      ],
+      "cargoCapacity": 130,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1230,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1862,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1863,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1864,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 4620,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 5079,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5867,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 34496,
+      "name": "Council Diplomatic Shuttle",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 35779,
+      "name": "Imp",
+      "class": "Interceptor",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3330,
+        3331,
+        12092
+      ],
+      "cargoCapacity": 150,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3487,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3489,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3495,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3514,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3766,
+          "capability": "Propulsion",
+          "operational": true
+        },
+        {
+          "effectId": 5813,
+          "capability": "Propulsion",
+          "operational": true
+        },
+        {
+          "effectId": 6170,
+          "capability": "Entosis",
+          "operational": false
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8120,
+          "capability": "Interdiction",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "Entosis",
+        "Interdiction"
+      ]
+    },
+    {
+      "typeId": 37453,
+      "name": "Crucifier Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 165,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 757,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6352,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6353,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6354,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 37454,
+      "name": "Vigil Fleet Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 6359,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6360,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6361,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6362,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 37455,
+      "name": "Griffin Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 260,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4941,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8100,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 8101,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 8102,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 37456,
+      "name": "Maulus Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 275,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5087,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5111,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6357,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 6358,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 42685,
+      "name": "Sunesis",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1218,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3487,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5014,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5035,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 6083,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes"
+      ]
+    },
+    {
+      "typeId": 47269,
+      "name": "Damavik",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        47867
+      ],
+      "cargoCapacity": 213,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7088,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7092,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7094,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7112,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7204,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7205,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7206,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7207,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs",
+        "Disintegrators"
+      ]
+    },
+    {
+      "typeId": 49710,
+      "name": "Kikimora",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 3,
+        "low": 4,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        49742
+      ],
+      "cargoCapacity": 360,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7092,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7094,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7112,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7154,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7156,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7157,
+          "capability": "Disintegrators",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs",
+        "Disintegrators"
+      ]
+    },
+    {
+      "typeId": 54731,
+      "name": "Skybreaker",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 4,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        55031
+      ],
+      "cargoCapacity": 158,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 8047,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8048,
+          "capability": "VortonProjectors",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "VortonProjectors"
+      ]
+    },
+    {
+      "typeId": 60765,
+      "name": "Raiju",
+      "class": "ElectronicAttack",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 6,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3328,
+        3330,
+        28615
+      ],
+      "cargoCapacity": 220,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1230,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1862,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1863,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1864,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 3366,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3367,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3371,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3588,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3589,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5079,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5867,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 64034,
+      "name": "Boobook",
+      "class": "Shuttle",
+      "acquisition": "market",
+      "fitting": {
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "turrets": 0,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 10,
+      "generalMiningHoldCapacity": 0,
+      "effects": [],
+      "deferred": []
+    },
+    {
+      "typeId": 72903,
+      "name": "Probe Fleet Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3329
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4166,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 11068,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11069,
+          "capability": "Probes",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "Probes",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 72904,
+      "name": "Heron Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 5,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3330
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4165,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 11069,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 11070,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "Probes",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 72907,
+      "name": "Magnate Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3331
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 514,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5119,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 11069,
+          "capability": "Probes",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "Probes",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 72913,
+      "name": "Imicus Navy Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3328
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4167,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5087,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5111,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 11069,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 11072,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 73789,
+      "name": "Coercer Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 2,
+        "low": 4,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33091
+      ],
+      "cargoCapacity": 375,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 11404,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11405,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11406,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11407,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 11408,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 11410,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11450,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 73794,
+      "name": "Thrasher Fleet Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 3,
+        "low": 3,
+        "turrets": 6,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 11398,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11399,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11400,
+          "capability": "Propulsion",
+          "operational": true
+        },
+        {
+          "effectId": 11401,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11402,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 73795,
+      "name": "Cormorant Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 2,
+        "turrets": 6,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33092
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 11391,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11392,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11395,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 11396,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11397,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 73796,
+      "name": "Catalyst Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 3,
+        "low": 3,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33093
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 11387,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11388,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 11390,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 11393,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11394,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 77114,
+      "name": "Metamorphosis",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 3,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 200,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1218,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 3487,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 6083,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8226,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11528,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 11529,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 11530,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 11531,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 11532,
+          "capability": "Hacking",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Cloaking",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 78333,
+      "name": "Mekubal",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 3,
+        "low": 4,
+        "turrets": 4,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33093,
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2215,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11743,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11919,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12567,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 78367,
+      "name": "Mamba",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        33092,
+        33093
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5816,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5817,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5818,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5819,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11938,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11939,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11940,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11941,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11942,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11943,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12566,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 85087,
+      "name": "Tholos",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 6,
+        "low": 2,
+        "turrets": 2,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        33092,
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 5647,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 12188,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12190,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12192,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12194,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Cloaking"
+      ]
+    },
+    {
+      "typeId": 89240,
+      "name": "Pioneer",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 3,
+        "low": 2,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        89241
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 8000,
+      "effects": [
+        {
+          "effectId": 12329,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 12330,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 12331,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 12557,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 12596,
+          "capability": "OreMining",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "GasMining"
+      ]
+    },
+    {
+      "typeId": 89647,
+      "name": "Pioneer Consortium Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 2,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        89241
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 10000,
+      "effects": [
+        {
+          "effectId": 12329,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 12330,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 12331,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 12557,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 12559,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 12560,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 12596,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 12753,
+          "capability": "OreMining",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "GasMining"
+      ]
+    },
+    {
+      "typeId": 89648,
+      "name": "Venture Consortium Issue",
+      "class": "Frigate",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 1,
+        "turrets": 2,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        32918
+      ],
+      "cargoCapacity": 150,
+      "generalMiningHoldCapacity": 6250,
+      "effects": [
+        {
+          "effectId": 3526,
+          "capability": "CynosuralFields",
+          "operational": false
+        },
+        {
+          "effectId": 5058,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 5139,
+          "capability": "OreMining",
+          "operational": true
+        },
+        {
+          "effectId": 8313,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 8315,
+          "capability": "GasMining",
+          "operational": false
+        },
+        {
+          "effectId": 12560,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 12563,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 12753,
+          "capability": "OreMining",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CynosuralFields",
+        "GasMining"
+      ]
+    },
+    {
+      "typeId": 91174,
+      "name": "Perseverance",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 2,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        16281,
+        89241
+      ],
+      "cargoCapacity": 250,
+      "generalMiningHoldCapacity": 21000,
+      "effects": [
+        {
+          "effectId": 12771,
+          "capability": "IceMining",
+          "operational": false
+        },
+        {
+          "effectId": 12772,
+          "capability": "IceMining",
+          "operational": false
+        },
+        {
+          "effectId": 12773,
+          "capability": "IceMining",
+          "operational": false
+        },
+        {
+          "effectId": 12774,
+          "capability": "IceMining",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "IceMining"
+      ]
+    },
+    {
+      "typeId": 91775,
+      "name": "Dragoon Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 4,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        33091
+      ],
+      "cargoCapacity": 350,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5165,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5295,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5300,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6241,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6242,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6245,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6246,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12807,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12808,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 91849,
+      "name": "Algos Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 4,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33093
+      ],
+      "cargoCapacity": 350,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5165,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5310,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5311,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 12810,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 12810,
+          "capability": "Interdiction",
+          "operational": false
+        },
+        {
+          "effectId": 12843,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12908,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Interdiction"
+      ]
+    },
+    {
+      "typeId": 91857,
+      "name": "Corax Navy Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 5,
+        "low": 2,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        33092
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5153,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12812,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12813,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12815,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    },
+    {
+      "typeId": 91858,
+      "name": "Talwar Fleet Issue",
+      "class": "Destroyer",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 4,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        33094
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1234,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5153,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12817,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12818,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 12819,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": []
+    }
+  ]
+}
