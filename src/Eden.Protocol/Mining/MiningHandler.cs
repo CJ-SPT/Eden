@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -9,7 +10,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Mining;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting)
+internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting) : IModuleEffectSource
 {
     private sealed record Cycle(MiningLaser Laser, long Target, long Started, long StartTime, long Repeats);
 
@@ -84,7 +85,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         var result = mining.Collect(context.Pilot.PilotId, cycle.Laser.ItemId, cycle.Target, volume, criticalBonus);
         if (result.Cargo is { } change)
         {
-            InventoryHandler.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change);
         }
         if (result.Extracted > 0)
         {

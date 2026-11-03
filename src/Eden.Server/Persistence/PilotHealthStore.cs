@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Combat;

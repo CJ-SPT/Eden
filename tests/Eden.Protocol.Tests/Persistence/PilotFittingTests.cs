@@ -1,5 +1,6 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -144,7 +145,7 @@ public sealed class PilotFittingTests
         var module = Assert.Single(inventory.List(pilot.PilotId, pilot.ShipId));
         Assert.Equal(new[] { "OnItemChange", "OnItemChange", "OnModuleAttributeChanges" }, context.Notifications.Select(n => n.Name));
         var row = Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(context.Notifications[1].Arguments[0]).Arguments[1]);
-        Assert.Equal(InventoryDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
+        Assert.Equal(InventoryWireDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
         Assert.Equal(9, row.Length);
         var descriptor = Assert.IsType<BlueConstructor>(Assert.IsType<BlueConstructor>(context.Notifications[1].Arguments[0]).Arguments[0]);
         Assert.True(BlueRowDescriptor.IsInventoryVirtuals(descriptor.State));
@@ -160,8 +161,8 @@ public sealed class PilotFittingTests
                     : "TakeModuleOffline";
             object?[] args = native
                 ? online
-                    ? [module.Id, InventoryDefinitions.OnlineEffectName, null, 0L]
-                    : [module.Id, InventoryDefinitions.OnlineEffectName]
+                    ? [module.Id, InventoryWireDefinitions.OnlineEffectName, null, 0L]
+                    : [module.Id, InventoryWireDefinitions.OnlineEffectName]
                 : [pilot.ShipId, module.Id];
             Assert.Null(router.CallWire(context, "dogmaIM", method, args, _ => { }));
             Assert.Equal(new[] { "OnGodmaShipEffect", "OnModuleAttributeChanges" }, context.Notifications.Select(n => n.Name));

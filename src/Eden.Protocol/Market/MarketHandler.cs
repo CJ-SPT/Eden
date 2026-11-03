@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -25,7 +26,7 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, IPi
     {
         foreach (var change in result.Changes)
         {
-            InventoryHandler.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change);
         }
         context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, Isk(result.BalanceCents)));
         var orders = result

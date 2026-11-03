@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -37,7 +38,7 @@ internal sealed class ModuleActivationHandler(
             CombatDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
             ShieldBoostDefinitions.EffectName => shields.Call(context, service, method, args),
             PropulsionDefinitions.EffectName => propulsion.Call(context, service, method, args),
-            InventoryDefinitions.OnlineEffectName => Online(context, method, args),
+            InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,
         };
     }

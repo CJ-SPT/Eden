@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
@@ -23,6 +24,10 @@ public sealed class ServerServicesTests
         using var second = world.Services.CreateScope();
         var session = first.ServiceProvider.GetRequiredService<IPilotSession>();
         Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
+        Assert.Contains(
+            first.ServiceProvider.GetRequiredService<MiningHandler>(),
+            first.ServiceProvider.GetServices<IModuleEffectSource>()
+        );
         Assert.NotSame(session, second.ServiceProvider.GetRequiredService<IPilotSession>());
         Assert.Same(world.Store, first.ServiceProvider.GetRequiredService<IPilotLookup>());
         Assert.IsType<PilotHealthStore>(first.ServiceProvider.GetRequiredService<IPilotHealth>());

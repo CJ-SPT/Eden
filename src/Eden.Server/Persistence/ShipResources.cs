@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 

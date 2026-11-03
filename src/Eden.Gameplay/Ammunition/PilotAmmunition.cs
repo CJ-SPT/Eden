@@ -1,6 +1,6 @@
-using Eden.Protocol.Docking;
+using Eden.Gameplay.Inventory;
 
-namespace Eden.Protocol.Ammunition;
+namespace Eden.Gameplay.Ammunition;
 
 public sealed record Magazine(long ModuleId, long ShipId, int FlagId, int TypeId, int Quantity, long ReadyAt);
 

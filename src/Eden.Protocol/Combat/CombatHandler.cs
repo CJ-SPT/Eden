@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -12,7 +14,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, TargetingHandler targeting)
+internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, TargetingHandler targeting) : IModuleEffectSource
 {
     private sealed record Cycle(
         long ShipId,
@@ -123,7 +125,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         }
         if (result.Magazine is { } magazine)
         {
-            AmmunitionHandler.NotifyQuantity(context, magazine, magazine.Quantity, now);
+            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, now);
         }
         if (result.Destroyed)
         {

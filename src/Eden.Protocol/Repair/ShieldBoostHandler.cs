@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -8,7 +9,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Repair;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoosting boosting)
+internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoosting boosting) : IModuleEffectSource
 {
     private sealed record Cycle(long ShipId, ShieldBooster Booster, long Started, long StartTime, long Repeats, bool Stopping = false);
 

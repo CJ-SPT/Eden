@@ -1,8 +1,7 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
-
-internal sealed record InventoryMoveRequest(IReadOnlyList<long> ItemIds, long SourceId, int FlagId, int? Quantity);
 
 internal sealed record InventoryRow(
     long Id,
@@ -23,7 +22,7 @@ internal sealed record InventoryRow(
             item.OwnerId,
             item.LocationId,
             item.FlagId,
-            item.Singleton ? InventoryDefinitions.AssembledQuantity : item.Quantity,
+            item.Singleton ? InventoryWireDefinitions.AssembledQuantity : item.Quantity,
             item.GroupId,
             item.CategoryId
         );

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;

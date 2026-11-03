@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
@@ -581,12 +582,12 @@ public sealed class IndustryTests
         );
         context.Select(pilot);
         var item = f.Store.Blueprint(pilot.PilotId, Fixture.BlueprintId).Item;
-        InventoryHandler.NotifyItemChange(context, new(item, null));
-        InventoryHandler.NotifyItemChange(context, new(item with { Quantity = 2 }, item));
+        InventoryChangesWire.NotifyItemChange(context, new(item, null));
+        InventoryChangesWire.NotifyItemChange(context, new(item with { Quantity = 2 }, item));
         Assert.Equal(2, context.Notifications.Count(n => n.Name == "OnItemChange"));
         Assert.Equal(pilot.PilotId, Assert.Single(context.Notifications, n => n.Name == "OnBlueprintsUpdated").Arguments[0]);
         context.Notifications.Clear();
-        InventoryHandler.NotifyItemChange(context, new(item, item with { LocationId = pilot.ShipId }));
+        InventoryChangesWire.NotifyItemChange(context, new(item, item with { LocationId = pilot.ShipId }));
         Assert.Single(context.Notifications, n => n.Name == "OnBlueprintsUpdated");
     }
 

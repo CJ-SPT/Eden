@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;

@@ -1,6 +1,8 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -270,32 +272,21 @@ public sealed class MiningTests
             fixture.Inventory,
             fixture.Db.Services.GetRequiredService<IPilotFitting>(),
             fixture.Store,
-            mining,
             fixture.Db.Services.GetRequiredService<IPilotFleet>(),
             fixture.Db.Services.GetRequiredService<IPilotHealth>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
-            new Eden.Protocol.Combat.CombatHandler(
-                fixture.Clock,
-                fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
-                targeting
-            ),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Loot.IWrecks>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>(),
-            new Eden.Protocol.Repair.ShieldBoostHandler(
+            fixture.Db.Services.GetRequiredService<IPilotAmmunition>(),
+            new Eden.Protocol.Ammunition.MagazineWire(
                 fixture.Clock,
-                fixture.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()
-            ),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
-            new Eden.Protocol.Ammunition.AmmunitionHandler(
-                fixture.Clock,
-                fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
                 fixture.Db.Services.GetRequiredService<IPilotFitting>(),
                 fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(),
                 fixture.Inventory
             ),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>(),
-            new(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>())
+            [mining]
         );
         var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);

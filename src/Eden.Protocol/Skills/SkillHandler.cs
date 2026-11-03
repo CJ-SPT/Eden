@@ -64,7 +64,7 @@ internal sealed class SkillHandler(
         var result = books.Inject(context.Pilot.PilotId, items.Cast<long>().ToArray());
         foreach (var change in result.Changes)
         {
-            InventoryHandler.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change);
         }
         var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => result.TypeIds.Contains(s.TypeId)));
         context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));

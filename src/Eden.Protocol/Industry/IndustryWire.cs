@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 
@@ -49,7 +50,7 @@ internal static class IndustryWire
                 ["itemID"] = item.Id,
                 ["typeID"] = item.TypeId,
                 ["ownerID"] = item.OwnerId,
-                ["quantity"] = item.Singleton ? InventoryDefinitions.AssembledQuantity : item.Quantity,
+                ["quantity"] = item.Singleton ? InventoryWireDefinitions.AssembledQuantity : item.Quantity,
                 ["timeEfficiency"] = 0,
                 ["materialEfficiency"] = 0,
                 ["runs"] = -1,

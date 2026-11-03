@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Protocol.Docking;
 

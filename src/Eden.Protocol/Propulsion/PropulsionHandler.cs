@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -8,7 +9,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Propulsion;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion propulsion)
+internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion propulsion) : IModuleEffectSource
 {
     private sealed record Cycle(long ShipId, Afterburner Module, long Started, long StartTime, long Repeats, bool Stopping = false);
 

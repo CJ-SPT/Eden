@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -64,7 +65,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
                 );
                 foreach (var change in result.Changes)
                 {
-                    InventoryHandler.NotifyItemChange(context, change);
+                    InventoryChangesWire.NotifyItemChange(context, change);
                 }
                 // ItemReprocessor extends its result list with this pair, then the
                 // controller unpacks input IDs and actual output quantities.

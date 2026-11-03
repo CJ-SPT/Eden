@@ -926,3 +926,13 @@ The extracted formulas retain the existing Carbon Destiny reference at revision 
 Automated acceptance passed restore, build with zero warnings, all 383 .NET tests, 3 catalog setup Python tests, 9 formatting policy Python tests and formatting verification. Coverage includes invalid headings/ranges, warp state, gate transitions, collision/approach, orbit, peer snapshots and native Destiny arguments.
 
 Live acceptance used both staged clients on the isolated architecture save. Eden Pilot warped from Perimeter II belt 1 to the Jita gate, played the gate flash and tunnel, and arrived in Jita beside the Perimeter gate. The server recorded transfer from system 30000144 to 30000142. Eden Wing undocked from Jita IV - Moon 4. Eden Pilot warped to that station and coasted out of warp. Pilot's Overview showed Eden Wing in an Ibis at 183 km, and Wing's Overview showed Eden Pilot in an Ibis at the same distance.
+
+## Inventory boundary milestone 4
+
+On 2026-11-03, Gameplay became the owner of inventory changes, fitting and ammunition contracts, magazine state and typed inventory moves. Native row-column indices, singleton quantities, effect names and notification construction remain in Protocol. InventoryChangesWire owns shared item-change and blueprint-cache notifications. MagazineWire owns charge priming and quantity/reload notifications. Inventory, ammunition, mining, industry, market, skills and loot use these adapters. Inventory reads active cycle effects through IModuleEffectSource, with the original connection-scoped feature handlers remaining their state owners. Hosting tests verify that this interface resolves the same scoped mining handler.
+
+Transfers select named move, fitting and wreck-looting paths. The common post-transfer sequence still clears old magazine quantities, detaches moving modules, sends changed item rows, and primes charges after the client fetches the new module slots.
+
+Automated acceptance passed restore, build with zero warnings, all 383 .NET tests, both Python suites (3 and 9 tests), and formatting verification. Existing loaded-ammunition and fitting tests continue to exercise transfer identities, slot swaps, charge notifications and reload state.
+
+Live observation showed Eden Pilot docked in Jita with Inventory showing the active Ibis and Fitting showing the miner and loaded railgun. The maintainer took control of the game for this check and confirmed that swapping the miner and loaded railgun preserved the 76 Iron Charge S rounds and showed both modules in the new slots after reopening Fitting. This is maintainer-reported acceptance, alongside the agent's visible Inventory/Fitting observations.

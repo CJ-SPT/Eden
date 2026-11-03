@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 
@@ -38,8 +39,8 @@ public static class CombatDefinitions
 
     public static bool IsSupportedHybrid(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         group == HybridWeaponGroup
-        && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == Ammunition.AmmunitionDefinitions.SmallChargeSize
-        && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == Ammunition.AmmunitionDefinitions.TechOne;
+        && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == Eden.Gameplay.Ammunition.AmmunitionDefinitions.SmallChargeSize
+        && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == Eden.Gameplay.Ammunition.AmmunitionDefinitions.TechOne;
 
     public const double WreckingChance = CombatDamage.WreckingChance;
     public const double WreckingMultiplier = CombatDamage.WreckingMultiplier;

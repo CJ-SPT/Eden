@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;
@@ -61,7 +62,7 @@ internal sealed record ShipEffectChanged(DogmaActiveEffect Effect, long Time, bo
                 (int)Effect.Effect,
             },
             Effect.StartTime,
-            Effect.DurationMilliseconds is double duration ? (object)duration : InventoryDefinitions.InfiniteEffectDuration,
+            Effect.DurationMilliseconds is double duration ? (object)duration : InventoryWireDefinitions.InfiniteEffectDuration,
             Effect.Repeats,
             null,
             StopTime,

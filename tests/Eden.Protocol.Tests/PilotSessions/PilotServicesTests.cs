@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -61,7 +62,7 @@ public sealed class PilotServicesTests
             saved.SaveChanges();
         }
         string method = native ? "Deactivate" : "TakeModuleOffline";
-        object?[] args = native ? [module, InventoryDefinitions.OnlineEffectName] : [ship, module];
+        object?[] args = native ? [module, InventoryWireDefinitions.OnlineEffectName] : [ship, module];
         var rejection = bound
             ? Request("dogmaIM", "MachoBindObject", [null, new object?[] { method, args, new Dictionary<string, object?>() }])
             : Request("dogmaIM", method, args);

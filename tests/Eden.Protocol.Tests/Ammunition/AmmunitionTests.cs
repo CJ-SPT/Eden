@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -271,7 +273,7 @@ public sealed class AmmunitionTests
         Assert.All(removed, q => Assert.True(q.Index < firstItem));
         Assert.All(
             magazines,
-            m => Assert.Contains(removed, q => ((object?[])q.Change[2]!).SequenceEqual((object?[])AmmunitionHandler.Key(m).ToBlue()))
+            m => Assert.Contains(removed, q => ((object?[])q.Change[2]!).SequenceEqual((object?[])MagazineWire.Key(m).ToBlue()))
         );
         var primes = context
             .Notifications.Select((n, index) => (Notification: n, Index: index))
@@ -286,7 +288,7 @@ public sealed class AmmunitionTests
                     quantities,
                     q =>
                         q.Index > lastItem
-                        && ((object?[])q.Change[2]!).SequenceEqual((object?[])AmmunitionHandler.Key(m).ToBlue())
+                        && ((object?[])q.Change[2]!).SequenceEqual((object?[])MagazineWire.Key(m).ToBlue())
                         && Equals(q.Change[5], (double)m.Quantity)
                 )
         );
@@ -541,7 +543,7 @@ public sealed class AmmunitionTests
         using Fixture f = new();
         long stack = f.Buy(222, 20);
         using var context = f.Context();
-        AmmunitionHandler handler = new(f.Clock, f.Ammo, f.Fitting, f.Combat, f.Inventory);
+        AmmunitionHandler handler = new(f.Clock, f.Ammo, new(f.Clock, f.Fitting, f.Combat, f.Inventory));
         Assert.Null(
             handler.CallWire(
                 context,

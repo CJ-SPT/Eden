@@ -1,6 +1,8 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
@@ -19,19 +21,16 @@ internal sealed class InventoryHandler(
     IPilotInventory inventory,
     IPilotFitting fitting,
     IPilotMining mining,
-    MiningHandler miningEffects,
     IPilotFleet fleet,
     IPilotHealth health,
     IPilotCombat combat,
-    CombatHandler combatEffects,
     IWrecks wrecks,
     IPilotShieldBoosting boosting,
-    ShieldBoostHandler shieldEffects,
     IPilotAmmunition ammunition,
-    AmmunitionHandler ammunitionHandler,
+    MagazineWire magazinesWire,
     PilotBrain brain,
     IPilotPropulsion propulsion,
-    PropulsionHandler propulsionEffects
+    IEnumerable<IModuleEffectSource> moduleEffects
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
@@ -41,7 +40,7 @@ internal sealed class InventoryHandler(
 
     internal static BlueConstructor ItemDescriptor() => InventoryWire.Descriptor();
 
-    internal static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
+    private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
 
     private BlueList<InventoryRow> List(DockedPilot pilot, string service, long? flag)
     {
@@ -133,19 +132,7 @@ internal sealed class InventoryHandler(
             {
                 context.Flight.Checkpoint();
             }
-            var changes =
-                looting
-                    ? wrecks.Take(
-                        context.Pilot.PilotId,
-                        context.Pilot.ShipId,
-                        source,
-                        ids,
-                        quantity,
-                        clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
-                    )
-                : destination == context.Pilot.ShipId && (flag == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsFittedSlot(flag))
-                    ? fitting.Fit(context.Pilot.PilotId, ids, source, flag)
-                : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
+            var changes = TransferItems(context, request, destination, looting);
             var currentMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId).ToDictionary(m => m.ModuleId);
             var changedMagazines = previousMagazines
                 .Where(m => !currentMagazines.TryGetValue(m.ModuleId, out var current) || m != current)
@@ -155,7 +142,7 @@ internal sealed class InventoryHandler(
             // prime the new slots after their inventory rows have moved.
             foreach (var magazine in changedMagazines)
             {
-                AmmunitionHandler.NotifyQuantity(context, magazine, 0, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+                MagazineWire.NotifyQuantity(context, magazine, 0, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             var relocated = changes
                 .Where(c =>
@@ -172,11 +159,11 @@ internal sealed class InventoryHandler(
             // either one. This is cache staging, never a saved cargo transfer.
             foreach (var change in changes.Where(c => relocated.ContainsKey(c.Item.Id)))
             {
-                NotifyItemChange(context, new(relocated[change.Item.Id], change.Previous));
+                InventoryChangesWire.NotifyItemChange(context, new(relocated[change.Item.Id], change.Previous));
             }
             foreach (var change in changes)
             {
-                NotifyItemChange(
+                InventoryChangesWire.NotifyItemChange(
                     context,
                     relocated.TryGetValue(change.Item.Id, out var detached) ? change with { Previous = detached } : change
                 );
@@ -213,7 +200,7 @@ internal sealed class InventoryHandler(
             }
             else
             {
-                ammunitionHandler.NotifyChanges(context, movedMagazines);
+                magazinesWire.NotifyChanges(context, movedMagazines);
             }
             return PilotCallResult.None;
         }
@@ -227,74 +214,42 @@ internal sealed class InventoryHandler(
         }
     }
 
-    internal static void NotifyItemChange(PilotCallContext context, InventoryChange change)
+    private IReadOnlyList<InventoryChange> TransferItems(
+        PilotCallContext context,
+        InventoryMoveRequest request,
+        long destination,
+        bool looting
+    )
     {
-        // OnItemChange keys index the inventory DBRow; values describe the old row.
-        // Build 3662168 removes exhausted stacks through a junk-location change.
-        // Keep the detached stack's last quantity: the UI reconstructs the old
-        // row's quantity but reads its separate stacksize when deciding to remove
-        // a tile. A zero stacksize makes both the old and new rows appear absent.
-        var item =
-            change.Item.Quantity == 0
-                ? change.Item with
-                {
-                    LocationId = (int)InventoryLocation.Graveyard,
-                    FlagId = (int)InventoryFlag.AutoFit,
-                    Online = false,
-                    Quantity = change.Previous?.Quantity ?? 0,
-                }
-                : change.Item;
-        Dictionary<InventoryColumn, long> old = [];
-        if (change.Previous is not { } previous)
+        if (looting)
         {
-            // A new stack must enter the cached container. A quantity-only change
-            // updates capacity but does not insert an unknown item in invCache.
-            old[InventoryColumn.Location] = 0L;
-            old[InventoryColumn.Flag] = 0;
-            // Assembled rows encode quantity as -1. invCache rejects a quantity
-            // change on that row; stacksize still describes its prior absence.
-            if (!item.Singleton)
-            {
-                old[InventoryColumn.Quantity] = 0;
-            }
-            old[InventoryColumn.StackSize] = 0;
+            return LootWreck(context, request);
         }
-        else
+        if (
+            destination == context.Pilot.ShipId
+            && (request.FlagId == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsFittedSlot(request.FlagId))
+        )
         {
-            if (previous.LocationId != item.LocationId)
-            {
-                old[InventoryColumn.Location] = previous.LocationId;
-            }
-            if (previous.FlagId != item.FlagId)
-            {
-                old[InventoryColumn.Flag] = previous.FlagId;
-            }
-            if (previous.Singleton != item.Singleton)
-            {
-                old[InventoryColumn.Singleton] = previous.Singleton ? 1 : 0;
-            }
-            if (previous.Quantity != item.Quantity)
-            {
-                old[InventoryColumn.Quantity] = previous.Quantity;
-                old[InventoryColumn.StackSize] = previous.Quantity;
-            }
+            return FitItems(context, request);
         }
-        context.Notifications.Add(new ItemChanged(Item(item), old));
-        if (item.CategoryId == (int)InventoryCategory.Blueprint)
-        {
-            NotifyBlueprintsUpdated(context, item.OwnerId);
-        }
+        return MoveInventory(context, request, destination);
     }
 
-    internal static void NotifyBlueprintsUpdated(PilotCallContext context, long ownerId)
-    {
-        // BlueprintSvc memoizes both the owner's list and facility summaries
-        // independently of invCache, including an empty list before a purchase.
-        if (!context.Notifications.Any(n => n is BlueprintsUpdated update && update.OwnerId == ownerId))
-        {
-            context.Notifications.Add(new BlueprintsUpdated(ownerId));
-        }
-    }
+    private IReadOnlyList<InventoryChange> LootWreck(PilotCallContext context, InventoryMoveRequest request) =>
+        wrecks.Take(
+            context.Pilot.PilotId,
+            context.Pilot.ShipId,
+            request.SourceId,
+            request.ItemIds,
+            request.Quantity,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
+
+    private IReadOnlyList<InventoryChange> FitItems(PilotCallContext context, InventoryMoveRequest request) =>
+        fitting.Fit(context.Pilot.PilotId, request.ItemIds, request.SourceId, request.FlagId);
+
+    private IReadOnlyList<InventoryChange> MoveInventory(PilotCallContext context, InventoryMoveRequest request, long destination) =>
+        inventory.Move(context.Pilot.PilotId, request.ItemIds, request.SourceId, destination, request.FlagId, request.Quantity);
 
     private static InventoryRow Item(DockedPilot pilot, string kind) =>
         kind switch
@@ -305,19 +260,19 @@ internal sealed class InventoryHandler(
                 pilot.PilotId,
                 pilot.LocationId,
                 pilot.Position is null ? (int)InventoryFlag.Hangar : (int)InventoryFlag.AutoFit,
-                InventoryDefinitions.AssembledQuantity,
+                InventoryWireDefinitions.AssembledQuantity,
                 pilot.ShipGroupId,
                 pilot.ShipCategoryId
             ),
             // Build 3662168: character inventory type 1373, pilot flag 57, group/category 1.
-            "pilot" => new(pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, InventoryDefinitions.AssembledQuantity, 1, 1),
+            "pilot" => new(pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, InventoryWireDefinitions.AssembledQuantity, 1, 1),
             _ => new(
                 pilot.StationId,
                 pilot.StationTypeId,
                 pilot.StationOwnerId,
                 pilot.SystemId,
                 (int)InventoryFlag.AutoFit,
-                InventoryDefinitions.AssembledQuantity,
+                InventoryWireDefinitions.AssembledQuantity,
                 pilot.Station.GroupId,
                 pilot.Station.CategoryId
             ),
@@ -370,17 +325,9 @@ internal sealed class InventoryHandler(
         {
             effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, pilot.ShipId, null, DogmaEffect.Online, now, null, 0);
         }
-        foreach (
-            var active in new[]
-            {
-                miningEffects.ActiveEffect(pilot, module.Id),
-                combatEffects.ActiveEffect(pilot, module.Id),
-                shieldEffects.ActiveEffect(pilot, module.Id),
-                propulsionEffects.ActiveEffect(pilot, module.Id),
-            }
-        )
+        foreach (var source in moduleEffects)
         {
-            if (active is not null)
+            if (source.ActiveEffect(pilot, module.Id) is { } active)
             {
                 effects[active.Effect] = active;
             }
@@ -418,7 +365,7 @@ internal sealed class InventoryHandler(
         return new(
             new(instances, quantities),
             shipInfo,
-            magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => ammunitionHandler.Prime(m)),
+            magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => magazinesWire.Prime(m)),
             PrimePilot(pilot),
             brain.Read(pilot.PilotId, pilot.ShipId)
         );
@@ -480,7 +427,7 @@ internal sealed class InventoryHandler(
         var result = PrimeModule(pilot, module);
         if (_refittingShip == pilot.ShipId && _refittingModules.Remove(id) && _refittingModules.Count == 0)
         {
-            ammunitionHandler.NotifyChanges(context, _refittingMagazines);
+            magazinesWire.NotifyChanges(context, _refittingMagazines);
             _refittingMagazines = [];
         }
         return result;
@@ -596,7 +543,7 @@ internal sealed class InventoryHandler(
                 .Read(pilot.PilotId, hull)
                 .FirstOrDefault(m => m.FlagId == slot && m.TypeId == type)
                 is { } magazine
-                ? ammunitionHandler.Prime(magazine)
+                ? magazinesWire.Prime(magazine)
                 : PilotCallResult.None,
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => SetOnline(
                 context,

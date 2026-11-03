@@ -1,5 +1,7 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
@@ -43,7 +45,7 @@ internal sealed record DogmaActiveEffect(
             Array.Empty<object?>(),
             (int)Effect,
             StartTime,
-            DurationMilliseconds is double duration ? (object)duration : InventoryDefinitions.InfiniteEffectDuration,
+            DurationMilliseconds is double duration ? (object)duration : InventoryWireDefinitions.InfiniteEffectDuration,
             Repeats,
         };
 }

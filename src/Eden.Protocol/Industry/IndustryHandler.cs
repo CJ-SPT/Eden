@@ -1,3 +1,4 @@
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -145,11 +146,11 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     {
         foreach (var change in result.Changes)
         {
-            InventoryHandler.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change);
         }
         var job = result.Job;
         context.Notifications.Add(new IndustryJobChanged(job));
-        InventoryHandler.NotifyBlueprintsUpdated(context, job.PilotId);
+        InventoryChangesWire.NotifyBlueprintsUpdated(context, job.PilotId);
     }
 
     public PilotCallResult Call(

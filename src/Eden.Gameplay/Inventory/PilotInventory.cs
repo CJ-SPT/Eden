@@ -1,6 +1,6 @@
 using Eden.Gameplay.Dogma;
 
-namespace Eden.Protocol.Docking;
+namespace Eden.Gameplay.Inventory;
 
 public sealed record InventoryItem(
     long Id,

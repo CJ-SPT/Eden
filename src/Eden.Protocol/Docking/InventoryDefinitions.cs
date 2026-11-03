@@ -1,36 +1,4 @@
-using Eden.Gameplay.Dogma;
-
 namespace Eden.Protocol.Docking;
-
-public enum InventoryCategory
-{
-    Station = 3,
-    Ship = 6,
-    Module = 7,
-    Charge = 8,
-    Blueprint = 9,
-    Skill = 16,
-    Asteroid = 25,
-}
-
-// Build 3662168: inventorycommon.const and dogma data in the pinned catalog.
-public enum InventoryFlag
-{
-    AutoFit = 0,
-    Hangar = 4,
-    Cargo = 5,
-    MediumSlot0 = 19,
-    MediumSlot7 = 26,
-    HighSlot0 = 27,
-    HighSlot1 = 28,
-    HighSlot7 = 34,
-    GeneralMiningHold = 134,
-}
-
-public enum InventoryLocation
-{
-    Graveyard = 8,
-}
 
 public enum InventoryColumn
 {
@@ -41,59 +9,9 @@ public enum InventoryColumn
     Singleton = 10,
 }
 
-public enum FittingSkill
-{
-    PowerGridManagement = 3413,
-    CapacitorSystemsOperation = 3417,
-    CapacitorManagement = 3418,
-    CpuManagement = 3426,
-}
-
-public enum DogmaEffect
-{
-    ShieldBoosting = 4,
-    CivilianWeapon = 10,
-    Online = 16,
-    ProjectileFired = 34,
-    MiningLaser = 67,
-    Afterburner = 6731,
-}
-
-public enum StationService
-{
-    Reprocessing = 5,
-    Market = 7,
-    Repair = 13,
-    Manufacturing = 14,
-    Laboratory = 15,
-    Fitting = 17,
-}
-
-public static class InventoryDefinitions
+internal static class InventoryWireDefinitions
 {
     public const string OnlineEffectName = "online";
-    public const int MiningLaserGroup = 54;
-    public const int CivilianMinerType = 3651;
-    public const double OutputBonusPerSkillLevel = 0.05;
-    public const double ResourceTolerance = 1e-9;
     public const int AssembledQuantity = -1;
     public const int InfiniteEffectDuration = -1;
-    public const long FirstOwnedItemId = 2000000000000;
-    public const int SlotsPerRack = 8; // Pinned inventory flags reserve eight slots per rack.
-
-    public static bool IsHighSlot(int flag) => flag is >= (int)InventoryFlag.HighSlot0 and <= (int)InventoryFlag.HighSlot7;
-
-    public static bool IsMediumSlot(int flag) => flag is >= (int)InventoryFlag.MediumSlot0 and <= (int)InventoryFlag.MediumSlot7;
-
-    public static bool IsFittedSlot(int flag) => IsHighSlot(flag) || IsMediumSlot(flag);
-
-    public static readonly (DogmaAttributeId Skill, DogmaAttributeId Level)[] RequiredSkills =
-    [
-        (DogmaAttributeId.RequiredSkill1, DogmaAttributeId.RequiredSkill1Level),
-        (DogmaAttributeId.RequiredSkill2, DogmaAttributeId.RequiredSkill2Level),
-        (DogmaAttributeId.RequiredSkill3, DogmaAttributeId.RequiredSkill3Level),
-        (DogmaAttributeId.RequiredSkill4, DogmaAttributeId.RequiredSkill4Level),
-        (DogmaAttributeId.RequiredSkill5, DogmaAttributeId.RequiredSkill5Level),
-        (DogmaAttributeId.RequiredSkill6, DogmaAttributeId.RequiredSkill6Level),
-    ];
 }

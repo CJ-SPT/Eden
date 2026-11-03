@@ -26,7 +26,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
                 context.ChangeShip(recovery.Pilot);
                 foreach (var change in recovery.Changes)
                 {
-                    InventoryHandler.NotifyItemChange(context, change);
+                    InventoryChangesWire.NotifyItemChange(context, change);
                 }
                 return PilotCallResult.None;
             }
@@ -45,7 +45,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
                 var result = fleet.Assemble(context.Pilot.PilotId, items.Cast<long>().ToArray(), name);
                 foreach (var change in result.Changes)
                 {
-                    InventoryHandler.NotifyItemChange(context, change);
+                    InventoryChangesWire.NotifyItemChange(context, change);
                 }
                 return new BlueList<long>(result.ShipIds);
             }

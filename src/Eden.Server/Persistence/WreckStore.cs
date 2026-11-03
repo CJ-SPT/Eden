@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;

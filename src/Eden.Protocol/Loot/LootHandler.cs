@@ -52,13 +52,13 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             }
             if (method == "GetSelfInvItem" && args.Length == 0)
             {
-                return InventoryHandler.Item(contents.Container);
+                return InventoryRow.From(contents.Container);
             }
             if (method == "List")
             {
                 object? flag = args.FirstOrDefault() ?? keywords?.GetValueOrDefault("flag");
                 return new BlueList<InventoryRow>(
-                    contents.Items.Where(item => flag is null || Equals(flag, (long)item.FlagId)).Select(InventoryHandler.Item).ToArray()
+                    contents.Items.Where(item => flag is null || Equals(flag, (long)item.FlagId)).Select(InventoryRow.From).ToArray()
                 );
             }
             return PilotCallResult.Unsupported;

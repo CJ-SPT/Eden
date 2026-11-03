@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -611,7 +612,7 @@ public sealed class NpcCombatTests
         var row = Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(Call(service, "GetSelfInvItem", [])).Arguments[1]);
         Assert.Equal(old.ShipId, row[0]);
         Assert.Equal((long)InventoryLocation.Graveyard, row[(int)InventoryColumn.Location]);
-        Assert.Equal(InventoryDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
+        Assert.Equal(InventoryWireDefinitions.AssembledQuantity, row[(int)InventoryColumn.Quantity]);
         Assert.IsType<PilotCallResult.Failure>(Call(service, "Add", [f.Module, capsule.ShipId]));
         Assert.IsType<PilotCallResult.Failure>(Call(service, "MultiAdd", [new List<object?> { f.Module }, capsule.ShipId]));
         Assert.Same(PilotCallResult.Unsupported, Call("invbroker", "GetInventoryFromId", [1000000000002L, 0L]));
