@@ -94,7 +94,7 @@ For format-on-save in Visual Studio, VS Code or Rider, install the CSharpier edi
 | --- | --- |
 | `src/Eden.Gameplay` | Typed gameplay rules, state, commands and persistence interfaces. |
 | `src/Eden.Server` | Host the loopback session and own the SQLite world. |
-| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and serve character selection, inventory, and first flight. |
+| `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and adapt client calls and notifications to typed gameplay operations. |
 | `tests/Eden.Protocol.Tests` | Verify wire formats, login, ship movement, docking, and SQLite persistence. |
 
 Known protocol data uses named immutable models: inventory/dogma state, character cards, flight commands, combat notifications, market and industry replies, skill queues and brain effects. Handlers return `PilotCallResult`, distinguishing successful Python None, unsupported calls and errors. Gameplay consumes named properties such as `DogmaAllInfo.ShipState` and `PilotBrainState.ShipEffects`; explicit `BlueModel.ToBlue()` adapters preserve the native client formats. The low-level Blue codec retains its flexible Python value graph. See the [type-boundary audit and acceptance results](docs/protocol.md#named-protocol-models-final-audit).
@@ -108,3 +108,5 @@ Eden's original source and documentation are available under the [MIT License](L
 ## Architecture
 
 Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.Server references both to compose the host and implement catalog and SQLite operations. Gameplay references neither adapter assembly. Combat health, damage arithmetic, recharge, coordinates and catalog attribute identifiers establish this boundary. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by Server.
+
+Manufacturing illustrates the persistence boundary. The Server store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. Server then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.

@@ -1,8 +1,7 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Industry;
+namespace Eden.Gameplay.Industry;
 
 // Pinned build 3662168: industry.const and industryCommon, not database row IDs.
 public enum IndustryActivity

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
@@ -382,65 +383,23 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 throw new InvalidDataException("Train the blueprint's required manufacturing skills first.");
             }
         }
-        var bonuses = Bonuses(world, catalog, pilotId);
-        int slots = checked(IndustryDefinitions.BaseManufacturingSlots + (int)bonuses.Where(b => b.Additive).Sum(b => b.Value));
-        if (world.Set<IndustryJob>().Count(j => j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed) >= slots)
-        {
-            throw new InvalidDataException("Deliver or cancel an existing job to free a manufacturing slot.");
-        }
-        double seconds = recipe.Time.Value * (double)request.Runs;
-        foreach (var bonus in bonuses.Where(b => !b.Additive))
-        {
-            seconds *= 1 + bonus.Value / 100;
-        }
-        foreach (var skill in recipe.Skills ?? [])
-        {
-            seconds *=
-                1
-                + Attributes(catalog, checked((int)skill.TypeID!.Value)).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel)
-                    * Level(world, catalog, pilotId, (int)skill.TypeID.Value)
-                    / 100;
-        }
-        // Activity.job_max_runs uses ceil(30 days / modified single-run time),
-        // capped at MAX_RUNS_HARD_CAP. An exact 30-day boundary adds no extra run.
-        if (
-            !double.IsFinite(seconds)
-            || seconds <= 0
-            || request.Runs
-                > Math.Min(
-                    IndustryDefinitions.MaximumJobRuns,
-                    Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / (seconds / request.Runs))
-                )
-        )
-        {
-            throw new InvalidDataException("The job exceeds the manufacturing run-length limit.");
-        }
-        long duration = checked((long)Math.Round(seconds, IndustryDefinitions.ManufacturingTimePrecision, MidpointRounding.ToEven));
-        if (duration <= 0 || !double.IsFinite(request.QuotedSeconds) || request.QuotedSeconds != duration)
-        {
-            throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");
-        }
-        Dictionary<int, int> materials = [];
-        foreach (var material in recipe.Materials ?? [])
-        {
-            if (
-                material.TypeID is not > 0 or > int.MaxValue
-                || material.Quantity is not > 0
-                || materials.ContainsKey((int)material.TypeID.Value)
+        var calculation = ManufacturingRules.Plan(
+            request,
+            new(
+                recipe.Time.Value,
+                world.Set<IndustryJob>().Count(j => j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed),
+                Bonuses(world, catalog, pilotId),
+                (recipe.Skills ?? [])
+                    .Select(skill => new ManufacturingSkillTimeBonus(
+                        Attributes(catalog, checked((int)skill.TypeID!.Value)).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel),
+                        Level(world, catalog, pilotId, (int)skill.TypeID.Value)
+                    ))
+                    .ToArray(),
+                (recipe.Materials ?? []).Select(material => new ManufacturingMaterial(material.TypeID, material.Quantity)).ToArray()
             )
-            {
-                throw new InvalidDataException("Invalid manufacturing material recipe.");
-            }
-            materials.Add((int)material.TypeID.Value, checked((int)(material.Quantity.Value * request.Runs)));
-        }
-        if (
-            materials.Count == 0
-            || materials.Count != request.QuotedMaterials.Count
-            || materials.Any(m => request.QuotedMaterials.GetValueOrDefault(m.Key) != m.Value)
-        )
-        {
-            throw new InvalidDataException("Manufacturing materials changed; reopen the blueprint to refresh the quote.");
-        }
+        );
+        long duration = calculation.DurationSeconds;
+        var materials = calculation.Materials;
         List<InventoryChange> changes = [];
         foreach (var material in materials)
         {

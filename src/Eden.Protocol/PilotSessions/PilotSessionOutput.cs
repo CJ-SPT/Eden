@@ -1,16 +1,5 @@
-using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
-using Eden.Protocol.Industry;
-using Eden.Protocol.Loot;
-using Eden.Protocol.Mining;
-using Eden.Protocol.Propulsion;
-using Eden.Protocol.Repair;
-using Eden.Protocol.Serialization;
-using Eden.Protocol.Skills;
-using Eden.Protocol.Targeting;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
