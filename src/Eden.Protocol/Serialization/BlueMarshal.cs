@@ -90,6 +90,15 @@ internal static class BlueMarshal
             return length;
         }
 
+        byte[] Bytes(int length)
+        {
+            if (length < 0 || length > end - stream.Position)
+            {
+                throw new InvalidDataException("Truncated Blue byte value.");
+            }
+            return reader.ReadBytes(length);
+        }
+
         object?[] Items(int size, int depth)
         {
             object?[] items = new object?[size];
@@ -235,7 +244,7 @@ internal static class BlueMarshal
             {
                 throw new InvalidDataException("Expected a Blue row descriptor.");
             }
-            byte[] packed = reader.ReadBytes(Length());
+            byte[] packed = Bytes(Length());
             BluePackedRow.Validate(packed, descriptor.DataLength);
             return new(descriptor, packed, Items(descriptor.ObjectCount, depth));
         }
@@ -262,7 +271,7 @@ internal static class BlueMarshal
             object? value = tag switch
             {
                 1 => null,
-                2 => new BlueGlobal(Encoding.ASCII.GetString(reader.ReadBytes(Length()))),
+                2 => new BlueGlobal(Encoding.ASCII.GetString(Bytes(Length()))),
                 3 => reader.ReadInt64(),
                 4 => (long)reader.ReadInt32(),
                 5 => (long)reader.ReadInt16(),
@@ -273,9 +282,9 @@ internal static class BlueMarshal
                 10 => reader.ReadDouble(),
                 11 => 0d,
                 14 => Array.Empty<byte>(),
-                15 => reader.ReadBytes(1),
+                15 => Bytes(1),
                 17 => MarshalStrings.Get(reader.ReadByte()),
-                16 or 19 => reader.ReadBytes(Length()),
+                16 or 19 => Bytes(Length()),
                 20 => Items(Length(), depth),
                 21 => Items(Length(), depth).ToList(),
                 22 => Map(depth),
@@ -292,10 +301,10 @@ internal static class BlueMarshal
                 38 => new List<object?>(),
                 39 => Items(1, depth).ToList(),
                 42 => ReadPackedRow(depth),
-                43 => new BlueStream(reader.ReadBytes(Length())),
+                43 => new BlueStream(Bytes(Length())),
                 44 => Items(2, depth),
-                46 => Encoding.UTF8.GetString(reader.ReadBytes(Length())),
-                47 => ReadInteger(reader.ReadBytes(Length())),
+                46 => Encoding.UTF8.GetString(Bytes(Length())),
+                47 => ReadInteger(Bytes(Length())),
                 _ => throw new InvalidDataException($"Unsupported Blue tag 0x{tag:X2} at {stream.Position - 1}."),
             };
             if (slot >= 0)

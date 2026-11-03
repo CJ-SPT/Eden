@@ -92,9 +92,20 @@ public sealed class BlueMarshalTests
     [InlineData("7E0000000016FFFFFFFFFF")]
     [InlineData("7E010000002C530261621B0102000000")]
     [InlineData("7E000000000801")]
+    [InlineData("7E000000000F")]
+    [InlineData("7E010000004F01000000")]
     public void RejectsMalformedStreams(string hex)
     {
         Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(Convert.FromHexString(hex)));
+    }
+
+    [Theory]
+    [InlineData("7E000000000E", "")]
+    [InlineData("7E000000000F41", "41")]
+    [InlineData("7E010000004F4101000000", "41")]
+    public void SingleByteAndEmptyStringsRemainDistinct(string input, string expected)
+    {
+        Assert.Equal(Convert.FromHexString(expected), Assert.IsType<byte[]>(BlueMarshal.Decode(Convert.FromHexString(input))));
     }
 
     [Theory]
