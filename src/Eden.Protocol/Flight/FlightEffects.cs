@@ -11,6 +11,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshWeapons(ship, previous);
         RefreshShieldBoosts(ship, previous);
         RefreshArmorRepairs(ship, previous);
+        RefreshHardeners(ship, previous);
         RefreshPropulsion(ship, previous);
     }
 
@@ -127,6 +128,35 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.StartedAt
             )
         );
+
+    internal void HardenerEffect(long shipId, HardenerContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                shipId,
+                null,
+                HardenerWireDefinitions.Graphic(effect.Module.Effect),
+                false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.StartedAt
+            )
+        );
+
+    private void RefreshHardeners(ShipContact ship, ShipContact? previous)
+    {
+        foreach (var effect in (previous?.Hardeners ?? []).Except(ship.Hardeners ?? []))
+        {
+            HardenerEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.Hardeners ?? []).Except(previous?.Hardeners ?? []))
+        {
+            HardenerEffect(ship.Pilot.ShipId, effect, true);
+        }
+    }
 
     private void RefreshArmorRepairs(ShipContact ship, ShipContact? previous)
     {

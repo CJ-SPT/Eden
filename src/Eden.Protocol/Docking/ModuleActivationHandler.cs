@@ -21,7 +21,8 @@ internal sealed class ModuleActivationHandler(
     ShieldBoostHandler shields,
     FittingOperations inventory,
     PropulsionHandler propulsion,
-    ArmorRepairHandler armor
+    ArmorRepairHandler armor,
+    HardenerHandler hardeners
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -43,6 +44,12 @@ internal sealed class ModuleActivationHandler(
             CombatWireDefinitions.HybridWeaponEffect => combat.Call(context, service, method, args, keywords),
             ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
             ArmorRepairWireDefinitions.EffectName => armor.Call(context, service, method, args),
+            HardenerWireDefinitions.ShieldEffectName or HardenerWireDefinitions.ArmorEffectName => hardeners.Call(
+                context,
+                service,
+                method,
+                args
+            ),
             PropulsionWireDefinitions.EffectName => propulsion.Call(context, service, method, args),
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,

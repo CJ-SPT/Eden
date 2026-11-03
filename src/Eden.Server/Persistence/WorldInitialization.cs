@@ -1,4 +1,5 @@
 using Eden.Server.Catalog;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
@@ -16,6 +17,9 @@ public static class WorldInitialization
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System);
+        // Live hardening belongs to a connection. A restart retains paid
+        // capacitor/cooldowns but never leaves an orphaned resistance bonus.
+        world.Set<ActiveHardener>().ExecuteDelete();
     }
 
     // Explicit development/test open: validate and migrate before creating a reader.

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
@@ -11,6 +12,10 @@ internal static class FittingCatalog
     {
         var type = catalog.Set<ItemType>().Find(typeId);
         if (type is null)
+        {
+            return null;
+        }
+        if (HardenerDefinitions.Effect(type.GroupId) is not null && !HardenerCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

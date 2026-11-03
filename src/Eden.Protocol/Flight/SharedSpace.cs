@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
@@ -24,6 +25,8 @@ internal sealed record WeaponContact(
 );
 
 internal sealed record ArmorRepairContact(long ModuleId, int TypeId, long StartedAt, double Duration);
+
+internal sealed record HardenerContact(Hardener Module, long StartedAt);
 
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 
@@ -89,7 +92,8 @@ internal sealed record ShipContact(
     ShieldBoostContact[]? ShieldBoosts = null,
     PropulsionContact? Propulsion = null,
     NavigationMode FollowMode = NavigationMode.Follow,
-    ArmorRepairContact[]? ArmorRepairs = null
+    ArmorRepairContact[]? ArmorRepairs = null,
+    HardenerContact[]? Hardeners = null
 );
 
 [Injectable(InjectionType.Singleton)]

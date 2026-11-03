@@ -41,6 +41,7 @@ internal sealed class FlightSession(
     private WeaponContact[] _weapons = [];
     private ShieldBoostContact[] _shieldBoosts = [];
     private ArmorRepairContact[] _armorRepairs = [];
+    private HardenerContact[] _hardeners = [];
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
@@ -341,6 +342,7 @@ internal sealed class FlightSession(
         _weapons = [];
         _shieldBoosts = [];
         _armorRepairs = [];
+        _hardeners = [];
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -448,7 +450,8 @@ internal sealed class FlightSession(
             _shieldBoosts,
             _propulsion,
             _navigation.FollowMode,
-            _armorRepairs
+            _armorRepairs,
+            _hardeners
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -561,6 +564,19 @@ internal sealed class FlightSession(
             .Concat(active ? [effect] : Array.Empty<ArmorRepairContact>())
             .ToArray();
         Effects.ArmorRepairEffect(Pilot.ShipId, effect, active);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
+
+    public void SetHardenerEffect(HardenerContact effect, bool active)
+    {
+        _hardeners = _hardeners
+            .Where(h => h.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<HardenerContact>())
+            .ToArray();
+        Effects.HardenerEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -711,6 +727,7 @@ internal sealed class FlightSession(
         _npcs = [];
         _shieldBoosts = [];
         _armorRepairs = [];
+        _hardeners = [];
         _wrecks = [];
         space.Leave(Pilot.ShipId);
     }

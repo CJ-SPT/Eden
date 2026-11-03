@@ -17,7 +17,8 @@ internal sealed class PilotUpdateCoordinator(
     PropulsionHandler propulsion,
     IndustryHandler industry,
     NpcCombatHandler npcCombat,
-    ArmorRepairHandler armor
+    ArmorRepairHandler armor,
+    HardenerHandler hardeners
 )
 {
     public bool IsMonitoring => industry.IsMonitoring;
@@ -31,6 +32,7 @@ internal sealed class PilotUpdateCoordinator(
     public DockedPilot? Advance(PilotCallContext context)
     {
         targeting.Advance(context);
+        hardeners.Advance(context);
         mining.Advance(context);
         combat.Advance(context);
         shields.Advance(context);

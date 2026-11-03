@@ -10844,6 +10844,2366 @@
           "value": 10.0
         }
       ]
+    },
+    {
+      "id": 578,
+      "name": "Multispectrum Shield Hardener I",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": -25.0
+        },
+        {
+          "id": 985,
+          "value": -25.0
+        },
+        {
+          "id": 986,
+          "value": -25.0
+        },
+        {
+          "id": 987,
+          "value": -25.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2289,
+      "name": "Explosive Shield Hardener I",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -50.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2291,
+      "name": "Kinetic Shield Hardener I",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -50.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2293,
+      "name": "EM Shield Hardener I",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": -50.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2295,
+      "name": "Thermal Shield Hardener I",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -50.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 2301,
+      "name": "EM Shield Hardener II",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 44.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 984,
+          "value": -55.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 3.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 3420,
+      "name": "Tactical Shield Manipulation",
+      "groupId": 1209,
+      "groupName": "Shields",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3413.0
+        },
+        {
+          "id": 275,
+          "value": 4.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 336,
+          "value": 0.05
+        }
+      ]
+    },
+    {
+      "id": 9608,
+      "name": "Compact Kinetic Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -52.5
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9622,
+      "name": "Compact EM Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -52.5
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9632,
+      "name": "Compact Multispectrum Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 27.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -29.0
+        },
+        {
+          "id": 985,
+          "value": -29.0
+        },
+        {
+          "id": 986,
+          "value": -29.0
+        },
+        {
+          "id": 987,
+          "value": -29.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9646,
+      "name": "Compact Explosive Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -52.5
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9660,
+      "name": "Compact Thermal Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 20.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 30.0
+        },
+        {
+          "id": 73,
+          "value": 10000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -52.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 11277,
+      "name": "Thermal Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -50.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 11301,
+      "name": "EM Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": -50.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 11303,
+      "name": "Explosive Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -50.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 11305,
+      "name": "Kinetic Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -50.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 11642,
+      "name": "EM Armor Hardener II",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 36.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 984,
+          "value": -55.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16357,
+      "name": "Experimental Enduring EM Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -52.5
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 7.91
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16359,
+      "name": "Prototype Compact EM Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -52.5
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16365,
+      "name": "Experimental Enduring Explosive Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -52.5
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 7.91
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16367,
+      "name": "Prototype Compact Explosive Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -52.5
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16373,
+      "name": "Experimental Enduring Kinetic Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -52.5
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 7.91
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16375,
+      "name": "Prototype Compact Kinetic Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -52.5
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16381,
+      "name": "Experimental Enduring Thermal Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 33.0
+        },
+        {
+          "id": 73,
+          "value": 24000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -52.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 7.91
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16383,
+      "name": "Prototype Compact Thermal Armor Hardener I",
+      "groupId": 328,
+      "groupName": "Armor Hardener",
+      "categoryId": 7,
+      "mass": 1.0,
+      "radius": 10.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 30.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 16.0
+        },
+        {
+          "id": 73,
+          "value": 20000.0
+        },
+        {
+          "id": 182,
+          "value": 3394.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -52.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 6.6
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 54291,
+      "name": "Enduring Multispectrum Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 32.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -29.0
+        },
+        {
+          "id": 985,
+          "value": -29.0
+        },
+        {
+          "id": 986,
+          "value": -29.0
+        },
+        {
+          "id": 987,
+          "value": -29.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 54292,
+      "name": "Enduring EM Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 16.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": -52.5
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 54293,
+      "name": "Enduring Explosive Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 16.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": -52.5
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 54294,
+      "name": "Enduring Kinetic Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 16.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": -52.5
+        },
+        {
+          "id": 987,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 54295,
+      "name": "Enduring Thermal Shield Hardener",
+      "groupId": 77,
+      "groupName": "Shield Hardener",
+      "categoryId": 7,
+      "mass": 10000.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 16.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 182,
+          "value": 3420.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 984,
+          "value": 0.0
+        },
+        {
+          "id": 985,
+          "value": 0.0
+        },
+        {
+          "id": 986,
+          "value": 0.0
+        },
+        {
+          "id": 987,
+          "value": -52.5
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1208,
+          "value": 20.0
+        },
+        {
+          "id": 1211,
+          "value": 4.0
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        }
+      ]
     }
   ],
   "records": [
@@ -13763,7 +16123,20 @@
       "key": 11,
       "data": {
         "effectCategory": 0,
-        "effectID": 11
+        "effectID": 11,
+        "descriptionID": 107004,
+        "isAssistance": 0,
+        "displayNameID": 109441,
+        "isOffensive": 0,
+        "iconID": 295,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "loPower",
+        "propulsionChance": 0,
+        "guid": "",
+        "published": 1
       }
     },
     {
@@ -13779,7 +16152,20 @@
       "key": 13,
       "data": {
         "effectCategory": 0,
-        "effectID": 13
+        "effectID": 13,
+        "descriptionID": 107006,
+        "isAssistance": 0,
+        "displayNameID": 109443,
+        "isOffensive": 0,
+        "iconID": 294,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "medPower",
+        "propulsionChance": 0,
+        "guid": "",
+        "published": 1
       }
     },
     {
@@ -13787,7 +16173,17 @@
       "key": 16,
       "data": {
         "effectCategory": 1,
-        "effectID": 16
+        "effectID": 16,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "propulsionChance": 0,
+        "effectName": "online",
+        "guid": "",
+        "published": 0
       }
     },
     {
@@ -14121,7 +16517,17 @@
             "modifyingAttributeID": 275,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "skillEffect",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -14413,7 +16819,18 @@
             "modifyingAttributeID": 280,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "hullUpgradesSkillBoostArmorHpBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -14430,7 +16847,18 @@
             "modifyingAttributeID": 335,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "hullUpgradesArmorHpBonusPostPercentHpLocationShip",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -15087,7 +17515,18 @@
             "modifyingAttributeID": 796,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "armorReinforcerMassAdd",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -15668,7 +18107,19 @@
             "modifyingAttributeID": 1159,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "armorHPBonusAdd",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -21487,8 +23938,9 @@
       "key": 3394,
       "data": {
         "published": 1,
-        "marketGroupID": 1745,
-        "volume": 0.01
+        "volume": 0.01,
+        "typeID": 3394,
+        "groupID": 1210
       }
     },
     {
@@ -22268,8 +24720,9 @@
       "data": {
         "volume": 10.0,
         "published": 1,
-        "marketGroupID": 1674,
-        "metaGroupID": 1
+        "metaGroupID": 1,
+        "typeID": 11309,
+        "groupID": 329
       }
     },
     {
@@ -22892,6 +25345,1397 @@
         "volume": 5.0,
         "published": 1,
         "metaGroupID": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 336,
+      "data": {
+        "attributeID": 336,
+        "name": "uniformityBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1208,
+      "data": {
+        "attributeID": 1208,
+        "name": "overloadHardeningBonus",
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 277,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 277,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 336,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "tacticalshieldManipulationSkillBoostUniformityBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3029,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3029,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 984,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfEmHardeningBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3030,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3030,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 987,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfThermalHardeningBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3031,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3031,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 985,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfExplosiveHardeningBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3032,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3032,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 986,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfKineticHardeningBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3035,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 5,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3035,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 984,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 985,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 986,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 987,
+            "operation": 6,
+            "modifyingAttributeID": 1208,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "overloadSelfHardeningInvulnerabilityBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3254,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3254,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 484,
+            "operation": 2,
+            "modifyingAttributeID": 336,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "tacticalShieldManipulationBonus2",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5230,
+      "data": {
+        "guid": "effects.ModifyShieldResonance",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5230,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 271,
+            "operation": 6,
+            "modifyingAttributeID": 984,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 272,
+            "operation": 6,
+            "modifyingAttributeID": 985,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 273,
+            "operation": 6,
+            "modifyingAttributeID": 986,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 274,
+            "operation": 6,
+            "modifyingAttributeID": 987,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "modifyActiveShieldResonancePostPercent",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5231,
+      "data": {
+        "guid": "effects.ArmorHardening",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 1,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5231,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 267,
+            "operation": 6,
+            "modifyingAttributeID": 984,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 268,
+            "operation": 6,
+            "modifyingAttributeID": 985,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 269,
+            "operation": 6,
+            "modifyingAttributeID": 986,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 270,
+            "operation": 6,
+            "modifyingAttributeID": 987,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "modifyActiveArmorResonancePostPercent",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 578,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3035,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2289,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2291,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2293,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2295,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2301,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3420,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 277,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3254,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9608,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9622,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9632,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3035,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9646,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9660,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11277,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11301,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11303,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11305,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11642,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16357,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16359,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16365,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16367,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16373,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16375,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16381,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16383,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5231,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 54291,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3035,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 54292,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3029,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 54293,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3031,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 54294,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3032,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 54295,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 13,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3030,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5230,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 578,
+      "data": {
+        "typeID": 578,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2289,
+      "data": {
+        "typeID": 2289,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2291,
+      "data": {
+        "typeID": 2291,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2293,
+      "data": {
+        "typeID": 2293,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2295,
+      "data": {
+        "typeID": 2295,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2301,
+      "data": {
+        "typeID": 2301,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 2,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3420,
+      "data": {
+        "typeID": 3420,
+        "groupID": 1209,
+        "published": 1,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9608,
+      "data": {
+        "typeID": 9608,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9622,
+      "data": {
+        "typeID": 9622,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9632,
+      "data": {
+        "typeID": 9632,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9646,
+      "data": {
+        "typeID": 9646,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9660,
+      "data": {
+        "typeID": 9660,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11277,
+      "data": {
+        "typeID": 11277,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11301,
+      "data": {
+        "typeID": 11301,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11303,
+      "data": {
+        "typeID": 11303,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11305,
+      "data": {
+        "typeID": 11305,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11642,
+      "data": {
+        "typeID": 11642,
+        "volume": 5.0,
+        "published": 1,
+        "metaGroupID": 2,
+        "groupID": 328
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16357,
+      "data": {
+        "typeID": 16357,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16359,
+      "data": {
+        "typeID": 16359,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16365,
+      "data": {
+        "typeID": 16365,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16367,
+      "data": {
+        "typeID": 16367,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16373,
+      "data": {
+        "typeID": 16373,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16375,
+      "data": {
+        "typeID": 16375,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16381,
+      "data": {
+        "typeID": 16381,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16383,
+      "data": {
+        "typeID": 16383,
+        "groupID": 328,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 54291,
+      "data": {
+        "typeID": 54291,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 54292,
+      "data": {
+        "typeID": 54292,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 54293,
+      "data": {
+        "typeID": 54293,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 54294,
+      "data": {
+        "typeID": 54294,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 54295,
+      "data": {
+        "typeID": 54295,
+        "groupID": 77,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
       }
     }
   ]

@@ -19,6 +19,7 @@ public enum ModifierSelector
 public enum PassiveEffectPhase
 {
     Fitted = 0,
+    Active = 1,
     Online = 4,
 }
 
