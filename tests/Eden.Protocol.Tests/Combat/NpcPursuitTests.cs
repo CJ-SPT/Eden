@@ -190,11 +190,11 @@ public sealed class NpcPursuitTests
         f.Clock.Milliseconds = 7500;
         f.Fire();
         observer.RefreshNpcs();
-        var calls = observer.Updates.Cast<object?[]>().Select(u => Assert.IsType<object?[]>(u[1])).ToArray();
+        var calls = observer.WireUpdates().Cast<object?[]>().Select(u => Assert.IsType<object?[]>(u[1])).ToArray();
         Assert.Contains(calls, c => Equals(c[0], "FollowBall"));
         Assert.DoesNotContain(calls, c => Equals(c[0], "SetState"));
         var npc = Contact(f);
-        var chunk = Ballpark.AddNpcs([npc], 42);
+        var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddNpcs([npc], 42)));
         using BinaryReader reader = new(new MemoryStream(Assert.IsType<byte[]>(chunk[0])));
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());
@@ -220,8 +220,8 @@ public sealed class NpcPursuitTests
         observer.Updates.Clear();
         f.Combat.Disengage(NpcCombatTests.Fixture.ShipId);
         observer.RefreshNpcs();
-        Assert.Contains(observer.Updates.Cast<object?[]>(), u => Equals(Assert.IsType<object?[]>(u[1])[0], "GotoPoint"));
-        Assert.NotEmpty(BlueMarshal.Encode(observer.Updates));
+        Assert.Contains(observer.WireUpdates().Cast<object?[]>(), u => Equals(Assert.IsType<object?[]>(u[1])[0], "GotoPoint"));
+        Assert.NotEmpty(BlueMarshal.Encode(observer.WireUpdates()));
     }
 
     [Fact]

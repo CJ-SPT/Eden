@@ -120,7 +120,7 @@ public sealed class NpcEncounterTests
         using TestWorld db = new();
         Prepare(db);
         var npc = db.Services.GetRequiredService<INpcEncounters>().List(30000144, s_now)[0];
-        var chunk = Ballpark.AddNpcs([npc], 42);
+        var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddNpcs([npc], 42)));
         using BinaryReader reader = new(new MemoryStream(Assert.IsType<byte[]>(chunk[0])));
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());
@@ -214,11 +214,11 @@ public sealed class NpcEncounterTests
         }
         flight.RefreshNpcs();
         Assert.Single(flight.VisibleNpcs);
-        var update = Assert.IsType<object?[]>(Assert.Single(flight.Updates));
+        var update = Assert.IsType<object?[]>(Assert.Single(flight.WireUpdates()));
         var method = Assert.IsType<object?[]>(update[1]);
         Assert.Equal("AddBalls", method[0]);
         flight.RefreshNpcs();
-        Assert.Single(flight.Updates);
+        Assert.Single(flight.WireUpdates());
         Assert.NotEmpty(BlueMarshal.Encode(update));
     }
 
@@ -269,7 +269,7 @@ public sealed class NpcEncounterTests
         // Follow tapers toward stand-off under inertia rather than snapping.
         // The old collision stopped thousands of meters short at the belt marker.
         Assert.InRange(distance, 500, 550);
-        var chunk = Ballpark.AddObjects([belt], 42);
+        var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddObjects([belt], 42)));
         using BinaryReader reader = new(new MemoryStream(Assert.IsType<byte[]>(chunk[0])));
         reader.ReadBytes(sizeof(byte) + sizeof(int) + sizeof(long) + sizeof(byte) + sizeof(float) + 3 * sizeof(double));
         Assert.Equal((byte)DestinyBallFlags.Global, reader.ReadByte());

@@ -103,7 +103,7 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
     private void NotifyShipAttributes(PilotCallContext context, double? capacitor = null)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        List<object?> changes =
+        List<ModuleAttributeChange> changes =
         [
             Attribute(DogmaAttributeId.MaxVelocity, context.Pilot.Flight.MaxSpeed),
             Attribute(DogmaAttributeId.Mass, context.Pilot.Flight.Mass),
@@ -112,39 +112,30 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
         {
             changes.Add(Attribute(DogmaAttributeId.CapacitorCharge, capacitor.Value));
         }
-        context.Notifications.Add(("OnModuleAttributeChanges", [changes]));
-        object?[] Attribute(DogmaAttributeId attribute, double value) =>
-            ["OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)attribute, now, value, null, now];
+        context.Notifications.Add(new ModuleAttributesChanged(changes));
+        ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
+            new(context.Pilot.PilotId, new DogmaItemKey.Item(context.Pilot.ShipId), attribute, now, value);
     }
 
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         context.Notifications.Add(
-            (
-                "OnGodmaShipEffect",
-                [
+            new ShipEffectChanged(
+                new DogmaActiveEffect(
                     cycle.Module.ItemId,
-                    (int)DogmaEffect.Afterburner,
-                    now,
-                    active,
-                    active,
-                    new object?[]
-                    {
-                        cycle.Module.ItemId,
-                        context.Pilot.PilotId,
-                        cycle.ShipId,
-                        null,
-                        null,
-                        Array.Empty<object?>(),
-                        (int)DogmaEffect.Afterburner,
-                    },
+                    context.Pilot.PilotId,
+                    cycle.ShipId,
+                    null,
+                    DogmaEffect.Afterburner,
                     cycle.StartTime,
                     cycle.Module.DurationMilliseconds,
-                    cycle.Repeats,
-                    null,
-                    active ? null : now,
-                ]
+                    cycle.Repeats
+                ),
+                now,
+                active,
+                active,
+                active ? null : now
             )
         );
     }

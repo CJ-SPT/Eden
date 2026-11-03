@@ -8,14 +8,14 @@ namespace Eden.Protocol.Flight;
 
 internal static class Ballpark
 {
-    internal static BlueInstance Snapshot(
+    internal static BallparkSnapshot Snapshot(
         ShipContact own,
         int stamp,
         IReadOnlyList<StaticSpaceObject> objects,
         params ShipContact[] peers
     ) => Snapshot(own, stamp, objects, peers, []);
 
-    internal static BlueInstance Snapshot(
+    internal static BallparkSnapshot Snapshot(
         ShipContact own,
         int stamp,
         IReadOnlyList<StaticSpaceObject> objects,
@@ -29,7 +29,7 @@ internal static class Ballpark
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE
         writer.Write(stamp);
-        List<object?> items = [];
+        List<SlimItem> items = [];
         foreach (var body in objects)
         {
             items.Add(WriteObject(writer, body));
@@ -52,26 +52,11 @@ internal static class Ballpark
             .Where(s => s.Health is not null)
             .Select(s => s.Health!)
             .Concat(npcs.Select(n => n.Health))
-            .ToDictionary(s => s.ShipId, s => (object?)s.DamageState());
-        return new(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["state"] = stream.ToArray(),
-                ["ego"] = pilot.ShipId,
-                ["slims"] = items,
-                ["solItem"] = Slim(Item(pilot.SystemId, 5, 1, 5, 2)),
-                ["droneState"] = new List<object?>(),
-                ["damageState"] = damage,
-                ["effectStates"] = new List<object?>(),
-                ["dbuffState"] = new Dictionary<long, object?>(),
-                ["industryLevel"] = 0,
-                ["researchLevel"] = 0,
-            }
-        );
+            .ToDictionary(s => s.ShipId, s => s.DamageState());
+        return new(stream.ToArray(), pilot.ShipId, items, new SolarSystemSlim(pilot.SystemId), damage);
     }
 
-    private static BlueInstance WriteObject(BinaryWriter writer, StaticSpaceObject body)
+    private static SlimItem WriteObject(BinaryWriter writer, StaticSpaceObject body)
     {
         // Rigid balls have only the formation ID after the common header. Asteroids
         // use local coordinates; global celestials remain selectable system-wide.
@@ -80,78 +65,56 @@ internal static class Ballpark
             | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
         WriteBallHeader(writer, body.Id, (byte)DestinyBallMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
-        var item = Item(body.Id, body.TypeId, body.OwnerId, body.GroupId, body.CategoryId);
-        if (body.DestinationGateId.HasValue)
-        {
-            // StargateSetup indexes these pairs even when there is no local insurgency.
-            item["destinationCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
-            item["localCorruptionStageAndMaximum"] = new object?[] { 0, 5 };
-            item["destinationSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
-            item["localSuppressionStageAndMaximum"] = new object?[] { 0, 5 };
-            // Menus read the columns by name. JumpTransitionGate unpacks the same row in order.
-            item["jumps"] = new BlueInstance(
-                "eve.common.script.sys.rowset.Rowset",
-                new Dictionary<string, object?>
-                {
-                    ["header"] = new List<object?> { "toCelestialID", "locationID" },
-                    ["lines"] = new List<object?> { new object?[] { body.DestinationGateId, body.DestinationSystemId } },
-                }
-            );
-        }
-        if (body.CategoryId == 3)
-        {
-            item["corpID"] = body.OwnerId;
-        }
-        return Slim(item);
+        return new StaticSlimItem(body);
     }
 
-    internal static object?[] AddObjects(IEnumerable<StaticSpaceObject> objects, int stamp)
+    internal static BallparkAddition AddObjects(IEnumerable<StaticSpaceObject> objects, int stamp)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // DESTINY_FULLSTATE, consumed by AddBalls in partial mode.
         writer.Write(stamp);
-        var slims = objects.Select(body => (object?)WriteObject(writer, body)).ToList();
-        return [stream.ToArray(), slims, new Dictionary<long, object?>()];
+        var slims = objects.Select(body => WriteObject(writer, body)).ToList();
+        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
     }
 
-    internal static object?[] AddShip(ShipContact ship, int stamp)
+    internal static BallparkAddition AddShip(ShipContact ship, int stamp)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0); // AddBalls reads the full-state format in partial mode.
         writer.Write(stamp);
         var slim = WriteShip(writer, ship, stamp);
-        var damage = new Dictionary<long, object?>();
+        var damage = new Dictionary<long, ShipDamageState>();
         if (ship.Health is not null)
         {
             damage[ship.Pilot.ShipId] = ship.Health.DamageState();
         }
-        return [stream.ToArray(), new List<object?> { slim }, damage];
+        return new(stream.ToArray(), [slim], damage);
     }
 
-    internal static object?[] AddNpcs(IEnumerable<NpcContact> npcs, int stamp)
+    internal static BallparkAddition AddNpcs(IEnumerable<NpcContact> npcs, int stamp)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0);
         writer.Write(stamp);
         var contacts = npcs.ToArray();
-        var slims = contacts.Select(n => (object?)WriteNpc(writer, n)).ToList();
-        return [stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => (object?)n.Health.DamageState())];
+        var slims = contacts.Select(n => WriteNpc(writer, n)).ToList();
+        return new(stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => n.Health.DamageState()));
     }
 
-    internal static object?[] AddWrecks(IEnumerable<WreckContact> wrecks, int stamp)
+    internal static BallparkAddition AddWrecks(IEnumerable<WreckContact> wrecks, int stamp)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
         writer.Write((byte)0);
         writer.Write(stamp);
-        var slims = wrecks.Select(w => (object?)WriteWreck(writer, w)).ToList();
-        return [stream.ToArray(), slims, new Dictionary<long, object?>()];
+        var slims = wrecks.Select(w => WriteWreck(writer, w)).ToList();
+        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
     }
 
-    private static BlueInstance WriteWreck(BinaryWriter writer, WreckContact wreck)
+    private static SlimItem WriteWreck(BinaryWriter writer, WreckContact wreck)
     {
         WriteBallHeader(
             writer,
@@ -174,19 +137,9 @@ internal static class Ballpark
         return WreckSlim(wreck);
     }
 
-    internal static BlueInstance WreckSlim(WreckContact wreck)
-    {
-        var item = Item(wreck.Id, wreck.TypeId, wreck.OwnerId, WreckDefinitions.Group, WreckDefinitions.Category);
-        item["name"] = wreck.Name;
-        item["corpID"] = wreck.CorporationId;
-        item["charID"] = null;
-        item["launcherID"] = wreck.SourceId;
-        item["isEmpty"] = wreck.Empty;
-        item["lootRights"] = new object?[] { wreck.OwnerId, wreck.CorporationId, null, false };
-        return Slim(item);
-    }
+    internal static WreckSlimItem WreckSlim(WreckContact wreck) => new(wreck);
 
-    private static BlueInstance WriteNpc(BinaryWriter writer, NpcContact npc)
+    private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc)
     {
         // Entity ships share the free-ball movement layout with player ships.
         // EntityShip fits its graphics turret from the type catalog.
@@ -223,15 +176,10 @@ internal static class Ballpark
         {
             WritePosition(writer, destination);
         }
-        var item = Item(npc.Id, npc.TypeId, npc.CorporationId, npc.GroupId, npc.CategoryId);
-        item["name"] = npc.Name;
-        item["corpID"] = npc.CorporationId;
-        item["charID"] = null;
-        item["modules"] = new List<object?>();
-        return Slim(item);
+        return new NpcSlimItem(npc);
     }
 
-    private static BlueInstance WriteShip(BinaryWriter writer, ShipContact ship, int stamp)
+    private static SlimItem WriteShip(BinaryWriter writer, ShipContact ship, int stamp)
     {
         var pilot = ship.Pilot;
         var velocity = ship.Velocity;
@@ -276,14 +224,7 @@ internal static class Ballpark
             WritePosition(writer, pilot.Position! + heading * 1e17);
         }
 
-        var ibis = Item(pilot.ShipId, pilot.ShipTypeId, pilot.PilotId, pilot.ShipGroupId, pilot.ShipCategoryId);
-        ibis["name"] = pilot.ShipName;
-        ibis["charID"] = pilot.PilotId;
-        ibis["corpID"] = pilot.CorpId;
-        ibis["modules"] = (ship.Modules ?? [])
-            .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })
-            .ToList();
-        return Slim(ibis);
+        return new ShipSlimItem(ship);
     }
 
     private static void WritePosition(BinaryWriter writer, SpacePosition position)
@@ -292,18 +233,6 @@ internal static class Ballpark
         writer.Write(position.Y);
         writer.Write(position.Z);
     }
-
-    private static BlueInstance Slim(Dictionary<string, object?> item) => new("eve.common.script.util.slimItem.SlimItem", item);
-
-    private static Dictionary<string, object?> Item(long id, int type, long owner, int group, int category) =>
-        new()
-        {
-            ["itemID"] = id,
-            ["typeID"] = type,
-            ["ownerID"] = owner,
-            ["groupID"] = group,
-            ["categoryID"] = category,
-        };
 
     private static void WriteBallHeader(BinaryWriter writer, long id, byte mode, float radius, SpacePosition pos, byte flags)
     {

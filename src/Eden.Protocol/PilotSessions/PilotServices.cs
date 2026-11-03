@@ -262,7 +262,7 @@ internal sealed class PilotServices(
             context.NotificationsBeforeFlight.Clear();
             if (context.ActiveFlight is { Updates.Count: > 0 } flight)
             {
-                await SendNotificationAsync("DoDestinyUpdate", [flight.Updates, false, null]);
+                await SendNotificationAsync("DoDestinyUpdate", new DestinyUpdatesNotification(flight.Updates).Arguments);
                 flight.Updates.Clear();
             }
         }

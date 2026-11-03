@@ -66,7 +66,7 @@ internal sealed class FlightSession(
     private WarpCourse? _warp;
     private double _speedFraction;
     public DockedPilot Pilot { get; private set; } = pilot;
-    public List<object?> Updates { get; } = [];
+    public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _direction is not null || _warp is not null || _velocity != SpacePosition.Zero;
     public bool CanTarget =>
         InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _warp is null && _warpDestination is null;
@@ -174,18 +174,18 @@ internal sealed class FlightSession(
         var current = ReadWrecks();
         foreach (var departed in _wrecks.ExceptBy(current.Select(w => w.Id), w => w.Id))
         {
-            Update("RemoveBall", departed.Id, false);
+            Update(new DestinyCommand.RemoveBall(departed.Id, false));
         }
         var added = current.ExceptBy(_wrecks.Select(w => w.Id), w => w.Id).ToArray();
         if (added.Length > 0)
         {
-            Update("AddBalls", [Ballpark.AddWrecks(added, Stamp)]);
+            Update(new DestinyCommand.AddBalls(Ballpark.AddWrecks(added, Stamp)));
         }
         foreach (var wreck in current)
         {
             if (_wrecks.FirstOrDefault(w => w.Id == wreck.Id) is { } previous && previous != wreck)
             {
-                Update("OnSlimItemChange", wreck.Id, Ballpark.WreckSlim(wreck));
+                Update(new DestinyCommand.OnSlimItemChange(wreck.Id, Ballpark.WreckSlim(wreck)));
             }
         }
         _wrecks = current;
@@ -211,12 +211,12 @@ internal sealed class FlightSession(
             {
                 NpcWeaponEffect(departed.Id, weapon, false);
             }
-            Update("RemoveBall", departed.Id, encounters?.WasDestroyed(departed.Id) == true);
+            Update(new DestinyCommand.RemoveBall(departed.Id, encounters?.WasDestroyed(departed.Id) == true));
         }
         var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
         if (added.Length > 0)
         {
-            Update("AddBalls", [Ballpark.AddNpcs(added, Stamp)]);
+            Update(new DestinyCommand.AddBalls(Ballpark.AddNpcs(added, Stamp)));
         }
         bool reconcile = Stamp - _lastNpcSync >= NpcReconciliationTicks;
         foreach (var npc in current)
@@ -227,29 +227,31 @@ internal sealed class FlightSession(
                 && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null)
             )
             {
-                Update("SetBallPosition", npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z);
+                Update(new DestinyCommand.SetBallPosition(npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z));
                 if (npc.Navigation is { } course)
                 {
                     if (course.TargetId != 0)
                     {
                         Update(
-                            course.State == NpcNavigationState.Orbiting ? "Orbit" : "FollowBall",
-                            npc.Id,
-                            course.TargetId,
-                            course.FollowRange
+                            new DestinyCommand.Follow(
+                                course.State == NpcNavigationState.Orbiting ? DestinyBallMode.Orbit : DestinyBallMode.Follow,
+                                npc.Id,
+                                course.TargetId,
+                                course.FollowRange
+                            )
                         );
                     }
                     else if (course.Destination is { } destination)
                     {
-                        Update("GotoPoint", npc.Id, destination.X, destination.Y, destination.Z);
+                        Update(new DestinyCommand.GotoPoint(npc.Id, destination.X, destination.Y, destination.Z));
                     }
-                    Update("SetSpeedFraction", npc.Id, course.SpeedFraction);
-                    Update("SetBallVelocity", npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z);
+                    Update(new DestinyCommand.SetSpeedFraction(npc.Id, course.SpeedFraction));
+                    Update(new DestinyCommand.SetBallVelocity(npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z));
                 }
                 else
                 {
-                    Update("Stop", npc.Id);
-                    Update("SetBallVelocity", npc.Id, 0d, 0d, 0d);
+                    Update(new DestinyCommand.Stop(npc.Id));
+                    Update(new DestinyCommand.SetBallVelocity(npc.Id, 0d, 0d, 0d));
                 }
             }
             if (previous?.Weapon != npc.Weapon)
@@ -284,21 +286,19 @@ internal sealed class FlightSession(
 
     private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active) =>
         Update(
-            "OnSpecialFX",
-            npcId,
-            npcId,
-            weapon.TurretTypeId,
-            weapon.TargetId,
-            null,
-            "effects.Laser",
-            true,
-            active,
-            active,
-            weapon.Duration,
-            0,
-            weapon.StartedAt,
-            0,
-            null
+            new DestinyCommand.TimedSpecialEffect(
+                npcId,
+                npcId,
+                weapon.TurretTypeId,
+                weapon.TargetId,
+                null,
+                "effects.Laser",
+                true,
+                active,
+                active,
+                weapon.Duration,
+                weapon.StartedAt
+            )
         );
 
     public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
@@ -342,15 +342,15 @@ internal sealed class FlightSession(
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
-        Update("AddBalls", [Ballpark.AddShip(Sample, Stamp)]);
-        Update("RemoveBall", destroyed, true);
+        Update(new DestinyCommand.AddBalls(Ballpark.AddShip(Sample, Stamp)));
+        Update(new DestinyCommand.RemoveBall(destroyed, true));
         space.Publish(Sample);
     }
 
     public void NotifyHealth(ShipHealth current)
     {
         _npcs = _npcs.Select(n => n.Id == current.ShipId ? n with { Health = current } : n).ToArray();
-        Update("OnDamageStateChange", current.ShipId, current.DamageState());
+        Update(new DestinyCommand.OnDamageStateChange(current.ShipId, current.DamageState()));
     }
 
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
@@ -363,12 +363,12 @@ internal sealed class FlightSession(
         var current = VisibleObjects().Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
         foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
         {
-            Update("RemoveBall", departed.Id, false);
+            Update(new DestinyCommand.RemoveBall(departed.Id, false));
         }
         var added = current.ExceptBy(_visibleAsteroids.Select(o => o.Id), o => o.Id).ToArray();
         if (added.Length > 0)
         {
-            Update("AddBalls", [Ballpark.AddObjects(added, Stamp)]);
+            Update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, Stamp)));
         }
         _visibleAsteroids = current;
     }
@@ -430,13 +430,13 @@ internal sealed class FlightSession(
                 if (_followMode == DestinyBallMode.Orbit && _velocity.Length > 0)
                 {
                     _direction = _lastHeading = _velocity.Unit;
-                    Update("GotoDirection", Pilot.ShipId, _direction.X, _direction.Y, _direction.Z);
+                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, _direction.X, _direction.Y, _direction.Z));
                 }
                 else
                 {
                     _direction = null;
                     _speedFraction = cruise = 0;
-                    Update("Stop", Pilot.ShipId);
+                    Update(new DestinyCommand.Stop(Pilot.ShipId));
                 }
             }
             else
@@ -483,9 +483,9 @@ internal sealed class FlightSession(
             _velocity = SpacePosition.Zero;
             if (_warpDestination is null)
             {
-                Update("SetBallPosition", Pilot.ShipId, contact.X, contact.Y, contact.Z);
-                Update("Stop", Pilot.ShipId);
-                Update("SetBallVelocity", Pilot.ShipId, 0d, 0d, 0d);
+                Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, contact.X, contact.Y, contact.Z));
+                Update(new DestinyCommand.Stop(Pilot.ShipId));
+                Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
                 SetAtRest();
             }
         }
@@ -560,8 +560,8 @@ internal sealed class FlightSession(
         Pilot = Pilot with { Flight = properties };
         if (InBallpark)
         {
-            Update("SetBallMass", Pilot.ShipId, properties.Mass);
-            Update("SetMaxSpeed", Pilot.ShipId, (double)properties.MaxSpeed);
+            Update(new DestinyCommand.SetBallMass(Pilot.ShipId, properties.Mass));
+            Update(new DestinyCommand.SetMaxSpeed(Pilot.ShipId, (double)properties.MaxSpeed));
             if (!_destroying)
             {
                 space.Publish(Sample);
@@ -571,21 +571,19 @@ internal sealed class FlightSession(
 
     private void PropulsionEffect(long shipId, PropulsionContact effect, bool active) =>
         Update(
-            "OnSpecialFX",
-            shipId,
-            effect.Module.ItemId,
-            effect.Module.TypeId,
-            shipId,
-            null,
-            PropulsionDefinitions.EffectGraphic,
-            false,
-            active,
-            active,
-            effect.Module.DurationMilliseconds,
-            0,
-            effect.StartedAt,
-            0,
-            null
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                shipId,
+                null,
+                PropulsionDefinitions.EffectGraphic,
+                false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.StartedAt
+            )
         );
 
     private void RefreshPropulsion(ShipContact ship, ShipContact? previous)
@@ -593,8 +591,8 @@ internal sealed class FlightSession(
         long id = ship.Pilot.ShipId;
         if (previous is not null && previous.Pilot.Flight != ship.Pilot.Flight)
         {
-            Update("SetBallMass", id, ship.Pilot.Flight.Mass);
-            Update("SetMaxSpeed", id, (double)ship.Pilot.Flight.MaxSpeed);
+            Update(new DestinyCommand.SetBallMass(id, ship.Pilot.Flight.Mass));
+            Update(new DestinyCommand.SetMaxSpeed(id, (double)ship.Pilot.Flight.MaxSpeed));
         }
         if (previous?.Propulsion == ship.Propulsion)
         {
@@ -628,21 +626,19 @@ internal sealed class FlightSession(
 
     private void MiningEffect(long shipId, MiningContact effect, bool active) =>
         Update(
-            "OnSpecialFX",
-            shipId,
-            effect.ModuleId,
-            effect.TypeId,
-            effect.Target,
-            null,
-            "effects.Laser",
-            false,
-            active,
-            active,
-            effect.Duration,
-            0,
-            effect.StartedAt,
-            0,
-            null
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.ModuleId,
+                effect.TypeId,
+                effect.Target,
+                null,
+                "effects.Laser",
+                false,
+                active,
+                active,
+                effect.Duration,
+                effect.StartedAt
+            )
         );
 
     private void RefreshMining(ShipContact ship, ShipContact? previous)
@@ -669,21 +665,19 @@ internal sealed class FlightSession(
 
     private void WeaponEffect(long shipId, WeaponContact effect, bool active) =>
         Update(
-            "OnSpecialFX",
-            shipId,
-            effect.ModuleId,
-            effect.TypeId,
-            effect.Target,
-            effect.ChargeTypeId,
-            effect.Graphic,
-            true,
-            active,
-            active,
-            effect.Duration,
-            0,
-            effect.StartedAt,
-            0,
-            null
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.ModuleId,
+                effect.TypeId,
+                effect.Target,
+                effect.ChargeTypeId,
+                effect.Graphic,
+                true,
+                active,
+                active,
+                effect.Duration,
+                effect.StartedAt
+            )
         );
 
     private void RefreshWeapons(ShipContact ship, ShipContact? previous)
@@ -713,21 +707,19 @@ internal sealed class FlightSession(
 
     private void ShieldBoostEffect(long shipId, ShieldBoostContact effect, bool active) =>
         Update(
-            "OnSpecialFX",
-            shipId,
-            effect.ModuleId,
-            effect.TypeId,
-            shipId,
-            null,
-            ShieldBoostDefinitions.EffectGraphic,
-            false,
-            active,
-            active,
-            effect.Duration,
-            0,
-            effect.StartedAt,
-            0,
-            null
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.ModuleId,
+                effect.TypeId,
+                shipId,
+                null,
+                ShieldBoostDefinitions.EffectGraphic,
+                false,
+                active,
+                active,
+                effect.Duration,
+                effect.StartedAt
+            )
         );
 
     private void RefreshShieldBoosts(ShipContact ship, ShipContact? previous)
@@ -785,14 +777,14 @@ internal sealed class FlightSession(
         }
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
-            Update("RemoveBall", departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true);
+            Update(new DestinyCommand.RemoveBall(departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true));
         }
         // Destiny integrates the same course between changes. Occasionally reconcile drift.
         bool reconcile = Stamp - _lastPeerSync >= NavigationDefinitions.ReconciliationTicks;
         if (reconcile && _followTarget is not null && _followMode == DestinyBallMode.Orbit && Pilot.Position is { } ownPosition)
         {
-            Update("SetBallPosition", Pilot.ShipId, ownPosition.X, ownPosition.Y, ownPosition.Z);
-            Update("SetBallVelocity", Pilot.ShipId, _velocity.X, _velocity.Y, _velocity.Z);
+            Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, ownPosition.X, ownPosition.Y, ownPosition.Z));
+            Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, _velocity.X, _velocity.Y, _velocity.Z));
         }
         foreach (var ship in current)
         {
@@ -800,7 +792,7 @@ internal sealed class FlightSession(
             if (previous is null)
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
-                Update("AddBalls", [Ballpark.AddShip(ship, Stamp)]);
+                Update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, Stamp)));
                 RefreshMining(ship, null);
                 RefreshWeapons(ship, null);
                 RefreshShieldBoosts(ship, null);
@@ -856,7 +848,7 @@ internal sealed class FlightSession(
             {
                 if (previous.Heading is not null)
                 {
-                    Update("Stop", ship.Pilot.ShipId);
+                    Update(new DestinyCommand.Stop(ship.Pilot.ShipId));
                 }
                 continue;
             }
@@ -870,7 +862,7 @@ internal sealed class FlightSession(
             )
             {
                 var position = ship.Pilot.Position!;
-                Update("SetBallPosition", ship.Pilot.ShipId, position.X, position.Y, position.Z);
+                Update(new DestinyCommand.SetBallPosition(ship.Pilot.ShipId, position.X, position.Y, position.Z));
                 ApplyCourse(ship);
             }
         }
@@ -965,13 +957,7 @@ internal sealed class FlightSession(
         _npcs = ReadNpcs();
         _wrecks = ReadWrecks();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(
-            new object?[]
-            {
-                stamp,
-                new object?[] { "SetState", new object?[] { Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs, _wrecks) } },
-            }
-        );
+        Updates.Add(new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(Sample, stamp, visible, peers, _npcs, _wrecks))));
         foreach (var npc in _npcs.Where(n => n.Weapon is not null))
         {
             NpcWeaponEffect(npc.Id, npc.Weapon!, true);
@@ -1010,34 +996,34 @@ internal sealed class FlightSession(
         long id = ship.Pilot.ShipId;
         if (ship.AlignTo is { } end)
         {
-            Update("SetSpeedFraction", id, 1d);
-            Update("SetBallVelocity", id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z);
-            Update("WarpTo", id, end.X, end.Y, end.Z, 0d, ship.WarpFactor);
+            Update(new DestinyCommand.SetSpeedFraction(id, 1d));
+            Update(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
+            Update(new DestinyCommand.WarpTo(id, end.X, end.Y, end.Z, 0d, ship.WarpFactor));
             return;
         }
         if (ship.Heading is null)
         {
-            Update("Stop", id);
+            Update(new DestinyCommand.Stop(id));
         }
         else
         {
             if (ship.FollowRange is double range)
             {
-                Update(ship.FollowMode == DestinyBallMode.Orbit ? "Orbit" : "FollowBall", id, ship.FollowTargetId, range);
+                Update(new DestinyCommand.Follow(ship.FollowMode, id, ship.FollowTargetId, range));
             }
             else
             {
-                Update("GotoDirection", id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z);
+                Update(new DestinyCommand.GotoDirection(id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z));
             }
-            Update("SetSpeedFraction", id, ship.SpeedFraction);
+            Update(new DestinyCommand.SetSpeedFraction(id, ship.SpeedFraction));
         }
-        Update("SetBallVelocity", id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z);
+        Update(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
     }
 
     private void WarpEffect(long id, bool start)
     {
         // The simulation command moves the ball. This separate toggle drives the pilot's tunnel and peer flash.
-        Update("OnSpecialFX", id, null, null, null, null, "effects.Warping", false, start, true);
+        Update(new DestinyCommand.SpecialEffect(id, null, null, null, null, "effects.Warping", false, start, true));
     }
 
     private void SetAtRest()
@@ -1048,8 +1034,7 @@ internal sealed class FlightSession(
         _speedFraction = 0;
     }
 
-    private void Update(string method, params object?[] args) =>
-        Updates.Add(new object?[] { _simulatedStamp, new object?[] { method, args } });
+    private void Update(DestinyCommand command) => Updates.Add(new(_simulatedStamp, command));
 
     public object? StartJump(object?[] args, ISystemObjects systems)
     {
@@ -1081,7 +1066,7 @@ internal sealed class FlightSession(
         _arrivalStamp = null;
         _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
         SetAtRest();
-        Update("Stop", Pilot.ShipId);
+        Update(new DestinyCommand.Stop(Pilot.ShipId));
         DepartureEffect(Pilot.ShipId, source.Id, systemId);
         space.Publish(Sample);
         return null;
@@ -1106,26 +1091,11 @@ internal sealed class FlightSession(
 
     // SubwayService reads graphicInfo[0] to preload the skybox and attach the destination camera.
     private void DepartureEffect(long shipId, long gateId, int systemId) =>
-        Update(
-            "OnSpecialFX",
-            shipId,
-            null,
-            null,
-            gateId,
-            null,
-            "effects.JumpOut",
-            false,
-            true,
-            false,
-            JumpDurationTicks * 1000,
-            0,
-            null,
-            0,
-            new object?[] { systemId }
-        );
+        Update(new DestinyCommand.JumpOut(shipId, gateId, systemId, JumpDurationTicks * 1000));
 
     // SubwayService completes the gate transition. JumpIn supplies the ship flash.
-    private void ArrivalEffect(long shipId) => Update("OnSpecialFX", shipId, null, null, null, null, "effects.JumpIn", false, true, false);
+    private void ArrivalEffect(long shipId) =>
+        Update(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));
 
     private object? StartWarp(long target, double range)
     {
@@ -1224,8 +1194,8 @@ internal sealed class FlightSession(
                 {
                     _speedFraction = 1;
                 }
-                Update("GotoDirection", Pilot.ShipId, x, y, z);
-                Update("SetSpeedFraction", Pilot.ShipId, _speedFraction);
+                Update(new DestinyCommand.GotoDirection(Pilot.ShipId, x, y, z));
+                Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _speedFraction));
                 return null;
             case "CmdFollowBall"
             or "CmdOrbit"
@@ -1255,8 +1225,8 @@ internal sealed class FlightSession(
                     _followTarget = follow;
                     _followRange = standOff;
                     _speedFraction = 1;
-                    Update(_followMode == DestinyBallMode.Orbit ? "Orbit" : "FollowBall", Pilot.ShipId, target, standOff);
-                    Update("SetSpeedFraction", Pilot.ShipId, 1d);
+                    Update(new DestinyCommand.Follow(_followMode, Pilot.ShipId, target, standOff));
+                    Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, 1d));
                 }
                 return null;
             case "CmdSetSpeedFraction" when arguments is [var speed] && speed is double or long:
@@ -1269,16 +1239,16 @@ internal sealed class FlightSession(
                 {
                     _direction = _lastHeading;
                     _followTarget = null;
-                    Update("GotoDirection", Pilot.ShipId, _lastHeading.X, _lastHeading.Y, _lastHeading.Z);
+                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, _lastHeading.X, _lastHeading.Y, _lastHeading.Z));
                 }
                 _speedFraction = fraction;
-                Update("SetSpeedFraction", Pilot.ShipId, fraction);
+                Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, fraction));
                 return null;
             case "CmdStop":
                 _direction = null;
                 _followTarget = null;
                 _speedFraction = 0;
-                Update("Stop", Pilot.ShipId);
+                Update(new DestinyCommand.Stop(Pilot.ShipId));
                 return null;
             case "CmdDock"
                 when arguments is [long station, long ship]

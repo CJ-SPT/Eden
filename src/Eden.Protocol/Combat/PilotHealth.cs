@@ -6,15 +6,15 @@ public sealed record ShipHealth(long ShipId, HullDefense Defense, HullDamage Rem
 {
     // damageStateValue.pyj accepts (shield fraction, tau in milliseconds), then
     // armor and structure fractions. dogma.const.dgmTauConstant is 10,000 ticks/ms.
-    public object?[] DamageState()
+    public ShipDamageState DamageState()
     {
         var fractions = Remaining.Fractions(Defense);
-        return
-        [
-            new object?[] { fractions.Shield, ChargedResource.TimeConstant(Defense.ShieldRechargeMilliseconds) },
+        return new(
+            fractions.Shield,
+            ChargedResource.TimeConstant(Defense.ShieldRechargeMilliseconds),
             fractions.Armor,
-            fractions.Structure,
-        ];
+            fractions.Structure
+        );
     }
 
     public static HullDefense DefenseFrom(IReadOnlyDictionary<DogmaAttributeId, double> attributes)

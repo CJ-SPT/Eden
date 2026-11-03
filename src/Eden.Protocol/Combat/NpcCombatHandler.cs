@@ -87,21 +87,15 @@ internal sealed class NpcCombatHandler(
             {
                 continue;
             }
-            context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Incoming(shot)]));
+            context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Incoming(shot)));
             context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);
             context.Flight.NotifyHealth(shot.Health);
             context.Notifications.Add(
-                (
-                    "OnModuleAttributeChanges",
-                    [
-                        new List<object?>
-                        {
-                            Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
-                            Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
-                            Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
-                        },
-                    ]
-                )
+                new ModuleAttributesChanged([
+                    Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
+                    Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
+                    Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
+                ])
             );
             if (shot.Capsule is { } capsule)
             {
@@ -119,8 +113,8 @@ internal sealed class NpcCombatHandler(
                 break;
             }
 
-            object?[] Attribute(DogmaAttributeId attribute, double value) =>
-                ["OnModuleAttributeChange", context.Pilot.PilotId, shot.Health.ShipId, (int)attribute, now, value, null, now];
+            ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
+                new(context.Pilot.PilotId, new DogmaItemKey.Item(shot.Health.ShipId), attribute, now, value);
         }
         var current = combat.Aggressors(_shipId).ToArray();
         foreach (long npc in _aggressors.Except(current))

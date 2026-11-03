@@ -96,37 +96,27 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         );
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, clock.GetTimestamp(), now, repeats);
         _cycles.Add(module, cycle);
-        context.NotificationsBeforeFlight.Add(("OnDamageMessage", [CombatMessages.Outgoing(result, target)]));
+        context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Outgoing(result, target)));
         Effect(context, cycle, true);
         context.Flight.SetWeaponEffect(Contact(cycle), true);
         context.Flight.NotifyHealth(result.Health);
         context.Flight.RefreshWrecks();
         context.Flight.RefreshNpcs();
         context.Notifications.Add(
-            (
-                "OnModuleAttributeChanges",
-                [
-                    new List<object?>
-                    {
-                        new object?[]
-                        {
-                            "OnModuleAttributeChange",
-                            context.Pilot.PilotId,
-                            context.Pilot.ShipId,
-                            (int)DogmaAttributeId.CapacitorCharge,
-                            now,
-                            result.Capacitor,
-                            null,
-                            now,
-                        },
-                    },
-                ]
-            )
+            new ModuleAttributesChanged([
+                new ModuleAttributeChange(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(context.Pilot.ShipId),
+                    DogmaAttributeId.CapacitorCharge,
+                    now,
+                    result.Capacitor
+                ),
+            ])
         );
         if (result.Reward is { } reward)
         {
             context.Notifications.Add(
-                ("OnAccountChange", ["cash", context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk])
+                new AccountBalanceChanged(context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk)
             );
         }
         if (result.Magazine is { } magazine)
@@ -164,30 +154,21 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         context.Notifications.Add(
-            (
-                "OnGodmaShipEffect",
-                [
+            new ShipEffectChanged(
+                new DogmaActiveEffect(
                     cycle.Weapon.ItemId,
-                    cycle.Weapon.EffectId,
-                    now,
-                    active,
-                    active,
-                    new object?[]
-                    {
-                        cycle.Weapon.ItemId,
-                        context.Pilot.PilotId,
-                        cycle.ShipId,
-                        cycle.Target,
-                        null,
-                        Array.Empty<object?>(),
-                        cycle.Weapon.EffectId,
-                    },
+                    context.Pilot.PilotId,
+                    cycle.ShipId,
+                    cycle.Target,
+                    (DogmaEffect)cycle.Weapon.EffectId,
                     cycle.StartTime,
                     cycle.Weapon.CycleMilliseconds,
-                    cycle.Repeats,
-                    null,
-                    active ? null : now,
-                ]
+                    cycle.Repeats
+                ),
+                now,
+                active,
+                active,
+                active ? null : now
             )
         );
     }

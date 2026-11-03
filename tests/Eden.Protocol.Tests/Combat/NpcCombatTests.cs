@@ -539,7 +539,7 @@ public sealed class NpcCombatTests
         Assert.Equal(f.Npc.Id, message["attackerID"]);
         Assert.Equal(new object?[] { (int)MessageArgumentType.TypeId, f.Npc.TypeId }, message["owner"]);
         Assert.NotEmpty(BlueMarshal.Encode(message));
-        var ownActions = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
+        var ownActions = context.Flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
         int added = ownActions.FindIndex(a => Equals(a[0], "AddBalls"));
         int removed = ownActions.FindIndex(a => Equals(a[0], "RemoveBall"));
         Assert.True(added >= 0 && removed > added);
@@ -553,7 +553,7 @@ public sealed class NpcCombatTests
         Assert.Equal(Fixture.ShipId, slim["launcherID"]);
         Assert.Equal(new object?[] { Fixture.ShipId, true }, ownActions[removed][1]);
         Assert.DoesNotContain(ownActions, a => Equals(a[0], "SetState"));
-        var peerActions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+        var peerActions = observer.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(
             peerActions,
             a => Equals(a[0], "RemoveBall") && Equals(((object?[])a[1]!)[0], Fixture.ShipId) && Equals(((object?[])a[1]!)[1], true)

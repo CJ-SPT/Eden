@@ -118,12 +118,12 @@ public sealed class AsteroidFieldTests
         Assert.All(rocks.Except(nearby), r => Assert.Null(flight.FindTarget(r.Id)));
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks.Where(r => r.Id != nearby[0].Id).ToArray());
-        var removed = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.Updates))[1]);
+        var removed = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.WireUpdates()))[1]);
         Assert.Equal("RemoveBall", removed[0]);
         Assert.Equal(new object?[] { nearby[0].Id, false }, Assert.IsType<object?[]>(removed[1]));
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks);
-        var add = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.Updates))[1]);
+        var add = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.WireUpdates()))[1]);
         Assert.Equal("AddBalls", add[0]);
         var chunk = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<object?[]>(add[1])));
         using BinaryReader reader = new(new MemoryStream(Assert.IsType<byte[]>(chunk[0])));
@@ -141,7 +141,7 @@ public sealed class AsteroidFieldTests
         Assert.NotEmpty(BlueMarshal.Encode(chunk));
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks);
-        Assert.Empty(flight.Updates);
+        Assert.Empty(flight.WireUpdates());
         Assert.Null(flight.CallWire("beyonce", "CmdWarpToStuff", ["item", belts[1].Id]));
         clock.Seconds = 120;
         flight.Checkpoint();
@@ -149,7 +149,7 @@ public sealed class AsteroidFieldTests
         flight.RefreshAsteroids(rocks);
         Assert.All(nearby, r => Assert.Null(flight.FindTarget(r.Id)));
         Assert.All(rocks.Except(nearby), r => Assert.NotNull(flight.FindTarget(r.Id)));
-        Assert.DoesNotContain(flight.Updates.Cast<object?[]>(), update => Equals(Assert.IsType<object?[]>(update[1])[0], "SetState"));
+        Assert.DoesNotContain(flight.WireUpdates().Cast<object?[]>(), update => Equals(Assert.IsType<object?[]>(update[1])[0], "SetState"));
     }
 
     [Fact]
@@ -162,7 +162,13 @@ public sealed class AsteroidFieldTests
         // The largest pinned belt contains 186 asteroids. A complete reconnect snapshot
         // and a streamed AddBalls both have to pass through the encrypted transport.
         var rocks = Enumerable.Range(0, 186).Select(index => template with { Id = template.Id + index }).ToArray();
-        object[] messages = [Ballpark.Snapshot(new(pilot, SpacePosition.Zero, null, 0, null), 1, rocks), Ballpark.AddObjects(rocks, 1)];
+        object[] messages =
+        [
+            Assert.IsType<BlueInstance>(
+                WireAssertions.Materialize(Ballpark.Snapshot(new(pilot, SpacePosition.Zero, null, 0, null), 1, rocks))
+            ),
+            Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddObjects(rocks, 1))),
+        ];
         using var aes = Aes.Create();
         foreach (var message in messages)
         {

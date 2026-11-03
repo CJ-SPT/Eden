@@ -395,7 +395,7 @@ public sealed class ShieldBoostTests
         Assert.Equal(51, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);
         Assert.Equal((int)DogmaEffect.ShieldBoosting, (int)handler.ActiveEffect(context.Pilot, f.Module)!.Effect);
         observer.RefreshPeers();
-        var actions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+        var actions = observer.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(actions, a => Equals(a[0], "OnDamageStateChange") && Equals(((object?[])a[1]!)[0], context.Pilot.ShipId));
         Assert.Contains(actions, a => Equals(a[0], "OnSpecialFX") && Equals(((object?[])a[1]!)[5], ShieldBoostDefinitions.EffectGraphic));
         Assert.Null(activation.CallWire(context, "dogmaIM", "Deactivate", [f.Module, ShieldBoostDefinitions.EffectName]));

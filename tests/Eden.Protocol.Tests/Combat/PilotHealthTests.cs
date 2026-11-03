@@ -133,10 +133,24 @@ public sealed class PilotHealthTests
         var row = Assert.IsType<object?[]>(instances[ShipId]);
         Assert.Equal(75d, row[2]);
         Assert.Equal(125d, row[5]);
-        var snapshot = Ballpark.Snapshot(
-            new(pilot with { Position = SpacePosition.Zero }, SpacePosition.Zero, null, 0, null, Health: health.Read(PilotId, s_now)),
-            42,
-            db.Objects
+        var snapshot = Assert.IsType<BlueInstance>(
+            WireAssertions.Materialize(
+                Ballpark.Snapshot(
+                    new(
+                        pilot with
+                        {
+                            Position = SpacePosition.Zero,
+                        },
+                        SpacePosition.Zero,
+                        null,
+                        0,
+                        null,
+                        Health: health.Read(PilotId, s_now)
+                    ),
+                    42,
+                    db.Objects
+                )
+            )
         );
         var state = Assert.IsType<Dictionary<string, object?>>(snapshot.State);
         var damage = Assert.IsType<Dictionary<long, object?>>(state["damageState"]);

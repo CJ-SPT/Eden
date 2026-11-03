@@ -237,12 +237,12 @@ public sealed class WreckTests
         Assert.Equal(f.Wreck.Id, Assert.IsType<Dictionary<long, object?>>(change.Arguments[1])[(long)InventoryColumn.Location]);
         Assert.Empty(Assert.IsType<List<object?>>(Call(service, "List", [])));
         var action = Assert.Single(
-            context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!),
+            context.Flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!),
             a => Equals(a[0], "OnSlimItemChange")
         );
         var args = Assert.IsType<object?[]>(action[1]);
         Assert.True(Assert.IsType<bool>(Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(args[1]).State)["isEmpty"]));
-        Assert.NotEmpty(BlueMarshal.Encode(context.Flight.Updates));
+        Assert.NotEmpty(BlueMarshal.Encode(context.Flight.WireUpdates()));
         context.ReleaseLocationReferences();
         Assert.Null(context.ResolveReference(reference.Id));
     }
@@ -251,7 +251,7 @@ public sealed class WreckTests
     public void WreckWireRecordIsACompleteLocalFreeBallWithSourceAndLootRights()
     {
         using Fixture f = new();
-        var payload = Ballpark.AddWrecks([f.Wreck], 10);
+        var payload = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddWrecks([f.Wreck], 10)));
         using BinaryReader reader = new(new MemoryStream(Assert.IsType<byte[]>(payload[0])));
         Assert.Equal(105, reader.BaseStream.Length);
         Assert.Equal(0, reader.ReadByte());
@@ -283,7 +283,7 @@ public sealed class WreckTests
         flight.Updates.Clear();
         clock.Seconds = WreckDefinitions.LifetimeSeconds;
         flight.RefreshWrecks();
-        var removed = Assert.Single(flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!));
+        var removed = Assert.Single(flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!));
         Assert.Equal("RemoveBall", removed[0]);
         Assert.Equal(new object?[] { f.Wreck.Id, false }, removed[1]);
         Assert.Empty(flight.VisibleWrecks);

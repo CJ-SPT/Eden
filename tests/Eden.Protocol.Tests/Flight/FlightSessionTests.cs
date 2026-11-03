@@ -33,7 +33,7 @@ public sealed class FlightSessionTests
         }
         pilot.Updates.Clear();
         pilot.RefreshPeers();
-        var add = (object?[])((object?[])Assert.Single(pilot.Updates)!)[1]!;
+        var add = (object?[])((object?[])Assert.Single(pilot.WireUpdates())!)[1]!;
         Assert.Equal("AddBalls", add[0]);
         var chunk = (object?[])Assert.Single((object?[])add[1]!)!;
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));
@@ -51,7 +51,7 @@ public sealed class FlightSessionTests
             moving.RefreshPeers();
             observer.Updates.Clear();
             observer.RefreshPeers();
-            var calls = observer.Updates.Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToList();
+            var calls = observer.WireUpdates().Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToList();
             Assert.Equal(
                 new object?[] { "SetBallPosition", "GotoDirection", "SetSpeedFraction", "SetBallVelocity" },
                 calls.Select(call => call[0])
@@ -64,7 +64,7 @@ public sealed class FlightSessionTests
             moving.CallWire("beyonce", "CmdStop", []);
             moving.RefreshPeers();
             observer.RefreshPeers();
-            Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(observer.Updates)!)[1]!)[0]);
+            Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(observer.WireUpdates())!)[1]!)[0]);
             var braking = Assert.Single(space.Peers(observer.Pilot));
             Assert.Null(braking.Heading);
             Assert.Equal(sample.Velocity, braking.Velocity);
@@ -79,7 +79,7 @@ public sealed class FlightSessionTests
         Assert.Empty(space.Peers(pilot.Pilot));
         pilot.Updates.Clear();
         pilot.RefreshPeers();
-        var remove = (object?[])((object?[])Assert.Single(pilot.Updates)!)[1]!;
+        var remove = (object?[])((object?[])Assert.Single(pilot.WireUpdates())!)[1]!;
         Assert.Equal("RemoveBall", remove[0]);
         Assert.Equal(new object?[] { wing.Pilot.ShipId, false }, (object?[])remove[1]!);
         pilot.Dispose();
@@ -119,21 +119,21 @@ public sealed class FlightSessionTests
         var departure = pilot.Pilot.Position;
         pilot.Updates.Clear();
         Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
-        var commands = pilot.Updates.Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToArray();
+        var commands = pilot.WireUpdates().Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToArray();
         Assert.Equal(new[] { "SetSpeedFraction", "SetBallVelocity", "WarpTo", "OnSpecialFX" }, commands.Select(call => call[0]));
         Assert.Equal(3000, ((object?[])commands[2][1]!)[5]);
-        int initialUpdates = pilot.Updates.Count;
+        int initialUpdates = pilot.WireUpdates().Count;
         Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
-        Assert.Equal(initialUpdates, pilot.Updates.Count);
+        Assert.Equal(initialUpdates, pilot.WireUpdates().Count);
         clock.Seconds += 4;
         pilot.Checkpoint();
         Assert.NotEqual(departure, pilot.Pilot.Position);
         pilot.Updates.Clear();
         clock.Seconds += 5;
         pilot.Checkpoint();
-        Assert.Empty(pilot.Updates);
+        Assert.Empty(pilot.WireUpdates());
         Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 10_000L }));
-        Assert.Empty(pilot.Updates);
+        Assert.Empty(pilot.WireUpdates());
         Assert.Same(PilotCallRouter.Unsupported, pilot.CallWire("beyonce", "CmdWarpToStuff", toGate, new() { ["minRange"] = 0L }));
         Assert.Same(PilotCallRouter.Unsupported, pilot.CallWire("beyonce", "CmdStop", []));
         clock.Seconds += 15;
@@ -284,12 +284,12 @@ public sealed class FlightSessionTests
             mover.RefreshPeers();
             observer.Checkpoint();
             observer.RefreshPeers();
-            if (observer.Updates.Count > 0)
+            if (observer.WireUpdates().Count > 0)
             {
                 break;
             }
         }
-        var add = (object?[])((object?[])Assert.Single(observer.Updates)!)[1]!;
+        var add = (object?[])((object?[])Assert.Single(observer.WireUpdates())!)[1]!;
         Assert.Equal("AddBalls", add[0]);
         var chunk = (object?[])((object?[])add[1]!)[0]!;
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));
@@ -314,12 +314,15 @@ public sealed class FlightSessionTests
         Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);
         mover.Updates.Clear();
         mover.Snapshot();
-        var call = (object?[])((object?[])mover.Updates[0]!)[1]!;
+        var call = (object?[])((object?[])mover.WireUpdates()[0]!)[1]!;
         var state = (BlueInstance)((object?[])call[1]!)[0]!;
         var stream = (byte[])((Dictionary<string, object?>)state.State!)["state"]!;
         Assert.Equal(((byte[])chunk[0]!)[5..], stream.AsSpan(5 + 39, ((byte[])chunk[0]!).Length - 5).ToArray());
         Assert.True(destination.X < gate.Position.X);
-        Assert.DoesNotContain(mover.Updates.Concat(observer.Updates), update => Equals(((object?[])((object?[])update!)[1]!)[0], "WarpTo"));
+        Assert.DoesNotContain(
+            mover.WireUpdates().Concat(observer.WireUpdates()),
+            update => Equals(((object?[])((object?[])update!)[1]!)[0], "WarpTo")
+        );
     }
 
     [Fact]
@@ -454,7 +457,8 @@ public sealed class FlightSessionTests
 
         static IEnumerable<object?[]> EffectArguments(FlightSession flight) =>
             flight
-                .Updates.Cast<object?[]>()
+                .WireUpdates()
+                .Cast<object?[]>()
                 .Select(update => (object?[])update[1]!)
                 .Where(call => Equals(call[0], "OnSpecialFX"))
                 .Select(call => (object?[])call[1]!);
@@ -504,7 +508,7 @@ public sealed class FlightSessionTests
         clock.Seconds = 3;
         session.Updates.Clear();
         Assert.Null(session.CallWire("beyonce", "CmdStop", []));
-        Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(session.Updates)!)[1]!)[0]);
+        Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(session.WireUpdates())!)[1]!)[0]);
         session.Updates.Clear();
         var stopped = Assert.IsType<SpacePosition>(session.Pilot.Position);
         Assert.True(stopped.Y > spawn.Y);
@@ -513,7 +517,7 @@ public sealed class FlightSessionTests
         session.Checkpoint();
         var reopened = new SqliteWorld(db.Path);
         Assert.Equal(session.Pilot, reopened.FindPilot(1000001));
-        Assert.Empty(session.Updates);
+        Assert.Empty(session.WireUpdates());
         Assert.True(session.Pilot.Position!.Y > stopped.Y);
         Assert.False(session.Moving);
         var resumed = new FlightSession(reopened, reopened.FindPilot(1000001)!, clock, new(), db.Objects);
@@ -527,7 +531,11 @@ public sealed class FlightSessionTests
         using TestWorld db = new();
         DockedPilot pilot = db.Store.FindPilot(1000001)!;
         SpacePosition position = new(pilot.X + 123456, pilot.Y - 590, pilot.Z + 200);
-        var snapshot = Ballpark.Snapshot(new(pilot with { Position = position }, SpacePosition.Zero, null, 0, null), 42, db.Objects);
+        var snapshot = Assert.IsType<BlueInstance>(
+            WireAssertions.Materialize(
+                Ballpark.Snapshot(new(pilot with { Position = position }, SpacePosition.Zero, null, 0, null), 42, db.Objects)
+            )
+        );
         var fields = Assert.IsType<Dictionary<string, object?>>(snapshot.State);
         Assert.Equal(pilot.ShipId, fields["ego"]);
         var items = Assert.IsType<List<object?>>(fields["slims"]);

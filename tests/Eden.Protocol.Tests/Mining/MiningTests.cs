@@ -520,7 +520,8 @@ public sealed class MiningTests
         Assert.Null(mining.CallWire(pilot, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
         wing.Flight.RefreshPeers();
         var started = wing
-            .Flight.Updates.Cast<object?[]>()
+            .Flight.WireUpdates()
+            .Cast<object?[]>()
             .Select(u => Assert.IsType<object?[]>(u[1]))
             .Single(u => Equals(u[0], "OnSpecialFX"));
         var args = Assert.IsType<object?[]>(started[1]);
@@ -535,7 +536,8 @@ public sealed class MiningTests
         wing.Flight.Updates.Clear();
         wing.Flight.RefreshPeers();
         var stopped = wing
-            .Flight.Updates.Cast<object?[]>()
+            .Flight.WireUpdates()
+            .Cast<object?[]>()
             .Select(u => Assert.IsType<object?[]>(u[1]))
             .Single(u => Equals(u[0], "OnSpecialFX"));
         Assert.Equal(false, Assert.IsType<object?[]>(stopped[1])[7]);

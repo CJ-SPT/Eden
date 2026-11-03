@@ -114,11 +114,11 @@ public sealed class NpcOrbitTests
         f.Fire();
         observer.Updates.Clear();
         observer.RefreshNpcs();
-        var actions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+        var actions = observer.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(actions, a => Equals(a[0], "Orbit"));
         Assert.DoesNotContain(actions, a => Equals(a[0], "SetState"));
         var npc = Contact(f);
-        var chunk = Ballpark.AddNpcs([npc], 42);
+        var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddNpcs([npc], 42)));
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));
         reader.ReadByte();
         reader.ReadInt32();
@@ -145,7 +145,7 @@ public sealed class NpcOrbitTests
         Assert.Null(f.Fire());
         observer.Updates.Clear();
         observer.RefreshNpcs();
-        Assert.Contains(observer.Updates.Cast<object?[]>(), u => Equals(((object?[])u[1]!)[0], "FollowBall"));
+        Assert.Contains(observer.WireUpdates().Cast<object?[]>(), u => Equals(((object?[])u[1]!)[0], "FollowBall"));
         Assert.Equal(NpcNavigationState.Pursuing, Contact(f).Navigation!.State);
     }
 

@@ -299,7 +299,7 @@ public sealed class PropulsionTests
         Assert.Equal(velocity, context.Flight.Velocity);
         Assert.True(context.Pilot.Flight.MaxSpeed > 690);
         observer.RefreshPeers();
-        var actions = observer.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+        var actions = observer.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.Contains(actions, a => Equals(a[0], "SetMaxSpeed"));
         Assert.Contains(actions, a => Equals(a[0], "SetBallMass"));
         Assert.Contains(actions, a => Equals(a[0], "OnSpecialFX") && Equals(((object?[])a[1]!)[5], PropulsionDefinitions.EffectGraphic));
@@ -331,7 +331,7 @@ public sealed class PropulsionTests
         f.Clock.Milliseconds = 60_000;
         handler.Advance(context);
         Assert.Equal(speed, context.Pilot.Flight.MaxSpeed);
-        var actions = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+        var actions = context.Flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
         Assert.DoesNotContain(actions, a => Equals(a[0], "SetMaxSpeed") || Equals(a[0], "SetBallMass"));
         using (WorldDbContext world = new(f.Db.Path))
         {

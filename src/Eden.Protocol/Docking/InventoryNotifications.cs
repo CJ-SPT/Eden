@@ -39,7 +39,7 @@ internal sealed record ChargeLoading(IReadOnlyList<long> Modules, int TypeId, do
     public override object?[] Arguments => [Modules.Select(id => (object?)id).ToList(), TypeId, ReloadMilliseconds];
 }
 
-internal sealed record ShipEffectChanged(DogmaActiveEffect Effect, long Time, bool Start, bool Active)
+internal sealed record ShipEffectChanged(DogmaActiveEffect Effect, long Time, bool Start, bool Active, long? StopTime = null)
     : PilotNotification("OnGodmaShipEffect")
 {
     public override object?[] Arguments =>
@@ -63,6 +63,6 @@ internal sealed record ShipEffectChanged(DogmaActiveEffect Effect, long Time, bo
             Effect.DurationMilliseconds is double duration ? (object)duration : InventoryDefinitions.InfiniteEffectDuration,
             Effect.Repeats,
             null,
-            null,
+            StopTime,
         ];
 }

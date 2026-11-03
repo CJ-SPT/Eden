@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Targeting;
 
@@ -29,11 +30,11 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
             // Removing shared edges alone leaves portraits and targeted markers.
             foreach (long id in _pending.Keys.Concat(_locked).Distinct())
             {
-                Notify(context, "lost", id);
+                Notify(context, TargetChange.Lost, id);
             }
             foreach (long id in _targeters)
             {
-                Notify(context, "otherlost", id);
+                Notify(context, TargetChange.OtherLost, id);
             }
             shared.RemoveShip(_shipId);
             _pending.Clear();
@@ -64,18 +65,18 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
                     _pending.Remove(id);
                     _locked.Add(id);
                     shared.Add(_shipId, id);
-                    Notify(context, "add", id);
+                    Notify(context, TargetChange.Added, id);
                 }
             }
         }
         var targeters = shared.Targeters(_shipId);
         foreach (long id in _targeters.Except(targeters))
         {
-            Notify(context, "otherlost", id);
+            Notify(context, TargetChange.OtherLost, id);
         }
         foreach (long id in targeters.Except(_targeters))
         {
-            Notify(context, "otheradd", id);
+            Notify(context, TargetChange.OtherAdded, id);
         }
         _targeters = targeters;
     }
@@ -83,8 +84,8 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
     private static double Distance(PilotCallContext context, TargetContact target) =>
         Math.Max(0, context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius);
 
-    private static void Notify(PilotCallContext context, string action, long target) =>
-        context.Notifications.Add(("OnTarget", [action, target, null]));
+    private static void Notify(PilotCallContext context, TargetChange action, long target) =>
+        context.Notifications.Add(new TargetChanged(action, target));
 
     private void Remove(PilotCallContext context, long target)
     {
@@ -93,7 +94,7 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         shared.Remove(_shipId, target);
         if (pending || locked)
         {
-            Notify(context, "lost", target);
+            Notify(context, TargetChange.Lost, target);
         }
     }
 
@@ -109,11 +110,11 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         }
         if (_locked.Contains(id))
         {
-            return new object?[] { false, _locked.Order().Cast<object?>().ToList() };
+            return new TargetLockReply(false, _locked.Order().ToArray());
         }
         if (_pending.ContainsKey(id))
         {
-            return new object?[] { true, _locked.Order().Cast<object?>().ToList() };
+            return new TargetLockReply(true, _locked.Order().ToArray());
         }
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets));
@@ -135,7 +136,7 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         }
         _pending.Add(id, new(clock.GetTimestamp(), seconds));
         // targetMgr._LockTarget interprets true as pending; OnTarget("add") completes it.
-        return new object?[] { true, _locked.Order().Cast<object?>().ToList() };
+        return new TargetLockReply(true, _locked.Order().ToArray());
     }
 
     public object? Call(
@@ -166,9 +167,9 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
                 }
                 return null;
             case "GetTargets" when args.Length == 0:
-                return _locked.Order().Cast<object?>().ToList();
+                return new BlueList<long>(_locked.Order().ToArray());
             case "GetTargeters" when args.Length == 0:
-                return _targeters.Cast<object?>().ToList();
+                return new BlueList<long>(_targeters);
             default:
                 return PilotCallRouter.Unsupported;
         }

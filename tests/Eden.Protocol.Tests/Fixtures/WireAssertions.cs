@@ -101,4 +101,6 @@ internal static class WireAssertions
         object?[] args,
         Dictionary<string, object?>? keywords = null
     ) => Materialize(handler.Call(context, service, method, args));
+
+    internal static List<object?> WireUpdates(this FlightSession flight) => flight.Updates.Select(Materialize).ToList();
 }

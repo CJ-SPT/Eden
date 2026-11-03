@@ -87,24 +87,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         if (result.Extracted > 0)
         {
             // oreMinedNotificationAdapter in build 3662168 uses these exact keys.
-            context.Notifications.Add(
-                (
-                    "OnOreMined",
-                    [
-                        new Dictionary<string, object?>
-                        {
-                            ["oreType"] = result.TypeId,
-                            ["quantity_added"] = result.Extracted + result.CriticalBonus,
-                            ["quantity_removed"] = result.Extracted,
-                            ["hasRewards"] = false,
-                            ["amountWasted"] = 0,
-                            ["amountCritBonus"] = result.CriticalBonus,
-                            ["itemID"] = cycle.Target,
-                            ["moduleItemID"] = cycle.Laser.ItemId,
-                        },
-                    ]
-                )
-            );
+            context.Notifications.Add(new OreMined(result, cycle.Target, cycle.Laser.ItemId));
         }
         return result;
     }
@@ -118,25 +101,15 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         Effect(context, cycle, true);
         context.Flight.SetMiningEffect(new(module, start.Laser.TypeId, target, now, start.Laser.DurationMilliseconds), true);
         context.Notifications.Add(
-            (
-                "OnModuleAttributeChanges",
-                [
-                    new List<object?>
-                    {
-                        new object?[]
-                        {
-                            "OnModuleAttributeChange",
-                            context.Pilot.PilotId,
-                            context.Pilot.ShipId,
-                            (int)DogmaAttributeId.CapacitorCharge,
-                            now,
-                            start.Capacitor,
-                            null,
-                            now,
-                        },
-                    },
-                ]
-            )
+            new ModuleAttributesChanged([
+                new ModuleAttributeChange(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(context.Pilot.ShipId),
+                    DogmaAttributeId.CapacitorCharge,
+                    now,
+                    start.Capacitor
+                ),
+            ])
         );
     }
 
@@ -157,30 +130,21 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         context.Notifications.Add(
-            (
-                "OnGodmaShipEffect",
-                [
+            new ShipEffectChanged(
+                new DogmaActiveEffect(
                     cycle.Laser.ItemId,
-                    (int)DogmaEffect.MiningLaser,
-                    now,
-                    active,
-                    active,
-                    new object?[]
-                    {
-                        cycle.Laser.ItemId,
-                        context.Pilot.PilotId,
-                        context.Pilot.ShipId,
-                        cycle.Target,
-                        null,
-                        Array.Empty<object?>(),
-                        (int)DogmaEffect.MiningLaser,
-                    },
+                    context.Pilot.PilotId,
+                    context.Pilot.ShipId,
+                    cycle.Target,
+                    DogmaEffect.MiningLaser,
                     cycle.StartTime,
                     cycle.Laser.DurationMilliseconds,
-                    cycle.Repeats,
-                    null,
-                    active ? null : now,
-                ]
+                    cycle.Repeats
+                ),
+                now,
+                active,
+                active,
+                active ? null : now
             )
         );
     }

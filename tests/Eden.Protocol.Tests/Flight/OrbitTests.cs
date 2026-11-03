@@ -28,7 +28,8 @@ public sealed class OrbitTests
         public bool WasDestroyed(long npcId) => Contacts.All(n => n.Id != npcId);
     }
 
-    private static object?[][] Actions(FlightSession session) => session.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
+    private static object?[][] Actions(FlightSession session) =>
+        session.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!).ToArray();
 
     [Fact]
     public void SteeringMatchesCarbonsPublishedTenTickOrbitTrajectory()
@@ -116,7 +117,7 @@ public sealed class OrbitTests
         Assert.DoesNotContain(Actions(observer), a => Equals(a[0], "SetState"));
         var contact = Assert.Single(space.Peers(wing));
         Assert.Equal(DestinyBallMode.Orbit, contact.FollowMode);
-        var chunk = Ballpark.AddShip(contact, 42);
+        var chunk = Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddShip(contact, 42)));
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(42, reader.ReadInt32());

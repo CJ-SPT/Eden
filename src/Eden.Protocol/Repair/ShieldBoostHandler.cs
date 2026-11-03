@@ -77,20 +77,14 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
         context.Flight.NotifyHealth(result.Health);
         context.Flight.SetShieldBoostEffect(Contact(cycle), true);
         context.Notifications.Add(
-            (
-                "OnModuleAttributeChanges",
-                [
-                    new List<object?>
-                    {
-                        Attribute(DogmaAttributeId.CapacitorCharge, result.Capacitor),
-                        Attribute(DogmaAttributeId.ShieldCharge, result.Health.Remaining.Shield),
-                    },
-                ]
-            )
+            new ModuleAttributesChanged([
+                Attribute(DogmaAttributeId.CapacitorCharge, result.Capacitor),
+                Attribute(DogmaAttributeId.ShieldCharge, result.Health.Remaining.Shield),
+            ])
         );
 
-        object?[] Attribute(DogmaAttributeId attribute, double value) =>
-            ["OnModuleAttributeChange", context.Pilot.PilotId, context.Pilot.ShipId, (int)attribute, now, value, null, now];
+        ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
+            new(context.Pilot.PilotId, new DogmaItemKey.Item(context.Pilot.ShipId), attribute, now, value);
     }
 
     private static ShieldBoostContact Contact(Cycle cycle) =>
@@ -110,30 +104,21 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         context.Notifications.Add(
-            (
-                "OnGodmaShipEffect",
-                [
+            new ShipEffectChanged(
+                new DogmaActiveEffect(
                     cycle.Booster.ItemId,
-                    (int)DogmaEffect.ShieldBoosting,
-                    now,
-                    active,
-                    active,
-                    new object?[]
-                    {
-                        cycle.Booster.ItemId,
-                        context.Pilot.PilotId,
-                        cycle.ShipId,
-                        null,
-                        null,
-                        Array.Empty<object?>(),
-                        (int)DogmaEffect.ShieldBoosting,
-                    },
+                    context.Pilot.PilotId,
+                    cycle.ShipId,
+                    null,
+                    DogmaEffect.ShieldBoosting,
                     cycle.StartTime,
                     cycle.Booster.DurationMilliseconds,
-                    cycle.Repeats,
-                    null,
-                    active ? null : now,
-                ]
+                    cycle.Repeats
+                ),
+                now,
+                active,
+                active,
+                active ? null : now
             )
         );
     }

@@ -258,8 +258,8 @@ public sealed class PilotCombatTests
         Assert.Single(context.NotificationsBeforeFlight);
         Assert.Equal(firstDamage, saved.Set<WorldNpc>().AsNoTracking().Single(n => n.Id == f.Npc.Id).ShieldCharge);
         Assert.Equal(2, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
-        Assert.Contains(context.Flight.Updates, update => Equals(((object?[])((object?[])update!)[1]!)[0], "OnDamageStateChange"));
-        Assert.NotEmpty(BlueMarshal.Encode(context.Flight.Updates));
+        Assert.Contains(context.Flight.WireUpdates(), update => Equals(((object?[])((object?[])update!)[1]!)[0], "OnDamageStateChange"));
+        Assert.NotEmpty(BlueMarshal.Encode(context.Flight.WireUpdates()));
     }
 
     [Fact]
@@ -277,11 +277,12 @@ public sealed class PilotCombatTests
         );
         Assert.Equal(f.Npc.Id, feedback["target"]);
         Assert.True(Assert.IsType<double>(feedback["damage"]) > 0);
-        var removal = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).Single(m => Equals(m[0], "RemoveBall"));
-        var actions = context.Flight.Updates.Cast<object?[]>().Select(u => (object?[])u[1]!).ToList();
-        Assert.True(actions.FindIndex(a => Equals(a[0], "AddBalls")) < actions.IndexOf(removal));
+        var actions = context.Flight.Updates.Select(update => update.Command).ToList();
+        var removal = Assert.Single(actions.OfType<DestinyCommand.RemoveBall>());
+        Assert.True(actions.FindIndex(action => action is DestinyCommand.AddBalls) < actions.IndexOf(removal));
         Assert.Single(context.Flight.VisibleWrecks);
-        Assert.Equal(new object?[] { f.Npc.Id, true }, Assert.IsType<object?[]>(removal[1]));
+        Assert.Equal(f.Npc.Id, removal.Id);
+        Assert.True(removal.Explode);
         Assert.Contains(context.Notifications, n => n.Name == "OnAccountChange" && Equals(n.Arguments[2], 3000d));
         using var scope = f.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
@@ -407,17 +408,17 @@ public sealed class PilotCombatTests
         using Fixture f = new();
         f.Db.Store.SetPosition(1000000000001, f.Npc.Position + new SpacePosition(9000, 0, 0), f.Npc.SystemId);
         var miss = CombatMessages.Outgoing(f.Fire(), f.Npc.Id);
-        Assert.Equal((int)CombatHitQuality.Miss, miss["hitQuality"]);
-        Assert.Equal(0d, miss["damage"]);
-        Assert.All(Assert.IsType<Dictionary<long, object?>>(miss["damageAttributes"]).Values, v => Assert.Equal(0d, v));
+        Assert.Equal(CombatHitQuality.Miss, miss.HitQuality);
+        Assert.Equal(0d, miss.Damage);
+        Assert.Equal(DamageVector.None, miss.DamageAttributes);
         f.Clock.Milliseconds += 2000;
         f.Db.Store.SetPosition(1000000000001, f.Npc.Position + new SpacePosition(1000, 0, 0), f.Npc.SystemId);
         var wrecking = CombatMessages.Outgoing(f.Fire(0), f.Npc.Id);
-        Assert.Equal((int)CombatHitQuality.Wrecking, wrecking["hitQuality"]);
-        var damageTypes = Assert.IsType<Dictionary<long, object?>>(wrecking["damageAttributes"]);
-        Assert.Equal(11.25, damageTypes[(long)DogmaAttributeId.KineticDamage]);
-        Assert.Equal(7.5, damageTypes[(long)DogmaAttributeId.ThermalDamage]);
-        Assert.Equal(0d, damageTypes[(long)DogmaAttributeId.EmDamage]);
+        Assert.Equal(CombatHitQuality.Wrecking, wrecking.HitQuality);
+        var damageTypes = wrecking.DamageAttributes;
+        Assert.Equal(11.25, damageTypes.Kinetic);
+        Assert.Equal(7.5, damageTypes.Thermal);
+        Assert.Equal(0d, damageTypes.Em);
     }
 
     [Fact]
