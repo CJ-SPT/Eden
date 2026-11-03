@@ -48,21 +48,8 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
         // the local signature, evaluates it, and returns the empty dictionary as its result.
         byte[] expression = BlueMarshal.Encode(new byte[] { (byte)'s', 2, 0, 0, 0, (byte)'{', (byte)'}' });
         byte[] signature = key.SignData(HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        Dictionary<string, object?> response = new()
-        {
-            ["challenge_responsehash"] = HashArgument(Bytes(credentials[0])),
-            ["macho_version"] = 496,
-            ["boot_version"] = 24.01,
-            ["boot_build"] = CompatibilityHandshake.Build,
-            ["boot_codename"] = "V24.01",
-            ["boot_region"] = "ccp",
-            ["cluster_usercount"] = 1,
-            ["proxy_nodeid"] = NodeId,
-            ["user_logonqueueposition"] = 0,
-            ["config_vals"] = new Dictionary<string, object?>(),
-        };
         await packets.WriteAsync(
-            new object?[] { challenge, new object?[] { expression, signature }, new Dictionary<string, object?>(), response }
+            new LoginChallenge(challenge, new SignedSettings(expression, signature), HashArgument(Bytes(credentials[0])))
         );
         object?[] proof = Tuple(await packets.ReadAsync(), 3);
         if (!CryptographicOperations.FixedTimeEquals(Bytes(proof[0]), HashArgument(challenge)))
@@ -72,18 +59,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
 
         authenticated?.Invoke(accountId);
         long clientId = Interlocked.Increment(ref s_nextClientId);
-        await packets.WriteAsync(
-            new Dictionary<string, object?>
-            {
-                ["session_init"] = AccountState(accountId),
-                ["session_id"] = clientId,
-                ["sessionID"] = clientId,
-                ["clientID"] = clientId,
-                ["access_token"] = "",
-                ["computer_hash"] = "",
-                ["client_hash"] = "Unknown",
-            }
-        );
+        await packets.WriteAsync(new LoginSession(accountId, clientId));
         report("Authenticated local pilot account; session established.");
 
         // Build 3662168 expects a signed Python 2.7 function body for its optional settings statistics.
@@ -101,19 +77,13 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session)
             report,
             accountId,
             clientId,
-            [settingsCode, settingsSignature],
+            new SignedSettings(settingsCode, settingsSignature),
             cancellationToken
         );
     }
 
     internal static Dictionary<string, object?> AccountState(long accountId) =>
-        new()
-        {
-            ["userid"] = accountId,
-            ["role"] = PlayerRole,
-            ["languageID"] = "EN",
-            ["userType"] = 1,
-        };
+        (Dictionary<string, object?>)new AccountSessionState(accountId).ToBlue();
 
     internal static byte[] Bytes(object? value) => value as byte[] ?? throw new InvalidDataException("Expected bytes.");
 

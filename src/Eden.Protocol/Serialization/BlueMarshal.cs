@@ -347,6 +347,9 @@ internal static class BlueMarshal
     {
         switch (value)
         {
+            case IBlueWritable model:
+                Write(writer, model.ToBlue());
+                break;
             case null:
                 writer.Write((byte)1);
                 break;

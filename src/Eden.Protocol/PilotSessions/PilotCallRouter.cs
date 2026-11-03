@@ -9,11 +9,27 @@ namespace Eden.Protocol.PilotSessions;
 internal interface IPilotCallHandler
 {
     object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords);
+
+    PilotCallResult Dispatch(
+        PilotCallContext context,
+        string service,
+        string method,
+        object? arguments,
+        Dictionary<string, object?>? keywords
+    ) => PilotCallResult.FromLegacy(Call(context, service, method, arguments, keywords));
 }
 
 internal interface ISelectedPilotCallHandler
 {
     object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null);
+
+    PilotCallResult Dispatch(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    ) => PilotCallResult.FromLegacy(Call(context, service, method, args, keywords));
 }
 
 internal sealed class PilotCallContext(
@@ -59,11 +75,11 @@ internal sealed class PilotCallContext(
     public object?[] SignedSettings { get; } = signedSettings;
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
-    public List<(string Name, object?[] Arguments)> Notifications { get; } = [];
+    public List<PilotNotification> Notifications { get; } = [];
 
     // Combat text resolves the target's slim item, including on a fatal hit.
     // Deliver it before Destiny removes that ball from the client's park.
-    public List<(string Name, object?[] Arguments)> NotificationsBeforeFlight { get; } = [];
+    public List<PilotNotification> NotificationsBeforeFlight { get; } = [];
 
     private readonly Dictionary<string, string> _bindings = [];
     private readonly Dictionary<string, BlueObjectReference> _references = [];
@@ -117,7 +133,7 @@ internal sealed class PilotCallRouter(
 )
 {
     // A successful MachoNet method can return Python None.
-    public static readonly object Unsupported = new();
+    public static readonly PilotCallResult Unsupported = new PilotCallResult.UnsupportedCall();
 
     internal sealed record Error(string Message);
 
@@ -141,7 +157,26 @@ internal sealed class PilotCallRouter(
         return name.StartsWith('@') ? "unknown binding" : name;
     }
 
-    public object? Call(
+    internal object? Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object? arguments,
+        Action<string> report,
+        Dictionary<string, object?>? keywords = null
+    ) =>
+        Dispatch(context, service, method, arguments, report, keywords) switch
+        {
+            PilotCallResult.Success success => Unwrap(success.Reply),
+            PilotCallResult.Failure error => new Error(error.Message),
+            PilotCallResult.NamedFailure error => new UserError(error.Name, (Dictionary<string, object?>)error.Values.ToBlue()!),
+            var result => result,
+        };
+
+    private static object? Unwrap(IBlueWritable reply) =>
+        reply is BoundPilotReply bound ? new object?[] { bound.Reference, Unwrap(bound.Reply) } : reply.ToBlue();
+
+    public PilotCallResult Dispatch(
         PilotCallContext context,
         string service,
         string method,
@@ -152,7 +187,7 @@ internal sealed class PilotCallRouter(
     {
         foreach (var handler in accountHandlers)
         {
-            object? result = handler.Call(context, service, method, arguments, keywords);
+            PilotCallResult result = handler.Dispatch(context, service, method, arguments, keywords);
             if (!ReferenceEquals(result, Unsupported))
             {
                 return result;
@@ -163,7 +198,7 @@ internal sealed class PilotCallRouter(
             : Unsupported;
     }
 
-    private object? CallSelected(
+    private PilotCallResult CallSelected(
         PilotCallContext context,
         string service,
         string method,
@@ -190,7 +225,7 @@ internal sealed class PilotCallRouter(
         {
             if (method == "MachoResolveObject")
             {
-                return PilotLogin.NodeId;
+                return new PilotCallResult.Success(new PilotCallResult.LegacyReply(PilotLogin.NodeId));
             }
             if (method == "MachoBindObject" && args.Length == 2)
             {
@@ -232,7 +267,7 @@ internal sealed class PilotCallRouter(
                 {
                     return Unsupported;
                 }
-                object? result = null;
+                PilotCallResult result = PilotCallResult.None;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
                     string innerMethod = BlueMarshal.Text(first[0]);
@@ -252,14 +287,14 @@ internal sealed class PilotCallRouter(
                 }
                 // A failed first call is an RPC failure, not a value to embed in
                 // the successful (bound reference, result) tuple.
-                return result is Error or UserError || ReferenceEquals(result, Unsupported)
-                    ? result
-                    : new object?[] { context.Reference(service), result };
+                return result is PilotCallResult.Success success
+                    ? new PilotCallResult.Success(new BoundPilotReply(context.Reference(service), success.Reply))
+                    : result;
             }
         }
         foreach (var handler in selectedHandlers)
         {
-            object? result = handler.Call(context, service, method, args, keywords);
+            PilotCallResult result = handler.Dispatch(context, service, method, args, keywords);
             if (!ReferenceEquals(result, Unsupported))
             {
                 return result;

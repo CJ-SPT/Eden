@@ -8,7 +8,7 @@ public interface IPilotSession
         Action<string> report,
         long accountId,
         long clientId,
-        object?[] signedSettings,
+        SignedSettings signedSettings,
         CancellationToken cancellationToken
     );
 }

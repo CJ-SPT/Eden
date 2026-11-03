@@ -703,7 +703,7 @@ public sealed class NpcCombatTests
                 _ => { },
                 1000001,
                 42,
-                [],
+                SignedSettings.Empty,
                 CancellationToken.None
             )
         );

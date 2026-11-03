@@ -370,7 +370,7 @@ public sealed class PilotServicesTests
                 _ => { },
                 1000001,
                 sessionId,
-                [],
+                SignedSettings.Empty,
                 CancellationToken.None
             )
         );

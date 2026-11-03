@@ -379,7 +379,7 @@ public sealed class PilotCombatTests
                 _ => { },
                 1000001,
                 42,
-                [],
+                SignedSettings.Empty,
                 CancellationToken.None
             )
         );

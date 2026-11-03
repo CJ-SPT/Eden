@@ -25,6 +25,8 @@
 - Use the default transient lifetime for stateless handlers. Use `[Injectable(InjectionType.Scoped)]` for one instance per client connection and `[Injectable(InjectionType.Singleton)]` for shared infrastructure. Keep service resolution in the host. Pass connection data, such as the authenticated session ID, to the operation that uses it.
 - Add gameplay methods to a feature handler implementing `ISelectedPilotCallHandler`. Use `IPilotCallHandler` for account-level calls available before character selection. Give each service/method pair one owner within its phase. Return `PilotCallRouter.Unsupported` for an unhandled call and `null` for a successful Python None. The router owns bound references and selection gating. The session loop sends replies and notifications.
 - Keep pure codecs and packet builders independent of the DI container. Protocol services depend on narrow persistence interfaces implemented by the server.
+- Use named immutable models for known requests, replies, events, and intermediate data in new or changed code. Use typed collections for homogeneous values and named properties instead of positional arrays or string-keyed dictionaries in gameplay logic. Reuse existing feature models where their meaning matches.
+- Keep flexible Python values (`object`, heterogeneous arrays, and dictionaries) inside explicit wire adapters and the low-level Blue codec, or at genuinely dynamic boundaries such as appearance data. Preserve tuple/list distinctions, None, field order, native class forms, and numeric wire representations with explicit conversion; do not use reflection-based serialization or hide untyped data inside a generic result wrapper.
 
 ## Testing
 
