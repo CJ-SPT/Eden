@@ -1,4 +1,5 @@
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;

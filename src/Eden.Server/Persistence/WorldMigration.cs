@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -411,27 +412,8 @@ internal static class WorldMigration
         {
             foreach (var pilot in group)
             {
-                GrantStartingSkills(world, catalog, pilot.Id, group.Key);
+                StartingSkills.Grant(world, catalog, pilot.Id, group.Key);
             }
-        }
-    }
-
-    internal static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog, long pilotId, int raceId)
-    {
-        var levels =
-            CatalogData.Client.Races.Get(catalog, raceId).Skills
-            ?? throw new InvalidDataException($"Missing starting skills for race {raceId}.");
-        foreach (var (key, level) in levels)
-        {
-            int typeId = int.Parse(key, CultureInfo.InvariantCulture);
-            double rank = catalog.Set<TypeAttribute>().Single(a => a.ItemTypeId == typeId && a.AttributeId == 275).Value;
-            long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
-            world.Database.ExecuteSql(
-                $"""
-                INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES ({pilotId},{typeId},{points})
-                ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=MAX(Points,excluded.Points)
-                """
-            );
         }
     }
 

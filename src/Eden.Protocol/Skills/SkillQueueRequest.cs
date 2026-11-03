@@ -1,3 +1,5 @@
+using Eden.Gameplay.Skills;
+
 namespace Eden.Protocol.Skills;
 
 internal sealed record SkillQueueRequest(IReadOnlyList<TrainingTarget> Targets, bool Activate)

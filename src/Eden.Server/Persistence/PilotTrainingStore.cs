@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
@@ -123,7 +124,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         long now
     )
     {
-        if (targets.Count > 150)
+        if (targets.Count > TrainingRules.MaximumEntries)
         {
             throw new InvalidTrainingQueue("QueueTooManySkills");
         }
@@ -137,7 +138,14 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         var owned = points.Keys.ToArray();
         var attributes = catalog
             .Set<TypeAttribute>()
-            .Where(a => owned.Contains(a.ItemTypeId) && (a.AttributeId == 180 || a.AttributeId == 181 || a.AttributeId == 275))
+            .Where(a =>
+                owned.Contains(a.ItemTypeId)
+                && (
+                    a.AttributeId == (int)DogmaAttributeId.PrimaryAttribute
+                    || a.AttributeId == (int)DogmaAttributeId.SecondaryAttribute
+                    || a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant
+                )
+            )
             .AsEnumerable()
             .GroupBy(a => a.ItemTypeId)
             .ToDictionary(g => g.Key, g => g.ToDictionary(a => a.AttributeId, a => a.Value));
@@ -151,59 +159,28 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             .Where(r => types.Contains(r.Key))
             .AsEnumerable()
             .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
-        long start = now;
-        long total = points.Values.Sum();
         var pilotAttributes = PilotProfile.TrainingAttributes();
-        foreach (var target in targets)
-        {
-            if (!points.TryGetValue(target.TypeId, out long before))
+        var inputs = points.ToDictionary(
+            p => p.Key,
+            p =>
             {
-                throw new InvalidTrainingQueue("QueueSkillNotUploaded");
+                var dogma = attributes.GetValueOrDefault(p.Key, []);
+                var required = prerequisites.GetValueOrDefault(p.Key);
+                return new TrainingSkill(
+                    p.Value,
+                    dogma.GetValueOrDefault((int)DogmaAttributeId.SkillTimeConstant, 1),
+                    pilotAttributes.GetValueOrDefault((DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.PrimaryAttribute)),
+                    pilotAttributes.GetValueOrDefault((DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.SecondaryAttribute)),
+                    checked((int)alpha.GetValueOrDefault(p.Key)),
+                    required is null
+                        ? []
+                        : required
+                            .Select(r => new TrainingTarget(int.Parse(r.Key, CultureInfo.InvariantCulture), checked((int)r.Value)))
+                            .ToArray()
+                );
             }
-            if (start - now > TimeSpan.FromDays(3650).Ticks)
-            {
-                throw new InvalidTrainingQueue("QueueTooLong");
-            }
-            var dogma = attributes[target.TypeId];
-            double rank = dogma[275];
-            if (target.Level is < 1 or > 5 || target.Level != new TrainedSkill(target.TypeId, before, rank).Level + 1)
-            {
-                throw new InvalidTrainingQueue("QueueInvalidSkillLevel");
-            }
-            if (activate && target.Level > alpha.GetValueOrDefault(target.TypeId))
-            {
-                throw new InvalidTrainingQueue("SkillInQueueRequiresOmegaCloneState");
-            }
-            if (prerequisites.TryGetValue(target.TypeId, out var required))
-            {
-                foreach (var (key, level) in required)
-                {
-                    int id = int.Parse(key, CultureInfo.InvariantCulture);
-                    if (!points.TryGetValue(id, out long sp) || new TrainedSkill(id, sp, attributes[id][275]).Level < level)
-                    {
-                        throw new InvalidTrainingQueue("QueueSkillPrerequisitesNotMet");
-                    }
-                }
-            }
-            long after = TrainedSkill.PointsForLevel(rank, target.Level);
-            total += after - before;
-            if (activate && total > 5_000_000)
-            {
-                throw new InvalidTrainingQueue("SkillInQueueOverAlphaSpTrainingSize");
-            }
-            // Local accounts are Alpha. Training earns half the Omega rate.
-            double primary = Convert.ToDouble(pilotAttributes[(DogmaAttributeId)dogma[180]], CultureInfo.InvariantCulture);
-            double secondary = Convert.ToDouble(pilotAttributes[(DogmaAttributeId)dogma[181]], CultureInfo.InvariantCulture);
-            long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / ((primary + secondary / 2) / 2));
-            var entry =
-                result.Count == 0 && running is not null
-                    ? running
-                    : new TrainingEntry(target, before, after, activate ? start : null, activate ? start + duration : null);
-            start = entry.EndTime ?? start + duration;
-            points[target.TypeId] = after;
-            result.Add(entry);
-        }
-        return result;
+        );
+        return TrainingRules.Plan(targets, new(inputs), activate, running, now);
     }
 
     private static void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>

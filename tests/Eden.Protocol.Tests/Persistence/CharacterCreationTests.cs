@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Persistence;
@@ -51,7 +52,7 @@ public sealed class CharacterCreationTests
         var creation = db.Services.GetRequiredService<ICharacterCreation>();
         NewCharacter character = new("Amsen Pilot", 1, 1, 1, 64, [1], [2], 18);
         creation.Create(1000001, character);
-        Assert.Equal(-101, creation.ValidateName("amsen pilot"));
+        Assert.Equal(CharacterNameResult.Taken, creation.ValidateName("amsen pilot"));
         Assert.Throws<InvalidDataException>(() => creation.Create(1000002, character with { Name = "AMSEN PILOT" }));
         Assert.Throws<InvalidDataException>(() => creation.Create(1000001, character));
         Assert.Throws<InvalidDataException>(() => creation.Create(1000001, character with { Name = "Unknown School", SchoolId = 99 }));

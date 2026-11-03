@@ -1,4 +1,6 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
@@ -73,7 +75,7 @@ internal sealed class CharacterSelectionHandler(
         {
             ("charUnboundMgr", "GetCharacterSelectionData") => CharacterSelection(context),
             ("charUnboundMgr", "ValidateNameEx") when arguments is object?[] { Length: > 0 } name && name[0] is byte[] or string =>
-                creation.ValidateName(BlueMarshal.Text(name[0])),
+                CharacterNameWire.Code(creation.ValidateName(BlueMarshal.Text(name[0]))),
             ("charUnboundMgr", "GetCohortsForUser") => BlueEmpty.List,
             ("charUnboundMgr", "GetValidRandomName") => $"Eden {Guid.NewGuid().ToString("N")[..8]}",
             ("charUnboundMgr", "GetCharOmegaDowngradeStatus") => BlueEmpty.Dictionary,

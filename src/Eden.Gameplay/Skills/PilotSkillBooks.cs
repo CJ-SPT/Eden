@@ -1,7 +1,6 @@
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Docking;
 
-namespace Eden.Protocol.Skills;
+namespace Eden.Gameplay.Skills;
 
 public sealed record SkillInjection(IReadOnlyList<int> TypeIds, IReadOnlyList<InventoryChange> Changes);
 

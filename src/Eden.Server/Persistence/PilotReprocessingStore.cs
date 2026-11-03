@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Reprocessing;
@@ -79,8 +80,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
 
     private static double SkillMultiplier(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
     {
-        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
-        int level = new TrainedSkill(skill, points, Attribute(catalog, skill, DogmaAttributeId.SkillTimeConstant, 1)).Level;
+        int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
         return 1 + level * Attribute(catalog, skill, DogmaAttributeId.RefiningYieldMutator) / 100;
     }
 

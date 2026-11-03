@@ -1,4 +1,4 @@
-namespace Eden.Protocol.Skills;
+namespace Eden.Gameplay.Skills;
 
 public interface IPilotSkillReader
 {

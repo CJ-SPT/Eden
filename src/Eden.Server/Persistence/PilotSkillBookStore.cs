@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;

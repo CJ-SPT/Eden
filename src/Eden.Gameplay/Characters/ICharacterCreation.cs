@@ -1,4 +1,4 @@
-namespace Eden.Protocol.Characters;
+namespace Eden.Gameplay.Characters;
 
 public sealed record NewCharacter(
     string Name,
@@ -14,7 +14,7 @@ public sealed record NewCharacter(
 public interface ICharacterCreation
 {
     const int Slots = 3;
-    int ValidateName(string name);
+    CharacterNameResult ValidateName(string name);
     long Create(long accountId, NewCharacter character);
     byte[]? ReadAppearance(long characterId, bool portrait);
 }

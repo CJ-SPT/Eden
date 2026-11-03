@@ -1,5 +1,6 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
@@ -43,7 +44,7 @@ internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillRead
         // Dogma attribute 275 is the skill's training time multiplier.
         var ranks = catalog
             .Set<TypeAttribute>()
-            .Where(a => a.AttributeId == 275 && types.Contains(a.ItemTypeId))
+            .Where(a => a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant && types.Contains(a.ItemTypeId))
             .ToDictionary(a => a.ItemTypeId, a => a.Value);
         return points.Select(p => new TrainedSkill(p.Key, p.Value, ranks[p.Key])).ToArray();
     }

@@ -4,6 +4,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
@@ -240,11 +241,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     }
 
     private static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId) =>
-        new TrainedSkill(
-            typeId,
-            world.Set<PilotSkill>().Find(pilotId, typeId)?.Points ?? 0,
-            Attributes(catalog, typeId).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1)
-        ).Level;
+        PilotSkillReader.Level(world, catalog, pilotId, typeId);
 
     private static IndustryCharacterBonus[] Bonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {

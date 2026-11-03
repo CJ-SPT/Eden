@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -146,12 +147,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
         return attributes;
     }
 
-    private static int SkillLevel(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
-    {
-        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
-        double rank = Attributes(catalog, skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
-        return new TrainedSkill(skill, points, rank).Level;
-    }
+    private static int SkillLevel(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill) =>
+        PilotSkillReader.Level(world, catalog, pilotId, skill);
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {

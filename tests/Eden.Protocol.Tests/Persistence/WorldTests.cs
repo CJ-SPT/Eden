@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;

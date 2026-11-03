@@ -1,4 +1,4 @@
-namespace Eden.Protocol.Skills;
+namespace Eden.Gameplay.Skills;
 
 public readonly record struct TrainingTarget(int TypeId, int Level);
 

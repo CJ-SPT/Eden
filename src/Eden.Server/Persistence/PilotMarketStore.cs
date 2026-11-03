@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
@@ -256,9 +257,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
     private static decimal TaxRate(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {
         int skill = (int)MarketSkill.Accounting;
-        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
-        double rank = catalog.Set<TypeAttribute>().Find(skill, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 1;
-        int level = new TrainedSkill(skill, points, rank).Level;
+        int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
         return MarketDefinitions.SalesTaxRate * (1 - MarketDefinitions.AccountingReductionPerLevel * level);
     }
 

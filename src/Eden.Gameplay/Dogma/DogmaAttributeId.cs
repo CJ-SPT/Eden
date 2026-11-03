@@ -3,6 +3,8 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    PrimaryAttribute = 180,
+    SecondaryAttribute = 181,
     Charisma = 164,
     Intelligence = 165,
     Memory = 166,
