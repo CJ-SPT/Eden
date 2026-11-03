@@ -31,15 +31,9 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             .ToArray();
     }
 
-    public IReadOnlyList<InventoryChange> Move(
-        long pilotId,
-        IReadOnlyList<long> itemIds,
-        long sourceId,
-        long destinationId,
-        int flagId,
-        int? quantity
-    )
+    public IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request)
     {
+        var (itemIds, sourceId, flagId, quantity) = request;
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);

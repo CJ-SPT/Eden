@@ -247,7 +247,12 @@ public sealed class MiningTests
         );
         Assert.False(mining.IsActive(module));
         Assert.Equal(10000, fixture.Remaining());
-        Assert.Equal(130, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
+        Assert.Equal(
+            130,
+            fixture
+                .Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>()
+                .Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+        );
     }
 
     [Theory]
@@ -265,7 +270,9 @@ public sealed class MiningTests
         Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
         Assert.Equal(
             130 - capacitor,
-            fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            fixture
+                .Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>()
+                .Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
             8
         );
         Assert.Equal(15000d, mining.ActiveEffect(context.Pilot, module)!.DurationMilliseconds);
@@ -290,31 +297,41 @@ public sealed class MiningTests
         object? Activate() => mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]);
         Assert.Null(Activate());
         Assert.True(mining.IsActive(module));
-        var inventoryHandler = new InventoryHandler(
+        using var dogmaScope = fixture.Db.Services.CreateScope();
+        var dogma = new ShipDogmaBuilder(
             fixture.Clock,
             fixture.Inventory,
-            fixture.Db.Services.GetRequiredService<IPilotFitting>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>(),
             fixture.Store,
-            fixture.Db.Services.GetRequiredService<IPilotFleet>(),
-            fixture.Db.Services.GetRequiredService<IPilotHealth>(),
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotCombat>(),
-            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Loot.IWrecks>(),
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>(),
-            fixture.Db.Services.GetRequiredService<IPilotAmmunition>(),
-            new Eden.Protocol.Ammunition.MagazineWire(
-                fixture.Clock,
-                fixture.Db.Services.GetRequiredService<IPilotFitting>(),
-                fixture.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotCombat>(),
-                fixture.Inventory
-            ),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(),
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>(),
+            fixture.Db.Services.GetRequiredService<IPilotAmmunition>(),
+            dogmaScope.ServiceProvider.GetRequiredService<Eden.Protocol.Ammunition.MagazineWire>(),
+            fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(),
             [mining]
+        );
+        var inventoryHandler = new InventoryHandler(
+            fixture.Inventory,
+            fixture.Db.Services.GetRequiredService<IPilotFitting>(),
+            fixture.Db.Services.GetRequiredService<IPilotFleet>(),
+            fixture.Db.Services.GetRequiredService<IPilotAmmunition>(),
+            dogmaScope.ServiceProvider.GetRequiredService<Eden.Protocol.Ammunition.MagazineWire>(),
+            dogma,
+            dogmaScope.ServiceProvider.GetRequiredService<InventoryTransfers>(),
+            dogmaScope.ServiceProvider.GetRequiredService<FittingOperations>(),
+            dogmaScope.ServiceProvider.GetRequiredService<DeferredRefitPrimes>()
         );
         var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
-        Assert.Equal(125, fixture.Store.Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), 8);
+        Assert.Equal(
+            125,
+            fixture
+                .Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>()
+                .Capacitor(context.Pilot.PilotId, fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            8
+        );
         Assert.Null(Activate());
         Assert.Equal(2, context.Notifications.Count);
         Assert.Equal(10000, fixture.Remaining());
@@ -573,11 +590,25 @@ public sealed class MiningTests
         {
             fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now);
         }
-        Assert.Equal(0, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);
+        Assert.Equal(
+            0,
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
+            8
+        );
         Assert.Throws<InvalidDataException>(() => fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now));
         _ = new SqliteWorld(fixture.Db.Path);
-        Assert.Equal(0, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);
-        Assert.InRange(fixture.Store.Capacitor(context.Pilot.PilotId, now + TimeSpan.TicksPerSecond * 65), 128, 130);
+        Assert.Equal(
+            0,
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
+            8
+        );
+        Assert.InRange(
+            fixture
+                .Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>()
+                .Capacitor(context.Pilot.PilotId, now + TimeSpan.TicksPerSecond * 65),
+            128,
+            130
+        );
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
@@ -604,7 +635,11 @@ public sealed class MiningTests
             );
         }
         _ = new SqliteWorld(fixture.Db.Path);
-        Assert.Equal(149.5, fixture.Store.Capacitor(context.Pilot.PilotId, now), 8);
+        Assert.Equal(
+            149.5,
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
+            8
+        );
         Assert.Equal(10000, fixture.Remaining());
     }
 }

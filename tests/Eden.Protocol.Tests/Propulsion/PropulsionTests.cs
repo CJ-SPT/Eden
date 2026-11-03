@@ -199,7 +199,10 @@ public sealed class PropulsionTests
         Assert.Single(results, r => r is not null);
         _ = new SqliteWorld(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Store.Activate(f.Pilot.PilotId, f.Module, f.Clock.Now));
-        Assert.Equal(116, f.Db.Services.GetRequiredService<IPilotMining>().Capacitor(f.Pilot.PilotId, f.Clock.Now));
+        Assert.Equal(
+            116,
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(f.Pilot.PilotId, f.Clock.Now)
+        );
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(f.Clock.Now + 8500 * TimeSpan.TicksPerMillisecond, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(339.25, f.Pilot.Flight.MaxSpeed);

@@ -242,7 +242,11 @@ public sealed class ShieldBoostTests
             world.SaveChanges();
         }
         Assert.Equal(18.8, f.Boost().Booster.CapacitorNeed, 8);
-        Assert.Equal(111.2, f.Db.Services.GetRequiredService<IPilotMining>().Capacitor(f.Pilot.PilotId, f.Clock.Now), 8);
+        Assert.Equal(
+            111.2,
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(f.Pilot.PilotId, f.Clock.Now),
+            8
+        );
     }
 
     [Fact]
@@ -268,7 +272,10 @@ public sealed class ShieldBoostTests
         );
         Assert.Single(results, r => r is not null);
         Assert.Equal(51, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining.Shield, 8);
-        Assert.Equal(110, f.Db.Services.GetRequiredService<IPilotMining>().Capacitor(f.Pilot.PilotId, f.Clock.Now));
+        Assert.Equal(
+            110,
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(f.Pilot.PilotId, f.Clock.Now)
+        );
     }
 
     [Fact]
@@ -394,7 +401,7 @@ public sealed class ShieldBoostTests
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
             handler,
-            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(),
+            activationScope.ServiceProvider.GetRequiredService<FittingOperations>(),
             new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
         );
         object? Activate() =>

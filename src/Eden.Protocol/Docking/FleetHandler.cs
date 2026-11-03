@@ -5,7 +5,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventories) : ISelectedPilotCallHandler
+internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, DeferredRefitPrimes refits) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -24,6 +24,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
             if (service == "dogmaIM" && args is [long previousShip, long station])
             {
                 var recovery = fleet.RecoverCorvette(context.Pilot.PilotId, previousShip, station);
+                refits.Clear();
                 context.ChangeShip(recovery.Pilot);
                 foreach (var change in recovery.Changes)
                 {
@@ -53,8 +54,9 @@ internal sealed class FleetHandler(IPilotFleet fleet, InventoryHandler inventori
             if (method == "Board" && args is [long shipId, long oldShipId])
             {
                 var pilot = fleet.Board(context.Pilot.PilotId, shipId, oldShipId);
+                refits.Clear();
                 context.ChangeShip(pilot);
-                return inventories.AllInfo(pilot).ShipState;
+                return dogma.ShipState(pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
         }

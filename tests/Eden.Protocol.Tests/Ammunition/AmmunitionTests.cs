@@ -539,6 +539,39 @@ public sealed class AmmunitionTests
         Assert.Equal(200, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId), i => i.TypeId == 222).Quantity);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OverlappingDeferredPrimesWaitForAllModulesAndReadCurrentMagazine(bool changeHull)
+    {
+        using Fixture f = new();
+        f.Load(quantity: 20);
+        using var scope = f.Db.Services.CreateScope();
+        var pending = scope.ServiceProvider.GetRequiredService<DeferredRefitPrimes>();
+        var magazine = Assert.Single(f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId));
+        using var context = f.Context();
+        const long otherModule = 987654;
+        pending.Defer(f.Pilot.ShipId, [otherModule], [new(null, magazine)]);
+        pending.Defer(f.Pilot.ShipId, [f.Gun], [new(null, magazine with { Quantity = 999 })]);
+        pending.Primed(context, f.Gun);
+        Assert.Empty(context.Notifications);
+        if (changeHull)
+        {
+            // Boarding and capsule adoption discard the departed hull's pending primes.
+            pending.Clear();
+        }
+        pending.Primed(context, otherModule);
+        if (changeHull)
+        {
+            Assert.Empty(context.Notifications);
+        }
+        else
+        {
+            var prime = Assert.Single(context.Notifications.OfType<GodmaItemPrimed>()).Item;
+            Assert.Equal(20, prime.Attributes[DogmaAttributeId.Quantity]);
+        }
+    }
+
     [Fact]
     public void NativeLoadingPrimesTheTupleSublocationAndReloadStateForReconnect()
     {
@@ -566,7 +599,7 @@ public sealed class AmmunitionTests
         Assert.Equal(20d, quantityChange[5]);
         Assert.Contains(context.Notifications, n => n.Name == "OnChargeBeingLoadedToModule" && Equals(n.Arguments[2], 5000d));
         using var scope = f.Db.Services.CreateScope();
-        var inventory = scope.ServiceProvider.GetRequiredService<InventoryHandler>();
+        var inventory = scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>();
         var all = Assert.IsType<Dictionary<string, object?>>(
             Assert.IsType<BlueInstance>(WireAssertions.Materialize(inventory.AllInfo(f.Pilot))).State
         );

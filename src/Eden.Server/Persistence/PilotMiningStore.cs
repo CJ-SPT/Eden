@@ -42,15 +42,6 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         );
     }
 
-    public double Capacitor(long pilotId, long now)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        return ShipResources.Capacitor(world, pilot.ActiveShipId, PilotFittingStore.ShipAttributes(world, catalog, pilotId), now);
-    }
-
     private static (Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser) Validate(
         WorldDbContext world,
         CatalogDbContext catalog,

@@ -19,7 +19,7 @@ internal sealed class ModuleActivationHandler(
     MiningHandler mining,
     CombatHandler combat,
     ShieldBoostHandler shields,
-    InventoryHandler inventory,
+    FittingOperations inventory,
     PropulsionHandler propulsion
 ) : ISelectedPilotCallHandler
 {

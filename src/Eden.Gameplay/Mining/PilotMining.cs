@@ -22,7 +22,6 @@ public sealed record MiningYield(InventoryChange? Cargo, int TypeId, int Extract
 public interface IPilotMining
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
-    double Capacitor(long pilotId, long now);
     MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now);
     MiningYield Collect(long pilotId, long moduleId, long asteroidId, double volume, double criticalBonusYield);
 }

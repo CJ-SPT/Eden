@@ -27,14 +27,7 @@ public sealed class CargoCapacityException(double available, double required) : 
 public interface IPilotInventory
 {
     IReadOnlyList<InventoryItem> List(long pilotId, long locationId);
-    IReadOnlyList<InventoryChange> Move(
-        long pilotId,
-        IReadOnlyList<long> itemIds,
-        long sourceId,
-        long destinationId,
-        int flagId,
-        int? quantity
-    );
+    IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request);
 }
 
 public interface IPilotFitting
@@ -43,4 +36,17 @@ public interface IPilotFitting
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
     IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId);
     InventoryChange SetOnline(long pilotId, long shipId, long itemId, bool online);
+}
+
+public static class PilotInventoryMoves
+{
+    public static IReadOnlyList<InventoryChange> Move(
+        this IPilotInventory inventory,
+        long pilotId,
+        IReadOnlyList<long> items,
+        long sourceId,
+        long destinationId,
+        int flag,
+        int? quantity
+    ) => inventory.Move(pilotId, destinationId, new(items, sourceId, flag, quantity));
 }
