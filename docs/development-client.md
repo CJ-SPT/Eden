@@ -90,7 +90,9 @@ While docked, select **Eden Pilot**, open **Inventory**, and verify **Ibis (Ibis
 3. Choose **Unfit**. The slot clears and the assembled miner appears in Item Hangar. Drag it back onto the empty slot.
 4. Restart the host and client. Open Fitting and check that the same module and its online state return.
 
-World version 14 adds assembled and online state to owned items without repeating the starter grant. Mining lasers can be fitted or unfitted while docked; other module families, saved fitting templates and in-space online changes remain separate work. Civilian Miner activation on corvettes is described below.
+World version 14 adds assembled and online state to owned items without repeating the starter grant. Supported modules can be fitted, unfitted or rearranged while docked; saved fitting templates and in-space online changes remain separate work. Civilian Miner activation on corvettes is described below.
+
+To rearrange a fitting, drag the fitted module onto an empty compatible slot, or onto another fitted module in the same rack to exchange their slots. High-slot equipment stays in high slots and medium-slot equipment stays in medium slots. A loaded gun's icon drags its charges in this client; drag the other unloaded module onto that gun to swap them while retaining its ammunition. Loaded charges and paid cycle/reload deadlines follow the module identity, without creating ammunition or restarting a reload. Check both module tooltips after a swap and bring either module online through its menu if the client took it offline during the drag. Undock and verify that the new HUD order activates the intended module, then dock and restart to check the saved layout.
 
 ## Fly two pilots in Jita
 

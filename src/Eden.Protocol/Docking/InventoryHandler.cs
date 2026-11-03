@@ -10,10 +10,13 @@ using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
-[Injectable]
+[Injectable(InjectionType.Scoped)]
 internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler, PilotBrain brain, IPilotPropulsion propulsion, PropulsionHandler propulsionEffects) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
+    private long _refittingShip;
+    private readonly HashSet<long> _refittingModules = [];
+    private MagazineChange[] _refittingMagazines = [];
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
     private static readonly (string Name, int Type)[] s_columns =
     [
@@ -93,11 +96,28 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 ? fitting.Fit(context.Pilot.PilotId, ids, source, flag)
                 : inventory.Move(context.Pilot.PilotId, ids, source, destination, flag, quantity);
             var currentMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId).ToDictionary(m => m.ModuleId);
-            ammunitionHandler.NotifyChanges(context, previousMagazines.Where(m => !currentMagazines.ContainsKey(m.ModuleId))
-                .Select(m => new MagazineChange(m, null)).ToArray());
+            var changedMagazines = previousMagazines.Where(m => !currentMagazines.TryGetValue(m.ModuleId, out var current) || m != current).ToArray();
+            // Charge sublocations are keyed by ship/slot/type in this client.
+            // Clear every old slot before moving either module in a swap, then
+            // prime the new slots after their inventory rows have moved.
+            foreach (var magazine in changedMagazines)
+            {
+                AmmunitionHandler.NotifyQuantity(context, magazine, 0, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            }
+            var relocated = changes.Where(c => c.Previous is { } old && old.LocationId == c.Item.LocationId &&
+                old.FlagId != c.Item.FlagId && InventoryDefinitions.IsFittedSlot(old.FlagId) && InventoryDefinitions.IsFittedSlot(c.Item.FlagId))
+                .ToDictionary(c => c.Item.Id, c => c.Previous! with { FlagId = (int)InventoryFlag.Cargo });
+            // A direct fitted-to-fitted flag change updates dogmaItem.flagID,
+            // but build 3662168 retains its old ship slot/effect associations.
+            // Detach all moving modules from the client rack before refitting
+            // either one. This is cache staging, never a saved cargo transfer.
+            foreach (var change in changes.Where(c => relocated.ContainsKey(c.Item.Id)))
+            {
+                NotifyItemChange(context, new(relocated[change.Item.Id], change.Previous));
+            }
             foreach (var change in changes)
             {
-                NotifyItemChange(context, change);
+                NotifyItemChange(context, relocated.TryGetValue(change.Item.Id, out var detached) ? change with { Previous = detached } : change);
             }
             if (looting) { context.Flight.RefreshWrecks(); }
             if (changes.Any(c => InventoryDefinitions.IsFittedSlot(c.Item.FlagId) || (c.Previous is not null && InventoryDefinitions.IsFittedSlot(c.Previous.FlagId))))
@@ -106,6 +126,22 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
                 // OnGodmaPrimeItem replaces its inventory row with an incompatible
                 // godma row in build 3662168, removing it from clientDogmaLocation.
                 NotifyShipAttributes(context);
+            }
+            var movedMagazines = changedMagazines.Where(m => currentMagazines.ContainsKey(m.ModuleId))
+                .Select(m => new MagazineChange(null, currentMagazines[m.ModuleId])).ToArray();
+            if (relocated.Count > 0 && movedMagazines.Length > 0)
+            {
+                // Refitting fetches ItemGetInfo asynchronously. A charge fitted
+                // before those replies can start its passive effects with no
+                // module in the new slot. Wait for the fresh module primes.
+                _refittingShip = context.Pilot.ShipId;
+                _refittingModules.Clear();
+                _refittingModules.UnionWith(relocated.Keys);
+                _refittingMagazines = movedMagazines;
+            }
+            else
+            {
+                ammunitionHandler.NotifyChanges(context, movedMagazines);
             }
             return null;
         }
@@ -304,12 +340,20 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         }
     }
 
-    private object? ItemInfo(DockedPilot pilot, long id)
+    private object? ItemInfo(PilotCallContext context, long id)
     {
+        var pilot = context.Pilot;
         if (id == pilot.ShipId) { return PrimeItem(pilot, id, "ship")[id]; }
         if (id == pilot.PilotId) { return PrimeItem(pilot, id, "pilot")[id]; }
         var module = inventory.List(pilot.PilotId, pilot.ShipId).FirstOrDefault(i => i.Id == id && InventoryDefinitions.IsFittedSlot(i.FlagId));
-        return module is null ? PilotCallRouter.Unsupported : PrimeModule(pilot, module);
+        if (module is null) { return PilotCallRouter.Unsupported; }
+        var result = PrimeModule(pilot, module);
+        if (_refittingShip == pilot.ShipId && _refittingModules.Remove(id) && _refittingModules.Count == 0)
+        {
+            ammunitionHandler.NotifyChanges(context, _refittingMagazines);
+            _refittingMagazines = [];
+        }
+        return result;
     }
 
     public object? Call(PilotCallContext context, string service, string method, object? arguments, Dictionary<string, object?>? keywords)
@@ -369,7 +413,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             ("@hangar" or "@ship", "Add" or "MultiAdd") => Move(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => Item(pilot, service[1..]),
             ("dogmaIM", "GetAllInfo") => AllInfo(pilot),
-            ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(pilot, id),
+            ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(context, id),
             ("dogmaIM", "ItemGetInfo") when args is [object?[] { Length: 3 } key] && key is [long hull, long slot, long type] && hull == pilot.ShipId =>
                 ammunition.Read(pilot.PilotId, hull).FirstOrDefault(m => m.FlagId == slot && m.TypeId == type) is { } magazine ? ammunitionHandler.Prime(magazine) : null,
             ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => SetOnline(context, ship, module, method == "SetModuleOnline"),

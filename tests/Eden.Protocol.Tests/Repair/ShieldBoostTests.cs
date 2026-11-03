@@ -18,6 +18,28 @@ namespace Eden.Protocol.Tests.Repair;
 
 public sealed class ShieldBoostTests
 {
+    [Fact]
+    public void MediumSlotSwapsRetainOnlineCostsAndDoNotActivateOrRepair()
+    {
+        using Fixture f = new();
+        f.Db.Store.SetPosition(f.Pilot.ShipId, null);
+        long other = Assert.Single(f.Market.Buy(f.Pilot.PilotId, f.Pilot.StationId,
+            [new((int)ShieldBoosterType.SmallI, 100000, 1)]).Changes).Item.Id;
+        f.Fitting.Fit(f.Pilot.PilotId, [other], f.Pilot.StationId, (int)InventoryFlag.AutoFit);
+        var before = f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId);
+        var attributes = f.Fitting.ShipAttributes(f.Pilot.PilotId);
+        var health = f.Health.Read(f.Pilot.PilotId, f.Clock.Now);
+        int destination = Assert.Single(before, i => i.Id == other).FlagId;
+        var changes = f.Fitting.Fit(f.Pilot.PilotId, [f.Module], f.Pilot.ShipId, destination);
+        Assert.Equal(2, changes.Count);
+        Assert.Equal(before.Select(i => i with { FlagId = i.Id == f.Module ? destination : (int)InventoryFlag.MediumSlot0 }),
+            f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId));
+        Assert.Equal(attributes.OrderBy(a => a.Key), f.Fitting.ShipAttributes(f.Pilot.PilotId).OrderBy(a => a.Key));
+        Assert.Equal(health, f.Health.Read(f.Pilot.PilotId, f.Clock.Now));
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Empty(saved.Set<ModuleCooldown>());
+    }
+
     private sealed class Clock : TimeProvider
     {
         private readonly DateTimeOffset _start = DateTimeOffset.UtcNow;

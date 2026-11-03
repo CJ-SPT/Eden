@@ -107,34 +107,60 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             throw new InvalidDataException("Fit equipment from your cargo or current hangar while docked.");
         }
         var items = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && itemIds.Contains(i.Id) && i.LocationId == sourceId &&
-            i.FlagId == (sourceId == ship.Id ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar)).OrderBy(i => i.Id).ToArray();
+            (sourceId == ship.Id ? i.FlagId == (int)InventoryFlag.Cargo ||
+                (i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7) :
+                i.FlagId == (int)InventoryFlag.Hangar)).OrderBy(i => i.Id).ToArray();
         if (items.Length != itemIds.Count)
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
         var before = inventory.List(pilotId, sourceId).ToDictionary(i => i.Id);
         var hull = Attributes(catalog, ship.TypeId);
-        var occupied = world.Set<OwnedItem>().Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).Select(i => i.FlagId).ToHashSet();
+        var rack = world.Set<OwnedItem>().Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7).ToArray();
+        var occupied = rack.Select(i => i.FlagId).ToHashSet();
         long nextId = PilotInventoryStore.NextId(world);
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
         {
-            // Regular weapons need ammunition and additional effects; the civilian
-            // railgun has a built-in charge and shares turret/CPU/grid accounting.
-            int group = catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;
-            bool booster = group == ShieldBoostDefinitions.Group;
-            bool medium = booster || group == PropulsionDefinitions.AfterburnerGroup;
-            if (group != InventoryDefinitions.MiningLaserGroup && !medium && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, item.TypeId)) &&
-                item.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
+            var (first, slots) = SlotsFor(item.TypeId);
+            bool moving = InventoryDefinitions.IsFittedSlot(item.FlagId);
+            int slot = flagId == (int)InventoryFlag.AutoFit ? moving ? item.FlagId :
+                Enumerable.Range(first, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
+            if (slot < first || slot >= first + slots)
             {
-                throw new InvalidDataException("This module family is not supported yet.");
+                throw new InvalidDataException("No compatible module slot is available.");
             }
-            PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
-            int first = (int)(medium ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
-            int slots = Math.Clamp(checked((int)(medium ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots) :
-                Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)))), 0, InventoryDefinitions.SlotsPerRack);
-            int slot = flagId == (int)InventoryFlag.AutoFit ? Enumerable.Range(first, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
-            if (slot < first || slot >= first + slots || !occupied.Add(slot))
+            if (moving)
+            {
+                if (!item.Singleton || item.Quantity != 1 || item.FlagId < first || item.FlagId >= first + slots)
+                {
+                    throw new InvalidDataException("The fitted module is unavailable.");
+                }
+                if (item.FlagId == slot) { continue; }
+                var other = rack.SingleOrDefault(i => i.FlagId == slot);
+                if (other is not null)
+                {
+                    var (otherFirst, otherSlots) = SlotsFor(other.TypeId);
+                    if (other.OwnerId != pilotId || !other.Singleton || other.Quantity != 1 ||
+                        item.FlagId < otherFirst || item.FlagId >= otherFirst + otherSlots)
+                    {
+                        throw new InvalidDataException("The modules cannot exchange slots.");
+                    }
+                    other.FlagId = item.FlagId;
+                    changed.Add((other, before[other.Id]));
+                }
+                else
+                {
+                    occupied.Remove(item.FlagId);
+                    occupied.Add(slot);
+                }
+                // Charges and paid cooldowns belong to the module identity.
+                // Changing its slot must not unload it or change online costs.
+                item.FlagId = slot;
+                changed.Add((item, before[item.Id]));
+                continue;
+            }
+            if (!occupied.Add(slot))
             {
                 throw new InvalidDataException("No compatible module slot is available.");
             }
@@ -166,6 +192,22 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             }, c.Previous)).ToArray();
         transaction.Commit();
         return result;
+
+        (int First, int Count) SlotsFor(int typeId)
+        {
+            int group = catalog.Set<ItemType>().Single(t => t.Id == typeId).GroupId;
+            bool medium = group is ShieldBoostDefinitions.Group or PropulsionDefinitions.AfterburnerGroup;
+            if (group != InventoryDefinitions.MiningLaserGroup && !medium && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, typeId)) &&
+                typeId != (int)CombatWeaponType.CivilianGatlingRailgun)
+            {
+                throw new InvalidDataException("This module family is not supported yet.");
+            }
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
+            int first = (int)(medium ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
+            int slots = Math.Clamp(checked((int)(medium ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots) :
+                Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)))), 0, InventoryDefinitions.SlotsPerRack);
+            return (first, slots);
+        }
     }
 
     public InventoryChange SetOnline(long pilotId, long shipId, long itemId, bool online)

@@ -154,6 +154,105 @@ public sealed class AmmunitionTests
         Assert.Throws<InvalidDataException>(() => f.Fire());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RearrangingLoadedGunsPreservesRoundsAndDeadlinesAndMovesNativeSublocations(bool swap)
+    {
+        using Fixture f = new();
+        f.Load((int)HybridChargeType.IronSmall, 10);
+        long? other = null;
+        if (swap)
+        {
+            other = Assert.Single(f.Market.Buy(f.Pilot.PilotId, f.Pilot.StationId,
+                [new((int)CombatWeaponType.GatlingRailgun75mm, 100000, 1)]).Changes).Item.Id;
+            f.Fitting.Fit(f.Pilot.PilotId, [other.Value], f.Pilot.StationId, (int)InventoryFlag.HighSlot1);
+            long rounds = f.Buy((int)HybridChargeType.IronSmall, 7);
+            f.Ammo.Load(f.Pilot.PilotId, f.Pilot.ShipId, [other.Value], [rounds], f.Pilot.StationId, f.Clock.Now);
+        }
+        var before = f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId);
+        var magazines = f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId);
+        var attributes = f.Fitting.ShipAttributes(f.Pilot.PilotId);
+        long balance = f.Market.Balance(f.Pilot.PilotId);
+        using var context = f.Context();
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Null(router.Call(context, "@ship", "Add", new object?[] { f.Gun, f.Pilot.ShipId }, _ => { },
+            new() { ["qty"] = 1L, ["flag"] = (long)InventoryFlag.HighSlot1 }));
+        Assert.DoesNotContain(context.Notifications, n => n.Name == "OnGodmaPrimeItem");
+        Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "ItemGetInfo", new object?[] { f.Gun }, _ => { }));
+        if (other.HasValue)
+        {
+            Assert.DoesNotContain(context.Notifications, n => n.Name == "OnGodmaPrimeItem");
+            Assert.IsType<BlueInstance>(router.Call(context, "dogmaIM", "ItemGetInfo", new object?[] { other.Value }, _ => { }));
+        }
+        var after = f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId);
+        Assert.Equal(before.Select(i => i with { FlagId = i.Id == f.Gun ? (int)InventoryFlag.HighSlot1 : (int)InventoryFlag.HighSlot0 }), after);
+        Assert.Equal(attributes.OrderBy(a => a.Key), f.Fitting.ShipAttributes(f.Pilot.PilotId).OrderBy(a => a.Key));
+        Assert.Equal(balance, f.Market.Balance(f.Pilot.PilotId));
+        Assert.Equal(swap ? 17 : 10, f.Total((int)HybridChargeType.IronSmall));
+        var expected = magazines.Select(m => m with
+        {
+            FlagId = m.ModuleId == f.Gun ? (int)InventoryFlag.HighSlot1 : (int)InventoryFlag.HighSlot0
+        }).OrderBy(m => m.FlagId).ToArray();
+        Assert.Equal(expected, f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId));
+        var quantities = context.Notifications.SelectMany((n, index) => n.Name == "OnModuleAttributeChanges" ?
+            ((List<object?>)n.Arguments[0]!).Cast<object?[]>().Where(a => a[2] is object?[]).Select(a => (Index: index, Change: a)) : []).ToArray();
+        int firstItem = context.Notifications.FindIndex(n => n.Name == "OnItemChange");
+        int lastItem = context.Notifications.FindLastIndex(n => n.Name == "OnItemChange");
+        var itemRows = context.Notifications.Where(n => n.Name == "OnItemChange")
+            .Select(n => (Row: (object?[])((BlueConstructor)n.Arguments[0]!).Arguments[1]!, Old: (Dictionary<long, object?>)n.Arguments[1]!)).ToArray();
+        int movedCount = swap ? 2 : 1;
+        Assert.Equal(movedCount * 2, itemRows.Length);
+        Assert.All(itemRows.Take(movedCount), i => Assert.Equal((int)InventoryFlag.Cargo, i.Row[(int)InventoryColumn.Flag]));
+        Assert.All(itemRows.Skip(movedCount), i => Assert.Equal((int)InventoryFlag.Cargo, i.Old[(long)InventoryColumn.Flag]));
+        var removed = quantities.Where(q => Equals(q.Change[5], 0d)).ToArray();
+        Assert.Equal(magazines.Count, removed.Length);
+        Assert.All(removed, q => Assert.True(q.Index < firstItem));
+        Assert.All(magazines, m => Assert.Contains(removed, q => ((object?[])q.Change[2]!).SequenceEqual(AmmunitionHandler.Key(m))));
+        var primes = context.Notifications.Select((n, index) => (Notification: n, Index: index)).Where(n => n.Notification.Name == "OnGodmaPrimeItem").ToArray();
+        Assert.Equal(expected.Length, primes.Length);
+        Assert.All(primes, n => Assert.True(n.Index > lastItem));
+        Assert.All(expected, m => Assert.Contains(quantities, q => q.Index > lastItem &&
+            ((object?[])q.Change[2]!).SequenceEqual(AmmunitionHandler.Key(m)) && Equals(q.Change[5], (double)m.Quantity)));
+        Assert.DoesNotContain(context.Notifications, n => n.Name == "OnChargeBeingLoadedToModule");
+        Assert.All(context.Notifications, n => Assert.NotEmpty(BlueMarshal.Encode(n.Arguments)));
+        Assert.Empty(f.Fitting.Fit(f.Pilot.PilotId, [f.Gun], f.Pilot.ShipId, (int)InventoryFlag.HighSlot1));
+        Assert.Empty(f.Fitting.Fit(f.Pilot.PilotId, [f.Gun], f.Pilot.ShipId, (int)InventoryFlag.AutoFit));
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.Equal(after, f.Inventory.List(f.Pilot.PilotId, f.Pilot.ShipId));
+        Assert.Equal(expected, f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId));
+        f.Space();
+        Assert.Throws<InvalidDataException>(() => f.Fire());
+        f.Clock.Milliseconds = 5000;
+        Assert.Equal(9, f.Fire().Magazine!.Quantity);
+        Assert.Equal(swap ? 16 : 9, f.Total((int)HybridChargeType.IronSmall));
+    }
+
+    [Theory]
+    [InlineData("space")]
+    [InlineData("foreign")]
+    [InlineData("wrong rack")]
+    [InlineData("outside rack")]
+    [InlineData("malformed")]
+    public void RejectedSlotMovesRetainEveryItemAndPaidReload(string reason)
+    {
+        using Fixture f = new();
+        f.Load((int)HybridChargeType.IronSmall, 10);
+        if (reason == "space") { f.Space(); }
+        using WorldDbContext world = new(f.Db.Path);
+        if (reason == "foreign") { world.Set<OwnedItem>().Find(f.Gun)!.OwnerId = 90000002; }
+        if (reason == "malformed") { world.Set<OwnedItem>().Find(f.Gun)!.Singleton = false; }
+        world.SaveChanges();
+        string items = JsonSerializer.Serialize(world.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id));
+        string cooldowns = JsonSerializer.Serialize(world.Set<ModuleCooldown>().AsNoTracking().OrderBy(c => c.ModuleId));
+        int destination = reason == "wrong rack" ? (int)InventoryFlag.MediumSlot0 :
+            reason == "outside rack" ? (int)InventoryFlag.HighSlot7 : (int)InventoryFlag.HighSlot1;
+        Assert.Throws<InvalidDataException>(() => f.Fitting.Fit(f.Pilot.PilotId, [f.Gun], f.Pilot.ShipId, destination));
+        Assert.Equal(items, JsonSerializer.Serialize(world.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id)));
+        Assert.Equal(cooldowns, JsonSerializer.Serialize(world.Set<ModuleCooldown>().AsNoTracking().OrderBy(c => c.ModuleId)));
+    }
+
     [Fact]
     public void ChangingAmmoReturnsOldRoundsAndUsesCatalogRangeAndCapacitorModifiers()
     {
