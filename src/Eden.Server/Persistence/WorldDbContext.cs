@@ -123,6 +123,11 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<IndustryJob>().ToTable("WorldIndustryJob", t => t.HasCheckConstraint("CK_IndustryJob_Values",
+            "Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime"));
+        model.Entity<IndustryJob>().HasOne<Pilot>().WithMany().HasForeignKey(j => j.PilotId);
+        model.Entity<IndustryJob>().HasIndex(j => new { j.PilotId, j.Status });
+        model.Entity<IndustryJob>().HasIndex(j => j.BlueprintId);
         model.Entity<WorldWreck>().ToTable("WorldWreck", t => t.HasCheckConstraint("CK_Wreck_Source",
             "(NpcId IS NOT NULL AND ShipId IS NULL) OR (NpcId IS NULL AND ShipId IS NOT NULL)")).HasKey(w => w.Id);
         model.Entity<WorldWreck>().Property(w => w.Id).ValueGeneratedNever();

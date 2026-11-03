@@ -226,7 +226,7 @@ public sealed class AmmunitionTests
         }
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(ModuleCooldownKind.Cycle, saved.Set<ModuleCooldown>().Single().Kind);
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, saved.Set<OwnedItem>().Count());

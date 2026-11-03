@@ -156,6 +156,17 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             }
         }
         context.Notifications.Add(("OnItemChange", [Item(item), old, null]));
+        if (item.CategoryId == (int)InventoryCategory.Blueprint) { NotifyBlueprintsUpdated(context, item.OwnerId); }
+    }
+
+    internal static void NotifyBlueprintsUpdated(PilotCallContext context, long ownerId)
+    {
+        // BlueprintSvc memoizes both the owner's list and facility summaries
+        // independently of invCache, including an empty list before a purchase.
+        if (!context.Notifications.Any(n => n.Name == "OnBlueprintsUpdated" && Equals(n.Arguments[0], ownerId)))
+        {
+            context.Notifications.Add(("OnBlueprintsUpdated", [ownerId]));
+        }
     }
 
     private BlueConstructor Item(DockedPilot pilot, string kind)

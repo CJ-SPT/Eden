@@ -201,6 +201,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         {
             var item = world.Set<OwnedItem>().Find(request.ItemId);
             if (item is null || item.OwnerId != pilotId || item.TypeId != request.TypeId || item.Singleton || request.Quantity > item.Quantity ||
+                PilotIndustryStore.IsInstalled(world, item.Id) ||
                 !((item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar) ||
                   (item.LocationId == pilot.ActiveShipId && (item.FlagId == (int)InventoryFlag.Cargo || item.FlagId == (int)InventoryFlag.GeneralMiningHold))))
             {

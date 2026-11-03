@@ -95,10 +95,12 @@ public sealed class BlueMarshalTests
         Assert.Throws<InvalidDataException>(() => BlueMarshal.Decode(Convert.FromHexString(hex)));
     }
 
-    [Fact]
-    public void NewStyleBrainObjectsCarryStateWithoutExecutingIncomingGlobals()
+    [Theory]
+    [InlineData(BlueNewObject.BrainEffectClass)]
+    [InlineData(BlueNewObject.IndustryLocationClass)]
+    public void NewStyleDataObjectsCarryStateWithoutExecutingIncomingGlobals(string className)
     {
-        BlueNewObject value = new(BlueNewObject.BrainEffectClass, new Dictionary<string, object?> { ["value"] = 5d });
+        BlueNewObject value = new(className, new Dictionary<string, object?> { ["value"] = 5d });
         byte[] encoded = BlueMarshal.Encode(value);
         Assert.Equal(35, encoded[5]);
         var decoded = Assert.IsType<BlueNewObject>(BlueMarshal.Decode(encoded));

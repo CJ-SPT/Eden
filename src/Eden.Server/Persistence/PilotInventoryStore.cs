@@ -43,6 +43,10 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");
         }
+        if (items.Any(i => PilotIndustryStore.IsInstalled(world, i.Id)))
+        {
+            throw new InvalidDataException("Deliver or cancel the manufacturing job before moving its blueprint.");
+        }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
         var magazines = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && unfittedIds.Contains(i.LocationId)).OrderBy(i => i.Id).ToArray();
         if (destinationId == ship.Id)

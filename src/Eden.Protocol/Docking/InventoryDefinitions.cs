@@ -6,6 +6,7 @@ public enum InventoryCategory
     Ship = 6,
     Module = 7,
     Charge = 8,
+    Blueprint = 9,
     Skill = 16,
     Asteroid = 25,
 }
@@ -77,6 +78,12 @@ public enum DogmaAttributeId
     MiningRoleYieldMultiplier = 207,
     EntityTurretType = 245,
     EntityAttackRange = 247,
+    ManufactureSlotLimit = 196,
+    ManufactureTimeMultiplier = 219,
+    ManufacturingTimeBonus = 440,
+    ManufacturingSlotBonus = 450,
+    AdvancedIndustryTimeBonus = 1961,
+    ManufactureTimePerLevel = 1982,
     EntityFlyRange = 416,
     ShieldCapacity = 263,
     ShieldCharge = 264,
@@ -157,6 +164,8 @@ public enum StationService
     Reprocessing = 5,
     Market = 7,
     Repair = 13,
+    Manufacturing = 14,
+    Laboratory = 15,
     Fitting = 17,
 }
 

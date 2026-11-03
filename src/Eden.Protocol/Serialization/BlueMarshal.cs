@@ -11,6 +11,7 @@ internal sealed record BlueGlobal(string Name);
 internal sealed record BlueNewObject(string Name, object? State)
 {
     internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
+    internal const string IndustryLocationClass = "industry.job.Location";
 }
 internal sealed record PaperDollRow(string Name, object?[] Fields);
 internal sealed record BlueStream(byte[] Bytes);
@@ -176,7 +177,7 @@ internal static class BlueMarshal
         object ReadNewObject(int depth)
         {
             // Carbon NEWOBJ (35) stores ((class,), state) and empty iterators.
-            // Retain only the known brain value as inert data; never allocate a
+            // Retain only known brain/location values as inert data; never allocate a
             // Python class or invoke a client-provided __new__ implementation.
             if (Read(depth + 1) is not object?[] { Length: 1 or 2 } parts ||
                 parts[0] is not object?[] { Length: >= 1 } args || args[0] is not BlueGlobal name ||
@@ -184,7 +185,8 @@ internal static class BlueMarshal
             {
                 throw new InvalidDataException("Unsupported Blue new-style object.");
             }
-            if (parts.Length == 2 && args.Length == 1 && name.Name == BlueNewObject.BrainEffectClass && parts[1] is Dictionary<string, object?> state)
+            if (parts.Length == 2 && args.Length == 1 && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass &&
+                parts[1] is Dictionary<string, object?> state)
             {
                 return new BlueNewObject(name.Name, state);
             }

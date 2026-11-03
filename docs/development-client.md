@@ -14,7 +14,7 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 25 migrates to version 26 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup creates `%LOCALAPPDATA%\Eden\world.sqlite` with Eden Pilot and Eden Wing. An existing save at versions 1 through 26 migrates to version 27 in a transaction. To back up progress, stop the host and copy the save. To start fresh, move the stopped host's save to a backup location and start the host again. To restore progress, restore the backed-up save while the host is stopped.
 
 To recheck an installed catalog independently, run the following command.
 
@@ -296,6 +296,17 @@ The server recomputes damage at payment time and caps the charge at the current 
 4. Carry reserve charges in cargo, undock and lock a Rookie. Activate the new gun. Check its ammo icon/count, cycle ring, capacitor, native turret effect, damage messages and the target's health. Every paid shot consumes the catalog's charge rate, including misses. A gun with no loaded ammunition cannot deal damage.
 5. Stop the gun and wait for the paid cycle to finish. Use **Unload to Cargo**, reload, or select a different charge. Compare Antimatter's damage/shorter optimal range with Iron's lower damage/longer optimal range and lower capacitor cost. Compare the docked gun tooltip with its in-space HUD tooltip and Fitting offense panel: trained gunnery bonuses should agree. Cargo limits still apply when unloading. Unfitting while docked returns remaining loaded rounds into the same destination as the module.
 6. Restart the host/client on the same save and compare magazine count, reserve stacks, reload deadline and wallet. Reconnecting grants no rounds and cannot finish a reload early. Loaded rounds are included separately in the original hull-loss manifest and its normal survival roll. Weapon banks, other turret families and Tech II charge groups remain unsupported.
+
+## Manufacture ammunition from mined minerals
+
+1. Select **Eden Pilot**, dock at a station with manufacturing and verify the active ship in Inventory. Buy an **Iron Charge S Blueprint** original for **1,000 ISK** from the starter market. This price and finite stock are Eden policy. Keep the original in the current station's **Item Hangar**. Industry I is required; use the pilot's actual trained skills.
+2. Mine Scordite in a Perimeter belt, unload it into Item Hangar and use **Reprocess** to convert complete batches into Tritanium and Pyerite. One Iron run needs **27 Tritanium and 21 Pyerite**. Mining and reprocessing retain their normal catalog cycle times and yields.
+3. Open the station's **Industry** factory button. In **Blueprints**, double-click the owned Iron original. Choose the current station and personal **Item Hangar** for both input and output. One run should preview **100 Iron Charge S**, using 27 Tritanium and 21 Pyerite, with a base five-minute build reduced to **4 minutes 48 seconds at Industry I**. Materials missing from the hangar should be marked unavailable.
+4. Choose **Start**. Verify the materials leave the hangar, the original becomes unavailable for another job, and **Jobs** shows the countdown. The installed original must remain reserved when a move is attempted. A ready job still occupies the original and slot until delivered or cancelled in this initial Eden policy.
+5. Restart the host and client on the same save before completion. The original, consumed materials and finish time must remain saved; restarting must not start the job again or create its output early. Industry time continues while disconnected.
+6. Once the job is ready, choose **Deliver** from **Jobs**. Exactly **100 Iron Charge S** should arrive in Item Hangar, and the original should become available again. Load the manufactured charges into the supported railgun, wait for its reload, and fire: the magazine must spend ordinary rounds through the existing ammunition system. Restart and compare job history, charges, original and wallet.
+
+Schema **27** adds saved manufacturing jobs without granting blueprints, materials, skills or ISK. Small Tech I hybrid ammunition originals and current-station personal jobs are supported. Installation fees currently show zero because adjusted industry prices are unavailable, matching the existing missing-price fallback. Cancellation releases the blueprint and slot but consumes the paid materials without output. Research, copies, invention, corporate/remote jobs and other product families remain separate work.
 
 ## Check a rejected gameplay action
 

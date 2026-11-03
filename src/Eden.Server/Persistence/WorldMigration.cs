@@ -12,7 +12,7 @@ internal static class WorldMigration
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 26)
+        if (version is < 0 or > 27)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -282,6 +282,22 @@ internal static class WorldMigration
                 """);
         }
         if (version < 26) { world.Database.ExecuteSqlRaw("PRAGMA user_version=26"); }
+        if (version is >= 6 and < 27)
+        {
+            world.Database.ExecuteSqlRaw("""
+                CREATE TABLE IF NOT EXISTS WorldIndustryJob(
+                    Id INTEGER NOT NULL CONSTRAINT PK_WorldIndustryJob PRIMARY KEY AUTOINCREMENT,
+                    PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                    BlueprintId INTEGER NOT NULL, BlueprintTypeId INTEGER NOT NULL, StationId INTEGER NOT NULL,
+                    ProductTypeId INTEGER NOT NULL, Runs INTEGER NOT NULL, OutputQuantity INTEGER NOT NULL,
+                    StartTime INTEGER NOT NULL, EndTime INTEGER NOT NULL, DurationSeconds INTEGER NOT NULL,
+                    Status INTEGER NOT NULL, CompletedAt INTEGER, MaterialsJson TEXT NOT NULL,
+                    CONSTRAINT CK_IndustryJob_Values CHECK (Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime));
+                CREATE INDEX IF NOT EXISTS IX_WorldIndustryJob_PilotId_Status ON WorldIndustryJob(PilotId,Status);
+                CREATE INDEX IF NOT EXISTS IX_WorldIndustryJob_BlueprintId ON WorldIndustryJob(BlueprintId);
+                """);
+        }
+        if (version < 27) { world.Database.ExecuteSqlRaw("PRAGMA user_version=27"); }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog.Set<ItemType>().Where(t => skillTypes.Contains(t.Id) && t.Group.CategoryId == 16 &&
             t.Attributes.Any(a => a.AttributeId == 275 && a.Value > 0)).Count();

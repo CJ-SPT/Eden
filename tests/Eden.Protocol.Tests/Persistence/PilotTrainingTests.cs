@@ -74,7 +74,7 @@ public sealed class PilotTrainingTests
         var training = new PilotTrainingStore(new(db.Path), clock);
         var pilot = db.Store.FindPilot(1000001)!;
         var skills = db.Services.GetRequiredService<IPilotSkillReader>();
-        SkillHandler handler = new(skills, training, db.Services.GetRequiredService<IPilotSkillBooks>(), clock, new(skills, clock));
+        SkillHandler handler = new(skills, training, db.Services.GetRequiredService<IPilotSkillBooks>(), clock, new(skills, clock, db.Services.GetRequiredService<Eden.Protocol.Industry.IPilotIndustrySkills>()));
         using (WorldDbContext world = new(db.Path))
         {
             world.Set<PilotSkill>().Find(pilot.PilotId, 3327)!.Points = 0;

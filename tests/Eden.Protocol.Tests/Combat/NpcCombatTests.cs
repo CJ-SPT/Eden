@@ -350,7 +350,7 @@ public sealed class NpcCombatTests
         _ = new SqliteWorld(f.Db.Path);
         _ = new SqliteWorld(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(26, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(27, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
         Assert.Equal(12345, saved.Set<PilotWallet>().Single().Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);

@@ -1,15 +1,17 @@
 using Eden.Protocol.Combat;
+using Eden.Protocol.Industry;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Skills;
 
 internal enum BrainOperation
 {
+    Add = 2,
     PostPercent = 6,
 }
 
 [Injectable]
-internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock)
+internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, IPilotIndustrySkills industry)
 {
     private const string LocationRequiredSkillModifier = "LRS";
     private const string LocationGroupModifier = "LG";
@@ -33,7 +35,19 @@ internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock)
                 ["skills"] = new List<object?> { (int)m.Skill },
                 ["value"] = Percent * m.PerLevel * levels[(int)m.Skill],
             })).ToList();
-        return [clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), new List<object?>(), effects, new List<object?>()];
+        var characterEffects = industry.CharacterBonuses(pilotId).Select(b => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass,
+            new Dictionary<string, object?>
+            {
+                ["fromAttrib"] = null,
+                ["toItemID"] = pilotId,
+                ["modifierType"] = "M",
+                ["toAttribID"] = (int)b.Attribute,
+                ["operation"] = (int)(b.Additive ? BrainOperation.Add : BrainOperation.PostPercent),
+                ["extras"] = Array.Empty<object?>(),
+                ["skills"] = new List<object?> { b.SkillId },
+                ["value"] = b.Value,
+            })).ToList();
+        return [clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), characterEffects, effects, new List<object?>()];
     }
 
     public object?[] Update(long pilotId, long shipId)
