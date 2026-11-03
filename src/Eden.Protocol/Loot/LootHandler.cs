@@ -48,7 +48,10 @@ internal sealed class LootHandler(IWrecks wrecks, TimeProvider clock) : ISelecte
             var contents = wrecks.Read(context.Pilot.PilotId, id, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             if (bind)
             {
-                return context.Reference(WreckDefinitions.BindingPrefix + id.ToString(CultureInfo.InvariantCulture));
+                return context.Reference(
+                    WreckDefinitions.BindingPrefix + id.ToString(CultureInfo.InvariantCulture),
+                    PilotBindingLifetime.Location
+                );
             }
             if (method == "GetSelfInvItem" && args.Length == 0)
             {

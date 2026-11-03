@@ -49,7 +49,8 @@ public sealed class ServerServicesTests
         using TcpClient client = new();
         await client.ConnectAsync((IPEndPoint)listener.LocalEndpoint, timeout.Token);
         using TcpClient accepted = await listener.AcceptTcpClientAsync(timeout.Token);
-        Task serving = scope.ServiceProvider.GetRequiredService<ClientConnection>().ServeAsync(accepted, timeout.Token);
+        using ConnectionAdmission admission = new(world.Services.GetRequiredService<PilotGate>());
+        Task serving = scope.ServiceProvider.GetRequiredService<ClientConnection>().ServeAsync(accepted, admission, timeout.Token);
         var wire = client.GetStream();
         await PacketStream.ReadAsync(wire, timeout.Token);
         await PacketStream.WriteAsync(

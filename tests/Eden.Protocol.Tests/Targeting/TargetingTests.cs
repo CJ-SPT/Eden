@@ -105,6 +105,27 @@ public sealed class TargetingTests
     }
 
     [Fact]
+    public void DeclinedCallsCannotCheckpointOrCompleteALock()
+    {
+        using Fixture fixture = new();
+        var (context, handler) = fixture.Client(1000001);
+        Assert.IsType<PilotCallResult.Success>(handler.Call(context, "dogmaIM", "AddTarget", [70000001L]));
+        context.Flight.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
+        var position = context.Pilot.Position;
+        context.Notifications.Clear();
+        context.Flight.Updates.Clear();
+        fixture.Clock.Seconds += 60;
+        Assert.Same(PilotCallResult.Unsupported, handler.Call(context, "dogmaIM", "Unknown", []));
+        Assert.Same(PilotCallResult.Unsupported, handler.Call(context, "dogmaIM", "AddTarget", ["invalid"]));
+        Assert.Equal(position, context.Pilot.Position);
+        Assert.False(handler.IsLocked(70000001));
+        Assert.Empty(context.Notifications);
+        Assert.Empty(context.Flight.Updates);
+        handler.Advance(context);
+        Assert.True(handler.IsLocked(70000001));
+    }
+
+    [Fact]
     public void LockUsesScanTimeAndNotifiesBothPilotsUntilUnlocked()
     {
         using Fixture fixture = new();

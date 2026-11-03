@@ -521,17 +521,25 @@ internal sealed class InventoryHandler(
             ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") or ("charFittingMgr", "GetFittings") => BlueEmpty.IndexedDictionary,
             ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId =>
                 BlueEmpty.IndexedDictionary,
-            ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference("@hangar"),
+            ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference(
+                "@hangar",
+                PilotBindingLifetime.Location
+            ),
             ("invbroker", "GetInventoryFromId")
                 when args is [long id, ..]
                     && fleet.Find(pilot.PilotId, id) is { } ship
                     && (id == pilot.ShipId || (pilot.Position is null && ship.LocationId == pilot.StationId)) => context.Reference(
-                $"{ShipInventoryPrefix}{id}"
+                $"{ShipInventoryPrefix}{id}",
+                PilotBindingLifetime.Location
             ),
             ("invbroker", "GetInventoryFromId") when args is [long id, ..] && context.DestroyedShip?.ShipId == id => context.Reference(
-                $"{ShipInventoryPrefix}{id}"
+                $"{ShipInventoryPrefix}{id}",
+                PilotBindingLifetime.Location
             ),
-            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference("@pilot"),
+            ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference(
+                "@pilot",
+                PilotBindingLifetime.Pilot
+            ),
             ("@hangar" or "@ship", "List") => List(pilot, service, args.FirstOrDefault() as long?),
             ("@pilot", "List") => BlueEmpty.List,
             ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),

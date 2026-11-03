@@ -1,50 +1,47 @@
-using Eden.Protocol.Loot;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
 
+internal enum PilotBindingLifetime
+{
+    Account,
+    Pilot,
+    Location,
+}
+
 internal sealed class PilotBindings(long sessionId)
 {
-    private readonly Dictionary<string, string> _bindings = [];
-    private readonly Dictionary<string, BlueObjectReference> _references = [];
+    private sealed record Binding(string Service, PilotBindingLifetime Lifetime, BlueObjectReference Reference);
 
+    private readonly Dictionary<string, Binding> _bindings = [];
+    private readonly Dictionary<string, Binding> _references = [];
     private int _nextSlot = 2;
 
     public void ReleaseLocationReferences()
     {
-        foreach (
-            string service in new[]
-            {
-                "beyonce",
-                "ship",
-                "invbroker",
-                "dogmaIM",
-                "jumpCloneSvc",
-                "corpStationMgr",
-                "reprocessingSvc",
-                "repairSvc",
-            }.Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray())
-        )
+        foreach (var binding in _references.Values.Where(b => b.Lifetime == PilotBindingLifetime.Location).ToArray())
         {
-            if (_references.Remove(service, out var reference))
-            {
-                _bindings.Remove(reference.Id);
-            }
+            _references.Remove(binding.Service);
+            _bindings.Remove(binding.Reference.Id);
         }
     }
 
     public string? ResolveReference(object? objectId) =>
-        objectId is byte[] or string ? _bindings.GetValueOrDefault(BlueMarshal.Text(objectId)) : null;
+        objectId is byte[] or string ? _bindings.GetValueOrDefault(BlueMarshal.Text(objectId))?.Service : null;
 
-    public BlueObjectReference Reference(string service)
+    public BlueObjectReference Reference(string service, PilotBindingLifetime lifetime)
     {
-        if (!_references.TryGetValue(service, out var reference))
+        if (!_references.TryGetValue(service, out var binding))
         {
             int slot = _nextSlot++;
-            reference = new($"N={PilotLogin.NodeId}:{sessionId}-{slot}", slot);
-            _references.Add(service, reference);
-            _bindings.Add(reference.Id, service);
+            binding = new(service, lifetime, new($"N={PilotLogin.NodeId}:{sessionId}-{slot}", slot));
+            _references.Add(service, binding);
+            _bindings.Add(binding.Reference.Id, binding);
         }
-        return reference;
+        if (binding.Lifetime != lifetime)
+        {
+            throw new InvalidOperationException("A bound service must have one lifetime.");
+        }
+        return binding.Reference;
     }
 }

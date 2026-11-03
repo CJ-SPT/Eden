@@ -1,7 +1,10 @@
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
@@ -12,6 +15,68 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {
+    private sealed class RejectingHandler : ISelectedPilotCallHandler
+    {
+        public PilotCallResult Call(
+            PilotCallContext context,
+            string service,
+            string method,
+            object?[] args,
+            Dictionary<string, object?>? keywords = null
+        )
+        {
+            context.NotificationsBeforeFlight.Add(new AccountBalanceChanged(context.Pilot.PilotId, 1));
+            context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, 2));
+            return new PilotCallResult.Failure("Rejected after notifications were queued.");
+        }
+    }
+
+    [Fact]
+    public async Task RejectedCallFlushesBothNotificationQueuesInOrder()
+    {
+        using TestWorld world = new();
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new FlightSession(world.Store, selected, TimeProvider.System, new(), world.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        List<object?> packets = [];
+        PilotSessionOutput output = new(
+            context,
+            1000001,
+            42,
+            packet =>
+            {
+                packets.Add(packet);
+                return Task.CompletedTask;
+            },
+            _ => { }
+        );
+        PilotSessionCalls calls = new(
+            context,
+            output,
+            new PilotCallRouter([], [new RejectingHandler()]),
+            scope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>(),
+            scope.ServiceProvider.GetRequiredService<SkillHandler>(),
+            TimeProvider.System,
+            _ => { },
+            1000001,
+            42
+        );
+        await calls.ProcessAsync(Request("test", "Reject", []));
+        Assert.Equal(3, packets.Count);
+        Assert.EndsWith(".ErrorResponse", Assert.IsType<BlueInstance>(packets[0]).Name);
+        Assert.All(packets.Skip(1), packet => Assert.EndsWith(".Notification", Assert.IsType<BlueInstance>(packet).Name));
+        Assert.Empty(context.NotificationsBeforeFlight);
+        Assert.Empty(context.Notifications);
+    }
+
     [Fact]
     public async Task FailedBoundMarketCheckReturnsAnErrorAndKeepsTheSessionUsable()
     {

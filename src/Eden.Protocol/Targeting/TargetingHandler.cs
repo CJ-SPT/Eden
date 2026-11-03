@@ -149,7 +149,13 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != "dogmaIM")
+        bool handled = (method, args) switch
+        {
+            ("AddTarget" or "RemoveTarget" or "CancelAddTarget", [long]) => true,
+            ("ClearTargets" or "GetTargets" or "GetTargeters", []) => true,
+            _ => false,
+        };
+        if (service != "dogmaIM" || !handled)
         {
             return PilotCallResult.Unsupported;
         }

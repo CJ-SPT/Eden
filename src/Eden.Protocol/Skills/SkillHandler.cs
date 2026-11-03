@@ -30,7 +30,7 @@ internal sealed class SkillHandler(
         {
             return (service, method) switch
             {
-                ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills"),
+                ("skillMgr2", "GetMySkillHandler") => context.Reference("@skills", PilotBindingLifetime.Pilot),
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
                 ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,

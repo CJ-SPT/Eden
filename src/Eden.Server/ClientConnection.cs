@@ -7,9 +7,9 @@ using Eden.Protocol.Transport;
 namespace Eden.Server;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class ClientConnection(PilotLogin login, PilotGate gate)
+internal sealed class ClientConnection(PilotLogin login)
 {
-    public async Task ServeAsync(TcpClient client, CancellationToken shutdown)
+    public async Task ServeAsync(TcpClient client, ConnectionAdmission admission, CancellationToken shutdown)
     {
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown))
         {
@@ -24,32 +24,17 @@ internal sealed class ClientConnection(PilotLogin login, PilotGate gate)
                     timeout.Token,
                     async (command, token) =>
                     {
-                        long? admitted = null;
-                        try
-                        {
-                            await login.RunAsync(
-                                stream,
-                                command,
-                                Console.WriteLine,
-                                token,
-                                accountId =>
-                                {
-                                    if (!gate.TryEnter(accountId))
-                                    {
-                                        throw new InvalidDataException("This account is already connected.");
-                                    }
-                                    admitted = accountId;
-                                    timeout.CancelAfter(Timeout.InfiniteTimeSpan);
-                                }
-                            );
-                        }
-                        finally
-                        {
-                            if (admitted is long accountId)
+                        await login.RunAsync(
+                            stream,
+                            command,
+                            Console.WriteLine,
+                            token,
+                            accountId =>
                             {
-                                gate.Leave(accountId);
+                                admission.Enter(accountId);
+                                timeout.CancelAfter(Timeout.InfiniteTimeSpan);
                             }
-                        }
+                        );
                     }
                 );
             }

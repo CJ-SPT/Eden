@@ -49,6 +49,7 @@ internal sealed class PilotCallContext(
     {
         DestroyedShip = null;
         ActiveFlight?.Dispose();
+        ReleaseLocationReferences();
         ActiveFlight = startFlight(pilot);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
@@ -82,7 +83,8 @@ internal sealed class PilotCallContext(
 
     public string? ResolveReference(object? objectId) => _bindings.ResolveReference(objectId);
 
-    public BlueObjectReference Reference(string service) => _bindings.Reference(service);
+    public BlueObjectReference Reference(string service, PilotBindingLifetime lifetime = PilotBindingLifetime.Pilot) =>
+        _bindings.Reference(service, lifetime);
 }
 
 [Injectable(InjectionType.Scoped)]
@@ -221,7 +223,9 @@ internal sealed class PilotCallRouter(
                 // A failed first call is an RPC failure, not a value to embed in
                 // the successful (bound reference, result) tuple.
                 return result is PilotCallResult.Success success
-                    ? new PilotCallResult.Success(new BoundPilotReply(context.Reference(service), success.Reply))
+                    ? new PilotCallResult.Success(
+                        new BoundPilotReply(context.Reference(service, PilotBindingLifetime.Location), success.Reply)
+                    )
                     : result;
             }
         }
