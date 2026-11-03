@@ -82,7 +82,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         }
         List<long> ships = [];
         List<InventoryChange> changes = [];
-        long nextId = PilotInventoryStore.NextId(world);
+        long nextId = InventoryPersistence.NextId(world);
         foreach (long id in itemIds)
         {
             // Retrying an assembled ID must not consume a second unit from its old stack.
@@ -253,7 +253,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             {
                 throw new InvalidDataException("The catalog's corvette cannot support the recovery equipment.");
             }
-            long nextId = PilotInventoryStore.NextId(world);
+            long nextId = InventoryPersistence.NextId(world);
             recovered = world
                 .Ships.Add(
                     new()

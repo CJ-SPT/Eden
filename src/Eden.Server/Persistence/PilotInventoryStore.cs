@@ -98,11 +98,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             {
                 throw new InvalidDataException("Only mined ore can enter this ship's mining hold.");
             }
-            double used = world
-                .Set<OwnedItem>()
-                .Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == flagId)
-                .AsEnumerable()
-                .Sum(i => Read(catalog, i).Volume * i.Quantity);
+            double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, flagId);
             double added = items
                 .Where(i => i.LocationId != ship.Id || i.FlagId != flagId)
                 .Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
@@ -123,7 +119,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
             magazine.FlagId = flagId;
             changes.Add(new(Read(catalog, magazine), previous));
         }
-        long nextId = NextId(world);
+        long nextId = InventoryPersistence.NextId(world);
         foreach (var item in items)
         {
             var previous = Read(catalog, item);
@@ -197,17 +193,6 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
         return volume;
     }
 
-    internal static long NextId(WorldDbContext world)
-    {
-        // Packaged items become assembled ships without changing identity. Both
-        // AUTOINCREMENT sequences retain their high-water IDs after deletion.
-        long last = world
-            .Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name IN ('WorldItem','WorldShip')")
-            .AsEnumerable()
-            .Single();
-        return checked(Math.Max(last, InventoryDefinitions.FirstOwnedItemId) + 1);
-    }
-
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)
     {
         GrantStarterMiner(world, pilotId, stationId);
@@ -216,7 +201,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
 
     internal static void GrantStarterWeapon(WorldDbContext world, long pilotId, int stationId)
     {
-        long id = NextId(world);
+        long id = InventoryPersistence.NextId(world);
         int type = (int)CombatWeaponType.CivilianGatlingRailgun;
         world.Database.ExecuteSql(
             $"""
@@ -229,7 +214,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database) : IPilotInvent
     internal static void GrantStarterMiner(WorldDbContext world, long pilotId, int stationId)
     {
         // A local starter grant, once per pilot, using the catalog's Civilian Miner.
-        long id = NextId(world);
+        long id = InventoryPersistence.NextId(world);
         world.Database.ExecuteSql(
             $"""
             INSERT INTO WorldItem(Id,OwnerId,TypeId,LocationId,FlagId,Quantity)

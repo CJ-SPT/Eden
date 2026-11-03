@@ -120,7 +120,7 @@ public sealed class PilotFleetTests
         Assert.Equal(first, f.Pilot.ShipId);
         Assert.Equal(original.ShipId, f.Fleet.Board(original.PilotId, original.ShipId, first).ShipId);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.True(PilotInventoryStore.NextId(saved) > Math.Max(first, second));
+        Assert.True(InventoryPersistence.NextId(saved) > Math.Max(first, second));
     }
 
     [Fact]

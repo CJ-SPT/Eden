@@ -181,34 +181,16 @@ internal sealed class PilotMiningStore(WorldDatabase database) : IPilotMining
         InventoryChange? change = null;
         if (extracted + bonus > 0)
         {
-            var stack = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == pilot.ActiveShipId
-                    && i.FlagId == (int)hold
-                    && i.TypeId == asteroid.TypeId
-                    && !i.Singleton
-                )
-                .OrderBy(i => i.Id)
-                .FirstOrDefault();
-            var previous = stack is null ? null : PilotInventoryStore.Read(catalog, stack);
-            stack ??= world
-                .Set<OwnedItem>()
-                .Add(
-                    new()
-                    {
-                        Id = PilotInventoryStore.NextId(world),
-                        OwnerId = pilotId,
-                        LocationId = pilot.ActiveShipId,
-                        TypeId = asteroid.TypeId,
-                        FlagId = (int)hold,
-                    }
-                )
-                .Entity;
-            stack.Quantity = checked(stack.Quantity + extracted + bonus);
+            change = InventoryPersistence.MergeOutput(
+                world,
+                catalog,
+                pilotId,
+                pilot.ActiveShipId,
+                (int)hold,
+                asteroid.TypeId,
+                checked(extracted + bonus)
+            );
             asteroid.Quantity -= extracted;
-            change = new(PilotInventoryStore.Read(catalog, stack), previous);
         }
         world.SaveChanges();
         transaction.Commit();

@@ -229,7 +229,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                 .Ships.Add(
                     new()
                     {
-                        Id = PilotInventoryStore.NextId(world),
+                        Id = InventoryPersistence.NextId(world),
                         OwnerId = pilotId,
                         TypeId = capsuleType.Id,
                         StationId = old.StationId,

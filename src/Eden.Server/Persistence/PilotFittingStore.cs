@@ -142,7 +142,7 @@ internal sealed class PilotFittingStore(WorldDatabase database) : IPilotFitting
             .Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.MediumSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
             .ToArray();
         var occupied = rack.Select(i => i.FlagId).ToHashSet();
-        long nextId = PilotInventoryStore.NextId(world);
+        long nextId = InventoryPersistence.NextId(world);
         List<(OwnedItem Item, InventoryItem? Previous)> changed = [];
         foreach (var item in items)
         {

@@ -122,11 +122,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
     private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)InventoryFlag.Cargo);
-        double used = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilot.Id && i.LocationId == pilot.ActiveShipId && i.FlagId == (int)InventoryFlag.Cargo)
-            .AsEnumerable()
-            .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilot.Id, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
         if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {
             throw new CargoCapacityException(0, used - capacity);
@@ -186,7 +182,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         List<InventoryChange> changes = [];
         List<MagazineChange> magazines = [];
         var beforeSources = sources.ToDictionary(i => i.Id, i => PilotInventoryStore.Read(catalog, i));
-        long nextId = PilotInventoryStore.NextId(world);
+        long nextId = InventoryPersistence.NextId(world);
         double duration = 0;
         foreach (var module in modules)
         {
@@ -302,7 +298,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var modules = Modules(world, catalog, pilot, moduleIds, now, unloading: true);
         List<InventoryChange> items = [];
         List<MagazineChange> magazines = [];
-        long nextId = PilotInventoryStore.NextId(world);
+        long nextId = InventoryPersistence.NextId(world);
         foreach (var module in modules)
         {
             var loaded = Contents(world, module.Id);

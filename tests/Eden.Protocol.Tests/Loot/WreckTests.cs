@@ -130,7 +130,7 @@ public sealed class WreckTests
             world.Add(
                 new OwnedItem
                 {
-                    Id = PilotInventoryStore.NextId(world),
+                    Id = InventoryPersistence.NextId(world),
                     OwnerId = f.Pilot.PilotId,
                     TypeId = WreckDefinitions.StarterLootType,
                     LocationId = f.Pilot.ShipId,

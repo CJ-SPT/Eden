@@ -25,9 +25,9 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
             throw new InvalidDataException("Reprocessing is available only at your current station.");
         }
         var station = Source<SdeNpcStations>(catalog, "sde/npcStations", stationId);
-        var operation = station?.OperationID is long id ? Source<ClientStationoperations>(catalog, "client/stationoperations", id) : null;
         if (
-            operation?.Services?.Contains((long)StationService.Reprocessing) != true
+            station?.OperationID is not long operationId
+            || !StationCapabilities.Has(catalog, operationId, StationService.Reprocessing)
             || station?.ReprocessingEfficiency is not > 0 or > 1
             || station.ReprocessingStationsTake is not >= 0 or > 1
         )
@@ -107,40 +107,23 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
             // silently destroy equipment or ores with randomized outputs.
             return new(item.Id, item.TypeId, 0, item.Quantity, 0, stationEfficiency, []);
         }
-        int portionSize = checked((int)definition.PortionSize.Value);
-        int portions = item.Quantity / portionSize;
-        int leftOvers = item.Quantity % portionSize;
-        double efficiency = stationEfficiency;
-        foreach (
-            int skill in new[]
-            {
-                (int)ReprocessingSkill.Reprocessing,
-                (int)ReprocessingSkill.ReprocessingEfficiency,
-                checked((int)Attribute(catalog, item.TypeId, DogmaAttributeId.ReprocessingSkillType)),
-            }
-        )
+        var skills = new[]
         {
-            if (skill != 0)
-            {
-                efficiency *= SkillMultiplier(world, catalog, pilot.Id, skill);
-            }
-        }
-        efficiency = Math.Clamp(efficiency, 0, 1);
-        List<RecoveredMaterial> recoverables = [];
-        if (portions > 0)
-        {
-            foreach (var material in materials.Materials)
-            {
-                if (material.MaterialTypeID is not > 0 || material.Quantity is not > 0)
-                {
-                    throw new InvalidDataException("The catalog contains an invalid reprocessing output.");
-                }
-                long total = checked(material.Quantity.Value * portions);
-                int recovered = checked((int)Math.Floor(total * efficiency));
-                recoverables.Add(new(checked((int)material.MaterialTypeID.Value), recovered, total - recovered));
-            }
-        }
-        return new(item.Id, item.TypeId, item.Quantity - leftOvers, leftOvers, portions, efficiency, recoverables);
+            (int)ReprocessingSkill.Reprocessing,
+            (int)ReprocessingSkill.ReprocessingEfficiency,
+            checked((int)Attribute(catalog, item.TypeId, DogmaAttributeId.ReprocessingSkillType)),
+        };
+        return ReprocessingRules.Quote(
+            new(
+                item.Id,
+                item.TypeId,
+                item.Quantity,
+                checked((int)definition.PortionSize.Value),
+                stationEfficiency,
+                skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
+                materials.Materials.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0)).ToArray()
+            )
+        );
     }
 
     public ReprocessingQuotes Quote(long pilotId, int stationId, long activeShipId, IReadOnlyList<long> itemIds)
@@ -207,11 +190,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
         if (outputLocationId == ship.Id)
         {
             double capacity = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId).Capacity ?? 0;
-            double used = world
-                .Set<OwnedItem>()
-                .Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id && i.FlagId == (int)InventoryFlag.Cargo)
-                .AsEnumerable()
-                .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+            double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.Cargo);
             double removed = items
                 .Zip(quotes)
                 .Where(pair => pair.First.LocationId == ship.Id && pair.First.FlagId == (int)InventoryFlag.Cargo)
@@ -223,7 +202,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
             }
         }
         List<InventoryChange> changes = [];
-        long nextId = PilotInventoryStore.NextId(world);
         foreach (var (item, quote) in items.Zip(quotes))
         {
             var previous = PilotInventoryStore.Read(catalog, item);
@@ -236,39 +214,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
         }
         foreach (var (typeId, quantity) in output)
         {
-            var stack = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == outputLocationId
-                    && i.FlagId == outputFlagId
-                    && i.TypeId == typeId
-                    && !i.Singleton
-                )
-                .OrderBy(i => i.Id)
-                .FirstOrDefault();
-            InventoryItem? previous = stack is null ? null : PilotInventoryStore.Read(catalog, stack);
-            if (stack is null)
-            {
-                stack = world
-                    .Add(
-                        new OwnedItem
-                        {
-                            Id = nextId++,
-                            OwnerId = pilotId,
-                            TypeId = typeId,
-                            LocationId = outputLocationId,
-                            FlagId = outputFlagId,
-                            Quantity = quantity,
-                        }
-                    )
-                    .Entity;
-            }
-            else
-            {
-                stack.Quantity = checked(stack.Quantity + quantity);
-            }
-            changes.Add(new(PilotInventoryStore.Read(catalog, stack), previous));
+            changes.Add(InventoryPersistence.MergeOutput(world, catalog, pilotId, outputLocationId, outputFlagId, typeId, quantity));
         }
         world.SaveChanges();
         transaction.Commit();

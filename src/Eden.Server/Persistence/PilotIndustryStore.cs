@@ -51,11 +51,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         new(station.Id, station.TypeId, station.OwnerId, station.SolarSystemId);
 
     private static bool HasService(CatalogDbContext catalog, Station station, StationService service = StationService.Manufacturing) =>
-        catalog
-            .Set<SourceRecord>()
-            .Find("client/stationoperations", station.OperationId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientStationoperations>()
-            .Services?.Contains((long)service) == true;
+        StationCapabilities.Has(catalog, station.OperationId, service);
 
     private static Station Station(CatalogDbContext catalog, int id, StationService? service = StationService.Manufacturing)
     {
@@ -446,7 +442,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 .Add(
                     new()
                     {
-                        Id = PilotInventoryStore.NextId(world),
+                        Id = InventoryPersistence.NextId(world),
                         OwnerId = pilotId,
                         TypeId = item.TypeId,
                         LocationId = item.LocationId,
@@ -512,36 +508,17 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         List<InventoryChange> changes = [];
         if (!cancel)
         {
-            var stack = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == job.StationId
-                    && i.FlagId == (int)InventoryFlag.Hangar
-                    && i.TypeId == job.ProductTypeId
-                    && !i.Singleton
+            changes.Add(
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    pilotId,
+                    job.StationId,
+                    (int)InventoryFlag.Hangar,
+                    job.ProductTypeId,
+                    job.OutputQuantity
                 )
-                .OrderBy(i => i.Id)
-                .FirstOrDefault();
-            var previous = stack is null ? null : PilotInventoryStore.Read(catalog, stack);
-            if (stack is null)
-            {
-                stack = world
-                    .Set<OwnedItem>()
-                    .Add(
-                        new()
-                        {
-                            Id = PilotInventoryStore.NextId(world),
-                            OwnerId = pilotId,
-                            LocationId = job.StationId,
-                            TypeId = job.ProductTypeId,
-                            FlagId = (int)InventoryFlag.Hangar,
-                        }
-                    )
-                    .Entity;
-            }
-            stack.Quantity = checked(stack.Quantity + job.OutputQuantity);
-            changes.Add(new(PilotInventoryStore.Read(catalog, stack), previous));
+            );
         }
         // Cancellation releases the blueprint and slot, but consumes the paid
         // materials. A completed job delivers once, even after reconnect/retry.

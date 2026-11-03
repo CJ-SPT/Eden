@@ -274,6 +274,11 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
     public IReadOnlyList<CombatReward> Rewards(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        return Rewards(world, pilotId);
+    }
+
+    internal static IReadOnlyList<CombatReward> Rewards(WorldDbContext world, long pilotId)
+    {
         return world
             .Set<NpcBounty>()
             .AsNoTracking()

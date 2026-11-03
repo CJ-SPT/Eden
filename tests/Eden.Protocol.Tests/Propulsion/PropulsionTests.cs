@@ -82,7 +82,7 @@ public sealed class PropulsionTests
                         Points = 8000,
                     }
                 );
-                Module = PilotInventoryStore.NextId(world);
+                Module = InventoryPersistence.NextId(world);
                 world.Add(
                     new OwnedItem
                     {

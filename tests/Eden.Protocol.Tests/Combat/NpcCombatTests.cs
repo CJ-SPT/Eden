@@ -189,7 +189,7 @@ public sealed class NpcCombatTests
             before.Add(
                 new OwnedItem
                 {
-                    Id = PilotInventoryStore.NextId(before),
+                    Id = InventoryPersistence.NextId(before),
                     OwnerId = Fixture.PilotId,
                     TypeId = 34,
                     LocationId = Fixture.ShipId,
@@ -294,7 +294,7 @@ public sealed class NpcCombatTests
         long mining;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            cargo = PilotInventoryStore.NextId(world);
+            cargo = InventoryPersistence.NextId(world);
             mining = cargo + 1;
             world.AddRange(
                 new OwnedItem

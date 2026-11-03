@@ -38,11 +38,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         catalog.Set<Station>().Include(s => s.SolarSystem).ThenInclude(s => s.Constellation).Single(s => s.Id == id);
 
     private static bool HasMarket(CatalogDbContext catalog, Station station) =>
-        catalog
-            .Set<SourceRecord>()
-            .Find("client/stationoperations", station.OperationId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientStationoperations>()
-            .Services?.Contains((long)StationService.Market) == true;
+        StationCapabilities.Has(catalog, station.OperationId, StationService.Market);
 
     private static Station TradeStation(CatalogDbContext catalog, Pilot pilot, int stationId)
     {
@@ -119,32 +115,9 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         _ = TradeStation(catalog, Pilot(world, pilotId), stationId);
     }
 
-    public long Balance(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0;
-    }
+    public long Balance(long pilotId) => new PilotWalletReader(database).Balance(pilotId);
 
-    public IReadOnlyList<WalletEntryDefinition> EntryTypes()
-    {
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog
-            .Set<SourceRecord>()
-            .Where(r => r.Dataset == "client/accountingentrytypes")
-            .AsEnumerable()
-            .Select(r =>
-            {
-                var type = r.Read<ClientAccountingentrytypes>();
-                return new WalletEntryDefinition(
-                    int.Parse(r.Key, CultureInfo.InvariantCulture),
-                    type.EntryTypeNameID ?? 0,
-                    type.Name ?? "",
-                    type.Description ?? ""
-                );
-            })
-            .OrderBy(t => t.Id)
-            .ToArray();
-    }
+    public IReadOnlyList<WalletEntryDefinition> EntryTypes() => new PilotWalletReader(database).EntryTypes();
 
     public IReadOnlyList<MarketOrder> Orders(long pilotId)
     {
@@ -203,6 +176,11 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
     public IReadOnlyList<MarketTrade> Transactions(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        return Transactions(world, pilotId);
+    }
+
+    internal static IReadOnlyList<MarketTrade> Transactions(WorldDbContext world, long pilotId)
+    {
         return world
             .Set<MarketExecution>()
             .AsNoTracking()
@@ -259,7 +237,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
     {
         int skill = (int)MarketSkill.Accounting;
         int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
-        return MarketDefinitions.SalesTaxRate * (1 - MarketDefinitions.AccountingReductionPerLevel * level);
+        return MarketRules.SalesTax(level);
     }
 
     private NpcMarketOrder Match(WorldDbContext world, int stationId, int typeId, bool bid, long limit)
@@ -301,7 +279,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         List<MarketExecution> trades = [];
         foreach (var request in items)
         {
-            var item = world.Set<OwnedItem>().Find(request.ItemId);
+            var item = InventoryPersistence.OwnedStack(world, pilotId, request.ItemId);
             if (
                 item is null
                 || item.OwnerId != pilotId
@@ -321,9 +299,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
                 throw new InvalidDataException("The selected stack or quantity is unavailable in your hangar or cargo.");
             }
             var order = Match(world, station.Id, item.TypeId, true, request.LimitPriceCents);
-            int quantity = Math.Min(request.Quantity, order.Remaining);
-            long gross = checked(order.PriceCents * quantity);
-            long tax = checked((long)Math.Round(gross * rate, 0, MidpointRounding.ToEven));
+            var (quantity, gross, tax) = MarketRules.Fill(request.Quantity, order.Remaining, order.PriceCents, rate);
             wallet.Cents = checked(wallet.Cents + gross - tax);
             var before = PilotInventoryStore.Read(catalog, item);
             item.Quantity -= quantity;
@@ -371,53 +347,23 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         }
         Seed(world, catalog, station);
         var wallet = Wallet(world, pilotId);
-        long nextId = PilotInventoryStore.NextId(world);
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];
         foreach (var request in items)
         {
             var order = Match(world, station.Id, request.TypeId, false, request.LimitPriceCents);
-            int quantity = Math.Min(request.Quantity, order.Remaining);
-            long cost = checked(order.PriceCents * quantity);
+            var fill = MarketRules.Fill(request.Quantity, order.Remaining, order.PriceCents);
+            int quantity = fill.Quantity;
+            long cost = fill.GrossCents;
             if (wallet.Cents < cost)
             {
                 throw new InvalidDataException("You do not have enough ISK for this purchase.");
             }
             wallet.Cents -= cost;
             order.Remaining -= quantity;
-            var stack = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == stationId
-                    && i.FlagId == (int)InventoryFlag.Hangar
-                    && i.TypeId == request.TypeId
-                    && !i.Singleton
-                )
-                .OrderBy(i => i.Id)
-                .FirstOrDefault();
-            var before = stack is null ? null : PilotInventoryStore.Read(catalog, stack);
-            if (stack is null)
-            {
-                stack = world
-                    .Add(
-                        new OwnedItem
-                        {
-                            Id = nextId++,
-                            OwnerId = pilotId,
-                            TypeId = request.TypeId,
-                            LocationId = stationId,
-                            FlagId = (int)InventoryFlag.Hangar,
-                            Quantity = quantity,
-                        }
-                    )
-                    .Entity;
-            }
-            else
-            {
-                stack.Quantity = checked(stack.Quantity + quantity);
-            }
-            changes.Add(new(PilotInventoryStore.Read(catalog, stack), before));
+            changes.Add(
+                InventoryPersistence.MergeOutput(world, catalog, pilotId, stationId, (int)InventoryFlag.Hangar, request.TypeId, quantity)
+            );
             trades.Add(
                 world
                     .Add(

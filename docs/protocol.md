@@ -1008,3 +1008,13 @@ Inventory dispatch now delegates transfers, online/offline operations, dogma pro
 Automated: restore, build, all 412 .NET tests, the 3 catalog Python tests, 9 formatting-policy Python tests, and formatting verification passed. Existing loaded-slot swap and capsule tests remain green; new overlap tests verify waiting and cancellation.
 
 Live: restarted the InventoryBoundary host on the isolated audit-flight save, selected Eden Pilot, and inspected Inventory. The active ship was Ibis; Item hangar displayed 100 Iron Charge S, its blueprint, and five Civilian Miners. Native login/ship dogma priming completed. Loaded overlapping swaps and boarding cancellation were verified automatically, not manually. While navigating the toolbar, the unrelated unsupported map and enlistment calls displayed their existing error dialogs; no acceptance claim is made for those services.
+
+## Architecture audit milestone 9
+
+Reprocessing quote arithmetic, market fill/tax calculations, and partial repair budgeting/allocation now live in Gameplay. Server retains eligibility checks, catalog loading, and each atomic payment/item/order/health transaction. Station capabilities share one catalog lookup. A separate wallet handler depends on a narrow journal reader that reads trades, bounty rewards, and repair receipts in one transaction.
+
+InventoryPersistence now owns owned-stack lookup, hold-volume measurement, checked ordinary-output merging and shared item/ship identity allocation. Market, manufacturing, mining and reprocessing use the shared output operation; cargo, ammunition and wreck capacity checks share volume reads. Magazine and wreck identity policies remain explicit at their call sites. The allocator includes unsaved tracked identities, and capacity reads include staged changes in the same transaction.
+
+Automated: restore/build, all 413 .NET tests, 3 catalog Python tests, 9 formatting-policy Python tests, and formatting verification passed. The new transaction test exercises unsaved output merging, capacity, ownership, identity uniqueness, and overflow without mutation. Existing reprocessing, market, manufacturing, ammunition, loot and partial repair tests pass.
+
+Live: restarted StationRules on the isolated audit-flight save. Selected Eden Pilot; Inventory showed Ibis and 100 Iron Charge S. Opened Wallet: balance 22,686 ISK, saved market purchases and bounty prizes appeared in Transactions. New paid trades, repair payments and reprocessing were covered automatically; they were not repeated manually in this milestone.

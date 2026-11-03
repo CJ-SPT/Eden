@@ -73,7 +73,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Add(
                 new()
                 {
-                    Id = PilotInventoryStore.NextId(world),
+                    Id = InventoryPersistence.NextId(world),
                     OwnerId = pilot.Id,
                     TypeId = WreckDefinitions.StarterLootType,
                     LocationId = wreck.Id,
@@ -282,11 +282,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             throw new InvalidDataException("The requested wreck contents are no longer available.");
         }
         double capacity = PilotInventoryStore.HoldCapacity(catalog, pilot.ActiveShip.TypeId, (int)InventoryFlag.Cargo);
-        double used = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId == (int)InventoryFlag.Cargo)
-            .AsEnumerable()
-            .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)InventoryFlag.Cargo);
         double added = items.Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * (quantity ?? i.Quantity));
         if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
         {
@@ -306,7 +302,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                     .Add(
                         new()
                         {
-                            Id = PilotInventoryStore.NextId(world),
+                            Id = InventoryPersistence.NextId(world),
                             OwnerId = pilotId,
                             TypeId = item.TypeId,
                             LocationId = shipId,

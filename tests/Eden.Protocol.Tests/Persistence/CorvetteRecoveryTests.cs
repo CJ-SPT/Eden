@@ -122,7 +122,7 @@ public sealed class CorvetteRecoveryTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(3, saved.Ships.Count(s => s.OwnerId == f.Pilot.PilotId));
         Assert.Equal(4, saved.Set<OwnedItem>().Count(i => i.OwnerId == f.Pilot.PilotId));
-        Assert.True(PilotInventoryStore.NextId(saved) > saved.Set<OwnedItem>().Max(i => i.Id));
+        Assert.True(InventoryPersistence.NextId(saved) > saved.Set<OwnedItem>().Max(i => i.Id));
     }
 
     [Fact]

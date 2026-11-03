@@ -40,11 +40,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
             throw new InvalidDataException("Repairs are available only at your current station.");
         }
         var station = catalog.Set<Station>().Single(s => s.Id == stationId);
-        var operation = catalog
-            .Set<SourceRecord>()
-            .Find("client/stationoperations", station.OperationId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientStationoperations>();
-        if (operation?.Services?.Contains((long)StationService.Repair) != true)
+        if (!StationCapabilities.Has(catalog, station.OperationId, StationService.Repair))
         {
             throw new InvalidDataException("This station does not provide repair facilities.");
         }
@@ -102,7 +98,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
             }
             else
             {
-                var item = world.Set<OwnedItem>().Find(id);
+                var item = InventoryPersistence.OwnedStack(world, pilot.Id, id);
                 var ownerShip = item is null ? null : world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == item.LocationId);
                 if (
                     item is null
@@ -164,12 +160,8 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         var pilot = Pilot(world, pilotId);
         var station = Station(catalog, pilot, stationId);
         var quotes = Quotes(world, catalog, pilot, itemIds).Values.SelectMany(q => q).Where(q => q.Damage > 0).ToArray();
-        long cost = quotes.Aggregate(
-            0L,
-            (total, q) =>
-                checked(total + checked((long)Math.Ceiling(q.Damage)) * RepairDefinitions.IskPerDamagePoint * MarketDefinitions.CentsPerIsk)
-        );
-        long charged = Math.Min(paymentCents, cost);
+        var budget = RepairRules.Allocate(quotes, paymentCents);
+        long charged = budget.ChargedCents;
         var wallet = world.Set<PilotWallet>().Find(pilotId);
         long balance = wallet?.Cents ?? 0;
         if (charged > balance)
@@ -180,18 +172,19 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         {
             return new(balance, []);
         }
-        double fraction = charged / (double)cost;
+        double fraction = budget.Fraction;
         List<ShipRepair> repairs = [];
         foreach (var quote in quotes)
         {
             var saved = world.Set<ShipHealthState>().Find(quote.ItemId)!;
-            double armor = saved.ArmorDamage * fraction;
-            double structure = saved.StructureDamage * fraction;
+            var repair = RepairRules.Apply(quote.ItemId, saved.ArmorDamage, saved.StructureDamage, budget);
+            double armor = repair.ArmorRepaired;
+            double structure = repair.StructureRepaired;
             saved.ArmorDamage = fraction == 1 ? 0 : saved.ArmorDamage - armor;
             saved.StructureDamage = fraction == 1 ? 0 : saved.StructureDamage - structure;
             // Preserve the shield snapshot and timestamp so payment does not
             // refill shields or restart their natural recharge curve.
-            repairs.Add(new(quote.ItemId, armor, structure));
+            repairs.Add(repair);
         }
         wallet!.Cents = balance - charged;
         world
@@ -216,6 +209,11 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
     public IReadOnlyList<RepairPayment> Payments(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        return Payments(world, pilotId);
+    }
+
+    internal static IReadOnlyList<RepairPayment> Payments(WorldDbContext world, long pilotId)
+    {
         return world
             .Set<StationRepairPayment>()
             .AsNoTracking()
