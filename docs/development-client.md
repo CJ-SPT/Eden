@@ -115,6 +115,10 @@ Use the same copied acceptance save and explicitly supplied test modules. Verify
 4. Fit Small Shield Booster I and Shield Boost Amplifier I. The amplifier's online 30% boost bonus affects restored shields. Capacitor Power Relay I improves capacitor recharge but applies its online 10% shield-boost penalty to that same booster. Offline state removes their online bonuses and penalties.
 5. Restart host/client and compare the modules and bonuses again. Missile guidance and ballistic-control modifiers can be fitted and evaluated; missile firing remains outside the implemented weapon families.
 
+## Check repeating HUD cycle timers
+
+Fit an afterburner, undock and activate it. Observe the module's cycle circle across at least three complete cycles. An automatic repeat should continue the active state without an idle flash or extra partial-cycle reset. Capacitor is still charged for each server cycle. Click once to request shutdown; the paid cycle finishes and the circle stops. Reconnect must retain the paid deadline without automatically activating another cycle. Weapons, miners and shield boosters share the same continuous-HUD rule, with their existing manual-stop policies.
+
 ## Fly two pilots in Jita
 
 Start one server. From the repository root, launch both clients against it.

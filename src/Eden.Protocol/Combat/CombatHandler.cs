@@ -75,21 +75,22 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             {
                 continue;
             }
+            if (!cycle.Stopping && cycle.Repeats > 0)
+            {
+                try
+                {
+                    Start(context, module, cycle.Target, cycle.Repeats - 1, previous: cycle);
+                    continue;
+                }
+                catch (Exception error) when (error is InvalidDataException or OverflowException) { }
+            }
             Stop(context, cycle);
-            if (cycle.Stopping || cycle.Repeats == 0)
-            {
-                continue;
-            }
-            try
-            {
-                Start(context, module, cycle.Target, cycle.Repeats - 1);
-            }
-            catch (Exception error) when (error is InvalidDataException or OverflowException) { }
         }
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats, string? effectName = null)
+    private void Start(PilotCallContext context, long module, long target, long repeats, string? effectName = null, Cycle? previous = null)
     {
+        long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var result = combat.Fire(
             context.Pilot.PilotId,
@@ -102,10 +103,17 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 : effectName == CombatWireDefinitions.HybridWeaponEffect ? WeaponActivation.Hybrid
                 : WeaponActivation.Civilian
         );
-        var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, clock.GetTimestamp(), now, repeats);
-        _cycles.Add(module, cycle);
+        var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats);
+        _cycles[module] = cycle;
         context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Outgoing(result, target)));
-        Effect(context, cycle, true);
+        if (previous is null)
+        {
+            Effect(context, cycle, true);
+        }
+        else
+        {
+            context.Flight.SetWeaponEffect(Contact(previous), false);
+        }
         context.Flight.SetWeaponEffect(Contact(cycle), true);
         context.Flight.NotifyHealth(result.Health);
         context.Flight.RefreshWrecks();

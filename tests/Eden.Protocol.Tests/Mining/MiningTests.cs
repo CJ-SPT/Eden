@@ -30,6 +30,26 @@ namespace Eden.Protocol.Tests.Mining;
 public sealed class MiningTests
 {
     [Fact]
+    public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()
+    {
+        using Fixture f = new();
+        var (context, _, mining, module) = f.Client();
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, MiningWireDefinitions.EffectName, Fixture.Asteroid, 100L]));
+        Assert.True(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+        context.Notifications.Clear();
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            f.Clock.Milliseconds += 11000;
+            mining.Advance(context);
+            Assert.True(mining.IsActive(module));
+            Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        }
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, MiningWireDefinitions.EffectName]));
+        Assert.False(mining.IsActive(module));
+        Assert.False(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+    }
+
+    [Fact]
     public void AttributeReadsUseTheOwningTransactionsTrackedSkillState()
     {
         using Fixture fixture = new();

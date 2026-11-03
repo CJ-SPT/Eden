@@ -120,6 +120,39 @@ public sealed class PilotCombatTests
     }
 
     [Fact]
+    public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()
+    {
+        using Fixture f = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=100000 WHERE ItemTypeId=30380 AND AttributeId=263");
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge = 100000;
+            world.SaveChanges();
+        }
+        var (context, targeting, combat) = f.Client();
+        using var owned = context;
+        using var locks = targeting;
+        Assert.Null(combat.CallWire(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]));
+        Assert.True(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+        context.Notifications.Clear();
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            f.Clock.Milliseconds += 3000;
+            combat.Advance(context);
+            Assert.NotNull(combat.ActiveEffect(context.Pilot, f.Module));
+            Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        }
+        Assert.Null(combat.CallWire(context, "dogmaIM", "Deactivate", [f.Module, "targetAttack"]));
+        f.Clock.Milliseconds += 3000;
+        combat.Advance(context);
+        Assert.Null(combat.ActiveEffect(context.Pilot, f.Module));
+        Assert.False(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+    }
+
+    [Fact]
     public void FirstShotSpendsCapacitorImmediatelyAndCooldownSurvivesReconnect()
     {
         using Fixture f = new();

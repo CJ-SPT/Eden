@@ -55,29 +55,37 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             {
                 continue;
             }
+            if (!cycle.Stopping && cycle.Repeats > 0)
+            {
+                try
+                {
+                    Start(context, cycle.Booster.ItemId, cycle.Repeats - 1, cycle);
+                    continue;
+                }
+                catch (Exception error) when (error is InvalidDataException or OverflowException)
+                {
+                    // A rejected next cycle never spends capacitor or grants health.
+                }
+            }
             Stop(context, cycle);
-            if (cycle.Stopping || cycle.Repeats == 0)
-            {
-                continue;
-            }
-            try
-            {
-                Start(context, cycle.Booster.ItemId, cycle.Repeats - 1);
-            }
-            catch (Exception error) when (error is InvalidDataException or OverflowException)
-            {
-                // A rejected next cycle never spends capacitor or grants health.
-            }
         }
     }
 
-    private void Start(PilotCallContext context, long module, long repeats)
+    private void Start(PilotCallContext context, long module, long repeats, Cycle? previous = null)
     {
+        long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var result = boosting.Boost(context.Pilot.PilotId, module, now);
-        Cycle cycle = new(context.Pilot.ShipId, result.Booster, clock.GetTimestamp(), now, repeats);
-        _cycles.Add(module, cycle);
-        Effect(context, cycle, true);
+        Cycle cycle = new(context.Pilot.ShipId, result.Booster, started, now, repeats);
+        _cycles[module] = cycle;
+        if (previous is null)
+        {
+            Effect(context, cycle, true);
+        }
+        else
+        {
+            context.Flight.SetShieldBoostEffect(Contact(previous), false);
+        }
         context.Flight.NotifyHealth(result.Health);
         context.Flight.SetShieldBoostEffect(Contact(cycle), true);
         context.Notifications.Add(

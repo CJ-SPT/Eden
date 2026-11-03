@@ -110,6 +110,29 @@ public sealed class PropulsionTests
     }
 
     [Fact]
+    public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()
+    {
+        using Fixture f = new();
+        using var context = f.Client();
+        PropulsionHandler handler = new(f.Clock, f.Store);
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, PropulsionWireDefinitions.EffectName, null, 100L]));
+        Assert.True(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+        context.Notifications.Clear();
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            f.Clock.Milliseconds += 9000;
+            handler.Advance(context);
+            Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
+            Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        }
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Deactivate", [f.Module, PropulsionWireDefinitions.EffectName]));
+        f.Clock.Milliseconds += 9000;
+        handler.Advance(context);
+        Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
+        Assert.False(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+    }
+
+    [Fact]
     public void EarnedNavigationAndModuleSkillsAgreeWithNativeBrainAndMassDependentFlight()
     {
         using Fixture f = new();

@@ -83,16 +83,19 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
 
     private void Start(PilotCallContext context, long module, long repeats)
     {
+        long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var result = propulsion.Activate(context.Pilot.PilotId, module, now);
-        Cycle cycle = new(context.Pilot.ShipId, result.Module, clock.GetTimestamp(), now, repeats);
-        if (_cycle is { } previous)
-        {
-            Effect(context, previous, false);
-        }
+        Cycle cycle = new(context.Pilot.ShipId, result.Module, started, now, repeats);
+        bool continuing = _cycle is not null;
         _cycle = cycle;
         context.Flight.SetPropulsionEffect(new(result.Module, now));
-        Effect(context, cycle, true);
+        if (!continuing)
+        {
+            // IdleRamps clears the native HUD phase. A paid automatic repeat
+            // continues that effect instead of stopping and restarting its timer.
+            Effect(context, cycle, true);
+        }
         NotifyShipAttributes(context, result.Capacitor);
     }
 

@@ -68,10 +68,13 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             {
                 bool critical = RandomNumberGenerator.GetInt32(ProbabilityResolution) < cycle.Laser.CriticalChance * ProbabilityResolution;
                 var result = Collect(context, cycle, cycle.Laser.Volume, critical ? cycle.Laser.CriticalBonusYield : 0);
-                Stop(context, cycle);
                 if (cycle.Repeats > 0 && !result.Depleted && !result.CargoFull)
                 {
-                    Start(context, module, cycle.Target, cycle.Repeats - 1);
+                    Start(context, module, cycle.Target, cycle.Repeats - 1, cycle);
+                }
+                else
+                {
+                    Stop(context, cycle);
                 }
             }
             catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
@@ -96,13 +99,24 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         return result;
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats)
+    private void Start(PilotCallContext context, long module, long target, long repeats, Cycle? previous = null)
     {
+        long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var start = mining.Begin(context.Pilot.PilotId, module, target, now);
-        Cycle cycle = new(start.Laser, target, clock.GetTimestamp(), now, repeats);
-        _cycles.Add(module, cycle);
-        Effect(context, cycle, true);
+        Cycle cycle = new(start.Laser, target, started, now, repeats);
+        _cycles[module] = cycle;
+        if (previous is null)
+        {
+            Effect(context, cycle, true);
+        }
+        else
+        {
+            context.Flight.SetMiningEffect(
+                new(module, previous.Laser.TypeId, target, previous.StartTime, previous.Laser.DurationMilliseconds),
+                false
+            );
+        }
         context.Flight.SetMiningEffect(new(module, start.Laser.TypeId, target, now, start.Laser.DurationMilliseconds), true);
         context.Notifications.Add(
             new ModuleAttributesChanged([

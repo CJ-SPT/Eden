@@ -29,6 +29,29 @@ namespace Eden.Protocol.Tests.Repair;
 public sealed class ShieldBoostTests
 {
     [Fact]
+    public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()
+    {
+        using Fixture f = new();
+        using var context = f.Client();
+        ShieldBoostHandler handler = new(f.Clock, f.Boosting);
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]));
+        Assert.True(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+        context.Notifications.Clear();
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            f.Clock.Milliseconds += 2500;
+            handler.Advance(context);
+            Assert.NotNull(handler.ActiveEffect(context.Pilot, f.Module));
+            Assert.Empty(context.Notifications.OfType<ShipEffectChanged>());
+        }
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Deactivate", [f.Module, ShieldBoostWireDefinitions.EffectName]));
+        f.Clock.Milliseconds += 2500;
+        handler.Advance(context);
+        Assert.Null(handler.ActiveEffect(context.Pilot, f.Module));
+        Assert.False(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+    }
+
+    [Fact]
     public void MediumSlotSwapsRetainOnlineCostsAndDoNotActivateOrRepair()
     {
         using Fixture f = new();
