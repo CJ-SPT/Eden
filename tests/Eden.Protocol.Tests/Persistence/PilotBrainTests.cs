@@ -54,8 +54,11 @@ public sealed class PilotBrainTests
         };
         Clock clock = new();
         var brain = new PilotBrain(skills, clock, skills, skills).Read(90000001, 1000000000001);
-        Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), brain[0]);
-        var effects = Assert.IsType<List<object?>>(brain[2]).Select(State).ToArray();
+        Assert.Equal(clock.Now.UtcDateTime.ToFileTimeUtc(), brain.Version);
+        var effects = Assert
+            .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.ShipEffects)))
+            .Select(State)
+            .ToArray();
         Assert.Equal(3, effects.Length);
         Assert.All(
             effects,
@@ -76,8 +79,8 @@ public sealed class PilotBrainTests
         var hybrid = Assert.Single(effects, e => Equals(e["toAttribID"], (int)DogmaAttributeId.DamageMultiplier));
         Assert.Equal(5d, hybrid["value"]);
         Assert.Equal(new object?[] { (int)CombatSkill.SmallHybridTurret }, hybrid["extras"]);
-        Assert.Empty(Assert.IsType<List<object?>>(brain[1]));
-        Assert.Empty(Assert.IsType<List<object?>>(brain[3]));
+        Assert.Empty(Assert.IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.CharacterEffects))));
+        Assert.Empty(Assert.IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.StructureEffects))));
     }
 
     [Fact]
@@ -87,13 +90,13 @@ public sealed class PilotBrainTests
         Clock clock = new();
         PilotBrain source = new(skills, clock, skills, skills);
         var first = source.Update(90000001, 1000000000001);
-        var firstMatter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(first[1])));
+        var firstMatter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(first.GrayMatter)));
         Assert.Equal(-2d, State(Assert.Single(Assert.IsType<List<object?>>(firstMatter[1])))["value"]);
         clock.Now = clock.Now.AddSeconds(1000);
         skills.Values = [new((int)CombatSkill.Gunnery, 1415, 1)];
         var next = source.Update(90000001, 1000000000001);
-        Assert.True(Assert.IsType<long>(next[0]) > Assert.IsType<long>(first[0]));
-        var matter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(next[1])));
+        Assert.True(Assert.IsType<long>(next.Version) > Assert.IsType<long>(first.Version));
+        var matter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(next.GrayMatter)));
         Assert.Equal(-4d, State(Assert.Single(Assert.IsType<List<object?>>(matter[1])))["value"]);
         Assert.Empty(Assert.IsType<List<object?>>(matter[0]));
         Assert.Empty(Assert.IsType<List<object?>>(matter[2]));
@@ -105,7 +108,10 @@ public sealed class PilotBrainTests
     {
         Skills skills = new() { Values = [new((int)CombatSkill.SurgicalStrike, 8000, 1)] };
         var brain = new PilotBrain(skills, new Clock(), skills, skills).Read(90000001, 1000000000001);
-        var effects = Assert.IsType<List<object?>>(brain[2]).Select(State).ToArray();
+        var effects = Assert
+            .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.ShipEffects)))
+            .Select(State)
+            .ToArray();
         Assert.Equal(2, effects.Length);
         Assert.All(
             effects,

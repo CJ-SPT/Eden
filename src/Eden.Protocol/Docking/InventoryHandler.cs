@@ -415,7 +415,7 @@ internal sealed class InventoryHandler(
             shipInfo,
             magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => ammunitionHandler.Prime(m)),
             PrimePilot(pilot),
-            new PilotCallResult.LegacyReply(brain.Read(pilot.PilotId, pilot.ShipId))
+            brain.Read(pilot.PilotId, pilot.ShipId)
         );
     }
 

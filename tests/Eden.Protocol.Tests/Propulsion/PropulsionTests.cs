@@ -130,7 +130,7 @@ public sealed class PropulsionTests
         Assert.Equal(339.25 * (1 + 1.15 * 1_500_000 / 1_663_000), boosted.MaxSpeed, 3);
         var brain = f.Db.Services.GetRequiredService<PilotBrain>().Read(f.Pilot.PilotId, f.Pilot.ShipId);
         var effects = Assert
-            .IsType<List<object?>>(brain[2])
+            .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.ShipEffects)))
             .Cast<BlueNewObject>()
             .Select(e => (Dictionary<string, object?>)e.State!)
             .ToArray();

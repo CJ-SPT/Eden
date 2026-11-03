@@ -428,7 +428,7 @@ public sealed class IndustryTests
             f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()
         ).Read(f.Pilot.PilotId, f.Pilot.ShipId);
         var effects = Assert
-            .IsType<List<object?>>(brain[1])
+            .IsType<List<object?>>(WireAssertions.Materialize(new BlueList<BrainEffect>(brain.CharacterEffects)))
             .Cast<BlueNewObject>()
             .Select(e => Assert.IsType<Dictionary<string, object?>>(e.State))
             .ToArray();

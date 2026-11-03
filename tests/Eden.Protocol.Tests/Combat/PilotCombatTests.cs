@@ -291,7 +291,7 @@ public sealed class PilotCombatTests
         );
         var entry = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(Assert.Single(journal)).State);
         Assert.Equal(85, entry["entryTypeID"]);
-        Assert.Equal(30000144, entry["referenceID"]);
+        Assert.Equal(30000144L, entry["referenceID"]);
         Assert.Equal(3000d, entry["amount"]);
         Assert.NotEmpty(BlueMarshal.Encode(journal));
         Assert.DoesNotContain(f.Encounters.List(30000144, f.Clock.Now + TimeSpan.TicksPerSecond * 599), n => n.Id == f.Npc.Id);

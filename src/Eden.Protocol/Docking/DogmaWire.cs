@@ -1,5 +1,6 @@
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
@@ -129,7 +130,7 @@ internal sealed record DogmaAllInfo(
     IReadOnlyDictionary<long, DogmaItemInfo<double>> ShipInfo,
     IReadOnlyDictionary<DogmaItemKey.Charge, DogmaItemInfo<double>> Charges,
     DogmaItemInfo<int> Character,
-    IBlueWritable Brain
+    PilotBrainState Brain
 ) : IBlueWritable
 {
     public object ToBlue() =>
