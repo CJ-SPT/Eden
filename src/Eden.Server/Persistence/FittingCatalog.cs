@@ -31,6 +31,14 @@ internal static class FittingCatalog
         }
         if (
             type.GroupId == PropulsionDefinitions.AfterburnerGroup
+            && Effects(catalog, typeId).Contains(DogmaEffect.Afterburner)
+            && !AfterburnerCatalog.Supported(catalog, typeId, type.GroupId)
+        )
+        {
+            return null;
+        }
+        if (
+            type.GroupId == PropulsionDefinitions.AfterburnerGroup
             && Effects(catalog, typeId).Contains(DogmaEffect.Microwarpdrive)
             && !MicrowarpdriveCatalog.Supported(catalog, typeId, type.GroupId)
         )

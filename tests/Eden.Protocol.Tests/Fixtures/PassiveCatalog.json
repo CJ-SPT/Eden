@@ -26876,7 +26876,15 @@
       "dataset": "client/dogmaeffects",
       "key": 3175,
       "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 5,
+        "iconID": 0,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
         "effectID": 3175,
         "modifierInfo": [
           {
@@ -26886,7 +26894,11 @@
             "modifyingAttributeID": 1223,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "effectName": "overloadSelfSpeedBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {
@@ -27396,8 +27408,20 @@
       "dataset": "client/dogmaeffects",
       "key": 6731,
       "data": {
+        "guid": "effects.Afterburner",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 1,
-        "effectID": 6731
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6731,
+        "propulsionChance": 0,
+        "effectName": "moduleBonusAfterburner",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 0
       }
     },
     {

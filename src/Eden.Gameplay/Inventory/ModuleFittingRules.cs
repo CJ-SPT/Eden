@@ -54,7 +54,9 @@ public static class ModuleFittingRules
             HardenerDefinitions.ShieldGroup => effects.Contains(DogmaEffect.ActiveShieldResistance),
             HardenerDefinitions.ArmorGroup => effects.Contains(DogmaEffect.ActiveArmorResistance),
             PropulsionDefinitions.AfterburnerGroup => (
-                effects.Contains(DogmaEffect.Afterburner) && !effects.Contains(DogmaEffect.Microwarpdrive)
+                effects.Contains(DogmaEffect.Afterburner)
+                && !effects.Contains(DogmaEffect.Microwarpdrive)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
             )
                 || (
                     effects.Contains(DogmaEffect.Microwarpdrive)

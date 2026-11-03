@@ -158,7 +158,7 @@ public sealed class IndustryTests
             );
             PassiveCatalogFixture.LoadActiveMetadata(
                 new WorldDatabase(Db.Path).CatalogPath,
-                new HashSet<int> { (int)ShieldBoosterType.SmallI }
+                new HashSet<int> { (int)ShieldBoosterType.SmallI, (int)PropulsionModuleType.OneMnAfterburnerI }
             );
             using WorldDbContext world = new(Db.Path);
             foreach (

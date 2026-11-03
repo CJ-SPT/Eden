@@ -52,6 +52,10 @@ public sealed class PropulsionTests
                     """
                 );
             }
+            PassiveCatalogFixture.LoadActiveMetadata(
+                new WorldDatabase(Db.Path).CatalogPath,
+                new HashSet<int> { (int)PropulsionModuleType.OneMnAfterburnerI }
+            );
             using (WorldDbContext world = new(Db.Path))
             {
                 world.Add(
