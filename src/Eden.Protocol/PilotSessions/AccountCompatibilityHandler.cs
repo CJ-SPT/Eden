@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
@@ -19,10 +20,13 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         {
             ("machoNet", "GetServiceInfo") => BlueEmpty.Dictionary,
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, context.ActiveFlight?.VisiblePilots() ?? context.Roster),
+            ("config", "GetMultiOwnersEx") => OwnerRows(
+                arguments,
+                context.ActiveFlight?.VisiblePilots() ?? context.Roster.Select(PilotContact.From)
+            ),
             ("config", "GetMultiCorpTickerNamesEx")
                 when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new CorporationTickerTable(
-                (context.ActiveFlight?.VisiblePilots() ?? context.Roster)
+                (context.ActiveFlight?.VisiblePilots() ?? context.Roster.Select(PilotContact.From))
                     .DistinctBy(pilot => pilot.CorpId)
                     .Where(pilot => ids.Contains((long)pilot.CorpId))
                     .Select(pilot => new CorporationTickerRow(pilot.CorpId, pilot.CorporationTicker))
@@ -42,7 +46,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         };
     }
 
-    private static OwnerTable OwnerRows(object? arguments, IEnumerable<DockedPilot> pilots)
+    private static OwnerTable OwnerRows(object? arguments, IEnumerable<PilotContact> pilots)
     {
         var ids = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected owner IDs.");
         List<OwnerRow> rows = [];
@@ -50,7 +54,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         {
             if (ids.Contains(pilot.PilotId))
             {
-                rows.Add(new(pilot.PilotId, pilot.Name, pilot.Profile.GenderId));
+                rows.Add(new(pilot.PilotId, pilot.Name, pilot.GenderId));
             }
         }
 

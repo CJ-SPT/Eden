@@ -14,7 +14,15 @@ internal sealed class FlightCallHandler(ISystemObjects systems) : ISelectedPilot
         Dictionary<string, object?>? keywords = null
     )
     {
-        var command = FlightRequestWire.Read(service, method, args, keywords);
+        var request = FlightRequestWire.Read(service, method, args, keywords);
+        if (request.Command is not { } command)
+        {
+            if (request.Checkpoint)
+            {
+                context.Flight.Checkpoint();
+            }
+            return PilotCallResult.Unsupported;
+        }
         return command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
     }
 }

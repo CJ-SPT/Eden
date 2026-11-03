@@ -26,38 +26,99 @@ public static class DockingDefinitions
     public const double MaximumRange = 2500;
 }
 
-public sealed record DockedPilot(
-    long PilotId,
+public sealed record PilotIdentity(
+    long Id,
     string Name,
-    int CorpId,
-    long ShipId,
-    int ShipTypeId,
-    int ShipGroupId,
-    int ShipCategoryId,
-    int StationId,
-    int StationTypeId,
-    int StationOwnerId,
-    int HomeSystemId,
-    int HomeConstellationId,
-    int HomeRegionId,
-    int OperationId,
-    int OrbitId,
-    double X,
-    double Y,
-    double Z,
-    string ShipName,
+    int CorporationId,
+    AccountProfile Account,
+    PilotProfile Profile,
+    string CorporationTicker = ""
+);
+
+public sealed record PilotShip(
+    long Id,
+    int TypeId,
+    int GroupId,
+    int CategoryId,
+    string Name,
     double CargoCapacity,
     int TurretSlots,
     FlightProperties Flight,
-    StationIdentity Station,
-    HullProperties Hull,
-    AccountProfile Account,
-    PilotProfile Profile,
-    SpacePosition? Position = null,
-    FlightSystem? CurrentSystem = null
-)
+    HullProperties Hull
+);
+
+public sealed record PilotStation(
+    int Id,
+    int TypeId,
+    int OwnerId,
+    FlightSystem System,
+    int OperationId,
+    int OrbitId,
+    SpacePosition Position,
+    StationIdentity Identity
+);
+
+public sealed record PilotLocation(SpacePosition? Position = null, FlightSystem? System = null);
+
+public sealed record DockedPilot(PilotIdentity Identity, PilotShip Ship, PilotStation Home, PilotLocation Location)
 {
-    public string CorporationTicker { get; init; } = "";
+    public long PilotId => Identity.Id;
+    public string Name
+    {
+        get => Identity.Name;
+        init => Identity = Identity with { Name = value };
+    }
+    public int CorpId => Identity.CorporationId;
+    public long ShipId
+    {
+        get => Ship.Id;
+        init => Ship = Ship with { Id = value };
+    }
+    public int ShipTypeId => Ship.TypeId;
+    public int ShipGroupId
+    {
+        get => Ship.GroupId;
+        init => Ship = Ship with { GroupId = value };
+    }
+    public int ShipCategoryId => Ship.CategoryId;
+    public int StationId => Home.Id;
+    public int StationTypeId => Home.TypeId;
+    public int StationOwnerId => Home.OwnerId;
+    public int HomeSystemId => Home.System.Id;
+    public int HomeConstellationId => Home.System.ConstellationId;
+    public int HomeRegionId => Home.System.RegionId;
+    public int OperationId => Home.OperationId;
+    public int OrbitId => Home.OrbitId;
+    public double X => Home.Position.X;
+    public double Y => Home.Position.Y;
+    public double Z => Home.Position.Z;
+    public string ShipName => Ship.Name;
+    public double CargoCapacity => Ship.CargoCapacity;
+    public int TurretSlots => Ship.TurretSlots;
+    public FlightProperties Flight
+    {
+        get => Ship.Flight;
+        init => Ship = Ship with { Flight = value };
+    }
+    public StationIdentity Station => Home.Identity;
+    public HullProperties Hull => Ship.Hull;
+    public AccountProfile Account => Identity.Account;
+    public PilotProfile Profile => Identity.Profile;
+    public SpacePosition? Position
+    {
+        get => Location.Position;
+        init => Location = Location with { Position = value };
+    }
+    public FlightSystem? CurrentSystem
+    {
+        get => Location.System;
+        init => Location = Location with { System = value };
+    }
+    public string CorporationTicker
+    {
+        get => Identity.CorporationTicker;
+        init => Identity = Identity with { CorporationTicker = value };
+    }
     public int SystemId => CurrentSystem?.Id ?? HomeSystemId;
     public int ConstellationId => CurrentSystem?.ConstellationId ?? HomeConstellationId;
     public int RegionId => CurrentSystem?.RegionId ?? HomeRegionId;

@@ -3,9 +3,19 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
+internal sealed record FlightRequest(FlightCommand? Command, bool Checkpoint);
+
 internal static class FlightRequestWire
 {
-    public static FlightCommand Read(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null)
+    public static FlightRequest Read(string service, string method, object?[] arguments, Dictionary<string, object?>? keywords = null) =>
+        new(ReadCommand(service, method, arguments, keywords), service == "beyonce");
+
+    private static FlightCommand? ReadCommand(
+        string service,
+        string method,
+        object?[] arguments,
+        Dictionary<string, object?>? keywords = null
+    )
     {
         if (service == "ship" && method == "Undock" && arguments is [long shipId, ..])
         {
@@ -13,7 +23,7 @@ internal static class FlightRequestWire
         }
         if (service != "beyonce")
         {
-            return new FlightCommand.Unsupported(false);
+            return null;
         }
         return (method, arguments) switch
         {
@@ -31,7 +41,7 @@ internal static class FlightRequestWire
             ("CmdSetSpeedFraction", [var speed]) when speed is double or long => new FlightCommand.Speed(Convert.ToDouble(speed)),
             ("CmdStop", _) => new FlightCommand.Stop(),
             ("CmdDock", [long station, long ship]) => new FlightCommand.Dock(station, ship),
-            _ => new FlightCommand.Unsupported(true),
+            _ => null,
         };
     }
 }

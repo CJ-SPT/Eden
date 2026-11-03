@@ -169,7 +169,7 @@ public sealed class NpcAggressionTests
     {
         using NpcCombatTests.Fixture f = new();
         SharedSpace space = new();
-        ShipContact contact = new(f.Pilot, SpacePosition.Zero, null, 0, null);
+        ShipContact contact = new(PilotContact.From(f.Pilot), SpacePosition.Zero, null, 0, null);
         space.Publish(contact);
         Assert.Equal(new[] { s_pilot }, space.NpcTargets(f.Npc.SystemId));
         Assert.Empty(space.NpcTargets(30000142));
@@ -194,11 +194,11 @@ public sealed class NpcAggressionTests
                 },
                 contact with
                 {
-                    Pilot = f.Pilot with { ShipGroupId = FleetDefinitions.CapsuleGroup },
+                    Pilot = contact.Pilot with { ShipGroupId = FleetDefinitions.CapsuleGroup },
                 },
                 contact with
                 {
-                    Pilot = f.Pilot with { Position = null },
+                    Pilot = contact.Pilot with { Position = null },
                 },
                 contact with
                 {
@@ -229,10 +229,21 @@ public sealed class NpcAggressionTests
             f.Clock,
             f.Combat,
             locks,
-            mining,
-            weapons,
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotShieldBoosting>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotPropulsion>()),
+            new ShipLossCoordinator(
+                mining,
+                weapons,
+                new(f.Clock, f.Db.Services.GetRequiredService<IPilotShieldBoosting>()),
+                new(f.Clock, f.Db.Services.GetRequiredService<IPilotPropulsion>()),
+                new Eden.Protocol.Docking.DeferredRefitPrimes(
+                    new Eden.Protocol.Ammunition.MagazineWire(
+                        f.Clock,
+                        fitting,
+                        f.Weapons,
+                        f.Db.Services.GetRequiredService<IPilotInventory>()
+                    ),
+                    f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
+                )
+            ),
             space
         );
         StaticSpaceObject destination = new(999, 0, 0, 0, 0, f.Pilot.Position! + new SpacePosition(1_000_000, 0, 0), 1);

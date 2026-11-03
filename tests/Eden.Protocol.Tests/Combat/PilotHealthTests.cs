@@ -141,10 +141,7 @@ public sealed class PilotHealthTests
             WireAssertions.Materialize(
                 Ballpark.Snapshot(
                     new(
-                        pilot with
-                        {
-                            Position = SpacePosition.Zero,
-                        },
+                        PilotContact.From(pilot with { Position = SpacePosition.Zero }),
                         SpacePosition.Zero,
                         null,
                         0,

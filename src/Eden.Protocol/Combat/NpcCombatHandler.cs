@@ -17,15 +17,13 @@ internal sealed class NpcCombatHandler(
     TimeProvider clock,
     INpcCombat combat,
     SharedTargetLocks locks,
-    MiningHandler mining,
-    CombatHandler weapons,
-    ShieldBoostHandler shields,
-    PropulsionHandler propulsion,
+    ShipLossCoordinator shipLoss,
     SharedSpace space
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
     private long _shipId;
+    private bool _disengaged = true;
     private long[] _aggressors = [];
 
     public void Enter(PilotCallContext context)
@@ -34,6 +32,7 @@ internal sealed class NpcCombatHandler(
         // detection can establish a fresh fight with a new reaction interval.
         combat.Disengage(context.Pilot.ShipId);
         _shipId = context.Pilot.ShipId;
+        _disengaged = true;
     }
 
     private void Clear()
@@ -42,11 +41,12 @@ internal sealed class NpcCombatHandler(
         {
             locks.Remove(npc, _shipId);
         }
-        if (_shipId != 0)
+        if (_shipId != 0 && !_disengaged)
         {
             combat.Disengage(_shipId);
         }
         _aggressors = [];
+        _disengaged = true;
     }
 
     public void Advance(PilotCallContext context)
@@ -59,12 +59,14 @@ internal sealed class NpcCombatHandler(
         {
             Clear();
             _shipId = context.Pilot.ShipId;
+            _disengaged = false;
         }
         if (!context.Flight.CanTarget || context.Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             Clear();
             return;
         }
+        _disengaged = false;
         if (context.Pilot.SystemId == NpcEncounterDefinitions.PerimeterSystem)
         {
             combat.Acquire(space.NpcTargets(context.Pilot.SystemId), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
@@ -102,15 +104,7 @@ internal sealed class NpcCombatHandler(
             );
             if (shot.Capsule is { } capsule)
             {
-                context.Flight.BeginShipLoss();
-                mining.Cancel(context);
-                weapons.Cancel(context);
-                shields.Cancel(context);
-                propulsion.Cancel(context);
-                // Wreck.Prepare links launcherID to the still-loaded hull for
-                // rotation and explosion timing before its terminal removal.
-                context.Flight.RefreshWrecks();
-                context.ReplaceDestroyedShip(capsule);
+                shipLoss.Replace(context, capsule);
                 Clear();
                 _shipId = capsule.ShipId;
                 break;

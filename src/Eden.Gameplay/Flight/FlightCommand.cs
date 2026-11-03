@@ -2,8 +2,6 @@ namespace Eden.Gameplay.Flight;
 
 public abstract record FlightCommand
 {
-    public sealed record Unsupported(bool Advance) : FlightCommand;
-
     public sealed record Undock(long ShipId) : FlightCommand;
 
     public sealed record Jump(long SourceId, long ExitId, long ShipId) : FlightCommand;

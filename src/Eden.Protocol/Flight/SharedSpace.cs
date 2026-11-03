@@ -27,8 +27,48 @@ internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long Starte
 
 internal sealed record PropulsionContact(Afterburner Module, long StartedAt);
 
+internal sealed record PilotContact(
+    long PilotId,
+    string Name,
+    int CorpId,
+    int GenderId,
+    string CorporationTicker,
+    long ShipId,
+    int ShipTypeId,
+    int ShipGroupId,
+    int ShipCategoryId,
+    string ShipName,
+    FlightProperties Flight,
+    int SystemId,
+    SpacePosition? Position,
+    double X,
+    double Y,
+    double Z
+)
+{
+    internal static PilotContact From(DockedPilot pilot) =>
+        new(
+            pilot.PilotId,
+            pilot.Name,
+            pilot.CorpId,
+            pilot.Profile.GenderId,
+            pilot.CorporationTicker,
+            pilot.ShipId,
+            pilot.ShipTypeId,
+            pilot.ShipGroupId,
+            pilot.ShipCategoryId,
+            pilot.ShipName,
+            pilot.Flight,
+            pilot.SystemId,
+            pilot.Position,
+            pilot.X,
+            pilot.Y,
+            pilot.Z
+        );
+}
+
 internal sealed record ShipContact(
-    DockedPilot Pilot,
+    PilotContact Pilot,
     SpacePosition Velocity,
     SpacePosition? Heading,
     double SpeedFraction,

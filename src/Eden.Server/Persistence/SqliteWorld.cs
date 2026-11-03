@@ -149,34 +149,38 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
         );
         var hull = new HullProperties(Attribute(9), Attribute(482), Attribute(55), Attribute(263), Attribute(265), Attribute(479));
         return new(
-            pilot.Id,
-            pilot.Name,
-            pilot.CorporationId,
-            ship.Id,
-            ship.TypeId,
-            type.GroupId,
-            type.Group.CategoryId,
-            station.Id,
-            station.TypeId,
-            station.OwnerId,
-            system.Id,
-            system.ConstellationId,
-            system.Constellation.RegionId,
-            station.OperationId,
-            station.OrbitId,
-            station.X,
-            station.Y,
-            station.Z,
-            ship.Name,
-            type.Capacity!.Value,
-            checked((int)Attribute(102)),
-            flight,
-            identity,
-            hull,
-            new(pilot.Account.UserName, pilot.Account.CreatedAt),
-            new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt),
-            ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
-            ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null
+            new(
+                pilot.Id,
+                pilot.Name,
+                pilot.CorporationId,
+                new(pilot.Account.UserName, pilot.Account.CreatedAt),
+                new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt)
+            ),
+            new(
+                ship.Id,
+                ship.TypeId,
+                type.GroupId,
+                type.Group.CategoryId,
+                ship.Name,
+                type.Capacity!.Value,
+                checked((int)Attribute(102)),
+                flight,
+                hull
+            ),
+            new(
+                station.Id,
+                station.TypeId,
+                station.OwnerId,
+                new(system.Id, system.ConstellationId, system.Constellation.RegionId),
+                station.OperationId,
+                station.OrbitId,
+                new(station.X, station.Y, station.Z),
+                identity
+            ),
+            new(
+                ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
+                ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null
+            )
         )
         {
             CorporationTicker =

@@ -4,17 +4,35 @@ namespace Eden.Gameplay.Flight;
 
 public sealed class NavigationState
 {
-    public SpacePosition LastHeading { get; set; } = new(1, 0, 0);
-    public SpacePosition? Direction { get; set; }
-    public SpacePosition Velocity { get; set; } = new(0, 0, 0);
-    public StaticSpaceObject? FollowTarget { get; set; }
-    public NavigationMode FollowMode { get; set; } = NavigationMode.Follow;
-    public double FollowRange { get; set; }
-    public SpacePosition? WarpDestination { get; set; }
-    public (long Target, double Range)? WarpOrder { get; set; }
-    public int AlignStamp { get; set; }
-    public WarpCourse? Warp { get; set; }
-    public double SpeedFraction { get; set; }
+    public SpacePosition LastHeading { get; private set; } = new(1, 0, 0);
+    public SpacePosition? Direction { get; private set; }
+    public SpacePosition Velocity { get; private set; } = new(0, 0, 0);
+    public StaticSpaceObject? FollowTarget { get; private set; }
+    public NavigationMode FollowMode { get; private set; } = NavigationMode.Follow;
+    public double FollowRange { get; private set; }
+    public SpacePosition? WarpDestination { get; private set; }
+    public (long Target, double Range)? WarpOrder { get; private set; }
+    public int AlignStamp { get; private set; }
+    public WarpCourse? Warp { get; private set; }
+    public double SpeedFraction { get; private set; }
+
+    public void AdoptHull()
+    {
+        SetAtRest();
+        Warp = null;
+        WarpDestination = null;
+        WarpOrder = null;
+        AlignStamp = 0;
+    }
+
+    public void Dock()
+    {
+        AdoptHull();
+        SpeedFraction = 1;
+        LastHeading = new(1, 0, 0);
+    }
+
+    public void CancelAlignment() => WarpDestination = null;
 
     public bool StartWarp(long shipId, FlightProperties hull, SpacePosition origin, StaticSpaceObject body, double range, int stamp)
     {

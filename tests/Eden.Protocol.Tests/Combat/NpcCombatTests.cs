@@ -470,10 +470,21 @@ public sealed class NpcCombatTests
             f.Clock,
             f.Combat,
             locks,
-            mining,
-            weapons,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>()),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+            new ShipLossCoordinator(
+                mining,
+                weapons,
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotShieldBoosting>()),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+                new Eden.Protocol.Docking.DeferredRefitPrimes(
+                    new Eden.Protocol.Ammunition.MagazineWire(
+                        f.Clock,
+                        fitting,
+                        f.Weapons,
+                        f.Db.Services.GetRequiredService<IPilotInventory>()
+                    ),
+                    f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
+                )
+            ),
             space
         );
         using PilotCallContext context = new(

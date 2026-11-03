@@ -42,8 +42,8 @@ public sealed class FlightSessionTests
         Assert.Equal(0, reader.ReadByte());
         Assert.Equal(1, reader.ReadInt32());
         Assert.Equal(wing.Pilot.ShipId, reader.ReadInt64());
-        Assert.Equal(wing.Pilot, Assert.Single(space.Peers(pilot.Pilot)).Pilot);
-        Assert.Equal(pilot.Pilot, Assert.Single(space.Peers(wing.Pilot)).Pilot);
+        Assert.Equal(PilotContact.From(wing.Pilot), Assert.Single(space.Peers(pilot.Pilot)).Pilot);
+        Assert.Equal(PilotContact.From(pilot.Pilot), Assert.Single(space.Peers(wing.Pilot)).Pilot);
         foreach (var (moving, observer) in new[] { (pilot, wing), (wing, pilot) })
         {
             var initial = moving.Pilot.Position!;
@@ -156,7 +156,7 @@ public sealed class FlightSessionTests
         clock.Seconds += 120;
         wing.Checkpoint();
         wing.RefreshPeers();
-        Assert.Equal(pilot.Pilot, Assert.Single(space.Peers(wing.Pilot)).Pilot);
+        Assert.Equal(PilotContact.From(pilot.Pilot), Assert.Single(space.Peers(wing.Pilot)).Pilot);
         Assert.Equal(wing.Pilot, new SqliteWorld(db.Path).FindPilot(1000002));
         Assert.Null(pilot.CallWire("beyonce", "CmdWarpToStuff", ["item", (long)pilot.Pilot.StationId]));
         clock.Seconds += 8;
@@ -535,7 +535,11 @@ public sealed class FlightSessionTests
         SpacePosition position = new(pilot.X + 123456, pilot.Y - 590, pilot.Z + 200);
         var snapshot = Assert.IsType<BlueInstance>(
             WireAssertions.Materialize(
-                Ballpark.Snapshot(new(pilot with { Position = position }, SpacePosition.Zero, null, 0, null), 42, db.Objects)
+                Ballpark.Snapshot(
+                    new(PilotContact.From(pilot with { Position = position }), SpacePosition.Zero, null, 0, null),
+                    42,
+                    db.Objects
+                )
             )
         );
         var fields = Assert.IsType<Dictionary<string, object?>>(snapshot.State);

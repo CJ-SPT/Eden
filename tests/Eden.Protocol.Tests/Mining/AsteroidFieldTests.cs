@@ -169,7 +169,7 @@ public sealed class AsteroidFieldTests
         object[] messages =
         [
             Assert.IsType<BlueInstance>(
-                WireAssertions.Materialize(Ballpark.Snapshot(new(pilot, SpacePosition.Zero, null, 0, null), 1, rocks))
+                WireAssertions.Materialize(Ballpark.Snapshot(new(PilotContact.From(pilot), SpacePosition.Zero, null, 0, null), 1, rocks))
             ),
             Assert.IsType<object?[]>(WireAssertions.Materialize(Ballpark.AddObjects(rocks, 1))),
         ];

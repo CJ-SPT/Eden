@@ -12,10 +12,22 @@ internal static class FlightCalls
         string method,
         object?[] arguments,
         Dictionary<string, object?>? keywords = null
-    ) => flight.Execute(FlightRequestWire.Read(service, method, arguments, keywords));
+    )
+    {
+        var request = FlightRequestWire.Read(service, method, arguments, keywords);
+        if (request.Command is { } command)
+        {
+            return flight.Execute(command);
+        }
+        if (request.Checkpoint)
+        {
+            flight.Checkpoint();
+        }
+        return PilotCallResult.Unsupported;
+    }
 
     public static PilotCallResult StartJump(this FlightSession flight, object?[] arguments, ISystemObjects systems) =>
-        FlightRequestWire.Read("beyonce", "CmdStargateJump", arguments) is FlightCommand.Jump jump
+        FlightRequestWire.Read("beyonce", "CmdStargateJump", arguments).Command is FlightCommand.Jump jump
             ? flight.StartJump(jump, systems)
-            : flight.Execute(new FlightCommand.Unsupported(true));
+            : flight.Call("beyonce", "CmdStargateJump", arguments);
 }

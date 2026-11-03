@@ -546,10 +546,21 @@ public sealed class ShieldBoostTests
             f.Clock,
             f.Db.Services.GetRequiredService<INpcCombat>(),
             locks,
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
-            shields,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+            new ShipLossCoordinator(
+                new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
+                new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
+                shields,
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+                new Eden.Protocol.Docking.DeferredRefitPrimes(
+                    new Eden.Protocol.Ammunition.MagazineWire(
+                        f.Clock,
+                        f.Fitting,
+                        f.Db.Services.GetRequiredService<IPilotCombat>(),
+                        f.Db.Services.GetRequiredService<IPilotInventory>()
+                    ),
+                    f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
+                )
+            ),
             new()
         );
         combat.Enter(context);
