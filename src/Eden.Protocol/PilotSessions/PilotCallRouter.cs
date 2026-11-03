@@ -71,49 +71,17 @@ internal sealed class PilotCallContext(
     // Deliver it before Destiny removes that ball from the client's park.
     public List<PilotNotification> NotificationsBeforeFlight { get; } = [];
 
-    private readonly Dictionary<string, string> _bindings = [];
-    private readonly Dictionary<string, BlueObjectReference> _references = [];
-
-    private int _nextSlot = 2;
+    private readonly PilotBindings _bindings = new(sessionId);
 
     public void ReleaseLocationReferences()
     {
         DestroyedShip = null;
-        foreach (
-            string service in new[]
-            {
-                "beyonce",
-                "ship",
-                "invbroker",
-                "dogmaIM",
-                "jumpCloneSvc",
-                "corpStationMgr",
-                "reprocessingSvc",
-                "repairSvc",
-            }.Concat(_references.Keys.Where(k => k.StartsWith(WreckDefinitions.BindingPrefix, StringComparison.Ordinal)).ToArray())
-        )
-        {
-            if (_references.Remove(service, out var reference))
-            {
-                _bindings.Remove(reference.Id);
-            }
-        }
+        _bindings.ReleaseLocationReferences();
     }
 
-    public string? ResolveReference(object? objectId) =>
-        objectId is byte[] or string ? _bindings.GetValueOrDefault(BlueMarshal.Text(objectId)) : null;
+    public string? ResolveReference(object? objectId) => _bindings.ResolveReference(objectId);
 
-    public BlueObjectReference Reference(string service)
-    {
-        if (!_references.TryGetValue(service, out var reference))
-        {
-            int slot = _nextSlot++;
-            reference = new($"N={PilotLogin.NodeId}:{sessionId}-{slot}", slot);
-            _references.Add(service, reference);
-            _bindings.Add(reference.Id, service);
-        }
-        return reference;
-    }
+    public BlueObjectReference Reference(string service) => _bindings.Reference(service);
 }
 
 [Injectable(InjectionType.Scoped)]

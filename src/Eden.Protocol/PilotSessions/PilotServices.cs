@@ -17,25 +17,12 @@ namespace Eden.Protocol.PilotSessions;
 [Injectable(InjectionType.Scoped)]
 internal sealed class PilotServices(
     IPilotLookup pilots,
-    IShipPositionStore positions,
     PilotCallRouter router,
     TimeProvider clock,
-    SharedSpace space,
-    ISystemObjects objects,
+    FlightSessionFactory flights,
+    PilotUpdateCoordinator updates,
     SkillHandler skills,
-    TargetingHandler targeting,
-    IAsteroidField asteroids,
-    MiningHandler mining,
-    IPilotInventory inventory,
-    IStationDocking docking,
-    IPilotHealth health,
-    INpcEncounters encounters,
-    CombatHandler combat,
-    NpcCombatHandler npcCombat,
-    IWrecks wrecks,
-    ShieldBoostHandler shields,
-    IndustryHandler industry,
-    PropulsionHandler propulsion
+    IAsteroidField asteroids
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -52,25 +39,11 @@ internal sealed class PilotServices(
             accountId,
             pilots.ReadAccount(accountId),
             pilots.ListPilots(accountId),
-            pilot => new FlightSession(
-                positions,
-                pilot,
-                clock,
-                space,
-                objects.Load(pilot.SystemId),
-                inventory
-                    .List(pilot.PilotId, pilot.ShipId)
-                    .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
-                    .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId))
-                    .ToArray(),
-                docking,
-                health,
-                encounters,
-                wrecks
-            ),
+            flights.Create,
             clientId,
             signedSettings
         );
+        PilotSessionOutput output = new(context, accountId, clientId, write, report);
         bool initialStateSent = false;
         Task? checkpoint = null;
         while (true)
@@ -78,7 +51,7 @@ internal sealed class PilotServices(
             var incoming = read();
             while (
                 context.ActiveFlight is { } flight
-                && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || industry.IsMonitoring)
+                && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
             )
             {
                 checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);
@@ -89,14 +62,14 @@ internal sealed class PilotServices(
                     if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                     {
                         skills.Advance(context);
-                        await FlushNotificationsAsync();
+                        await output.FlushNotificationsAsync();
                     }
                     flight.Checkpoint();
                     var departure = flight.Pilot;
                     if (flight.CompleteJump())
                     {
                         context.ReleaseLocationReferences();
-                        await write(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
+                        await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
                         report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
                     }
                     if (flight.InBallpark)
@@ -105,23 +78,15 @@ internal sealed class PilotServices(
                         flight.RefreshWrecks();
                         flight.RefreshNpcs();
                         flight.RefreshPeers();
-                        await FlushFlightUpdatesAsync();
+                        await output.FlushFlightUpdatesAsync();
                     }
-                    targeting.Advance(context);
-                    mining.Advance(context);
-                    combat.Advance(context);
-                    shields.Advance(context);
-                    propulsion.Advance(context);
-                    industry.Advance(context);
-                    var beforeAttack = context.Pilot;
-                    npcCombat.Advance(context);
-                    targeting.Advance(context);
-                    if (beforeAttack.ShipId != context.Pilot.ShipId)
+                    var beforeAttack = updates.Advance(context);
+                    if (beforeAttack is not null && beforeAttack.ShipId != context.Pilot.ShipId)
                     {
-                        await AnnounceTransitionAsync(beforeAttack);
+                        await output.AnnounceTransitionAsync(beforeAttack);
                     }
-                    await FlushFlightUpdatesAsync();
-                    await FlushNotificationsAsync();
+                    await output.FlushFlightUpdatesAsync();
+                    await output.FlushNotificationsAsync();
                     checkpoint = null;
                 }
                 if (incoming.IsCompleted)
@@ -132,7 +97,7 @@ internal sealed class PilotServices(
             var packet = IncomingMachoPacket.Read(await incoming);
             if (packet.Name == PacketNamespace + "PingReq")
             {
-                await write(packet.Ping(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
+                await output.WriteAsync(packet.Ping(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
                 continue;
             }
 
@@ -151,7 +116,7 @@ internal sealed class PilotServices(
             catch (InvalidDataException error)
             {
                 report(error.Message);
-                await write(packet.InvalidArguments());
+                await output.WriteAsync(packet.InvalidArguments());
                 continue;
             }
             string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
@@ -162,21 +127,14 @@ internal sealed class PilotServices(
             PilotCallResult result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
             if (!selected && context.Selected)
             {
-                npcCombat.Enter(context);
+                updates.Enter(context);
             }
-            targeting.Advance(context);
-            mining.Advance(context);
-            combat.Advance(context);
-            shields.Advance(context);
-            propulsion.Advance(context);
-            industry.Advance(context);
-            npcCombat.Advance(context);
-            targeting.Advance(context);
+            updates.Advance(context);
             // A timer-driven loss can happen while rejecting an unrelated RPC.
             // Its durable capsule transition still has to reach the client.
             if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
             {
-                await AnnounceTransitionAsync(previous);
+                await output.AnnounceTransitionAsync(previous);
             }
             if (result is PilotCallResult.Failure validationError)
             {
@@ -189,23 +147,23 @@ internal sealed class PilotServices(
                 // ErrorResponse params are original command, code and payload. Code 2 wraps an
                 // exception stream. Named errors retain their client-specific handling,
                 // including inventory's smaller-quantity retry for cargo capacity.
-                await write(packet.UserError(userError));
+                await output.WriteAsync(packet.UserError(userError));
                 continue;
             }
             if (result is PilotCallResult.UnsupportedCall)
             {
-                await write(packet.UnsupportedCall(service, method));
+                await output.WriteAsync(packet.UnsupportedCall(service, method));
                 continue;
             }
             if (!selected && context.Selected)
             {
                 var pilot = context.Pilot;
                 skills.Advance(context);
-                await write(new PilotSessionChange(accountId, clientId, pilot).ToBlue());
+                await output.WriteAsync(new PilotSessionChange(accountId, clientId, pilot).ToBlue());
                 report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
             }
 
-            await write(packet.CallSucceeded(((PilotCallResult.Success)result).Reply));
+            await output.WriteAsync(packet.CallSucceeded(((PilotCallResult.Success)result).Reply));
             if (
                 service == "beyonce"
                 && method == "MachoBindObject"
@@ -215,67 +173,13 @@ internal sealed class PilotServices(
             {
                 context.Flight.Snapshot();
             }
-            await FlushFlightUpdatesAsync();
-            await FlushNotificationsAsync();
+            await output.FlushFlightUpdatesAsync();
+            await output.FlushNotificationsAsync();
             if (!initialStateSent && service == "machoNet" && method == "GetServiceInfo")
             {
                 initialStateSent = true;
-                await write(InitialState(accountId, clientId));
+                await output.WriteAsync(InitialState(accountId, clientId));
             }
-        }
-
-        async Task AnnounceTransitionAsync(DockedPilot previous)
-        {
-            if (previous.ShipId != context.Pilot.ShipId)
-            {
-                // HangarView needs new inventory rows before its ship delta. In
-                // space, load the capsule ball before the client adopts its ego.
-                await FlushNotificationsAsync();
-                if (previous.Position is not null)
-                {
-                    await FlushFlightUpdatesAsync();
-                }
-            }
-            if (previous.LocationId != context.Pilot.LocationId)
-            {
-                context.ReleaseLocationReferences();
-            }
-            await write(new PilotSessionChange(accountId, clientId, context.Pilot, previous).ToBlue());
-            report(
-                previous.ShipId != context.Pilot.ShipId
-                    ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} "
-                        + $"from {previous.ShipId} at {context.Pilot.LocationId}."
-                    : $"Ship {context.Pilot.ShipId} moved from {previous.LocationId} to {context.Pilot.LocationId}."
-            );
-        }
-
-        async Task FlushFlightUpdatesAsync()
-        {
-            foreach (var notification in context.NotificationsBeforeFlight)
-            {
-                await SendNotificationAsync(notification);
-            }
-            context.NotificationsBeforeFlight.Clear();
-            if (context.ActiveFlight is { Updates.Count: > 0 } flight)
-            {
-                await SendNotificationAsync(new DestinyUpdatesNotification(flight.Updates));
-                flight.Updates.Clear();
-            }
-        }
-
-        async Task FlushNotificationsAsync()
-        {
-            foreach (var notification in context.Notifications)
-            {
-                await SendNotificationAsync(notification);
-            }
-            context.Notifications.Clear();
-        }
-
-        Task SendNotificationAsync(PilotNotification notification)
-        {
-            report($"Notify {notification.Name}.");
-            return write(Notification(accountId, clientId, notification));
         }
     }
 }

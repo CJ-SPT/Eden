@@ -908,3 +908,11 @@ Eden.Gameplay owns combat damage arithmetic, health state and its persistence co
 Automated acceptance passed restore, build with zero warnings, 383 .NET tests, 3 catalog setup Python tests, 9 formatting policy Python tests and formatting verification. Existing health tests check layered damage, recharge, concurrent hits, restart persistence and the exact native damage-state snapshot.
 
 Live acceptance used staged build 3662168 and a separate copy of the prior test save under `%LOCALAPPDATA%/Eden/Lab/architecture-20261102`. Eden Pilot entered Perimeter II - Asteroid Belt 1. Inventory showed Ibis (Ibis), 100 Tritanium and a Civilian Miner with 6.0/125.0 cubic metres used. The HUD rendered health rings. Activating Small Shield Booster I displayed its 26 HP per 2 seconds tooltip and produced native effect and attribute updates. Shields were already full. This checks presentation and activation, while damaged-health arithmetic is covered by automated tests. The copied save and client remain available for subsequent milestones.
+
+## Session orchestration milestone 2
+
+On 2026-11-03, PilotServices delegated flight construction to FlightSessionFactory, common feature advancement to the connection-scoped PilotUpdateCoordinator, bound-reference storage to PilotBindings, and socket output to PilotSessionOutput. Timer-only skill and flight checkpoints remain explicit. Both advancement paths retain targeting, mining, combat, shields, propulsion, industry, NPC combat and targeting in their original order. The coordinator accepts account calls before selection. Ship-loss transitions still precede rejected-call replies, and the before-flight queue still precedes Destiny updates.
+
+Automated acceptance passed restore, build with zero warnings, all 383 .NET tests, both Python suites (3 and 9 tests) and formatting verification. Existing session tests cover account calls before selection, bound inventory routing, notification ordering, rejected calls and recovery hull announcements.
+
+Live acceptance restarted the staged client against the milestone build and the isolated architecture save. Eden Pilot re-entered the belt with Ibis inventory and health rings visible. Double-clicking open space issued CmdGotoDirection. The ship turned, the speed display reached 133 m/s, and wreck ranges changed during timer updates without further calls.
