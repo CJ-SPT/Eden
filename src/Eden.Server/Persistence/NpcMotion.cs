@@ -104,7 +104,9 @@ internal static class NpcMotion
     ) =>
         npc.Navigation switch
         {
-            NpcNavigationState.Idle => null,
+            NpcNavigationState.Idle => Velocity(npc) == SpacePosition.Zero
+                ? null
+                : new(Velocity(npc), 0, 0, 0, State: NpcNavigationState.Idle),
             NpcNavigationState.Pursuing or NpcNavigationState.Orbiting when target != 0 => new(
                 Velocity(npc),
                 NpcMotionRules.SpeedFraction(attributes),

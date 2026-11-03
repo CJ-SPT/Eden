@@ -47,10 +47,7 @@ public sealed class FlightSessionTests
             observer.Updates.Clear();
             observer.RefreshPeers();
             var calls = observer.WireUpdates().Cast<object?[]>().Select(tick => (object?[])tick[1]!).ToList();
-            Assert.Equal(
-                new object?[] { "SetBallPosition", "GotoDirection", "SetSpeedFraction", "SetBallVelocity" },
-                calls.Select(call => call[0])
-            );
+            Assert.Equal(new object?[] { "GotoDirection", "SetSpeedFraction" }, calls.Select(call => call[0]));
             Assert.All(calls, call => Assert.Equal(moving.Pilot.ShipId, ((object?[])call[1]!)[0]));
             var sample = Assert.Single(space.Peers(observer.Pilot));
             Assert.True(sample.Pilot.Position!.X > initial.X);
@@ -59,7 +56,7 @@ public sealed class FlightSessionTests
             moving.CallWire("beyonce", "CmdStop", []);
             moving.RefreshPeers();
             observer.RefreshPeers();
-            Assert.Equal("Stop", ((object?[])((object?[])Assert.Single(observer.WireUpdates())!)[1]!)[0]);
+            Assert.Equal(new[] { "Stop" }, observer.Updates.Select(u => ((object?[])u.Command.ToBlue())[0]));
             var braking = Assert.Single(space.Peers(observer.Pilot));
             Assert.Null(braking.Heading);
             Assert.Equal(sample.Velocity, braking.Velocity);
@@ -74,7 +71,8 @@ public sealed class FlightSessionTests
         Assert.Empty(space.Peers(pilot.Pilot));
         pilot.Updates.Clear();
         pilot.RefreshPeers();
-        var remove = (object?[])((object?[])Assert.Single(pilot.WireUpdates())!)[1]!;
+        var removal = Assert.Single(pilot.Updates, u => u.Command is DestinyCommand.RemoveBall);
+        var remove = (object?[])removal.Command.ToBlue();
         Assert.Equal("RemoveBall", remove[0]);
         Assert.Equal(new object?[] { wing.Pilot.ShipId, false }, (object?[])remove[1]!);
         pilot.Dispose();
@@ -279,12 +277,13 @@ public sealed class FlightSessionTests
             mover.RefreshPeers();
             observer.Checkpoint();
             observer.RefreshPeers();
-            if (observer.WireUpdates().Count > 0)
+            if (observer.Updates.Any(u => u.Command is DestinyCommand.AddBalls))
             {
                 break;
             }
         }
-        var add = (object?[])((object?[])Assert.Single(observer.WireUpdates())!)[1]!;
+        var addition = Assert.Single(observer.Updates, u => u.Command is DestinyCommand.AddBalls);
+        var add = (object?[])WireAssertions.Materialize(addition.Command)!;
         Assert.Equal("AddBalls", add[0]);
         var chunk = (object?[])((object?[])add[1]!)[0]!;
         using BinaryReader reader = new(new MemoryStream((byte[])chunk[0]!));

@@ -16,6 +16,10 @@ public sealed class NavigationState
     public WarpCourse? Warp { get; private set; }
     public double SpeedFraction { get; private set; }
 
+    public NavigationState Copy() => (NavigationState)MemberwiseClone();
+
+    public void SetVelocity(SpacePosition velocity) => Velocity = velocity;
+
     public void AdoptHull()
     {
         SetAtRest();
@@ -164,7 +168,7 @@ public sealed class NavigationState
             Velocity = sample.Velocity;
             if (!sample.Exited)
             {
-                return new(position, changes);
+                return new(position, changes, Velocity);
             }
             Warp = null;
             SpeedFraction = 0;
@@ -210,7 +214,7 @@ public sealed class NavigationState
                 {
                     var radial = position - current.Position;
                     double error = radial.Length - current.Radius - hull.ShipRadius - FollowRange;
-                    Direction = radial.Unit * -Math.Sign(error);
+                    Direction = radial.Length == 0 ? new SpacePosition(1, 0, 0) : radial.Unit * -Math.Sign(error);
                     if (cruise > 0 && Math.Abs(error) < cruise)
                     {
                         // Destiny GotoThrust tapers within one tick's travel distance.
@@ -225,6 +229,7 @@ public sealed class NavigationState
         {
             Velocity = Velocity with { Y = Velocity.Y * (0.93 / 1.07) };
         }
+        var initialVelocity = Velocity;
         double tau = hull.InertiaTime;
         double decay = Math.Exp(-1 / tau);
         var targetVelocity = (Direction ?? SpacePosition.Zero) * cruise;
@@ -244,7 +249,7 @@ public sealed class NavigationState
         {
             SetAtRest();
         }
-        return new(next, changes);
+        return new(next, changes, initialVelocity);
     }
 
     public void SetAtRest()
@@ -285,7 +290,7 @@ public sealed class NavigationState
     }
 }
 
-public sealed record NavigationTick(SpacePosition Position, IReadOnlyList<NavigationChange> Changes);
+public sealed record NavigationTick(SpacePosition Position, IReadOnlyList<NavigationChange> Changes, SpacePosition InitialVelocity);
 
 public abstract record NavigationChange
 {

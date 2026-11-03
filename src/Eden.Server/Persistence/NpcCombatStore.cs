@@ -174,6 +174,10 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         {
             return null;
         }
+        if (database.MotionStamps.ContainsKey(system))
+        {
+            npc.MotionAt = now;
+        }
         NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now, destinyStamp);
         var separation = targetPosition - NpcMotion.Position(npc);
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));

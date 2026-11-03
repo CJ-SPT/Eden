@@ -37,6 +37,14 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
     {
+        lock (database.MotionLock)
+        {
+            return Read(systemId, now);
+        }
+    }
+
+    private IReadOnlyList<NpcContact> Read(int systemId, long now)
+    {
         if (systemId != NpcEncounterDefinitions.PerimeterSystem)
         {
             return [];
@@ -112,7 +120,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
             {
                 NpcMotion.Return(npc);
             }
-            if (npc.Navigation == NpcNavigationState.Returning)
+            if (npc.Navigation == NpcNavigationState.Returning && !database.MotionStamps.ContainsKey(systemId))
             {
                 NpcMotion.Advance(
                     npc,
@@ -161,7 +169,9 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                             effective[n.Id],
                             aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
                             NpcMotion.Home(belts.Single(b => b.Id == n.BeltId))
-                        )
+                        ),
+                        database.MotionStamps.GetValueOrDefault(systemId),
+                        database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId)
                     )
             )
             .ToArray();

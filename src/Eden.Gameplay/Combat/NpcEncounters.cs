@@ -18,7 +18,9 @@ public sealed record NpcContact(
     float Agility,
     ShipHealth Health,
     NpcWeaponContact? Weapon = null,
-    NpcNavigationContact? Navigation = null
+    NpcNavigationContact? Navigation = null,
+    int Stamp = 0,
+    bool Bumped = false
 );
 
 public enum NpcNavigationState

@@ -209,7 +209,7 @@ internal static class Ballpark
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;
         var mode =
-            course is null ? NavigationMode.Stop
+            course is null || course.State == NpcNavigationState.Idle ? NavigationMode.Stop
             : course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit
             : course.TargetId != 0 ? NavigationMode.Follow
             : NavigationMode.Goto;

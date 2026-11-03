@@ -36,8 +36,9 @@ internal sealed class FlightSession(
 {
     private FlightEffects? _effects;
     private FlightEffects Effects => _effects ??= new(Update);
-    private readonly NavigationState _navigation = new();
+    private NavigationState _navigation = new();
     private ShipContact[] _peers = [];
+    private readonly Dictionary<long, long> _peerOrderSequences = new();
     private StaticSpaceObject[] _visibleAsteroids = [];
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
@@ -55,9 +56,6 @@ internal sealed class FlightSession(
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
     private bool _destroying;
-    private int _lastPeerSync;
-    private int _lastNpcSync;
-    private const int NpcReconciliationTicks = 10;
     public bool InBallpark { get; private set; }
     private int _simulatedStamp = space.Stamp(clock);
     private int Stamp => space.Stamp(clock);
@@ -269,7 +267,6 @@ internal sealed class FlightSession(
         {
             Update(new DestinyCommand.AddBalls(Ballpark.AddNpcs(added, Stamp)));
         }
-        bool reconcile = Stamp - _lastNpcSync >= NpcReconciliationTicks;
         foreach (var npc in current)
         {
             var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
@@ -277,37 +274,18 @@ internal sealed class FlightSession(
             {
                 Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));
             }
-            if (
-                previous is not null
-                && (npc.Position != previous.Position || npc.Navigation != previous.Navigation || reconcile && npc.Navigation is not null)
-            )
+            if (previous is not null && npc.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks)
             {
-                Update(new DestinyCommand.SetBallPosition(npc.Id, npc.Position.X, npc.Position.Y, npc.Position.Z));
-                if (npc.Navigation is { } course)
-                {
-                    if (course.TargetId != 0)
-                    {
-                        Update(
-                            new DestinyCommand.Follow(
-                                course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit : NavigationMode.Follow,
-                                npc.Id,
-                                course.TargetId,
-                                course.FollowRange
-                            )
-                        );
-                    }
-                    else if (course.Destination is { } destination)
-                    {
-                        Update(new DestinyCommand.GotoPoint(npc.Id, destination.X, destination.Y, destination.Z));
-                    }
-                    Update(new DestinyCommand.SetSpeedFraction(npc.Id, course.SpeedFraction));
-                    Update(new DestinyCommand.SetBallVelocity(npc.Id, course.Velocity.X, course.Velocity.Y, course.Velocity.Z));
-                }
-                else
-                {
-                    Update(new DestinyCommand.Stop(npc.Id));
-                    Update(new DestinyCommand.SetBallVelocity(npc.Id, 0d, 0d, 0d));
-                }
+                CorrectPosition(
+                    npc.Id,
+                    npc.Position,
+                    npc.Navigation?.Velocity ?? SpacePosition.Zero,
+                    npc.Stamp == 0 ? _simulatedStamp : npc.Stamp
+                );
+            }
+            if (previous is not null && NpcCourseChanged(previous.Navigation, npc.Navigation))
+            {
+                ApplyNpcCourse(npc);
             }
             if (previous?.Weapon != npc.Weapon)
             {
@@ -332,12 +310,42 @@ internal sealed class FlightSession(
                 NotifyHealth(npc.Health);
             }
         }
-        if (reconcile)
-        {
-            _lastNpcSync = Stamp;
-        }
         _npcs = current;
     }
+
+    private void ApplyNpcCourse(NpcContact npc)
+    {
+        int stamp = npc.Stamp == 0 ? _simulatedStamp : npc.Stamp;
+        void Send(DestinyCommand command) => Updates.Add(new(stamp, command));
+        var course = npc.Navigation;
+        if (course is null || course.State == NpcNavigationState.Idle)
+        {
+            Send(new DestinyCommand.Stop(npc.Id));
+        }
+        else if (course.TargetId != 0)
+        {
+            Send(
+                new DestinyCommand.Follow(
+                    course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit : NavigationMode.Follow,
+                    npc.Id,
+                    course.TargetId,
+                    course.FollowRange
+                )
+            );
+        }
+        else if (course.Destination is { } destination)
+        {
+            Send(new DestinyCommand.GotoPoint(npc.Id, destination.X, destination.Y, destination.Z));
+        }
+        Send(new DestinyCommand.SetSpeedFraction(npc.Id, course?.SpeedFraction ?? 0));
+    }
+
+    private static bool NpcCourseChanged(NpcNavigationContact? previous, NpcNavigationContact? current) =>
+        previous?.State != current?.State
+        || previous?.TargetId != current?.TargetId
+        || previous?.FollowRange != current?.FollowRange
+        || previous?.SpeedFraction != current?.SpeedFraction
+        || previous?.Destination != current?.Destination;
 
     private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active) =>
         Update(
@@ -433,21 +441,82 @@ internal sealed class FlightSession(
         _visibleAsteroids = current;
     }
 
+    private ShipMotion Motion() =>
+        new(
+            Pilot.ShipId,
+            Pilot.SystemId,
+            _simulatedStamp,
+            Pilot.Position!,
+            Pilot.Flight,
+            _navigation,
+            _jump is null && !_destroying,
+            _navigation.FollowTarget is { } target ? NavigationTarget(target.Id) : null
+        );
+
+    private void PublishMotion()
+    {
+        if (Pilot.Position is not null && world is ISystemMotionStore)
+        {
+            space.PublishMotion(Motion());
+        }
+    }
+
     public void Checkpoint()
     {
-        RefreshTackle();
-        int now = Stamp;
-        var previous = Pilot.Position;
-        while (_simulatedStamp < now && Moving && Pilot.Position is { } position)
+        lock (space.MotionLock)
         {
-            _simulatedStamp++;
-            Evolve(position);
+            RefreshTackle();
+            int now = Stamp;
+            if (Pilot.Position is not null && world is ISystemMotionStore motionStore)
+            {
+                var history = space.Advance(Motion(), now, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), motionStore, objects);
+                bool recover = history.Count > 0 && history[0].Ship.Stamp > _simulatedStamp + 1;
+                if (recover)
+                {
+                    history = [history[^1]];
+                }
+                foreach (var result in history)
+                {
+                    _simulatedStamp = result.Ship.Stamp;
+                    _navigation = result.Ship.Navigation.Copy();
+                    Pilot = Pilot with { Position = result.Ship.Position };
+                    ApplyChanges(result.Changes, shared: true);
+                }
+                _simulatedStamp = now;
+                if (recover && InBallpark)
+                {
+                    var contact = CreateContact();
+                    if (_navigation.Warp is not null)
+                    {
+                        Snapshot(space.Peers(Pilot), contact);
+                    }
+                    else
+                    {
+                        CorrectPosition(Pilot.ShipId, Pilot.Position!, _navigation.Velocity, now);
+                        ApplyCourse(contact);
+                    }
+                }
+                return;
+            }
+            var previous = Pilot.Position;
+            while (_simulatedStamp < now && Moving && Pilot.Position is { } position)
+            {
+                _simulatedStamp++;
+                Evolve(position);
+            }
+            _simulatedStamp = now;
+            if (Pilot.Position != previous)
+            {
+                world.SetPosition(Pilot.ShipId, Pilot.Position);
+            }
         }
-        _simulatedStamp = now;
-        if (Pilot.Position != previous)
-        {
-            world.SetPosition(Pilot.ShipId, Pilot.Position);
-        }
+    }
+
+    private void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp)
+    {
+        Updates.Add(new(stamp, new DestinyCommand.SetBallPosition(id, position.X, position.Y, position.Z)));
+        // This restores a missed sample. Ordinary prediction avoids setters that reset native interpolation and facing.
+        Updates.Add(new(stamp, new DestinyCommand.SetBallVelocity(id, velocity.X, velocity.Y, velocity.Z)));
     }
 
     public void RefreshTackle(bool force = false)
@@ -488,7 +557,21 @@ internal sealed class FlightSession(
             objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray()
         );
         Pilot = Pilot with { Position = tick.Position };
-        foreach (var change in tick.Changes)
+        ApplyChanges(tick.Changes);
+    }
+
+    private void ApplyChanges(IReadOnlyList<NavigationChange> changes, bool shared = false)
+    {
+        void Send(DestinyCommand command, int? sourceStamp = null)
+        {
+            int stamp = sourceStamp ?? _simulatedStamp;
+            Updates.Add(new(stamp, command));
+            if (!shared)
+            {
+                space.RecordOrder(Pilot.ShipId, new(stamp, command));
+            }
+        }
+        foreach (var change in changes)
         {
             switch (change)
             {
@@ -496,17 +579,20 @@ internal sealed class FlightSession(
                     WarpEffect(Pilot.ShipId, false);
                     break;
                 case NavigationChange.Heading heading:
-                    Update(new DestinyCommand.GotoDirection(Pilot.ShipId, heading.Direction.X, heading.Direction.Y, heading.Direction.Z));
+                    Send(
+                        new DestinyCommand.GotoDirection(Pilot.ShipId, heading.Direction.X, heading.Direction.Y, heading.Direction.Z),
+                        _simulatedStamp - 1
+                    );
                     break;
                 case NavigationChange.Stopped:
-                    Update(new DestinyCommand.Stop(Pilot.ShipId));
+                    Send(new DestinyCommand.Stop(Pilot.ShipId), _simulatedStamp - 1);
                     break;
                 case NavigationChange.Collision collision:
-                    Update(
+                    Send(
                         new DestinyCommand.SetBallPosition(Pilot.ShipId, collision.Position.X, collision.Position.Y, collision.Position.Z)
                     );
-                    Update(new DestinyCommand.Stop(Pilot.ShipId));
-                    Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
+                    Send(new DestinyCommand.Stop(Pilot.ShipId));
+                    Send(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
                     break;
             }
         }
@@ -536,7 +622,8 @@ internal sealed class FlightSession(
             _localRepairs,
             _hardeners,
             _support,
-            _tackleEffects
+            _tackleEffects,
+            _simulatedStamp
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -609,6 +696,7 @@ internal sealed class FlightSession(
             return;
         }
         Pilot = Pilot with { Flight = properties };
+        PublishMotion();
         if (InBallpark)
         {
             Update(new DestinyCommand.SetBallMass(Pilot.ShipId, properties.Mass));
@@ -713,6 +801,16 @@ internal sealed class FlightSession(
 
     public void RefreshPeers()
     {
+        lock (space.MotionLock)
+        {
+            RefreshPeersCore();
+        }
+    }
+
+    private void RefreshPeersCore()
+    {
+        Checkpoint();
+        PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
         var current = space.Peers(Pilot);
@@ -732,21 +830,10 @@ internal sealed class FlightSession(
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
             Update(new DestinyCommand.RemoveBall(departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true));
+            _peerOrderSequences.Remove(departed.Pilot.ShipId);
         }
-        // Destiny integrates the same course between changes. Occasionally reconcile drift.
-        bool reconcile = Stamp - _lastPeerSync >= NavigationDefinitions.ReconciliationTicks;
-        if (
-            reconcile
-            && _navigation.FollowTarget is not null
-            && _navigation.FollowMode == NavigationMode.Orbit
-            && Pilot.Position is { } ownPosition
-        )
-        {
-            Update(new DestinyCommand.SetBallPosition(Pilot.ShipId, ownPosition.X, ownPosition.Y, ownPosition.Z));
-            Update(
-                new DestinyCommand.SetBallVelocity(Pilot.ShipId, _navigation.Velocity.X, _navigation.Velocity.Y, _navigation.Velocity.Z)
-            );
-        }
+        // Native Destiny predicts the common movement and collisions between stamped course changes.
+        // Absolute position setters collapse its interpolation interval and are reserved for recovery.
         foreach (var ship in current)
         {
             var previous = Array.Find(_peers, peer => peer.Pilot.ShipId == ship.Pilot.ShipId);
@@ -754,6 +841,7 @@ internal sealed class FlightSession(
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
                 Update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, Stamp)));
+                _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
                 Effects.Replay(ship, null);
                 if (ship.Arriving)
                 {
@@ -779,6 +867,21 @@ internal sealed class FlightSession(
             {
                 DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
             }
+            long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
+            bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
+            if (missing)
+            {
+                CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
+                ApplyCourse(ship);
+            }
+            else
+            {
+                foreach (var order in space.Orders(ship.Pilot.ShipId, after))
+                {
+                    Updates.Add(order.Update);
+                }
+            }
+            _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
             if (ship.Warp is not null)
             {
                 if (ship.Warp != previous.Warp)
@@ -789,41 +892,12 @@ internal sealed class FlightSession(
             }
             if (ship.AlignTo is not null)
             {
-                if (ship.AlignTo != previous.AlignTo)
-                {
-                    ApplyCourse(ship);
-                }
                 continue;
             }
             if (previous.Warp is not null)
             {
                 WarpEffect(ship.Pilot.ShipId, false);
             }
-            if (ship.Heading is null)
-            {
-                if (previous.Heading is not null)
-                {
-                    Update(new DestinyCommand.Stop(ship.Pilot.ShipId));
-                }
-                continue;
-            }
-            if (
-                (ship.FollowRange is null && ship.Heading != previous.Heading)
-                || ship.SpeedFraction != previous.SpeedFraction
-                || ship.FollowRange != previous.FollowRange
-                || ship.FollowTargetId != previous.FollowTargetId
-                || ship.FollowMode != previous.FollowMode
-                || reconcile
-            )
-            {
-                var position = ship.Pilot.Position!;
-                Update(new DestinyCommand.SetBallPosition(ship.Pilot.ShipId, position.X, position.Y, position.Z));
-                ApplyCourse(ship);
-            }
-        }
-        if (reconcile)
-        {
-            _lastPeerSync = Stamp;
         }
         _peers = current;
     }
@@ -846,6 +920,7 @@ internal sealed class FlightSession(
         Pilot = Pilot with { Flight = _baseFlight };
         InBallpark = false;
         _peers = [];
+        _peerOrderSequences.Clear();
         _visibleAsteroids = [];
         _mining = [];
         _weapons = [];
@@ -882,6 +957,14 @@ internal sealed class FlightSession(
 
     public void Snapshot()
     {
+        lock (space.MotionLock)
+        {
+            SnapshotCore();
+        }
+    }
+
+    private void SnapshotCore()
+    {
         Checkpoint();
         if (!InBallpark && Pilot.Position is { } position)
         {
@@ -905,6 +988,7 @@ internal sealed class FlightSession(
             _awaitingArrival = false;
             _arrivalStamp = Stamp;
         }
+        PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
         Snapshot(space.Peers(Pilot), contact);
@@ -917,6 +1001,11 @@ internal sealed class FlightSession(
     private void Snapshot(ShipContact[] peers, ShipContact own)
     {
         _peers = peers;
+        _peerOrderSequences.Clear();
+        foreach (var peer in peers)
+        {
+            _peerOrderSequences[peer.Pilot.ShipId] = space.OrderSequence(peer.Pilot.ShipId);
+        }
         int stamp = Stamp;
         var visible = VisibleObjects();
         _npcs = ReadNpcs();
@@ -941,31 +1030,38 @@ internal sealed class FlightSession(
 
     private void ApplyCourse(ShipContact ship)
     {
+        void Send(DestinyCommand command)
+        {
+            Updates.Add(new(ship.Stamp, command));
+            if (ship.Pilot.ShipId == Pilot.ShipId)
+            {
+                space.RecordOrder(Pilot.ShipId, new(ship.Stamp, command));
+            }
+        }
         long id = ship.Pilot.ShipId;
         if (ship.AlignTo is { } end)
         {
-            Update(new DestinyCommand.SetSpeedFraction(id, 1d));
-            Update(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
-            Update(new DestinyCommand.WarpTo(id, end.X, end.Y, end.Z, 0d, ship.WarpFactor));
+            Send(new DestinyCommand.SetSpeedFraction(id, 1d));
+            Send(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
+            Send(new DestinyCommand.WarpTo(id, end.X, end.Y, end.Z, 0d, ship.WarpFactor));
             return;
         }
         if (ship.Heading is null)
         {
-            Update(new DestinyCommand.Stop(id));
+            Send(new DestinyCommand.Stop(id));
         }
         else
         {
             if (ship.FollowRange is double range)
             {
-                Update(new DestinyCommand.Follow(ship.FollowMode, id, ship.FollowTargetId, range));
+                Send(new DestinyCommand.Follow(ship.FollowMode, id, ship.FollowTargetId, range));
             }
             else
             {
-                Update(new DestinyCommand.GotoDirection(id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z));
+                Send(new DestinyCommand.GotoDirection(id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z));
             }
-            Update(new DestinyCommand.SetSpeedFraction(id, ship.SpeedFraction));
+            Send(new DestinyCommand.SetSpeedFraction(id, ship.SpeedFraction));
         }
-        Update(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
     }
 
     private void WarpEffect(long id, bool start)
@@ -976,7 +1072,12 @@ internal sealed class FlightSession(
 
     private void SetAtRest() => _navigation.SetAtRest();
 
-    private void Update(DestinyCommand command) => Updates.Add(new(_simulatedStamp, command));
+    private void Update(DestinyCommand command)
+    {
+        var update = new StampedDestinyUpdate(_simulatedStamp, command);
+        Updates.Add(update);
+        space.RecordOrder(Pilot.ShipId, update);
+    }
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems)
     {
@@ -1071,8 +1172,28 @@ internal sealed class FlightSession(
 
     public PilotCallResult Execute(FlightCommand command)
     {
+        lock (space.MotionLock)
+        {
+            try
+            {
+                return ExecuteCommand(command);
+            }
+            finally
+            {
+                PublishMotion();
+                if (InBallpark && !_destroying)
+                {
+                    space.Publish(CreateContact());
+                }
+            }
+        }
+    }
+
+    private PilotCallResult ExecuteCommand(FlightCommand command)
+    {
         if (command is FlightCommand.Undock undock && Pilot.Position is null && undock.ShipId == Pilot.ShipId)
         {
+            _simulatedStamp = Stamp;
             // Separate the two local launch lanes even on simultaneous undocks.
             double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
             SetPosition(new(Pilot.X + Pilot.Flight.StationRadius + 500, Pilot.Y + lane, Pilot.Z));

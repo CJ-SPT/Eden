@@ -7,6 +7,15 @@ public sealed record NpcMotionState(long Id, SpacePosition Position, SpacePositi
 
 public static class NpcMotionRules
 {
+    public static SpacePosition CoastVelocity(SpacePosition velocity) => velocity with { Y = velocity.Y * (0.93 / 1.07) };
+
+    public static NpcMotionState Coast(NpcMotionState npc, double inertia)
+    {
+        double decay = Math.Exp(-1 / inertia);
+        var initial = CoastVelocity(npc.Velocity);
+        return npc with { Position = npc.Position + initial * (inertia * (1 - decay)), Velocity = initial * decay };
+    }
+
     public static bool Engaged(NpcMotionState npc) => npc.Navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting;
 
     public static float Agility(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>

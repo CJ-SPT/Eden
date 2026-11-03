@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -11,12 +12,15 @@ namespace Eden.Server.Persistence;
 
 public sealed record WorldDatabase(string Path)
 {
+    internal object MotionLock { get; } = new();
+    internal ConcurrentDictionary<int, int> MotionStamps { get; } = new();
+    internal ConcurrentDictionary<long, int> CollisionStamps { get; } = new();
     public string CatalogPath =>
         System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(Path))!, "catalog.sqlite");
 }
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SqliteWorld : IDockedWorld, IStationDocking
+public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystemMotionStore
 {
     private readonly WorldDatabase _database;
 
