@@ -16,12 +16,17 @@ internal sealed class PilotUpdateCoordinator(
     ShieldBoostHandler shields,
     PropulsionHandler propulsion,
     IndustryHandler industry,
-    NpcCombatHandler npcCombat
+    NpcCombatHandler npcCombat,
+    ArmorRepairHandler armor
 )
 {
     public bool IsMonitoring => industry.IsMonitoring;
 
-    public void Enter(PilotCallContext context) => npcCombat.Enter(context);
+    public void Enter(PilotCallContext context)
+    {
+        armor.Enter(context);
+        npcCombat.Enter(context);
+    }
 
     public DockedPilot? Advance(PilotCallContext context)
     {
@@ -29,6 +34,7 @@ internal sealed class PilotUpdateCoordinator(
         mining.Advance(context);
         combat.Advance(context);
         shields.Advance(context);
+        armor.Advance(context);
         propulsion.Advance(context);
         industry.Advance(context);
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;

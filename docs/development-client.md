@@ -372,6 +372,14 @@ Both controls use visible, local targets within **8,000 km** and accept surface 
 
 Afterburners use the existing saved capacitor and module cooldown records; world version remains **27** and no equipment, skills or ISK are granted. Microwarpdrives, overheating, implants and other navigation bonuses remain separate work. Nearby pilots receive the changed speed, mass and native propulsion effect; peer behavior has automated coverage.
 
+## Fit and use an armor repairer
+
+1. Select **Eden Pilot**, dock and verify the active ship in Inventory. Train **Repair Systems I** and **Mechanics I**, obtain a **Small Armor Repairer I**, and use **Fit to Active Ship**. It needs a low slot, 5 CPU and 5 power grid. Ordinary named Tech I repairers also use their pinned catalog values.
+2. Open Fitting or the module's Attributes. The basic small repairer shows **69 armor HP**, **40 GJ** and **5.7 seconds** with Repair Systems I (6 seconds before skills). Armor repair is applied at the end of a cycle. Existing armor damage is needed to observe healing; use a separate copied save for artificial damage fixtures.
+3. Undock and activate the repairer on the HUD. Capacitor should fall immediately, while armor stays unchanged until the paid cycle ends. Then armor rises by up to 69 HP, capped at the hull's maximum. Shields and structure must not be repaired. It may run during warp.
+4. Click the active module again to stop it. The current paid repair finishes, the ring clears and no further capacitor is spent. Let it repeat through several cycles to check a steady HUD ring and one payment per new cycle. Insufficient capacitor stops the next cycle without losing an already paid repair.
+5. Disconnect or dock during a paid cycle, then restart on the same save. The single paid completion remains due at its original deadline, even if that deadline passed while disconnected. Reconnecting before it ends restores the original cycle without another payment or automatic repeats. Inspect armor again to confirm there is no duplicate completion. World version **29** adds the pending-repair table while retaining inventory, skills, health and saved cooldowns.
+
 ## Check a rejected gameplay action
 
 Select **Eden Pilot**, open Inventory and verify the active equipped ship. Undock safely outside a station. Right-click an online module on the HUD, choose **Put Offline** and accept the local module prompt. Eden currently requires docking to change online state, so the native **Information** dialog should explain: **Change module online state on your docked active ship.** Dismiss it and check that the module remains online and the ship still responds. This check must preserve the module, cargo and wallet. Capacity errors retain the client's existing quantity-selection flow.

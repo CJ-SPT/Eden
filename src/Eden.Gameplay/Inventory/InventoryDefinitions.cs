@@ -52,6 +52,7 @@ public enum DogmaEffect
     HighPower = 12,
     MediumPower = 13,
     Online = 16,
+    ArmorRepair = 27,
     LauncherFitted = 40,
     TurretFitted = 42,
     Microwarpdrive = 6730,

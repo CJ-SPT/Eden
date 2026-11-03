@@ -442,7 +442,7 @@ public sealed class AmmunitionTests
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(ModuleCooldownKind.Cycle, saved.Set<ModuleCooldown>().Single().Kind);
         Assert.Equal(deadline, saved.Set<ModuleCooldown>().Single().ReadyAt);
         Assert.Equal(items, saved.Set<OwnedItem>().Count());

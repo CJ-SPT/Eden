@@ -23,6 +23,8 @@ internal sealed record WeaponContact(
     string Graphic = "effects.Laser"
 );
 
+internal sealed record ArmorRepairContact(long ModuleId, int TypeId, long StartedAt, double Duration);
+
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 
 internal sealed record PropulsionContact(Afterburner Module, long StartedAt);
@@ -86,7 +88,8 @@ internal sealed record ShipContact(
     WeaponContact[]? Weapons = null,
     ShieldBoostContact[]? ShieldBoosts = null,
     PropulsionContact? Propulsion = null,
-    NavigationMode FollowMode = NavigationMode.Follow
+    NavigationMode FollowMode = NavigationMode.Follow,
+    ArmorRepairContact[]? ArmorRepairs = null
 );
 
 [Injectable(InjectionType.Singleton)]

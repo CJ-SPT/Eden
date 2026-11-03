@@ -242,7 +242,8 @@ public sealed class NpcAggressionTests
                         f.Db.Services.GetRequiredService<IPilotInventory>()
                     ),
                     f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
-                )
+                ),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>())
             ),
             space
         );

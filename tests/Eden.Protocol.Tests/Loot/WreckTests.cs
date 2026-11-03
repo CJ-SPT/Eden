@@ -304,7 +304,7 @@ public sealed class WreckTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.NotNull(saved.Set<WorldNpc>().Find(f.Wreck.SourceId)!.DestroyedAt);
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]
@@ -348,6 +348,6 @@ public sealed class WreckTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal("[]", saved.Set<ShipLoss>().Single().DroppedItemIdsJson);
         Assert.Empty(saved.Database.SqlQueryRaw<string>("PRAGMA foreign_key_check").AsEnumerable());
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 }

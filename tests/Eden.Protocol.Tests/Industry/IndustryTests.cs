@@ -725,7 +725,7 @@ public sealed class IndustryTests
         }
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Empty(saved.Set<IndustryJob>());
         Assert.Equal(items, JsonSerializer.Serialize(saved.Set<OwnedItem>().AsNoTracking().OrderBy(i => i.Id).ToArray()));
     }

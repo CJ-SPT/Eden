@@ -413,7 +413,8 @@ public sealed class ShieldBoostTests
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting),
             handler,
             activationScope.ServiceProvider.GetRequiredService<FittingOperations>(),
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>())
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>())
         );
         object? Activate() =>
             activation.CallWire(context, "dogmaIM", "Activate", [f.Module, ShieldBoostWireDefinitions.EffectName, null, 100L]);
@@ -571,7 +572,8 @@ public sealed class ShieldBoostTests
                         f.Db.Services.GetRequiredService<IPilotInventory>()
                     ),
                     f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
-                )
+                ),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>())
             ),
             new()
         );

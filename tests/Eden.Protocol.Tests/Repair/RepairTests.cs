@@ -261,7 +261,7 @@ public sealed class RepairTests
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(f.Store.Payments(f.Pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(100100000, saved.Set<PilotWallet>().Find(90000001L)!.Cents);
         Assert.Equal(10, saved.Set<ShipHealthState>().Single().ArmorDamage);
         Assert.Equal(20, saved.Set<ShipHealthState>().Single().StructureDamage);

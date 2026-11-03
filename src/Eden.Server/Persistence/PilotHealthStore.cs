@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
@@ -33,13 +34,15 @@ internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-        return Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
+        var health = Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
+        transaction.Commit();
+        return health;
     }
 
     internal static ShipHealth Read(WorldDbContext world, long shipId, HullDefense defense, long now)
     {
         var saved = world.Set<ShipHealthState>().Find(shipId);
-        return new(
+        ShipHealth current = new(
             shipId,
             defense,
             saved is null
@@ -55,6 +58,23 @@ internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
                     Math.Max(0, defense.Structure - saved.StructureDamage)
                 )
         );
+        var repairs = world.Set<PendingArmorRepair>().Where(r => r.ShipId == shipId && r.CompletesAt <= now).ToArray();
+        if (repairs.Length > 0)
+        {
+            foreach (var repair in repairs)
+            {
+                current = ArmorRepairRules.Apply(current, repair.Amount);
+            }
+            if (saved is not null)
+            {
+                saved.ArmorDamage = Math.Max(0, defense.Armor - current.Remaining.Armor);
+            }
+            world.RemoveRange(repairs);
+            // Every caller owns a world transaction. Settle the single paid
+            // completion before combat, fitting or a resource snapshot uses it.
+            world.SaveChanges();
+        }
+        return current;
     }
 
     // Internal combat persistence primitive: callers keep health, destruction

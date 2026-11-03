@@ -389,7 +389,7 @@ public sealed class NpcCombatTests
         _ = WorldInitialization.Open(f.Db.Path);
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Fixture.ShipId, f.Pilot.ShipId);
         Assert.Equal(100012345, saved.Set<PilotWallet>().Find(90000001L)!.Cents);
         Assert.Equal(174, saved.Set<ShipHealthState>().Single().StructureDamage);
@@ -474,7 +474,8 @@ public sealed class NpcCombatTests
                         f.Db.Services.GetRequiredService<IPilotInventory>()
                     ),
                     f.Db.Services.GetRequiredService<Eden.Gameplay.Ammunition.IPilotAmmunition>()
-                )
+                ),
+                new(f.Clock, f.Db.Services.GetRequiredService<Eden.Gameplay.Repair.IPilotArmorRepairing>())
             ),
             space
         );

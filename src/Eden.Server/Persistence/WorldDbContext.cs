@@ -173,6 +173,13 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<ShipLoss>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId);
         model.Entity<ShipLoss>().HasOne<WorldNpc>().WithMany().HasForeignKey(l => l.NpcId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<ShipLoss>().HasIndex(l => new { l.PilotId, l.Time });
+        model
+            .Entity<PendingArmorRepair>()
+            .ToTable("WorldArmorRepair", t => t.HasCheckConstraint("CK_ArmorRepair_Amount", "Amount > 0"))
+            .HasKey(r => r.ModuleId);
+        model.Entity<PendingArmorRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
+        model.Entity<PendingArmorRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
+        model.Entity<PendingArmorRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
         model.Entity<ModuleCooldown>().ToTable("WorldWeaponCooldown").HasKey(w => w.ModuleId);
         model.Entity<ModuleCooldown>().HasOne<OwnedItem>().WithMany().HasForeignKey(w => w.ModuleId);
         model

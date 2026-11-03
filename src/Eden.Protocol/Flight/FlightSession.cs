@@ -40,6 +40,7 @@ internal sealed class FlightSession(
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
     private ShieldBoostContact[] _shieldBoosts = [];
+    private ArmorRepairContact[] _armorRepairs = [];
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
@@ -339,6 +340,7 @@ internal sealed class FlightSession(
         _mining = [];
         _weapons = [];
         _shieldBoosts = [];
+        _armorRepairs = [];
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -445,7 +447,8 @@ internal sealed class FlightSession(
             _weapons,
             _shieldBoosts,
             _propulsion,
-            _navigation.FollowMode
+            _navigation.FollowMode,
+            _armorRepairs
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -545,6 +548,19 @@ internal sealed class FlightSession(
     {
         _weapons = _weapons.Where(w => w.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<WeaponContact>()).ToArray();
         Effects.WeaponEffect(Pilot.ShipId, effect, active);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
+
+    public void SetArmorRepairEffect(ArmorRepairContact effect, bool active)
+    {
+        _armorRepairs = _armorRepairs
+            .Where(r => r.ModuleId != effect.ModuleId)
+            .Concat(active ? [effect] : Array.Empty<ArmorRepairContact>())
+            .ToArray();
+        Effects.ArmorRepairEffect(Pilot.ShipId, effect, active);
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -694,6 +710,7 @@ internal sealed class FlightSession(
         _weapons = [];
         _npcs = [];
         _shieldBoosts = [];
+        _armorRepairs = [];
         _wrecks = [];
         space.Leave(Pilot.ShipId);
     }

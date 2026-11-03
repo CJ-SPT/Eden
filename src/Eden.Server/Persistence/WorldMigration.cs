@@ -8,12 +8,14 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
+    internal const int CurrentVersion = 29;
+
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
-        if (version is < 0 or > 28)
+        if (version is < 0 or > CurrentVersion)
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
@@ -395,6 +397,23 @@ internal static class WorldMigration
                 TestingWalletFunding.Grant(world, pilotId, now);
             }
             world.Database.ExecuteSqlRaw("PRAGMA user_version=28");
+        }
+        if (version is >= 6 and < 29)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE IF NOT EXISTS WorldArmorRepair(
+                    ModuleId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE,
+                    ShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE,
+                    StartedAt INTEGER NOT NULL, CompletesAt INTEGER NOT NULL,
+                    Amount REAL NOT NULL CONSTRAINT CK_ArmorRepair_Amount CHECK (Amount > 0));
+                CREATE INDEX IF NOT EXISTS IX_WorldArmorRepair_ShipId_CompletesAt ON WorldArmorRepair(ShipId,CompletesAt);
+                """
+            );
+        }
+        if (version < CurrentVersion)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=29");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

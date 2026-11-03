@@ -13,7 +13,8 @@ internal sealed class ShipLossCoordinator(
     CombatHandler weapons,
     ShieldBoostHandler shields,
     PropulsionHandler propulsion,
-    DeferredRefitPrimes refits
+    DeferredRefitPrimes refits,
+    ArmorRepairHandler armor
 )
 {
     internal void Replace(PilotCallContext context, DockedPilot capsule)
@@ -22,6 +23,7 @@ internal sealed class ShipLossCoordinator(
         mining.Cancel(context);
         weapons.Cancel(context);
         shields.Cancel(context);
+        armor.Cancel(context);
         propulsion.Cancel(context);
         refits.Clear();
         // Wreck.Prepare needs the still-loaded hull for rotation/explosion timing.

@@ -554,6 +554,86 @@
       ]
     },
     {
+      "id": 523,
+      "name": "Small Armor Repairer I",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 5.0
+        },
+        {
+          "id": 73,
+          "value": 6000.0
+        },
+        {
+          "id": 84,
+          "value": 69.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
       "id": 561,
       "name": "75mm Gatling Rail I",
       "groupId": 74,
@@ -1022,6 +1102,86 @@
         {
           "id": 6364,
           "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 1183,
+      "name": "Small Armor Repairer II",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 6.0
+        },
+        {
+          "id": 50,
+          "value": 6.0
+        },
+        {
+          "id": 73,
+          "value": 6000.0
+        },
+        {
+          "id": 84,
+          "value": 92.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 1180,
+          "value": 0.02
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
         }
       ]
     },
@@ -2786,6 +2946,46 @@
       ]
     },
     {
+      "id": 3393,
+      "name": "Repair Systems",
+      "groupId": 1210,
+      "groupName": "Armor",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3392.0
+        },
+        {
+          "id": 275,
+          "value": 1.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 312,
+          "value": -5.0
+        }
+      ]
+    },
+    {
       "id": 3394,
       "name": "Hull Upgrades",
       "groupId": 1210,
@@ -3390,6 +3590,166 @@
       ]
     },
     {
+      "id": 3528,
+      "name": "Medium Armor Repairer I",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 120.0
+        },
+        {
+          "id": 50,
+          "value": 25.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 84,
+          "value": 276.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 3538,
+      "name": "Large Armor Repairer I",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 400.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1800.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 84,
+          "value": 690.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
       "id": 3638,
       "name": "Civilian Gatling Railgun",
       "groupId": 53,
@@ -3770,6 +4130,486 @@
         {
           "id": 1692,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 4529,
+      "name": "Small I-a Enduring Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 36.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 5.0
+        },
+        {
+          "id": 73,
+          "value": 6000.0
+        },
+        {
+          "id": 84,
+          "value": 79.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 4533,
+      "name": "Small ACM Compact Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 40.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 5.0
+        },
+        {
+          "id": 50,
+          "value": 4.0
+        },
+        {
+          "id": 73,
+          "value": 6000.0
+        },
+        {
+          "id": 84,
+          "value": 79.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 4569,
+      "name": "Medium I-a Enduring Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 144.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 120.0
+        },
+        {
+          "id": 50,
+          "value": 22.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 84,
+          "value": 317.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 4573,
+      "name": "Medium ACM Compact Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 160.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 108.0
+        },
+        {
+          "id": 50,
+          "value": 20.0
+        },
+        {
+          "id": 73,
+          "value": 12000.0
+        },
+        {
+          "id": 84,
+          "value": 317.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.3
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 4609,
+      "name": "Large I-a Enduring Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 360.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1800.0
+        },
+        {
+          "id": 50,
+          "value": 49.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 84,
+          "value": 794.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 4613,
+      "name": "Large ACM Compact Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 400.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 1620.0
+        },
+        {
+          "id": 50,
+          "value": 40.0
+        },
+        {
+          "id": 73,
+          "value": 15000.0
+        },
+        {
+          "id": 84,
+          "value": 794.0
+        },
+        {
+          "id": 182,
+          "value": 3393.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 5.4
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
         }
       ]
     },
@@ -8070,6 +8910,78 @@
       ]
     },
     {
+      "id": 20701,
+      "name": "Capital Armor Repairer I",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 2400.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 125000.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 84,
+          "value": 9600.0
+        },
+        {
+          "id": 182,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 10.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
       "id": 21855,
       "name": "Civilian Expanded Cargohold",
       "groupId": 765,
@@ -9358,6 +10270,150 @@
       ]
     },
     {
+      "id": 41498,
+      "name": "Capital I-a Enduring Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 1920.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 125000.0
+        },
+        {
+          "id": 50,
+          "value": 75.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 84,
+          "value": 10560.0
+        },
+        {
+          "id": 182,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 10.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
+      "id": 41499,
+      "name": "Capital ACM Compact Armor Repairer",
+      "groupId": 62,
+      "groupName": "Armor Repair Unit",
+      "categoryId": 7,
+      "mass": 500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 2400.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 112500.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 73,
+          "value": 30000.0
+        },
+        {
+          "id": 84,
+          "value": 10560.0
+        },
+        {
+          "id": 182,
+          "value": 21803.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 1.0
+        },
+        {
+          "id": 1180,
+          "value": 0.01
+        },
+        {
+          "id": 1206,
+          "value": -15.0
+        },
+        {
+          "id": 1211,
+          "value": 10.7
+        },
+        {
+          "id": 1212,
+          "value": 1.0
+        },
+        {
+          "id": 1230,
+          "value": 10.0
+        }
+      ]
+    },
+    {
       "id": 47254,
       "name": "Assault Damage Control I",
       "groupId": 60,
@@ -10216,6 +11272,18 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 84,
+      "data": {
+        "stackable": 0,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "name": "armorDamageAmount",
+        "attributeID": 84,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 101,
       "data": {
         "stackable": 1,
@@ -10953,9 +12021,9 @@
         "stackable": 1,
         "dataType": 4,
         "defaultValue": 0.0,
+        "name": "requiredSkill1Level",
         "attributeID": 277,
-        "highIsGood": 1,
-        "name": "requiredSkill1Level"
+        "highIsGood": 1
       }
     },
     {
@@ -10965,9 +12033,9 @@
         "stackable": 1,
         "dataType": 4,
         "defaultValue": 0.0,
+        "name": "requiredSkill2Level",
         "attributeID": 278,
-        "highIsGood": 1,
-        "name": "requiredSkill2Level"
+        "highIsGood": 1
       }
     },
     {
@@ -11064,6 +12132,18 @@
         "defaultValue": 0.0,
         "name": "maxTargetBonus",
         "attributeID": 311,
+        "highIsGood": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 312,
+      "data": {
+        "stackable": 1,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "name": "durationSkillBonus",
+        "attributeID": 312,
         "highIsGood": 1
       }
     },
@@ -11922,9 +13002,9 @@
         "stackable": 1,
         "dataType": 5,
         "defaultValue": 0.0,
+        "name": "heatAbsorbtionRateModifier",
         "attributeID": 1180,
-        "highIsGood": 1,
-        "name": "heatAbsorbtionRateModifier"
+        "highIsGood": 1
       }
     },
     {
@@ -12057,6 +13137,18 @@
         "attributeID": 1224,
         "highIsGood": 1,
         "name": "heatGenerationMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1230,
+      "data": {
+        "stackable": 1,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "name": "overloadArmorDamageAmount",
+        "attributeID": 1230,
+        "highIsGood": 1
       }
     },
     {
@@ -12734,6 +13826,14 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 27,
+      "data": {
+        "effectCategory": 1,
+        "effectID": 27
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 34,
       "data": {
         "effectCategory": 2,
@@ -13164,6 +14264,23 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 216,
+      "data": {
+        "effectCategory": 0,
+        "effectID": 216,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 312,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 218,
       "data": {
         "effectCategory": 0,
@@ -13312,6 +14429,24 @@
             "operation": 6,
             "modifyingAttributeID": 335,
             "func": "ItemModifier"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 272,
+      "data": {
+        "effectCategory": 0,
+        "effectID": 272,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 312,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3393
           }
         ]
       }
@@ -14641,6 +15776,30 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 3200,
+      "data": {
+        "effectCategory": 5,
+        "effectID": 3200,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 84,
+            "operation": 6,
+            "modifyingAttributeID": 1230,
+            "func": "ItemModifier"
+          },
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 73,
+            "operation": 6,
+            "modifyingAttributeID": 1206,
+            "func": "ItemModifier"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 3201,
       "data": {
         "effectCategory": 5,
@@ -15403,6 +16562,30 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 523,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 561,
       "data": {
         "dogmaEffects": [
@@ -15460,6 +16643,30 @@
           },
           {
             "effectID": 5028,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 1183,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
             "isDefault": 0
           }
         ]
@@ -16347,6 +17554,26 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 3393,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 216,
+            "isDefault": 0
+          },
+          {
+            "effectID": 272,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 3394,
       "data": {
         "dogmaEffects": [
@@ -16655,6 +17882,54 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 3528,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3538,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 3638,
       "data": {
         "dogmaEffects": [
@@ -16784,6 +18059,150 @@
           },
           {
             "effectID": 51,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4529,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4533,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4569,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4573,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4609,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 4613,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
             "isDefault": 0
           }
         ]
@@ -18855,6 +20274,30 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 20701,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 21855,
       "data": {
         "dogmaEffects": [
@@ -19431,6 +20874,54 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 41498,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 41499,
+      "data": {
+        "dogmaEffects": [
+          {
+            "effectID": 11,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 27,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 47254,
       "data": {
         "dogmaEffects": [
@@ -19607,6 +21098,17 @@
     },
     {
       "dataset": "client/types",
+      "key": 523,
+      "data": {
+        "typeID": 523,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 561,
       "data": {
         "volume": 5.0,
@@ -19622,6 +21124,17 @@
         "marketGroupID": 1817,
         "volume": 15000.0,
         "published": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1183,
+      "data": {
+        "typeID": 1183,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 2,
+        "volume": 5.0
       }
     },
     {
@@ -19961,6 +21474,16 @@
     },
     {
       "dataset": "client/types",
+      "key": 3393,
+      "data": {
+        "typeID": 3393,
+        "groupID": 1210,
+        "published": 1,
+        "volume": 0.01
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3394,
       "data": {
         "published": 1,
@@ -20096,6 +21619,28 @@
     },
     {
       "dataset": "client/types",
+      "key": 3528,
+      "data": {
+        "typeID": 3528,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3538,
+      "data": {
+        "typeID": 3538,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 3638,
       "data": {
         "published": 0,
@@ -20150,6 +21695,72 @@
         "published": 1,
         "marketGroupID": 665,
         "metaGroupID": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4529,
+      "data": {
+        "typeID": 4529,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4533,
+      "data": {
+        "typeID": 4533,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 5.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4569,
+      "data": {
+        "typeID": 4569,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4573,
+      "data": {
+        "typeID": 4573,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 10.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4609,
+      "data": {
+        "typeID": 4609,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 50.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 4613,
+      "data": {
+        "typeID": 4613,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 50.0
       }
     },
     {
@@ -20979,6 +22590,17 @@
     },
     {
       "dataset": "client/types",
+      "key": 20701,
+      "data": {
+        "typeID": 20701,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 21855,
       "data": {
         "volume": 5.0,
@@ -21209,6 +22831,28 @@
         "published": 1,
         "marketGroupID": 2242,
         "metaGroupID": 1
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41498,
+      "data": {
+        "typeID": 41498,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 4000.0
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 41499,
+      "data": {
+        "typeID": 41499,
+        "groupID": 62,
+        "published": 1,
+        "metaGroupID": 1,
+        "volume": 4000.0
       }
     },
     {

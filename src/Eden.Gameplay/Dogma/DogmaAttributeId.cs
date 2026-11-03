@@ -41,6 +41,7 @@ public enum DogmaAttributeId
     Duration = 73,
     MaxTargetRange = 76,
     MiningAmount = 77,
+    ArmorRepairAmount = 84,
     LauncherSlotsLeft = 101,
     TurretSlotsLeft = 102,
     MaxGroupFitted = 1544,

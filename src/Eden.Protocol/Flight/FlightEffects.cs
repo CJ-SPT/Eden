@@ -10,6 +10,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshMining(ship, previous);
         RefreshWeapons(ship, previous);
         RefreshShieldBoosts(ship, previous);
+        RefreshArmorRepairs(ship, previous);
         RefreshPropulsion(ship, previous);
     }
 
@@ -107,6 +108,35 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         foreach (var effect in (ship.Weapons ?? []).Except(previous?.Weapons ?? []))
         {
             WeaponEffect(ship.Pilot.ShipId, effect, true);
+        }
+    }
+
+    internal void ArmorRepairEffect(long shipId, ArmorRepairContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                effect.ModuleId,
+                effect.TypeId,
+                shipId,
+                null,
+                ArmorRepairWireDefinitions.EffectGraphic,
+                false,
+                active,
+                active,
+                effect.Duration,
+                effect.StartedAt
+            )
+        );
+
+    private void RefreshArmorRepairs(ShipContact ship, ShipContact? previous)
+    {
+        foreach (var effect in (previous?.ArmorRepairs ?? []).Except(ship.ArmorRepairs ?? []))
+        {
+            ArmorRepairEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.ArmorRepairs ?? []).Except(previous?.ArmorRepairs ?? []))
+        {
+            ArmorRepairEffect(ship.Pilot.ShipId, effect, true);
         }
     }
 

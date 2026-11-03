@@ -47,6 +47,7 @@ public static class ModuleFittingRules
         {
             InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser),
             ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
+            ArmorRepairDefinitions.Group => ArmorRepairDefinitions.IsSupported(attributes) && effects.Contains(DogmaEffect.ArmorRepair),
             PropulsionDefinitions.AfterburnerGroup => effects.Contains(DogmaEffect.Afterburner)
                 && !effects.Contains(DogmaEffect.Microwarpdrive),
             CombatDefinitions.HybridWeaponGroup => CombatDefinitions.IsSupportedHybrid(groupId, attributes)

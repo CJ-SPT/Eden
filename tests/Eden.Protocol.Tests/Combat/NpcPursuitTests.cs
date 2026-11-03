@@ -274,7 +274,7 @@ public sealed class NpcPursuitTests
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         var npc = saved.Set<WorldNpc>().Find(f.Npc.Id)!;
-        Assert.Equal(28, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(f.Npc.Position, NpcMotion.Position(npc));
         Assert.True(npc.ShieldCharge < 20);
         Assert.Equal(NpcNavigationState.Idle, npc.Navigation);
