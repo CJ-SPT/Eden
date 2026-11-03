@@ -2,8 +2,11 @@ using System.Globalization;
 using System.Text.Json;
 using Eden.Protocol;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Propulsion;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Skills;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -101,15 +104,18 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     private static bool SupportedProduct(CatalogDbContext catalog, ItemType type)
     {
         var attributes = Attributes(catalog, type.Id);
+        if (attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) != AmmunitionDefinitions.TechOne) { return false; }
         return type.GroupId == AmmunitionDefinitions.HybridChargeGroup &&
-            attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize &&
-            attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) == AmmunitionDefinitions.TechOne;
+            attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize ||
+            CombatDefinitions.IsSupportedHybrid(type.GroupId, attributes) ||
+            type.GroupId is InventoryDefinitions.MiningLaserGroup or ShieldBoostDefinitions.Group or PropulsionDefinitions.AfterburnerGroup;
     }
 
     public IReadOnlyList<int> ProductTypes()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog.Set<ItemType>().Where(t => t.GroupId == AmmunitionDefinitions.HybridChargeGroup).OrderBy(t => t.Id)
+        return catalog.Set<ItemType>().Where(t => t.GroupId == AmmunitionDefinitions.HybridChargeGroup || t.GroupId == CombatDefinitions.HybridWeaponGroup ||
+            t.GroupId == InventoryDefinitions.MiningLaserGroup || t.GroupId == ShieldBoostDefinitions.Group || t.GroupId == PropulsionDefinitions.AfterburnerGroup).OrderBy(t => t.Id)
             .AsEnumerable().Where(t => SupportedProduct(catalog, t)).Select(t => t.Id).ToArray();
     }
 
@@ -235,7 +241,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             request.ProductTypeId.HasValue && product.TypeID != request.ProductTypeId || product.Quantity is not > 0 || recipe.Time is not > 0 ||
             !SupportedProduct(catalog, catalog.Set<ItemType>().Single(t => t.Id == (int)product.TypeID.Value)))
         {
-            throw new InvalidDataException("Manufacturing currently supports small Tech I hybrid ammunition.");
+            throw new InvalidDataException("Manufacturing supports small Tech I hybrid ammunition and turrets, mining lasers, shield boosters and afterburners.");
         }
         foreach (var skill in recipe.Skills ?? [])
         {

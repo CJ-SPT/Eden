@@ -1,5 +1,6 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Industry;
 using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -134,6 +135,51 @@ public sealed class MarketTests
         Assert.Equal(9, saved.Set<NpcMarketOrder>().Count());
         Assert.Equal(0, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
         Assert.Equal(999990, saved.Set<NpcMarketOrder>().Single(o => o.TypeId == Scordite).Remaining);
+    }
+
+    [Fact]
+    public void ModuleBlueprintsAndMexallonCanBePurchasedWithoutRestockingEarlierOffers()
+    {
+        using Fixture f = new();
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<OwnedItem>().Find(OreId)!.Quantity = 1000;
+            world.SaveChanges();
+        }
+        f.Sell(f.Sale(quantity: 1000));
+        var original = f.Store.Orders(f.Pilot.PilotId);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("""
+                INSERT INTO ItemCategory VALUES (9,'Blueprint');
+                INSERT INTO ItemGroup VALUES (167,'Blueprint',9);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (785,'Miner I Blueprint',167),(1032,'Small Shield Booster I Blueprint',167),
+                    (1072,'1MN Afterburner I Blueprint',167),(1112,'75mm Gatling Rail I Blueprint',167),(36,'Mexallon',18);
+                INSERT INTO SourceRecord VALUES ('client/types','1112','{{"volume":0.01}}'),('client/types','36','{{"volume":0.01}}');
+                """);
+        }
+        var book = f.Store.Orders(f.Pilot.PilotId);
+        Assert.Equal(original, book.Where(o => original.Any(old => old.Id == o.Id)));
+        foreach (var blueprint in new[] { IndustryBlueprintType.MinerI, IndustryBlueprintType.SmallShieldBoosterI,
+            IndustryBlueprintType.OneMnAfterburnerI, IndustryBlueprintType.GatlingRail75MmI })
+        {
+            var offer = Assert.Single(book, o => o.TypeId == (int)blueprint);
+            Assert.False(offer.Bid);
+            Assert.Equal(100000, offer.PriceCents);
+            Assert.Equal(100, offer.Remaining);
+        }
+        var bought = f.Buy((int)IndustryBlueprintType.GatlingRail75MmI, limit: 100000);
+        Assert.Equal(362500, bought.BalanceCents);
+        var blueprintItem = Assert.Single(bought.Changes).Item;
+        Assert.Equal((int)InventoryCategory.Blueprint, blueprintItem.CategoryId);
+        Assert.False(blueprintItem.Singleton);
+        Assert.Equal(350500, f.Buy(36, 2, 6000).BalanceCents);
+        _ = new SqliteWorld(f.Db.Path);
+        var after = f.Store.Orders(f.Pilot.PilotId);
+        Assert.Equal(99, Assert.Single(after, o => o.TypeId == (int)IndustryBlueprintType.GatlingRail75MmI).Remaining);
+        Assert.Equal(9998, Assert.Single(after, o => o.TypeId == 36).Remaining);
+        Assert.Equal(999000, Assert.Single(after, o => o.TypeId == Scordite).Remaining);
+        Assert.Equal(blueprintItem, Assert.Single(f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId), i => i.Id == blueprintItem.Id));
     }
 
     [Fact]

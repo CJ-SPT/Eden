@@ -1,7 +1,11 @@
 using System.Text.Json;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Propulsion;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
@@ -65,6 +69,89 @@ public sealed class IndustryTests
         }
         public ManufacturingRequest Request(int runs = 1) => new(BlueprintId, 1130, Pilot.StationId, runs, 215, 288d * runs,
             new Dictionary<int, int> { [34] = 27 * runs, [35] = 21 * runs });
+        public ManufacturingRequest ModuleRequest(IndustryBlueprintType blueprint, int runs = 1)
+        {
+            var (product, tritanium, pyerite, mexallon, nocxium) = blueprint switch
+            {
+                IndustryBlueprintType.MinerI => ((int)MiningLaserType.MinerI, 1324, 481, 119, 0),
+                IndustryBlueprintType.SmallShieldBoosterI => ((int)ShieldBoosterType.SmallI, 1327, 481, 113, 0),
+                IndustryBlueprintType.OneMnAfterburnerI => ((int)PropulsionModuleType.OneMnAfterburnerI, 708, 643, 1, 1),
+                IndustryBlueprintType.GatlingRail75MmI => ((int)CombatWeaponType.GatlingRailgun75mm, 231, 220, 0, 0),
+                _ => throw new ArgumentOutOfRangeException(nameof(blueprint)),
+            };
+            Dictionary<int, int> materials = new() { [34] = tritanium * runs, [35] = pyerite * runs };
+            if (mexallon > 0) { materials.Add(36, mexallon * runs); }
+            if (nocxium > 0) { materials.Add(38, nocxium * runs); }
+            return new(BlueprintId + (int)blueprint, (int)blueprint, Pilot.StationId, runs, product, 864d * runs, materials);
+        }
+        public void AddModules()
+        {
+            using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
+            catalog.Database.ExecuteSqlRaw("""
+                INSERT INTO ItemGroup VALUES (40,'Shield Booster',7),(46,'Afterburner',7),(74,'Hybrid Weapon',7);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(399,'Small Shield Booster I',40),
+                    (439,'1MN Afterburner I',46),(561,'75mm Gatling Rail I',74),(482,'Miner II',54),(564,'Heavy Hybrid',74),
+                    (785,'Miner I Blueprint',167),(1032,'Small Shield Booster I Blueprint',167),
+                    (1072,'1MN Afterburner I Blueprint',167),(1112,'75mm Gatling Rail I Blueprint',167),
+                    (36,'Mexallon',18),(38,'Nocxium',18);
+                INSERT INTO DogmaAttribute(Id,Name) VALUES (13,'medSlots'),(14,'hiSlots');
+                INSERT INTO TypeAttribute VALUES (483,422,1),(399,422,1),(439,422,1),(561,422,1),(561,128,1),
+                    (482,422,2),(564,422,1),(564,128,2),(601,13,2),(601,14,2);
+                INSERT INTO SourceRecord VALUES ('client/types','483','{{"volume":5.0}}'),('client/types','399','{{"volume":5.0}}'),
+                    ('client/types','439','{{"volume":5.0}}'),('client/types','561','{{"volume":5.0}}'),
+                    ('client/types','785','{{"volume":0.01}}'),('client/types','1032','{{"volume":0.01}}'),
+                    ('client/types','1072','{{"volume":0.01}}'),('client/types','1112','{{"volume":0.01}}'),
+                    ('client/types','36','{{"volume":0.01}}'),('client/types','38','{{"volume":0.01}}');
+                """);
+            using WorldDbContext world = new(Db.Path);
+            foreach (var blueprint in new[] { IndustryBlueprintType.MinerI, IndustryBlueprintType.SmallShieldBoosterI,
+                IndustryBlueprintType.OneMnAfterburnerI, IndustryBlueprintType.GatlingRail75MmI })
+            {
+                var request = ModuleRequest(blueprint);
+                catalog.Add(new SourceRecord
+                {
+                    Dataset = "client/blueprints",
+                    Key = JsonSerializer.Serialize(((int)blueprint).ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    Data = JsonSerializer.Serialize(new
+                    {
+                        blueprintTypeID = (int)blueprint,
+                        activities = new
+                        {
+                            manufacturing = new
+                            {
+                                time = 900,
+                                skills = new[] { new { typeID = (int)IndustrySkill.Industry, level = 1 } },
+                                materials = request.QuotedMaterials.Select(m => new { typeID = m.Key, quantity = m.Value }),
+                                products = new[] { new { typeID = request.ProductTypeId, quantity = 1 } },
+                            }
+                        },
+                    }),
+                });
+                world.Add(new OwnedItem
+                {
+                    Id = request.BlueprintId,
+                    OwnerId = Pilot.PilotId,
+                    TypeId = (int)blueprint,
+                    LocationId = Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1
+                });
+            }
+            foreach (int type in new[] { 34, 35, 36, 38 })
+            {
+                world.Add(new OwnedItem
+                {
+                    Id = BlueprintId + 2000 + type,
+                    OwnerId = Pilot.PilotId,
+                    TypeId = type,
+                    LocationId = Pilot.StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 10_000
+                });
+            }
+            catalog.SaveChanges();
+            world.SaveChanges();
+        }
         public long Quantity(int type)
         {
             using WorldDbContext world = new(Db.Path);
@@ -350,6 +437,66 @@ public sealed class IndustryTests
         Assert.Throws<InvalidDataException>(() => f.Store.Install(pilot.PilotId, f.Request()));
         Assert.Same(PilotCallRouter.Unsupported, Check(StationService.Laboratory, pilot.StationId + 1));
         Assert.Same(PilotCallRouter.Unsupported, router.Call(context, "industryManager", "ResearchJob", Array.Empty<object?>(), _ => { }));
+    }
+
+    [Theory]
+    [InlineData(IndustryBlueprintType.MinerI)]
+    [InlineData(IndustryBlueprintType.SmallShieldBoosterI)]
+    [InlineData(IndustryBlueprintType.OneMnAfterburnerI)]
+    [InlineData(IndustryBlueprintType.GatlingRail75MmI)]
+    public void CatalogModuleRecipesDeliverPackagedEquipmentThatCanBeFitted(IndustryBlueprintType blueprint)
+    {
+        using Fixture f = new();
+        f.AddModules();
+        var request = f.ModuleRequest(blueprint, runs: 2);
+        var before = request.QuotedMaterials.Keys.ToDictionary(t => t, f.Quantity);
+        var job = f.Store.Install(f.Pilot.PilotId, request).Job;
+        Assert.Equal(1728, job.DurationSeconds);
+        Assert.Equal(2, job.OutputQuantity);
+        foreach (var material in request.QuotedMaterials) { Assert.Equal(before[material.Key] - material.Value, f.Quantity(material.Key)); }
+        Assert.Throws<InvalidDataException>(() => f.Store.Deliver(f.Pilot.PilotId, job.Id, f.Pilot.SystemId));
+        _ = new SqliteWorld(f.Db.Path);
+        Assert.Equal(job, f.Store.Job(f.Pilot.PilotId, job.Id));
+        f.Clock.Now = f.Clock.Now.AddSeconds(job.DurationSeconds);
+        var delivered = Assert.Single(f.Store.Deliver(f.Pilot.PilotId, job.Id, f.Pilot.SystemId).Changes).Item;
+        Assert.False(delivered.Singleton);
+        Assert.False(delivered.Online);
+        Assert.Equal((int)InventoryFlag.Hangar, delivered.FlagId);
+        var fitting = f.Db.Services.GetRequiredService<IPilotFitting>();
+        var changes = fitting.Fit(f.Pilot.PilotId, [delivered.Id], f.Pilot.StationId, (int)InventoryFlag.AutoFit);
+        var fitted = Assert.Single(changes, c => c.Item.LocationId == f.Pilot.ShipId).Item;
+        Assert.True(fitted.Singleton);
+        Assert.Equal(1, fitted.Quantity);
+        Assert.Equal(request.ProductTypeId, fitted.TypeId);
+        Assert.Equal(2, f.Quantity(fitted.TypeId));
+        Assert.Empty(f.Store.Deliver(f.Pilot.PilotId, job.Id, f.Pilot.SystemId).Changes);
+        Assert.Equal(2, f.Quantity(fitted.TypeId));
+    }
+
+    [Fact]
+    public void FacilityProductListAdmitsUsableTechOneModulesAndRejectsUnsupportedTiersAndWeaponSizes()
+    {
+        using Fixture f = new();
+        f.AddModules();
+        var products = f.Store.ProductTypes();
+        foreach (var blueprint in new[] { IndustryBlueprintType.MinerI, IndustryBlueprintType.SmallShieldBoosterI,
+            IndustryBlueprintType.OneMnAfterburnerI, IndustryBlueprintType.GatlingRail75MmI })
+        {
+            Assert.Contains(f.ModuleRequest(blueprint).ProductTypeId!.Value, products);
+        }
+        Assert.DoesNotContain((int)MiningLaserType.MinerII, products);
+        Assert.DoesNotContain(564, products);
+        Assert.DoesNotContain((int)CombatWeaponType.CivilianGatlingRailgun, products);
+        var request = f.ModuleRequest(IndustryBlueprintType.MinerI);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Set<TypeAttribute>().AsTracking().Single(a => a.ItemTypeId == (int)MiningLaserType.MinerI && a.AttributeId == (int)DogmaAttributeId.TechLevel).Value = 2;
+            catalog.SaveChanges();
+        }
+        long tritanium = f.Quantity(34);
+        Assert.Throws<InvalidDataException>(() => f.Store.Install(f.Pilot.PilotId, request));
+        Assert.Equal(tritanium, f.Quantity(34));
+        Assert.Empty(f.Store.Jobs(f.Pilot.PilotId, true));
     }
 
     [Fact]

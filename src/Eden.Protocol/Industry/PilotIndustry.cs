@@ -24,6 +24,17 @@ public enum IndustrySkill
     AdvancedMassProduction = 24625,
 }
 
+// Original blueprint types in the pinned build's client/blueprints catalog.
+public enum IndustryBlueprintType
+{
+    MinerI = 785,
+    SmallShieldBoosterI = 1032,
+    OneMnAfterburnerI = 1072,
+    GatlingRail75MmI = 1112,
+    IronChargeSmall = 1130,
+    AntimatterChargeSmall = 1137,
+}
+
 public sealed record IndustryFacility(int Id, int TypeId, int OwnerId, int SystemId);
 public sealed record OwnedBlueprint(InventoryItem Item, IndustryFacility Facility, long? JobId);
 public sealed record IndustryCharacterBonus(int SkillId, DogmaAttributeId Attribute, double Value, bool Additive);
@@ -58,10 +69,7 @@ public interface IPilotIndustry : IPilotIndustrySkills
 
 public static class IndustryDefinitions
 {
-    public const int BlueprintCategory = 9;
     public const int BaseManufacturingSlots = 1;
-    public const int IronBlueprint = 1130;
-    public const int AntimatterBlueprint = 1137;
     public const int ManufacturingTimePrecision = 0;
     public const long MaximumJobSeconds = 30 * 24 * 60 * 60;
     public const int MaximumJobRuns = 1_000_000;
