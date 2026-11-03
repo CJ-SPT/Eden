@@ -34,6 +34,7 @@ public enum DogmaAttributeId
 {
     IsOnline = 2,
     Damage = 3,
+    Mass = 4,
     CapacitorNeed = 6,
     StructureHitPoints = 9,
     PowerOutput = 11,
@@ -41,6 +42,7 @@ public enum DogmaAttributeId
     HighSlots = 14,
     PowerLoad = 15,
     CapacitorCharge = 18,
+    SpeedFactor = 20,
     Power = 30,
     MaxVelocity = 37,
     CargoCapacity = 38,
@@ -52,6 +54,7 @@ public enum DogmaAttributeId
     ChargeRate = 56,
     CapacitorRechargeTime = 55,
     DamageMultiplier = 64,
+    DurationBonus = 66,
     ShieldBonus = 68,
     Agility = 70,
     Duration = 73,
@@ -103,6 +106,8 @@ public enum DogmaAttributeId
     RequiredSkill2Level = 278,
     RequiredSkill3Level = 279,
     CapacitorNeedBonus = 317,
+    VelocityBonus = 315,
+    SpeedFactorBonus = 318,
     TechLevel = 422,
     ShieldRechargeTime = 479,
     EntityAttackDelayMinimum = 475,
@@ -111,9 +116,12 @@ public enum DogmaAttributeId
     EntityCruiseSpeed = 508,
     SignatureRadius = 552,
     ScanResolution = 564,
+    SpeedBoostFactor = 567,
     ChargeGroup1 = 604,
     WeaponSignatureResolution = 620,
     ReprocessingSkillType = 790,
+    MaxGroupActive = 763,
+    MassAddition = 796,
     Quantity = 805,
     ShieldBoostCapacitorBonus = 851,
     RequiredSkill4 = 1285,
@@ -157,6 +165,7 @@ public enum DogmaEffect
     Online = 16,
     ProjectileFired = 34,
     MiningLaser = 67,
+    Afterburner = 6731,
 }
 
 public enum StationService

@@ -3,6 +3,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
@@ -10,7 +11,7 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler, PilotBrain brain) : IPilotCallHandler, ISelectedPilotCallHandler
+internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inventory, IPilotFitting fitting, IPilotMining mining, MiningHandler miningEffects, IPilotFleet fleet, IPilotHealth health, IPilotCombat combat, CombatHandler combatEffects, IWrecks wrecks, IPilotShieldBoosting boosting, ShieldBoostHandler shieldEffects, IPilotAmmunition ammunition, AmmunitionHandler ammunitionHandler, PilotBrain brain, IPilotPropulsion propulsion, PropulsionHandler propulsionEffects) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
@@ -191,6 +192,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
             attributes[(long)DogmaAttributeId.ArmorDamage] = current.Defense.Armor - current.Remaining.Armor;
             attributes[(long)DogmaAttributeId.CapacitorCharge] = mining.Capacitor(pilot.PilotId, now);
             attributes[(long)DogmaAttributeId.MaxVelocity] = (double)pilot.Flight.MaxSpeed;
+            attributes[(long)DogmaAttributeId.Mass] = pilot.Flight.Mass;
             attributes[(long)DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
             attributes[(long)DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
         }
@@ -211,7 +213,8 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
     private BlueInstance PrimeModule(DockedPilot pilot, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = (module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module) :
+        var attributes = (module.GroupId == PropulsionDefinitions.AfterburnerGroup ? propulsion.ModuleAttributes(pilot.PilotId, module) :
+            module.GroupId == ShieldBoostDefinitions.Group ? boosting.ModuleAttributes(pilot.PilotId, module) :
             module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun || module.GroupId == CombatDefinitions.HybridWeaponGroup ? combat.ModuleAttributes(pilot.PilotId, module) :
             mining.ModuleAttributes(pilot.PilotId, module)).ToDictionary(a => (long)a.Key, a => (object?)a.Value);
         attributes[(long)DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
@@ -224,6 +227,7 @@ internal sealed class InventoryHandler(TimeProvider clock, IPilotInventory inven
         if (miningEffects.ActiveEffect(pilot, module.Id) is { } active) { effects[(long)DogmaEffect.MiningLaser] = active; }
         if (combatEffects.ActiveEffect(pilot, module.Id) is { } firing) { effects[Convert.ToInt64(firing[6])] = firing; }
         if (shieldEffects.ActiveEffect(pilot, module.Id) is { } boost) { effects[(long)DogmaEffect.ShieldBoosting] = boost; }
+        if (propulsionEffects.ActiveEffect(pilot, module.Id) is { } propulsionEffect) { effects[(long)DogmaEffect.Afterburner] = propulsionEffect; }
         return KeyVal(new()
         {
             ["itemID"] = module.Id,

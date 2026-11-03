@@ -308,6 +308,16 @@ The server recomputes damage at payment time and caps the charge at the current 
 
 Schema **27** adds saved manufacturing jobs without granting blueprints, materials, skills or ISK. Small Tech I hybrid ammunition originals and current-station personal jobs are supported. Installation fees currently show zero because adjusted industry prices are unavailable, matching the existing missing-price fallback. Cancellation releases the blueprint and slot but consumes the paid materials without output. Research, copies, invention, corporate/remote jobs and other product families remain separate work.
 
+## Fit and fly with an afterburner
+
+1. Select **Eden Pilot**, dock at a market/fitting station and verify the active ship in Inventory. Search the Regional Market for **1MN Afterburner I**, buy one for **1,000 ISK**, and use **Fit to Active Ship** in Item Hangar. This finite starter offer is Eden policy. The module requires Afterburner I, a medium slot, CPU and power grid.
+2. Open Fitting using the station's **circled ship** button. Check Navigation and hover over the afterburner. An Ibis with Navigation III shows **339.25 m/s** without the module and **691.15 m/s** with it. Afterburner III reduces its base 10-second, 20-GJ cycle to **8.5 seconds / 14 GJ**. Fuel Conservation and Acceleration Control modify cost and speed when trained.
+3. Undock, set a direction in open space and choose full speed. Activate the afterburner on the HUD. Its ring should cycle, capacitor should be spent, and the ship should accelerate above its normal limit. Repeated cycles must retain one bonus and a steady maximum speed, rather than multiplying the speed again.
+4. Click the active module to stop it. It finishes the paid cycle, clears its ring and restores normal speed and mass; actual velocity coasts toward the new limit. Warp prevents starting another afterburner cycle. Docking, hull loss and disconnecting remove the effect.
+5. Restart both host and client on the same save. Confirm the module remains fitted and online, the wallet retains the purchase, and cargo and ammunition are unchanged. The speed bonus must be absent until a new paid activation. An unexpired saved cooldown still prevents immediate reactivation; disconnected time grants no propulsion cycles.
+
+Afterburners use the existing saved capacitor and module cooldown records; world version remains **27** and no equipment, skills or ISK are granted. Microwarpdrives, overheating, implants and other navigation bonuses remain separate work. Nearby pilots receive the changed speed, mass and native propulsion effect; peer behavior has automated coverage.
+
 ## Check a rejected gameplay action
 
 Select **Eden Pilot**, open Inventory and verify the active equipped ship. Undock safely outside a station. Right-click an online module on the HUD, choose **Put Offline** and accept the local module prompt. Eden currently requires docking to change online state, so the native **Information** dialog should explain: **Change module online state on your docked active ship.** Dismiss it and check that the module remains online and the ship still responds. This check must preserve the module, cargo and wallet. Capacity errors retain the client's existing quantity-selection flow.

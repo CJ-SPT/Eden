@@ -211,7 +211,7 @@ public sealed class IndustryTests
         Assert.Contains(bonuses, b => b.Value == 1 && b.Additive);
         var job = f.Store.Install(f.Pilot.PilotId, f.Request() with { QuotedSeconds = 256 }).Job;
         Assert.Equal(256, job.DurationSeconds);
-        var brain = new PilotBrain(f.Db.Services.GetRequiredService<IPilotSkillReader>(), f.Clock, f.Store).Read(f.Pilot.PilotId, f.Pilot.ShipId);
+        var brain = new PilotBrain(f.Db.Services.GetRequiredService<IPilotSkillReader>(), f.Clock, f.Store, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotNavigationSkills>()).Read(f.Pilot.PilotId, f.Pilot.ShipId);
         var effects = Assert.IsType<List<object?>>(brain[1]).Cast<BlueNewObject>().Select(e => Assert.IsType<Dictionary<string, object?>>(e.State)).ToArray();
         Assert.Equal(3, effects.Length);
         Assert.All(effects, e => { Assert.Equal("M", e["modifierType"]); Assert.Equal(f.Pilot.PilotId, e["toItemID"]); });

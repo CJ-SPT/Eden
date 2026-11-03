@@ -3,6 +3,7 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
@@ -16,6 +17,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private MiningContact[] _mining = [];
     private WeaponContact[] _weapons = [];
     private ShieldBoostContact[] _shieldBoosts = [];
+    private PropulsionContact? _propulsion;
+    private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
     private WreckContact[] _wrecks = [];
     private bool _destroying;
@@ -49,6 +52,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     // the terminal hull transition still prevent local module activations.
     public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null;
     public SpacePosition Velocity => _velocity;
+    public float BaseSpeed => _baseFlight.MaxSpeed;
 
     public TargetContact? FindTarget(long id)
     {
@@ -172,6 +176,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         foreach (var npc in _npcs.Where(n => n.Weapon?.TargetId == destroyed)) { NpcWeaponEffect(npc.Id, npc.Weapon!, false); }
         _npcs = _npcs.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToArray();
         Pilot = capsule;
+        _baseFlight = capsule.Flight;
+        _propulsion = null;
         modules = [];
         _velocity = SpacePosition.Zero;
         _direction = null;
@@ -308,7 +314,56 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
     private ShipContact Sample => new(Pilot, _velocity, _direction, _speedFraction,
         _followTarget is null ? null : _followRange, _warp, _warpDestination, _alignStamp, (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
         _followTarget?.Id ?? 0, _jump?.SourceId, Stamp - _arrivalStamp < 8, modules, _mining,
-        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts);
+        health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()), _weapons, _shieldBoosts, _propulsion);
+
+    public void SetBaseSpeed(double speed)
+    {
+        if (!double.IsFinite(speed) || speed <= 0 || speed > float.MaxValue) { throw new InvalidDataException("Invalid ship navigation speed."); }
+        Checkpoint();
+        _baseFlight = _baseFlight with { MaxSpeed = (float)speed };
+        ApplyFlightProperties();
+    }
+
+    public void SetPropulsionEffect(PropulsionContact? effect)
+    {
+        Checkpoint();
+        var previous = _propulsion;
+        _propulsion = effect;
+        ApplyFlightProperties();
+        if (previous is not null) { PropulsionEffect(Pilot.ShipId, previous, false); }
+        if (effect is not null) { PropulsionEffect(Pilot.ShipId, effect, true); }
+        if (InBallpark && !_destroying) { space.Publish(Sample); }
+    }
+
+    private void ApplyFlightProperties()
+    {
+        var properties = _propulsion?.Module.Apply(_baseFlight) ?? _baseFlight;
+        if (Pilot.Flight == properties) { return; }
+        Pilot = Pilot with { Flight = properties };
+        if (InBallpark)
+        {
+            Update("SetBallMass", Pilot.ShipId, properties.Mass);
+            Update("SetMaxSpeed", Pilot.ShipId, (double)properties.MaxSpeed);
+            if (!_destroying) { space.Publish(Sample); }
+        }
+    }
+
+    private void PropulsionEffect(long shipId, PropulsionContact effect, bool active) =>
+        Update("OnSpecialFX", shipId, effect.Module.ItemId, effect.Module.TypeId, shipId, null, PropulsionDefinitions.EffectGraphic, false, active, active,
+            effect.Module.DurationMilliseconds, 0, effect.StartedAt, 0, null);
+
+    private void RefreshPropulsion(ShipContact ship, ShipContact? previous)
+    {
+        long id = ship.Pilot.ShipId;
+        if (previous is not null && previous.Pilot.Flight != ship.Pilot.Flight)
+        {
+            Update("SetBallMass", id, ship.Pilot.Flight.Mass);
+            Update("SetMaxSpeed", id, (double)ship.Pilot.Flight.MaxSpeed);
+        }
+        if (previous?.Propulsion == ship.Propulsion) { return; }
+        if (previous?.Propulsion is { } stopped) { PropulsionEffect(id, stopped, false); }
+        if (ship.Propulsion is { } started) { PropulsionEffect(id, started, true); }
+    }
 
     public void SetMiningEffect(MiningContact effect, bool active)
     {
@@ -423,6 +478,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
                 RefreshMining(ship, null);
                 RefreshWeapons(ship, null);
                 RefreshShieldBoosts(ship, null);
+                RefreshPropulsion(ship, null);
                 if (ship.Arriving)
                 {
                     ArrivalEffect(ship.Pilot.ShipId);
@@ -433,6 +489,7 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
             RefreshMining(ship, previous);
             RefreshWeapons(ship, previous);
             RefreshShieldBoosts(ship, previous);
+            RefreshPropulsion(ship, previous);
             if (ship.Health is { } currentHealth && previous.Health is { } previousHealth &&
                 (currentHealth.Remaining.Armor != previousHealth.Remaining.Armor || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure ||
                 currentHealth.Remaining.Shield != previousHealth.Remaining.Shield))
@@ -490,6 +547,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
 
     private void LeaveSpace()
     {
+        _propulsion = null;
+        Pilot = Pilot with { Flight = _baseFlight };
         InBallpark = false;
         _peers = [];
         _visibleAsteroids = [];
@@ -571,7 +630,8 @@ internal sealed class FlightSession(IShipPositionStore world, DockedPilot pilot,
         foreach (var effect in _mining) { MiningEffect(Pilot.ShipId, effect, true); }
         foreach (var effect in _weapons) { WeaponEffect(Pilot.ShipId, effect, true); }
         foreach (var effect in _shieldBoosts) { ShieldBoostEffect(Pilot.ShipId, effect, true); }
-        foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); RefreshShieldBoosts(peer, null); }
+        if (_propulsion is { } propulsion) { PropulsionEffect(Pilot.ShipId, propulsion, true); }
+        foreach (var peer in peers) { RefreshMining(peer, null); RefreshWeapons(peer, null); RefreshShieldBoosts(peer, null); RefreshPropulsion(peer, null); }
         if (_warp is not null || _warpDestination is not null)
         {
             WarpEffect(Pilot.ShipId, true);

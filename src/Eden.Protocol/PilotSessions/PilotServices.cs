@@ -4,6 +4,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Mining;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
@@ -12,7 +13,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters, CombatHandler combat, NpcCombatHandler npcCombat, IWrecks wrecks, ShieldBoostHandler shields, IndustryHandler industry) : IPilotSession
+internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore positions, PilotCallRouter router, TimeProvider clock, SharedSpace space, ISystemObjects objects, SkillHandler skills, TargetingHandler targeting, IAsteroidField asteroids, MiningHandler mining, IPilotInventory inventory, IStationDocking docking, IPilotHealth health, INpcEncounters encounters, CombatHandler combat, NpcCombatHandler npcCombat, IWrecks wrecks, ShieldBoostHandler shields, IndustryHandler industry, PropulsionHandler propulsion) : IPilotSession
 {
     private const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
     private static BlueInstance Address(params object?[] state) => new("carbon.common.script.net.machoNetAddress.MachoAddress", state);
@@ -59,6 +60,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
                     mining.Advance(context);
                     combat.Advance(context);
                     shields.Advance(context);
+                    propulsion.Advance(context);
                     industry.Advance(context);
                     var beforeAttack = context.Pilot;
                     npcCombat.Advance(context);
@@ -128,6 +130,7 @@ internal sealed class PilotServices(IPilotLookup pilots, IShipPositionStore posi
             mining.Advance(context);
             combat.Advance(context);
             shields.Advance(context);
+            propulsion.Advance(context);
             industry.Advance(context);
             npcCombat.Advance(context);
             targeting.Advance(context);

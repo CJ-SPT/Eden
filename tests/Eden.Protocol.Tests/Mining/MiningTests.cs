@@ -230,7 +230,8 @@ public sealed class MiningTests
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
             new Eden.Protocol.Ammunition.AmmunitionHandler(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Ammunition.IPilotAmmunition>(),
                 fixture.Db.Services.GetRequiredService<IPilotFitting>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Combat.IPilotCombat>(), fixture.Inventory),
-            fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>());
+            fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(), fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>(),
+            new(fixture.Clock, fixture.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
         var info = Assert.IsType<BlueInstance>(inventoryHandler.Call(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
         Assert.Equal(Fixture.Asteroid, Assert.IsType<object?[]>(effects[(long)DogmaEffect.MiningLaser])[3]);
@@ -244,7 +245,7 @@ public sealed class MiningTests
         fixture.Clock.Milliseconds++;
         mining.Advance(context);
         var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
-        Assert.Equal(63, ore.Quantity); // Mining I: 6 * 1.05 m³, 0.1 m³ per unit.
+        Assert.Equal(63, ore.Quantity); // Mining I: 6 * 1.05 mÂ³, 0.1 mÂ³ per unit.
         Assert.Equal(9937, fixture.Remaining());
         Assert.False(mining.IsActive(module));
         var insertion = Assert.IsType<Dictionary<long, object?>>(Assert.Single(context.Notifications, n => n.Name == "OnItemChange").Arguments[1]);

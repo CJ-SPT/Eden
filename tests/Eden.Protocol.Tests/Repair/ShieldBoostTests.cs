@@ -296,7 +296,7 @@ public sealed class ShieldBoostTests
         using var activationScope = f.Db.Services.CreateScope();
         ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), handler,
-            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>());
+            activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(), new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, ShieldBoostDefinitions.EffectName, null, 100L]);
         Assert.Null(Activate());
         Assert.Null(Activate());
@@ -409,7 +409,7 @@ public sealed class ShieldBoostTests
         using TargetingHandler targeting = new(f.Clock, f.Fitting, locks);
         using NpcCombatHandler combat = new(f.Clock, f.Db.Services.GetRequiredService<INpcCombat>(), locks,
             new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting),
-            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), shields);
+            new(f.Clock, f.Db.Services.GetRequiredService<IPilotCombat>(), targeting), shields, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
         combat.Enter(context);
         using (WorldDbContext world = new(f.Db.Path))
         {

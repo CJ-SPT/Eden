@@ -1,11 +1,12 @@
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Skills;
 
 [Injectable]
-internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock, PilotBrain brain) : ISelectedPilotCallHandler
+internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining training, IPilotSkillBooks books, TimeProvider clock, PilotBrain brain, PropulsionHandler propulsion) : ISelectedPilotCallHandler
 {
     public object? Call(PilotCallContext context, string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
     {
@@ -109,6 +110,7 @@ internal sealed class SkillHandler(IPilotSkillReader skills, IPilotTraining trai
         context.NextSkillCompletion = state.Queue.FirstOrDefault()?.EndTime;
         if (state.ChangedSkills.Count > 0)
         {
+            propulsion.RefreshNavigation(context);
             var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
             context.Notifications.Add(("OnServerSkillsChanged", [updates, null, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()]));
             context.Notifications.Add(("OnServerBrainUpdated", [brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)]));

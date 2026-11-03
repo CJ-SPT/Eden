@@ -415,7 +415,8 @@ public sealed class NpcCombatTests
         using TargetingHandler targeting = new(f.Clock, fitting, locks);
         MiningHandler mining = new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting);
         CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
-        using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()));
+        using NpcCombatHandler npcCombat = new(f.Clock, f.Combat, locks, mining, weapons, new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()),
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
         using PilotCallContext context = new(1000001, f.Pilot.Account, [f.Pilot],
             p => new(f.Db.Store, p, f.Clock, space, [], health: f.Health, encounters: encounters, wrecks: f.Db.Services.GetRequiredService<IWrecks>()), 42, []);
         context.Select(f.Pilot);

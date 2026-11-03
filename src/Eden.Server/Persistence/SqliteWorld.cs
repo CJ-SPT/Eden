@@ -110,7 +110,7 @@ public sealed class SqliteWorld : IDockedWorld, IStationDocking
         var system = station.SolarSystem;
         double Attribute(int id) => type.Attributes.Single(a => a.AttributeId == id).Value;
         var flight = new FlightProperties((float)station.Type.Radius!.Value, (float)type.Radius!.Value,
-            type.Mass!.Value, (float)Attribute(70), (float)Attribute(37), Attribute(1281) * Attribute(600));
+            type.Mass!.Value, (float)Attribute(70), (float)PilotPropulsionStore.NavigationSpeed(world, catalog, pilot.Id, Attribute(37)), Attribute(1281) * Attribute(600));
         var designation = catalog.Set<StationDesignation>().Single(s => s.StationId == station.Id);
         var identity = new StationIdentity(designation.Format(system.Name, station.Owner.Name), station.Type.GroupId, station.Type.Group.CategoryId);
         var hull = new HullProperties(Attribute(9), Attribute(482), Attribute(55), Attribute(263), Attribute(265), Attribute(479));

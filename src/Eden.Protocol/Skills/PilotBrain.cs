@@ -1,5 +1,6 @@
 using Eden.Protocol.Combat;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Skills;
@@ -11,7 +12,7 @@ internal enum BrainOperation
 }
 
 [Injectable]
-internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, IPilotIndustrySkills industry)
+internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, IPilotIndustrySkills industry, IPilotNavigationSkills navigation)
 {
     private const string LocationRequiredSkillModifier = "LRS";
     private const string LocationGroupModifier = "LG";
@@ -35,6 +36,18 @@ internal sealed class PilotBrain(IPilotSkillReader skills, TimeProvider clock, I
                 ["skills"] = new List<object?> { (int)m.Skill },
                 ["value"] = Percent * m.PerLevel * levels[(int)m.Skill],
             })).ToList();
+        effects.AddRange(navigation.NavigationBonuses(pilotId).Select(b => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass,
+            new Dictionary<string, object?>
+            {
+                ["fromAttrib"] = null,
+                ["toItemID"] = shipId,
+                ["modifierType"] = b.RequiredSkill.HasValue ? LocationRequiredSkillModifier : b.Group.HasValue ? LocationGroupModifier : "M",
+                ["toAttribID"] = (int)b.Attribute,
+                ["operation"] = (int)BrainOperation.PostPercent,
+                ["extras"] = b.RequiredSkill is int skill ? new object?[] { skill } : b.Group is int group ? new object?[] { group } : Array.Empty<object?>(),
+                ["skills"] = new List<object?> { b.SkillId },
+                ["value"] = b.Percent,
+            })));
         var characterEffects = industry.CharacterBonuses(pilotId).Select(b => (object?)new BlueNewObject(BlueNewObject.BrainEffectClass,
             new Dictionary<string, object?>
             {

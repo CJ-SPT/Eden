@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
@@ -33,6 +34,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
     {
         ship ??= pilot.ActiveShip;
         var attributes = Attributes(catalog, ship.TypeId);
+        attributes[DogmaAttributeId.MaxVelocity] = PilotPropulsionStore.NavigationSpeed(world, catalog, pilot.Id, attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity));
         // Catalog corvette role effects multiply the corresponding resonances.
         // A -8 percent bonus means 0.92 times damage, not eight resistance points.
         foreach (var (bonus, resonances) in new[]
@@ -121,14 +123,15 @@ internal sealed class PilotFittingStore(WorldDatabase database, IPilotInventory 
             // railgun has a built-in charge and shares turret/CPU/grid accounting.
             int group = catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;
             bool booster = group == ShieldBoostDefinitions.Group;
-            if (group != InventoryDefinitions.MiningLaserGroup && !booster && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, item.TypeId)) &&
+            bool medium = booster || group == PropulsionDefinitions.AfterburnerGroup;
+            if (group != InventoryDefinitions.MiningLaserGroup && !medium && !CombatDefinitions.IsSupportedHybrid(group, Attributes(catalog, item.TypeId)) &&
                 item.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             {
                 throw new InvalidDataException("This module family is not supported yet.");
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
-            int first = (int)(booster ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
-            int slots = Math.Clamp(checked((int)(booster ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots) :
+            int first = (int)(medium ? InventoryFlag.MediumSlot0 : InventoryFlag.HighSlot0);
+            int slots = Math.Clamp(checked((int)(medium ? hull.GetValueOrDefault(DogmaAttributeId.MediumSlots) :
                 Math.Min(hull.GetValueOrDefault(DogmaAttributeId.HighSlots), hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)))), 0, InventoryDefinitions.SlotsPerRack);
             int slot = flagId == (int)InventoryFlag.AutoFit ? Enumerable.Range(first, slots).FirstOrDefault(f => !occupied.Contains(f)) : flagId;
             if (slot < first || slot >= first + slots || !occupied.Add(slot))

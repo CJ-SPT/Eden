@@ -202,7 +202,7 @@ public sealed class PilotCombatTests
         using var locks = targeting;
         using var activationScope = f.Db.Services.CreateScope();
         ModuleActivationHandler activation = new(new(f.Clock, f.Db.Services.GetRequiredService<IPilotMining>(), targeting), combat,
-            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()), activationScope.ServiceProvider.GetRequiredService<InventoryHandler>());
+            new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Repair.IPilotShieldBoosting>()), activationScope.ServiceProvider.GetRequiredService<InventoryHandler>(), new(f.Clock, f.Db.Services.GetRequiredService<Eden.Protocol.Propulsion.IPilotPropulsion>()));
         object? Activate() => activation.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", f.Npc.Id, 100L]);
         Assert.Null(Activate());
         using WorldDbContext saved = new(f.Db.Path);
