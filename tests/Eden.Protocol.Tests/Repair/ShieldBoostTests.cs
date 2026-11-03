@@ -108,6 +108,10 @@ public sealed class ShieldBoostTests
                     """
                 );
             }
+            PassiveCatalogFixture.LoadActiveMetadata(
+                new WorldDatabase(Db.Path).CatalogPath,
+                new HashSet<int> { (int)ShieldBoosterType.SmallI, (int)ShieldBoostSkill.Compensation }
+            );
             using (WorldDbContext world = new(Db.Path))
             {
                 world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3416,250)");

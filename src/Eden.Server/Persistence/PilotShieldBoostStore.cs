@@ -27,26 +27,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         CatalogDbContext catalog,
         long pilotId,
         InventoryItem module
-    )
-    {
-        var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module).ToDictionary();
-        if (module.GroupId != ShieldBoostDefinitions.Group)
-        {
-            return attributes;
-        }
-        int level = PilotSkillReader.Level(world, catalog, pilotId, (int)ShieldBoostSkill.Compensation);
-        double bonus =
-            catalog.Set<TypeAttribute>().Find((int)ShieldBoostSkill.Compensation, (int)DogmaAttributeId.ShieldBoostCapacitorBonus)?.Value
-            ?? 0;
-        // Pinned effects 1499/1500 multiply shield-booster capacitor need by the
-        // trained Shield Compensation level and its catalog percent bonus.
-        attributes[DogmaAttributeId.CapacitorNeed] = ShieldBoostRules.CapacitorNeed(
-            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            bonus,
-            level
-        );
-        return attributes;
-    }
+    ) => PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module);
 
     public ShieldBoost Boost(long pilotId, long moduleId, long now)
     {
@@ -64,6 +45,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
             || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ShieldBoostDefinitions.Group
+            || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
             throw new InvalidDataException("Use an online fitted shield booster on your active ship in space.");

@@ -17,6 +17,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == ShieldBoostDefinitions.Group && !ShieldBoosterCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (type.GroupId == ArmorRepairDefinitions.Group && !ArmorRepairCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

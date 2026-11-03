@@ -34,14 +34,16 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadActiveTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "ActiveTierCatalog.json", types);
 
-    private static void Load(string path, string resource, IReadOnlySet<int>? types)
+    internal static void LoadActiveMetadata(string path, IReadOnlySet<int> types) => Load(path, "ActiveTierCatalog.json", types, false);
+
+    private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true)
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;
         var data = JsonSerializer.Deserialize<Fixture>(stream, JsonSerializerOptions.Web)!;
         Assert.Equal(3662168, data.Build);
         using CatalogDbContext catalog = new(path, writable: true);
         using var transaction = catalog.Database.BeginTransaction();
-        foreach (var type in data.Types.Where(type => types is null || types.Contains(type.Id)))
+        foreach (var type in data.Types.Where(type => definitions && (types is null || types.Contains(type.Id))))
         {
             catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO ItemCategory VALUES ({type.CategoryId},{type.CategoryId.ToString()})");
             catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO ItemGroup VALUES ({type.GroupId},{type.GroupName},{type.CategoryId})");

@@ -24746,8 +24746,20 @@
       "dataset": "client/dogmaeffects",
       "key": 4,
       "data": {
+        "guid": "effects.ShieldBoosting",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 1,
-        "effectID": 4
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 4,
+        "propulsionChance": 0,
+        "effectName": "shieldBoosting",
+        "dischargeAttributeID": 6,
+        "durationAttributeID": 73,
+        "published": 0
       }
     },
     {
@@ -26905,7 +26917,14 @@
       "dataset": "client/dogmaeffects",
       "key": 3201,
       "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
         "effectCategory": 5,
+        "isWarpSafe": 1,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
         "effectID": 3201,
         "modifierInfo": [
           {
@@ -26922,7 +26941,11 @@
             "modifyingAttributeID": 1206,
             "func": "ItemModifier"
           }
-        ]
+        ],
+        "effectName": "overloadSelfShieldBonusDurationBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
       }
     },
     {

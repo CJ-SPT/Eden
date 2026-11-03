@@ -23,6 +23,7 @@ public enum ShieldBoosterType
 public enum ShieldBoostSkill
 {
     Compensation = 21059,
+    CapitalOperation = 21802,
 }
 
 public static class ShieldBoostDefinitions

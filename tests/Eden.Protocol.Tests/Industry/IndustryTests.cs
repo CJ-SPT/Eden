@@ -156,6 +156,10 @@ public sealed class IndustryTests
                         ('client/types','38','{{"published":1,"marketGroupID":1,"volume":0.01}}');
                 """
             );
+            PassiveCatalogFixture.LoadActiveMetadata(
+                new WorldDatabase(Db.Path).CatalogPath,
+                new HashSet<int> { (int)ShieldBoosterType.SmallI }
+            );
             using WorldDbContext world = new(Db.Path);
             foreach (
                 var blueprint in new[]

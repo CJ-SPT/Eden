@@ -4,10 +4,6 @@ namespace Eden.Gameplay.Repair;
 
 public static class ShieldBoostRules
 {
-    private const double Percent = 100;
-
-    public static double CapacitorNeed(double basis, double percentPerLevel, int level) => basis * (1 + percentPerLevel * level / Percent);
-
     public static double RestoredShield(ShipHealth health, ShieldBooster booster)
     {
         if (

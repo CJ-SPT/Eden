@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Repair;
 
 namespace Eden.Gameplay.Inventory;
 
@@ -98,5 +99,9 @@ public static class PassiveModules
     public static IReadOnlySet<int> Groups { get; } = Enum.GetValues<PassiveModuleGroup>().Select(g => (int)g).ToHashSet();
 
     // Existing weapon/navigation/hull skill rules retain their current single owner.
-    public static IReadOnlyList<int> Skills { get; } = Enum.GetValues<PassiveModuleSkill>().Select(s => (int)s).ToArray();
+    public static IReadOnlyList<int> Skills { get; } =
+        Enum.GetValues<PassiveModuleSkill>()
+            .Select(skill => (int)skill)
+            .Concat(Enum.GetValues<ShieldBoostSkill>().Select(skill => (int)skill))
+            .ToArray();
 }
