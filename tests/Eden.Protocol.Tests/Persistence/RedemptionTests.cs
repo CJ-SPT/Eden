@@ -262,7 +262,7 @@ public sealed class RedemptionTests
         var inSpace = store.Grant(Grant("space"));
         var contact = db.Store.FindPilot(Account)!;
         db.Store.SetPosition(contact.ShipId, new(1, 2, 3), contact.SystemId);
-        Assert.Throws<InvalidDataException>(() => store.Claim(Account, Pilot, [new(inSpace.Id, 34)], false));
+        Assert.Single(store.Claim(Account, Pilot, [new(inSpace.Id, 34)], false).Errors);
         Assert.Equal(inSpace, Assert.Single(store.Read(Account)));
         Assert.Equal(home, Assert.Single(store.Claim(Account, Pilot, [new(inSpace.Id, 34)], true).Items).Item.LocationId);
     }

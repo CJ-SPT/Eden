@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider clock) : IPilotTraining
+internal sealed partial class PilotTrainingStore(WorldDatabase database, TimeProvider clock) : IPilotTraining, IPilotFreeSkillPoints
 {
     // Build 3662168 appConst skill event IDs.
     private const int Started = 36;
@@ -26,7 +26,11 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
 
     public TrainingState Pause(long pilotId) => Update(pilotId, null, false, true).Training;
 
-    internal CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes) => Update(pilotId, null, false, false, attributes);
+    internal CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes)
+    {
+        var result = Update(pilotId, null, false, false, attributes);
+        return new(result.Training, result.Remapped);
+    }
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
@@ -41,17 +45,39 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             .ToArray();
     }
 
-    private CharacterRemapResult Update(
+    private TrainingUpdateResult Update(
         long pilotId,
         IReadOnlyList<TrainingTarget>? targets,
         bool activate,
         bool pause,
-        CharacterAttributes? attributes = null
+        CharacterAttributes? attributes = null,
+        PointOperation? points = null,
+        bool preview = false
     )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var result = UpdateCore(world, pilotId, targets, activate, pause, attributes, points, preview, now);
+        if (!preview)
+        {
+            transaction.Commit();
+        }
+        return result;
+    }
+
+    private TrainingUpdateResult UpdateCore(
+        WorldDbContext world,
+        long pilotId,
+        IReadOnlyList<TrainingTarget>? targets,
+        bool activate,
+        bool pause,
+        CharacterAttributes? attributes,
+        PointOperation? points,
+        bool preview,
+        long now
+    )
+    {
         bool remapped = false;
         if (attributes is not null)
         {
@@ -66,6 +92,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         var saved = world.Set<QueuedLevel>().AsNoTracking().Where(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
         List<TrainingEntry> queue = [];
         HashSet<int> changed = [];
+        bool alphaBudgetStopped = false;
         foreach (var row in saved)
         {
             var entry = new TrainingEntry(new(row.TypeId, row.Level), row.StartPoints, row.EndPoints, row.StartTime, row.EndTime);
@@ -73,7 +100,21 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             {
                 world.Set<PilotSkill>().Find(pilotId, row.TypeId)!.Points = row.EndPoints;
                 changed.Add(row.TypeId);
-                Record(world, pilotId, end, row.TypeId, row.EndPoints, Completed);
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                double rank = catalog.Set<TypeAttribute>().Find(row.TypeId, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 1;
+                long threshold = TrainedSkill.PointsForLevel(rank, row.Level);
+                if (row.EndPoints < threshold)
+                {
+                    // A reward shortened passive training to Alpha's total-SP cap,
+                    // not to the requested level. Retain that level paused.
+                    queue.Add(new(entry.Target, row.EndPoints, threshold, null, null));
+                    alphaBudgetStopped = true;
+                    Record(world, pilotId, end, row.TypeId, row.EndPoints, Cancelled);
+                }
+                else
+                {
+                    Record(world, pilotId, end, row.TypeId, row.EndPoints, Completed);
+                }
                 world.Remove(row);
             }
             else
@@ -83,6 +124,45 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         }
         world.SaveChanges();
         var first = queue.FirstOrDefault();
+        TrainingEntry? pointHead = null;
+        if (alphaBudgetStopped)
+        {
+            targets = queue.Select(e => e.Target).ToArray();
+            activate = false;
+        }
+        FreePointPlan? pointPlan = null;
+        if (points is not null)
+        {
+            bool wasActive = first?.StartTime is not null;
+            if (wasActive)
+            {
+                pointHead = first;
+            }
+            if (wasActive)
+            {
+                world.Set<PilotSkill>().Find(pilotId, first!.Target.TypeId)!.Points = first.PointsAt(now);
+                world.SaveChanges();
+            }
+            pointPlan = ChangePoints(world, pilotId, points, queue, changed, now, preview);
+            if (preview)
+            {
+                return new(new(queue, []), false, pointPlan);
+            }
+            if (pointPlan.Allocations.Count > 0 || points.Credit > 0)
+            {
+                if (wasActive)
+                {
+                    changed.Add(first!.Target.TypeId);
+                }
+                var inputs = ReadInputs(world, pilotId, queue.Select(e => e.Target).ToArray());
+                targets = queue
+                    .Select(e => e.Target)
+                    .Where(t => t.Level > new TrainedSkill(t.TypeId, inputs.Skills[t.TypeId].Points, inputs.Skills[t.TypeId].Rank).Level)
+                    .ToArray();
+                activate = wasActive;
+                first = null;
+            }
+        }
         if (pause)
         {
             targets = queue.Select(e => e.Target).ToArray();
@@ -103,7 +183,8 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
                 Record(world, pilotId, now, first.Target.TypeId, earned, Cancelled);
                 world.SaveChanges();
             }
-            queue = Plan(world, pilotId, targets, activate, keepHead ? first : null, now);
+            queue = Plan(world, pilotId, targets, activate, keepHead ? first : null, now, points is not null, queue);
+            activate = queue.FirstOrDefault()?.StartTime is not null;
             world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).ExecuteDelete();
             for (int i = 0; i < queue.Count; i++)
             {
@@ -122,9 +203,14 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
                     }
                 );
             }
-            if (activate && !keepHead && queue.Count > 0)
+            if (activate && !keepHead && queue.Count > 0 && (pointHead is null || pointHead.Target != queue[0].Target))
             {
                 Record(world, pilotId, now, queue[0].Target.TypeId, queue[0].StartPoints, Started);
+            }
+            if (pointHead is not null && queue is [{ StartTime: null }, ..])
+            {
+                long earned = world.Set<PilotSkill>().Find(pilotId, pointHead.Target.TypeId)!.Points;
+                Record(world, pilotId, now, pointHead.Target.TypeId, earned, Cancelled);
             }
         }
         // The next queued level starts at its predecessor's end, including while offline.
@@ -136,8 +222,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             }
         }
         world.SaveChanges();
-        transaction.Commit();
-        return new(new(queue, changed.ToArray()), remapped);
+        return new(new(queue, changed.ToArray()), remapped, pointPlan, world.Set<SavedFreeSkillPoints>().Find(pilotId)?.Revision ?? 0);
     }
 
     private List<TrainingEntry> Plan(
@@ -146,18 +231,23 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         IReadOnlyList<TrainingTarget> targets,
         bool activate,
         TrainingEntry? running,
-        long now
+        long now,
+        bool clampAlphaBudget = false,
+        IReadOnlyList<TrainingEntry>? priorQueue = null
     )
     {
-        if (targets.Count > TrainingRules.MaximumEntries)
-        {
-            throw new InvalidTrainingQueue("QueueTooManySkills");
-        }
-        List<TrainingEntry> result = [];
         if (targets.Count == 0)
         {
-            return result;
+            return [];
         }
+        var inputs = ReadInputs(world, pilotId, targets);
+        bool partial =
+            priorQueue?.Any(e => e.EndPoints < TrainedSkill.PointsForLevel(inputs.Skills[e.Target.TypeId].Rank, e.Target.Level)) == true;
+        return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial);
+    }
+
+    private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets)
+    {
         var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var owned = points.Keys.ToArray();
@@ -206,7 +296,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             }
         );
         var grade = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single();
-        return TrainingRules.Plan(targets, new(inputs, grade), activate, running, now);
+        return new(inputs, grade, ReadFreePoints(world, pilotId));
     }
 
     private void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId)

@@ -1,12 +1,15 @@
 using Eden.Gameplay.Redemption;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Redemption;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvider clock) : IPilotCallHandler
+internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvider clock, FreeSkillPointHandler freePoints)
+    : IPilotCallHandler
 {
     private long[]? _tokens;
     private long _nextPoll;
@@ -71,6 +74,14 @@ internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvi
                     var result = redemption.Claim(context.AccountId, pilot, selected, home);
                     if (context.Selected && context.Pilot.PilotId == pilot)
                     {
+                        if (
+                            result.FreeSkillPoints is long balance
+                            && result.Training is { } state
+                            && result.FreePointRevision is long revision
+                        )
+                        {
+                            freePoints.Notify(context, balance, revision, state);
+                        }
                         foreach (
                             var item in result.Items.Where(i =>
                                 i.Item.LocationId == context.Pilot.StationId && context.Pilot.Position is null
@@ -80,7 +91,7 @@ internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvi
                             InventoryChangesWire.NotifyItemChange(context, new(item.Item, null));
                         }
                     }
-                    if (result.Items.Count > 0)
+                    if (result.Items.Count > 0 || result.SkillPoints > 0)
                     {
                         Changed(context);
                     }
@@ -168,7 +179,7 @@ internal sealed record RedeemTokenRow(RedeemToken Token) : BlueModel
                 ["dateTime"] = Token.CreatedAt,
                 ["expireDateTime"] = Token.ExpiresAt,
                 ["soulbound"] = false,
-                ["isAutoInject"] = false,
+                ["isAutoInject"] = SkillPointRewards.Amount(Token.TypeId) > 0,
                 ["blueprintInfo"] = null,
             }
         );
@@ -181,7 +192,7 @@ internal sealed record RedeemClaimReply(RedeemResult Result) : BlueModel
         {
             ["charID"] = Result.PilotId,
             ["stationID"] = Result.Items.Select(i => i.Item.LocationId).Distinct().ToArray() is [long station] ? station : null,
-            ["skillpoints"] = 0,
+            ["skillpoints"] = Result.SkillPoints,
             ["itemsCreated"] = Result.Items.Select(i => (object?)new RedeemedItemRow(i)).ToList(),
             ["errors"] = Result
                 .Errors.Select(e =>

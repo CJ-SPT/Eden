@@ -143,6 +143,8 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedFreeSkillPoints>().ToTable("WorldFreeSkillPoints").HasKey(s => s.PilotId);
+        model.Entity<SavedFreeSkillPoints>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model.Entity<SavedRedeemToken>().ToTable("WorldRedeemToken").HasKey(t => t.Id);
         model.Entity<SavedRedeemToken>().HasOne<Account>().WithMany().HasForeignKey(t => t.AccountId);
         model.Entity<SavedRedeemToken>().HasIndex(t => new { t.AccountId, t.Reference }).IsUnique();

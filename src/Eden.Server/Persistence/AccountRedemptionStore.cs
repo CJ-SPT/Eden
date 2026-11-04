@@ -1,5 +1,6 @@
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Redemption;
+using Eden.Gameplay.Skills;
 using Eden.Protocol;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +69,10 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckType(catalog, grant.TypeId);
+        if (SkillPointRewards.Amount(grant.TypeId) > 0 && grant.StationId.HasValue)
+        {
+            throw new InvalidDataException("Skill point rewards have no fixed station.");
+        }
         if (grant.StationId is int station)
         {
             CheckStation(catalog, station);
@@ -115,15 +120,17 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         using var transaction = world.Database.BeginTransaction();
         var pilot = Pilot(world, accountId, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (!useHomeStation && pilot.ActiveShip.Position is not null)
-        {
-            throw new InvalidDataException("Dock the destination pilot or choose its home station.");
-        }
-        int destination = useHomeStation ? PilotHomeStationStore.Read(world, catalog, pilot).Id : pilot.ActiveShip.StationId;
-        CheckStation(catalog, destination);
+        int? destination =
+            useHomeStation ? PilotHomeStationStore.Read(world, catalog, pilot).Id
+            : pilot.ActiveShip.Position is null ? pilot.ActiveShip.StationId
+            : null;
         long now = Now;
         List<RedeemedItem> items = [];
         List<RedeemFailure> errors = [];
+        long skillPoints = 0;
+        long? freeSkillPoints = null;
+        long? freePointRevision = null;
+        TrainingState? training = null;
         foreach (var selected in tokens)
         {
             var token = world.Set<SavedRedeemToken>().Find(selected.TokenId);
@@ -138,7 +145,29 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
                 errors.Add(new(selected.TokenId, selected.TypeId, "This redeem token is unavailable or expired."));
                 continue;
             }
-            int station = token.StationId ?? destination;
+            long reward = SkillPointRewards.Amount(token.TypeId);
+            if (reward > 0)
+            {
+                CheckType(catalog, token.TypeId);
+                var credit = new PilotTrainingStore(database, clock).Credit(world, pilotId, checked(reward * token.Quantity), now);
+                skillPoints = checked(skillPoints + reward * token.Quantity);
+                freeSkillPoints = credit.Remaining;
+                freePointRevision = credit.Revision;
+                training = new(
+                    credit.Training.Queue,
+                    (training?.ChangedSkills ?? []).Concat(credit.Training.ChangedSkills).Distinct().ToArray()
+                );
+                token.State = RedeemTokenState.Claimed;
+                token.FinishedAt = now;
+                token.PilotId = pilotId;
+                continue;
+            }
+            if (destination is null)
+            {
+                errors.Add(new(token.Id, token.TypeId, "Dock the destination pilot or choose its home station."));
+                continue;
+            }
+            int station = token.StationId ?? destination.Value;
             InventoryItem snapshot;
             OwnedItem item = new()
             {
@@ -169,7 +198,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(pilotId, items, errors);
+        return new(pilotId, items, errors, skillPoints, freeSkillPoints, training, freePointRevision);
     }
 
     public void Trash(long accountId, IReadOnlyList<long> tokens)
@@ -273,6 +302,10 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
     private static void CheckType(CatalogDbContext catalog, int id)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == id);
+        if (type is not null && SkillPointRewards.Amount(id) > 0)
+        {
+            return;
+        }
         if (type is null || !RedemptionRules.Deliverable((InventoryCategory)type.Group.CategoryId))
         {
             throw new InvalidDataException("This reward requires a redemption mechanic that is not implemented yet.");

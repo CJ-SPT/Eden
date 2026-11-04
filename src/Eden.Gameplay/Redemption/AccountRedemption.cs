@@ -1,4 +1,5 @@
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Redemption;
 
@@ -30,7 +31,15 @@ public sealed record RedeemFailure(long TokenId, int TypeId, string Information)
 
 public sealed record RedeemedItem(long TokenId, InventoryItem Item);
 
-public sealed record RedeemResult(long PilotId, IReadOnlyList<RedeemedItem> Items, IReadOnlyList<RedeemFailure> Errors);
+public sealed record RedeemResult(
+    long PilotId,
+    IReadOnlyList<RedeemedItem> Items,
+    IReadOnlyList<RedeemFailure> Errors,
+    long SkillPoints = 0,
+    long? FreeSkillPoints = null,
+    TrainingState? Training = null,
+    long? FreePointRevision = null
+);
 
 public interface IAccountRedemption
 {

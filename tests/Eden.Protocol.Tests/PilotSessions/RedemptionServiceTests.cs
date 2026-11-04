@@ -52,7 +52,7 @@ public sealed class RedemptionServiceTests
         var result = Assert.IsType<Dictionary<string, object?>>(WireAssertions.Materialize(claim));
         Assert.Equal(RedemptionTests.Pilot, result["charID"]);
         Assert.Equal((long)db.Store.FindPilot(RedemptionTests.Account)!.StationId, result["stationID"]);
-        Assert.Equal(0, result["skillpoints"]);
+        Assert.Equal(0L, result["skillpoints"]);
         var created = Assert.IsType<Dictionary<string, object?>>(Assert.Single(Assert.IsType<List<object?>>(result["itemsCreated"])));
         Assert.Equal(34, created["typeID"]);
         Assert.Equal(10, created["quantity"]);

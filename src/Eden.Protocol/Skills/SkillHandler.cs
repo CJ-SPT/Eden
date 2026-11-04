@@ -45,9 +45,7 @@ internal sealed class SkillHandler(
                 ),
                 ("@skills", "GetRespecInfo") when args.Length == 0 => new NeuralRemapReply(sheet.ReadAttributes(pilotId)),
                 ("@skills", "RespecCharacter") => Remap(context, CharacterAttributesWire.Read(args)),
-                ("@skills", "GetFreeSkillPoints") => 0,
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
-                ("@skills", "GetSkillQueueAndFreePoints") => new SkillQueueReply(Advance(context)),
                 ("@skills", "SaveNewQueue") => Save(context, args, keywords),
                 ("@skills", "AbortTraining") when args.Length == 0 => Pause(context),
                 ("@skills", "GetBoosters" or "GetImplants") => BlueEmpty.IndexedDictionary,
@@ -129,7 +127,7 @@ internal sealed class SkillHandler(
         return PilotCallResult.None;
     }
 
-    private IReadOnlyList<SkillQueueRow> Apply(PilotCallContext context, TrainingState state, bool notify)
+    internal IReadOnlyList<SkillQueueRow> Apply(PilotCallContext context, TrainingState state, bool notify)
     {
         context.NextSkillCompletion = state.Queue.FirstOrDefault()?.EndTime;
         if (state.ChangedSkills.Count > 0)

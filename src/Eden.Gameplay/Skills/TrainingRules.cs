@@ -11,35 +11,45 @@ public sealed record TrainingSkill(
     IReadOnlyList<TrainingTarget> Prerequisites
 );
 
-public sealed record TrainingInputs(IReadOnlyDictionary<int, TrainingSkill> Skills, AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha);
+public sealed record TrainingInputs(
+    IReadOnlyDictionary<int, TrainingSkill> Skills,
+    AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha,
+    long UnallocatedPoints = 0
+);
 
 public static class TrainingRules
 {
     public const int MaximumEntries = 150;
     private const int MaximumQueueDays = 3650;
-    private const long MaximumAlphaPoints = 5_000_000;
+    public const long MaximumAlphaPoints = 5_000_000;
 
     public static List<TrainingEntry> Plan(
         IReadOnlyList<TrainingTarget> targets,
         TrainingInputs inputs,
         bool activate,
         TrainingEntry? running,
-        long now
+        long now,
+        bool clampAlphaBudget = false
     )
     {
         if (targets.Count > MaximumEntries)
         {
             throw new InvalidTrainingQueue("QueueTooManySkills");
         }
+        if (inputs.UnallocatedPoints < 0)
+        {
+            throw new InvalidDataException("Invalid unallocated skill point balance.");
+        }
         List<TrainingEntry> result = [];
         var points = inputs.Skills.ToDictionary(s => s.Key, s => s.Value.Points);
         long start = now;
-        long total = points.Values.Sum();
+        long total = checked(points.Values.Sum() + inputs.UnallocatedPoints);
         if (!Enum.IsDefined(inputs.CloneGrade))
         {
             throw new InvalidDataException("Unknown account clone grade.");
         }
         bool alpha = inputs.CloneGrade == AccountCloneGrade.Alpha;
+        bool budgetExhausted = false;
 
         foreach (var target in targets)
         {
@@ -57,9 +67,15 @@ public static class TrainingRules
             {
                 throw new InvalidTrainingQueue("QueueInvalidSkillLevel");
             }
-            if (activate && alpha && target.Level > skill.AlphaLevel)
+            bool active = activate && !budgetExhausted;
+            if (active && alpha && target.Level > skill.AlphaLevel)
             {
-                throw new InvalidTrainingQueue("SkillInQueueRequiresOmegaCloneState");
+                if (!clampAlphaBudget)
+                {
+                    throw new InvalidTrainingQueue("SkillInQueueRequiresOmegaCloneState");
+                }
+                active = false;
+                budgetExhausted = true;
             }
             if (skill.Prerequisites.Count > 0)
             {
@@ -74,19 +90,30 @@ public static class TrainingRules
                 }
             }
             long after = TrainedSkill.PointsForLevel(rank, target.Level);
-            total += after - before;
-            if (activate && alpha && total > MaximumAlphaPoints)
+            long endPoints = after;
+            long available = Math.Max(0, MaximumAlphaPoints - total);
+            total = checked(total + after - before);
+            if (active && alpha && total > MaximumAlphaPoints)
             {
-                throw new InvalidTrainingQueue("SkillInQueueOverAlphaSpTrainingSize");
+                if (!clampAlphaBudget)
+                {
+                    throw new InvalidTrainingQueue("SkillInQueueOverAlphaSpTrainingSize");
+                }
+                budgetExhausted = true;
+                active = available > 0;
+                if (active)
+                {
+                    endPoints = checked(before + available);
+                }
             }
             double primary = skill.PrimaryAttribute;
             double secondary = skill.SecondaryAttribute;
             double rate = (primary + secondary / 2) * (alpha ? .5 : 1);
-            long duration = (long)Math.Ceiling((after - before) * TimeSpan.TicksPerMinute / rate);
+            long duration = (long)Math.Ceiling((endPoints - before) * TimeSpan.TicksPerMinute / rate);
             var entry =
                 result.Count == 0 && running is not null
                     ? running
-                    : new TrainingEntry(target, before, after, activate ? start : null, activate ? start + duration : null);
+                    : new TrainingEntry(target, before, endPoints, active ? start : null, active ? start + duration : null);
             start = entry.EndTime ?? start + duration;
             points[target.TypeId] = after;
             result.Add(entry);

@@ -33,9 +33,9 @@ internal sealed record SkillQueueRow(int Position, TrainingEntry Entry) : BlueMo
         );
 }
 
-internal sealed record SkillQueueReply(IReadOnlyList<SkillQueueRow> Queue) : BlueModel
+internal sealed record SkillQueueReply(IReadOnlyList<SkillQueueRow> Queue, long FreePoints = 0) : BlueModel
 {
-    public override object ToBlue() => new object?[] { new BlueList<SkillQueueRow>(Queue), 0 };
+    public override object ToBlue() => new object?[] { new BlueList<SkillQueueRow>(Queue), FreePoints };
 }
 
 internal sealed record SkillHistoryRow(TrainingEvent Event) : BlueModel
