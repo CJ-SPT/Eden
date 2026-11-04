@@ -20,7 +20,9 @@ public sealed record NpcContact(
     NpcWeaponContact? Weapon = null,
     NpcNavigationContact? Navigation = null,
     int Stamp = 0,
-    bool Bumped = false
+    bool Bumped = false,
+    NpcRole Role = NpcRole.Pirate,
+    int FactionId = 0
 );
 
 public enum NpcNavigationState
@@ -54,6 +56,7 @@ public static class NpcEncounterDefinitions
     public const int PerimeterSystem = 30000144;
     public const int GuristasRookieType = 30380;
     public const int GuristasCorporation = 1000127;
+    public const int GuristasFaction = 500010;
     public const long FirstNpcId = 4_000_000_000_000;
     public const double AnchorOffset = 3500;
     public const double VisibilityRange = 250_000;

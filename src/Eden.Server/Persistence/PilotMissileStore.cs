@@ -92,7 +92,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             var aggressors = world.Set<NpcAggression>().Where(a => a.TargetShipId == pilot.ActiveShipId).Select(a => a.NpcId).ToArray();
             var candidates = world
                 .Set<WorldNpc>()
-                .Where(n => n.SystemId == systemId && n.DestroyedAt == null && aggressors.Contains(n.Id))
+                .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null && aggressors.Contains(n.Id))
                 .AsEnumerable()
                 .Select(n => new MissileAggressor(n.Id, NpcMotion.Position(n)))
                 .ToArray();
@@ -103,7 +103,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             throw new InvalidDataException("Lock a nearby NPC before launching missiles.");
         }
         var npc = targetId is long id ? world.Set<WorldNpc>().Find(id) : null;
-        if (npc is null || npc.DestroyedAt.HasValue || npc.SystemId != systemId)
+        if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.SystemId != systemId)
         {
             throw new InvalidDataException(automatic ? "No attacking NPC is available for automatic missiles." : "The NPC is unavailable.");
         }
@@ -232,7 +232,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                 var payload = row.Payload();
                 var npc = world.Set<WorldNpc>().Find(row.TargetId);
                 MissileTarget? target = null;
-                if (npc is { DestroyedAt: null } && npc.SystemId == systemId)
+                if (npc is { DestroyedAt: null, RetiredAt: null } && npc.SystemId == systemId)
                 {
                     double offset = npc.MotionAt == 0 ? 0 : (row.UpdatedAt - npc.MotionAt) / (double)TimeSpan.TicksPerSecond;
                     target = new(NpcMotion.Position(npc) + NpcMotion.Velocity(npc) * offset, NpcMotion.Velocity(npc), row.TargetRadius);
@@ -251,7 +251,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                 {
                     row.EndedAt = time;
                 }
-                if (row.Status == MissileFlightStatus.Impact && npc is { DestroyedAt: null })
+                if (row.Status == MissileFlightStatus.Impact && npc is { DestroyedAt: null, RetiredAt: null })
                 {
                     var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
                     double application = MissileRules.Application(

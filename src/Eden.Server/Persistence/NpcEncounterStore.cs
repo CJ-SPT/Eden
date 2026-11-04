@@ -17,6 +17,15 @@ public sealed class WorldNpc
     public int BeltId { get; set; }
     public int SystemId { get; set; }
     public int TypeId { get; set; }
+    public int CorporationId { get; set; } = NpcEncounterDefinitions.GuristasCorporation;
+    public int FactionId { get; set; }
+    public NpcRole Role { get; set; }
+    public NpcAnchorKind AnchorKind { get; set; }
+    public long EncounterId { get; set; }
+    public double? HomeX { get; set; }
+    public double? HomeY { get; set; }
+    public double? HomeZ { get; set; }
+    public long? RetiredAt { get; set; }
     public double X { get; set; }
     public double Y { get; set; }
     public double Z { get; set; }
@@ -45,13 +54,107 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
 
     private IReadOnlyList<NpcContact> Read(int systemId, long now)
     {
-        if (systemId != NpcEncounterDefinitions.PerimeterSystem)
-        {
-            return [];
-        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = world.Database.BeginTransaction();
+        SeedLegacy(world, catalog, systemId, now);
+        world.SaveChanges();
+        var npcs = world
+            .Set<WorldNpc>()
+            .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+            .OrderBy(n => n.Id)
+            .ToArray();
+        var ids = npcs.Select(n => n.Id).ToArray();
+        var aggression = world.Set<NpcAggression>().AsNoTracking().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
+        var profiles = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => ReadProfile(catalog, id));
+        NpcWeaponContact? Weapon(long npcId)
+        {
+            var attributes = profiles[npcs.Single(n => n.Id == npcId).TypeId].Attributes;
+            double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
+            return
+                aggression.TryGetValue(npcId, out var active)
+                && active.LastShotAt is long started
+                && now >= started
+                && now - started < duration * TimeSpan.TicksPerMillisecond
+                ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration)
+                : null;
+        }
+        var effective = npcs.ToDictionary(n => n.Id, n => PilotTackleStore.NpcAttributes(world, n.Id, profiles[n.TypeId].Attributes));
+        foreach (var npc in npcs)
+        {
+            if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
+            {
+                NpcMotion.Return(npc);
+            }
+            if (npc.Navigation == NpcNavigationState.Returning && !database.MotionStamps.ContainsKey(systemId))
+            {
+                NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), profiles[npc.TypeId].Type, effective[npc.Id], now, returning: true);
+            }
+        }
+        world.SaveChanges();
+        var contacts = npcs.Select(n =>
+            {
+                var (type, attributes, defense) = profiles[n.TypeId];
+                return new NpcContact(
+                    n.Id,
+                    n.TypeId,
+                    type.GroupId,
+                    type.Group.CategoryId,
+                    n.CorporationId,
+                    type.Name,
+                    systemId,
+                    new(n.X, n.Y, n.Z),
+                    type.Mass ?? 0,
+                    (float)(type.Radius ?? 0),
+                    (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                    NpcMotion.Agility(attributes),
+                    new(
+                        n.Id,
+                        defense,
+                        new(
+                            ChargedResource.Recharged(
+                                n.ShieldCharge,
+                                defense.Shield,
+                                defense.ShieldRechargeMilliseconds,
+                                Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
+                            ),
+                            Math.Max(0, defense.Armor - n.ArmorDamage),
+                            Math.Max(0, defense.Structure - n.StructureDamage)
+                        )
+                    ),
+                    Weapon(n.Id),
+                    NpcMotion.Contact(
+                        n,
+                        effective[n.Id],
+                        aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
+                        NpcMotion.Home(n, catalog)
+                    ),
+                    database.MotionStamps.GetValueOrDefault(systemId),
+                    database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
+                    n.Role,
+                    n.FactionId
+                );
+            })
+            .ToArray();
+        transaction.Commit();
+        return contacts;
+    }
+
+    private sealed record Profile(ItemType Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense);
+
+    private static Profile ReadProfile(CatalogDbContext catalog, int typeId)
+    {
+        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
+        return new(type, attributes, ShipHealth.DefenseFrom(attributes));
+    }
+
+    private static void SeedLegacy(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
+    {
+        if (systemId != NpcEncounterDefinitions.PerimeterSystem)
+        {
+            return;
+        }
         var belts = catalog
             .Set<Celestial>()
             .Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)
@@ -59,7 +162,7 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
             .ToArray();
         if (belts.Length == 0)
         {
-            return [];
+            return;
         }
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == NpcEncounterDefinitions.GuristasRookieType);
         var attributes = catalog
@@ -91,6 +194,12 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                         BeltId = belt.Id,
                         SystemId = systemId,
                         TypeId = type.Id,
+                        CorporationId = NpcEncounterDefinitions.GuristasCorporation,
+                        FactionId = NpcEncounterDefinitions.GuristasFaction,
+                        EncounterId = belt.Id,
+                        HomeX = belt.X + NpcEncounterDefinitions.AnchorOffset,
+                        HomeY = belt.Y,
+                        HomeZ = belt.Z,
                         X = belt.X + NpcEncounterDefinitions.AnchorOffset,
                         Y = belt.Y,
                         Z = belt.Z,
@@ -99,84 +208,6 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
                     }
                 );
         }
-        world.SaveChanges();
-        var aggression = world.Set<NpcAggression>().AsNoTracking().ToDictionary(a => a.NpcId);
-        NpcWeaponContact? Weapon(long npcId)
-        {
-            double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
-            return
-                aggression.TryGetValue(npcId, out var active)
-                && active.LastShotAt is long started
-                && now >= started
-                && now - started < duration * TimeSpan.TicksPerMillisecond
-                ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration)
-                : null;
-        }
-        var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id).ToArray();
-        var effective = npcs.ToDictionary(n => n.Id, n => PilotTackleStore.NpcAttributes(world, n.Id, attributes));
-        foreach (var npc in npcs)
-        {
-            if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
-            {
-                NpcMotion.Return(npc);
-            }
-            if (npc.Navigation == NpcNavigationState.Returning && !database.MotionStamps.ContainsKey(systemId))
-            {
-                NpcMotion.Advance(
-                    npc,
-                    NpcMotion.Home(belts.Single(b => b.Id == npc.BeltId)),
-                    type,
-                    effective[npc.Id],
-                    now,
-                    returning: true
-                );
-            }
-        }
-        world.SaveChanges();
-        var contacts = npcs.Select(n =>
-                n.TypeId != type.Id
-                    ? throw new InvalidDataException($"Unsupported saved NPC type {n.TypeId}.")
-                    : new NpcContact(
-                        n.Id,
-                        n.TypeId,
-                        type.GroupId,
-                        type.Group.CategoryId,
-                        NpcEncounterDefinitions.GuristasCorporation,
-                        type.Name,
-                        systemId,
-                        new(n.X, n.Y, n.Z),
-                        type.Mass ?? 0,
-                        (float)(type.Radius ?? 0),
-                        (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-                        NpcMotion.Agility(attributes),
-                        new(
-                            n.Id,
-                            defense,
-                            new(
-                                ChargedResource.Recharged(
-                                    n.ShieldCharge,
-                                    defense.Shield,
-                                    defense.ShieldRechargeMilliseconds,
-                                    Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
-                                ),
-                                Math.Max(0, defense.Armor - n.ArmorDamage),
-                                Math.Max(0, defense.Structure - n.StructureDamage)
-                            )
-                        ),
-                        Weapon(n.Id),
-                        NpcMotion.Contact(
-                            n,
-                            effective[n.Id],
-                            aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
-                            NpcMotion.Home(belts.Single(b => b.Id == n.BeltId))
-                        ),
-                        database.MotionStamps.GetValueOrDefault(systemId),
-                        database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId)
-                    )
-            )
-            .ToArray();
-        transaction.Commit();
-        return contacts;
     }
 
     public bool WasDestroyed(long npcId)

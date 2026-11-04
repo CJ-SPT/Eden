@@ -38,7 +38,11 @@ public sealed partial class SqliteWorld
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
-        var npcs = world.Set<WorldNpc>().Where(n => n.SystemId == systemId && n.DestroyedAt == null).OrderBy(n => n.Id).ToArray();
+        var npcs = world
+            .Set<WorldNpc>()
+            .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+            .OrderBy(n => n.Id)
+            .ToArray();
         var starts = npcs.ToDictionary(n => n.Id, NpcMotion.Position);
         var velocities = npcs.ToDictionary(n => n.Id, NpcMotion.Velocity);
         var types = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => catalog.Set<ItemType>().Single(t => t.Id == id));
@@ -118,14 +122,7 @@ public sealed partial class SqliteWorld
             else if (npc.Navigation == NpcNavigationState.Returning || NpcMotion.Engaged(npc))
             {
                 NpcMotion.Return(npc);
-                NpcMotion.Advance(
-                    npc,
-                    NpcMotion.Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId)),
-                    type,
-                    effective,
-                    now,
-                    returning: true
-                );
+                NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now, returning: true);
             }
             else if (npc.MotionAt / TimeSpan.TicksPerSecond < now / TimeSpan.TicksPerSecond)
             {

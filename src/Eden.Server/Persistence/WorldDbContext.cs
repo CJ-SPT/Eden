@@ -414,6 +414,15 @@ public sealed class WorldDbContext(string path) : DbContext
             );
         model.Entity<WorldNpc>().HasIndex(n => n.BeltId);
         model.Entity<WorldNpc>().HasIndex(n => n.SystemId);
+        model.Entity<WorldNpc>().HasIndex(n => n.EncounterId);
+        model
+            .Entity<WorldNpc>()
+            .HasIndex(n => new
+            {
+                n.SystemId,
+                n.RetiredAt,
+                n.DestroyedAt,
+            });
         model
             .Entity<ShipHealthState>()
             .ToTable(

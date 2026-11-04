@@ -102,6 +102,11 @@ internal sealed class PilotSecurityStatusStore(WorldDatabase database, TimeProvi
         long now
     )
     {
+        if (!NpcPopulationRules.RewardsPirateKill(npc.Role))
+        {
+            return;
+        }
+
         double bonus = attributes.GetValueOrDefault(DogmaAttributeId.EntitySecurityStatusKillBonus);
         if (bonus == 0)
         {
@@ -149,8 +154,7 @@ internal sealed class PilotSecurityStatusStore(WorldDatabase database, TimeProvi
         pending.NpcId = npc.Id;
         pending.TypeId = npc.TypeId;
         pending.SystemId = npc.SystemId;
-        // Current Eden belt encounters explicitly belong to this corporation.
-        pending.CorporationId = NpcEncounterDefinitions.GuristasCorporation;
+        pending.CorporationId = npc.CorporationId;
         pending.Fraction = reward.Fraction;
         pending.Maximum = reward.Maximum;
     }

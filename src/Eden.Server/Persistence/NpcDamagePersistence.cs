@@ -22,9 +22,9 @@ internal static class NpcDamagePersistence
         long now
     )
     {
-        if (npc.DestroyedAt.HasValue)
+        if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
-            throw new InvalidDataException("The NPC has already been destroyed.");
+            throw new InvalidDataException("The NPC is no longer available.");
         }
         var defense = ShipHealth.DefenseFrom(attributes);
         HullDamage health = new(
@@ -54,7 +54,9 @@ internal static class NpcDamagePersistence
             npc.DestroyedAt = now;
             PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
             WreckStore.Create(world, catalog, npc, pilot, now);
-            double bounty = attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);
+            double bounty = NpcPopulationRules.RewardsPirateKill(npc.Role)
+                ? attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty)
+                : 0;
             if (!double.IsFinite(bounty) || bounty < 0)
             {
                 throw new InvalidDataException("Invalid NPC bounty.");

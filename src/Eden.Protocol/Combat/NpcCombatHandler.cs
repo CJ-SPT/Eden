@@ -69,10 +69,7 @@ internal sealed class NpcCombatHandler(
             return;
         }
         _disengaged = false;
-        if (context.Pilot.SystemId == NpcEncounterDefinitions.PerimeterSystem)
-        {
-            combat.Acquire(space.NpcTargets(context.Pilot.SystemId), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        }
+        combat.Acquire(space.NpcTargets(context.Pilot.SystemId), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         foreach (long npc in combat.Aggressors(_shipId))
         {
             if (!context.Flight.VisibleNpcs.Any(n => n.Id == npc))

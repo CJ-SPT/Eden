@@ -13,6 +13,11 @@ internal static class NpcMotion
 
     internal static SpacePosition Home(Celestial belt) => new(belt.X + NpcEncounterDefinitions.AnchorOffset, belt.Y, belt.Z);
 
+    internal static SpacePosition Home(WorldNpc npc, CatalogDbContext catalog) =>
+        npc.HomeX is double x && npc.HomeY is double y && npc.HomeZ is double z
+            ? new(x, y, z)
+            : Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+
     internal static float Agility(IReadOnlyDictionary<DogmaAttributeId, double> attributes) => NpcMotionRules.Agility(attributes);
 
     internal static void Return(WorldNpc npc) => npc.Navigation = NpcNavigationState.Returning;

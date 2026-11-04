@@ -36,24 +36,27 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         var targets = pilots
             .Where(p => requested.Contains(new(p.Id, p.ActiveShipId)))
             .Select(p => (Pilot: p, Hull: catalog.Set<ItemType>().Single(t => t.Id == p.ActiveShip.TypeId)))
-            .Where(t =>
-                t.Hull.GroupId != FleetDefinitions.CapsuleGroup
-                && (
-                    t.Pilot.ActiveShip.Position!.SystemId
-                    ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId
-                ) == NpcEncounterDefinitions.PerimeterSystem
-            )
+            .Where(t => t.Hull.GroupId != FleetDefinitions.CapsuleGroup)
             .ToArray();
         if (targets.Length == 0)
         {
             return;
         }
+        var systems = targets
+            .Select(t =>
+                t.Pilot.ActiveShip.Position!.SystemId
+                ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId
+            )
+            .Distinct()
+            .ToArray();
         var occupied = world.Set<NpcAggression>().Select(a => a.NpcId).ToArray();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n =>
-                n.SystemId == NpcEncounterDefinitions.PerimeterSystem
+                systems.Contains(n.SystemId)
+                && n.Role == NpcRole.Pirate
                 && n.DestroyedAt == null
+                && n.RetiredAt == null
                 && n.Navigation == NpcNavigationState.Idle
                 && !occupied.Contains(n.Id)
             )
@@ -67,8 +70,14 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                 continue;
             }
             var type = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
-            var home = NpcMotion.Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+            var home = NpcMotion.Home(npc, catalog);
             var target = targets
+                .Where(t =>
+                    (
+                        t.Pilot.ActiveShip.Position!.SystemId
+                        ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId
+                    ) == npc.SystemId
+                )
                 .Select(t =>
                 {
                     var saved = t.Pilot.ActiveShip.Position!;
@@ -80,7 +89,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                     );
                 })
                 .Where(t =>
-                    t.Range <= NpcEncounterDefinitions.DetectionRange && t.Position.DistanceTo(home) <= NpcEncounterDefinitions.ChaseLeash
+                    t.Range <= NpcPopulationRules.DetectionRange(attributes)
+                    && t.Position.DistanceTo(home) <= NpcPopulationRules.Leash(attributes)
                 )
                 .OrderBy(t => t.Range)
                 .ThenBy(t => t.ActiveShipId)
@@ -109,7 +119,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         using var transaction = world.Database.BeginTransaction();
         var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId && (npcId == null || a.NpcId == npcId)).ToArray();
         var ids = aggression.Select(a => a.NpcId).ToArray();
-        foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null))
+        foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null))
         {
             NpcMotion.Return(npc);
         }
@@ -147,6 +157,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             || hull.GroupId == FleetDefinitions.CapsuleGroup
             || npc is null
             || npc.DestroyedAt.HasValue
+            || npc.RetiredAt.HasValue
             || npc.SystemId != system
         )
         {
@@ -159,11 +170,11 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             transaction.Commit();
             return null;
         }
-        var home = NpcMotion.Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+        var home = NpcMotion.Home(npc, catalog);
         var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
         if (
-            targetPosition.DistanceTo(home) > NpcEncounterDefinitions.ChaseLeash
-            || NpcMotion.Position(npc).DistanceTo(home) > NpcEncounterDefinitions.ChaseLeash
+            targetPosition.DistanceTo(home) > NpcPopulationRules.Leash(attributes)
+            || NpcMotion.Position(npc).DistanceTo(home) > NpcPopulationRules.Leash(attributes)
         )
         {
             NpcMotion.Return(npc);

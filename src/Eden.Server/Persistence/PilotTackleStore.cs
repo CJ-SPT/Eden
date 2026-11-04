@@ -75,7 +75,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             if (target.Kind == TackleTargetKind.Npc)
             {
                 npc = world.Set<WorldNpc>().Find(target.Id);
-                if (npc is null || npc.DestroyedAt.HasValue || npc.SystemId != system)
+                if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.SystemId != system)
                 {
                     throw new InvalidDataException("The NPC is unavailable.");
                 }
@@ -206,7 +206,9 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
                 && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId);
             if (valid && row.TargetKind == TackleTargetKind.Npc)
             {
-                valid = world.Set<WorldNpc>().Any(n => n.Id == row.TargetId && n.DestroyedAt == null && n.SystemId == row.SystemId);
+                valid = world
+                    .Set<WorldNpc>()
+                    .Any(n => n.Id == row.TargetId && n.DestroyedAt == null && n.RetiredAt == null && n.SystemId == row.SystemId);
             }
             else if (valid)
             {
