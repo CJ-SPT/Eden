@@ -25,8 +25,22 @@ public sealed record NeuralRemapState(CharacterAttributes Attributes, int BonusR
 
 public sealed record CharacterRemapResult(TrainingState Training, bool Changed);
 
+public sealed record PublicCharacterProfile(
+    long CharacterId,
+    string Name,
+    int CorporationId,
+    int? RaceId,
+    int? BloodlineId,
+    int GenderId,
+    int? SchoolId,
+    int? AncestryId,
+    long? CreatedAt,
+    string Biography
+);
+
 public interface IPilotCharacterSheet
 {
+    PublicCharacterProfile? ReadPublicProfile(long pilotId);
     NeuralRemapState ReadAttributes(long pilotId);
     CharacterAttributes ReadEffectiveAttributes(long pilotId);
     CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes);

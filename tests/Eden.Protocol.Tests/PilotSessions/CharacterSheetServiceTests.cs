@@ -5,13 +5,113 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Server;
 using Eden.Server.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CharacterSheetServiceTests
 {
+    [Theory]
+    [InlineData(90000001L)]
+    [InlineData(90000002L)]
+    public void ShowInfoReadsSavedPublicProfileAndCorporationAcrossAccountsAndReopen(long target)
+    {
+        using Fixture fixture = new();
+        const string name = "星間 Étoile";
+        const string biography = "<b>Explorer</b> — пилот 🚀";
+        const long born = 134010000000000000L;
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            var pilot = world.Pilots.Find(target)!;
+            pilot.Name = name;
+            pilot.CreatedAt = born;
+            pilot.RaceId = 8;
+            pilot.BloodlineId = 11;
+            pilot.AncestryId = 14;
+            pilot.GenderId = 0;
+            world.SaveChanges();
+        }
+        fixture.Db.Services.GetRequiredService<IPilotCharacterSheet>().SaveBiography(target, biography);
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000001)!);
+        AssertPublicProfile(fixture.Call("charMgr", "GetPublicInfo3", [target]), target, name, biography, born);
+        var legacy = BlueRead.Fields(Assert.IsType<BlueInstance>(Reply(fixture.Call("charMgr", "GetPublicInfo", [target]))).State);
+        Assert.Equal(target, legacy["characterID"]);
+        Assert.Equal(name, legacy["characterName"]);
+        Assert.Equal(born, legacy["createDateTime"]);
+        Assert.DoesNotContain("description", legacy.Keys);
+        var corporationReply = Assert.IsType<BlueInstance>(Reply(fixture.Call("corpRegistry", "GetInfoWindowDataForChar", [target])));
+        var corporation = BlueRead.Fields(corporationReply.State);
+        Assert.Equal(1000044L, corporation["corpID"]);
+        Assert.Null(corporation["allianceID"]);
+        Assert.Null(corporation["militiaFactionID"]);
+        Assert.Equal("", corporation["title"]);
+        for (int index = 1; index <= 16; index++)
+        {
+            Assert.Null(corporation[$"title{index}"]);
+        }
+        Assert.Equal(20, corporation.Count);
+        Assert.Equal(90000001L, fixture.Context.Pilot.PilotId);
+        Assert.Empty(fixture.Context.Notifications);
+
+        using var reopened = ServerServices.Build(new(fixture.Db.Path), fixture.Clock);
+        using var scope = reopened.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        AssertPublicProfile(
+            router.Call(fixture.Context, "charMgr", "GetPublicInfo3", new object?[] { target }, _ => { }),
+            target,
+            name,
+            biography,
+            born
+        );
+    }
+
+    [Theory]
+    [InlineData("charMgr", "GetPublicInfo")]
+    [InlineData("charMgr", "GetPublicInfo3")]
+    [InlineData("corpRegistry", "GetInfoWindowDataForChar")]
+    public void PublicInfoRequiresSelectionAndValidArgumentsWithoutChangingEitherPilot(string service, string method)
+    {
+        using Fixture fixture = new();
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call(service, method, [90000002L]));
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000001)!);
+        foreach (object?[] args in new object?[][] { [], ["90000002"], [0L], [-1L], [123L], [long.MaxValue], [90000002L, true] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(fixture.Call(service, method, args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call(service, method, [90000002L], new() { ["unexpected"] = true }));
+        Assert.IsType<PilotCallResult.Success>(fixture.Call(service, method, [90000002L], new() { ["machoVersion"] = 1L }));
+        var sheet = fixture.Db.Services.GetRequiredService<IPilotCharacterSheet>();
+        Assert.Equal("", sheet.ReadBiography(90000001));
+        Assert.Equal("", sheet.ReadBiography(90000002));
+        using WorldDbContext world = new(fixture.Db.Path);
+        Assert.Empty(world.Set<SavedCharacterSheet>());
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    private static void AssertPublicProfile(PilotCallResult result, long target, string name, string biography, long born)
+    {
+        var rowset = Assert.IsType<BlueInstance>(Reply(result));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rowset.Name);
+        var state = BlueRead.Fields(rowset.State);
+        var header = Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text).ToArray();
+        var line = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(state["lines"])));
+        var fields = header.Zip(line).ToDictionary(p => p.First, p => p.Second);
+        Assert.Equal(10, fields.Count);
+        Assert.Equal(target, fields["characterID"]);
+        Assert.Equal(name, fields["characterName"]);
+        Assert.Equal(1000044L, fields["corporationID"]);
+        Assert.Equal(8L, fields["raceID"]);
+        Assert.Equal(11L, fields["bloodlineID"]);
+        Assert.Equal(0L, fields["gender"]);
+        Assert.Equal(19L, fields["schoolID"]);
+        Assert.Equal(14L, fields["ancestryID"]);
+        Assert.Equal(born, fields["startDateTime"]);
+        Assert.Equal(biography, fields["description"]);
+    }
+
     [Fact]
     public void BiographyUsesUnicodeAndCanOnlyEditTheSelectedCharacter()
     {
@@ -158,10 +258,10 @@ public sealed class CharacterSheetServiceTests
             Context = new(1000001, pilot.Account, [pilot], p => new(Db.Store, p, Clock, new(), Db.Objects), 42, SignedSettings.Empty);
         }
 
-        public PilotCallResult Call(string service, string method, object?[] args) =>
+        public PilotCallResult Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             Scope
                 .ServiceProvider.GetRequiredService<PilotCallRouter>()
-                .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });
+                .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
 
         public void Dispose()
         {

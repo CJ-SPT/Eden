@@ -57,16 +57,45 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
             var data = creation.ReadAppearance(portraitId, true);
             return new CharacterPortraitReply(data);
         }
-        if (service == "charMgr" && method == "GetPublicInfo" && args is [long id])
+        if (
+            (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
+            || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
+        )
         {
-            if (id == pilot.PilotId)
+            if (keywords is { Count: > 0 } || args is not [long id] || id <= 0)
             {
-                return new PublicCharacterInfo(pilot);
+                return new PilotCallResult.Failure("Invalid public character request.");
             }
-            if (npcs.Character(id) is { } npc)
+            var profile = sheet.ReadPublicProfile(id);
+            if (profile is null && npcs.Character(id) is { } npc)
             {
-                return new PublicNpcInfo(npc);
+                if (method == "GetPublicInfo")
+                {
+                    return new PublicNpcInfo(npc);
+                }
+                profile = new(
+                    npc.Identity.Id,
+                    npc.Identity.Name,
+                    npc.CorporationId,
+                    npc.RaceId,
+                    npc.BloodlineId,
+                    npc.Identity.Gender,
+                    npc.SchoolId,
+                    npc.AncestryId,
+                    npc.CreatedAt,
+                    npc.Description
+                );
             }
+            if (profile is null)
+            {
+                return new PilotCallResult.Failure("Unknown character.");
+            }
+            return method switch
+            {
+                "GetPublicInfo3" => new PublicCharacterInfo3(profile),
+                "GetInfoWindowDataForChar" => new CharacterCorporationInfo(profile.CorporationId),
+                _ => new PublicCharacterInfo(profile),
+            };
         }
         return PilotCallResult.Unsupported;
     }

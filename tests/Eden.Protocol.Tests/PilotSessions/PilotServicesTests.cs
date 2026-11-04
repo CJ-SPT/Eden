@@ -442,22 +442,35 @@ public sealed class PilotServicesTests
     }
 
     [Fact]
-    public async Task SheetReadsOnlyTheSelectedPilotsProfile()
+    public async Task SheetReadsOtherPilotsPublicProfilesAfterSelection()
     {
         var packets = await ExchangeAsync(
             42,
             Request("charMgr", "GetPublicInfo", [90000001L]),
             Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
             Request("charMgr", "GetPublicInfo", [90000002L]),
-            Request("charMgr", "GetPublicInfo", [90000001L])
+            Request("charMgr", "GetPublicInfo", [90000001L]),
+            Request("charMgr", "GetPublicInfo3", [90000002L]),
+            Request("corpRegistry", "MachoBindObject", [1000044L, null]),
+            Request(null, "GetInfoWindowDataForChar", [90000002L], "N=10001:42-2")
         );
         Assert.EndsWith(".ErrorResponse", packets[0].Name);
-        Assert.EndsWith(".ErrorResponse", packets[3].Name);
+        Assert.EndsWith(".CallRsp", packets[3].Name);
+        Assert.Equal(90000002L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[3])).State)["characterID"]);
         var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);
         Assert.Equal(90000001L, fields["characterID"]);
         Assert.Equal(19L, fields["schoolID"]);
         Assert.Equal(10L, fields["ancestryID"]);
         Assert.Equal(134000000000000000L, fields["createDateTime"]);
+        var rowset = Assert.IsType<BlueInstance>(Result(packets[5]));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rowset.Name);
+        var state = BlueRead.Fields(rowset.State);
+        var row = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(state["lines"])));
+        Assert.Equal(90000002L, row[0]);
+        Assert.Equal("", row[^1]);
+        Assert.EndsWith(".CallRsp", packets[6].Name);
+        Assert.EndsWith(".CallRsp", packets[7].Name);
+        Assert.Equal(1000044L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[7])).State)["corpID"]);
     }
 
     [Fact]

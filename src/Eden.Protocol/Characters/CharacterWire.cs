@@ -32,24 +32,85 @@ internal sealed record CharacterPortraitReply(byte[]? Data) : BlueModel
         };
 }
 
-internal sealed record PublicCharacterInfo(DockedPilot Pilot) : BlueModel
+internal sealed record PublicCharacterInfo(PublicCharacterProfile Pilot) : BlueModel
 {
     public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
             new Dictionary<string, object?>
             {
-                ["characterID"] = Pilot.PilotId,
-                ["characterName"] = Pilot.Name,
-                ["corporationID"] = Pilot.CorpId,
-                ["raceID"] = Pilot.Profile.RaceId,
-                ["bloodlineID"] = Pilot.Profile.BloodlineId,
-                ["gender"] = Pilot.Profile.GenderId,
-                ["schoolID"] = Pilot.Profile.SchoolId,
-                ["ancestryID"] = Pilot.Profile.AncestryId,
-                ["createDateTime"] = Pilot.Profile.CreatedAt,
+                ["characterID"] = Pilot.CharacterId,
+                ["characterName"] = new BlueUnicode(Pilot.Name),
+                ["corporationID"] = Pilot.CorporationId,
+                ["raceID"] = Pilot.RaceId,
+                ["bloodlineID"] = Pilot.BloodlineId,
+                ["gender"] = Pilot.GenderId,
+                ["schoolID"] = Pilot.SchoolId,
+                ["ancestryID"] = Pilot.AncestryId,
+                ["createDateTime"] = Pilot.CreatedAt,
             }
         );
+}
+
+internal sealed record PublicCharacterInfo3(PublicCharacterProfile Profile) : BlueModel
+{
+    // Build 3662168 CharacterInfoWindow indexes row zero before reading these fields.
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            [
+                "characterID",
+                "characterName",
+                "corporationID",
+                "raceID",
+                "bloodlineID",
+                "gender",
+                "schoolID",
+                "ancestryID",
+                "startDateTime",
+                "description",
+            ],
+            [new PublicCharacterInfoRow(Profile)]
+        ).ToBlue();
+}
+
+internal sealed record PublicCharacterInfoRow(PublicCharacterProfile Profile) : BlueModel
+{
+    public override object ToBlue() =>
+        new object?[]
+        {
+            Profile.CharacterId,
+            new BlueUnicode(Profile.Name),
+            Profile.CorporationId,
+            Profile.RaceId,
+            Profile.BloodlineId,
+            Profile.GenderId,
+            Profile.SchoolId,
+            Profile.AncestryId,
+            Profile.CreatedAt,
+            new BlueUnicode(Profile.Biography),
+        };
+}
+
+internal sealed record CharacterCorporationInfo(int CorporationId) : BlueModel
+{
+    // NPC starter corporations have no alliance, militia membership or player titles.
+    private const int CorporationTitleCount = 16;
+
+    public override object ToBlue()
+    {
+        Dictionary<string, object?> fields = new()
+        {
+            ["corpID"] = CorporationId,
+            ["allianceID"] = null,
+            ["militiaFactionID"] = null,
+            ["title"] = new BlueUnicode(""),
+        };
+        for (int index = 1; index <= CorporationTitleCount; index++)
+        {
+            fields[$"title{index}"] = null;
+        }
+        return new BlueInstance("utillib.KeyVal", fields);
+    }
 }
 
 internal sealed record PublicNpcInfo(NpcCharacter Npc) : BlueModel

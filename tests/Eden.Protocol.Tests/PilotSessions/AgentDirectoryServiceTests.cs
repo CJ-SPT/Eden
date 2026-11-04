@@ -82,6 +82,13 @@ public sealed class AgentDirectoryServiceTests
         Assert.Equal("Agent Étoile", BlueMarshal.Text(profile["characterName"]));
         Assert.Equal(1000044L, profile["corporationID"]);
         Assert.Equal(19L, profile["schoolID"]);
+        var publicRows = Fields(Reply(fixture.Call("charMgr", "GetPublicInfo3", [AgentTestData.AgentId])));
+        var publicRow = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(publicRows["lines"])));
+        Assert.Equal(AgentTestData.AgentId, publicRow[0]);
+        Assert.Equal("Agent Étoile", publicRow[1]);
+        Assert.Equal("Pinned NPC biography", publicRow[^1]);
+        var corporation = Fields(Reply(fixture.Call("corpRegistry", "GetInfoWindowDataForChar", [AgentTestData.AgentId])));
+        Assert.Equal(1000044L, corporation["corpID"]);
         Assert.Equal(new DateTime(2003, 5, 4, 0, 32, 0, DateTimeKind.Utc).ToFileTimeUtc(), profile["createDateTime"]);
         Assert.Equal(
             "Pinned NPC biography",

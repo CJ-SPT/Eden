@@ -34,6 +34,27 @@ public sealed class SavedCharacterSheet
 internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)
     : IPilotCharacterSheet
 {
+    public PublicCharacterProfile? ReadPublicProfile(long pilotId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world
+            .Pilots.AsNoTracking()
+            .Where(p => p.Id == pilotId)
+            .Select(p => new PublicCharacterProfile(
+                p.Id,
+                p.Name,
+                p.CorporationId,
+                p.RaceId,
+                p.BloodlineId,
+                p.GenderId,
+                p.SchoolId,
+                p.AncestryId,
+                p.CreatedAt,
+                world.Set<SavedCharacterSheet>().Where(s => s.PilotId == p.Id).Select(s => s.Biography).FirstOrDefault() ?? ""
+            ))
+            .SingleOrDefault();
+    }
+
     public NeuralRemapState ReadAttributes(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
