@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Mail-arrival events now match the stock client's eight-argument callback. An extra label-mask argument previously caused the recipient callback to be rejected before its native unread/popup handling. See the [arrival-event correction](docs/protocol.md#mail-arrival-notification-arity); live popup/blink confirmation remains pending.
+
 Inventory stack division now supports Shift-drag within the same hangar or active ship hold, plus the native Divide Stack menu while docked. A 50-unit injector stack can become separate 49- and one-unit stacks without changing location or consuming extra capacity. Splits preserve metadata, update the native inventory cache and survive restarts. See the [stack division correction](docs/protocol.md#native-inventory-stack-division); native presentation remains unverified.
 
 New personal mail now accepts the stock compose window's `False` defaults for unused reply/forward IDs. This fixes the reported **Expected a mail identifier or None** rejection when sending to another pilot. See the [compose-default correction](docs/protocol.md#mail-compose-optional-source-defaults); live confirmation of the fix remains pending.

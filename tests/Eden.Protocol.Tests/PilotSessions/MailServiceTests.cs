@@ -67,6 +67,8 @@ public sealed class MailServiceTests
         var delivery = Assert.Single(recipient.Context.Notifications.OfType<MailSent>());
         Assert.Equal(id, delivery.Header.Id);
         var eventArgs = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(delivery.Arguments)));
+        Assert.Equal(8, eventArgs.Length);
+        Assert.Equal(0L, eventArgs[7]);
         Assert.Equal(id, eventArgs[0]);
         Assert.Equal(new List<object?> { MailTestData.Recipient }, eventArgs[3]);
         Assert.Equal("Étoile 学習", eventArgs[6]);

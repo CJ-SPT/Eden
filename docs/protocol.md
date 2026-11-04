@@ -657,6 +657,22 @@ Reference: installed `code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491
 
 **Optional maintainer checks.** Consume an eligible accelerator and inspect its slot/countdown and queue timing; verify expiry refreshes the native attributes; reconnect or change clone bodies and inspect retained lifetime. Native rendering, input and gameplay feel remain unverified.
 
+### Mail arrival notification arity
+
+After the compose-default correction, the maintainer reported that the recipient received no mail notification. Inert inspection of pinned build **3662168** `eve/client/script/ui/services/mail/mailSvc.pyj` shows `OnMailSent.co_argcount == 9`: **self plus eight arguments**: `messageID`, `senderID`, `sentDate`, `toCharacterIDs`, `toListID`, `toCorpOrAllianceID`, `title` and `statusMask`. `labelMask` and `read` occur later in `co_varnames` because they are locals. Eden incorrectly sent a ninth label-mask argument, which the native callback cannot accept.
+
+Removed that extra wire argument. The client computes Inbox/Sent/group labels itself and, for an unread recipient, calls `OnNewMailReceived`, which applies the user's existing blink/popup settings. No separate invented popup or `OnNewMailReceived` server event is sent. The corrected event retains Unicode title, recipient list, None optional group IDs and the numeric status mask. Private mailbox labels remain persisted and continue to travel through status/synchronization and external label-update events.
+
+Four encoded-byte regressions assert the exact eight-field tuple for unread, read and automated status combinations. The actual two-session delivery regression now also checks callback arity and unread status, alongside recipient/header/body persistence and writer-echo suppression. Before the fix all five selected regressions failed, including the real-delivery assertion of nine arguments instead of eight. These checks validate protocol shape rather than just the existence of a named notification.
+
+References: unchanged pinned archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368** and previously consulted [Carbon Blue revision fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp). Client code objects were inspected inertly, never executed. No codec, schema, runtime-world or mail-preference changes were made.
+
+**Automated validation.** Filter `FullyQualifiedName~Mail|FullyQualifiedName~CharacterSearch|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **77 cases**, including **four new encoded arrival-contract regressions** and the tightened real-delivery case, in approximately **11 seconds**, with `xUnit.MaxParallelThreads=4`. Tool restore, solution restore, solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting tests), formatting verification (582 files, 140-character maximum), documentation checks and `git diff --check` passed. Before the fix the five selected reproductions all failed, including the service-delivery check expecting eight arguments and observing nine. After the fix every ordinary/read/automated payload has the pinned shape, while existing mail defaults, replies, private state, name lookup, body encoding, delivery and echo checks remain green. No full .NET suite or interactive client acceptance was performed. Mailing-list work remains isolated and uncommitted in a separate checkout.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Load the rebuilt server, send a message between the two selected pilots, and inspect the recipient's unread indicator/popup with its normal mail notification settings. The reported missing alert is historical failure evidence; native presentation of this fix remains unverified.
+
 ### Mail compose optional source defaults
 
 The maintainer's November 4 screenshot showed **Expected a mail identifier or None** when sending new mail to pilot 2. Inert inspection of build **3662168** `eve/client/script/ui/shared/neocom/evemail.pyj`, class `NewNewMessage`, confirms `default_isForwardedFrom = False` and `default_isReplyTo = False`. These values reach `mailMgr.SendMail` through `mailSvc.SendMail`. Eden's optional-ID adapter accepted None and integer zero but rejected Python False, so its automated requests with None defaults had missed the native failure.

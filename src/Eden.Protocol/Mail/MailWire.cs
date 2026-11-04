@@ -80,6 +80,7 @@ internal sealed record MailBodyReply(string Body) : BlueModel
     }
 }
 
+// Pinned OnMailSent accepts eight arguments; labelMask is computed locally.
 internal sealed record MailSent(MailHeader Header, MailEntryState State) : PilotNotification("OnMailSent")
 {
     public override object?[] Arguments =>
@@ -92,7 +93,6 @@ internal sealed record MailSent(MailHeader Header, MailEntryState State) : Pilot
             null,
             new BlueUnicode(Header.Subject),
             (int)State.Status,
-            State.Labels,
         ];
 }
 
