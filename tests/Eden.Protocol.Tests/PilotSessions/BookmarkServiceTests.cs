@@ -129,9 +129,13 @@ public sealed class BookmarkServiceTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void BookmarkWarpUsesExistingNavigationWithStableRetriesAndSavedArrival(bool staticLocation)
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, 0L)]
+    [InlineData(true, 0L)]
+    public void BookmarkWarpUsesExistingNavigationWithStableRetriesAndSavedArrival(bool staticLocation, object? fleet)
     {
         using Fixture fixture = new();
         fixture.Select(true);
@@ -148,7 +152,12 @@ public sealed class BookmarkServiceTests
             );
         var foreignFolder = fixture.Store.AddFolder(90000002, "Wing", "");
         var foreign = fixture.Store.CreateStatic(90000002, 60003760, foreignFolder.Id, null, new("Private", ""), BookmarkExpiry.Never);
-        Assert.IsType<PilotCallResult.Failure>(fixture.Call("CmdWarpToStuff", ["bookmark", foreign.Id], "beyonce"));
+        Dictionary<string, object?> keywords = new() { ["minRange"] = fleet is null ? (object)10_000L : 10_000d };
+        if (fleet is not null)
+        {
+            keywords["fleet"] = fleet;
+        }
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("CmdWarpToStuff", ["bookmark", foreign.Id], "beyonce", keywords));
         Assert.False(fixture.Context.Flight.Moving);
         Assert.Null(Reply(Warp()));
         fixture.Context.Flight.Updates.Clear();
@@ -175,7 +184,36 @@ public sealed class BookmarkServiceTests
         Assert.Equal(arrival, fixture.Db.Store.FindPilot(1000001)!.Position);
         Assert.Equal(target, fixture.Store.Find(90000001, target.Id));
 
-        PilotCallResult Warp() => fixture.Call("CmdWarpToStuff", ["bookmark", target.Id], "beyonce", new() { ["minRange"] = 10_000L });
+        PilotCallResult Warp() => fixture.Call("CmdWarpToStuff", ["bookmark", target.Id], "beyonce", keywords);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(1L)]
+    [InlineData(null)]
+    [InlineData("False")]
+    [InlineData(0d)]
+    [InlineData(-1L)]
+    public void FleetAndMalformedBookmarkWarpOptionsLeaveFlightAndBookmarksUnchanged(object? fleet)
+    {
+        using Fixture fixture = new();
+        fixture.Select(true);
+        long folder = fixture.Folder("Travel");
+        var target = fixture.Store.CreateStatic(90000001, 60003760, folder, null, new("Station", ""), BookmarkExpiry.Never);
+        var result = fixture.Call(
+            "CmdWarpToStuff",
+            ["bookmark", target.Id],
+            "beyonce",
+            new() { ["minRange"] = 10_000d, ["fleet"] = fleet }
+        );
+        var failure = Assert.IsType<PilotCallResult.Failure>(result);
+        Assert.Equal(fleet is true or 1L ? "Fleet bookmark warp is not supported." : "Invalid bookmark warp fleet flag.", failure.Message);
+        Assert.Equal(Fixture.Start, fixture.Context.Pilot.Position);
+        Assert.Equal(Fixture.Start, fixture.Db.Store.FindPilot(1000001)!.Position);
+        Assert.False(fixture.Context.Flight.Moving);
+        Assert.Empty(fixture.Context.Flight.Updates);
+        Assert.Empty(fixture.Context.Notifications);
+        Assert.Equal(target, fixture.Store.Find(90000001, target.Id));
     }
 
     [Fact]
@@ -195,7 +233,9 @@ public sealed class BookmarkServiceTests
         fixture.Store.SetFolderState(90000001, folder, false);
         Assert.IsType<PilotCallResult.Failure>(fixture.Call("CmdWarpToStuff", ["bookmark", target.Id], "beyonce"));
         fixture.Store.SetFolderState(90000001, folder, true);
-        Assert.IsType<PilotCallResult.Failure>(fixture.Call("CmdWarpToStuff", ["bookmark", target.Id], "beyonce", new() { ["x"] = 1d }));
+        Assert.IsType<PilotCallResult.Failure>(
+            fixture.Call("CmdWarpToStuff", ["bookmark", target.Id], "beyonce", new() { ["fleet"] = false, ["x"] = 1d })
+        );
         var remote = fixture.Store.Create(
             90000001,
             target.Target with
@@ -270,7 +310,14 @@ public sealed class BookmarkServiceTests
         ) =>
             _scope
                 .ServiceProvider.GetRequiredService<PilotCallRouter>()
-                .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+                .Call(
+                    Context,
+                    service,
+                    method,
+                    BlueMarshal.Decode(BlueMarshal.Encode(args)),
+                    _ => { },
+                    keywords is null ? null : BlueRead.Fields(BlueMarshal.Decode(BlueMarshal.Encode(keywords)))
+                );
 
         public void Dispose()
         {
