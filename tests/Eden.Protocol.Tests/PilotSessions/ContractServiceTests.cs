@@ -69,8 +69,13 @@ public sealed class ContractServiceTests
             }
         );
 
-    [Fact]
-    public void NativeCreateAssignedDetailsAcceptLoginAndJournalUseTheSameAtomicContract()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    [InlineData(true)]
+    [InlineData(0L)]
+    [InlineData(1L)]
+    public void NativeCreateAssignedDetailsAcceptLoginAndJournalUseTheSameAtomicContract(object? confirm)
     {
         using Fixture f = new();
         Assert.Same(PilotCallResult.Unsupported, f.Owner.Call("CreateContract", [Request(f.Item)]));
@@ -89,7 +94,7 @@ public sealed class ContractServiceTests
         Assert.NotEmpty(
             Assert.IsType<List<object?>>(WireAssertions.Materialize(f.Owner.Call("GetItemsInDockableLocation", [60003760L, false])))
         );
-        long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)], new() { ["confirm"] = 0L }));
+        long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)], new() { ["confirm"] = confirm }));
         Assert.Equal("OnContractCreated", Assert.Single(f.Owner.Context.Notifications.OfType<ContractEvent>()).Name);
         var changed = Assert.Single(f.Owner.Context.Notifications.OfType<ItemChanged>());
         Assert.Equal(13, changed.Item.Quantity);
@@ -201,7 +206,7 @@ public sealed class ContractServiceTests
         Assert.Equal(10000002L, station["regionID"]);
         Assert.Equal(30000142L, station["solarSystemID"]);
         Assert.Equal(52678L, station["stationTypeID"]);
-        long id = Created(f.Owner.Call("CreateContract", [request]));
+        long id = Created(f.Owner.Call("CreateContract", [request], new() { ["confirm"] = null }));
         object selection = set ? new BlueConstructor("__builtin__.set", [new List<object?> { 3651L }]) : new List<object?> { 3651L };
         var found = Fields(
             Reply(
@@ -258,6 +263,9 @@ public sealed class ContractServiceTests
             var (key, invalid) in new (string, object?)[]
             {
                 ("forCorp", true),
+                ("forCorp", null),
+                ("isPrivate", null),
+                ("multiContract", null),
                 ("multiContract", true),
                 ("contractType", 3L),
                 ("collateral", 1L),
@@ -279,6 +287,13 @@ public sealed class ContractServiceTests
         Assert.IsType<Dictionary<string, object?>>(incomplete.State).Remove("description");
         Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("CreateContract", [incomplete]));
         Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("CreateContract", [Request(f.Item)], new() { ["other"] = true }));
+        foreach (object invalid in new object[] { -1L, 2L, 0d, "false" })
+        {
+            var failure = Assert.IsType<PilotCallResult.Failure>(
+                f.Owner.Call("CreateContract", [Request(f.Item)], new() { ["confirm"] = invalid })
+            );
+            Assert.Equal("Invalid contract flag.", failure.Message);
+        }
         Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("SearchContracts", [], new() { ["sortBy"] = 999L }));
         Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("SearchContracts", [1L]));
         Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("GetCorporationIDForCharacter", [1L], service: "corpmgr"));

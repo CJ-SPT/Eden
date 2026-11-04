@@ -136,7 +136,9 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
             switch (method, args)
             {
                 case ("CreateContract", [var draft]):
-                    if (keywords?.TryGetValue("confirm", out var confirm) == true)
+                    // Build 3662168 ContractsSvc.CreateContract always forwards its
+                    // default confirm=None; only explicit confirmation values are flags.
+                    if (keywords?.TryGetValue("confirm", out var confirm) == true && confirm is not null)
                     {
                         ContractRequestWire.Flag(confirm);
                     }

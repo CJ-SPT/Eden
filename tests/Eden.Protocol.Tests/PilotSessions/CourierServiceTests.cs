@@ -31,7 +31,7 @@ public sealed class CourierServiceTests
         using Fixture f = new();
         Assert.Same(PilotCallResult.Unsupported, f.Owner.Call("CreateContract", [Request(f.Item)]));
         f.Select();
-        long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)]));
+        long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)], keywords: new() { ["confirm"] = null }));
         var details = Fields(Reply(f.Hauler.Call("GetContract", [id])));
         Assert.Empty(Assert.IsType<List<object?>>(details["items"]));
         var contract = Fields(details["contract"]);

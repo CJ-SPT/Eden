@@ -38,7 +38,9 @@ public sealed class BulkContractServiceTests
         owner.Context.Notifications.Clear();
         buyer.Context.Notifications.Clear();
         var ids = Assert
-            .IsType<List<object?>>(Reply(owner.Call("CreateContract", [Request(f.Hulls, isPrivate)])))
+            .IsType<List<object?>>(
+                Reply(owner.Call("CreateContract", [Request(f.Hulls, isPrivate)], keywords: new() { ["confirm"] = null }))
+            )
             .Select(Assert.IsType<long>)
             .ToArray();
         Assert.Equal(2, ids.Length);

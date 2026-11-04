@@ -22,7 +22,7 @@ public sealed class AuctionServiceTests
         fields["minutesExpire"] = 40320L;
         Assert.IsType<PilotCallResult.Failure>(owner.Call("CreateContract", [request]));
         fields["minutesExpire"] = 1440L;
-        long id = Created(owner.Call("CreateContract", [request]));
+        long id = Created(owner.Call("CreateContract", [request], keywords: new() { ["confirm"] = null }));
         Assert.Equal(true, Reply(bidder.Call("PlaceBid", [id, 2_000_000.99, false])));
         var details = Fields(Reply(bidder.Call("GetContract", [id])));
         Assert.Equal(1_000_000.01, Fields(details["contract"])["price"]);
