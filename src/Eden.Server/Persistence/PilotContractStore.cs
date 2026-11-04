@@ -65,197 +65,184 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
     public long Create(long pilotId, ContractDraft draft)
     {
         ContractRules.Check(draft);
-        return Write(
-            (world, catalog) =>
+        if (draft.MultiContract)
+        {
+            throw new InvalidDataException("Create bulk fitted-ship contracts through the batch operation.");
+        }
+        return Write((world, catalog) => CreateOne(world, catalog, pilotId, draft, Now));
+    }
+
+    private static long CreateOne(WorldDbContext world, CatalogDbContext catalog, long pilotId, ContractDraft draft, long now)
+    {
+        var pilot = Pilot(world, pilotId);
+        if (draft.AssigneeId == pilotId || (draft.AssigneeId is { } assignee && !world.Pilots.Any(p => p.Id == assignee)))
+        {
+            throw new InvalidDataException("Assign this contract to another local pilot or make it public.");
+        }
+        var station =
+            catalog
+                .Set<Station>()
+                .Include(s => s.SolarSystem)
+                    .ThenInclude(s => s.Constellation)
+                .SingleOrDefault(s => s.Id == draft.StationId)
+            ?? throw new InvalidDataException("Unknown contract station.");
+        var destination = draft.Courier is { } courier
+            ? catalog
+                .Set<Station>()
+                .Include(s => s.SolarSystem)
+                    .ThenInclude(s => s.Constellation)
+                .SingleOrDefault(s => s.Id == courier.DestinationStationId)
+                ?? throw new InvalidDataException("Unknown courier destination station.")
+            : null;
+        var skills = Skills(world, catalog, pilot);
+        // Expired contracts retain escrow for collection but release a creation slot.
+        if (
+            world
+                .Set<SavedContract>()
+                .Count(c =>
+                    c.IssuerId == pilotId
+                    && ((c.Status == ContractStatus.Outstanding && c.Expires > now) || c.Status == ContractStatus.InProgress)
+                ) >= ContractRules.Limit(skills)
+        )
+        {
+            throw new InvalidDataException("Your outstanding contract limit has been reached.");
+        }
+        var available = PilotContractAssetStore.Assets(world, catalog, pilotId, draft.StationId).ToDictionary(i => i.Id);
+        var fees = ContractRules.Fees(draft, skills);
+        var contract = world
+            .Add(
+                new SavedContract
+                {
+                    BuyoutCents = draft.Auction?.BuyoutCents ?? 0,
+                    AuctionAccountingLevel = skills.Accounting,
+                    Type = draft.Type,
+                    EndStationId = destination?.Id ?? 0,
+                    EndSystemId = destination?.SolarSystemId ?? 0,
+                    EndConstellationId = destination?.SolarSystem.ConstellationId ?? 0,
+                    EndRegionId = destination?.SolarSystem.Constellation.RegionId ?? 0,
+                    DurationDays = draft.Courier?.DurationDays ?? 0,
+                    CollateralCents = draft.Courier?.CollateralCents ?? 0,
+                    IssuerId = pilotId,
+                    IssuerCorporationId = pilot.CorporationId,
+                    AssigneeId = draft.AssigneeId,
+                    StationId = station.Id,
+                    SystemId = station.SolarSystemId,
+                    ConstellationId = station.SolarSystem.ConstellationId,
+                    RegionId = station.SolarSystem.Constellation.RegionId,
+                    Issued = now,
+                    Expires = checked(now + TimeSpan.FromMinutes(draft.ExpiryMinutes).Ticks),
+                    PriceCents = draft.PriceCents,
+                    RewardCents = draft.RewardCents,
+                    Title = draft.Title,
+                    Description = draft.Description,
+                    BrokerCents = fees.BrokerCents,
+                    DepositCents = fees.DepositCents,
+                    SalesTaxCents = fees.SalesTaxCents,
+                }
+            )
+            .Entity;
+        world.SaveChanges();
+        List<InventoryChange> changes = [];
+        HashSet<long> escrowIds = [];
+        foreach (var offer in draft.Items)
+        {
+            if (!available.TryGetValue(offer.ItemId, out var root) || offer.Quantity > root.Quantity)
             {
-                var pilot = Pilot(world, pilotId);
-                if (draft.AssigneeId == pilotId || (draft.AssigneeId is { } assignee && !world.Pilots.Any(p => p.Id == assignee)))
-                {
-                    throw new InvalidDataException("Assign this contract to another local pilot or make it public.");
-                }
-                var station =
-                    catalog
-                        .Set<Station>()
-                        .Include(s => s.SolarSystem)
-                            .ThenInclude(s => s.Constellation)
-                        .SingleOrDefault(s => s.Id == draft.StationId)
-                    ?? throw new InvalidDataException("Unknown contract station.");
-                var destination = draft.Courier is { } courier
-                    ? catalog
-                        .Set<Station>()
-                        .Include(s => s.SolarSystem)
-                            .ThenInclude(s => s.Constellation)
-                        .SingleOrDefault(s => s.Id == courier.DestinationStationId)
-                        ?? throw new InvalidDataException("Unknown courier destination station.")
-                    : null;
-                var skills = Skills(world, catalog, pilot);
-                // Expired contracts retain escrow for collection but release a creation slot.
-                long now = Now;
-                if (
-                    world
-                        .Set<SavedContract>()
-                        .Count(c =>
-                            c.IssuerId == pilotId
-                            && ((c.Status == ContractStatus.Outstanding && c.Expires > now) || c.Status == ContractStatus.InProgress)
-                        ) >= ContractRules.Limit(skills)
-                )
-                {
-                    throw new InvalidDataException("Your outstanding contract limit has been reached.");
-                }
-                var available = PilotContractAssetStore.Assets(world, catalog, pilotId, draft.StationId).ToDictionary(i => i.Id);
-                var fees = ContractRules.Fees(draft, skills);
-                var contract = world
+                throw new InvalidDataException("The offered items or quantities are unavailable.");
+            }
+            var contents = PilotContractAssetStore.Contents(world, catalog, pilotId, root.Id);
+            if (contents.Count > 0 && (!root.Singleton || offer.Quantity != 1))
+            {
+                throw new InvalidDataException("A container must be offered whole.");
+            }
+            var parentIds = contents.Select(i => i.Id).Append(root.Id).ToArray();
+            if (
+                world.Set<OwnedItem>().Any(i => parentIds.Contains(i.LocationId) && i.OwnerId != pilotId)
+                || world.Ships.Any(s => s.StoredInId != null && parentIds.Contains(s.StoredInId.Value) && s.OwnerId != pilotId)
+            )
+            {
+                throw new InvalidDataException("A contract cannot include another owner's nested assets.");
+            }
+            if (offer.Quantity < root.Quantity)
+            {
+                ContractAssetRules.Split(root, offer.Quantity);
+                var stack = world.Set<OwnedItem>().Find(root.Id)!;
+                stack.Quantity -= offer.Quantity;
+                changes.Add(new(PilotInventoryStore.Read(catalog, stack), root));
+                var separated = world
                     .Add(
-                        new SavedContract
+                        new OwnedItem
                         {
-                            BuyoutCents = draft.Auction?.BuyoutCents ?? 0,
-                            AuctionAccountingLevel = skills.Accounting,
-                            Type = draft.Type,
-                            EndStationId = destination?.Id ?? 0,
-                            EndSystemId = destination?.SolarSystemId ?? 0,
-                            EndConstellationId = destination?.SolarSystem.ConstellationId ?? 0,
-                            EndRegionId = destination?.SolarSystem.Constellation.RegionId ?? 0,
-                            DurationDays = draft.Courier?.DurationDays ?? 0,
-                            CollateralCents = draft.Courier?.CollateralCents ?? 0,
-                            IssuerId = pilotId,
-                            IssuerCorporationId = pilot.CorporationId,
-                            AssigneeId = draft.AssigneeId,
-                            StationId = station.Id,
-                            SystemId = station.SolarSystemId,
-                            ConstellationId = station.SolarSystem.ConstellationId,
-                            RegionId = station.SolarSystem.Constellation.RegionId,
-                            Issued = now,
-                            Expires = checked(now + TimeSpan.FromMinutes(draft.ExpiryMinutes).Ticks),
-                            PriceCents = draft.PriceCents,
-                            RewardCents = draft.RewardCents,
-                            Title = draft.Title,
-                            Description = draft.Description,
-                            BrokerCents = fees.BrokerCents,
-                            DepositCents = fees.DepositCents,
-                            SalesTaxCents = fees.SalesTaxCents,
+                            Id = InventoryPersistence.NextId(world),
+                            OwnerId = pilotId,
+                            TypeId = root.TypeId,
+                            LocationId = root.LocationId,
+                            FlagId = root.FlagId,
+                            Quantity = offer.Quantity,
+                            CrystalDamage = root.CrystalDamage,
                         }
                     )
                     .Entity;
-                world.SaveChanges();
-                List<InventoryChange> changes = [];
-                HashSet<long> escrowIds = [];
-                foreach (var offer in draft.Items)
-                {
-                    if (!available.TryGetValue(offer.ItemId, out var root) || offer.Quantity > root.Quantity)
-                    {
-                        throw new InvalidDataException("The offered items or quantities are unavailable.");
-                    }
-                    var contents = PilotContractAssetStore.Contents(world, catalog, pilotId, root.Id);
-                    if (contents.Count > 0 && (!root.Singleton || offer.Quantity != 1))
-                    {
-                        throw new InvalidDataException("A container must be offered whole.");
-                    }
-                    var parentIds = contents.Select(i => i.Id).Append(root.Id).ToArray();
-                    if (
-                        world.Set<OwnedItem>().Any(i => parentIds.Contains(i.LocationId) && i.OwnerId != pilotId)
-                        || world.Ships.Any(s => s.StoredInId != null && parentIds.Contains(s.StoredInId.Value) && s.OwnerId != pilotId)
-                    )
-                    {
-                        throw new InvalidDataException("A contract cannot include another owner's nested assets.");
-                    }
-                    if (offer.Quantity < root.Quantity)
-                    {
-                        ContractAssetRules.Split(root, offer.Quantity);
-                        var stack = world.Set<OwnedItem>().Find(root.Id)!;
-                        stack.Quantity -= offer.Quantity;
-                        changes.Add(new(PilotInventoryStore.Read(catalog, stack), root));
-                        var separated = world
-                            .Add(
-                                new OwnedItem
-                                {
-                                    Id = InventoryPersistence.NextId(world),
-                                    OwnerId = pilotId,
-                                    TypeId = root.TypeId,
-                                    LocationId = root.LocationId,
-                                    FlagId = root.FlagId,
-                                    Quantity = offer.Quantity,
-                                    CrystalDamage = root.CrystalDamage,
-                                }
-                            )
-                            .Entity;
-                        root = PilotInventoryStore.Read(catalog, separated);
-                    }
-                    else
-                    {
-                        changes.Add(new(root with { Quantity = 0 }, root));
-                    }
-                    changes.AddRange(contents.Select(item => new InventoryChange(item with { Quantity = 0 }, item)));
-                    foreach (var item in contents.Prepend(root))
-                    {
-                        if (item.TypeId == CourierRules.PackageType)
-                        {
-                            throw new InvalidDataException("Deliver or break an existing courier package before contracting it again.");
-                        }
-                        if (!escrowIds.Add(item.Id) || escrowIds.Count + draft.RequestedItems.Count > ContractRules.MaximumItems)
-                        {
-                            throw new InvalidDataException("The contract has too many or overlapping nested items.");
-                        }
-                        if (PilotIndustryStore.IsInstalled(world, item.Id))
-                        {
-                            throw new InvalidDataException("Deliver or cancel the manufacturing job before contracting its blueprint.");
-                        }
-                        world.Add(new SavedContractEscrow { ItemId = item.Id, ContractId = contract.Id });
-                        SaveItem(world, contract.Id, item, true, item.Id == root.Id ? null : item.LocationId);
-                    }
-                    contract.Volume += root.Volume * offer.Quantity;
-                }
-                if (contract.Type == ContractType.Courier)
-                {
-                    contract.Volume = CourierRules.PackageVolume(contract.Volume);
-                }
-                foreach (var request in draft.RequestedItems)
-                {
-                    var type =
-                        catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == request.TypeId)
-                        ?? throw new InvalidDataException("Unknown requested item type.");
-                    if (Enum.IsDefined((ContractRequestGroup)type.GroupId))
-                    {
-                        throw new InvalidDataException("This type cannot be requested on a contract.");
-                    }
-                    world.Add(
-                        new SavedContractItem
-                        {
-                            ContractId = contract.Id,
-                            TypeId = type.Id,
-                            Quantity = request.Quantity,
-                            GroupId = type.GroupId,
-                            CategoryId = type.Group.CategoryId,
-                            FlagId = (int)InventoryFlag.Hangar,
-                        }
-                    );
-                }
-                Pay(
-                    world,
-                    contract,
-                    pilotId,
-                    MarketDefinitions.SccCorporationId,
-                    WalletEntryType.ContractBrokersFee,
-                    -fees.BrokerCents,
-                    now
-                );
-                Pay(world, contract, pilotId, MarketDefinitions.SccCorporationId, WalletEntryType.ContractDeposit, -fees.DepositCents, now);
-                Pay(
-                    world,
-                    contract,
-                    pilotId,
-                    MarketDefinitions.SccCorporationId,
-                    WalletEntryType.ContractRewardAdded,
-                    -draft.RewardCents,
-                    now
-                );
-                Change(world, contract.Id, pilotId, ContractChangeKind.Created, changes, Balance(world, pilotId));
-                if (draft.AssigneeId is { } receiver)
-                {
-                    Change(world, contract.Id, receiver, ContractChangeKind.Assigned, [], null);
-                }
-                return contract.Id;
+                root = PilotInventoryStore.Read(catalog, separated);
             }
-        );
+            else
+            {
+                changes.Add(new(root with { Quantity = 0 }, root));
+            }
+            changes.AddRange(contents.Select(item => new InventoryChange(item with { Quantity = 0 }, item)));
+            foreach (var item in contents.Prepend(root))
+            {
+                if (item.TypeId == CourierRules.PackageType)
+                {
+                    throw new InvalidDataException("Deliver or break an existing courier package before contracting it again.");
+                }
+                if (!escrowIds.Add(item.Id) || escrowIds.Count + draft.RequestedItems.Count > ContractRules.MaximumItems)
+                {
+                    throw new InvalidDataException("The contract has too many or overlapping nested items.");
+                }
+                if (PilotIndustryStore.IsInstalled(world, item.Id))
+                {
+                    throw new InvalidDataException("Deliver or cancel the manufacturing job before contracting its blueprint.");
+                }
+                world.Add(new SavedContractEscrow { ItemId = item.Id, ContractId = contract.Id });
+                SaveItem(world, contract.Id, item, true, item.Id == root.Id ? null : item.LocationId);
+            }
+            contract.Volume += root.Volume * offer.Quantity;
+        }
+        if (contract.Type == ContractType.Courier)
+        {
+            contract.Volume = CourierRules.PackageVolume(contract.Volume);
+        }
+        foreach (var request in draft.RequestedItems)
+        {
+            var type =
+                catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == request.TypeId)
+                ?? throw new InvalidDataException("Unknown requested item type.");
+            if (Enum.IsDefined((ContractRequestGroup)type.GroupId))
+            {
+                throw new InvalidDataException("This type cannot be requested on a contract.");
+            }
+            world.Add(
+                new SavedContractItem
+                {
+                    ContractId = contract.Id,
+                    TypeId = type.Id,
+                    Quantity = request.Quantity,
+                    GroupId = type.GroupId,
+                    CategoryId = type.Group.CategoryId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                }
+            );
+        }
+        Pay(world, contract, pilotId, MarketDefinitions.SccCorporationId, WalletEntryType.ContractBrokersFee, -fees.BrokerCents, now);
+        Pay(world, contract, pilotId, MarketDefinitions.SccCorporationId, WalletEntryType.ContractDeposit, -fees.DepositCents, now);
+        Pay(world, contract, pilotId, MarketDefinitions.SccCorporationId, WalletEntryType.ContractRewardAdded, -draft.RewardCents, now);
+        Change(world, contract.Id, pilotId, ContractChangeKind.Created, changes, Balance(world, pilotId));
+        if (draft.AssigneeId is { } receiver)
+        {
+            Change(world, contract.Id, receiver, ContractChangeKind.Assigned, [], null);
+        }
+        return contract.Id;
     }
 
     private static void SaveItem(WorldDbContext world, long contract, InventoryItem item, bool offered, long? parent) =>

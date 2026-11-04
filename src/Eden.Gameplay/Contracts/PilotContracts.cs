@@ -79,7 +79,8 @@ public sealed record ContractDraft(
     IReadOnlyList<ContractRequest> RequestedItems,
     ContractType Type = ContractType.ItemExchange,
     CourierTerms? Courier = null,
-    AuctionTerms? Auction = null
+    AuctionTerms? Auction = null,
+    bool MultiContract = false
 );
 
 public sealed record ContractFees(long BrokerCents, long DepositCents, long SalesTaxCents);
@@ -166,6 +167,7 @@ public interface IPilotContracts
     long Observe(long pilotId);
     ContractChanges Changes(long pilotId, long after);
     long Create(long pilotId, ContractDraft draft);
+    IReadOnlyList<long> CreateBatch(long pilotId, ContractDraft draft);
     PersonalContract Accept(long pilotId, long contractId);
     void Reject(long pilotId, long contractId);
     void Delete(long pilotId, long contractId);
@@ -216,6 +218,7 @@ public static class ContractRules
     {
         CourierRules.Check(draft);
         AuctionRules.Check(draft);
+        BulkContractRules.Check(draft);
         if (
             draft.AssigneeId is <= 0
             || draft.StationId <= 0

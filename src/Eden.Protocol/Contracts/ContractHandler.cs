@@ -140,9 +140,12 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     {
                         ContractRequestWire.Flag(confirm);
                     }
-                    // ShowCreatedContracts calls len() and indexes [0] even for a
-                    // single item exchange. Preserve its list-of-IDs return shape.
-                    return new BlueList<long>([contracts.Create(pilot, ContractRequestWire.Draft(draft))]);
+                    // ShowCreatedContracts consumes all IDs for bulk fitted-ship
+                    // sales, and still expects a list for a single contract.
+                    var request = ContractRequestWire.Draft(draft);
+                    return new BlueList<long>(
+                        request.MultiContract ? contracts.CreateBatch(pilot, request) : [contracts.Create(pilot, request)]
+                    );
                 case ("GetContract", [long id]):
                     var details = contracts.Details(pilot, id);
                     return new ContractDetailsReply(details, details.Contract.IssuerId == pilot);

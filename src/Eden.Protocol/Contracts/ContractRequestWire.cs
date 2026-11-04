@@ -41,7 +41,6 @@ internal static class ContractRequestWire
         if (
             type is not (ContractType.ItemExchange or ContractType.Courier or ContractType.Auction)
             || Flag(fields["forCorp"])
-            || Flag(fields["multiContract"])
             || Id(fields["startStationDivision"]) != (int)InventoryFlag.Hangar
         )
         {
@@ -77,7 +76,8 @@ internal static class ContractRequestWire
             requested.Select(pair => new ContractRequest(Number(pair[0]), Number(pair[1]))).ToArray(),
             type,
             type == ContractType.Courier ? new(destination, days, collateral) : null,
-            type == ContractType.Auction ? new(collateral) : null
+            type == ContractType.Auction ? new(collateral) : null,
+            Flag(fields["multiContract"])
         );
     }
 
