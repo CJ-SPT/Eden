@@ -3,7 +3,17 @@ using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Characters;
 
-public sealed record LearningBooster(int TypeId, int Slot, int Bonus, long DurationTicks, long? MaximumAgeTicks, long? LastInjection);
+public sealed record CharacterBoosterProfile(
+    int TypeId,
+    int Slot,
+    int Bonus,
+    long DurationTicks,
+    long? MaximumAgeTicks,
+    long? LastInjection
+)
+{
+    public int NonDiminishingUses { get; init; }
+}
 
 public sealed record ActiveBooster(long ItemId, int TypeId, int Slot, int Bonus, long StartedAt, long ExpiresAt);
 
@@ -25,15 +35,20 @@ public static class BoosterRules
     // Pinned Biology effect 2866: durationBonus 66 is +20% per effective level.
     public const decimal BiologyDurationBonusPerLevel = .2m;
 
-    public static long Expiry(LearningBooster booster, long born, int biology, long now, IReadOnlyList<ActiveBooster> active)
+    public static long Expiry(CharacterBoosterProfile booster, long born, int biology, long now, IReadOnlyList<ActiveBooster> active)
     {
-        if (booster.Slot <= 0 || booster.Bonus <= 0 || biology is < 0 or > 5 || born > now)
+        if (
+            booster.Slot <= 0
+            || (booster.Bonus < 0 || (booster.Bonus == 0 && booster.NonDiminishingUses <= 0))
+            || biology is < 0 or > 5
+            || born > now
+        )
         {
-            throw new InvalidDataException("Invalid cerebral accelerator profile or character age.");
+            throw new InvalidDataException("Invalid booster profile or character age.");
         }
         if (booster.LastInjection is long last && now >= last)
         {
-            throw new InvalidDataException("This cerebral accelerator has passed its last injection date.");
+            throw new InvalidDataException("This booster has passed its last injection date.");
         }
         if (active.Any(b => b.Slot == booster.Slot && b.ExpiresAt > now))
         {
@@ -54,7 +69,7 @@ public static class BoosterRules
         }
         if (end is not long expiry || expiry <= now)
         {
-            throw new InvalidDataException("The accelerator has no remaining duration.");
+            throw new InvalidDataException("The booster has no remaining duration.");
         }
         return expiry;
     }

@@ -3,6 +3,9 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    MaximumCharacterSkillPoints = 2459,
+    ContainedSkillPoints = 2461,
+    NonDiminishingSkillInjectorUses = 2806,
     BoosterDuration = 330,
     BoosterSlot = 1087,
     BoosterExpiryTime = 1088,

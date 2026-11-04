@@ -20,6 +20,9 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
     private const int Cancelled = 38;
     private const int Completed = 53;
 
+    internal TrainingState Advance(WorldDbContext world, long pilotId, long now) =>
+        UpdateCore(world, pilotId, null, false, false, null, null, false, now).Training;
+
     public TrainingState Advance(long pilotId) => Update(pilotId, null, false, false).Training;
 
     public TrainingState Save(long pilotId, IReadOnlyList<TrainingTarget> targets, bool activate) =>
@@ -336,7 +339,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             .AsEnumerable()
             .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
         var basis = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
-        var boosters = PilotBoosterStore.Active(world, pilotId, now);
+        var boosters = PilotBoosterStore.Active(world, pilotId, now).Where(b => b.Bonus > 0).ToArray();
         int bonus = boosters.Sum(b => b.Bonus);
         var inputs = points.ToDictionary(
             p => p.Key,

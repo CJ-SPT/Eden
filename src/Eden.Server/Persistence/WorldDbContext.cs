@@ -215,6 +215,11 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedSkillInjectorState>().ToTable("WorldSkillInjectorState").HasKey(state => state.PilotId);
+        model.Entity<SavedSkillInjectorState>().HasOne<Pilot>().WithMany().HasForeignKey(state => state.PilotId);
+        model.Entity<SavedSkillInjection>().ToTable("WorldSkillInjection").HasKey(injection => injection.Id);
+        model.Entity<SavedSkillInjection>().HasOne<Pilot>().WithMany().HasForeignKey(injection => injection.PilotId);
+        model.Entity<SavedSkillInjection>().HasIndex(injection => new { injection.PilotId, injection.Time });
         model.Entity<SavedBooster>().ToTable("WorldBooster").HasKey(booster => booster.ItemId);
         model.Entity<SavedBooster>().HasOne<Pilot>().WithMany().HasForeignKey(booster => booster.PilotId);
         model.Entity<SavedBooster>().HasIndex(booster => new { booster.PilotId, booster.Slot }).IsUnique();

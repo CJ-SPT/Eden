@@ -16,6 +16,7 @@ public sealed class SavedBooster
     public int TypeId { get; set; }
     public int Slot { get; set; }
     public int Bonus { get; set; }
+    public int RemainingInjectionUses { get; set; }
     public long StartedAt { get; set; }
     public long ExpiresAt { get; set; }
 
@@ -57,22 +58,25 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
         return Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
     }
 
-    private static LearningBooster Profile(CatalogDbContext catalog, InventoryItem item)
+    private static CharacterBoosterProfile Profile(CatalogDbContext catalog, InventoryItem item)
     {
         string key = item.TypeId.ToString(CultureInfo.InvariantCulture);
         var published = catalog.Set<SourceRecord>().Find("client/types", key)?.Read<ClientTypes>().Published;
         var effects = catalog.Set<SourceRecord>().Find("client/typedogma", key)?.Read<ClientTypedogma>().DogmaEffects;
-        // The same five passive attribute effects as pure learning implants.
+        double useAttribute =
+            catalog.Set<TypeAttribute>().Find(item.TypeId, (int)DogmaAttributeId.NonDiminishingSkillInjectorUses)?.Value ?? 0;
+        bool augmentor = useAttribute > 0 && effects is { Length: 0 };
+        // Pure learning effects or the catalog's dedicated injection-use booster.
         if (
             item.GroupId != BoosterRules.Group
             || item.CategoryId != (int)InventoryCategory.Implant
             || published != 1
             || effects is null
-            || !PilotImplantStore.IsLearningEffects(effects)
+            || (!augmentor && (useAttribute != 0 || !PilotImplantStore.IsLearningEffects(effects)))
         )
         {
             throw new InvalidDataException(
-                "Only published pure cerebral accelerators are supported. Combat booster effects are unavailable."
+                "Only published learning or injection boosters are supported. Combat booster effects are unavailable."
             );
         }
         var attributes = catalog
@@ -87,9 +91,11 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
                 ? checked((int)value)
                 : throw new InvalidDataException("Invalid cerebral accelerator attribute.");
         }
-        int bonus = Integer(DogmaAttributeId.CharismaBonus);
+        int uses = augmentor ? Integer(DogmaAttributeId.NonDiminishingSkillInjectorUses) : 0;
+        int bonus = augmentor ? 0 : Integer(DogmaAttributeId.CharismaBonus);
         if (
-            Value(DogmaAttributeId.IntelligenceBonus) != bonus
+            Value(DogmaAttributeId.CharismaBonus) != bonus
+            || Value(DogmaAttributeId.IntelligenceBonus) != bonus
             || Value(DogmaAttributeId.MemoryBonus) != bonus
             || Value(DogmaAttributeId.PerceptionBonus) != bonus
             || Value(DogmaAttributeId.WillpowerBonus) != bonus
@@ -128,7 +134,10 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
             Ticks(DogmaAttributeId.BoosterDuration, TimeSpan.TicksPerMillisecond),
             age > 0 ? age : null,
             last
-        );
+        )
+        {
+            NonDiminishingUses = uses,
+        };
     }
 
     private static int Biology(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
@@ -200,6 +209,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
                         TypeId = item.TypeId,
                         Slot = profile.Slot,
                         Bonus = profile.Bonus,
+                        RemainingInjectionUses = profile.NonDiminishingUses,
                         StartedAt = now,
                         ExpiresAt = expiry,
                     }
@@ -207,6 +217,11 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
                 var revision =
                     world.Set<SavedBoosterState>().Find(pilotId) ?? world.Add(new SavedBoosterState { PilotId = pilotId }).Entity;
                 revision.Revision = checked(revision.Revision + 1);
+                if (profile.NonDiminishingUses > 0)
+                {
+                    var injections = PilotSkillInjectorStore.State(world, pilotId);
+                    injections.Revision = checked(injections.Revision + 1);
+                }
             },
             implantChange: false,
             effectiveTime: now

@@ -13,6 +13,7 @@ internal sealed class BoosterHandler(
     IPilotTraining training,
     IPilotSkillReader reader,
     SkillHandler skills,
+    SkillInjectorHandler injectors,
     TimeProvider clock
 ) : ISelectedPilotCallHandler
 {
@@ -23,6 +24,7 @@ internal sealed class BoosterHandler(
 
     public void Enter(PilotCallContext context)
     {
+        injectors.Enter(context);
         if (_pilot != context.Pilot.PilotId)
         {
             _pilot = context.Pilot.PilotId;
@@ -119,6 +121,7 @@ internal sealed class BoosterHandler(
                 var result = boosters.Consume(context.Pilot.PilotId, id, location);
                 InventoryChangesWire.NotifyItemChange(context, result.Change);
                 Notify(context, result.Snapshot, result.Training);
+                injectors.Refresh(context);
                 return PilotCallResult.None;
             }
             throw new InvalidDataException("Invalid booster request.");

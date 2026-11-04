@@ -41,6 +41,7 @@ internal sealed class PilotUpdateCoordinator(
     SecurityStatusHandler security,
     RedemptionHandler redemption,
     FreeSkillPointHandler freePoints,
+    SkillInjectorHandler injectors,
     LoyaltyWalletHandler loyalty,
     ImplantHandler implants,
     BoosterHandler boosters,
@@ -56,6 +57,7 @@ internal sealed class PilotUpdateCoordinator(
         || contracts.IsMonitoring
         || security.IsMonitoring
         || freePoints.IsMonitoring
+        || injectors.IsMonitoring
         || loyalty.IsMonitoring
         || implants.IsMonitoring
         || boosters.IsMonitoring;
@@ -68,6 +70,7 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Enter(context);
         security.Enter(context);
         freePoints.Enter(context);
+        injectors.Enter(context);
         loyalty.Enter(context);
         implants.Enter(context);
         boosters.Enter(context);
@@ -85,6 +88,7 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Reset();
         security.Reset();
         freePoints.Reset();
+        injectors.Reset();
         loyalty.Reset();
         implants.Reset();
         boosters.Reset();
@@ -131,6 +135,7 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Advance(context);
         security.Advance(context);
         freePoints.Advance(context);
+        injectors.Advance(context);
         loyalty.Advance(context);
         implants.Advance(context);
         boosters.Advance(context);
