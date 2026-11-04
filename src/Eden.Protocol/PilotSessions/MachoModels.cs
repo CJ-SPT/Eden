@@ -43,13 +43,13 @@ internal sealed record PilotSessionChange(long AccountId, long ClientId, DockedP
     public override object ToBlue() => PilotSessionWire.SessionChange(AccountId, ClientId, Pilot, Previous);
 }
 
-internal sealed record AccountSessionState(long AccountId) : BlueModel
+internal sealed record AccountSessionState(long AccountId, long Roles = (long)PilotRole.Player) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["userid"] = AccountId,
-            ["role"] = PilotLogin.PlayerRole,
+            ["role"] = Roles,
             ["languageID"] = "EN",
             ["userType"] = 1,
         };

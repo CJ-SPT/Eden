@@ -78,7 +78,7 @@ internal static class PilotSessionWire
             }
         );
 
-    internal static BlueInstance InitialState(long accountId, long clientId)
+    internal static BlueInstance InitialState(long accountId, long clientId, long roles = (long)PilotRole.Player)
     {
         return new BlueInstance(
             PacketNamespace + "SessionInitialStateNotification",
@@ -88,7 +88,7 @@ internal static class PilotSessionWire
                 new MachoAddress.Node(PilotLogin.NodeId).ToBlue(),
                 new MachoAddress.Client(clientId).ToBlue(),
                 accountId,
-                new object?[] { clientId, 5, new AccountSessionState(accountId) },
+                new object?[] { clientId, 5, new AccountSessionState(accountId, roles) },
                 new Dictionary<string, object?>(),
                 null,
                 null,

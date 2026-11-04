@@ -76,6 +76,8 @@ internal sealed class CharacterSelectionHandler(
         return (service, method) switch
         {
             ("charUnboundMgr", "GetCharacterSelectionData") => CharacterSelection(context),
+            // ccSvc._QAPickStarterSystem skips its optional QA override when the server offers no systems.
+            ("charUnboundMgr", "GetQAStarterSystemIDs") when (context.Roles & (long)PilotRole.QualityAssurance) != 0 => BlueEmpty.List,
             ("charUnboundMgr", "ValidateNameEx") when arguments is object?[] { Length: > 0 } name && name[0] is byte[] or string =>
                 CharacterNameWire.Code(creation.ValidateName(BlueMarshal.Text(name[0]))),
             ("charUnboundMgr", "GetCohortsForUser") => BlueEmpty.List,

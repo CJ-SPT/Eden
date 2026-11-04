@@ -17,7 +17,7 @@ internal sealed class TestWorld : IDisposable
         ALTER TABLE WorldNpc DROP COLUMN MotionAt;
         ALTER TABLE WorldNpc DROP COLUMN Navigation;
         """;
-    private readonly string _directory = Directory.CreateTempSubdirectory("eden-world-").FullName;
+    private readonly string _directory = TestDirectory.Create("eden-world-").FullName;
     public string Path => System.IO.Path.Combine(_directory, "world.sqlite");
     public SqliteWorld Store { get; }
     public ServiceProvider Services { get; }

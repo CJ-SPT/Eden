@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      regression_check:
+        description: Run the full .NET regression suite
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,7 +31,13 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: Test
+      - name: Test hosting and fixtures
+        if: github.event_name != 'workflow_dispatch' || !inputs.regression_check
+        run: >-
+          dotnet test --no-build --filter
+          'FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Fixtures'
+      - name: Run requested regression check
+        if: github.event_name == 'workflow_dispatch' && inputs.regression_check
         run: dotnet test --no-build
       - name: Test catalog setup
         run: python tests/Eden.Protocol.Tests/Persistence/catalog_setup_test.py

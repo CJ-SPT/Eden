@@ -1,6 +1,7 @@
 using System.Reflection;
 using Eden.Gameplay.Combat;
 using Eden.Protocol;
+using Eden.Server.Launcher;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,11 +9,12 @@ namespace Eden.Server;
 
 internal static class ServerServices
 {
-    public static ServiceProvider Build(WorldDatabase database, TimeProvider? clock = null)
+    public static ServiceProvider Build(WorldDatabase database, TimeProvider? clock = null, LauncherOptions? options = null)
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
         services.AddSingleton(clock ?? TimeProvider.System);
+        services.AddSingleton(options ?? new LauncherOptions());
         foreach (Assembly assembly in new[] { typeof(ServerServices).Assembly, typeof(InjectableAttribute).Assembly })
         {
             foreach (Type implementation in assembly.GetTypes())

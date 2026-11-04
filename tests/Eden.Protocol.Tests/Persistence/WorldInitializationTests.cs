@@ -10,7 +10,7 @@ public sealed class WorldInitializationTests
     [Fact]
     public void ResolvingWorldReaderDoesNotInitializeOrMigrateTheDatabase()
     {
-        string directory = Directory.CreateTempSubdirectory("eden-init-").FullName;
+        string directory = TestDirectory.Create("eden-init-").FullName;
         try
         {
             WorldDatabase database = new(System.IO.Path.Combine(directory, "world.sqlite"));

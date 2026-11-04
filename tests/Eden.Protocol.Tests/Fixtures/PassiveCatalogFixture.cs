@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
@@ -28,6 +29,16 @@ internal static class PassiveCatalogFixture
     private sealed record Record(string Dataset, int Key, JsonElement Data);
 
     private sealed record Fixture(int Build, IReadOnlyList<TypeDefinition> Types, IReadOnlyList<Record> Records);
+
+    private static readonly ConcurrentDictionary<string, Lazy<Fixture>> Fixtures = new(StringComparer.Ordinal);
+
+    private static Fixture ReadFixture(string resource)
+    {
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;
+        var data = JsonSerializer.Deserialize<Fixture>(stream, JsonSerializerOptions.Web)!;
+        Assert.Equal(3662168, data.Build);
+        return data;
+    }
 
     // Minimal definitions from the read-only build 3662168 catalog. No world
     // inventory, account, market or resource-cache data is embedded.
@@ -102,9 +113,7 @@ internal static class PassiveCatalogFixture
 
     private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true, int? hullType = null)
     {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;
-        var data = JsonSerializer.Deserialize<Fixture>(stream, JsonSerializerOptions.Web)!;
-        Assert.Equal(3662168, data.Build);
+        var data = Fixtures.GetOrAdd(resource, name => new Lazy<Fixture>(() => ReadFixture(name))).Value;
         if (hullType is int hull)
         {
             // Each lifecycle/bonus case needs its hull, the original Ibis and

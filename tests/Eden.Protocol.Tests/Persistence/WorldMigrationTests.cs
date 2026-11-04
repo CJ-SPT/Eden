@@ -17,7 +17,7 @@ public sealed class WorldMigrationTests
     [InlineData(5)]
     public void PreservesEachLegacyWorldVersion(int version)
     {
-        var directory = Directory.CreateTempSubdirectory("eden-migrate-");
+        var directory = TestDirectory.Create("eden-migrate-");
         try
         {
             var file = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));
@@ -127,7 +127,7 @@ public sealed class WorldMigrationTests
     [Fact]
     public void InvalidCatalogReferenceRollsBackLegacyConversion()
     {
-        var directory = Directory.CreateTempSubdirectory("eden-migrate-");
+        var directory = TestDirectory.Create("eden-migrate-");
         try
         {
             var file = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));

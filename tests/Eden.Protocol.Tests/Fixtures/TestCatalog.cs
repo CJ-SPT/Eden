@@ -6,6 +6,23 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal static class TestCatalog
 {
+    private static readonly Lazy<byte[]> Template = new(CreateTemplate);
+
+    private static byte[] CreateTemplate()
+    {
+        string directory = TestDirectory.Create("eden-catalog-template-").FullName;
+        try
+        {
+            string path = Path.Combine(directory, "catalog.sqlite");
+            Build(path);
+            return File.ReadAllBytes(path);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     public static void AddSchool(
         string path,
         int schoolId,
@@ -63,6 +80,14 @@ internal static class TestCatalog
     }
 
     public static void Create(string path)
+    {
+        // Only immutable seed bytes are shared. Each test owns its writable copy.
+        byte[] template = Template.Value;
+        using FileStream file = new(path, FileMode.CreateNew);
+        file.Write(template);
+    }
+
+    private static void Build(string path)
     {
         using CatalogDbContext db = new(path, writable: true);
         db.Database.EnsureCreated();

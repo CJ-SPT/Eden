@@ -1,6 +1,7 @@
 using System.Net;
 using Eden.Protocol;
 using Eden.Protocol.Gateway;
+using Eden.Server.Launcher;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Builder;
@@ -13,12 +14,24 @@ namespace Eden.Server.Gateway;
 
 internal static class LocalGateway
 {
-    public static WebApplication Create(GatewayRequests requests)
+    public static WebApplication Create(GatewayRequests requests, LauncherOptions? configuration = null)
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
+        var settings = configuration ?? new LauncherOptions();
         builder.WebHost.ConfigureKestrel(options =>
-            options.Listen(IPAddress.Loopback, 26001, endpoint => endpoint.Protocols = HttpProtocols.Http2)
+            options.Listen(
+                IPAddress.Parse(settings.ListenAddress),
+                settings.GatewayPort,
+                endpoint =>
+                {
+                    endpoint.Protocols = HttpProtocols.Http2;
+                    if (settings.CertificatePath is { } certificate)
+                    {
+                        endpoint.UseHttps(certificate, Environment.GetEnvironmentVariable("EDEN_CERTIFICATE_PASSWORD"));
+                    }
+                }
+            )
         );
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);

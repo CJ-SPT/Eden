@@ -34,6 +34,7 @@ internal sealed class PilotCallContext(
 ) : IDisposable
 {
     public long AccountId { get; } = accountId;
+    public long Roles { get; init; } = (long)PilotRole.Player;
     public AccountProfile Account { get; } = account;
     public IReadOnlyList<DockedPilot> Roster { get; set; } = roster;
     public FlightSession? ActiveFlight { get; private set; }

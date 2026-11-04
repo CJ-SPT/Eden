@@ -19,14 +19,30 @@ public sealed class PassiveFittingTests
         internal PilotFittingStore Fitting { get; }
         internal PilotInventoryStore Inventory { get; }
         internal string CatalogPath => new WorldDatabase(Db.Path).CatalogPath;
-        internal long PilotId => Db.Store.FindPilot(1000001)!.PilotId;
-        internal long ShipId => Db.Store.FindPilot(1000001)!.ShipId;
-        internal long StationId => Db.Store.FindPilot(1000001)!.StationId;
+        internal long PilotId { get; }
+        internal long ShipId
+        {
+            get
+            {
+                using WorldDbContext world = new(Db.Path);
+                return world.Pilots.Where(p => p.Id == PilotId).Select(p => p.ActiveShipId).Single();
+            }
+        }
+        internal long StationId
+        {
+            get
+            {
+                using WorldDbContext world = new(Db.Path);
+                return world.Pilots.Where(p => p.Id == PilotId).Select(p => p.ActiveShip.StationId).Single();
+            }
+        }
 
         internal Fixture()
         {
             Db = new(clock: Clock);
             PassiveCatalogFixture.Load(CatalogPath);
+            using WorldDbContext world = new(Db.Path);
+            PilotId = world.Pilots.Where(p => p.AccountId == 1000001).Select(p => p.Id).Single();
             Fitting = new(new(Db.Path), Clock);
             Inventory = new(new(Db.Path), Clock);
         }

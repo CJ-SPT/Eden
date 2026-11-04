@@ -9,6 +9,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
 using Eden.Server;
+using Eden.Server.Launcher;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,29 @@ namespace Eden.Protocol.Tests.Hosting;
 
 public sealed class ServerServicesTests
 {
+    [Fact]
+    public void LauncherTicketsUseTheHostClockAndIdentity()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock);
+        LauncherOptions options = new() { Name = "Launcher integration" };
+        using var services = ServerServices.Build(new WorldDatabase(world.Path), clock, options);
+        Assert.Same(options, services.GetRequiredService<LauncherOptions>());
+        var accounts = services.GetRequiredService<LauncherStore>();
+        accounts.Initialize();
+        const string password = "launcher integration password";
+        var account = accounts.Register(new("Launcher Integration", password));
+        var session = accounts.SignIn(new("Launcher Integration", password, false));
+        var identity = services.GetRequiredService<ILoginIdentity>();
+        string ticket = accounts.IssueTicket(session.AccessToken);
+        Assert.Equal(account.AccountId, identity.ValidateTicket(ticket));
+        Assert.Null(identity.ValidateTicket(ticket));
+        Assert.Equal((long)PilotRole.Player, identity.ReadRoles(account.AccountId));
+        string expired = accounts.IssueTicket(session.AccessToken);
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(LauncherStore.TicketSeconds));
+        Assert.Null(identity.ValidateTicket(expired));
+    }
+
     [Fact]
     public void SharesWorldAndGateButIsolatesPilotSessions()
     {
