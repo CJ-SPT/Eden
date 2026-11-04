@@ -140,6 +140,7 @@ internal sealed class PilotCallRouter(
         Dictionary<string, object?>? keywords = null
     )
     {
+        keywords = ServiceKeywords(keywords);
         foreach (var handler in accountHandlers)
         {
             PilotCallResult result = handler.Call(context, service, method, arguments, keywords);
@@ -162,6 +163,7 @@ internal sealed class PilotCallRouter(
         Dictionary<string, object?>? keywords
     )
     {
+        keywords = ServiceKeywords(keywords);
         if (
             service
             is "jumpCloneSvc"
@@ -258,5 +260,15 @@ internal sealed class PilotCallRouter(
             }
         }
         return PilotCallResult.Unsupported;
+    }
+
+    private static Dictionary<string, object?>? ServiceKeywords(Dictionary<string, object?>? keywords)
+    {
+        // Build 3662168 ServiceCallGPCS supplies machoVersion even for uncached
+        // methods. It belongs to MachoNet, not the service's argument contract.
+        // Apply this to embedded MachoBindObject calls as well as direct calls.
+        return keywords is not null && keywords.ContainsKey("machoVersion")
+            ? keywords.Where(pair => pair.Key != "machoVersion").ToDictionary()
+            : keywords;
     }
 }

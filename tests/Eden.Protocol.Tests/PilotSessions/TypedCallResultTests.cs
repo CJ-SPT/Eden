@@ -8,6 +8,65 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class TypedCallResultTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RouterSeparatesNativeCacheMetadataFromDirectAndBoundServiceKeywords(bool bound)
+    {
+        using TestWorld world = new();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            selected => new FlightSession(world.Store, selected, TimeProvider.System, new(), world.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        KeywordHandler handler = new();
+        PilotCallRouter router = new([], [handler]);
+        object?[] cacheVersion = [123L, 456L];
+        Dictionary<string, object?> keywords = new() { ["machoVersion"] = cacheVersion, ["qty"] = 7L };
+        var result = bound
+            ? router.Call(
+                context,
+                "invbroker",
+                "MachoBindObject",
+                new object?[] { null, new object?[] { "Capture", Array.Empty<object?>(), keywords } },
+                _ => { },
+                new() { ["machoVersion"] = 1L }
+            )
+            : router.Call(context, "invbroker", "Capture", Array.Empty<object?>(), _ => { }, keywords);
+        var success = Assert.IsType<PilotCallResult.Success>(result);
+        if (bound)
+        {
+            Assert.IsType<BoundPilotReply>(success.Reply);
+        }
+        var argument = Assert.Single(handler.Keywords!);
+        Assert.Equal("qty", argument.Key);
+        Assert.Equal(7L, argument.Value);
+        Assert.Equal(2, keywords.Count);
+        Assert.Same(cacheVersion, keywords["machoVersion"]);
+    }
+
+    private sealed class KeywordHandler : ISelectedPilotCallHandler
+    {
+        public Dictionary<string, object?>? Keywords { get; private set; }
+
+        public PilotCallResult Call(
+            PilotCallContext context,
+            string service,
+            string method,
+            object?[] args,
+            Dictionary<string, object?>? keywords = null
+        )
+        {
+            Keywords = keywords;
+            return PilotCallResult.None;
+        }
+    }
+
     [Fact]
     public void TypedOutcomesKeepFalseZeroAndNoneDistinctFromUnsupported()
     {

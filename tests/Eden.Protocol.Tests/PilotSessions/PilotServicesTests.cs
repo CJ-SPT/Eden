@@ -18,6 +18,42 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {
+    [Fact]
+    public async Task NativeStationGuestRequestReturnsBothDockedPilotsAndResolvesTheOtherName()
+    {
+        using TestWorld world = new();
+        using var peerScope = world.Services.CreateScope();
+        var peerServices = peerScope.ServiceProvider;
+        var pilot = world.Store.FindPilot(1000001)!;
+        var peer = world.Store.FindPilot(1000002)!;
+        using PilotCallContext peerContext = new(
+            1000002,
+            peer.Account,
+            [peer],
+            peerServices.GetRequiredService<FlightSessionFactory>().Create,
+            43,
+            SignedSettings.Empty
+        );
+        peerContext.Select(peer);
+        peerServices.GetRequiredService<PilotUpdateCoordinator>().Enter(peerContext);
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("station", "GetGuests", []),
+            Request("config", "GetMultiOwnersEx", [new List<object?> { peer.PilotId }])
+        );
+        Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var guests = Assert.IsType<List<object?>>(Result(packets[^2]));
+        Assert.Equal(2, guests.Count);
+        Assert.Equal(new object?[] { pilot.PilotId, (long)pilot.CorpId, null, null }, BlueRead.Tuple(guests[0], 4));
+        Assert.Equal(new object?[] { peer.PilotId, (long)peer.CorpId, null, null }, BlueRead.Tuple(guests[1], 4));
+        var owners = BlueRead.Tuple(Result(packets[^1]), 2);
+        var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(owners[1])), 5);
+        Assert.Equal(peer.PilotId, owner[0]);
+        Assert.Equal(peer.Name, BlueMarshal.Text(owner[1]));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -531,7 +567,10 @@ public sealed class PilotServicesTests
     )
     {
         const string address = "carbon.common.script.net.machoNetAddress.MachoAddress";
-        byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, keywords ?? new Dictionary<string, object?>() });
+        // ServiceCallGPCS adds this cache-version metadata even to uncached RPCs.
+        Dictionary<string, object?> wireKeywords = keywords is null ? new() : new(keywords);
+        wireKeywords.TryAdd("machoVersion", 1L);
+        byte[] call = BlueMarshal.Encode(new object?[] { objectId, method, args, wireKeywords });
         return new(
             "carbon.common.script.net.machoNetPacket.CallReq",
             new object?[]

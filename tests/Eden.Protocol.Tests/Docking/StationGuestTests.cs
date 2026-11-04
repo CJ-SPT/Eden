@@ -174,7 +174,14 @@ public sealed class StationGuestTests
         var router = first.Services.GetRequiredService<PilotCallRouter>();
         Assert.IsType<PilotCallResult.Failure>(router.Call(first.Context, "station", "GetGuests", new object?[] { 1L }, _ => { }));
         Assert.IsType<PilotCallResult.Failure>(
-            router.Call(first.Context, "station", "GetGuests", Array.Empty<object?>(), _ => { }, new() { ["stationID"] = 1L })
+            router.Call(
+                first.Context,
+                "station",
+                "GetGuests",
+                Array.Empty<object?>(),
+                _ => { },
+                new() { ["stationID"] = 1L, ["machoVersion"] = 1L }
+            )
         );
         Assert.Equal(2, first.Snapshot().Count);
         Assert.Equal(2, second.Snapshot().Count);

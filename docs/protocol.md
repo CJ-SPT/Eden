@@ -240,6 +240,24 @@ dotnet test --no-build --filter 'FullyQualifiedName~Eden.Protocol.Tests.Docking|
 
 **Optional maintainer checks.** Restart the updated server and reconnect both pilots at the same station; confirm both guest names/counts, then undock/redock or log off one pilot while watching the other's Guests panel.
 
+### Native request metadata correction, November 4, 2026
+
+The user subsequently reported **Guests [0]** in both clients after the first fix. The original 97-test validation omitted native MachoNet metadata, so it did not establish compatibility of the real request. Build 3662168's `carbon/common/script/net/ServiceCallGPCS.pyj`, `RemoteServiceCallWithoutTheStars`, lines 282–307, adds `machoVersion=1` to every uncached remote call; cached calls can instead carry their existing version value. The no-argument station handler rejected that transport field as an unexpected service keyword. The separate flatbuffer 501 error visible in the screenshot has not been linked to guest loading and is not treated as evidence of this cause.
+
+The router now removes the reserved `machoVersion` field before account-level or selected-pilot dispatch, including embedded `MachoBindObject` calls. Business keywords remain available and the incoming dictionary is not mutated. Unknown station arguments remain rejected. This also lets the existing strict character-logoff and requested-disconnect handlers receive their intended empty service keyword set. The guest presence registry and notification shapes are unchanged. The source is the pinned archive and SHA-256 recorded above; Blue/transport serialization is unchanged.
+
+A new simulated-session regression using the native metadata failed against `2aeb40a` with a station GetGuests ErrorResponse, then passed with the router correction. It checks both docked pilots and the other pilot's name through encoded replies. All `PilotServicesTests` requests now include the native field by default, and direct/bound router regressions verify that a cached version value is removed while `qty` and the original dictionary remain intact.
+
+**Automated validation.** Tool/solution restore and Release build passed with zero warnings/errors (2.21 seconds). All 100 focused .NET tests passed (15.20 seconds command time, 13 seconds reported test duration), including the new native guest-session regression and two direct/bound metadata cases. Both Python policy suites passed (3 catalog setup and 9 formatting cases), and `Format.ps1 -Check` passed across 405 files (8.94 seconds combined policy/format command time). The intentionally failing one-test reproduction preceded the correction; the later focused pass covers the corrected router and native request fixture. No full .NET regression run was requested or performed. The final filter was:
+
+```powershell
+dotnet test --no-build -c Release --filter 'FullyQualifiedName~Eden.Protocol.Tests.Docking|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions|FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Combat.ShipSafetyTests'
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. The user's second screenshot demonstrates the previous implementation's failure, not acceptance of this correction.
+
+**Optional maintainer checks.** Rebuild/restart the server and reconnect both pilots; confirm both guest lists populate and still update on undocking/redocking.
+
 ## Character logoff to selection, November 4, 2026
 
 The user reported an **Invalid Packet Destination** dialog for `userSvc.UserLogOffCharacter` when choosing Log Off. In build 3662168's `eve/client/script/parklife/gameui.py`, `GameUI.LogOffCharacter` passes the no-argument remote method to `sessionMgr.PerformSessionChange('logoff', ...)`. A truthy result invokes `DoCharacterLogoff`, which chains `ProcessSessionReset`, closes character windows, broadcasts `OnSessionReset` and activates `charsel` on the existing connection. Python None would deny the transition. The inspected `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
