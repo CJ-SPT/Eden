@@ -95,7 +95,7 @@ public sealed class TackleTests
         return module;
     }
 
-    private static Fixture Prepare(params int[] types)
+    internal static Fixture Prepare(params int[] types)
     {
         Fixture f = new();
         PassiveCatalogFixture.LoadTackleTiers(f.CatalogPath, types.Concat(new[] { 601, 3435, 3455, 3449 }).ToHashSet());

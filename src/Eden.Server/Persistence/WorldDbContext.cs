@@ -421,6 +421,11 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<WorldNpc>().HasIndex(n => n.EncounterId);
         model
             .Entity<WorldNpc>()
+            .HasIndex(n => new { n.EncounterId, n.SpawnSlot })
+            .IsUnique()
+            .HasFilter("Role<>0 AND DestroyedAt IS NULL AND RetiredAt IS NULL");
+        model
+            .Entity<WorldNpc>()
             .HasIndex(n => new
             {
                 n.SystemId,

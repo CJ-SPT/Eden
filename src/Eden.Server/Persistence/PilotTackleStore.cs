@@ -141,13 +141,9 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             row.MwdBlock = module.MwdBlock;
             row.StartedAt = now;
             row.ExpiresAt = expires;
-            if (npc is not null && world.Set<NpcAggression>().Find(npc.Id) is null)
+            if (npc is not null)
             {
-                var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
-                if (attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
-                {
-                    world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, pilot.ActiveShipId, delay, now));
-                }
+                NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
             }
         }
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;

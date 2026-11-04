@@ -1,5 +1,7 @@
 # Windows client setup
 
+Current NPC baseline: ordinary known-space belts now use persistent regional pirate groups, and the four main empires have locally defensive gate/station guards. Safest (displayed 0.9-1.0) systems no longer contain the old Perimeter Rookies. Historical Rookie procedures below describe prior acceptance fixtures; they are not current population guarantees. See [regional populations](protocol.md#regional-belt-pirate-populations) and [empire guards](protocol.md#local-empire-guard-populations) for policy and automated evidence. No new native acceptance was performed. Optional maintainer checks are to inspect representative belts, observe local guard retaliation, and inspect missile/patrol presentation plus restart continuity. Agents must not launch the client unless explicitly requested.
+
 ## Agent testing policy
 
 Agents perform **automated testing only**, following the [contributor testing policy](../AGENTS.md#testing) and [README build order](../README.md#build-and-run). Use focused tests during development and one full automated validation after a code milestone is stable. Documentation-only changes require relevant documentation checks rather than the gameplay suite. Do not repeat a successful full suite for unchanged code or publishing; after small corrections rerun affected tests and required build/format checks, expanding to the full suite only when broad coverage is invalidated.

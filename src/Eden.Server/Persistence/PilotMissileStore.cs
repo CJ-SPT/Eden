@@ -157,14 +157,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
         // Retaliation begins on the offensive launch, not after flight time.
-        var npcAttributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
-        if (
-            world.Set<NpcAggression>().Find(npc.Id) is null
-            && npcAttributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
-        )
-        {
-            world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, pilot.ActiveShipId, delay, now));
-        }
+        NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
         world.SaveChanges();
         transaction.Commit();
         return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);

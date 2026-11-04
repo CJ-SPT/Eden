@@ -22,6 +22,18 @@ internal static class NpcMotion
 
     internal static void Return(WorldNpc npc) => npc.Navigation = NpcNavigationState.Returning;
 
+    internal static void Patrol(
+        WorldNpc npc,
+        CatalogDbContext catalog,
+        ItemType type,
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        long now
+    )
+    {
+        npc.Navigation = NpcNavigationState.Patrolling;
+        Advance(npc, NpcGuardRules.PatrolDestination(Home(npc, catalog), npc.Id, now), type, attributes, now);
+    }
+
     internal static bool Engaged(WorldNpc npc) => NpcMotionRules.Engaged(State(npc));
 
     private static NpcMotionState State(WorldNpc npc) => new(npc.Id, Position(npc), Velocity(npc), npc.Navigation);
@@ -105,10 +117,19 @@ internal static class NpcMotion
         WorldNpc npc,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         long target,
-        SpacePosition home
+        SpacePosition home,
+        long now = 0
     ) =>
         npc.Navigation switch
         {
+            NpcNavigationState.Patrolling => new(
+                Velocity(npc),
+                NpcMotionRules.SpeedFraction(attributes),
+                0,
+                0,
+                NpcGuardRules.PatrolDestination(home, npc.Id, now),
+                NpcNavigationState.Patrolling
+            ),
             NpcNavigationState.Idle => Velocity(npc) == SpacePosition.Zero
                 ? null
                 : new(Velocity(npc), 0, 0, 0, State: NpcNavigationState.Idle),

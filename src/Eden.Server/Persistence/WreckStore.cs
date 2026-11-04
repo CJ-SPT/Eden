@@ -44,6 +44,12 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         var type = definition?.WreckTypeID is long wreckType
             ? catalog.Set<ItemType>().SingleOrDefault(t => t.Id == wreckType && t.GroupId == WreckDefinitions.Group)
             : null;
+        if (type is null && npc.Role != NpcRole.Pirate && definition is { WreckTypeID: null })
+        {
+            // Several pinned customs officials have no wreck link. They leave
+            // no wreck instead of borrowing an unrelated ship's wreck.
+            return;
+        }
         if (type is null)
         {
             throw new InvalidDataException("The defeated NPC has no supported catalog wreck.");

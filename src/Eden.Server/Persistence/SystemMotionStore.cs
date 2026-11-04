@@ -124,6 +124,10 @@ public sealed partial class SqliteWorld
                 NpcMotion.Return(npc);
                 NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now, returning: true);
             }
+            else if (npc.Role != NpcRole.Pirate && npc.Navigation is NpcNavigationState.Idle or NpcNavigationState.Patrolling)
+            {
+                NpcMotion.Patrol(npc, catalog, type, effective, now);
+            }
             else if (npc.MotionAt / TimeSpan.TicksPerSecond < now / TimeSpan.TicksPerSecond)
             {
                 initialVelocity = NpcMotionRules.CoastVelocity(initialVelocity);

@@ -65,7 +65,11 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             )
             .Distinct()
             .ToArray();
-        var occupied = world.Set<NpcAggression>().Select(a => a.NpcId).ToArray();
+        var occupied = world
+            .Set<NpcAggression>()
+            .Where(a => world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && systems.Contains(n.SystemId)))
+            .Select(a => a.NpcId)
+            .ToArray();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n =>

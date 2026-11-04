@@ -31,6 +31,7 @@ public enum NpcNavigationState
     Pursuing = 1,
     Returning = 2,
     Orbiting = 3,
+    Patrolling = 4,
 }
 
 public sealed record NpcNavigationContact(

@@ -196,8 +196,26 @@ public sealed class NpcPopulationTests
         {
             world.Set<WorldNpc>().Find(original.Id)!.ArmorDamage = 5;
             world.SaveChanges();
-            world.Database.ExecuteSqlRaw("DROP INDEX IX_WorldNpc_EncounterId; DROP INDEX IX_WorldNpc_SystemId_RetiredAt_DestroyedAt");
-            string[] columns = ["CorporationId", "FactionId", "Role", "AnchorKind", "EncounterId", "HomeX", "HomeY", "HomeZ", "RetiredAt"];
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP INDEX IX_WorldNpc_EncounterId;
+                DROP INDEX IX_WorldNpc_SystemId_RetiredAt_DestroyedAt;
+                DROP INDEX IX_WorldNpc_EncounterId_SpawnSlot;
+                """
+            );
+            string[] columns =
+            [
+                "CorporationId",
+                "FactionId",
+                "Role",
+                "AnchorKind",
+                "EncounterId",
+                "HomeX",
+                "HomeY",
+                "HomeZ",
+                "RetiredAt",
+                "SpawnSlot",
+            ];
             foreach (string column in columns)
             {
                 string sql = $"ALTER TABLE WorldNpc DROP COLUMN {column}";

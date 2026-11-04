@@ -15,7 +15,7 @@ public sealed class RegionalNpcTests
     private const int BeltCount = 8;
     private const long Now = 134000000000000000;
 
-    private static void Prepare(TestWorld db, double security = 0.7, NpcRegion region = NpcRegion.TheForge)
+    internal static void Prepare(TestWorld db, double security = 0.7, NpcRegion region = NpcRegion.TheForge)
     {
         string path = new WorldDatabase(db.Path).CatalogPath;
         PassiveCatalogFixture.LoadNpcPopulation(path);

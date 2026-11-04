@@ -22,6 +22,7 @@ public sealed class WorldNpc
     public NpcRole Role { get; set; }
     public NpcAnchorKind AnchorKind { get; set; }
     public long EncounterId { get; set; }
+    public int SpawnSlot { get; set; }
     public double? HomeX { get; set; }
     public double? HomeY { get; set; }
     public double? HomeZ { get; set; }
@@ -45,7 +46,8 @@ public sealed class WorldNpc
 internal sealed class NpcEncounterStore(
     WorldDatabase database,
     INpcPopulationSeeder? population = null,
-    NpcSpawnCatalog? spawnCatalog = null
+    NpcSpawnCatalog? spawnCatalog = null,
+    NpcGuardSeeder? guards = null
 ) : INpcEncounters
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
@@ -135,7 +137,8 @@ internal sealed class NpcEncounterStore(
                         n,
                         effective[n.Id],
                         aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
-                        NpcMotion.Home(n, catalog)
+                        NpcMotion.Home(n, catalog),
+                        now
                     ),
                     database.MotionStamps.GetValueOrDefault(systemId),
                     database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
@@ -170,6 +173,19 @@ internal sealed class NpcEncounterStore(
                 Group = new() { Id = saved.GroupId, CategoryId = NpcEncounterDefinitions.EntityCategory },
             };
             return new(cached, saved.Attributes, ShipHealth.DefenseFrom(saved.Attributes));
+        }
+        if (population is NpcPopulationSeeder && guards?.Cached(typeId) is { } guard)
+        {
+            ItemType cached = new()
+            {
+                Id = guard.TypeId,
+                Name = guard.Name,
+                GroupId = guard.GroupId,
+                Mass = guard.Mass,
+                Radius = guard.Radius,
+                Group = new() { Id = guard.GroupId, CategoryId = NpcEncounterDefinitions.EntityCategory },
+            };
+            return new(cached, guard.Attributes, ShipHealth.DefenseFrom(guard.Attributes));
         }
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);

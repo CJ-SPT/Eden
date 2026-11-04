@@ -23,6 +23,11 @@ def export(catalog_path, output):
     }
     if len(groups) != 30 or len(loot) != 24:
         raise ValueError("NPC group/loot declarations changed; review the export selectors.")
+    guard_source = (root / "src/Eden.Gameplay/Combat/NpcGuardRules.cs").read_text(encoding="utf-8")
+    guard_enum = guard_source.split("public enum NpcGuardType", 1)[1].split("}", 1)[0]
+    guards = {int(value) for value in re.findall(r"^    \w+ = (\d+),$", guard_enum, re.MULTILINE)}
+    if len(guards) != 12:
+        raise ValueError("Guard roster changed; review the export selector.")
     with sqlite3.connect(catalog_path.resolve().as_uri() + "?mode=ro", uri=True) as catalog:
         def record(dataset, key):
             row = catalog.execute(
@@ -30,7 +35,7 @@ def export(catalog_path, output):
             ).fetchone()
             return json.loads(row[0]) if row else None
 
-        pending = set(loot)
+        pending = set(loot) | guards
         pending.update(row[0] for row in catalog.execute(
             "SELECT Id FROM ItemType WHERE GroupId IN (" + ",".join("?" for _ in groups) + ")", sorted(groups)
         ))
@@ -61,11 +66,14 @@ def export(catalog_path, output):
             missile = next((a["value"] for a in attributes if a["id"] == 507), 0)
             if missile:
                 pending.add(int(missile))
-        for faction in (500010, 500011, 500012, 500019, 500020, 500025):
+        for faction in (500001, 500002, 500003, 500004, 500010, 500011, 500012, 500019, 500020, 500025):
             definition = record("client/factions", faction)
             records["client/factions", faction] = definition
             corporation = definition["corporationID"]
             records["sde/npcCorporations", corporation] = record("sde/npcCorporations", corporation)
+        # ReadAttributes uses this pinned default when an NPC does not carry a
+        # signature override. Keep the exact catalog rule in automated fixtures.
+        records["client/dogmaattributes", 552] = record("client/dogmaattributes", 552)
         data = {
             "build": 3662168,
             "types": [types[key] for key in sorted(types)],

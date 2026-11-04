@@ -26,6 +26,7 @@ internal static class NpcDamagePersistence
         {
             throw new InvalidDataException("The NPC is no longer available.");
         }
+        NpcHostility.Record(world, catalog, npc, attackingShip, now);
         var defense = ShipHealth.DefenseFrom(attributes);
         HullDamage health = new(
             ChargedResource.Recharged(
@@ -83,10 +84,6 @@ internal static class NpcDamagePersistence
                     )
                     .Entity;
             }
-        }
-        else if (aggression is null && attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
-        {
-            world.Set<NpcAggression>().Add(NpcAggression.Start(npc.Id, attackingShip, delay, now));
         }
         return new(new(npc.Id, defense, result.Remaining), result.Applied, result.Remaining.Destroyed, reward);
     }
