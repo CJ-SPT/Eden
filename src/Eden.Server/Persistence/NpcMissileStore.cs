@@ -41,7 +41,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         var warhead = NpcMissileRules.Warhead(charge, attributes);
         var position = pilot.ActiveShip.Position!;
         SpacePosition target = new(position.X, position.Y, position.Z);
-        if (target.DistanceTo(NpcMotion.Position(npc)) > drive.MaxVelocity * drive.LifetimeSeconds)
+        if (target.DistanceTo(NpcMotion.Position(npc)) > drive.NominalRange)
         {
             return false;
         }

@@ -144,6 +144,9 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<WorldNpcEncounter>().ToTable("WorldNpcEncounter").HasKey(e => e.Id);
+        model.Entity<WorldNpcEncounter>().Property(e => e.Id).ValueGeneratedNever();
+        model.Entity<WorldNpcEncounter>().HasIndex(e => e.SystemId);
         model.Entity<SavedPilotNote>().ToTable("WorldPilotNote").HasKey(note => new { note.PilotId, note.TargetId });
         model.Entity<SavedPilotNote>().HasOne<Pilot>().WithMany().HasForeignKey(note => note.PilotId);
         model.Entity<SavedLoyaltyBalance>().ToTable("WorldLoyaltyWallet").HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);

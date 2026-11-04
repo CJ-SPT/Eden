@@ -161,6 +161,22 @@ public sealed class NpcCombatTests
         Assert.Equal(f.Clock.Now + 2500 * TimeSpan.TicksPerMillisecond, world.Set<NpcAggression>().Single().ReadyAt);
     }
 
+    [Fact]
+    public void IntegratedNpcWeaponDoesDamageWithoutInventingATurretGraphic()
+    {
+        using Fixture f = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=0 WHERE ItemTypeId=30380 AND AttributeId=245");
+        }
+        f.Aggress();
+        f.Clock.Milliseconds = 7500;
+        var shot = Assert.IsType<NpcShot>(f.Fire());
+        Assert.Equal(2.475, shot.Applied, 8);
+        Assert.Equal(0, shot.Weapon.TurretTypeId);
+        Assert.Null(CombatMessages.Incoming(shot).ToBlue()["weapon"]);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

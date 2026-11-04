@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -47,7 +48,6 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         {
             throw new InvalidDataException("The defeated NPC has no supported catalog wreck.");
         }
-        _ = catalog.Set<ItemType>().Single(t => t.Id == WreckDefinitions.StarterLootType);
         var wreck = world
             .Set<WorldWreck>()
             .Add(
@@ -68,18 +68,47 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 }
             )
             .Entity;
-        world
-            .Set<OwnedItem>()
-            .Add(
-                new()
-                {
-                    Id = InventoryPersistence.NextId(world),
-                    OwnerId = pilot.Id,
-                    TypeId = WreckDefinitions.StarterLootType,
-                    LocationId = wreck.Id,
-                    FlagId = (int)InventoryFlag.Cargo,
-                    Quantity = WreckDefinitions.StarterLootQuantity,
-                }
+        foreach (var drop in Drops(catalog, npc))
+        {
+            _ = catalog.Set<ItemType>().Single(t => t.Id == drop.TypeId);
+            world
+                .Set<OwnedItem>()
+                .Add(
+                    new()
+                    {
+                        Id = InventoryPersistence.NextId(world),
+                        OwnerId = pilot.Id,
+                        TypeId = drop.TypeId,
+                        LocationId = wreck.Id,
+                        FlagId = (int)InventoryFlag.Cargo,
+                        Quantity = drop.Quantity,
+                    }
+                );
+        }
+    }
+
+    private static IReadOnlyList<NpcLootDrop> Drops(CatalogDbContext catalog, WorldNpc npc)
+    {
+        if (npc.Role != NpcRole.Pirate)
+        {
+            return [];
+        }
+        // Retained solely for the injected Rookie encounter fixture. Normal
+        // populations retire this type and never select it from asteroid pools.
+        if (npc.TypeId == NpcEncounterDefinitions.GuristasRookieType)
+        {
+            return [new(WreckDefinitions.StarterLootType, WreckDefinitions.StarterLootQuantity)];
+        }
+        int groupId = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId).GroupId;
+        var group = NpcPirateGroups.All.SingleOrDefault(g => g.GroupId == groupId);
+        return group is null
+            ? []
+            : NpcLootRules.Roll(
+                group.Faction,
+                group.Hull,
+                RandomNumberGenerator.GetInt32(NpcLootRules.RollOutcomes),
+                RandomNumberGenerator.GetInt32(NpcLootRules.RollOutcomes),
+                RandomNumberGenerator.GetInt32(NpcLootRules.ModuleChoices)
             );
     }
 

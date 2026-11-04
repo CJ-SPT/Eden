@@ -6,6 +6,7 @@ public sealed record MissileDrive(double Mass, float Radius, float MaxVelocity, 
 {
     public double InertiaSeconds => Mass * Agility / MissileFlightRules.InertiaMassScale;
     public double LifetimeSeconds => LifetimeMilliseconds / TimeSpan.MillisecondsPerSecond;
+    public double NominalRange => MaxVelocity * LifetimeSeconds;
 }
 
 public sealed record MissileLaunchPlatform(SpacePosition Position, SpacePosition Velocity, float MaxVelocity, SpacePosition RearDirection);

@@ -42,7 +42,11 @@ public sealed class WorldNpc
 }
 
 [Injectable]
-internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
+internal sealed class NpcEncounterStore(
+    WorldDatabase database,
+    INpcPopulationSeeder? population = null,
+    NpcSpawnCatalog? spawnCatalog = null
+) : INpcEncounters
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
     {
@@ -57,7 +61,11 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = world.Database.BeginTransaction();
-        SeedLegacy(world, catalog, systemId, now);
+        long populationStamp = now / TimeSpan.TicksPerSecond;
+        if (population is not null && database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp)
+        {
+            population.Seed(world, catalog, systemId, now);
+        }
         world.SaveChanges();
         var npcs = world
             .Set<WorldNpc>()
@@ -137,77 +145,35 @@ internal sealed class NpcEncounterStore(WorldDatabase database) : INpcEncounters
             })
             .ToArray();
         transaction.Commit();
+        if (population is not null)
+        {
+            database.PopulationStamps[systemId] = populationStamp;
+        }
         return contacts;
     }
 
     private sealed record Profile(ItemType Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense);
 
-    private static Profile ReadProfile(CatalogDbContext catalog, int typeId)
+    private Profile ReadProfile(CatalogDbContext catalog, int typeId)
     {
+        if (population is NpcPopulationSeeder && spawnCatalog?.Profiles.FirstOrDefault(p => p.TypeId == typeId) is { } saved)
+        {
+            // Normal catalog inputs are immutable. Test fixtures deliberately
+            // edit their catalogs, so their injected seeder retains fresh reads.
+            ItemType cached = new()
+            {
+                Id = saved.TypeId,
+                Name = saved.Name,
+                GroupId = saved.GroupId,
+                Mass = saved.Mass,
+                Radius = saved.Radius,
+                Group = new() { Id = saved.GroupId, CategoryId = NpcEncounterDefinitions.EntityCategory },
+            };
+            return new(cached, saved.Attributes, ShipHealth.DefenseFrom(saved.Attributes));
+        }
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         return new(type, attributes, ShipHealth.DefenseFrom(attributes));
-    }
-
-    private static void SeedLegacy(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
-    {
-        if (systemId != NpcEncounterDefinitions.PerimeterSystem)
-        {
-            return;
-        }
-        var belts = catalog
-            .Set<Celestial>()
-            .Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)
-            .OrderBy(c => c.Id)
-            .ToArray();
-        if (belts.Length == 0)
-        {
-            return;
-        }
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == NpcEncounterDefinitions.GuristasRookieType);
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.ItemTypeId == type.Id)
-            .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
-        var defense = ShipHealth.DefenseFrom(attributes);
-        foreach (var belt in belts)
-        {
-            // Keep defeated rows for bounty identity. A replacement gets a new
-            // AUTOINCREMENT ID only after the local ten-minute respawn delay.
-            var previous = world.Set<WorldNpc>().Where(n => n.BeltId == belt.Id).OrderByDescending(n => n.Id).FirstOrDefault();
-            if (
-                previous is not null
-                && (
-                    !previous.DestroyedAt.HasValue
-                    || now - previous.DestroyedAt.Value < TimeSpan.TicksPerSecond * NpcEncounterDefinitions.RespawnSeconds
-                )
-            )
-            {
-                continue;
-            }
-            world
-                .Set<WorldNpc>()
-                .Add(
-                    new()
-                    {
-                        Id = previous is null ? checked(NpcEncounterDefinitions.FirstNpcId + belt.Id) : 0,
-                        BeltId = belt.Id,
-                        SystemId = systemId,
-                        TypeId = type.Id,
-                        CorporationId = NpcEncounterDefinitions.GuristasCorporation,
-                        FactionId = NpcEncounterDefinitions.GuristasFaction,
-                        EncounterId = belt.Id,
-                        HomeX = belt.X + NpcEncounterDefinitions.AnchorOffset,
-                        HomeY = belt.Y,
-                        HomeZ = belt.Z,
-                        X = belt.X + NpcEncounterDefinitions.AnchorOffset,
-                        Y = belt.Y,
-                        Z = belt.Z,
-                        ShieldCharge = defense.Shield,
-                        UpdatedAt = now,
-                    }
-                );
-        }
     }
 
     public bool WasDestroyed(long npcId)

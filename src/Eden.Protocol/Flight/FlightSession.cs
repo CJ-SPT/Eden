@@ -391,7 +391,12 @@ internal sealed class FlightSession(
         || previous?.SpeedFraction != current?.SpeedFraction
         || previous?.Destination != current?.Destination;
 
-    private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active) =>
+    private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active)
+    {
+        if (weapon.TurretTypeId <= 0)
+        {
+            return;
+        }
         Update(
             new DestinyCommand.TimedSpecialEffect(
                 npcId,
@@ -407,6 +412,7 @@ internal sealed class FlightSession(
                 weapon.StartedAt
             )
         );
+    }
 
     public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
     {

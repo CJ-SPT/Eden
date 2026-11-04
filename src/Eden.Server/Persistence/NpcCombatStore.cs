@@ -15,8 +15,24 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup, IShipLootRoll lootRoll) : INpcCombat
+internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup, IShipLootRoll lootRoll, NpcSpawnCatalog? profiles = null)
+    : INpcCombat
 {
+    private double MissileRange(CatalogDbContext catalog, WorldNpc npc, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        if (profiles?.Profiles.FirstOrDefault(p => p.TypeId == npc.TypeId) is { } profile)
+        {
+            return profile.MissileRange;
+        }
+        int chargeId = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType));
+        if (chargeId == 0)
+        {
+            return 0;
+        }
+        var charge = PilotFittingStore.ReadAttributes(catalog, chargeId);
+        return NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
+    }
+
     public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
         if (candidates.Count == 0)
@@ -65,6 +81,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         foreach (var npc in npcs)
         {
             var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+            double missileRange = MissileRange(catalog, npc, attributes);
             if (!attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
             {
                 continue;
@@ -89,8 +106,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                     );
                 })
                 .Where(t =>
-                    t.Range <= NpcPopulationRules.DetectionRange(attributes)
-                    && t.Position.DistanceTo(home) <= NpcPopulationRules.Leash(attributes)
+                    t.Range <= NpcPopulationRules.DetectionRange(attributes, missileRange)
+                    && t.Position.DistanceTo(home) <= NpcPopulationRules.Leash(attributes, missileRange)
                 )
                 .OrderBy(t => t.Range)
                 .ThenBy(t => t.ActiveShipId)
@@ -182,11 +199,9 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             return null;
         }
         var home = NpcMotion.Home(npc, catalog);
+        double leash = NpcPopulationRules.Leash(attributes, MissileRange(catalog, npc, attributes));
         var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
-        if (
-            targetPosition.DistanceTo(home) > NpcPopulationRules.Leash(attributes)
-            || NpcMotion.Position(npc).DistanceTo(home) > NpcPopulationRules.Leash(attributes)
-        )
+        if (targetPosition.DistanceTo(home) > leash || NpcMotion.Position(npc).DistanceTo(home) > leash)
         {
             NpcMotion.Return(npc);
             world.Remove(aggression);
@@ -207,7 +222,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
         NpcMissileStore.Launch(world, catalog, npc, aggression, attributes, pilot, velocity, now, destinyStamp);
         if (
-            attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType) <= 0
+            !NpcPopulationRules.HasDirectWeapon(attributes)
             || range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange)
             || now < aggression.ReadyAt
         )

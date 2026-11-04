@@ -47,7 +47,7 @@ internal sealed class TestWorld : IDisposable
             DROP INDEX IX_WorldMarketOrder_RegionId_TypeId_Bid_PriceCents;
             """;
 
-    public TestWorld(bool emptyWallets = true, TimeProvider? clock = null)
+    public TestWorld(bool emptyWallets = true, TimeProvider? clock = null, bool regionalNpcs = false)
     {
         TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
         WorldInitialization.Initialize(new WorldDatabase(Path));
@@ -58,7 +58,7 @@ internal sealed class TestWorld : IDisposable
             using WorldDbContext world = new(Path);
             world.Database.ExecuteSqlRaw("DELETE FROM WorldTestingGrant; DELETE FROM WorldWallet");
         }
-        Services = ServerServices.Build(new WorldDatabase(Path), clock);
+        Services = ServerServices.Build(new WorldDatabase(Path), clock, population: regionalNpcs ? null : new TestNpcPopulationSeeder());
         Store = Services.GetRequiredService<SqliteWorld>();
     }
 

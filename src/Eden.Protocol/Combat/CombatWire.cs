@@ -56,7 +56,8 @@ internal sealed record IncomingCombatMessage(
             ["attackerID"] = Source,
             // An NPC owner is localized by type rather than capsuleer identity.
             ["owner"] = new object?[] { (int)MessageArgumentType.TypeId, SourceType },
-            ["weapon"] = Weapon,
+            // Hull-integrated NPC weapons may have no separate turret type.
+            ["weapon"] = Weapon > 0 ? Weapon : null,
             ["damageAttributes"] = AttributeFields(),
         };
 }

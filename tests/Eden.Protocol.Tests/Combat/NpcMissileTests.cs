@@ -53,7 +53,7 @@ public sealed class NpcMissileTests
             );
             if (!turret)
             {
-                catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=0 WHERE ItemTypeId=30380 AND AttributeId=245");
+                catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=0 WHERE ItemTypeId=30380 AND AttributeId IN (245,51)");
             }
         }
         f.Db.Store.SetPosition(f.Pilot.ShipId, f.Npc.Position + new SpacePosition(4000, 0, 0), f.Npc.SystemId);
@@ -397,5 +397,29 @@ public sealed class NpcMissileTests
         Assert.Null(Fire(f));
         f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(5));
         Assert.Single(Incoming(f).Advance(f.Pilot.PilotId, ship, SpacePosition.Zero, f.Clock.Now));
+    }
+
+    [Fact]
+    public void LongRangeMissileNpcDetectsAndEngagesBeyondTheOriginalBeltLeash()
+    {
+        using Fixture f = new();
+        Prepare(f);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=100000 WHERE ItemTypeId=212 AND AttributeId=281");
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<NpcAggression>().ExecuteDelete();
+        }
+        long ship = f.Pilot.ShipId;
+        f.Db.Store.SetPosition(ship, f.Npc.Position + new SpacePosition(100000, 0, 0), f.Npc.SystemId);
+        f.Combat.Acquire([new(f.Pilot.PilotId, ship)], f.Clock.Now);
+        Assert.Contains(f.Npc.Id, f.Combat.Aggressors(ship));
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(8));
+        Assert.Null(Fire(f));
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Single(saved.Set<WorldMissile>());
+        Assert.Single(saved.Set<NpcAggression>());
     }
 }

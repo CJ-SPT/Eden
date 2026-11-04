@@ -9,7 +9,12 @@ namespace Eden.Server;
 
 internal static class ServerServices
 {
-    public static ServiceProvider Build(WorldDatabase database, TimeProvider? clock = null, LauncherOptions? options = null)
+    public static ServiceProvider Build(
+        WorldDatabase database,
+        TimeProvider? clock = null,
+        LauncherOptions? options = null,
+        INpcPopulationSeeder? population = null
+    )
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
@@ -46,6 +51,10 @@ internal static class ServerServices
             }
         }
 
+        if (population is not null)
+        {
+            services.AddSingleton(population);
+        }
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
     }
 }
