@@ -14,6 +14,122 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class ContractAssetServiceTests
 {
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void NativeGlobalBindingListsPersonalStationsBeforePickingContractItems(bool embedded, bool inSpace)
+    {
+        using Fixture f = new();
+        ContractAssetTestData.AddRemoteStation(f.Db);
+        long remote = ContractAssetTestData.Stack(f.Db, location: ContractAssetTestData.RemoteStation);
+        if (inSpace)
+        {
+            f.Db.Store.SetPosition(f.Db.Store.FindPilot(1000001)!.ShipId, Eden.Gameplay.Flight.SpacePosition.Zero);
+        }
+        object?[] bind = [ContractAssetTestData.Pilot, 10002L];
+        Assert.Same(PilotCallResult.Unsupported, f.Call("MachoResolveObject", [bind], service: "charMgr"));
+        f.Select();
+        Assert.Equal(
+            PilotLogin.NodeId,
+            Assert.IsType<int>(WireAssertions.Materialize(f.Call("MachoResolveObject", [bind], service: "charMgr")))
+        );
+        var bound = Assert.IsType<BoundPilotReply>(
+            Assert
+                .IsType<PilotCallResult.Success>(
+                    f.Call(
+                        "MachoBindObject",
+                        [
+                            bind,
+                            embedded ? new object?[] { "ListStations", Array.Empty<object?>(), new Dictionary<string, object?>() } : null,
+                        ],
+                        new() { ["machoVersion"] = 1L },
+                        "charMgr"
+                    )
+                )
+                .Reply
+        );
+        var router = f.Scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        string service = router.ResolveService(f.Context, [1L, (long)PilotLogin.NodeId, null, null], bound.Reference.Id);
+        var stations = StationCounts(embedded ? new PilotCallResult.Success(bound.Reply) : f.Call("ListStations", [], service: service));
+        int local = f.Db.Services.GetRequiredService<IPilotContractAssets>().Station(ContractAssetTestData.Pilot, 60003760).Count;
+        Assert.Equal(local + (inSpace ? 0 : 1), stations[ContractAssetTestData.Station]);
+        Assert.Equal(1, stations[ContractAssetTestData.RemoteStation]);
+        Assert.Equal(
+            remote,
+            Assert.Single(Rows(f.Call("GetItemsInDockableLocation", [(long)ContractAssetTestData.RemoteStation, false])))[0]
+        );
+        f.Context.ReleaseLocationReferences();
+        Assert.Equal(service, f.Context.ResolveReference(bound.Reference.Id));
+        Assert.Equal(stations, StationCounts(f.Call("ListStations", [], service: service)));
+        Assert.Empty(f.Context.Notifications);
+        f.Context.LogOff();
+        Assert.Null(f.Context.ResolveReference(bound.Reference.Id));
+    }
+
+    [Fact]
+    public void GlobalInventoryRejectsForeignOrMalformedBindingsAndFailedEmbeddedCalls()
+    {
+        using Fixture f = new();
+        f.Select();
+        foreach (
+            object? value in new object?[]
+            {
+                null,
+                ContractAssetTestData.Pilot,
+                new object?[] { ContractAssetTestData.Other, 10002L },
+                new object?[] { ContractAssetTestData.Pilot, 10004L },
+                new object?[] { ContractAssetTestData.Pilot, 10002L, 0L },
+            }
+        )
+        {
+            Assert.Same(PilotCallResult.Unsupported, f.Call("MachoResolveObject", [value], service: "charMgr"));
+            Assert.Same(PilotCallResult.Unsupported, f.Call("MachoBindObject", [value, null], service: "charMgr"));
+        }
+        object?[] bind = [ContractAssetTestData.Pilot, 10002L];
+        Assert.Same(PilotCallResult.Unsupported, f.Call("MachoResolveObject", [], service: "charMgr"));
+        Assert.Same(PilotCallResult.Unsupported, f.Call("MachoBindObject", [bind, "bad call"], service: "charMgr"));
+        Assert.Same(PilotCallResult.Unsupported, f.Call("MachoBindObject", [bind, null], new() { ["unexpected"] = true }, "charMgr"));
+        Assert.IsType<PilotCallResult.Failure>(
+            f.Call(
+                "MachoBindObject",
+                [bind, new object?[] { "ListStations", new object?[] { ContractAssetTestData.Other } }],
+                service: "charMgr"
+            )
+        );
+        Assert.IsType<PilotCallResult.Failure>(
+            f.Call(
+                "MachoBindObject",
+                [
+                    bind,
+                    new object?[]
+                    {
+                        "ListStations",
+                        Array.Empty<object?>(),
+                        new Dictionary<string, object?> { ["ownerID"] = ContractAssetTestData.Other },
+                    },
+                ],
+                service: "charMgr"
+            )
+        );
+        Assert.Same(PilotCallResult.Unsupported, f.Call("ListStations", [], service: "charMgr"));
+        Assert.Empty(f.Context.Notifications);
+    }
+
+    private static Dictionary<int, int> StationCounts(PilotCallResult result)
+    {
+        var reply = Assert.IsType<PilotCallResult.Success>(result).Reply;
+        var rows = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rows.Name);
+        var state = BlueRead.Fields(rows.State);
+        Assert.Equal(new[] { "stationID", "itemCount" }, Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text));
+        return Assert
+            .IsType<List<object?>>(state["lines"])
+            .Select(row => Assert.IsType<object?[]>(row))
+            .ToDictionary(row => checked((int)Assert.IsType<long>(row[0])), row => checked((int)Assert.IsType<long>(row[1])));
+    }
+
     [Fact]
     public void SplittingPackagedBlueprintsInvalidatesTheBlueprintCacheOnce()
     {
@@ -175,10 +291,15 @@ public sealed class ContractAssetServiceTests
 
         public void Select() => Context.Select(Db.Store.FindPilot(1000001)!);
 
-        public PilotCallResult Call(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+        public PilotCallResult Call(
+            string method,
+            object?[] args,
+            Dictionary<string, object?>? keywords = null,
+            string service = "contractProxy"
+        ) =>
             Scope
                 .ServiceProvider.GetRequiredService<PilotCallRouter>()
-                .Call(Context, "contractProxy", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+                .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
 
         public void Dispose()
         {

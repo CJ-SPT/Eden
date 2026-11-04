@@ -6,8 +6,11 @@ public sealed record ContractContainerCount(long ItemId, int Count);
 
 public sealed record ContractStackSplit(int Remainder, int Quantity);
 
+public sealed record ContractAssetStation(int StationId, int ItemCount);
+
 public interface IPilotContractAssets
 {
+    IReadOnlyList<ContractAssetStation> Stations(long pilotId);
     IReadOnlyList<InventoryItem> Station(long pilotId, int stationId);
     IReadOnlyList<InventoryItem> Contents(long pilotId, int stationId, long itemId);
     IReadOnlyList<ContractContainerCount> Counts(long pilotId, int stationId, IReadOnlyList<long> itemIds);

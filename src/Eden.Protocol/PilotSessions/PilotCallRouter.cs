@@ -179,8 +179,23 @@ internal sealed class PilotCallRouter(
                 or "corpStationMgr"
                 or "reprocessingSvc"
                 or "repairSvc"
+                or "charMgr"
         )
         {
+            if (
+                service == "charMgr"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    keywords is { Count: > 0 }
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || args[0] is not object?[] { Length: 2 } globalBind
+                    || !Equals(globalBind[0], context.Pilot.PilotId)
+                    || !Equals(globalBind[1], GlobalInventoryHandler.ContainerId)
+                )
+            )
+            {
+                return PilotCallResult.Unsupported;
+            }
             if (method == "MachoResolveObject")
             {
                 return PilotLogin.NodeId;
@@ -239,13 +254,14 @@ internal sealed class PilotCallRouter(
                     return PilotCallResult.Unsupported;
                 }
                 PilotCallResult result = PilotCallResult.None;
+                string boundService = service == "charMgr" ? GlobalInventoryHandler.BoundService : service;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
                     string innerMethod = BlueMarshal.Text(first[0]);
                     report($"Bound call {service}.{innerMethod}.");
                     result = CallSelected(
                         context,
-                        service,
+                        boundService,
                         innerMethod,
                         innerArgs,
                         report,
@@ -260,7 +276,13 @@ internal sealed class PilotCallRouter(
                 // the successful (bound reference, result) tuple.
                 return result is PilotCallResult.Success success
                     ? new PilotCallResult.Success(
-                        new BoundPilotReply(context.Reference(service, PilotBindingLifetime.Location), success.Reply)
+                        new BoundPilotReply(
+                            context.Reference(
+                                boundService,
+                                service == "charMgr" ? PilotBindingLifetime.Pilot : PilotBindingLifetime.Location
+                            ),
+                            success.Reply
+                        )
                     )
                     : result;
             }
