@@ -46,7 +46,12 @@ internal static class ContractRequestWire
         {
             throw new InvalidDataException("Choose a personal item-exchange, auction or courier contract in a station hangar.");
         }
-        int destination = Number(fields["destinationID"]);
+        // ResetWizard leaves endStation=None until a courier destination is chosen.
+        // Item exchanges and auctions have no delivery destination.
+        int destination =
+            fields["destinationID"] is null && type is ContractType.ItemExchange or ContractType.Auction
+                ? 0
+                : Number(fields["destinationID"]);
         int days = Number(fields["numDays"]);
         long collateral = Amount(fields["collateral"]);
         if (type == ContractType.ItemExchange && (destination != 0 || days != 0 || collateral != 0))
@@ -57,7 +62,9 @@ internal static class ContractRequestWire
         {
             throw new InvalidDataException("Auctions do not have courier delivery terms.");
         }
-        long assignee = Id(fields["assignedToID"]);
+        // FinishPage0 saves ownerID=None for public availability, rather than zero.
+        // The consistency check below still requires an ID for private assignments.
+        long assignee = fields["assignedToID"] is null ? 0 : Id(fields["assignedToID"]);
         if (Flag(fields["isPrivate"]) != (assignee > 0) || assignee < 0)
         {
             throw new InvalidDataException("Choose a valid contract assignee.");

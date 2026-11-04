@@ -52,7 +52,7 @@ public sealed class ContractServiceTests
                 ["minutesExpire"] = 1440L,
                 ["numDays"] = 0L,
                 ["startStationID"] = 60003760L,
-                ["destinationID"] = 0L,
+                ["destinationID"] = null,
                 ["price"] = 123.45,
                 ["reward"] = 0L,
                 ["collateral"] = 0L,
@@ -199,7 +199,7 @@ public sealed class ContractServiceTests
         var request = Request(f.Item);
         var values = Assert.IsType<Dictionary<string, object?>>(request.State);
         values["isPrivate"] = false;
-        values["assignedToID"] = 0L;
+        values["assignedToID"] = null;
         // BuildPage3's public branch calls cfg.evelocations.Get(startStation).Station().regionID.
         var station = Fields(Reply(f.Owner.Call("GetStation", [60003760L], service: "stationSvc")));
         Assert.Equal(60003760L, station["stationID"]);
@@ -255,6 +255,64 @@ public sealed class ContractServiceTests
     }
 
     [Fact]
+    public void NativeCourierStillRequiresADestinationBeforeChangingState()
+    {
+        using Fixture f = new();
+        f.Select();
+        var request = Request(f.Item);
+        var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
+        fields["contractType"] = (long)ContractType.Courier;
+        fields["price"] = 0L;
+        fields["reward"] = 250d;
+        fields["collateral"] = 20000d;
+        fields["numDays"] = 1L;
+        Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("CreateContract", [request], new() { ["confirm"] = null }));
+        Assert.Equal(100_000_000, f.Db.Services.GetRequiredService<IPilotWalletReader>().Balance(ContractAssetTestData.Pilot));
+        Assert.Empty(f.Owner.Context.Notifications);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Empty(world.Set<SavedContract>());
+        Assert.Equal(20, world.Set<OwnedItem>().Find(f.Item)!.Quantity);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void NativePublicWizardDefaultsCreateAndSettleWithOptionalNoneOrLegacyZeroIdentifiers(bool zeroAssignee, bool zeroDestination)
+    {
+        using Fixture f = new();
+        f.Select();
+        var request = Request(f.Item);
+        var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
+        fields["isPrivate"] = false;
+        fields["assignedToID"] = zeroAssignee ? (object)0L : null;
+        fields["destinationID"] = zeroDestination ? (object)0L : null;
+        fields["title"] = new BlueUnicode("");
+        fields["description"] = new BlueUnicode("");
+        fields["price"] = 1000d;
+        fields["itemList"] = new List<object?>
+        {
+            new List<object?> { f.Item, 5L },
+        };
+        long id = Created(f.Owner.Call("CreateContract", [request], new() { ["confirm"] = null }));
+        var details = Fields(Reply(f.Guest.Call("GetContract", [id])));
+        var contract = Fields(details["contract"]);
+        Assert.Equal(0L, contract["availability"]);
+        Assert.Equal(0L, contract["assigneeID"]);
+        Assert.Equal(0L, contract["endStationID"]);
+        Assert.Equal(0L, contract["numDays"]);
+        Assert.Equal(1000d, contract["price"]);
+        Assert.Equal("", contract["title"]);
+        Assert.Equal("", contract["description"]);
+        Assert.Equal(5L, Fields(Assert.Single(Assert.IsType<List<object?>>(details["items"])))["quantity"]);
+        Reply(f.Guest.Call("AcceptContract", [id, false]));
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Equal(15, world.Set<OwnedItem>().Find(f.Item)!.Quantity);
+        Assert.Contains(world.Set<OwnedItem>(), item => item.OwnerId == ContractAssetTestData.Other && item.Quantity == 5);
+    }
+
+    [Fact]
     public void InvalidNativeRequestsRejectBeforeChangingAssetsWalletOrNotifications()
     {
         using Fixture f = new();
@@ -267,6 +325,12 @@ public sealed class ContractServiceTests
                 ("isPrivate", null),
                 ("multiContract", null),
                 ("multiContract", true),
+                ("assignedToID", null),
+                ("contractType", null),
+                ("startStationID", null),
+                ("startStationDivision", null),
+                ("minutesExpire", null),
+                ("numDays", null),
                 ("contractType", 3L),
                 ("collateral", 1L),
                 ("numDays", 1L),
@@ -276,6 +340,20 @@ public sealed class ContractServiceTests
                 ("isPrivate", false),
                 ("ownerID", ContractAssetTestData.Other),
                 ("itemList", new object?[] { new object?[] { f.Item, 7L } }),
+                (
+                    "itemList",
+                    new List<object?>
+                    {
+                        new List<object?> { null, 7L },
+                    }
+                ),
+                (
+                    "itemList",
+                    new List<object?>
+                    {
+                        new List<object?> { f.Item, null },
+                    }
+                ),
             }
         )
         {

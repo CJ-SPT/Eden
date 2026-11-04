@@ -16,7 +16,7 @@ public sealed class CourierServiceTests
         var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
         fields["contractType"] = 3L;
         fields["isPrivate"] = isPrivate;
-        fields["assignedToID"] = isPrivate ? CourierTestData.Hauler : 0L;
+        fields["assignedToID"] = isPrivate ? (object)CourierTestData.Hauler : null;
         fields["destinationID"] = (long)ContractAssetTestData.RemoteStation;
         fields["numDays"] = 1L;
         fields["price"] = 0L;

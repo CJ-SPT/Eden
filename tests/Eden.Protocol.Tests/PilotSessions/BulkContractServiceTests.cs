@@ -15,7 +15,7 @@ public sealed class BulkContractServiceTests
         var request = ContractServiceTests.Request(hulls[0]);
         var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
         fields["isPrivate"] = isPrivate;
-        fields["assignedToID"] = isPrivate ? BulkContractTestData.Buyer : 0L;
+        fields["assignedToID"] = isPrivate ? (object)BulkContractTestData.Buyer : null;
         fields["price"] = 1234.56;
         fields["itemList"] = hulls.Select(id => (object?)new List<object?> { id, 1L }).ToList();
         fields["multiContract"] = true;

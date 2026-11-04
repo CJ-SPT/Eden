@@ -59,7 +59,7 @@ public sealed class AuctionServiceTests
         var fields = Assert.IsType<Dictionary<string, object?>>(request.State);
         fields["contractType"] = 2L;
         fields["isPrivate"] = false;
-        fields["assignedToID"] = 0L;
+        fields["assignedToID"] = null;
         fields["price"] = 1000000d;
         fields["collateral"] = buyout;
         return request;
