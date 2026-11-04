@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Skills;
@@ -35,6 +36,15 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         }
         flight.Checkpoint();
         var departure = flight.Pilot;
+        if (flight.CompleteTranslocation() is { } moved)
+        {
+            context.ReleaseLocationReferences();
+            context.Roster = context.Roster.Select(p => p.PilotId == moved.Pilot.PilotId ? moved.Pilot : p).ToArray();
+            InventoryChangesWire.NotifyItemChange(context, moved.ShipChange);
+            updates.Enter(context);
+            await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
+            report($"Ship {flight.Pilot.ShipId} translocated from {departure.SystemId} to {flight.Pilot.SystemId}.");
+        }
         if (flight.CompleteJump())
         {
             context.ReleaseLocationReferences();

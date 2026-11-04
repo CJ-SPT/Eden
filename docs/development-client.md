@@ -20,6 +20,12 @@ Use a shared EVE installation containing the sibling directories `tq` and `ResFi
 
 Preparation copies the client files and resources. It checks SHA-256 hashes for the executable, Blue library, script archive, and startup configuration. Repeat the command to resume an interrupted copy or refresh the staged files. The script marks the client ready after both copies and the final hash checks succeed.
 
+## Developer travel
+
+On a developer account, right-click a solar system in the map or a known NPC station/static celestial, then choose **GM / WM Extras → TR me here!**. Solar-system and celestial targets move your active ship into space with collision clearance; NPC station targets dock it directly. Cross-system space targets use an approximately three-second native jump transition for the camera/input handoff. A docked departure automatically undocks in the source system and waits for that ballpark to load before starting the jump. Wait for that transfer to finish before requesting another move. Same-system moves and station destinations are immediate. The active hull, fittings, cargo, wallet and saved medical home are retained.
+
+The native menu submits `/tr me <destination ID>` to the server. Other subjects, coordinate syntax, flags, player targets, player structures and other developer commands remain unsupported. Ordinary player accounts cannot use this route. No account-role changes are made by TR. See the [protocol notes](protocol.md#developer-translocation) for supported targets, automated coverage and the maintainer-reported camera/menu issue. Native recovery of those controls remains unverified after the revised handoff.
+
 ## Creating and recreating the databases
 
 From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, the pinned .NET SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.

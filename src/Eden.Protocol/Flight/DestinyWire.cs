@@ -136,4 +136,11 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments =>
             [Id, null, null, GateId, null, "effects.JumpOut", false, true, false, Duration, 0, null, 0, new object?[] { SystemId }];
     }
+
+    internal sealed record TranslocationOut(long Id, int SystemId, int Duration) : DestinyCommand("OnSpecialFX")
+    {
+        // JumpDriveOut accepts a None gate and preloads the destination from graphicInfo[0].
+        protected override object?[] Arguments =>
+            [Id, null, null, null, null, "effects.JumpDriveOut", false, true, false, Duration, 0, null, 0, new object?[] { SystemId }];
+    }
 }

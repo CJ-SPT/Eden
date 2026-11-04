@@ -99,19 +99,36 @@ internal sealed class FlightSession(
     // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
     private const int JumpDurationTicks = 10;
     private GateTransit? _jump;
+
+    // The pinned cyno camera has a one-second look phase. Keep the source scene
+    // alive for three ticks so its native camera/controller handoff can begin.
+    internal const int TranslocationDurationTicks = 3;
+
+    private sealed record TranslocationTransit(
+        IPilotTranslocation Travel,
+        TranslocationTarget Target,
+        IReadOnlyList<StaticSpaceObject> Objects,
+        int TransferStamp,
+        bool AwaitingSourceState = false
+    );
+
+    private TranslocationTransit? _translocation;
+    private bool _translocationArrival;
+    public bool Translocating => _translocation is not null;
     private bool _awaitingArrival;
     private int? _arrivalStamp;
     public DockedPilot Pilot { get; private set; } = pilot;
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
-    public bool CanTarget => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && _navigation.Warp is null;
+    public bool CanTarget =>
+        InBallpark && !_destroying && Pilot.Position is not null && _jump is null && !Translocating && _navigation.Warp is null;
 
     public bool InWarp => _navigation.Warp is not null;
     public bool MicrowarpdriveBlocked => _mwdBlocked;
 
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
     // the terminal hull transition still prevent local module activations.
-    public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null;
+    public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && !Translocating;
     public SpacePosition Velocity => _navigation.Velocity;
     public float BaseSpeed => _baseFlight.MaxSpeed;
 
@@ -970,7 +987,98 @@ internal sealed class FlightSession(
         }
         finally
         {
+            _translocation = null;
             LeaveSpace();
+        }
+    }
+
+    public void Relocate(DockedPilot destination, IReadOnlyList<StaticSpaceObject> destinationObjects)
+    {
+        lock (space.MotionLock)
+        {
+            bool sameSystem = Pilot.Position is not null && destination.Position is not null && Pilot.SystemId == destination.SystemId;
+            bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
+            LeaveSpace();
+            Updates.Clear();
+            Pilot = destination;
+            objects = destinationObjects;
+            _baseFlight = destination.Flight;
+            _navigation = new();
+            _simulatedStamp = Stamp;
+            _jump = null;
+            _translocation = null;
+            _translocationArrival = false;
+            _awaitingArrival = false;
+            _arrivalStamp = null;
+            if (wasWarping)
+            {
+                WarpEffect(Pilot.ShipId, false);
+            }
+            if (sameSystem)
+            {
+                // This is an actual teleport, so observers need absolute setters
+                // rather than predicting a course across the intervening distance.
+                Update(
+                    new DestinyCommand.SetBallPosition(
+                        Pilot.ShipId,
+                        destination.Position!.X,
+                        destination.Position.Y,
+                        destination.Position.Z
+                    )
+                );
+                Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0, 0, 0));
+                Update(new DestinyCommand.Stop(Pilot.ShipId));
+            }
+        }
+    }
+
+    public void StartTranslocation(
+        IPilotTranslocation travel,
+        TranslocationTarget target,
+        IReadOnlyList<StaticSpaceObject> destinationObjects
+    )
+    {
+        lock (space.MotionLock)
+        {
+            bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
+            _navigation = new();
+            _jump = null;
+            _arrivalStamp = null;
+            _awaitingArrival = false;
+            _simulatedStamp = Stamp;
+            _translocation = new(travel, target, destinationObjects, Stamp + TranslocationDurationTicks);
+            if (wasWarping)
+            {
+                WarpEffect(Pilot.ShipId, false);
+            }
+            Update(new DestinyCommand.Stop(Pilot.ShipId));
+            Update(new DestinyCommand.TranslocationOut(Pilot.ShipId, target.System.Id, TranslocationDurationTicks * 1000));
+            space.Publish(CreateContact());
+        }
+    }
+
+    public void QueueTranslocationAfterSourceState(
+        IPilotTranslocation travel,
+        TranslocationTarget target,
+        IReadOnlyList<StaticSpaceObject> destinationObjects
+    )
+    {
+        _translocation = new(travel, target, destinationObjects, int.MaxValue, AwaitingSourceState: true);
+    }
+
+    public PilotTranslocation? CompleteTranslocation()
+    {
+        lock (space.MotionLock)
+        {
+            if (_translocation is not { AwaitingSourceState: false } transit || Stamp < transit.TransferStamp)
+            {
+                return null;
+            }
+            var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target.Id);
+            Relocate(moved.Pilot, transit.Objects);
+            _awaitingArrival = true;
+            _translocationArrival = true;
+            return moved;
         }
     }
 
@@ -1019,7 +1127,21 @@ internal sealed class FlightSession(
         Snapshot(space.Peers(Pilot), contact);
         if (arriving)
         {
-            ArrivalEffect(Pilot.ShipId);
+            if (_translocationArrival)
+            {
+                Update(new DestinyCommand.SpecialEffect(Pilot.ShipId, null, null, null, null, "effects.JumpDriveIn", false, true, false));
+                _translocationArrival = false;
+            }
+            else
+            {
+                ArrivalEffect(Pilot.ShipId);
+            }
+        }
+        if (_translocation is { AwaitingSourceState: true } departure)
+        {
+            // A station-origin TR first loads a real source-space ego. Only then
+            // can the client's native jump camera take over from its undock camera.
+            StartTranslocation(departure.Travel, departure.Target, departure.Objects);
         }
     }
 
@@ -1112,6 +1234,7 @@ internal sealed class FlightSession(
         Checkpoint();
         if (
             !InBallpark
+            || Translocating
             || Pilot.Position is not { } position
             || _jump is not null
             || _navigation.Warp is not null
@@ -1223,6 +1346,10 @@ internal sealed class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
+        if (Translocating && command is not FlightCommand.RefreshState)
+        {
+            return new PilotCallResult.Failure("Wait for translocation to finish before navigating.");
+        }
         if (command is FlightCommand.Undock undock && Pilot.Position is null && undock.ShipId == Pilot.ShipId)
         {
             _simulatedStamp = Stamp;
