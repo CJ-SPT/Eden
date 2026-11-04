@@ -46,7 +46,7 @@ internal static class HullSupportAudit
             var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
             var effects = HullCatalog.Capabilities(catalog, type.Id).OrderBy(e => e.EffectId).ThenBy(e => e.Capability).ToArray();
             var deferred = effects.Where(e => !e.Operational).Select(e => e.Capability).ToHashSet();
-            deferred.UnionWith(HullBonusRules.DeferredRoles(type.Id));
+            deferred.UnionWith(HullBonusRules.DeferredRoles(type.Id, (HullClass)type.GroupId));
             if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)
             {
                 deferred.Add(HullCapability.CombatDrones);

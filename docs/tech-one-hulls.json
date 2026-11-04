@@ -1113,6 +1113,1155 @@
       "deferred": []
     },
     {
+      "typeId": 620,
+      "name": "Osprey",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 485,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1964,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 2133,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5121,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5126,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 621,
+      "name": "Caracal",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1024,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 2809,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5131,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 622,
+      "name": "Stabber",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 4,
+        "low": 4,
+        "turrets": 4,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 420,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 602,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5132,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 623,
+      "name": "Moa",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 4,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1812,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1813,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1814,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1815,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5133,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 624,
+      "name": "Maller",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 480,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 958,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 959,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 960,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 961,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5136,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 625,
+      "name": "Augoror",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 465,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2133,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5121,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5123,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5124,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare"
+      ]
+    },
+    {
+      "typeId": 626,
+      "name": "Vexor",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 480,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 562,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2179,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2188,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2250,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 627,
+      "name": "Thorax",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 5,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 465,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 562,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 919,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 628,
+      "name": "Arbitrator",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 345,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2181,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2189,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2249,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6395,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 629,
+      "name": "Rupture",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3706,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4472,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 630,
+      "name": "Bellicose",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 5,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 315,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3703,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5129,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7247,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 631,
+      "name": "Scythe",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 475,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 3172,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 3173,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5122,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5127,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6374,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 632,
+      "name": "Blackbird",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 6,
+        "low": 3,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 305,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1442,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 2756,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 4370,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 633,
+      "name": "Celestis",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 5,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 320,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3587,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3590,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5128,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 5187,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 634,
+      "name": "Exequror",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 6,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 495,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1969,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 3172,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 3173,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5125,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 6374,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair"
+      ]
+    },
+    {
+      "typeId": 638,
+      "name": "Raven",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 7,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 830,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 891,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 892,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1885,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1886,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5618,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 639,
+      "name": "Tempest",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 780,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 549,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 604,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 640,
+      "name": "Scorpion",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 8,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 690,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1434,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 1441,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 2812,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 4372,
+          "capability": "ElectronicWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "ElectronicWarfare",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 641,
+      "name": "Megathron",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 8,
+        "turrets": 7,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 845,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2503,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5424,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 642,
+      "name": "Apocalypse",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 7,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 845,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3677,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 11424,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12573,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 643,
+      "name": "Armageddon",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 7,
+        "turrets": 5,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 750,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5417,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5418,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5419,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5420,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6253,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6256,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6257,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6260,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 644,
+      "name": "Typhoon",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 780,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5429,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5430,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5620,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5621,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5622,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 645,
+      "name": "Dominix",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 5,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 750,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2186,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2187,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5427,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5428,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 672,
       "name": "Caldari Shuttle",
       "class": "Shuttle",
@@ -1131,6 +2280,39 @@
       "generalMiningHoldCapacity": 0,
       "effects": [],
       "deferred": []
+    },
+    {
+      "typeId": 2006,
+      "name": "Omen",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 516,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 907,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
     },
     {
       "typeId": 2078,
@@ -1209,6 +2391,112 @@
       ]
     },
     {
+      "typeId": 3756,
+      "name": "Gnosis",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 6,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 900,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1233,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5014,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5030,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5035,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5220,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5221,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5222,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5223,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5224,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5225,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5226,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5227,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5228,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 3766,
       "name": "Vigil",
       "class": "Frigate",
@@ -1240,6 +2528,233 @@
       "deferred": [
         "CombatDrones",
         "ElectronicWarfare"
+      ]
+    },
+    {
+      "typeId": 4302,
+      "name": "Oracle",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 3,
+        "low": 6,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33095
+      ],
+      "cargoCapacity": 500,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4820,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4823,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4826,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5354,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5355,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 4306,
+      "name": "Naga",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 3,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 575,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4821,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4824,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4827,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5356,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5357,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 4308,
+      "name": "Talos",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 5,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097
+      ],
+      "cargoCapacity": 600,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1387,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 4821,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4824,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4827,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5358,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5359,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 4310,
+      "name": "Tornado",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 4,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33098
+      ],
+      "cargoCapacity": 535,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4822,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4825,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5360,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5361,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 11011,
+      "name": "Guardian-Vexor",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 5,
+        "turrets": 5,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 480,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 562,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 918,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
       ]
     },
     {
@@ -1301,6 +2816,104 @@
       "generalMiningHoldCapacity": 0,
       "effects": [],
       "deferred": []
+    },
+    {
+      "typeId": 11936,
+      "name": "Apocalypse Imperial Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 8,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 675,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 542,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 736,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 11938,
+      "name": "Armageddon Imperial Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 8,
+        "turrets": 7,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 600,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 542,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 887,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 11940,
@@ -1413,6 +3026,260 @@
         }
       ],
       "deferred": []
+    },
+    {
+      "typeId": 13202,
+      "name": "Megathron Federate Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 8,
+        "turrets": 8,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 675,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 550,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2503,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 16227,
+      "name": "Ferox",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 6,
+        "low": 4,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 475,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5334,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6173,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6177,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 16229,
+      "name": "Brutix",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097
+      ],
+      "cargoCapacity": 475,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5341,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5342,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 6173,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 16231,
+      "name": "Cyclone",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        33098
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5349,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5350,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5351,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 6175,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 16233,
+      "name": "Prophecy",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 7,
+        "turrets": 4,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        33095
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5322,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5323,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5324,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5325,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5326,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5331,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6176,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 16236,
@@ -1605,6 +3472,103 @@
       "deferred": []
     },
     {
+      "typeId": 17634,
+      "name": "Caracal Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 6,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5131,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5387,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5388,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17636,
+      "name": "Raven Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 7,
+        "low": 5,
+        "turrets": 0,
+        "launchers": 8
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 800,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 891,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 892,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5444,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5445,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 17703,
       "name": "Imperial Navy Slicer",
       "class": "Frigate",
@@ -1634,6 +3598,610 @@
         }
       ],
       "deferred": []
+    },
+    {
+      "typeId": 17709,
+      "name": "Omen Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 7,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5136,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5382,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17713,
+      "name": "Stabber Fleet Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 602,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3706,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12213,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17715,
+      "name": "Gila",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 6,
+        "low": 3,
+        "turrets": 0,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3332,
+        3334
+      ],
+      "cargoCapacity": 440,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1812,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1813,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1814,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 1815,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5821,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5825,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5826,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7184,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 7185,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 7186,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17718,
+      "name": "Phantasm",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 6,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3334,
+        3335
+      ],
+      "cargoCapacity": 410,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3484,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5820,
+          "capability": "Propulsion",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17720,
+      "name": "Cynabal",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332,
+        3333
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 968,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1232,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4512,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17722,
+      "name": "Vigilant",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332,
+        3333
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1233,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4510,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 4516,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17726,
+      "name": "Apocalypse Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 8,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 790,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3677,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 11424,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12573,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17728,
+      "name": "Megathron Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 8,
+        "turrets": 7,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 840,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2503,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5424,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 12579,
+          "capability": "ArmorPlates",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17732,
+      "name": "Tempest Fleet Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 815,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 549,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 604,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17736,
+      "name": "Nightmare",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 7,
+        "low": 6,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3338,
+        3339
+      ],
+      "cargoCapacity": 830,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3478,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3480,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5802,
+          "capability": "Propulsion",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17738,
+      "name": "Machariel",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 6,
+        "turrets": 7,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336,
+        3337
+      ],
+      "cargoCapacity": 860,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 549,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1239,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4484,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17740,
+      "name": "Vindicator",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 7,
+        "turrets": 8,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336,
+        3337
+      ],
+      "cargoCapacity": 850,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 553,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1240,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4485,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 17812,
@@ -1702,6 +4270,305 @@
       ],
       "deferred": [
         "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17843,
+      "name": "Vexor Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 6,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 460,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 562,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2179,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2188,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5958,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7230,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 7231,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 17918,
+      "name": "Rattlesnake",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 7,
+        "low": 6,
+        "turrets": 0,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3336,
+        3338
+      ],
+      "cargoCapacity": 815,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2602,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2603,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2604,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2605,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5803,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5804,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5805,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5806,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5807,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5808,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5809,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5810,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5811,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5812,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17920,
+      "name": "Bhaalgorn",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 7,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3337,
+        3339
+      ],
+      "cargoCapacity": 845,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1219,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 1221,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3297,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3478,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5854,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 17922,
+      "name": "Ashimmu",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 6,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3333,
+        3335
+      ],
+      "cargoCapacity": 430,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1220,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 1222,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 3298,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5854,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6299,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6305,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12739,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12740,
+          "capability": "EnergyWarfare",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare"
       ]
     },
     {
@@ -2017,6 +4884,530 @@
       "deferred": []
     },
     {
+      "typeId": 24688,
+      "name": "Rokh",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 7,
+        "low": 4,
+        "turrets": 8,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 820,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1412,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2602,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2603,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2604,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2605,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24690,
+      "name": "Hyperion",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 845,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 550,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5367,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24692,
+      "name": "Abaddon",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 7,
+        "turrets": 8,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 740,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2465,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2805,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24694,
+      "name": "Maelstrom",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 7,
+        "low": 5,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 790,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4950,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 8106,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24696,
+      "name": "Harbinger",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33095
+      ],
+      "cargoCapacity": 375,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5332,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5333,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6172,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24698,
+      "name": "Drake",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 6,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5335,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5336,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5337,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5338,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5339,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5340,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6175,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24700,
+      "name": "Myrmidon",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5342,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 5343,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5348,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6176,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 24702,
+      "name": "Hurricane",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        33098
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5352,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5353,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6174,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 26840,
+      "name": "Raven State Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 6,
+        "turrets": 2,
+        "launchers": 8
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 665,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 891,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 892,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1885,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1886,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 26842,
+      "name": "Tempest Tribal Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 7,
+        "turrets": 8,
+        "launchers": 2
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 600,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 549,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 604,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 29248,
       "name": "Magnate",
       "class": "Frigate",
@@ -2078,6 +5469,173 @@
       "deferred": []
     },
     {
+      "typeId": 29336,
+      "name": "Scythe Fleet Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 4
+      },
+      "requiredSkills": [
+        3333
+      ],
+      "cargoCapacity": 440,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 602,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6088,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6093,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6096,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 29337,
+      "name": "Augoror Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 3,
+        "low": 7,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3335
+      ],
+      "cargoCapacity": 480,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 909,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5136,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 29340,
+      "name": "Osprey Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 6,
+        "low": 4,
+        "turrets": 2,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        3334
+      ],
+      "cargoCapacity": 460,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1024,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 2809,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5383,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5384,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5385,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6351,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 29344,
+      "name": "Exequror Navy Issue",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 6,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332
+      ],
+      "cargoCapacity": 465,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 562,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11416,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11417,
+          "capability": "ArmorPlates",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
       "typeId": 30842,
       "name": "InterBus Shuttle",
       "class": "Shuttle",
@@ -2096,6 +5654,353 @@
       "generalMiningHoldCapacity": 0,
       "effects": [],
       "deferred": []
+    },
+    {
+      "typeId": 32305,
+      "name": "Armageddon Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 7,
+        "turrets": 5,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3339
+      ],
+      "cargoCapacity": 875,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 6253,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6256,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6257,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 6260,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 11421,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11422,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11423,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11424,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11425,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11426,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "EnergyWarfare",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 32307,
+      "name": "Dominix Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 6,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336
+      ],
+      "cargoCapacity": 845,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 550,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 2186,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2187,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 11419,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11420,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 32309,
+      "name": "Scorpion Navy Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 8,
+        "low": 5,
+        "turrets": 4,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3338
+      ],
+      "cargoCapacity": 815,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2602,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2603,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2604,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 2605,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5456,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5457,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5619,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 32311,
+      "name": "Typhoon Fleet Issue",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3337
+      ],
+      "cargoCapacity": 750,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 604,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5628,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5629,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5630,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5631,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5632,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5633,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5634,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5635,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5636,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5637,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5638,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5639,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        },
+        {
+          "effectId": 11428,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11429,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11430,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 32872,
@@ -2509,6 +6414,297 @@
       "deferred": []
     },
     {
+      "typeId": 33151,
+      "name": "Brutix Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 4,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097
+      ],
+      "cargoCapacity": 475,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5341,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5380,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6173,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 33153,
+      "name": "Drake Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 7
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5378,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5379,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6175,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 7031,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7032,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7033,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7034,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7035,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7036,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7037,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 7038,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 33155,
+      "name": "Harbinger Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33095
+      ],
+      "cargoCapacity": 375,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5333,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5381,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6172,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 12296,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 33157,
+      "name": "Hurricane Fleet Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 4,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        33098
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5352,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6174,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6178,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 33395,
+      "name": "Moracha",
+      "class": "ForceRecon",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 6,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        3332,
+        3333,
+        22761
+      ],
+      "cargoCapacity": 320,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 968,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1232,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 1921,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 4512,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5259,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Cloaking"
+      ]
+    },
+    {
       "typeId": 33397,
       "name": "Chremoas",
       "class": "CovertOps",
@@ -2664,6 +6860,157 @@
       ]
     },
     {
+      "typeId": 33470,
+      "name": "Stratios",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332,
+        3335
+      ],
+      "cargoCapacity": 550,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2179,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2188,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4640,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 5721,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Cloaking",
+        "Hacking"
+      ]
+    },
+    {
+      "typeId": 33472,
+      "name": "Nestor",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 6,
+        "low": 6,
+        "turrets": 5,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3336,
+        3339
+      ],
+      "cargoCapacity": 875,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2186,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2187,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2465,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 5725,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 5726,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5737,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5738,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "RemoteRepair",
+        "Hacking",
+        "ShipMaintenance",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 33513,
       "name": "Leopard",
       "class": "Shuttle",
@@ -2688,6 +7035,73 @@
         }
       ],
       "deferred": []
+    },
+    {
+      "typeId": 33553,
+      "name": "Stratios Emergency Responder",
+      "class": "Cruiser",
+      "acquisition": "recovery-or-developer-fixture",
+      "fitting": {
+        "high": 5,
+        "medium": 5,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3332,
+        3335
+      ],
+      "cargoCapacity": 550,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2179,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2188,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4640,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 5460,
+          "capability": "Hacking",
+          "operational": false
+        },
+        {
+          "effectId": 5721,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "Cloaking",
+        "Hacking"
+      ]
     },
     {
       "typeId": 33816,
@@ -2745,6 +7159,140 @@
         }
       ],
       "deferred": []
+    },
+    {
+      "typeId": 33818,
+      "name": "Orthrus",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 5,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3332,
+        3334
+      ],
+      "cargoCapacity": 380,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 899,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1230,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 4626,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 5383,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5384,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5385,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5867,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones"
+      ]
+    },
+    {
+      "typeId": 33820,
+      "name": "Barghest",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 6,
+        "low": 6,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3336,
+        3338
+      ],
+      "cargoCapacity": 830,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 1230,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5862,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5863,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5864,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5865,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5866,
+          "capability": "Tackle",
+          "operational": true
+        },
+        {
+          "effectId": 5867,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 34496,
@@ -2834,6 +7382,76 @@
       ],
       "deferred": [
         "Entosis",
+        "Interdiction"
+      ]
+    },
+    {
+      "typeId": 35781,
+      "name": "Fiend",
+      "class": "HeavyInterdictionCruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 7,
+        "low": 5,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        3334,
+        3335,
+        28609
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 3468,
+          "capability": "Interdiction",
+          "operational": false
+        },
+        {
+          "effectId": 3483,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 3484,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5008,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5009,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5011,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5012,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5820,
+          "capability": "Propulsion",
+          "operational": true
+        },
+        {
+          "effectId": 6166,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": [
         "Interdiction"
       ]
     },
@@ -3142,6 +7760,191 @@
       ]
     },
     {
+      "typeId": 47270,
+      "name": "Vedmak",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 6,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        47868
+      ],
+      "cargoCapacity": 533,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7085,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7092,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7094,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7112,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8074,
+          "capability": "Disintegrators",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs",
+        "Disintegrators"
+      ]
+    },
+    {
+      "typeId": 47271,
+      "name": "Leshak",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 5,
+        "medium": 4,
+        "low": 8,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        47869
+      ],
+      "cargoCapacity": 933,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7079,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7080,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7092,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7094,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7112,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs",
+        "Disintegrators",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 47466,
+      "name": "Praxis",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 7,
+        "low": 7,
+        "turrets": 6,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        3327
+      ],
+      "cargoCapacity": 1200,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5014,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5030,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5035,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5229,
+          "capability": "Probes",
+          "operational": false
+        },
+        {
+          "effectId": 7055,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 7055,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Probes",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 49710,
       "name": "Kikimora",
       "class": "Destroyer",
@@ -3203,6 +8006,146 @@
       ]
     },
     {
+      "typeId": 49711,
+      "name": "Drekavac",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 4,
+        "medium": 4,
+        "low": 7,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        49743
+      ],
+      "cargoCapacity": 650,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 7092,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7094,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7112,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7155,
+          "capability": "Disintegrators",
+          "operational": false
+        },
+        {
+          "effectId": 7158,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7159,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7160,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7161,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 7162,
+          "capability": "Disintegrators",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs",
+        "Disintegrators",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 49712,
+      "name": "Rodiva",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 3,
+        "medium": 4,
+        "low": 6,
+        "turrets": 3,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        47868
+      ],
+      "cargoCapacity": 435,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 7091,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7093,
+          "capability": "Smartbombs",
+          "operational": false
+        },
+        {
+          "effectId": 7167,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 7168,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7169,
+          "capability": "RemoteRepair",
+          "operational": false
+        },
+        {
+          "effectId": 7170,
+          "capability": "RemoteRepair",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "RemoteRepair",
+        "EnergyWarfare",
+        "Smartbombs"
+      ]
+    },
+    {
       "typeId": 54731,
       "name": "Skybreaker",
       "class": "Frigate",
@@ -3233,6 +8176,185 @@
       ],
       "deferred": [
         "VortonProjectors"
+      ]
+    },
+    {
+      "typeId": 54732,
+      "name": "Stormbringer",
+      "class": "Cruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 6,
+        "low": 3,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        55032
+      ],
+      "cargoCapacity": 473,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 8052,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 8053,
+          "capability": "VortonProjectors",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "VortonProjectors"
+      ]
+    },
+    {
+      "typeId": 54733,
+      "name": "Thunderchild",
+      "class": "Battleship",
+      "acquisition": "market",
+      "fitting": {
+        "high": 2,
+        "medium": 7,
+        "low": 5,
+        "turrets": 1,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        54794
+      ],
+      "cargoCapacity": 861,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 8054,
+          "capability": "VortonProjectors",
+          "operational": false
+        },
+        {
+          "effectId": 8056,
+          "capability": "VortonProjectors",
+          "operational": false
+        },
+        {
+          "effectId": 8377,
+          "capability": "ArmorPlates",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ShieldExtenders",
+          "operational": true
+        },
+        {
+          "effectId": 8377,
+          "capability": "ReinforcedBulkheads",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "VortonProjectors",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 60764,
+      "name": "Laelaps",
+      "class": "HeavyInterdictionCruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 5
+      },
+      "requiredSkills": [
+        3332,
+        3334,
+        28609
+      ],
+      "cargoCapacity": 420,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 899,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 912,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 1230,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 3468,
+          "capability": "Interdiction",
+          "operational": false
+        },
+        {
+          "effectId": 5008,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5009,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5011,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5012,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 5383,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5384,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5385,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5867,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8360,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 8362,
+          "capability": "Interdiction",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Interdiction"
       ]
     },
     {
@@ -3334,6 +8456,256 @@
       "generalMiningHoldCapacity": 0,
       "effects": [],
       "deferred": []
+    },
+    {
+      "typeId": 72811,
+      "name": "Cyclone Fleet Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 5,
+        "low": 5,
+        "turrets": 2,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        33098
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5349,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 5350,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6175,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 11055,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11056,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11358,
+          "capability": "HullAttributes",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 72812,
+      "name": "Ferox Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 7,
+        "low": 4,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 475,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 6173,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6177,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 11057,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        },
+        {
+          "effectId": 11059,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11359,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 72869,
+      "name": "Myrmidon Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 5,
+        "low": 6,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097
+      ],
+      "cargoCapacity": 560,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5341,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5342,
+          "capability": "LocalArmorRepair",
+          "operational": true
+        },
+        {
+          "effectId": 5343,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5348,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6176,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 11060,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11061,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12565,
+          "capability": "CombatDrones",
+          "operational": false
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 72872,
+      "name": "Prophecy Navy Issue",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 4,
+        "low": 7,
+        "turrets": 5,
+        "launchers": 1
+      },
+      "requiredSkills": [
+        33095
+      ],
+      "cargoCapacity": 400,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5326,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 5331,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6176,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 11063,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11064,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11065,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11067,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
     },
     {
       "typeId": 72903,
@@ -3857,6 +9229,102 @@
       "deferred": []
     },
     {
+      "typeId": 78366,
+      "name": "Alligator",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 6,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 6
+      },
+      "requiredSkills": [
+        33096,
+        33097
+      ],
+      "cargoCapacity": 450,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5821,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6176,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 7184,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 7185,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 7186,
+          "capability": "CombatDrones",
+          "operational": false
+        },
+        {
+          "effectId": 11745,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11746,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11747,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11748,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11750,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11751,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11752,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 11753,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 78367,
       "name": "Mamba",
       "class": "Destroyer",
@@ -3936,6 +9404,140 @@
       ]
     },
     {
+      "typeId": 78369,
+      "name": "Khizriel",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 7,
+        "medium": 5,
+        "low": 6,
+        "turrets": 6,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33097,
+        33098
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 5352,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6174,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 7117,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 11763,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 11764,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12887,
+          "capability": "Turrets",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "CommandBursts",
+        "MicroJumpDrives"
+      ]
+    },
+    {
+      "typeId": 85086,
+      "name": "Cenotaph",
+      "class": "CombatBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 7,
+        "low": 2,
+        "turrets": 3,
+        "launchers": 3
+      },
+      "requiredSkills": [
+        33096,
+        33098
+      ],
+      "cargoCapacity": 425,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 2252,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 5647,
+          "capability": "Cloaking",
+          "operational": false
+        },
+        {
+          "effectId": 6174,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 6175,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 6783,
+          "capability": "CommandBursts",
+          "operational": false
+        },
+        {
+          "effectId": 12189,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12191,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12193,
+          "capability": "HullAttributes",
+          "operational": true
+        },
+        {
+          "effectId": 12195,
+          "capability": "LocalShieldBoost",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "CombatDrones",
+        "Cloaking",
+        "CommandBursts",
+        "BreacherPods",
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 85087,
       "name": "Tholos",
       "class": "Destroyer",
@@ -3987,7 +9589,8 @@
       ],
       "deferred": [
         "CombatDrones",
-        "Cloaking"
+        "Cloaking",
+        "BreacherPods"
       ]
     },
     {
@@ -4169,6 +9772,49 @@
       ]
     },
     {
+      "typeId": 89807,
+      "name": "Anhinga",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 8,
+        "medium": 7,
+        "low": 4,
+        "turrets": 0,
+        "launchers": 8
+      },
+      "requiredSkills": [
+        33096
+      ],
+      "cargoCapacity": 800,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 12758,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12764,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12766,
+          "capability": "Missiles",
+          "operational": true
+        },
+        {
+          "effectId": 12790,
+          "capability": "Missiles",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "MicroJumpDrives"
+      ]
+    },
+    {
       "typeId": 91174,
       "name": "Perseverance",
       "class": "Destroyer",
@@ -4321,11 +9967,6 @@
           "operational": false
         },
         {
-          "effectId": 12810,
-          "capability": "Interdiction",
-          "operational": false
-        },
-        {
           "effectId": 12843,
           "capability": "Turrets",
           "operational": true
@@ -4337,8 +9978,7 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "Interdiction"
+        "CombatDrones"
       ]
     },
     {
@@ -4432,6 +10072,76 @@
         }
       ],
       "deferred": []
+    },
+    {
+      "typeId": 95741,
+      "name": "Akoman",
+      "class": "AttackBattlecruiser",
+      "acquisition": "market",
+      "fitting": {
+        "high": 6,
+        "medium": 4,
+        "low": 7,
+        "turrets": 4,
+        "launchers": 0
+      },
+      "requiredSkills": [
+        33095,
+        33098
+      ],
+      "cargoCapacity": 500,
+      "generalMiningHoldCapacity": 0,
+      "effects": [
+        {
+          "effectId": 4820,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4823,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 4826,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 5854,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12949,
+          "capability": "Turrets",
+          "operational": true
+        },
+        {
+          "effectId": 12950,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12951,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12952,
+          "capability": "EnergyWarfare",
+          "operational": false
+        },
+        {
+          "effectId": 12953,
+          "capability": "Tackle",
+          "operational": true
+        }
+      ],
+      "deferred": [
+        "EnergyWarfare",
+        "MicroJumpDrives"
+      ]
     }
   ]
 }

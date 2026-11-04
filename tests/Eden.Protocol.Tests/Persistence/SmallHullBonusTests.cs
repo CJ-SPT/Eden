@@ -21,7 +21,12 @@ public sealed class SmallHullBonusTests
     public void EveryOperationalBonusChangesItsCatalogTargetByItsEarnedSkillAndRoleAmount(int type)
     {
         using Fixture f = new();
-        PassiveCatalogFixture.LoadSmallHulls(f.CatalogPath);
+        PassiveCatalogFixture.LoadSmallHull(f.CatalogPath, type);
+        VerifyBonuses(f, type);
+    }
+
+    internal static void VerifyBonuses(Fixture f, int type)
+    {
         long ship = SmallHullTests.Board(f, type);
         IReadOnlyList<PassiveModifier> modifiers;
         Dictionary<DogmaAttributeId, double> sources;
@@ -94,6 +99,17 @@ public sealed class SmallHullBonusTests
                         _ => throw new InvalidDataException("Unexpected operational hull operator."),
                     };
                 }
+                // Native dogma exposes fitting CPU/grid with two decimals.
+                if (
+                    group.Key
+                    is DogmaAttributeId.Cpu
+                        or DogmaAttributeId.Power
+                        or DogmaAttributeId.CpuOutput
+                        or DogmaAttributeId.PowerOutput
+                )
+                {
+                    expected = Math.Round(expected, 2);
+                }
                 Assert.True(
                     Math.Abs(expected - enhanced.GetValueOrDefault(group.Key)) <= Math.Max(1, Math.Abs(expected)) * 1e-9,
                     $"Hull {type}, module {probe.ModuleType}, charge {probe.ChargeType}, {group.Key}: "
@@ -143,15 +159,29 @@ public sealed class SmallHullBonusTests
         modifier.Selector switch
         {
             ModifierSelector.Item => new(0),
-            ModifierSelector.OwnerRequiredSkill => modifier.SelectionId == (int)MissileSkill.LightMissiles
-                ? new(499, 210)
-                : new(10629, 266),
+            ModifierSelector.OwnerRequiredSkill => (MissileSkill?)modifier.SelectionId switch
+            {
+                MissileSkill.MissileLauncherOperation or MissileSkill.LightMissiles => new(499, 210),
+                MissileSkill.HeavyMissiles => new(501, 209),
+                MissileSkill.HeavyAssaultMissiles => new(20138, 20307),
+                MissileSkill.Torpedoes => new(503, 267),
+                MissileSkill.CruiseMissiles => new(13320, 203),
+                _ => new(10629, 266),
+            },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)modifier.SelectionId switch
             {
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
                 HullBonusEquipmentGroup.WarpScrambler => new(447),
                 HullBonusEquipmentGroup.StasisWeb => new(527),
                 HullBonusEquipmentGroup.ArmorPlate => new(11293),
+                HullBonusEquipmentGroup.ShieldExtender => new(377),
+                HullBonusEquipmentGroup.ReinforcedBulkhead => new(1333),
+                HullBonusEquipmentGroup.CruiseMissileLauncher => new(13320),
+                HullBonusEquipmentGroup.TorpedoLauncher => new(503),
+                HullBonusEquipmentGroup.HeavyMissileLauncher => new(501),
+                HullBonusEquipmentGroup.RapidLightMissileLauncher => new(1875),
+                HullBonusEquipmentGroup.HeavyAssaultMissileLauncher => new(20138),
+                HullBonusEquipmentGroup.RapidHeavyMissileLauncher => new(33448),
                 _ => throw new InvalidDataException($"No operational group probe for {modifier.SelectionId}."),
             },
             ModifierSelector.RequiredSkill => (HullBonusSkill?)modifier.SelectionId switch
@@ -159,6 +189,12 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.SmallHybridTurret => new(561),
                 HullBonusSkill.SmallProjectileTurret => new(484),
                 HullBonusSkill.SmallEnergyTurret => new(450),
+                HullBonusSkill.MediumHybridTurret => new(567),
+                HullBonusSkill.MediumProjectileTurret => new(490),
+                HullBonusSkill.MediumEnergyTurret => new(456),
+                HullBonusSkill.LargeHybridTurret => new(572),
+                HullBonusSkill.LargeProjectileTurret => new(494),
+                HullBonusSkill.LargeEnergyTurret => new(460),
                 HullBonusSkill.MissileLauncherOperation => new(499),
                 HullBonusSkill.Mining => new(482),
                 HullBonusSkill.RepairSystems => new(523),

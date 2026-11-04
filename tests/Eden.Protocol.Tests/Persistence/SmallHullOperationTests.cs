@@ -189,7 +189,7 @@ public sealed class SmallHullOperationTests
     private static Fixture Prepare(int type)
     {
         Fixture f = new();
-        PassiveCatalogFixture.LoadSmallHulls(f.CatalogPath);
+        PassiveCatalogFixture.LoadSmallHull(f.CatalogPath, type);
         SmallHullTests.Board(f, type);
         return f;
     }

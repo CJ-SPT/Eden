@@ -33,11 +33,17 @@ def export(catalog_path, output_directory, cohort="frigates"):
 
         # Four hulls, their test fits and medium weapons to verify size selectors.
         pending = {587, 594, 597, 603, 561, 484, 450, 1183, 215, 179, 246, 456, 490, 570}
-        if cohort == "small":
+        if cohort in ("small", "combat"):
             small_groups = {25, 31, 237, 420, 830, 831, 893, 1022}
-            pending.update(hull["id"] for hull in hulls if hull["groupId"] in small_groups)
+            combat_groups = {26, 27, 419, 833, 894, 1201}
+            groups = small_groups if cohort == "small" else combat_groups
+            pending.update(hull["id"] for hull in hulls if hull["groupId"] in groups)
             # Launchers, propulsion, tackle, plates, mining and local shield boosts.
             pending.update({499, 10629, 266, 210, 434, 439, 527, 3242, 447, 11293, 482, 399, 523})
+        if cohort == "combat":
+            # Real medium/large weapons, ammunition, tank and fitting-role probes.
+            pending.update({567, 572, 494, 460, 377, 1333, 501, 1875, 20138, 503, 13320, 33448})
+            pending.update({209, 20307, 267, 203, 223, 231, 187, 195, 254, 262, 3839, 11279, 3528, 3538, 10838})
         types = []
         records = {}
         attributes = set()
@@ -82,7 +88,7 @@ def export(catalog_path, output_directory, cohort="frigates"):
         output_directory.mkdir(parents=True, exist_ok=True)
         outputs = {
             "TechOneHulls.json": {"build": 3662168, "hulls": hulls},
-            ("SmallHullCatalog.json" if cohort == "small" else "FrigateHullCatalog.json"): {
+            {"small": "SmallHullCatalog.json", "combat": "CombatHullCatalog.json"}.get(cohort, "FrigateHullCatalog.json"): {
                 "build": 3662168, "types": sorted(types, key=lambda t: t["id"]),
                 "records": [{"dataset": d, "key": k, "data": v} for (d, k), v in sorted(records.items())],
             },
@@ -96,6 +102,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
-    parser.add_argument("--cohort", choices=("frigates", "small"), default="frigates")
+    parser.add_argument("--cohort", choices=("frigates", "small", "combat"), default="frigates")
     options = parser.parse_args()
     export(options.catalog, options.output, options.cohort)

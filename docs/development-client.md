@@ -554,3 +554,18 @@ dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage "$env:
 For native acceptance, select Eden Pilot and verify the active hull in Inventory after each boarding. Exercise a no-rack shuttle, Zephyr's one-high/no-hardpoint layout, Echelon's one-medium layout, a destroyer and representative supported hull bonuses. Use legal CPU, power, slots and hardpoints. Compare fitted attributes with the operation that uses them: Leopard warp speed, Succubus afterburner speed, Daredevil web strength, projectile reload, missile flight/damage, Venture Consortium Issue's mining hold/yield/shield boost, Fleet Thrasher's MWD and Navy Catalyst's armor-plate mass. Keep each previously flown hull's inventory separate and reconnect to check persistence. Use the station's Board my Corvette recovery control as a regression.
 
 The verified run flew eleven additional small hull types, recovered the racial Ibis and restarted the copied host/client with Consortium active. Inventory retained 2,573 Veldspar in its 6,250 m³ Mining Hold and Fitting retained its miner and shield booster. The [protocol record](protocol.md#tech-i-hull-expansion-milestone-2) separates the native observations from automated-only hulls and role gaps. Full repository checks run separately from the interactive game session.
+
+## Cruiser, battlecruiser and battleship acceptance
+
+Use the same copied-world procedure and the 101-type combat cohort. Reproduce the definitions with:
+
+```powershell
+python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures --cohort combat
+dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage "$env:LOCALAPPDATA/Eden/catalog.sqlite" docs/tech-one-hulls.json
+```
+
+Select Eden Pilot. Board representative cruiser, battlecruiser and battleship hulls and verify each active name in Inventory. Use actual fitting resources: medium guns on a cruiser, reduced-cost large guns on an attack battlecruiser and appropriately sized launchers. Check the fitted values against paid firing/reloads and actual flight. On a battleship, inspect the extender, plate and bulkhead role values and resulting defenses. Dock and change ships, then restart to verify cargo, modules, magazines and names.
+
+For incoming web resistance, use two local Omega test accounts in the same copied world; the stock client blocks Alpha aggression between these pilots. Fit a web on Eden Wing's ship, undock both pilots and lock Eden Pilot's Cenotaph. Compare its displayed maximum and actual movement before, during and after the paid web. Keep both accounts and inventories separate. The [milestone 3 record](protocol.md#tech-i-hull-expansion-milestone-3) records verification status and identifies deferred role systems.
+
+The verified run flew Moa, Caracal, Oracle, Raven, Anhinga and Cenotaph, docked each, switched back to the original Ibis and restarted with Raven active. Inventory retained 480 Scourge Cruise, and Fitting retained all four modules, its defenses and the 17-round loaded magazine. All 24 copied-world ships and 89 inventory items matched the pre-restart snapshot; the normal world remained unchanged. The other 95 combat hulls have automated coverage only. Full repository checks passed separately from the interactive run.

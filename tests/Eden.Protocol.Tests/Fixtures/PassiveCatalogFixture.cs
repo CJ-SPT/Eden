@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using Eden.Gameplay.Inventory;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,8 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal static class PassiveCatalogFixture
 {
+    private const int OriginalIbisType = 601;
+
     private sealed record AttributeValue(int Id, double Value);
 
     private sealed record TypeDefinition(
@@ -34,6 +37,12 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadSmallHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "SmallHullCatalog.json", types);
 
+    internal static void LoadSmallHull(string path, int type) => Load(path, "SmallHullCatalog.json", null, hullType: type);
+
+    internal static void LoadCombatHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "CombatHullCatalog.json", types);
+
+    internal static void LoadCombatHull(string path, int type) => Load(path, "CombatHullCatalog.json", null, hullType: type);
+
     internal static void LoadTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "PassiveTierCatalog.json", types);
 
     internal static void LoadActiveTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "ActiveTierCatalog.json", types);
@@ -58,11 +67,20 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadTackleTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "TackleTierCatalog.json", types);
 
-    private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true)
+    private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true, int? hullType = null)
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Eden.Protocol.Tests.Fixtures.{resource}")!;
         var data = JsonSerializer.Deserialize<Fixture>(stream, JsonSerializerOptions.Web)!;
         Assert.Equal(3662168, data.Build);
+        if (hullType is int hull)
+        {
+            // Each lifecycle/bonus case needs its hull, the original Ibis and
+            // all fixture equipment/skills. Cohort audits still load every hull.
+            types = data
+                .Types.Where(t => t.CategoryId != (int)InventoryCategory.Ship || t.Id == hull || t.Id == OriginalIbisType)
+                .Select(t => t.Id)
+                .ToHashSet();
+        }
         using CatalogDbContext catalog = new(path, writable: true);
         using var transaction = catalog.Database.BeginTransaction();
         foreach (var type in data.Types.Where(type => definitions && (types is null || types.Contains(type.Id))))

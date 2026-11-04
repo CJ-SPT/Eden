@@ -52,7 +52,7 @@ public sealed class SmallHullTests
     {
         TrainCatalog(f);
         var fleet = f.Db.Services.GetRequiredService<IPilotFleet>();
-        long ship = Assert.Single(fleet.Assemble(f.PilotId, [f.Grant(type)], "Small hull acceptance").ShipIds);
+        long ship = Assert.Single(fleet.Assemble(f.PilotId, [f.Grant(type)], "Hull acceptance").ShipIds);
         fleet.Board(f.PilotId, ship, f.ShipId);
         return ship;
     }
@@ -76,6 +76,10 @@ public sealed class SmallHullTests
         Assert.Contains(report.Hulls, hull => hull.TypeId == 594 && hull.Deferred.Contains(HullCapability.CombatDrones));
         Assert.Contains(report.Hulls, hull => hull.TypeId == 2078 && hull.Deferred.Contains(HullCapability.Probes));
         Assert.Contains(report.Hulls, hull => hull.TypeId == 3532 && hull.Deferred.Contains(HullCapability.Hacking));
+        Assert.Contains(
+            report.Hulls,
+            hull => hull.TypeId == (int)TechOneHullType.Tholos && hull.Deferred.Contains(HullCapability.BreacherPods)
+        );
     }
 
     [Theory]
@@ -83,7 +87,12 @@ public sealed class SmallHullTests
     public void PurchasedHullRetainsItsIdentityFittingCargoHealthAndFlightAfterRestart(int type)
     {
         using Fixture f = new();
-        PassiveCatalogFixture.LoadSmallHulls(f.CatalogPath);
+        PassiveCatalogFixture.LoadSmallHull(f.CatalogPath, type);
+        VerifyLifecycle(f, type);
+    }
+
+    internal static void VerifyLifecycle(Fixture f, int type, bool developerFixture = false)
+    {
         using (CatalogDbContext setup = new(f.CatalogPath, writable: true))
         {
             setup.Database.ExecuteSqlRaw(
@@ -98,13 +107,22 @@ public sealed class SmallHullTests
         long original = f.ShipId;
         var fleet = f.Db.Services.GetRequiredService<IPilotFleet>();
         var market = f.Db.Services.GetRequiredService<IPilotMarket>();
-        var bought = market.Buy(f.PilotId, checked((int)f.StationId), [new(type, 100, 2)]);
-        Assert.Equal(9800, bought.BalanceCents);
-        long stack = Assert.Single(bought.Changes).Item.Id;
+        long stack;
+        if (developerFixture)
+        {
+            Assert.DoesNotContain(market.Orders(f.PilotId, type), order => order.TypeId == type);
+            stack = f.Grant(type, 2);
+        }
+        else
+        {
+            var bought = market.Buy(f.PilotId, checked((int)f.StationId), [new(type, 100, 2)]);
+            Assert.Equal(9800, bought.BalanceCents);
+            stack = Assert.Single(bought.Changes).Item.Id;
+        }
         Assert.Throws<InvalidDataException>(() => fleet.Assemble(f.PilotId, [stack, stack], null));
         Assert.Throws<InvalidDataException>(() => fleet.Assemble(f.PilotId, [stack, long.MaxValue], null));
         Assert.Throws<InvalidDataException>(() => fleet.Assemble(90000002, [stack], null));
-        long ship = Assert.Single(fleet.Assemble(f.PilotId, [stack], "Small hull acceptance").ShipIds);
+        long ship = Assert.Single(fleet.Assemble(f.PilotId, [stack], "Hull acceptance").ShipIds);
         Assert.NotEqual(stack, ship);
         Assert.Empty(fleet.Assemble(f.PilotId, [ship], "Repeated request").Changes);
         Assert.Throws<InvalidDataException>(() => fleet.Board(90000002, ship, f.Db.Store.FindPilot(1000002)!.ShipId));
@@ -188,7 +206,7 @@ public sealed class SmallHullTests
         Assert.Equal(inventory, f.Inventory.List(f.PilotId, ship));
         Assert.Equal(magazines, ammo.Read(f.PilotId, ship));
         var restarted = new SqliteWorld(new(f.Db.Path)).FindPilot(1000001)!;
-        Assert.Equal((ship, type, "Small hull acceptance"), (restarted.ShipId, restarted.ShipTypeId, restarted.ShipName));
+        Assert.Equal((ship, type, "Hull acceptance"), (restarted.ShipId, restarted.ShipTypeId, restarted.ShipName));
         Assert.True(restarted.Flight.Mass > 0 && restarted.Flight.MaxSpeed > 0 && restarted.Flight.Agility > 0);
         Assert.True(restarted.Flight.ShipRadius > 0 && restarted.Flight.WarpSpeed > 0);
         using (WorldDbContext saved = new(f.Db.Path))
