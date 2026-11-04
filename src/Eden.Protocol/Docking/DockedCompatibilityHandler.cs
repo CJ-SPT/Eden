@@ -173,11 +173,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("ProjectDiscovery", "initialize_tutorial_status")
             or ("milestoneMgr", "ProcessCharacterLogon") => PilotCallResult.None,
 
-
-            ("standingMgr", "GetCharStandings" or "GetCorpStandings")
-            or
-            ("charMgr", "GetCharacterSettings")
-            or ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
+            ("standingMgr", "GetCharStandings" or "GetCorpStandings") or ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
 
 
             ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")

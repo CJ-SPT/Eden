@@ -1,5 +1,32 @@
 # Startup protocol and milestones
 
+## Placeholder route implementation (November 4, 2026)
+
+The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibilityHandler`. Empty replies are valid for features with no earned or configured state, but these handlers also conceal missing persistence and feature operations. Work proceeds by client feature, with a single handler owning each implemented service/method pair.
+
+| Feature | Audited routes | State |
+| --- | --- | --- |
+| Character settings | `charMgr.GetCharacterSettings`, `SaveCharacterSetting`, `DeleteCharacterSetting` | Implemented with private persistent values |
+| Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState` | Pending |
+| Personal locations | `accessGroupBookmarkMgr.GetMyActiveBookmarks` and folder/bookmark operations | Pending |
+| Ship insurance | `insuranceSvc.GetContracts`, `GetInsurancePrice` and policy operations | Pending |
+| Task tracking | `monolithTaskTrackerMgr.HasEverWarped`, `GetCompletedAchievementsAndClientEventCount`, `UpdateClientAchievmentsAndCounters` | Pending |
+| Larger feature systems | Agents/journal, standings, jump clones, contracts, calendar, drones/fighters and player corporations | Compatibility states; gameplay pending |
+
+### Character settings
+
+Inert code-object inspection of build **3662168** `eve/client/script/ui/services/characterSettingsSvc.pyj` confirms `GetCharacterSettings()` returns a dictionary, `SaveCharacterSetting(settingKey, value)` saves an opaque serialized string and `DeleteCharacterSetting(settingKey)` removes it. `Save` limits each value to **102400** characters/bytes and sends empty/None edits through `Delete`. It updates its local cache after successful RPCs; no server notification is required. Eden accepts text and binary payloads without interpreting serialized contents, preserves Unicode and arbitrary bytes, and rejects extra target IDs, invalid shapes, unexpected keywords and oversized values. Keys use an Eden-specific nonblank, no-NUL, 128-character bound. Every operation uses the selected pilot; there is no editable target argument.
+
+World version **40** adds `WorldCharacterSetting`, keyed by pilot and name, with a foreign key and an exclusive text/binary value constraint. Upserts and deletes are transactional. Upgrading version 39 creates empty settings and retains existing attributes, biography and skills; missing keys delete idempotently. Settings apply only to client preferences: saving a preference does not implement any gameplay feature it describes.
+
+Reference: installed `code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Consulted [Carbon Blue Marshal.cpp at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), including separate byte-string and Unicode representations. No codec or transport changes are required.
+
+**Automated validation.** Focused filter: `FullyQualifiedName~CharacterSettings|FullyQualifiedName~CharacterSheet|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`: **34 passed**, approximately **3 seconds** runner duration. Tests cover real router/wire requests, selection gating, Unicode/binary values, independent pilots, replacement/deletion, rejected edits with unchanged state, exact size boundaries, restart persistence and version-39 migration. Tool/solution restores, solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting tests) and formatting verification passed; final build/test/policy/format checks took approximately 16 seconds combined. Initial development builds exposed a missing test import, and the first focused run exposed a Unicode reply mismatch; both were corrected before the passing run. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Save a client preference using `characterSettings`, reconnect, and confirm it reloads; clear it and confirm it remains cleared after reconnect. Native presentation is unverified.
+
 ## Launcher accounts and developer roles
 
 API v1 adds registration, launcher sessions, rotating remembered sessions, logout and single-use 180-second game tickets. Credentials and token hashes use additive Launcher tables; account/pilot identities and gameplay schema versions are preserved. The RSA/AES/challenge exchange remains unchanged. Manifest signing accepts only the exact fingerprinted 17,769-byte build 3662168 prefix. Private keys never leave the host.

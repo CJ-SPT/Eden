@@ -142,6 +142,14 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model
+            .Entity<SavedCharacterSetting>()
+            .ToTable(
+                "WorldCharacterSetting",
+                table => table.HasCheckConstraint("CK_CharacterSetting_Value", "(Text IS NULL) <> (Binary IS NULL)")
+            )
+            .HasKey(s => new { s.PilotId, s.Key });
+        model.Entity<SavedCharacterSetting>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model.Entity<SavedCharacterSheet>().ToTable("WorldCharacterSheet").HasKey(s => s.PilotId);
         model.Entity<SavedCharacterSheet>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model.Entity<WorldTackle>().ToTable("WorldTackle").HasKey(t => t.ModuleId);
