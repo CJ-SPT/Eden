@@ -48,10 +48,17 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         using var transaction = world.Database.BeginTransaction();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
+        bool sameShipQuantityMove = sourceId == ship.Id && destinationId == ship.Id && quantity.HasValue;
         if (
-            ship.Position is not null
+            (ship.Position is not null && !sameShipQuantityMove)
             || !(
                 (sourceId == ship.Id && destinationId == ship.StationId && flagId == (int)InventoryFlag.Hangar)
+                || (
+                    sourceId == ship.StationId
+                    && destinationId == ship.StationId
+                    && flagId == (int)InventoryFlag.Hangar
+                    && quantity.HasValue
+                )
                 || ((sourceId == ship.StationId || sourceId == ship.Id) && destinationId == ship.Id && ShipHoldRules.IsHold(flagId))
             )
             || itemIds.Count == 0
@@ -93,6 +100,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             items.Length + storedShips.Length != itemIds.Count
             || items.Any(i => quantity > i.Quantity)
             || storedShips.Any(s => quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
+            || (ship.Position is not null && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
         )
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");
@@ -100,6 +108,23 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         if (items.Any(i => PilotIndustryStore.IsInstalled(world, i.Id)))
         {
             throw new InvalidDataException("Deliver or cancel the manufacturing job before moving its blueprint.");
+        }
+        if (sourceId == destinationId && destinationId == ship.StationId && storedShips.Length > 0)
+        {
+            throw new InvalidDataException("Only packaged item stacks can be divided.");
+        }
+        if (sourceId == destinationId && quantity is int selected && items is [var stack] && stack.FlagId == flagId)
+        {
+            // Shift-drag sends Add(item, sameLocation, qty=..., flag=...). This is a split,
+            // not a transfer; it keeps both rows in place and consumes no additional hold capacity.
+            if (selected == stack.Quantity)
+            {
+                return [];
+            }
+            var splitChanges = SplitInPlace(world, catalog, stack, selected);
+            world.SaveChanges();
+            transaction.Commit();
+            return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -219,6 +244,38 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         }
         transaction.Commit();
         return changes;
+    }
+
+    private static IReadOnlyList<InventoryChange> SplitInPlace(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        OwnedItem stack,
+        int quantity
+    )
+    {
+        var previous = Read(catalog, stack);
+        var split = InventoryStackRules.Split(previous, quantity);
+        if (world.Set<OwnedItem>().Any(item => item.LocationId == stack.Id) || world.Ships.Any(ship => ship.StoredInId == stack.Id))
+        {
+            throw new InvalidDataException("A container with contents cannot be divided.");
+        }
+        stack.Quantity = split.Remainder;
+        var separated = world
+            .Add(
+                new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = stack.OwnerId,
+                    TypeId = stack.TypeId,
+                    LocationId = stack.LocationId,
+                    FlagId = stack.FlagId,
+                    Quantity = split.Quantity,
+                    CrystalDamage = stack.CrystalDamage,
+                    VolumeOverride = stack.VolumeOverride,
+                }
+            )
+            .Entity;
+        return [new(Read(catalog, stack), previous), new(Read(catalog, separated), null)];
     }
 
     internal static InventoryItem Read(CatalogDbContext catalog, OwnedItem item)

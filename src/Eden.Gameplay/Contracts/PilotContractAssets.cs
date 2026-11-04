@@ -32,10 +32,7 @@ public static class ContractAssetRules
 
     public static ContractStackSplit Split(InventoryItem item, int quantity)
     {
-        if (item.Singleton || item.Online || quantity <= 0 || quantity >= item.Quantity)
-        {
-            throw new InvalidDataException("Split a packaged stack into two positive quantities.");
-        }
-        return new(item.Quantity - quantity, quantity);
+        var split = InventoryStackRules.Split(item, quantity);
+        return new(split.Remainder, split.Quantity);
     }
 }

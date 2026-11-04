@@ -148,6 +148,34 @@ internal sealed class InventoryHandler(
         return result;
     }
 
+    private PilotCallResult SplitFromWire(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        var pilot = context.Pilot;
+        // Build 3662168 invItemFunctions.SplitStack calls the inventory manager with the
+        // physical station, item ID, chosen quantity and owner ID (not a corporation flag).
+        if (
+            args is not [long station, long itemId, long quantity, long owner]
+            || pilot.Position is not null
+            || station != pilot.StationId
+            || owner != pilot.PilotId
+            || quantity is <= 0 or > int.MaxValue
+            || keywords is { Count: > 0 }
+        )
+        {
+            return new PilotCallResult.Failure("Choose an owned stack at your current station and a valid quantity.");
+        }
+        var item = inventory.List(owner, station).Concat(inventory.List(owner, pilot.ShipId)).FirstOrDefault(item => item.Id == itemId);
+        string? destination = item switch
+        {
+            { LocationId: var location, FlagId: (int)InventoryFlag.Hangar } when location == station => "@hangar",
+            { LocationId: var location, FlagId: var flag } when location == pilot.ShipId && ShipHoldRules.IsHold(flag) => "@ship",
+            _ => null,
+        };
+        return destination is null || item is null
+            ? new PilotCallResult.Failure("The stack is unavailable at your current station.")
+            : transfers.Move(context, destination, new([itemId], item.LocationId, item.FlagId, (int)quantity));
+    }
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -231,6 +259,7 @@ internal sealed class InventoryHandler(
         }
         return (service, method) switch
         {
+            ("invbroker", "SplitStack") => SplitFromWire(context, args, keywords),
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
                 PilotCallResult.None,
             ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") or ("charFittingMgr", "GetFittings") => BlueEmpty.IndexedDictionary,
