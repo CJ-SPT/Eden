@@ -6,6 +6,11 @@ namespace Eden.Server.Persistence;
 
 public sealed class SavedContract
 {
+    public long BuyoutCents { get; set; }
+    public long CurrentBidCents { get; set; }
+    public int AuctionAccountingLevel { get; set; }
+    public bool IssuerCollected { get; set; }
+    public bool WinnerCollected { get; set; }
     public ContractType Type { get; set; } = ContractType.ItemExchange;
     public int EndStationId { get; set; }
     public int EndSystemId { get; set; }
@@ -64,8 +69,21 @@ public sealed class SavedContract
             Type,
             Type == ContractType.Courier
                 ? new(new(EndStationId, EndSystemId, EndConstellationId, EndRegionId), DurationDays, CollateralCents, PackageId)
-                : null
+                : null,
+            Type == ContractType.Auction ? new(BuyoutCents, CurrentBidCents, IssuerCollected, WinnerCollected) : null
         );
+}
+
+public sealed class SavedContractBid
+{
+    public long Id { get; set; }
+    public long ContractId { get; set; }
+    public long BidderId { get; set; }
+    public long AmountCents { get; set; }
+    public long Time { get; set; }
+    public bool Dismissed { get; set; }
+
+    public ContractBid Snapshot() => new(Id, BidderId, AmountCents, Time);
 }
 
 public sealed class SavedContractItem
@@ -127,6 +145,41 @@ internal sealed class ContractChangeSignal
 
 internal static class ContractPersistence
 {
+    internal static void UpgradeAuctions(WorldDbContext world)
+    {
+        var columns = world
+            .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldContract')")
+            .AsEnumerable()
+            .ToHashSet();
+        foreach (
+            var (name, sql) in new (string, string)[]
+            {
+                ("BuyoutCents", "ALTER TABLE WorldContract ADD COLUMN BuyoutCents INTEGER NOT NULL DEFAULT 0"),
+                ("CurrentBidCents", "ALTER TABLE WorldContract ADD COLUMN CurrentBidCents INTEGER NOT NULL DEFAULT 0"),
+                ("AuctionAccountingLevel", "ALTER TABLE WorldContract ADD COLUMN AuctionAccountingLevel INTEGER NOT NULL DEFAULT 0"),
+                ("IssuerCollected", "ALTER TABLE WorldContract ADD COLUMN IssuerCollected INTEGER NOT NULL DEFAULT 0"),
+                ("WinnerCollected", "ALTER TABLE WorldContract ADD COLUMN WinnerCollected INTEGER NOT NULL DEFAULT 0"),
+            }
+        )
+        {
+            if (!columns.Contains(name))
+            {
+                world.Database.ExecuteSqlRaw(sql);
+            }
+        }
+        world.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS WorldContractBid(
+                Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                ContractId INTEGER NOT NULL REFERENCES WorldContract(Id) ON DELETE CASCADE,
+                BidderId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                AmountCents INTEGER NOT NULL, Time INTEGER NOT NULL, Dismissed INTEGER NOT NULL DEFAULT 0);
+            CREATE INDEX IF NOT EXISTS IX_WorldContractBid_ContractId_Id ON WorldContractBid(ContractId,Id);
+            CREATE INDEX IF NOT EXISTS IX_WorldContractBid_BidderId_ContractId ON WorldContractBid(BidderId,ContractId);
+            """
+        );
+    }
+
     internal static void UpgradeCourier(WorldDbContext world)
     {
         // Historical test saves can retain newer additive fields. Check the actual

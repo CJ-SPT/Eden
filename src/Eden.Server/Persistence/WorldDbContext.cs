@@ -151,6 +151,11 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.AcceptorId).OnDelete(DeleteBehavior.NoAction);
         model.Entity<SavedContract>().HasIndex(c => new { c.IssuerId, c.Status });
         model.Entity<SavedContract>().HasIndex(c => new { c.AssigneeId, c.Status });
+        model.Entity<SavedContractBid>().ToTable("WorldContractBid").HasKey(b => b.Id);
+        model.Entity<SavedContractBid>().HasOne<SavedContract>().WithMany().HasForeignKey(b => b.ContractId);
+        model.Entity<SavedContractBid>().HasOne<Pilot>().WithMany().HasForeignKey(b => b.BidderId);
+        model.Entity<SavedContractBid>().HasIndex(b => new { b.ContractId, b.Id });
+        model.Entity<SavedContractBid>().HasIndex(b => new { b.BidderId, b.ContractId });
         model.Entity<SavedContractItem>().ToTable("WorldContractItem").HasKey(i => i.Id);
         model.Entity<SavedContractItem>().HasOne<SavedContract>().WithMany().HasForeignKey(i => i.ContractId);
         model.Entity<SavedContractEscrow>().ToTable("WorldContractEscrow").HasKey(e => e.ItemId);

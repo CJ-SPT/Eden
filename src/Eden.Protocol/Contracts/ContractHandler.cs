@@ -107,6 +107,9 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     or "GetMyCurrentContractList"
                     or "GetMyBids"
                     or "GetCourierContractFromItemID"
+                    or "PlaceBid"
+                    or "FinishAuction"
+                    or "DeleteContractNotification"
                 )
         )
         {
@@ -197,7 +200,10 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                         return new ContractListReply([]);
                     }
                     return new ContractListReply(
-                        contracts.List(pilot, new(pilot, -1, 0, false, ContractAssetRules.MaximumSelection, null))
+                        contracts.List(
+                            pilot,
+                            new(pilot, (int)ContractStatus.RequiresAttention, 0, false, ContractAssetRules.MaximumSelection, null)
+                        )
                     );
                 case ("GetMyCurrentContractList", [var accepted, var corporation]):
                     bool forCorp = ContractRequestWire.Flag(corporation);
@@ -218,10 +224,20 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                             )
                     );
                 case ("GetMyBids", [var corporation]):
-                    ContractRequestWire.Flag(corporation);
-                    return new ContractListReply([]);
+                    return new ContractListReply(ContractRequestWire.Flag(corporation) ? [] : contracts.Bids(pilot));
+                case ("PlaceBid", [long id, var amount, var corporation]):
+                    Personal(corporation);
+                    contracts.Bid(pilot, id, ContractRequestWire.Amount(amount));
+                    return true;
+                case ("FinishAuction", [long id, var issuer]):
+                    contracts.FinishAuction(pilot, id, ContractRequestWire.Flag(issuer));
+                    return true;
+                case ("DeleteContractNotification", [long id, var corporation]):
+                    Personal(corporation);
+                    contracts.ForgetAuction(pilot, id);
+                    return PilotCallResult.None;
                 default:
-                    return new PilotCallResult.Failure("Invalid item-exchange contract request.");
+                    return new PilotCallResult.Failure("Invalid personal contract request.");
             }
         }
         catch (InvalidDataException error)
@@ -255,9 +271,13 @@ internal sealed record ContractEvent(long ContractId, ContractChangeKind Kind)
             ContractChangeKind.Completed => "OnContractCompleted",
             ContractChangeKind.CourierAccepted => "OnContractAccepted",
             ContractChangeKind.Failed => "OnContractFailed",
+            ContractChangeKind.AuctionBid => "OnContractEscrowChanged",
+            ContractChangeKind.AuctionOutbid => "OnContractOutbid",
+            ContractChangeKind.AuctionBuyout => "OnContractBuyout",
             _ => throw new InvalidDataException("Unknown contract change."),
         }
     )
 {
-    public override object?[] Arguments => Kind is ContractChangeKind.Created or ContractChangeKind.Reclaimed ? [] : [ContractId];
+    public override object?[] Arguments =>
+        Kind is ContractChangeKind.Created or ContractChangeKind.Reclaimed or ContractChangeKind.AuctionBid ? [] : [ContractId];
 }

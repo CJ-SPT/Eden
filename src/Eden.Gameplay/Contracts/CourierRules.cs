@@ -23,7 +23,7 @@ public static class CourierRules
 
     public static void Check(ContractDraft draft)
     {
-        if (draft.Type == ContractType.ItemExchange && draft.Courier is null)
+        if (draft.Type is ContractType.ItemExchange or ContractType.Auction && draft.Courier is null)
         {
             return;
         }

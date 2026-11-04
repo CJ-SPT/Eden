@@ -179,7 +179,7 @@ public sealed class CourierServiceTests
         }
     }
 
-    private sealed class Client(TestWorld db, TestClock clock, long account) : IDisposable
+    internal sealed class Client(TestWorld db, TestClock clock, long account) : IDisposable
     {
         private readonly IServiceScope _scope = db.Services.CreateScope();
         public PilotCallContext Context { get; } =

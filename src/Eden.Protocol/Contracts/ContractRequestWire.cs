@@ -39,13 +39,13 @@ internal static class ContractRequestWire
         }
         var type = (ContractType)Number(fields["contractType"]);
         if (
-            type is not (ContractType.ItemExchange or ContractType.Courier)
+            type is not (ContractType.ItemExchange or ContractType.Courier or ContractType.Auction)
             || Flag(fields["forCorp"])
             || Flag(fields["multiContract"])
             || Id(fields["startStationDivision"]) != (int)InventoryFlag.Hangar
         )
         {
-            throw new InvalidDataException("Choose a personal item-exchange or courier contract in a station hangar.");
+            throw new InvalidDataException("Choose a personal item-exchange, auction or courier contract in a station hangar.");
         }
         int destination = Number(fields["destinationID"]);
         int days = Number(fields["numDays"]);
@@ -53,6 +53,10 @@ internal static class ContractRequestWire
         if (type == ContractType.ItemExchange && (destination != 0 || days != 0 || collateral != 0))
         {
             throw new InvalidDataException("Item exchanges do not have courier delivery terms.");
+        }
+        if (type == ContractType.Auction && (destination != 0 || days != 0))
+        {
+            throw new InvalidDataException("Auctions do not have courier delivery terms.");
         }
         long assignee = Id(fields["assignedToID"]);
         if (Flag(fields["isPrivate"]) != (assignee > 0) || assignee < 0)
@@ -72,7 +76,8 @@ internal static class ContractRequestWire
             items.Select(pair => new ContractOffer(Id(pair[0]), Number(pair[1]))).ToArray(),
             requested.Select(pair => new ContractRequest(Number(pair[0]), Number(pair[1]))).ToArray(),
             type,
-            type == ContractType.Courier ? new(destination, days, collateral) : null
+            type == ContractType.Courier ? new(destination, days, collateral) : null,
+            type == ContractType.Auction ? new(collateral) : null
         );
     }
 

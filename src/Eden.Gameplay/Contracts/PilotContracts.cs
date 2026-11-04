@@ -17,8 +17,13 @@ public enum ContractType
 
 public enum ContractStatus
 {
+    // These two values are native list filters, never saved lifecycle states.
+    RequiresAttention = -1,
+    BidOnBy = 10,
     Outstanding = 0,
     InProgress = 1,
+    FinishedIssuer = 2,
+    FinishedContractor = 3,
     Finished = 4,
     Cancelled = 5,
     Rejected = 6,
@@ -44,6 +49,9 @@ public enum ContractChangeKind
     Completed,
     Failed,
     CourierAccepted,
+    AuctionBid,
+    AuctionOutbid,
+    AuctionBuyout,
 }
 
 public enum ContractRequestGroup
@@ -70,7 +78,8 @@ public sealed record ContractDraft(
     IReadOnlyList<ContractOffer> Items,
     IReadOnlyList<ContractRequest> RequestedItems,
     ContractType Type = ContractType.ItemExchange,
-    CourierTerms? Courier = null
+    CourierTerms? Courier = null,
+    AuctionTerms? Auction = null
 );
 
 public sealed record ContractFees(long BrokerCents, long DepositCents, long SalesTaxCents);
@@ -99,7 +108,8 @@ public sealed record PersonalContract(
     double Volume,
     ContractFees Fees,
     ContractType Type = ContractType.ItemExchange,
-    CourierContract? Courier = null
+    CourierContract? Courier = null,
+    AuctionState? Auction = null
 );
 
 public sealed record ContractItem(
@@ -115,7 +125,7 @@ public sealed record ContractItem(
     int CategoryId
 );
 
-public sealed record ContractDetails(PersonalContract Contract, IReadOnlyList<ContractItem> Items);
+public sealed record ContractDetails(PersonalContract Contract, IReadOnlyList<ContractItem> Items, IReadOnlyList<ContractBid>? Bids = null);
 
 public sealed record ContractPayment(
     long Id,
@@ -144,7 +154,8 @@ public sealed record ContractPageInfo(
     int Outstanding,
     IReadOnlyList<PersonalContract> Assigned,
     IReadOnlyList<long> Attention,
-    IReadOnlyList<PersonalContract>? InProgress = null
+    IReadOnlyList<PersonalContract>? InProgress = null,
+    int BiddingOn = 0
 );
 
 public sealed record ContractOwnerFilter(long OwnerId, int? Status, int Type, bool? IssuedTo, int Limit, long? BeforeId);
@@ -163,6 +174,10 @@ public interface IPilotContracts
     void Fail(long pilotId, long contractId);
     CourierPackageInfo? Package(long pilotId, long itemId);
     void BreakPackage(long pilotId, long itemId);
+    void Bid(long pilotId, long contractId, long amountCents);
+    void FinishAuction(long pilotId, long contractId, bool issuer);
+    void ForgetAuction(long pilotId, long contractId);
+    IReadOnlyList<ContractDetails> Bids(long pilotId);
     ContractDetails Details(long pilotId, long contractId);
     IReadOnlyList<ContractDetails> List(long pilotId, ContractOwnerFilter filter);
     IReadOnlyList<ContractDetails> Available(long pilotId);
@@ -200,6 +215,7 @@ public static class ContractRules
     public static void Check(ContractDraft draft)
     {
         CourierRules.Check(draft);
+        AuctionRules.Check(draft);
         if (
             draft.AssigneeId is <= 0
             || draft.StationId <= 0
@@ -258,18 +274,24 @@ public static class ContractRules
             decimal.Truncate(
                 Math.Clamp(basis * brokerRate, MinimumBrokerIsk, MaximumBrokerIsk * (1 - skills.BrokerRelations * BrokerCapReduction))
             ) * (1 + days * AdditionalDayMultiplier);
-        decimal tax = decimal.Truncate(
-            Math.Clamp(
-                basis * (SalesTaxRate - skills.Accounting * AccountingReduction),
-                MinimumTaxIsk,
-                MaximumTaxIsk * (1 - skills.Accounting * SalesTaxCapReduction)
-            )
-        );
         decimal deposit = decimal.Truncate(Math.Clamp(basis * DepositRate * multiplier, MinimumDepositIsk * multiplier, MaximumDepositIsk));
         return new(
             checked((long)(broker * MarketDefinitions.CentsPerIsk)),
             checked((long)(deposit * MarketDefinitions.CentsPerIsk)),
-            draft.Type == ContractType.Courier ? 0 : checked((long)(tax * MarketDefinitions.CentsPerIsk))
+            draft.Type == ContractType.Courier ? 0 : SalesTax(Math.Max(draft.PriceCents, draft.RewardCents), skills.Accounting)
         );
+    }
+
+    public static long SalesTax(long priceCents, int accounting)
+    {
+        decimal basis = (decimal)priceCents / MarketDefinitions.CentsPerIsk;
+        decimal tax = decimal.Truncate(
+            Math.Clamp(
+                basis * (SalesTaxRate - accounting * AccountingReduction),
+                MinimumTaxIsk,
+                MaximumTaxIsk * (1 - accounting * SalesTaxCapReduction)
+            )
+        );
+        return checked((long)(tax * MarketDefinitions.CentsPerIsk));
     }
 }

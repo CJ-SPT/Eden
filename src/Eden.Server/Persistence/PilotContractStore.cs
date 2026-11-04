@@ -108,6 +108,8 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     .Add(
                         new SavedContract
                         {
+                            BuyoutCents = draft.Auction?.BuyoutCents ?? 0,
+                            AuctionAccountingLevel = skills.Accounting,
                             Type = draft.Type,
                             EndStationId = destination?.Id ?? 0,
                             EndSystemId = destination?.SolarSystemId ?? 0,
@@ -290,6 +292,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 {
                     return AcceptCourier(world, catalog, contract, pilotId, now);
                 }
+                if (contract.Type != ContractType.ItemExchange)
+                {
+                    throw new InvalidDataException("Place a bid on this auction instead of accepting it.");
+                }
                 List<InventoryChange> issuerChanges = [];
                 List<InventoryChange> acceptorChanges = [];
                 var requested = world
@@ -442,6 +448,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 {
                     throw new InvalidDataException("Only the assigned pilot can reject an outstanding contract.");
                 }
+                if (contract.Type == ContractType.Auction && contract.AcceptorId is not null)
+                {
+                    throw new InvalidDataException("An auction with bids cannot be rejected.");
+                }
                 contract.Status = ContractStatus.Rejected;
                 Change(world, contractId, contract.IssuerId, ContractChangeKind.Rejected, [], null);
                 return true;
@@ -460,6 +470,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 if (contract.Reclaimed)
                 {
                     return true;
+                }
+                if (contract.Type == ContractType.Auction && contract.AcceptorId is not null)
+                {
+                    throw new InvalidDataException("Collect auction proceeds and goods through auction settlement.");
                 }
                 if (contract.Status is not (ContractStatus.Outstanding or ContractStatus.Rejected))
                 {
@@ -595,6 +609,14 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 .OrderBy(i => i.Id)
                 .AsEnumerable()
                 .Select(i => i.Snapshot())
+                .ToArray(),
+            world
+                .Set<SavedContractBid>()
+                .Where(b => b.ContractId == contract.Id)
+                .OrderByDescending(b => b.AmountCents)
+                .ThenByDescending(b => b.Id)
+                .AsEnumerable()
+                .Select(b => b.Snapshot())
                 .ToArray()
         );
 
@@ -628,45 +650,57 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 var rows = world
                     .Set<SavedContract>()
                     .Where(c => c.AssigneeId == null || c.IssuerId == pilotId || c.AssigneeId == pilotId || c.AcceptorId == pilotId);
-                rows = filter.IssuedTo switch
-                {
-                    false => rows.Where(c => c.IssuerId == filter.OwnerId),
-                    true => rows.Where(c => c.AssigneeId == filter.OwnerId || c.AcceptorId == filter.OwnerId),
-                    null => rows.Where(c =>
-                        c.IssuerId == filter.OwnerId || c.AssigneeId == filter.OwnerId || c.AcceptorId == filter.OwnerId
-                    ),
-                };
+                rows =
+                    filter.Status == (int)ContractStatus.RequiresAttention
+                        ? rows.Where(c => c.IssuerId == filter.OwnerId || c.AcceptorId == filter.OwnerId)
+                    : filter.Status == (int)ContractStatus.BidOnBy
+                        ? rows.Where(c => world.Set<SavedContractBid>().Any(b => b.ContractId == c.Id && b.BidderId == filter.OwnerId))
+                    : filter.IssuedTo switch
+                    {
+                        false => rows.Where(c => c.IssuerId == filter.OwnerId),
+                        true => rows.Where(c => c.AssigneeId == filter.OwnerId || c.AcceptorId == filter.OwnerId),
+                        null => rows.Where(c =>
+                            c.IssuerId == filter.OwnerId || c.AssigneeId == filter.OwnerId || c.AcceptorId == filter.OwnerId
+                        ),
+                    };
                 if (filter.BeforeId is { } before)
                 {
                     rows = rows.Where(c => c.Id < before);
                 }
-                if (filter.Type is not (0 or 1 or 3 or 10 or 11))
+                if (filter.Type is not (0 or 1 or 2 or 3 or 10 or 11))
                 {
                     return [];
                 }
-                if (filter.Type is 1 or 3)
+                if (filter.Type is 1 or 2 or 3)
                 {
                     rows = rows.Where(c => (int)c.Type == filter.Type);
                 }
                 else if (filter.Type == (int)ContractType.AuctionAndItemExchange)
                 {
-                    rows = rows.Where(c => c.Type == ContractType.ItemExchange);
+                    rows = rows.Where(c => c.Type == ContractType.ItemExchange || c.Type == ContractType.Auction);
                 }
-                if (filter.Status is >= 0)
+                if (filter.Status is >= 0 && filter.Status != (int)ContractStatus.BidOnBy)
                 {
                     rows = rows.Where(c => (int)c.Status == filter.Status);
                 }
-                else if (filter.Status == -1)
+                else if (filter.Status == (int)ContractStatus.RequiresAttention)
                 {
                     long now = Now;
                     rows = rows.Where(c =>
-                        !c.Dismissed
-                        && (
-                            (c.Status == ContractStatus.Outstanding && c.Expires <= now)
-                            || c.Status == ContractStatus.Rejected
-                            || c.Status == ContractStatus.Finished
-                            || c.Status == ContractStatus.Failed
-                        )
+                        c.Type == ContractType.Auction && c.AcceptorId != null
+                            ? c.Expires <= now
+                                && (
+                                    (c.IssuerId == filter.OwnerId && !c.IssuerCollected)
+                                    || (c.AcceptorId == filter.OwnerId && !c.WinnerCollected)
+                                )
+                            : c.IssuerId == filter.OwnerId
+                                && !c.Dismissed
+                                && (
+                                    (c.Status == ContractStatus.Outstanding && c.Expires <= now)
+                                    || c.Status == ContractStatus.Rejected
+                                    || c.Status == ContractStatus.Finished
+                                    || c.Status == ContractStatus.Failed
+                                )
                     );
                 }
                 return rows.OrderByDescending(c => c.Id).Take(filter.Limit).AsEnumerable().Select(c => Details(world, c)).ToArray();
@@ -683,6 +717,12 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     .Set<SavedContract>()
                     .Where(c => c.IssuerId == pilotId || c.AssigneeId == pilotId || c.AcceptorId == pilotId)
                     .ToArray();
+                int bidding = world
+                    .Set<SavedContract>()
+                    .Count(c =>
+                        c.Type == ContractType.Auction
+                        && world.Set<SavedContractBid>().Any(b => b.ContractId == c.Id && b.BidderId == pilotId && !b.Dismissed)
+                    );
                 return new(
                     rows.Count(c =>
                         c.IssuerId == pilotId
@@ -692,18 +732,20 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                         .Select(c => c.Snapshot())
                         .ToArray(),
                     rows.Where(c =>
-                            c.IssuerId == pilotId
-                            && !c.Dismissed
-                            && (
-                                (c.Status == ContractStatus.Outstanding && c.Expires <= now)
-                                || c.Status == ContractStatus.Rejected
-                                || c.Status == ContractStatus.Finished
-                                || c.Status == ContractStatus.Failed
-                            )
+                            c.Type == ContractType.Auction && c.AcceptorId is not null
+                                ? c.Expires <= now
+                                    && ((c.IssuerId == pilotId && !c.IssuerCollected) || (c.AcceptorId == pilotId && !c.WinnerCollected))
+                                : c.IssuerId == pilotId
+                                    && !c.Dismissed
+                                    && (
+                                        (c.Status == ContractStatus.Outstanding && c.Expires <= now)
+                                        || c.Status is ContractStatus.Rejected or ContractStatus.Finished or ContractStatus.Failed
+                                    )
                         )
                         .Select(c => c.Id)
                         .ToArray(),
-                    rows.Where(c => c.Status == ContractStatus.InProgress && c.AcceptorId == pilotId).Select(c => c.Snapshot()).ToArray()
+                    rows.Where(c => c.Status == ContractStatus.InProgress && c.AcceptorId == pilotId).Select(c => c.Snapshot()).ToArray(),
+                    bidding
                 );
             }
         );
@@ -716,7 +758,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 long isk =
                     world
                         .Set<SavedContract>()
-                        .Where(c => c.IssuerId == pilotId && !c.Reclaimed)
+                        .Where(c =>
+                            c.IssuerId == pilotId && (c.Type == ContractType.Auction ? !c.IssuerCollected && !c.Reclaimed : !c.Reclaimed)
+                        )
                         .Sum(c => (long?)(c.RewardCents + c.DepositCents))
                     ?? 0;
                 isk = checked(
@@ -726,6 +770,16 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                             .Set<SavedContract>()
                             .Where(c => c.AcceptorId == pilotId && c.Status == ContractStatus.InProgress)
                             .Sum(c => (long?)c.CollateralCents)
+                        ?? 0
+                    )
+                );
+                isk = checked(
+                    isk
+                    + (
+                        world
+                            .Set<SavedContract>()
+                            .Where(c => c.Type == ContractType.Auction && c.AcceptorId == pilotId && !c.IssuerCollected)
+                            .Sum(c => (long?)c.CurrentBidCents)
                         ?? 0
                     )
                 );

@@ -117,7 +117,9 @@ public static class ContractSearchRules
         sort switch
         {
             ContractSort.Id => details.Contract.Id,
-            ContractSort.Price => details.Contract.PriceCents,
+            ContractSort.Price => details.Contract.Auction is { CurrentBidCents: > 0 } auction
+                ? auction.CurrentBidCents
+                : details.Contract.PriceCents,
             ContractSort.Expires => details.Contract.Expires,
             ContractSort.Station => details.Contract.StationId,
             ContractSort.System => details.Contract.SystemId,
@@ -125,7 +127,7 @@ public static class ContractSearchRules
             ContractSort.Constellation => details.Contract.ConstellationId,
             ContractSort.Type => (int)details.Contract.Type,
             ContractSort.Reward => details.Contract.RewardCents,
-            ContractSort.Collateral => details.Contract.Courier?.CollateralCents ?? 0,
+            ContractSort.Collateral => details.Contract.Auction?.BuyoutCents ?? details.Contract.Courier?.CollateralCents ?? 0,
             ContractSort.Volume => (decimal)details.Contract.Volume,
             ContractSort.Assignee => details.Contract.AssigneeId ?? 0,
             _ => throw new InvalidDataException("Unknown contract sort order."),

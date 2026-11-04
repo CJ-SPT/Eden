@@ -272,7 +272,7 @@ public sealed class CourierContractTests
         Assert.Null(saved.Courier);
         Assert.Equal(12345, saved.PriceCents);
         using WorldDbContext verify = new(db.Path);
-        Assert.Equal(51, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Single(verify.Set<SavedContractEscrow>());
     }
 

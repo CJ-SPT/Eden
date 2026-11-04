@@ -21,6 +21,7 @@ internal sealed partial class PilotContractStore
                     search.Type
                         is not (
                             (int)ContractType.ItemExchange
+                            or (int)ContractType.Auction
                             or (int)ContractType.Courier
                             or (int)ContractType.AuctionAndItemExchange
                             or (int)ContractType.All
@@ -31,13 +32,13 @@ internal sealed partial class PilotContractStore
                     return new([], 0, 0);
                 }
                 var rows = world.Set<SavedContract>().Where(c => c.Status == ContractStatus.Outstanding && c.Expires > now);
-                if (search.Type is (int)ContractType.ItemExchange or (int)ContractType.Courier)
+                if (search.Type is (int)ContractType.ItemExchange or (int)ContractType.Auction or (int)ContractType.Courier)
                 {
                     rows = rows.Where(c => (int)c.Type == search.Type);
                 }
                 else if (search.Type == (int)ContractType.AuctionAndItemExchange)
                 {
-                    rows = rows.Where(c => c.Type == ContractType.ItemExchange);
+                    rows = rows.Where(c => c.Type == ContractType.ItemExchange || c.Type == ContractType.Auction);
                 }
                 rows = search.Availability == 0 ? rows.Where(c => c.AssigneeId == null) : rows.Where(c => c.AssigneeId == pilotId);
                 if (search.IssuerId is { } issuer)
@@ -52,7 +53,9 @@ internal sealed partial class PilotContractStore
                 }
                 if (search.MinPrice is { } minPrice)
                 {
-                    rows = rows.Where(c => c.PriceCents >= minPrice);
+                    rows = rows.Where(c =>
+                        (c.Type == ContractType.Auction && c.CurrentBidCents > 0 ? c.CurrentBidCents : c.PriceCents) >= minPrice
+                    );
                 }
                 if (search.EndLocationId is { } end)
                 {
@@ -62,15 +65,17 @@ internal sealed partial class PilotContractStore
                 }
                 if (search.MinCollateral is { } minCollateral)
                 {
-                    rows = rows.Where(c => c.CollateralCents >= minCollateral);
+                    rows = rows.Where(c => (c.Type == ContractType.Auction ? c.BuyoutCents : c.CollateralCents) >= minCollateral);
                 }
                 if (search.MaxCollateral is { } maxCollateral)
                 {
-                    rows = rows.Where(c => c.CollateralCents <= maxCollateral);
+                    rows = rows.Where(c => (c.Type == ContractType.Auction ? c.BuyoutCents : c.CollateralCents) <= maxCollateral);
                 }
                 if (search.MaxPrice is { } maxPrice)
                 {
-                    rows = rows.Where(c => c.PriceCents <= maxPrice);
+                    rows = rows.Where(c =>
+                        (c.Type == ContractType.Auction && c.CurrentBidCents > 0 ? c.CurrentBidCents : c.PriceCents) <= maxPrice
+                    );
                 }
                 if (search.MinReward is { } minReward)
                 {
@@ -102,7 +107,8 @@ internal sealed partial class PilotContractStore
     private static bool Matches(CatalogDbContext catalog, ContractDetails details, ContractSearch search)
     {
         if (
-            details.Contract.Type == ContractType.ItemExchange
+            search.ExcludeNoBuyout && details.Contract.Type == ContractType.Auction && details.Contract.Auction!.BuyoutCents == 0
+            || details.Contract.Type is ContractType.ItemExchange or ContractType.Auction
                 && (
                     search.ExcludeTrade && details.Items.Any(i => !i.Offered)
                     || search.ExcludeMultiple && details.Items.Count(i => i.Offered && i.ParentId == null) > 1

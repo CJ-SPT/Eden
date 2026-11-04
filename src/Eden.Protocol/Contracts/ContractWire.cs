@@ -40,7 +40,7 @@ internal sealed record ContractRow(PersonalContract Contract) : BlueModel
                 ["dateCompleted"] = Contract.Completed ?? 0,
                 ["price"] = ContractWire.Isk(Contract.PriceCents),
                 ["reward"] = ContractWire.Isk(Contract.RewardCents),
-                ["collateral"] = ContractWire.Isk(Contract.Courier?.CollateralCents ?? 0),
+                ["collateral"] = ContractWire.Isk(Contract.Auction?.BuyoutCents ?? Contract.Courier?.CollateralCents ?? 0),
                 ["volume"] = Contract.Volume,
                 ["numDays"] = Contract.Courier?.DurationDays ?? 0,
                 ["crateID"] = Contract.Courier?.PackageId,
@@ -86,7 +86,7 @@ internal sealed record ContractDetailsReply(ContractDetails Details, bool ShowCo
                         ? []
                         : Details.Items.Select(i => new ContractItemRow(i)).ToArray()
                 ),
-                ["bids"] = new List<object?>(),
+                ["bids"] = new BlueList<ContractBidRow>((Details.Bids ?? []).Select(b => new ContractBidRow(b)).ToArray()),
             }
         );
 }
@@ -148,7 +148,7 @@ internal sealed record ContractPageReply(ContractPageInfo Page) : BlueModel
                 ["numOutstandingContracts"] = Page.Outstanding,
                 ["numRequiresAttention"] = Page.Attention.Count,
                 ["numRequiresAttentionCorp"] = 0,
-                ["numBiddingOn"] = 0,
+                ["numBiddingOn"] = Page.BiddingOn,
                 ["numBiddingOnCorp"] = 0,
                 ["numInProgress"] = Page.InProgress?.Count ?? 0,
                 ["numInProgressCorp"] = 0,
