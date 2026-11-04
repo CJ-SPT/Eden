@@ -141,6 +141,7 @@ internal sealed record ShipSlimItem(ShipContact Ship) : SlimItem
         fields["name"] = pilot.ShipName;
         fields["charID"] = pilot.PilotId;
         fields["corpID"] = pilot.CorpId;
+        fields["dirtTime"] = Ship.DirtTime;
         fields["modules"] = (Ship.Modules ?? [])
             .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })
             .ToList();

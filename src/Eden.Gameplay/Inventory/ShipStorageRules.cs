@@ -7,9 +7,22 @@ public sealed record ShipInventoryAccess(long PilotId, long ActiveShipId, long S
 
 public sealed record ShipWreckAccess(WreckContact Wreck, SpacePosition ShipPosition, double ShipRadius);
 
+public sealed record ShipStorageLocation(long Id, long OwnerId, long LocationId, int FlagId)
+{
+    public static ShipStorageLocation From(InventoryItem item) => new(item.Id, item.OwnerId, item.LocationId, item.FlagId);
+}
+
 public static class ShipStorageRules
 {
-    public static bool CanRead(ShipInventoryAccess access, InventoryItem ship, InventoryItem? parent, ShipWreckAccess? wreck = null)
+    public static bool CanRead(ShipInventoryAccess access, InventoryItem ship, InventoryItem? parent, ShipWreckAccess? wreck = null) =>
+        CanRead(access, ShipStorageLocation.From(ship), parent is null ? null : ShipStorageLocation.From(parent), wreck);
+
+    public static bool CanRead(
+        ShipInventoryAccess access,
+        ShipStorageLocation ship,
+        ShipStorageLocation? parent,
+        ShipWreckAccess? wreck = null
+    )
     {
         if (ship.OwnerId != access.PilotId)
         {

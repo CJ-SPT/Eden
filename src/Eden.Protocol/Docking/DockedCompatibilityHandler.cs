@@ -8,7 +8,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet fleet, IPilotSafety safety) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety safety) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
@@ -48,9 +48,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new DynamicBountyState(),
             ("ProjectDiscovery", "is_enabled") => false,
             ("clientStatLogger", "LogString") => PilotCallResult.None,
-            ("ship", "GetDirtTimestamp") when args.Length == 1 && Equals(args[0], pilot.ShipId) => clock
-                .GetUtcNow()
-                .UtcDateTime.ToFileTimeUtc(),
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
             ("corpRegistry", "GetCorporateContacts") => BlueEmpty.List,

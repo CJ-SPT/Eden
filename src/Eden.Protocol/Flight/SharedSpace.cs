@@ -108,7 +108,8 @@ internal sealed record ShipContact(
     SupportContact[]? Support = null,
     TackleContact[]? Tackle = null,
     int Stamp = 0,
-    bool Bumped = false
+    bool Bumped = false,
+    long? DirtTime = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

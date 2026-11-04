@@ -31,13 +31,40 @@ internal sealed class FlightSession(
     INpcEncounters? encounters = null,
     IWrecks? wrecks = null,
     IPilotMissiles? missiles = null,
-    IPilotTackle? tackle = null
+    IPilotTackle? tackle = null,
+    IPilotShipAppearance? appearance = null
 ) : IDisposable
 {
     private FlightEffects? _effects;
     private FlightEffects Effects => _effects ??= new(Update);
     private NavigationState _navigation = new();
     private ShipContact[] _peers = [];
+    private ShipDirtState? _dirt;
+
+    private long? DirtTimestamp()
+    {
+        if (appearance is not null && _dirt?.ShipId != Pilot.ShipId)
+        {
+            _dirt = appearance.Read(Pilot.PilotId, Pilot.ShipId);
+        }
+        return _dirt?.Timestamp;
+    }
+
+    public void RefreshDirtTimestamp(long shipId, long timestamp)
+    {
+        if (Pilot.ShipId != shipId)
+        {
+            return;
+        }
+        _dirt = new(shipId, timestamp);
+        if (InBallpark && !_destroying)
+        {
+            var contact = CreateContact();
+            Update(new DestinyCommand.OnSlimItemChange(shipId, new ShipSlimItem(contact)));
+            space.Publish(contact);
+        }
+    }
+
     private readonly Dictionary<long, long> _peerOrderSequences = new();
     private StaticSpaceObject[] _visibleAsteroids = [];
     private MiningContact[] _mining = [];
@@ -623,7 +650,8 @@ internal sealed class FlightSession(
             _hardeners,
             _support,
             _tackleEffects,
-            _simulatedStamp
+            _simulatedStamp,
+            DirtTime: DirtTimestamp()
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -851,6 +879,10 @@ internal sealed class FlightSession(
                 continue;
             }
             Effects.Replay(ship, previous);
+            if (ship.DirtTime != previous.DirtTime)
+            {
+                Update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));
+            }
             if (
                 ship.Health is { } currentHealth
                 && previous.Health is { } previousHealth

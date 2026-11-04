@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Ship dirt now uses a saved timestamp for each assembled hull, and the native **Clean Ship** action resets it. Aging survives repeated reads, restarts and ownership transfers. Hangar reads and space metadata share the same value, with cleaning updates for owners and observers. Hulls without previous dirt history begin tracking on their first authorized read. Access follows current ownership and inventory reachability; client rendering remains unverified. See the [ship dirt notes](docs/protocol.md#persistent-ship-dirt-and-native-cleaning).
+
 Bulk ship contracts now create one personal item-exchange offer per assembled ship, up to the pinned client's **30-ship** limit and the pilot's available skill slots. Each offer keeps its own price, fees, fitted contents and later settlement. The complete batch commits together; a rejected ship, insufficient funds or a failed write leaves all ships and funds unchanged. Native requests and progress notifications have automated coverage; client presentation remains unverified. See the [bulk ship contract notes](docs/protocol.md#bulk-fitted-ship-contract-creation).
 
 Personal auctions now support public offers and private assignments, held bids, automatic outbid refunds, repeated late-bid extensions and buyouts. Ordinary auction winners collect their goods after expiry; issuers collect proceeds separately. Buyouts deliver goods immediately. Bid history, claims, wallet entries and fitted hull contents survive restarts. Native calls have automated coverage; client presentation remains unverified. See the [auction notes](docs/protocol.md#personal-auction-contracts).

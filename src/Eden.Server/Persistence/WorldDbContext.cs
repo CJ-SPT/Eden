@@ -143,6 +143,8 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedShipDirt>().ToTable("WorldShipDirt").HasKey(s => s.ShipId);
+        model.Entity<SavedShipDirt>().HasOne<Ship>().WithMany().HasForeignKey(s => s.ShipId);
         model.Entity<SavedContract>().ToTable("WorldContract").HasKey(c => c.Id);
         model.Entity<SavedContract>().Property(c => c.Type).HasDefaultValue(Eden.Gameplay.Contracts.ContractType.ItemExchange);
         model.Entity<SavedContract>().HasIndex(c => c.PackageId).IsUnique();

@@ -20,6 +20,7 @@ internal sealed class FlightSessionFactory(
     IPilotHealth health,
     INpcEncounters encounters,
     IWrecks wrecks,
+    IPilotShipAppearance appearance,
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null
 )
@@ -41,6 +42,7 @@ internal sealed class FlightSessionFactory(
             encounters,
             wrecks,
             missiles,
-            tackle
+            tackle,
+            appearance
         );
 }

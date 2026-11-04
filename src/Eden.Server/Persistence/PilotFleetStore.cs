@@ -23,14 +23,13 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
     internal static InventoryItem Read(CatalogDbContext catalog, Ship ship)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == ship.TypeId);
+        var location = ShipStoragePersistence.Location(ship);
         return new(
             ship.Id,
             ship.TypeId,
             ship.OwnerId,
-            ship.StoredInId ?? (ship.Position is null ? ship.StationId : ship.Position.SystemId ?? ship.StationId),
-            ship.StoredInId is not null ? ship.StorageFlagId
-                : ship.Position is null ? (int)InventoryFlag.Hangar
-                : (int)InventoryFlag.AutoFit,
+            location.LocationId,
+            location.FlagId,
             1,
             type.GroupId,
             type.Group.CategoryId,
