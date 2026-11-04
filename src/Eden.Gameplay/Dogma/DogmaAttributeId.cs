@@ -3,6 +3,23 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ShipMaintenanceBayCapacity = 908,
+    SpecialFuelBayCapacity = 1549,
+    SpecialGasHoldCapacity = 1557,
+    SpecialMineralHoldCapacity = 1558,
+    SpecialAmmoHoldCapacity = 1573,
+    SpecialCommandCenterHoldCapacity = 1646,
+    SpecialPlanetaryCommoditiesHoldCapacity = 1653,
+    SpecialQuafeHoldCapacity = 1804,
+    FleetHangarCapacity = 912,
+    FighterCapacity = 2055,
+    SpecialCorpseHoldCapacity = 2467,
+    FrigateEscapeBayCapacity = 3020,
+    SpecialIceHoldCapacity = 3136,
+    SpecialMobileDepotHoldCapacity = 5325,
+    SpecialColonyResourcesHoldCapacity = 5646,
+    SpecialExpeditionHoldCapacity = 5944,
+
     BaseWarpSpeed = 1281,
     WarpSpeedMultiplier = 600,
     PrimaryAttribute = 180,
@@ -231,4 +248,6 @@ public enum DogmaAttributeId
     RemoteResistanceId = 2138,
     ModuleReactivationDelay = 669,
     DroneBandwidth = 1271,
+    DroneIsAggressive = 1275,
+    DroneFocusFire = 1297,
 }

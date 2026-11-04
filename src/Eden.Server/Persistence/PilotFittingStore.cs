@@ -288,6 +288,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 FittingCatalog.Definition(catalog, typeId)
                 ?? throw new InvalidDataException("This module family or effect is not supported yet.");
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
+            CheckHull(catalog, typeId, ship.TypeId);
             int first = definition.FirstFlag;
             int slots = Math.Clamp(checked((int)hull.GetValueOrDefault(definition.SlotAttribute)), 0, InventoryDefinitions.SlotsPerRack);
             return (first, slots);
@@ -326,6 +327,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 FittingCatalog.Definition(catalog, item.TypeId)
                 ?? throw new InvalidDataException("This module effect is not supported yet.");
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+            CheckHull(catalog, item.TypeId, pilot.ActiveShip.TypeId);
         }
         item.Online = online;
         if (online)
@@ -353,6 +355,16 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         return FittingCalculation.Read(world, catalog, pilot).SkillBonuses;
+    }
+
+    internal static void CheckHull(CatalogDbContext catalog, int moduleType, int hullType)
+    {
+        if (
+            !InventoryDefinitions.CanFitShip(ReadAttributes(catalog, moduleType), hullType, catalog.Set<ItemType>().Find(hullType)!.GroupId)
+        )
+        {
+            throw new InvalidDataException("This module is restricted to a different ship type or class.");
+        }
     }
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadModuleAttributes(

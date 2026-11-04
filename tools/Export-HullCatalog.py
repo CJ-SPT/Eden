@@ -12,7 +12,7 @@ def export(catalog_path, output_directory, cohort="frigates"):
             row = catalog.execute(
                 "SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?", (dataset, str(key))
             ).fetchone()
-            return json.loads(row[0]) if row else None
+            return json.loads(row[0]) if row else {}
 
         hulls = []
         for type_id, name, group_id, group_name in catalog.execute(
@@ -33,17 +33,25 @@ def export(catalog_path, output_directory, cohort="frigates"):
 
         # Four hulls, their test fits and medium weapons to verify size selectors.
         pending = {587, 594, 597, 603, 561, 484, 450, 1183, 215, 179, 246, 456, 490, 570}
-        if cohort in ("small", "combat"):
+        if cohort in ("small", "combat", "utility"):
             small_groups = {25, 31, 237, 420, 830, 831, 893, 1022}
             combat_groups = {26, 27, 419, 833, 894, 1201}
-            groups = small_groups if cohort == "small" else combat_groups
+            utility_groups = {28, 463, 513, 941, 4902, 5087}
+            groups = {"small": small_groups, "combat": combat_groups, "utility": utility_groups}[cohort]
             pending.update(hull["id"] for hull in hulls if hull["groupId"] in groups)
             # Launchers, propulsion, tackle, plates, mining and local shield boosts.
             pending.update({499, 10629, 266, 210, 434, 439, 527, 3242, 447, 11293, 482, 399, 523})
-        if cohort == "combat":
+        if cohort in ("combat", "utility"):
             # Real medium/large weapons, ammunition, tank and fitting-role probes.
             pending.update({567, 572, 494, 460, 377, 1333, 501, 1875, 20138, 503, 13320, 33448})
             pending.update({209, 20307, 267, 203, 223, 231, 187, 195, 254, 262, 3839, 11279, 3528, 3538, 10838})
+        if cohort == "utility":
+            # Ordinary strip miners, wrong-family controls and personal hold cargo.
+            pending.update({17482, 28754, 16278, 17912, 87562, 90493})
+            pending.update({34, 1230, 25268, 16262, 16272, 3645, 3683, 3699, 28668, 33474, 2488, 23055, 2524, 2541, 25})
+            # Native assembled-ship storage representatives and their preserved fits.
+            pending.update({33472, 33513, 638, 670})
+            pending.update({3898, 16273, 16275, 45586})
         types = []
         records = {}
         attributes = set()
@@ -70,6 +78,8 @@ def export(catalog_path, output_directory, cohort="frigates"):
             attributes.update(key for key, _ in values)
             for dataset in ("client/types", "client/typedogma"):
                 records[dataset, type_id] = record(dataset, type_id)
+            if cohort == "utility" and category_id == 6 and records["client/types", type_id].get("wreckTypeID"):
+                pending.add(records["client/types", type_id]["wreckTypeID"])
             for effect in records["client/typedogma", type_id].get("dogmaEffects", []):
                 effect_id = effect["effectID"]
                 definition = record("client/dogmaeffects", effect_id)
@@ -88,7 +98,7 @@ def export(catalog_path, output_directory, cohort="frigates"):
         output_directory.mkdir(parents=True, exist_ok=True)
         outputs = {
             "TechOneHulls.json": {"build": 3662168, "hulls": hulls},
-            {"small": "SmallHullCatalog.json", "combat": "CombatHullCatalog.json"}.get(cohort, "FrigateHullCatalog.json"): {
+            {"small": "SmallHullCatalog.json", "combat": "CombatHullCatalog.json", "utility": "UtilityHullCatalog.json"}.get(cohort, "FrigateHullCatalog.json"): {
                 "build": 3662168, "types": sorted(types, key=lambda t: t["id"]),
                 "records": [{"dataset": d, "key": k, "data": v} for (d, k), v in sorted(records.items())],
             },
@@ -102,6 +112,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
-    parser.add_argument("--cohort", choices=("frigates", "small", "combat"), default="frigates")
+    parser.add_argument("--cohort", choices=("frigates", "small", "combat", "utility"), default="frigates")
     options = parser.parse_args()
     export(options.catalog, options.output, options.cohort)

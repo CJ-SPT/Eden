@@ -12,7 +12,25 @@ public enum InventoryCategory
     Charge = 8,
     Blueprint = 9,
     Skill = 16,
+    Commodity = 17,
+    Drone = 18,
+    Implant = 20,
+    Deployable = 22,
     Asteroid = 25,
+    Apparel = 30,
+    Subsystem = 32,
+    Relic = 34,
+    InfrastructureUpgrade = 39,
+    SovereigntyStructure = 40,
+    PlanetaryResource = 42,
+    PlanetaryCommodity = 43,
+    Orbitals = 46,
+    SpecialEditionAssets = 63,
+    Structure = 65,
+    StructureModule = 66,
+    Fighter = 87,
+    ShipSkin = 91,
+    Personalization = 2118,
 }
 
 // Build 3662168: inventorycommon.const and dogma data in the pinned catalog.
@@ -28,7 +46,24 @@ public enum InventoryFlag
     HighSlot0 = 27,
     HighSlot1 = 28,
     HighSlot7 = 34,
+    DroneBay = 87,
+    ShipMaintenanceBay = 90,
+    FuelBay = 133,
     GeneralMiningHold = 134,
+    GasHold = 135,
+    MineralHold = 136,
+    AmmoHold = 143,
+    CommandCenterHold = 148,
+    PlanetaryCommoditiesHold = 149,
+    QuafeBay = 154,
+    FleetHangar = 155,
+    FighterBay = 158,
+    CorpseBay = 174,
+    FrigateEscapeBay = 179,
+    IceHold = 181,
+    MobileDepotHold = 183,
+    InfrastructureHold = 185,
+    ExpeditionHold = 188,
 }
 
 public enum InventoryLocation
@@ -127,7 +162,26 @@ public static class InventoryDefinitions
     public static bool RequiresSpecificShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         ShipRestrictions.Any(attribute => attributes.GetValueOrDefault(attribute) > 0);
 
+    public static bool CanFitShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes, int typeId, int groupId)
+    {
+        var groups = ShipRestrictions
+            .TakeWhile(a => a != DogmaAttributeId.CanFitShipType1)
+            .Select(a => attributes.GetValueOrDefault(a))
+            .Where(value => value > 0)
+            .ToArray();
+        var types = ShipRestrictions
+            .SkipWhile(a => a != DogmaAttributeId.CanFitShipType1)
+            .Select(a => attributes.GetValueOrDefault(a))
+            .Where(value => value > 0)
+            .ToArray();
+        return groups.Length + types.Length == 0 || groups.Contains(groupId) || types.Contains(typeId);
+    }
+
     public const int MiningLaserGroup = 54;
+    public const int StripMinerGroup = 464;
+
+    public static bool IsOreMiningGroup(int groupId) => groupId is MiningLaserGroup or StripMinerGroup;
+
     public const int CivilianMinerType = 3651;
     public const double OutputBonusPerSkillLevel = 0.05;
     public const double ResourceTolerance = 1e-9;

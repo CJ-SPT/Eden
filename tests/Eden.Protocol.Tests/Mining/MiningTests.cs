@@ -564,7 +564,8 @@ public sealed class MiningTests
         Assert.Equal(unloaded, Assert.Single(fixture.Inventory.List(pilot.PilotId, 60000100)));
         Assert.Null(flight.CallWire("ship", "Undock", [pilot.ShipId]));
         Assert.Equal(30000144, fixture.Db.Store.FindPilot(1000001)!.SystemId);
-        Assert.InRange(flight.Pilot.Position!.DistanceTo(station.Position), station.Radius + 499, station.Radius + 501);
+        double clearance = flight.Pilot.Position!.DistanceTo(station.Position) - station.Radius - flight.Pilot.Flight.ShipRadius;
+        Assert.InRange(clearance, 499, 501);
     }
 
     [Fact]

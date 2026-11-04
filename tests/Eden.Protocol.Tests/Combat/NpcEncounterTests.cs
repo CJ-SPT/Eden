@@ -29,7 +29,7 @@ public sealed class NpcEncounterTests
             INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (186,'Wreck',2),(18,'Mineral',4);
             INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (26557,'Frigate Wreck',186,10000,14,27500),
                 (34,'Tritanium',18,0,1,0);
-            INSERT INTO SourceRecord VALUES ('client/types','30380','{{"wreckTypeID":26557}}'),
+            INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','30380','{{"wreckTypeID":26557}}'),
                 ('client/types','26557','{{"published":1,"marketGroupID":1,"volume":27500}}'),
                     ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}');
             INSERT INTO ItemCategory(Id,Name) VALUES (11,'Entity');

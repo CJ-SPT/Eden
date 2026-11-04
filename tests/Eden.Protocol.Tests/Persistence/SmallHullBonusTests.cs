@@ -30,28 +30,42 @@ public sealed class SmallHullBonusTests
         long ship = SmallHullTests.Board(f, type);
         IReadOnlyList<PassiveModifier> modifiers;
         Dictionary<DogmaAttributeId, double> sources;
+        bool stripMiner;
         using (CatalogDbContext catalog = new(f.CatalogPath))
         {
+            stripMiner = catalog.Set<ItemType>().Find(type)!.GroupId == (int)HullClass.MiningBarge;
             modifiers = HullCatalog.Modifiers(catalog, type);
             sources = PilotFittingStore.ReadAttributes(catalog, type).ToDictionary();
             foreach (int skill in HullCatalog.Skills(catalog, type))
             {
+                var skillAttributes = PilotFittingStore.ReadAttributes(catalog, skill).ToDictionary();
+                skillAttributes[DogmaAttributeId.SkillLevel] = 5;
+                var skillModifiers = PassiveCatalog.Modifiers(catalog, skill);
                 foreach (
-                    var modifier in PassiveCatalog
-                        .Modifiers(catalog, skill)
-                        .Where(m =>
-                            m.Domain == ModifierDomain.Ship
-                            && m.Selector == ModifierSelector.Item
-                            && m.SourceAttribute == DogmaAttributeId.SkillLevel
-                        )
+                    var modifier in skillModifiers.Where(m =>
+                        m.Domain == ModifierDomain.Item
+                        && m.Selector == ModifierSelector.Item
+                        && m.SourceAttribute == DogmaAttributeId.SkillLevel
+                    )
                 )
                 {
-                    Assert.Contains(modifier.Operation, new[] { DogmaOperation.PreMultiply, DogmaOperation.PostMultiply });
-                    sources[modifier.Attribute] = sources.GetValueOrDefault(modifier.Attribute) * 5;
+                    skillAttributes[modifier.Attribute] = Apply(
+                        skillAttributes.GetValueOrDefault(modifier.Attribute),
+                        modifier.Operation,
+                        5
+                    );
+                }
+                foreach (var modifier in skillModifiers.Where(m => m.Domain == ModifierDomain.Ship && m.Selector == ModifierSelector.Item))
+                {
+                    sources[modifier.Attribute] = Apply(
+                        sources.GetValueOrDefault(modifier.Attribute),
+                        modifier.Operation,
+                        skillAttributes.GetValueOrDefault(modifier.SourceAttribute)
+                    );
                 }
             }
         }
-        foreach (var probe in modifiers.Select(ProbeFor).Distinct())
+        foreach (var probe in modifiers.Select(modifier => ProbeFor(modifier, stripMiner)).Distinct())
         {
             InventoryItem? module = null;
             long target = ship;
@@ -123,6 +137,15 @@ public sealed class SmallHullBonusTests
         }
     }
 
+    private static double Apply(double basis, DogmaOperation operation, double amount) =>
+        operation switch
+        {
+            DogmaOperation.PreMultiply or DogmaOperation.PostMultiply => basis * amount,
+            DogmaOperation.Add => basis + amount,
+            DogmaOperation.PostPercent => basis * (1 + amount / 100),
+            _ => throw new InvalidDataException("Unexpected hull-source skill operation."),
+        };
+
     private static Dictionary<DogmaAttributeId, double> Attributes(Fixture f, long target)
     {
         using CatalogDbContext catalog = new(f.CatalogPath);
@@ -155,7 +178,7 @@ public sealed class SmallHullBonusTests
         return InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == modifier.SelectionId);
     }
 
-    private static Probe ProbeFor(PassiveModifier modifier) =>
+    private static Probe ProbeFor(PassiveModifier modifier, bool stripMiner) =>
         modifier.Selector switch
         {
             ModifierSelector.Item => new(0),
@@ -196,7 +219,7 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.LargeProjectileTurret => new(494),
                 HullBonusSkill.LargeEnergyTurret => new(460),
                 HullBonusSkill.MissileLauncherOperation => new(499),
-                HullBonusSkill.Mining => new(482),
+                HullBonusSkill.Mining => new(stripMiner ? 17482 : 482),
                 HullBonusSkill.RepairSystems => new(523),
                 HullBonusSkill.ShieldOperation => new(399),
                 HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => new(447),

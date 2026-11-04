@@ -1,0 +1,8806 @@
+{
+  "build": 3662168,
+  "source": "inventorycommon.const and inventoryFlagsCommon.ShouldAllowAdd from stock code.ccp",
+  "archiveSha256": "37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368",
+  "items": [
+    {
+      "typeId": 18,
+      "groupId": 458,
+      "categoryId": 25
+    },
+    {
+      "typeId": 25,
+      "groupId": 14,
+      "categoryId": 2
+    },
+    {
+      "typeId": 34,
+      "groupId": 18,
+      "categoryId": 4
+    },
+    {
+      "typeId": 41,
+      "groupId": 280,
+      "categoryId": 17
+    },
+    {
+      "typeId": 44,
+      "groupId": 1034,
+      "categoryId": 43
+    },
+    {
+      "typeId": 178,
+      "groupId": 83,
+      "categoryId": 8
+    },
+    {
+      "typeId": 215,
+      "groupId": 85,
+      "categoryId": 8
+    },
+    {
+      "typeId": 263,
+      "groupId": 87,
+      "categoryId": 8
+    },
+    {
+      "typeId": 582,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 583,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 584,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 585,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 586,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 587,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 588,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 589,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 590,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 591,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 592,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 593,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 594,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 596,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 597,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 598,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 599,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 601,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 602,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 603,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 605,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 606,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 607,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 608,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 609,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 615,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 617,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 620,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 621,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 622,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 623,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 624,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 625,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 626,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 627,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 628,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 629,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 630,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 631,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 632,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 633,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 634,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 635,
+      "groupId": 5087,
+      "categoryId": 6
+    },
+    {
+      "typeId": 638,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 639,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 640,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 641,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 642,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 643,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 644,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 645,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 648,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 649,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 650,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 651,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 652,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 653,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 654,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 655,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 656,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 657,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 670,
+      "groupId": 29,
+      "categoryId": 6
+    },
+    {
+      "typeId": 671,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 672,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 681,
+      "groupId": 104,
+      "categoryId": 9
+    },
+    {
+      "typeId": 1201,
+      "groupId": 100,
+      "categoryId": 18
+    },
+    {
+      "typeId": 1230,
+      "groupId": 462,
+      "categoryId": 25
+    },
+    {
+      "typeId": 1944,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2001,
+      "groupId": 1016,
+      "categoryId": 39
+    },
+    {
+      "typeId": 2006,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2073,
+      "groupId": 1035,
+      "categoryId": 42
+    },
+    {
+      "typeId": 2078,
+      "groupId": 1022,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2082,
+      "groupId": 1730,
+      "categoryId": 20
+    },
+    {
+      "typeId": 2129,
+      "groupId": 1027,
+      "categoryId": 41
+    },
+    {
+      "typeId": 2161,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2233,
+      "groupId": 1025,
+      "categoryId": 46
+    },
+    {
+      "typeId": 2403,
+      "groupId": 1241,
+      "categoryId": 16
+    },
+    {
+      "typeId": 2488,
+      "groupId": 100,
+      "categoryId": 18
+    },
+    {
+      "typeId": 2541,
+      "groupId": 1029,
+      "categoryId": 41
+    },
+    {
+      "typeId": 2834,
+      "groupId": 324,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2838,
+      "groupId": 303,
+      "categoryId": 20
+    },
+    {
+      "typeId": 2863,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 2948,
+      "groupId": 1653,
+      "categoryId": 87
+    },
+    {
+      "typeId": 2998,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3514,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3532,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3645,
+      "groupId": 1042,
+      "categoryId": 43
+    },
+    {
+      "typeId": 3683,
+      "groupId": 1042,
+      "categoryId": 43
+    },
+    {
+      "typeId": 3699,
+      "groupId": 280,
+      "categoryId": 17
+    },
+    {
+      "typeId": 3756,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3764,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3766,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 3898,
+      "groupId": 303,
+      "categoryId": 20
+    },
+    {
+      "typeId": 3958,
+      "groupId": 1083,
+      "categoryId": 30
+    },
+    {
+      "typeId": 4051,
+      "groupId": 1136,
+      "categoryId": 4
+    },
+    {
+      "typeId": 4090,
+      "groupId": 280,
+      "categoryId": 17
+    },
+    {
+      "typeId": 4302,
+      "groupId": 1201,
+      "categoryId": 6
+    },
+    {
+      "typeId": 4306,
+      "groupId": 1201,
+      "categoryId": 6
+    },
+    {
+      "typeId": 4308,
+      "groupId": 1201,
+      "categoryId": 6
+    },
+    {
+      "typeId": 4310,
+      "groupId": 1201,
+      "categoryId": 6
+    },
+    {
+      "typeId": 4363,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 4386,
+      "groupId": 1149,
+      "categoryId": 22
+    },
+    {
+      "typeId": 4388,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11011,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11129,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11132,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11134,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11174,
+      "groupId": 893,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11567,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11724,
+      "groupId": 355,
+      "categoryId": 17
+    },
+    {
+      "typeId": 11936,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11938,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11940,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 11942,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 12865,
+      "groupId": 280,
+      "categoryId": 17
+    },
+    {
+      "typeId": 12994,
+      "groupId": 314,
+      "categoryId": 17
+    },
+    {
+      "typeId": 13202,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16227,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16229,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16231,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16233,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16236,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16238,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16240,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16242,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 16262,
+      "groupId": 465,
+      "categoryId": 25
+    },
+    {
+      "typeId": 16272,
+      "groupId": 423,
+      "categoryId": 4
+    },
+    {
+      "typeId": 16273,
+      "groupId": 423,
+      "categoryId": 4
+    },
+    {
+      "typeId": 16275,
+      "groupId": 423,
+      "categoryId": 4
+    },
+    {
+      "typeId": 16633,
+      "groupId": 427,
+      "categoryId": 4
+    },
+    {
+      "typeId": 17476,
+      "groupId": 463,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17478,
+      "groupId": 463,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17480,
+      "groupId": 463,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17619,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17634,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17636,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17703,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17709,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17713,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17715,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17718,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17720,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17722,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17726,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17728,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17732,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17736,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17738,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17740,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17812,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17841,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17843,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17918,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17920,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17922,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17924,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17926,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17928,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17930,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 17932,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 18626,
+      "groupId": 492,
+      "categoryId": 8
+    },
+    {
+      "typeId": 19658,
+      "groupId": 976,
+      "categoryId": 63
+    },
+    {
+      "typeId": 19720,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 19722,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 19724,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 19726,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 19744,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 20183,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 20185,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 20187,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 20189,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 21097,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 21628,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 21661,
+      "groupId": 526,
+      "categoryId": 17
+    },
+    {
+      "typeId": 21815,
+      "groupId": 886,
+      "categoryId": 4
+    },
+    {
+      "typeId": 22852,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23055,
+      "groupId": 1652,
+      "categoryId": 87
+    },
+    {
+      "typeId": 23757,
+      "groupId": 547,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23773,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23911,
+      "groupId": 547,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23913,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23915,
+      "groupId": 547,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23917,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 23919,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24483,
+      "groupId": 547,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24608,
+      "groupId": 500,
+      "categoryId": 8
+    },
+    {
+      "typeId": 24688,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24690,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24692,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24694,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24696,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24698,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24700,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 24702,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 25268,
+      "groupId": 711,
+      "categoryId": 2
+    },
+    {
+      "typeId": 25588,
+      "groupId": 754,
+      "categoryId": 4
+    },
+    {
+      "typeId": 26840,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 26842,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 28352,
+      "groupId": 883,
+      "categoryId": 6
+    },
+    {
+      "typeId": 28606,
+      "groupId": 941,
+      "categoryId": 6
+    },
+    {
+      "typeId": 28668,
+      "groupId": 916,
+      "categoryId": 8
+    },
+    {
+      "typeId": 29113,
+      "groupId": 903,
+      "categoryId": 25
+    },
+    {
+      "typeId": 29148,
+      "groupId": 14,
+      "categoryId": 2
+    },
+    {
+      "typeId": 29248,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 29266,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 29336,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 29337,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 29340,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 29344,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 30013,
+      "groupId": 479,
+      "categoryId": 8
+    },
+    {
+      "typeId": 30018,
+      "groupId": 966,
+      "categoryId": 4
+    },
+    {
+      "typeId": 30187,
+      "groupId": 971,
+      "categoryId": 34
+    },
+    {
+      "typeId": 30842,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32226,
+      "groupId": 1003,
+      "categoryId": 40
+    },
+    {
+      "typeId": 32305,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32307,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32309,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32311,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32811,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32872,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32874,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32876,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32878,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 32880,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33079,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33081,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33083,
+      "groupId": 237,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33151,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33153,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33155,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33157,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33328,
+      "groupId": 29,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33395,
+      "groupId": 833,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33397,
+      "groupId": 830,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33468,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33470,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33472,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33474,
+      "groupId": 1246,
+      "categoryId": 22
+    },
+    {
+      "typeId": 33513,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33553,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33816,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33818,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 33820,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 34201,
+      "groupId": 1304,
+      "categoryId": 35
+    },
+    {
+      "typeId": 34328,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 34496,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 34590,
+      "groupId": 5087,
+      "categoryId": 6
+    },
+    {
+      "typeId": 34599,
+      "groupId": 1950,
+      "categoryId": 91
+    },
+    {
+      "typeId": 35779,
+      "groupId": 831,
+      "categoryId": 6
+    },
+    {
+      "typeId": 35781,
+      "groupId": 894,
+      "categoryId": 6
+    },
+    {
+      "typeId": 35825,
+      "groupId": 1404,
+      "categoryId": 65
+    },
+    {
+      "typeId": 35877,
+      "groupId": 1415,
+      "categoryId": 66
+    },
+    {
+      "typeId": 37453,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37454,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37455,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37456,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37457,
+      "groupId": 1527,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37604,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37605,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37606,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37607,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 37821,
+      "groupId": 1549,
+      "categoryId": 8
+    },
+    {
+      "typeId": 37843,
+      "groupId": 1546,
+      "categoryId": 8
+    },
+    {
+      "typeId": 37846,
+      "groupId": 1547,
+      "categoryId": 8
+    },
+    {
+      "typeId": 37849,
+      "groupId": 1548,
+      "categoryId": 8
+    },
+    {
+      "typeId": 41263,
+      "groupId": 1676,
+      "categoryId": 4
+    },
+    {
+      "typeId": 42124,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42125,
+      "groupId": 659,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42126,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42241,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42242,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42243,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42244,
+      "groupId": 941,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42685,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 42694,
+      "groupId": 1769,
+      "categoryId": 8
+    },
+    {
+      "typeId": 42829,
+      "groupId": 1771,
+      "categoryId": 8
+    },
+    {
+      "typeId": 42832,
+      "groupId": 1774,
+      "categoryId": 8
+    },
+    {
+      "typeId": 42835,
+      "groupId": 1773,
+      "categoryId": 8
+    },
+    {
+      "typeId": 42838,
+      "groupId": 1772,
+      "categoryId": 8
+    },
+    {
+      "typeId": 45586,
+      "groupId": 954,
+      "categoryId": 32
+    },
+    {
+      "typeId": 45645,
+      "groupId": 1538,
+      "categoryId": 6
+    },
+    {
+      "typeId": 45647,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 45649,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 47035,
+      "groupId": 4777,
+      "categoryId": 87
+    },
+    {
+      "typeId": 47037,
+      "groupId": 4778,
+      "categoryId": 87
+    },
+    {
+      "typeId": 47038,
+      "groupId": 4779,
+      "categoryId": 87
+    },
+    {
+      "typeId": 47269,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 47270,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 47271,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 47300,
+      "groupId": 1976,
+      "categoryId": 8
+    },
+    {
+      "typeId": 47336,
+      "groupId": 1551,
+      "categoryId": 8
+    },
+    {
+      "typeId": 47466,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 49710,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 49711,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 49712,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 49789,
+      "groupId": 2022,
+      "categoryId": 25
+    },
+    {
+      "typeId": 52907,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 54731,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 54732,
+      "groupId": 26,
+      "categoryId": 6
+    },
+    {
+      "typeId": 54733,
+      "groupId": 27,
+      "categoryId": 6
+    },
+    {
+      "typeId": 57422,
+      "groupId": 280,
+      "categoryId": 17
+    },
+    {
+      "typeId": 60559,
+      "groupId": 4094,
+      "categoryId": 25
+    },
+    {
+      "typeId": 60764,
+      "groupId": 894,
+      "categoryId": 6
+    },
+    {
+      "typeId": 60765,
+      "groupId": 893,
+      "categoryId": 6
+    },
+    {
+      "typeId": 62377,
+      "groupId": 4168,
+      "categoryId": 2
+    },
+    {
+      "typeId": 63195,
+      "groupId": 4186,
+      "categoryId": 8
+    },
+    {
+      "typeId": 64034,
+      "groupId": 31,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72811,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72812,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72869,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72872,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72903,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72904,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72907,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72913,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 72964,
+      "groupId": 4471,
+      "categoryId": 2118
+    },
+    {
+      "typeId": 73787,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73789,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73790,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73792,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73793,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73794,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73795,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 73796,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 77114,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 78333,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 78366,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 78367,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 78369,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 78576,
+      "groupId": 30,
+      "categoryId": 6
+    },
+    {
+      "typeId": 79910,
+      "groupId": 4714,
+      "categoryId": 25
+    },
+    {
+      "typeId": 81008,
+      "groupId": 28,
+      "categoryId": 6
+    },
+    {
+      "typeId": 81040,
+      "groupId": 513,
+      "categoryId": 6
+    },
+    {
+      "typeId": 81143,
+      "groupId": 4729,
+      "categoryId": 2143
+    },
+    {
+      "typeId": 85086,
+      "groupId": 419,
+      "categoryId": 6
+    },
+    {
+      "typeId": 85087,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 87381,
+      "groupId": 485,
+      "categoryId": 6
+    },
+    {
+      "typeId": 89240,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 89607,
+      "groupId": 4902,
+      "categoryId": 6
+    },
+    {
+      "typeId": 89612,
+      "groupId": 4905,
+      "categoryId": 8
+    },
+    {
+      "typeId": 89647,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 89648,
+      "groupId": 25,
+      "categoryId": 6
+    },
+    {
+      "typeId": 89807,
+      "groupId": 1201,
+      "categoryId": 6
+    },
+    {
+      "typeId": 90041,
+      "groupId": 4915,
+      "categoryId": 4
+    },
+    {
+      "typeId": 90283,
+      "groupId": 4932,
+      "categoryId": 4
+    },
+    {
+      "typeId": 91174,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 91775,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 91849,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 91857,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 91858,
+      "groupId": 420,
+      "categoryId": 6
+    },
+    {
+      "typeId": 92282,
+      "groupId": 5087,
+      "categoryId": 6
+    },
+    {
+      "typeId": 92283,
+      "groupId": 5087,
+      "categoryId": 6
+    },
+    {
+      "typeId": 92284,
+      "groupId": 5087,
+      "categoryId": 6
+    },
+    {
+      "typeId": 95741,
+      "groupId": 1201,
+      "categoryId": 6
+    }
+  ],
+  "holds": [
+    {
+      "flag": 5,
+      "attribute": 38,
+      "allowedTypes": [
+        18,
+        25,
+        34,
+        41,
+        44,
+        178,
+        215,
+        263,
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591,
+        592,
+        593,
+        594,
+        596,
+        597,
+        598,
+        599,
+        601,
+        602,
+        603,
+        605,
+        606,
+        607,
+        608,
+        609,
+        615,
+        617,
+        620,
+        621,
+        622,
+        623,
+        624,
+        625,
+        626,
+        627,
+        628,
+        629,
+        630,
+        631,
+        632,
+        633,
+        634,
+        635,
+        638,
+        639,
+        640,
+        641,
+        642,
+        643,
+        644,
+        645,
+        648,
+        649,
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657,
+        670,
+        671,
+        672,
+        681,
+        1201,
+        1230,
+        1944,
+        2001,
+        2006,
+        2073,
+        2078,
+        2082,
+        2129,
+        2161,
+        2233,
+        2403,
+        2488,
+        2541,
+        2834,
+        2838,
+        2863,
+        2948,
+        2998,
+        3514,
+        3532,
+        3645,
+        3683,
+        3699,
+        3756,
+        3764,
+        3766,
+        3898,
+        3958,
+        4051,
+        4090,
+        4302,
+        4306,
+        4308,
+        4310,
+        4363,
+        4386,
+        4388,
+        11011,
+        11129,
+        11132,
+        11134,
+        11174,
+        11567,
+        11724,
+        11936,
+        11938,
+        11940,
+        11942,
+        12865,
+        12994,
+        13202,
+        16227,
+        16229,
+        16231,
+        16233,
+        16236,
+        16238,
+        16240,
+        16242,
+        16262,
+        16272,
+        16273,
+        16275,
+        16633,
+        17476,
+        17478,
+        17480,
+        17619,
+        17634,
+        17636,
+        17703,
+        17709,
+        17713,
+        17715,
+        17718,
+        17720,
+        17722,
+        17726,
+        17728,
+        17732,
+        17736,
+        17738,
+        17740,
+        17812,
+        17841,
+        17843,
+        17918,
+        17920,
+        17922,
+        17924,
+        17926,
+        17928,
+        17930,
+        17932,
+        18626,
+        19658,
+        19720,
+        19722,
+        19724,
+        19726,
+        19744,
+        20183,
+        20185,
+        20187,
+        20189,
+        21097,
+        21628,
+        21661,
+        21815,
+        22852,
+        23055,
+        23757,
+        23773,
+        23911,
+        23913,
+        23915,
+        23917,
+        23919,
+        24483,
+        24608,
+        24688,
+        24690,
+        24692,
+        24694,
+        24696,
+        24698,
+        24700,
+        24702,
+        25268,
+        25588,
+        26840,
+        26842,
+        28352,
+        28606,
+        28668,
+        29113,
+        29148,
+        29248,
+        29266,
+        29336,
+        29337,
+        29340,
+        29344,
+        30013,
+        30018,
+        30187,
+        30842,
+        32226,
+        32305,
+        32307,
+        32309,
+        32311,
+        32811,
+        32872,
+        32874,
+        32876,
+        32878,
+        32880,
+        33079,
+        33081,
+        33083,
+        33151,
+        33153,
+        33155,
+        33157,
+        33328,
+        33395,
+        33397,
+        33468,
+        33470,
+        33472,
+        33474,
+        33513,
+        33553,
+        33816,
+        33818,
+        33820,
+        34201,
+        34328,
+        34496,
+        34590,
+        34599,
+        35779,
+        35781,
+        35825,
+        35877,
+        37453,
+        37454,
+        37455,
+        37456,
+        37457,
+        37604,
+        37605,
+        37606,
+        37607,
+        37821,
+        37843,
+        37846,
+        37849,
+        41263,
+        42124,
+        42125,
+        42126,
+        42241,
+        42242,
+        42243,
+        42244,
+        42685,
+        42694,
+        42829,
+        42832,
+        42835,
+        42838,
+        45586,
+        45645,
+        45647,
+        45649,
+        47035,
+        47037,
+        47038,
+        47269,
+        47270,
+        47271,
+        47300,
+        47336,
+        47466,
+        49710,
+        49711,
+        49712,
+        49789,
+        52907,
+        54731,
+        54732,
+        54733,
+        57422,
+        60559,
+        60764,
+        60765,
+        62377,
+        63195,
+        64034,
+        72811,
+        72812,
+        72869,
+        72872,
+        72903,
+        72904,
+        72907,
+        72913,
+        72964,
+        73787,
+        73789,
+        73790,
+        73792,
+        73793,
+        73794,
+        73795,
+        73796,
+        77114,
+        78333,
+        78366,
+        78367,
+        78369,
+        78576,
+        79910,
+        81008,
+        81040,
+        81143,
+        85086,
+        85087,
+        87381,
+        89240,
+        89607,
+        89612,
+        89647,
+        89648,
+        89807,
+        90041,
+        90283,
+        91174,
+        91775,
+        91849,
+        91857,
+        91858,
+        92282,
+        92283,
+        92284,
+        95741
+      ]
+    },
+    {
+      "flag": 87,
+      "attribute": 283,
+      "allowedTypes": [
+        1201,
+        2488
+      ]
+    },
+    {
+      "flag": 90,
+      "attribute": 908,
+      "allowedTypes": [
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591,
+        592,
+        593,
+        594,
+        596,
+        597,
+        598,
+        599,
+        601,
+        602,
+        603,
+        605,
+        606,
+        607,
+        608,
+        609,
+        615,
+        617,
+        620,
+        621,
+        622,
+        623,
+        624,
+        625,
+        626,
+        627,
+        628,
+        629,
+        630,
+        631,
+        632,
+        633,
+        634,
+        635,
+        638,
+        639,
+        640,
+        641,
+        642,
+        643,
+        644,
+        645,
+        648,
+        649,
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657,
+        671,
+        672,
+        1944,
+        2006,
+        2078,
+        2161,
+        2834,
+        2863,
+        2998,
+        3514,
+        3532,
+        3756,
+        3764,
+        3766,
+        4302,
+        4306,
+        4308,
+        4310,
+        4363,
+        4388,
+        11011,
+        11129,
+        11132,
+        11134,
+        11174,
+        11567,
+        11936,
+        11938,
+        11940,
+        11942,
+        13202,
+        16227,
+        16229,
+        16231,
+        16233,
+        16236,
+        16238,
+        16240,
+        16242,
+        17476,
+        17478,
+        17480,
+        17619,
+        17634,
+        17636,
+        17703,
+        17709,
+        17713,
+        17715,
+        17718,
+        17720,
+        17722,
+        17726,
+        17728,
+        17732,
+        17736,
+        17738,
+        17740,
+        17812,
+        17841,
+        17843,
+        17918,
+        17920,
+        17922,
+        17924,
+        17926,
+        17928,
+        17930,
+        17932,
+        19720,
+        19722,
+        19724,
+        19726,
+        19744,
+        20183,
+        20185,
+        20187,
+        20189,
+        21097,
+        21628,
+        22852,
+        23757,
+        23773,
+        23911,
+        23913,
+        23915,
+        23917,
+        23919,
+        24483,
+        24688,
+        24690,
+        24692,
+        24694,
+        24696,
+        24698,
+        24700,
+        24702,
+        26840,
+        26842,
+        28352,
+        28606,
+        29248,
+        29266,
+        29336,
+        29337,
+        29340,
+        29344,
+        30842,
+        32305,
+        32307,
+        32309,
+        32311,
+        32811,
+        32872,
+        32874,
+        32876,
+        32878,
+        32880,
+        33079,
+        33081,
+        33083,
+        33151,
+        33153,
+        33155,
+        33157,
+        33395,
+        33397,
+        33468,
+        33470,
+        33472,
+        33513,
+        33553,
+        33816,
+        33818,
+        33820,
+        34328,
+        34496,
+        34590,
+        35779,
+        35781,
+        37453,
+        37454,
+        37455,
+        37456,
+        37457,
+        37604,
+        37605,
+        37606,
+        37607,
+        42124,
+        42125,
+        42126,
+        42241,
+        42242,
+        42243,
+        42244,
+        42685,
+        45645,
+        45647,
+        45649,
+        47269,
+        47270,
+        47271,
+        47466,
+        49710,
+        49711,
+        49712,
+        52907,
+        54731,
+        54732,
+        54733,
+        60764,
+        60765,
+        64034,
+        72811,
+        72812,
+        72869,
+        72872,
+        72903,
+        72904,
+        72907,
+        72913,
+        73787,
+        73789,
+        73790,
+        73792,
+        73793,
+        73794,
+        73795,
+        73796,
+        77114,
+        78333,
+        78366,
+        78367,
+        78369,
+        78576,
+        81008,
+        81040,
+        85086,
+        85087,
+        87381,
+        89240,
+        89607,
+        89647,
+        89648,
+        89807,
+        91174,
+        91775,
+        91849,
+        91857,
+        91858,
+        92282,
+        92283,
+        92284,
+        95741
+      ]
+    },
+    {
+      "flag": 133,
+      "attribute": 1549,
+      "allowedTypes": [
+        16272,
+        16273,
+        16275
+      ]
+    },
+    {
+      "flag": 134,
+      "attribute": 1556,
+      "allowedTypes": [
+        18,
+        1230,
+        16262,
+        25268,
+        29113,
+        49789,
+        62377,
+        90041
+      ]
+    },
+    {
+      "flag": 135,
+      "attribute": 1557,
+      "allowedTypes": [
+        25268,
+        62377
+      ]
+    },
+    {
+      "flag": 136,
+      "attribute": 1558,
+      "allowedTypes": [
+        34,
+        90283
+      ]
+    },
+    {
+      "flag": 143,
+      "attribute": 1573,
+      "allowedTypes": [
+        178,
+        215,
+        263,
+        18626,
+        24608,
+        28668,
+        30013,
+        37821,
+        37843,
+        37846,
+        37849,
+        42694,
+        42829,
+        42832,
+        42835,
+        42838,
+        47300,
+        47336,
+        63195,
+        89612
+      ]
+    },
+    {
+      "flag": 148,
+      "attribute": 1646,
+      "allowedTypes": [
+        2129
+      ]
+    },
+    {
+      "flag": 149,
+      "attribute": 1653,
+      "allowedTypes": [
+        44,
+        2073,
+        3645,
+        3683
+      ]
+    },
+    {
+      "flag": 154,
+      "attribute": 1804,
+      "allowedTypes": [
+        3699,
+        3898,
+        4090,
+        12865,
+        12994,
+        21661,
+        57422
+      ]
+    },
+    {
+      "flag": 155,
+      "attribute": 912,
+      "allowedTypes": [
+        18,
+        25,
+        34,
+        41,
+        44,
+        178,
+        215,
+        263,
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591,
+        592,
+        593,
+        594,
+        596,
+        597,
+        598,
+        599,
+        601,
+        602,
+        603,
+        605,
+        606,
+        607,
+        608,
+        609,
+        615,
+        617,
+        620,
+        621,
+        622,
+        623,
+        624,
+        625,
+        626,
+        627,
+        628,
+        629,
+        630,
+        631,
+        632,
+        633,
+        634,
+        635,
+        638,
+        639,
+        640,
+        641,
+        642,
+        643,
+        644,
+        645,
+        648,
+        649,
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657,
+        670,
+        671,
+        672,
+        681,
+        1201,
+        1230,
+        1944,
+        2001,
+        2006,
+        2073,
+        2078,
+        2082,
+        2129,
+        2161,
+        2233,
+        2403,
+        2488,
+        2541,
+        2834,
+        2838,
+        2863,
+        2948,
+        2998,
+        3514,
+        3532,
+        3645,
+        3683,
+        3699,
+        3756,
+        3764,
+        3766,
+        3898,
+        3958,
+        4051,
+        4090,
+        4302,
+        4306,
+        4308,
+        4310,
+        4363,
+        4386,
+        4388,
+        11011,
+        11129,
+        11132,
+        11134,
+        11174,
+        11567,
+        11724,
+        11936,
+        11938,
+        11940,
+        11942,
+        12865,
+        12994,
+        13202,
+        16227,
+        16229,
+        16231,
+        16233,
+        16236,
+        16238,
+        16240,
+        16242,
+        16262,
+        16272,
+        16273,
+        16275,
+        16633,
+        17476,
+        17478,
+        17480,
+        17619,
+        17634,
+        17636,
+        17703,
+        17709,
+        17713,
+        17715,
+        17718,
+        17720,
+        17722,
+        17726,
+        17728,
+        17732,
+        17736,
+        17738,
+        17740,
+        17812,
+        17841,
+        17843,
+        17918,
+        17920,
+        17922,
+        17924,
+        17926,
+        17928,
+        17930,
+        17932,
+        18626,
+        19658,
+        19720,
+        19722,
+        19724,
+        19726,
+        19744,
+        20183,
+        20185,
+        20187,
+        20189,
+        21097,
+        21628,
+        21661,
+        21815,
+        22852,
+        23055,
+        23757,
+        23773,
+        23911,
+        23913,
+        23915,
+        23917,
+        23919,
+        24483,
+        24608,
+        24688,
+        24690,
+        24692,
+        24694,
+        24696,
+        24698,
+        24700,
+        24702,
+        25268,
+        25588,
+        26840,
+        26842,
+        28352,
+        28606,
+        28668,
+        29113,
+        29148,
+        29248,
+        29266,
+        29336,
+        29337,
+        29340,
+        29344,
+        30013,
+        30018,
+        30187,
+        30842,
+        32226,
+        32305,
+        32307,
+        32309,
+        32311,
+        32811,
+        32872,
+        32874,
+        32876,
+        32878,
+        32880,
+        33079,
+        33081,
+        33083,
+        33151,
+        33153,
+        33155,
+        33157,
+        33328,
+        33395,
+        33397,
+        33468,
+        33470,
+        33472,
+        33474,
+        33513,
+        33553,
+        33816,
+        33818,
+        33820,
+        34201,
+        34328,
+        34496,
+        34590,
+        34599,
+        35779,
+        35781,
+        35825,
+        35877,
+        37453,
+        37454,
+        37455,
+        37456,
+        37457,
+        37604,
+        37605,
+        37606,
+        37607,
+        37821,
+        37843,
+        37846,
+        37849,
+        41263,
+        42124,
+        42125,
+        42126,
+        42241,
+        42242,
+        42243,
+        42244,
+        42685,
+        42694,
+        42829,
+        42832,
+        42835,
+        42838,
+        45586,
+        45645,
+        45647,
+        45649,
+        47035,
+        47037,
+        47038,
+        47269,
+        47270,
+        47271,
+        47300,
+        47336,
+        47466,
+        49710,
+        49711,
+        49712,
+        49789,
+        52907,
+        54731,
+        54732,
+        54733,
+        57422,
+        60559,
+        60764,
+        60765,
+        62377,
+        63195,
+        64034,
+        72811,
+        72812,
+        72869,
+        72872,
+        72903,
+        72904,
+        72907,
+        72913,
+        72964,
+        73787,
+        73789,
+        73790,
+        73792,
+        73793,
+        73794,
+        73795,
+        73796,
+        77114,
+        78333,
+        78366,
+        78367,
+        78369,
+        78576,
+        79910,
+        81008,
+        81040,
+        81143,
+        85086,
+        85087,
+        87381,
+        89240,
+        89607,
+        89612,
+        89647,
+        89648,
+        89807,
+        90041,
+        90283,
+        91174,
+        91775,
+        91849,
+        91857,
+        91858,
+        92282,
+        92283,
+        92284,
+        95741
+      ]
+    },
+    {
+      "flag": 158,
+      "attribute": 2055,
+      "allowedTypes": [
+        2948,
+        23055,
+        47035,
+        47037,
+        47038
+      ]
+    },
+    {
+      "flag": 174,
+      "attribute": 2467,
+      "allowedTypes": [
+        25,
+        29148
+      ]
+    },
+    {
+      "flag": 179,
+      "attribute": 3020,
+      "allowedTypes": [
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        589,
+        590,
+        591,
+        592,
+        593,
+        594,
+        597,
+        598,
+        599,
+        602,
+        603,
+        605,
+        607,
+        608,
+        609,
+        2161,
+        2834,
+        3532,
+        3766,
+        11174,
+        11940,
+        11942,
+        17619,
+        17703,
+        17812,
+        17841,
+        17924,
+        17926,
+        17928,
+        17930,
+        17932,
+        29248,
+        32880,
+        33468,
+        33816,
+        37453,
+        37454,
+        37455,
+        37456,
+        37457,
+        47269,
+        54731,
+        60765,
+        72903,
+        72904,
+        72907,
+        72913,
+        77114,
+        89648
+      ]
+    },
+    {
+      "flag": 181,
+      "attribute": 3136,
+      "allowedTypes": [
+        16262,
+        29113,
+        49789
+      ]
+    },
+    {
+      "flag": 183,
+      "attribute": 5325,
+      "allowedTypes": [
+        33474
+      ]
+    },
+    {
+      "flag": 185,
+      "attribute": 5646,
+      "allowedTypes": [
+        44,
+        2001,
+        2073,
+        2129,
+        2233,
+        3645,
+        3683,
+        4051,
+        4386,
+        16272,
+        16273,
+        16275,
+        16633,
+        32226,
+        33474,
+        35825,
+        35877,
+        37821,
+        37843,
+        37846,
+        37849,
+        47035,
+        47037,
+        47038,
+        47336,
+        63195,
+        81143
+      ]
+    },
+    {
+      "flag": 188,
+      "attribute": 5944,
+      "allowedTypes": [
+        41,
+        263,
+        681,
+        2403,
+        2838,
+        3699,
+        3898,
+        3958,
+        4090,
+        4386,
+        11724,
+        12865,
+        12994,
+        18626,
+        19658,
+        21661,
+        21815,
+        24608,
+        25268,
+        25588,
+        28668,
+        30013,
+        30018,
+        30187,
+        33474,
+        34201,
+        34599,
+        41263,
+        42694,
+        42829,
+        42832,
+        42835,
+        42838,
+        47300,
+        57422,
+        62377,
+        72964,
+        89612
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "typeId": 582,
+      "groupId": 25,
+      "assembledVolume": 20000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 270.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 583,
+      "groupId": 25,
+      "assembledVolume": 18000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        }
+      ]
+    },
+    {
+      "typeId": 584,
+      "groupId": 25,
+      "assembledVolume": 19400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 260.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 585,
+      "groupId": 25,
+      "assembledVolume": 17400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 120.0
+        }
+      ]
+    },
+    {
+      "typeId": 586,
+      "groupId": 25,
+      "assembledVolume": 19500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 35.0
+        }
+      ]
+    },
+    {
+      "typeId": 587,
+      "groupId": 25,
+      "assembledVolume": 27289.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 140.0
+        }
+      ]
+    },
+    {
+      "typeId": 588,
+      "groupId": 237,
+      "assembledVolume": 15800.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 120.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 589,
+      "groupId": 25,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 115.0
+        }
+      ]
+    },
+    {
+      "typeId": 590,
+      "groupId": 25,
+      "assembledVolume": 28700.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 591,
+      "groupId": 25,
+      "assembledVolume": 24398.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 592,
+      "groupId": 25,
+      "assembledVolume": 10000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 280.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 593,
+      "groupId": 25,
+      "assembledVolume": 26500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 140.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 594,
+      "groupId": 25,
+      "assembledVolume": 29500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 165.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 596,
+      "groupId": 237,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 115.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 597,
+      "groupId": 25,
+      "assembledVolume": 28600.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        }
+      ]
+    },
+    {
+      "typeId": 598,
+      "groupId": 25,
+      "assembledVolume": 20000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 175.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 599,
+      "groupId": 25,
+      "assembledVolume": 17100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 260.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 601,
+      "groupId": 237,
+      "assembledVolume": 15000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 125.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 602,
+      "groupId": 25,
+      "assembledVolume": 19700.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 160.0
+        }
+      ]
+    },
+    {
+      "typeId": 603,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 150.0
+        }
+      ]
+    },
+    {
+      "typeId": 605,
+      "groupId": 25,
+      "assembledVolume": 18900.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 35.0
+        }
+      ]
+    },
+    {
+      "typeId": 606,
+      "groupId": 237,
+      "assembledVolume": 24500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 607,
+      "groupId": 25,
+      "assembledVolume": 21500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 608,
+      "groupId": 25,
+      "assembledVolume": 22500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 145.0
+        }
+      ]
+    },
+    {
+      "typeId": 609,
+      "groupId": 25,
+      "assembledVolume": 23000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 275.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 615,
+      "groupId": 237,
+      "assembledVolume": 17400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 115.0
+        }
+      ]
+    },
+    {
+      "typeId": 617,
+      "groupId": 237,
+      "assembledVolume": 17660.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 120.0
+        }
+      ]
+    },
+    {
+      "typeId": 620,
+      "groupId": 26,
+      "assembledVolume": 107000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 485.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 621,
+      "groupId": 26,
+      "assembledVolume": 92000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 622,
+      "groupId": 26,
+      "assembledVolume": 80000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 420.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 623,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 624,
+      "groupId": 26,
+      "assembledVolume": 118000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 480.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 625,
+      "groupId": 26,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 465.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 626,
+      "groupId": 26,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 480.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        }
+      ]
+    },
+    {
+      "typeId": 627,
+      "groupId": 26,
+      "assembledVolume": 112000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 465.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 628,
+      "groupId": 26,
+      "assembledVolume": 120000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 345.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 150.0
+        }
+      ]
+    },
+    {
+      "typeId": 629,
+      "groupId": 26,
+      "assembledVolume": 96000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 630,
+      "groupId": 26,
+      "assembledVolume": 85000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 315.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 631,
+      "groupId": 26,
+      "assembledVolume": 89000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 475.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 45.0
+        }
+      ]
+    },
+    {
+      "typeId": 632,
+      "groupId": 26,
+      "assembledVolume": 96000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 305.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 633,
+      "groupId": 26,
+      "assembledVolume": 116000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 320.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 634,
+      "groupId": 26,
+      "assembledVolume": 113000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 495.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 635,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1750.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 638,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 830.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 639,
+      "groupId": 27,
+      "assembledVolume": 450000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 780.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 640,
+      "groupId": 27,
+      "assembledVolume": 468000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 690.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 641,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 845.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 642,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 845.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 643,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 750.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 375.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 644,
+      "groupId": 27,
+      "assembledVolume": 414000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 780.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 645,
+      "groupId": 27,
+      "assembledVolume": 454500.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 750.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 375.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 648,
+      "groupId": 28,
+      "assembledVolume": 250000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 3900.0
+        }
+      ]
+    },
+    {
+      "typeId": 649,
+      "groupId": 28,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 7300.0
+        }
+      ]
+    },
+    {
+      "typeId": 650,
+      "groupId": 28,
+      "assembledVolume": 240000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2700.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 651,
+      "groupId": 28,
+      "assembledVolume": 400000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 500.0
+        },
+        {
+          "flag": 135,
+          "attribute": 1557,
+          "capacity": 30000.0
+        },
+        {
+          "flag": 143,
+          "attribute": 1573,
+          "capacity": 41000.0
+        }
+      ]
+    },
+    {
+      "typeId": 652,
+      "groupId": 28,
+      "assembledVolume": 255000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 5500.0
+        }
+      ]
+    },
+    {
+      "typeId": 653,
+      "groupId": 28,
+      "assembledVolume": 225000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2900.0
+        }
+      ]
+    },
+    {
+      "typeId": 654,
+      "groupId": 28,
+      "assembledVolume": 245000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 550.0
+        },
+        {
+          "flag": 136,
+          "attribute": 1558,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 181,
+          "attribute": 3136,
+          "capacity": 30000.0
+        }
+      ]
+    },
+    {
+      "typeId": 655,
+      "groupId": 28,
+      "assembledVolume": 250000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 550.0
+        },
+        {
+          "flag": 148,
+          "attribute": 1646,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 149,
+          "attribute": 1653,
+          "capacity": 45000.0
+        }
+      ]
+    },
+    {
+      "typeId": 656,
+      "groupId": 28,
+      "assembledVolume": 265000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 550.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 42000.0
+        }
+      ]
+    },
+    {
+      "typeId": 657,
+      "groupId": 28,
+      "assembledVolume": 275000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 5800.0
+        }
+      ]
+    },
+    {
+      "typeId": 670,
+      "groupId": 29,
+      "assembledVolume": 1000.0,
+      "packagedVolume": 500.0,
+      "holds": []
+    },
+    {
+      "typeId": 671,
+      "groupId": 30,
+      "assembledVolume": 145500000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 16250.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 672,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 1944,
+      "groupId": 28,
+      "assembledVolume": 260000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 4800.0
+        }
+      ]
+    },
+    {
+      "typeId": 2006,
+      "groupId": 26,
+      "assembledVolume": 118000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 2078,
+      "groupId": 1022,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 2161,
+      "groupId": 25,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 265.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 45.0
+        }
+      ]
+    },
+    {
+      "typeId": 2863,
+      "groupId": 28,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 100.0
+        },
+        {
+          "flag": 135,
+          "attribute": 1557,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 148,
+          "attribute": 1646,
+          "capacity": 2000.0
+        },
+        {
+          "flag": 149,
+          "attribute": 1653,
+          "capacity": 2500.0
+        },
+        {
+          "flag": 181,
+          "attribute": 3136,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 2998,
+      "groupId": 28,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1460.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 3514,
+      "groupId": 659,
+      "assembledVolume": 62000000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1740.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 3532,
+      "groupId": 25,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        }
+      ]
+    },
+    {
+      "typeId": 3756,
+      "groupId": 419,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 900.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 3764,
+      "groupId": 30,
+      "assembledVolume": 132500000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 13750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 3766,
+      "groupId": 25,
+      "assembledVolume": 17400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 5.0
+        }
+      ]
+    },
+    {
+      "typeId": 4302,
+      "groupId": 1201,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 500.0
+        }
+      ]
+    },
+    {
+      "typeId": 4306,
+      "groupId": 1201,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 575.0
+        }
+      ]
+    },
+    {
+      "typeId": 4308,
+      "groupId": 1201,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 600.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 4310,
+      "groupId": 1201,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 535.0
+        }
+      ]
+    },
+    {
+      "typeId": 4363,
+      "groupId": 28,
+      "assembledVolume": 265000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 5250.0
+        },
+        {
+          "flag": 154,
+          "attribute": 1804,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 4388,
+      "groupId": 28,
+      "assembledVolume": 265000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 5250.0
+        },
+        {
+          "flag": 154,
+          "attribute": 1804,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 11011,
+      "groupId": 26,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 480.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        }
+      ]
+    },
+    {
+      "typeId": 11129,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 11132,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 11134,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 11567,
+      "groupId": 30,
+      "assembledVolume": 155000000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 11250.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 11936,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 675.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 11938,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 600.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 150.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 11940,
+      "groupId": 25,
+      "assembledVolume": 22100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 300.0
+        }
+      ]
+    },
+    {
+      "typeId": 11942,
+      "groupId": 25,
+      "assembledVolume": 22100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        }
+      ]
+    },
+    {
+      "typeId": 13202,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 675.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 175.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 16227,
+      "groupId": 419,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 475.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 16229,
+      "groupId": 419,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 475.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 16231,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 16233,
+      "groupId": 419,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 225.0
+        }
+      ]
+    },
+    {
+      "typeId": 16236,
+      "groupId": 420,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 375.0
+        }
+      ]
+    },
+    {
+      "typeId": 16238,
+      "groupId": 420,
+      "assembledVolume": 52000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        }
+      ]
+    },
+    {
+      "typeId": 16240,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        }
+      ]
+    },
+    {
+      "typeId": 16242,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 17476,
+      "groupId": 463,
+      "assembledVolume": 150000.0,
+      "packagedVolume": 3750.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 350.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 9000.0
+        }
+      ]
+    },
+    {
+      "typeId": 17478,
+      "groupId": 463,
+      "assembledVolume": 150000.0,
+      "packagedVolume": 3750.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 27500.0
+        }
+      ]
+    },
+    {
+      "typeId": 17480,
+      "groupId": 463,
+      "assembledVolume": 150000.0,
+      "packagedVolume": 3750.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 350.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 16000.0
+        }
+      ]
+    },
+    {
+      "typeId": 17619,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 140.0
+        }
+      ]
+    },
+    {
+      "typeId": 17634,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 17636,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 800.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17703,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        }
+      ]
+    },
+    {
+      "typeId": 17709,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 17713,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 17715,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 440.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 17718,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 410.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 17720,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 17722,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 17726,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 790.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17728,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 840.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 175.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17732,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 815.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17736,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 830.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17738,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 860.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17740,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 850.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17812,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        }
+      ]
+    },
+    {
+      "typeId": 17841,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 145.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 17843,
+      "groupId": 26,
+      "assembledVolume": 112000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 460.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 200.0
+        }
+      ]
+    },
+    {
+      "typeId": 17918,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 815.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 175.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17920,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 845.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 150.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 17922,
+      "groupId": 26,
+      "assembledVolume": 118000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 430.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 17924,
+      "groupId": 25,
+      "assembledVolume": 28600.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        }
+      ]
+    },
+    {
+      "typeId": 17926,
+      "groupId": 25,
+      "assembledVolume": 28600.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 17928,
+      "groupId": 25,
+      "assembledVolume": 26500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 140.0
+        }
+      ]
+    },
+    {
+      "typeId": 17930,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 17932,
+      "groupId": 25,
+      "assembledVolume": 27289.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 19720,
+      "groupId": 485,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2175.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 19722,
+      "groupId": 485,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2900.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 19724,
+      "groupId": 485,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2550.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 19726,
+      "groupId": 485,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 19744,
+      "groupId": 28,
+      "assembledVolume": 230000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2100.0
+        }
+      ]
+    },
+    {
+      "typeId": 20183,
+      "groupId": 513,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 435000.0
+        }
+      ]
+    },
+    {
+      "typeId": 20185,
+      "groupId": 513,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 465000.0
+        }
+      ]
+    },
+    {
+      "typeId": 20187,
+      "groupId": 513,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 440000.0
+        }
+      ]
+    },
+    {
+      "typeId": 20189,
+      "groupId": 513,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 435000.0
+        }
+      ]
+    },
+    {
+      "typeId": 21097,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 21628,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 22852,
+      "groupId": 659,
+      "assembledVolume": 51000000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1720.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 110000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23757,
+      "groupId": 547,
+      "assembledVolume": 13950000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2175.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 2000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 65000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23773,
+      "groupId": 30,
+      "assembledVolume": 100000000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 15000.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23911,
+      "groupId": 547,
+      "assembledVolume": 13095000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2800.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 2000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 75000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23913,
+      "groupId": 659,
+      "assembledVolume": 58200000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 110000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23915,
+      "groupId": 547,
+      "assembledVolume": 11925000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2600.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 2000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 60000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23917,
+      "groupId": 659,
+      "assembledVolume": 53000000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1740.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 110000.0
+        }
+      ]
+    },
+    {
+      "typeId": 23919,
+      "groupId": 659,
+      "assembledVolume": 62000000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1650.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 110000.0
+        }
+      ]
+    },
+    {
+      "typeId": 24483,
+      "groupId": 547,
+      "assembledVolume": 11250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 2000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 70000.0
+        }
+      ]
+    },
+    {
+      "typeId": 24688,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 820.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 24690,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 845.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 175.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 24692,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 740.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 24694,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 790.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 24696,
+      "groupId": 419,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 375.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 24698,
+      "groupId": 419,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 24700,
+      "groupId": 419,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 200.0
+        }
+      ]
+    },
+    {
+      "typeId": 24702,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 26840,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 665.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 150.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 26842,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 600.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 28352,
+      "groupId": 883,
+      "assembledVolume": 14500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 40000.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 8800.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 300000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 40000.0
+        }
+      ]
+    },
+    {
+      "typeId": 28606,
+      "groupId": 941,
+      "assembledVolume": 10250000.0,
+      "packagedVolume": 500000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 30000.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 200.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 400000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6400.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 150000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 40000.0
+        }
+      ]
+    },
+    {
+      "typeId": 29248,
+      "groupId": 25,
+      "assembledVolume": 22100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 29266,
+      "groupId": 31,
+      "assembledVolume": 17400.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 29336,
+      "groupId": 26,
+      "assembledVolume": 89000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 440.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 29337,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 480.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 29340,
+      "groupId": 26,
+      "assembledVolume": 107000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 460.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 29344,
+      "groupId": 26,
+      "assembledVolume": 112000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 465.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 30842,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 32305,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 875.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 275.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 32307,
+      "groupId": 27,
+      "assembledVolume": 454500.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 845.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 400.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 32309,
+      "groupId": 27,
+      "assembledVolume": 468000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 815.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 32311,
+      "groupId": 27,
+      "assembledVolume": 414000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 750.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 200.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 32811,
+      "groupId": 28,
+      "assembledVolume": 265000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 5250.0
+        },
+        {
+          "flag": 154,
+          "attribute": 1804,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 32872,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 350.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 60.0
+        }
+      ]
+    },
+    {
+      "typeId": 32874,
+      "groupId": 420,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 300.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 32876,
+      "groupId": 420,
+      "assembledVolume": 52000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        }
+      ]
+    },
+    {
+      "typeId": 32878,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 32880,
+      "groupId": 25,
+      "assembledVolume": 29500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 50.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 10.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 5000.0
+        }
+      ]
+    },
+    {
+      "typeId": 33079,
+      "groupId": 237,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 115.0
+        }
+      ]
+    },
+    {
+      "typeId": 33081,
+      "groupId": 237,
+      "assembledVolume": 15000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 125.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 33083,
+      "groupId": 237,
+      "assembledVolume": 24500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 135.0
+        }
+      ]
+    },
+    {
+      "typeId": 33151,
+      "groupId": 419,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 475.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 33153,
+      "groupId": 419,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 33155,
+      "groupId": 419,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 375.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 33157,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 33328,
+      "groupId": 29,
+      "assembledVolume": 1000.0,
+      "packagedVolume": 500.0,
+      "holds": []
+    },
+    {
+      "typeId": 33395,
+      "groupId": 833,
+      "assembledVolume": 100000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 320.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 33397,
+      "groupId": 830,
+      "assembledVolume": 28000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 190.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 33468,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 210.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 33470,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 550.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 33472,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 875.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 500.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 33513,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 33553,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 550.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 33816,
+      "groupId": 25,
+      "assembledVolume": 27289.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 130.0
+        }
+      ]
+    },
+    {
+      "typeId": 33818,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 380.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 33820,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 830.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 34328,
+      "groupId": 513,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 4000.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1600000.0
+        }
+      ]
+    },
+    {
+      "typeId": 34496,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 34590,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 35779,
+      "groupId": 831,
+      "assembledVolume": 28600.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 150.0
+        }
+      ]
+    },
+    {
+      "typeId": 35781,
+      "groupId": 894,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        }
+      ]
+    },
+    {
+      "typeId": 37453,
+      "groupId": 25,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 165.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 20.0
+        }
+      ]
+    },
+    {
+      "typeId": 37454,
+      "groupId": 25,
+      "assembledVolume": 17400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 15.0
+        }
+      ]
+    },
+    {
+      "typeId": 37455,
+      "groupId": 25,
+      "assembledVolume": 19400.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 260.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 35.0
+        }
+      ]
+    },
+    {
+      "typeId": 37456,
+      "groupId": 25,
+      "assembledVolume": 23000.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 275.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 37604,
+      "groupId": 1538,
+      "assembledVolume": 18135000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2175.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 600.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 37605,
+      "groupId": 1538,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2600.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 500.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 37606,
+      "groupId": 1538,
+      "assembledVolume": 14625000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 500.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 37607,
+      "groupId": 1538,
+      "assembledVolume": 17020000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2800.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 600.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42124,
+      "groupId": 485,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2550.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42125,
+      "groupId": 659,
+      "assembledVolume": 58200000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 5000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 110000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42126,
+      "groupId": 30,
+      "assembledVolume": 145500000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 18000.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42241,
+      "groupId": 30,
+      "assembledVolume": 155000000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 12400.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        },
+        {
+          "flag": 174,
+          "attribute": 2467,
+          "capacity": 2000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42242,
+      "groupId": 1538,
+      "assembledVolume": 18135000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 600.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 174,
+          "attribute": 2467,
+          "capacity": 1000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42243,
+      "groupId": 485,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2400.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 174,
+          "attribute": 2467,
+          "capacity": 1000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42244,
+      "groupId": 941,
+      "assembledVolume": 400000.0,
+      "packagedVolume": 50000,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 500.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 4800.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 50000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 5000.0
+        }
+      ]
+    },
+    {
+      "typeId": 42685,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        }
+      ]
+    },
+    {
+      "typeId": 45645,
+      "groupId": 1538,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2600.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 250.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 6000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 45647,
+      "groupId": 485,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 40000.0
+        }
+      ]
+    },
+    {
+      "typeId": 45649,
+      "groupId": 30,
+      "assembledVolume": 132500000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 13750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        },
+        {
+          "flag": 158,
+          "attribute": 2055,
+          "capacity": 45000.0
+        }
+      ]
+    },
+    {
+      "typeId": 47269,
+      "groupId": 25,
+      "assembledVolume": 28600.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 213.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 47270,
+      "groupId": 26,
+      "assembledVolume": 118000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 533.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 47271,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 933.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 250.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 47466,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 1200.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 225.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 49710,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 360.0
+        }
+      ]
+    },
+    {
+      "typeId": 49711,
+      "groupId": 419,
+      "assembledVolume": 233000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 650.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 49712,
+      "groupId": 26,
+      "assembledVolume": 118000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 435.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 52907,
+      "groupId": 485,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2400.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 54731,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 158.0
+        }
+      ]
+    },
+    {
+      "typeId": 54732,
+      "groupId": 26,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 473.0
+        }
+      ]
+    },
+    {
+      "typeId": 54733,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 861.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        },
+        {
+          "flag": 179,
+          "attribute": 3020,
+          "capacity": 1.0
+        }
+      ]
+    },
+    {
+      "typeId": 60764,
+      "groupId": 894,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 420.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 60765,
+      "groupId": 893,
+      "assembledVolume": 27289.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 220.0
+        }
+      ]
+    },
+    {
+      "typeId": 64034,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 10.0
+        }
+      ]
+    },
+    {
+      "typeId": 72811,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 72812,
+      "groupId": 419,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 475.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 25.0
+        }
+      ]
+    },
+    {
+      "typeId": 72869,
+      "groupId": 419,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 560.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 300.0
+        }
+      ]
+    },
+    {
+      "typeId": 72872,
+      "groupId": 419,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 125.0
+        }
+      ]
+    },
+    {
+      "typeId": 72903,
+      "groupId": 25,
+      "assembledVolume": 19500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 72904,
+      "groupId": 25,
+      "assembledVolume": 18900.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 72907,
+      "groupId": 25,
+      "assembledVolume": 22100.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 72913,
+      "groupId": 25,
+      "assembledVolume": 21500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 73787,
+      "groupId": 485,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2900.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 73789,
+      "groupId": 420,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 375.0
+        }
+      ]
+    },
+    {
+      "typeId": 73790,
+      "groupId": 485,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2175.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 73792,
+      "groupId": 485,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2550.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 73793,
+      "groupId": 485,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2750.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 73794,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 73795,
+      "groupId": 420,
+      "assembledVolume": 52000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        }
+      ]
+    },
+    {
+      "typeId": 73796,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        }
+      ]
+    },
+    {
+      "typeId": 77114,
+      "groupId": 25,
+      "assembledVolume": 16500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 200.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        },
+        {
+          "flag": 183,
+          "attribute": 5325,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 78333,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 78366,
+      "groupId": 419,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 78367,
+      "groupId": 420,
+      "assembledVolume": 52000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 78369,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 78576,
+      "groupId": 30,
+      "assembledVolume": 100000000.0,
+      "packagedVolume": 10000000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 16500.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 5000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 60000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 100000.0
+        }
+      ]
+    },
+    {
+      "typeId": 81008,
+      "groupId": 28,
+      "assembledVolume": 250000.0,
+      "packagedVolume": 20000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 3000.0
+        },
+        {
+          "flag": 185,
+          "attribute": 5646,
+          "capacity": 45000.0
+        }
+      ]
+    },
+    {
+      "typeId": 81040,
+      "groupId": 513,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 205000.0
+        },
+        {
+          "flag": 185,
+          "attribute": 5646,
+          "capacity": 2000000.0
+        }
+      ]
+    },
+    {
+      "typeId": 85086,
+      "groupId": 419,
+      "assembledVolume": 216000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 425.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 85087,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 50.0
+        }
+      ]
+    },
+    {
+      "typeId": 87381,
+      "groupId": 485,
+      "assembledVolume": 15500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 2900.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 1000000.0
+        },
+        {
+          "flag": 133,
+          "attribute": 1549,
+          "capacity": 8000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 89240,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 8000.0
+        }
+      ]
+    },
+    {
+      "typeId": 89607,
+      "groupId": 4902,
+      "assembledVolume": 400000.0,
+      "packagedVolume": 50000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 750.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 600.0
+        },
+        {
+          "flag": 90,
+          "attribute": 908,
+          "capacity": 75000.0
+        },
+        {
+          "flag": 155,
+          "attribute": 912,
+          "capacity": 1000.0
+        },
+        {
+          "flag": 188,
+          "attribute": 5944,
+          "capacity": 50000.0
+        }
+      ]
+    },
+    {
+      "typeId": 89647,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 80.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 10000.0
+        }
+      ]
+    },
+    {
+      "typeId": 89648,
+      "groupId": 25,
+      "assembledVolume": 29500.0,
+      "packagedVolume": 2500.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 150.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 40.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 6250.0
+        }
+      ]
+    },
+    {
+      "typeId": 89807,
+      "groupId": 1201,
+      "assembledVolume": 252000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 800.0
+        }
+      ]
+    },
+    {
+      "typeId": 91174,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 250.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 60.0
+        },
+        {
+          "flag": 134,
+          "attribute": 1556,
+          "capacity": 21000.0
+        }
+      ]
+    },
+    {
+      "typeId": 91775,
+      "groupId": 420,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 350.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 75.0
+        }
+      ]
+    },
+    {
+      "typeId": 91849,
+      "groupId": 420,
+      "assembledVolume": 55000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 350.0
+        },
+        {
+          "flag": 87,
+          "attribute": 283,
+          "capacity": 100.0
+        }
+      ]
+    },
+    {
+      "typeId": 91857,
+      "groupId": 420,
+      "assembledVolume": 52000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 450.0
+        }
+      ]
+    },
+    {
+      "typeId": 91858,
+      "groupId": 420,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 400.0
+        }
+      ]
+    },
+    {
+      "typeId": 92282,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 92283,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 92284,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 30.0
+        }
+      ]
+    },
+    {
+      "typeId": 95741,
+      "groupId": 1201,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": [
+        {
+          "flag": 5,
+          "attribute": 38,
+          "capacity": 500.0
+        }
+      ]
+    }
+  ],
+  "otherShipVolumes": [
+    {
+      "typeId": 582,
+      "groupId": 25,
+      "assembledVolume": 20000.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 620,
+      "groupId": 26,
+      "assembledVolume": 107000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 638,
+      "groupId": 27,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": []
+    },
+    {
+      "typeId": 648,
+      "groupId": 28,
+      "assembledVolume": 250000.0,
+      "packagedVolume": 20000.0,
+      "holds": []
+    },
+    {
+      "typeId": 670,
+      "groupId": 29,
+      "assembledVolume": 1000.0,
+      "packagedVolume": 500.0,
+      "holds": []
+    },
+    {
+      "typeId": 671,
+      "groupId": 30,
+      "assembledVolume": 145500000.0,
+      "packagedVolume": 10000000.0,
+      "holds": []
+    },
+    {
+      "typeId": 672,
+      "groupId": 31,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": []
+    },
+    {
+      "typeId": 588,
+      "groupId": 237,
+      "assembledVolume": 15800.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 2834,
+      "groupId": 324,
+      "assembledVolume": 29500.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 2836,
+      "groupId": 358,
+      "assembledVolume": 112000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 12731,
+      "groupId": 380,
+      "assembledVolume": 390000.0,
+      "packagedVolume": 20000.0,
+      "holds": []
+    },
+    {
+      "typeId": 3756,
+      "groupId": 419,
+      "assembledVolume": 101000.0,
+      "packagedVolume": 15000.0,
+      "holds": []
+    },
+    {
+      "typeId": 16236,
+      "groupId": 420,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": []
+    },
+    {
+      "typeId": 17476,
+      "groupId": 463,
+      "assembledVolume": 150000.0,
+      "packagedVolume": 3750.0,
+      "holds": []
+    },
+    {
+      "typeId": 19720,
+      "groupId": 485,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 20183,
+      "groupId": 513,
+      "assembledVolume": 18500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 22442,
+      "groupId": 540,
+      "assembledVolume": 270000.0,
+      "packagedVolume": 15000.0,
+      "holds": []
+    },
+    {
+      "typeId": 22452,
+      "groupId": 541,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": []
+    },
+    {
+      "typeId": 22544,
+      "groupId": 543,
+      "assembledVolume": 150000.0,
+      "packagedVolume": 3750.0,
+      "holds": []
+    },
+    {
+      "typeId": 23757,
+      "groupId": 547,
+      "assembledVolume": 13950000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 3514,
+      "groupId": 659,
+      "assembledVolume": 62000000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 11172,
+      "groupId": 830,
+      "assembledVolume": 23000.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 11176,
+      "groupId": 831,
+      "assembledVolume": 18000.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 11978,
+      "groupId": 832,
+      "assembledVolume": 89000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 11957,
+      "groupId": 833,
+      "assembledVolume": 96000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 11377,
+      "groupId": 834,
+      "assembledVolume": 28100.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 28352,
+      "groupId": 883,
+      "assembledVolume": 14500000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 11174,
+      "groupId": 893,
+      "assembledVolume": 23000.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 11995,
+      "groupId": 894,
+      "assembledVolume": 92000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 22428,
+      "groupId": 898,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": []
+    },
+    {
+      "typeId": 28659,
+      "groupId": 900,
+      "assembledVolume": 470000.0,
+      "packagedVolume": 50000.0,
+      "holds": []
+    },
+    {
+      "typeId": 28844,
+      "groupId": 902,
+      "assembledVolume": 16250000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 11959,
+      "groupId": 906,
+      "assembledVolume": 96000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 28606,
+      "groupId": 941,
+      "assembledVolume": 10250000.0,
+      "packagedVolume": 500000.0,
+      "holds": []
+    },
+    {
+      "typeId": 29984,
+      "groupId": 963,
+      "assembledVolume": 92000.0,
+      "packagedVolume": 5000,
+      "holds": []
+    },
+    {
+      "typeId": 2078,
+      "groupId": 1022,
+      "assembledVolume": 5000.0,
+      "packagedVolume": 500.0,
+      "holds": []
+    },
+    {
+      "typeId": 4302,
+      "groupId": 1201,
+      "assembledVolume": 234000.0,
+      "packagedVolume": 15000.0,
+      "holds": []
+    },
+    {
+      "typeId": 12729,
+      "groupId": 1202,
+      "assembledVolume": 195000.0,
+      "packagedVolume": 20000.0,
+      "holds": []
+    },
+    {
+      "typeId": 33697,
+      "groupId": 1283,
+      "assembledVolume": 50000.0,
+      "packagedVolume": 2500,
+      "holds": []
+    },
+    {
+      "typeId": 34317,
+      "groupId": 1305,
+      "assembledVolume": 47000.0,
+      "packagedVolume": 5000.0,
+      "holds": []
+    },
+    {
+      "typeId": 37457,
+      "groupId": 1527,
+      "assembledVolume": 28700.0,
+      "packagedVolume": 2500.0,
+      "holds": []
+    },
+    {
+      "typeId": 37480,
+      "groupId": 1534,
+      "assembledVolume": 43000.0,
+      "packagedVolume": 5000.0,
+      "holds": []
+    },
+    {
+      "typeId": 37604,
+      "groupId": 1538,
+      "assembledVolume": 18135000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 45534,
+      "groupId": 1972,
+      "assembledVolume": 100000.0,
+      "packagedVolume": 10000,
+      "holds": []
+    },
+    {
+      "typeId": 77281,
+      "groupId": 4594,
+      "assembledVolume": 17550000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    },
+    {
+      "typeId": 89607,
+      "groupId": 4902,
+      "assembledVolume": 400000.0,
+      "packagedVolume": 50000.0,
+      "holds": []
+    },
+    {
+      "typeId": 635,
+      "groupId": 5087,
+      "assembledVolume": 115000.0,
+      "packagedVolume": 10000.0,
+      "holds": []
+    },
+    {
+      "typeId": 92822,
+      "groupId": 5120,
+      "assembledVolume": 13950000.0,
+      "packagedVolume": 1300000.0,
+      "holds": []
+    }
+  ]
+}

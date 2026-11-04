@@ -39,6 +39,39 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadSmallHull(string path, int type) => Load(path, "SmallHullCatalog.json", null, hullType: type);
 
+    internal static void LoadHoldCargo(string path) =>
+        Load(
+            path,
+            "UtilityHullCatalog.json",
+            new HashSet<int>
+            {
+                34,
+                1230,
+                25268,
+                16262,
+                16272,
+                3645,
+                3683,
+                3699,
+                28668,
+                33474,
+                2488,
+                23055,
+                2524,
+                25,
+                587,
+                33513,
+                3898,
+                16273,
+                16275,
+                45586,
+            }
+        );
+
+    internal static void LoadUtilityHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "UtilityHullCatalog.json", types);
+
+    internal static void LoadUtilityHull(string path, int type) => Load(path, "UtilityHullCatalog.json", null, hullType: type);
+
     internal static void LoadCombatHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "CombatHullCatalog.json", types);
 
     internal static void LoadCombatHull(string path, int type) => Load(path, "CombatHullCatalog.json", null, hullType: type);

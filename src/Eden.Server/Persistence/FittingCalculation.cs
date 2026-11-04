@@ -3,6 +3,7 @@ using System.Globalization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Server.Catalog;
@@ -238,7 +239,9 @@ internal sealed record FittingCalculation(
             Add(ship.Id, modifier, true);
         }
         List<(int Skill, PassiveModifier Modifier)> skillModifiers = [];
-        var hullSkills = HullCatalog.Skills(catalog, ship.TypeId);
+        // MiningRules owns work-skill yield. Astrogeology is also a direct barge
+        // prerequisite and must not enter the hull graph as a second multiplier.
+        var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
         var relevantSkills = PassiveModules.Skills.Concat(MissileDefinitions.Skills).Concat(hullSkills).Distinct().ToArray();
         var trained = world
             .Set<PilotSkill>()

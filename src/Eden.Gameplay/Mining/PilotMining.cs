@@ -55,9 +55,28 @@ public enum MiningLaserType
     Civilian = 3651,
 }
 
+public sealed record MiningSkillModifier(MiningSkill Skill, DogmaAttributeId Attribute, double PerLevel);
+
 public static class MiningDefinitions
 {
+    public const int DeepCoreMiningSkill = 11395;
+
+    public static bool OwnsYieldSkill(int skill) => skill is (int)MiningSkill.Mining or (int)MiningSkill.Astrogeology;
+
+    public static bool IsOrdinaryStripMiner(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == (int)MiningSkill.Mining)
+        && InventoryDefinitions.RequiredSkills.All(pair => attributes.GetValueOrDefault(pair.Skill) != DeepCoreMiningSkill);
+
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;
     public const double CriticalYieldBonusPerSkillLevel = 0.05;
+
+    // Pinned effects 391/12755/12757 select equipment requiring Mining.
+    public static IReadOnlyList<MiningSkillModifier> SkillModifiers { get; } =
+    [
+        new(MiningSkill.Mining, DogmaAttributeId.MiningAmount, YieldBonusPerSkillLevel),
+        new(MiningSkill.Astrogeology, DogmaAttributeId.MiningAmount, YieldBonusPerSkillLevel),
+        new(MiningSkill.Precision, DogmaAttributeId.MiningCriticalChance, CriticalChanceBonusPerSkillLevel),
+        new(MiningSkill.Exploitation, DogmaAttributeId.MiningCriticalBonusYield, CriticalYieldBonusPerSkillLevel),
+    ];
 }

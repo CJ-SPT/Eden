@@ -10,6 +10,13 @@ namespace Eden.Server.Persistence;
 
 internal sealed record HullFittingLimits(int High, int Medium, int Low, int Turrets, int Launchers);
 
+internal sealed record HullHoldSupport(
+    InventoryFlag Flag,
+    DogmaAttributeId CapacityAttribute,
+    double BaseCapacity,
+    ShipHoldCapacityUnit Unit
+);
+
 internal sealed record HullSupportEntry(
     int TypeId,
     string Name,
@@ -19,6 +26,7 @@ internal sealed record HullSupportEntry(
     IReadOnlyList<int> RequiredSkills,
     double CargoCapacity,
     double GeneralMiningHoldCapacity,
+    IReadOnlyList<HullHoldSupport> Holds,
     IReadOnlyList<HullEffectCapability> Effects,
     IReadOnlyList<HullCapability> Deferred
 );
@@ -43,13 +51,26 @@ internal static class HullSupportAudit
             {
                 continue;
             }
-            var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
+            var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id).ToDictionary();
+            attributes[DogmaAttributeId.CargoCapacity] = type.Capacity ?? 0;
             var effects = HullCatalog.Capabilities(catalog, type.Id).OrderBy(e => e.EffectId).ThenBy(e => e.Capability).ToArray();
             var deferred = effects.Where(e => !e.Operational).Select(e => e.Capability).ToHashSet();
             deferred.UnionWith(HullBonusRules.DeferredRoles(type.Id, (HullClass)type.GroupId));
             if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)
             {
                 deferred.Add(HullCapability.CombatDrones);
+            }
+            if (attributes.GetValueOrDefault(DogmaAttributeId.ShipMaintenanceBayCapacity) > 0)
+            {
+                deferred.Add(HullCapability.FleetRefitting);
+            }
+            if (attributes.GetValueOrDefault(DogmaAttributeId.FleetHangarCapacity) > 0)
+            {
+                deferred.Add(HullCapability.FleetAccess);
+            }
+            if (attributes.GetValueOrDefault(DogmaAttributeId.FrigateEscapeBayCapacity) > 0)
+            {
+                deferred.Add(HullCapability.FrigateEscapeRecovery);
             }
             entries.Add(
                 new(
@@ -67,6 +88,10 @@ internal static class HullSupportAudit
                     HullCatalog.Skills(catalog, type.Id).Order().ToArray(),
                     type.Capacity ?? 0,
                     attributes.GetValueOrDefault(DogmaAttributeId.GeneralMiningHoldCapacity),
+                    ShipHoldRules
+                        .Definitions.Where(h => attributes.GetValueOrDefault(h.CapacityAttribute) > 0)
+                        .Select(h => new HullHoldSupport(h.Flag, h.CapacityAttribute, attributes[h.CapacityAttribute], h.CapacityUnit))
+                        .ToArray(),
                     effects,
                     deferred.Order().ToArray()
                 )

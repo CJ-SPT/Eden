@@ -60,6 +60,7 @@ public sealed class ShipLoss
     public long Time { get; set; }
     public string Name { get; set; } = "";
     public string ItemsJson { get; set; } = "[]";
+    public string StoredShipsJson { get; set; } = "[]";
     public string DroppedItemIdsJson { get; set; } = "[]";
     public double X { get; set; }
     public double Y { get; set; }

@@ -44,7 +44,7 @@ internal sealed class InventoryTransfers(
             bool looting =
                 context.Pilot.Position is not null
                 && destination == context.Pilot.ShipId
-                && flag == (int)InventoryFlag.Cargo
+                && ShipHoldRules.IsHold(flag)
                 && context.Flight.VisibleWrecks.Any(w => w.Id == source);
             if (looting && !context.Flight.CanTarget)
             {
@@ -162,7 +162,8 @@ internal sealed class InventoryTransfers(
             request.SourceId,
             request.ItemIds,
             request.Quantity,
-            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            (InventoryFlag)request.FlagId
         );
 
     private IReadOnlyList<InventoryChange> FitItems(PilotCallContext context, InventoryMoveRequest request) =>

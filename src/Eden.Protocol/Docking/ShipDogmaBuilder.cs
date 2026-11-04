@@ -113,7 +113,7 @@ internal sealed class ShipDogmaBuilder(
                     or CombatDefinitions.HybridWeaponGroup
                     or CombatDefinitions.ProjectileWeaponGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
-            : module.GroupId == InventoryDefinitions.MiningLaserGroup ? mining.ModuleAttributes(pilot.PilotId, module)
+            : InventoryDefinitions.IsOreMiningGroup(module.GroupId) ? mining.ModuleAttributes(pilot.PilotId, module)
             : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
@@ -135,6 +135,30 @@ internal sealed class ShipDogmaBuilder(
             }
         }
         return new(new DogmaItemKey.Item(module.Id), Item(module), attributes, effects, now);
+    }
+
+    internal PilotCallResult DroneBayDamage(DockedPilot pilot, IReadOnlySet<long> ids)
+    {
+        var drones = inventory
+            .List(pilot.PilotId, pilot.ShipId)
+            .Where(item =>
+                ids.Contains(item.Id) && item.FlagId == (int)InventoryFlag.DroneBay && item.CategoryId == (int)InventoryCategory.Drone
+            )
+            .ToArray();
+        if (drones.Length != ids.Count)
+        {
+            return new PilotCallResult.Failure("Read damage only for drones in your active ship's drone bay.");
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        return new BlueMap<long, StoredDroneDamage>(
+            drones.ToDictionary(
+                item => item.Id,
+                item => new StoredDroneDamage(
+                    ChargedResource.TimeConstant(fitting.Attributes(item.TypeId).GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)),
+                    now
+                )
+            )
+        );
     }
 
     internal DogmaAllInfo AllInfo(DockedPilot pilot)

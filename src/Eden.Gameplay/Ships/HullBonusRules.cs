@@ -38,6 +38,14 @@ public enum HullCapability
     ShipMaintenance,
     BreacherPods,
     MicroJumpDrives,
+    TractorBeams,
+    IndustrialCores,
+    CapitalFlexShieldHardening,
+    FleetAccess,
+    FleetRefitting,
+    FrigateEscapeRecovery,
+    MiningCrystals,
+    DeepCoreMining,
 }
 
 // Catalog selectors are IDs, independent of a pilot's trained level.
@@ -54,6 +62,12 @@ public enum HullBonusSkill
     LargeEnergyTurret = 3309,
     MissileLauncherOperation = 3319,
     Leadership = 3348,
+    ShieldCommand = 3350,
+    MiningForeman = 22536,
+    InformationCommand = 20494,
+    ExpeditionCommand = 89611,
+    IndustrialReconfiguration = 58956,
+    IceHarvestingDroneOperation = 43702,
     Mining = 3386,
     RepairSystems = 3393,
     Science = 3402,
@@ -120,6 +134,9 @@ public enum HullBonusEquipmentGroup
     HeavyAssaultMissileLauncher = 771,
     WarpDisruptionFieldGenerator = 899,
     RapidHeavyMissileLauncher = 1245,
+    TractorBeam = 650,
+    CloakingDevice = 330,
+    CapitalFlexShieldHardener = 1700,
     AncillaryRemoteShieldBooster = 1697,
     AncillaryRemoteArmorRepairer = 1698,
     MutadaptiveRemoteArmorRepairer = 2018,
@@ -139,13 +156,21 @@ public static class HullBonusRules
         {
             TechOneHullType.Zephyr => [HullCapability.Probes],
             TechOneHullType.Echelon => [HullCapability.Hacking],
-            TechOneHullType.Nestor => [HullCapability.ShipMaintenance],
             TechOneHullType.Cenotaph or TechOneHullType.Tholos => [HullCapability.BreacherPods],
             _ => [],
         };
+        if (hullClass == HullClass.MiningBarge)
+        {
+            roles = [.. roles, HullCapability.MiningCrystals, HullCapability.DeepCoreMining];
+        }
         // Build 3662168 modules 4383/33915 admit these combat groups. Their
         // fitting restrictions do not appear in the hull's modifierInfo list.
-        return hullClass is HullClass.Battleship or HullClass.CombatBattlecruiser or HullClass.AttackBattlecruiser
+        return
+            hullClass
+                is HullClass.Battleship
+                    or HullClass.CombatBattlecruiser
+                    or HullClass.AttackBattlecruiser
+                    or HullClass.ExpeditionCommand
             ? [.. roles, HullCapability.MicroJumpDrives]
             : roles;
     }
@@ -180,11 +205,15 @@ public static class HullBonusRules
                 or (int)HullBonusSkill.LightDroneOperation
                 or (int)HullBonusSkill.MediumDroneOperation
                 or (int)HullBonusSkill.HeavyDroneOperation
+                or (int)HullBonusSkill.IceHarvestingDroneOperation
                 or (int)HullBonusSkill.SentryDroneInterfacing => HullCapability.CombatDrones,
                 _ => HullCapability.Unclassified,
             },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)target.Selection switch
             {
+                HullBonusEquipmentGroup.TractorBeam => HullCapability.TractorBeams,
+                HullBonusEquipmentGroup.CloakingDevice => HullCapability.Cloaking,
+                HullBonusEquipmentGroup.CapitalFlexShieldHardener => HullCapability.CapitalFlexShieldHardening,
                 HullBonusEquipmentGroup.ProjectileWeapon => HullCapability.Turrets,
                 HullBonusEquipmentGroup.WarpScrambler or HullBonusEquipmentGroup.StasisWeb => HullCapability.Tackle,
                 HullBonusEquipmentGroup.ArmorPlate => HullCapability.ArmorPlates,
@@ -239,7 +268,12 @@ public static class HullBonusRules
                 HullBonusSkill.CapacitorEmissionSystems => HullCapability.EnergyWarfare,
                 HullBonusSkill.WeaponDisruption or HullBonusSkill.TargetPainting or HullBonusSkill.ElectronicWarfare =>
                     HullCapability.ElectronicWarfare,
-                HullBonusSkill.Leadership => HullCapability.CommandBursts,
+                HullBonusSkill.Leadership
+                or HullBonusSkill.ShieldCommand
+                or HullBonusSkill.MiningForeman
+                or HullBonusSkill.InformationCommand
+                or HullBonusSkill.ExpeditionCommand => HullCapability.CommandBursts,
+                HullBonusSkill.IndustrialReconfiguration => HullCapability.IndustrialCores,
                 HullBonusSkill.Cloaking => HullCapability.Cloaking,
                 HullBonusSkill.Archaeology or HullBonusSkill.Hacking => HullCapability.Hacking,
                 HullBonusSkill.IceHarvesting => HullCapability.IceMining,

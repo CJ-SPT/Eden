@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -98,6 +99,29 @@ public sealed class PilotInventoryTests
                 .Where(i => i.TypeId == InventoryDefinitions.CivilianMinerType)
                 .Sum(i => i.Quantity)
         );
+    }
+
+    [Fact]
+    public void ZeroCargoCapacityReportsTheActualCapacityAndNeverUsesAnUnavailableSpecializedHold()
+    {
+        using TestWorld db = new();
+        var inventory = db.Services.GetRequiredService<IPilotInventory>();
+        var pilot = db.Store.FindPilot(1000001)!;
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql($"UPDATE ItemType SET Capacity=0 WHERE Id={pilot.ShipTypeId}");
+        }
+        var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
+        var error = Assert.Throws<CargoCapacityException>(() =>
+            inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.Cargo, null)
+        );
+        Assert.Equal(0, error.Available);
+        Assert.Equal(item.Volume, error.Required);
+        Assert.Throws<InvalidDataException>(() =>
+            inventory.Move(pilot.PilotId, [item.Id], pilot.StationId, pilot.ShipId, (int)InventoryFlag.GasHold, null)
+        );
+        Assert.Contains(item, inventory.List(pilot.PilotId, pilot.StationId));
+        Assert.Empty(inventory.List(pilot.PilotId, pilot.ShipId));
     }
 
     [Fact]

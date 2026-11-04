@@ -8,6 +8,22 @@ using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
+// Stored drones cannot currently launch or take damage. The native bay panel
+// still asks for their pristine layer state, with its shield sample timestamp.
+internal sealed record StoredDroneDamage(double ShieldTimeConstant, long Time) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["shieldInfo"] = new object?[] { 1d, ShieldTimeConstant, Time },
+                ["armorDamage"] = 0d,
+                ["hullDamage"] = 0d,
+            }
+        );
+}
+
 internal abstract record DogmaItemKey : BlueModel
 {
     public abstract override object ToBlue();

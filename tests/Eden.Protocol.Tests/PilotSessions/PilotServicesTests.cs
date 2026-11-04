@@ -178,18 +178,22 @@ public sealed class PilotServicesTests
                 "Notification",
                 "Notification",
                 "Notification",
+                "Notification",
                 "SessionChangeNotification",
                 "CallRsp",
             },
             packets.Select(p => p.Name.Split('.')[^1])
         );
-        foreach (var packet in packets.Skip(2).Take(3))
+        var brainEnvelope = BlueRead.Tuple(packets[2].State, 14);
+        var brainDestination = Assert.IsType<BlueInstance>(brainEnvelope[2]);
+        Assert.Equal("OnServerBrainUpdated", BlueRead.Tuple(brainDestination.State, 4)[1]);
+        foreach (var packet in packets.Skip(3).Take(3))
         {
             var envelope = BlueRead.Tuple(packet.State, 14);
             var destination = Assert.IsType<BlueInstance>(envelope[2]);
             Assert.Equal("OnItemChange", BlueRead.Tuple(destination.State, 4)[1]);
         }
-        var sessionBody = BlueRead.Tuple(BlueRead.Tuple(packets[5].State, 14)[4], 3);
+        var sessionBody = BlueRead.Tuple(BlueRead.Tuple(packets[6].State, 14)[4], 3);
         var delta = BlueRead.Fields(BlueRead.Tuple(sessionBody[1], 2)[1]);
         Assert.Equal(new object?[] { 1000000000001L, world.Store.FindPilot(1000001)!.ShipId }, delta["shipid"]);
         Assert.Null(Result(packets[^1]));

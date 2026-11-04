@@ -13,6 +13,37 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class FlightSessionTests
 {
+    [Theory]
+    [InlineData(30)]
+    [InlineData(500)]
+    [InlineData(1500)]
+    [InlineData(6000)]
+    public void UndockingLargeHullsStartsOutsideTheStationAndCanAccelerate(float radius)
+    {
+        using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
+        pilot = pilot with { Flight = pilot.Flight with { ShipRadius = radius } };
+        StaticSpaceObject station = new(
+            pilot.StationId,
+            pilot.StationTypeId,
+            15,
+            3,
+            pilot.SystemId,
+            pilot.Home.Position,
+            pilot.Flight.StationRadius
+        );
+        Clock clock = new();
+        using FlightSession session = new(db.Store, pilot, clock, new SharedSpace(), [station]);
+        Assert.Null(session.CallWire("ship", "Undock", [pilot.ShipId]));
+        var launch = session.Pilot.Position!;
+        Assert.True(launch.DistanceTo(station.Position) - station.Radius - radius >= 499);
+        session.Snapshot();
+        Assert.Null(session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]));
+        clock.Seconds = 20;
+        session.Checkpoint();
+        Assert.True(session.Pilot.Position!.X > launch.X + 100);
+    }
+
     [Fact]
     public void PeersReceiveEachOthersCoursesAndLeaveIndependently()
     {

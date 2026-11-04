@@ -125,7 +125,10 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 .ThenInclude(s => s.Constellation)
             .Single(s => s.Id == ship.StationId);
         var system = station.SolarSystem;
-        double Attribute(DogmaAttributeId id) => type.Attributes.Single(a => a.AttributeId == (int)id).Value;
+        // Hulls with no weapon fittings can omit the zero-valued hardpoint attribute.
+        int turretSlots = checked(
+            (int)(type.Attributes.SingleOrDefault(a => a.AttributeId == (int)DogmaAttributeId.TurretSlotsLeft)?.Value ?? 0)
+        );
         var fitted = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var flight = new FlightProperties(
             (float)station.Type.Radius!.Value,
@@ -164,7 +167,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 type.Group.CategoryId,
                 ship.Name,
                 fitted.GetValueOrDefault(DogmaAttributeId.CargoCapacity),
-                checked((int)Attribute(DogmaAttributeId.TurretSlotsLeft)),
+                turretSlots,
                 flight,
                 hull
             ),

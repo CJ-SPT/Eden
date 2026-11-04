@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Combat;
@@ -46,6 +47,19 @@ internal sealed class PilotBrain(
                 Percent * modifier.PerLevel * levels[(int)modifier.Skill]
             ))
             .ToList();
+        effects.AddRange(
+            MiningDefinitions
+                .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)
+                .Select(modifier => new BrainEffect(
+                    shipId,
+                    BrainModifier.LocationRequiredSkill,
+                    modifier.Attribute,
+                    BrainOperation.PostPercent,
+                    [(int)MiningSkill.Mining],
+                    [(int)modifier.Skill],
+                    Percent * modifier.PerLevel * levels[(int)modifier.Skill]
+                ))
+        );
         effects.AddRange(
             navigation
                 .NavigationBonuses(pilotId)

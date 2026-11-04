@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,11 @@ public sealed class Ship
     public int TypeId { get; set; }
     public int StationId { get; set; }
     public string Name { get; set; } = "";
+
+    // An assembled hull may belong to a ship bay or wreck. StationId retains
+    // its last station until unloading; startup validates the owning container.
+    public long? StoredInId { get; set; }
+    public int StorageFlagId { get; set; } = (int)InventoryFlag.Hangar;
     public FlightPosition? Position { get; set; }
 }
 
@@ -198,6 +204,7 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<NpcAggression>().HasIndex(a => a.TargetShipId);
         model.Entity<ShipLoss>().ToTable("WorldShipLoss").HasKey(l => l.ShipId);
         model.Entity<ShipLoss>().Property(l => l.ShipId).ValueGeneratedNever();
+        model.Entity<ShipLoss>().Property(l => l.StoredShipsJson).HasDefaultValue("[]");
         model.Entity<ShipLoss>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId);
         model.Entity<ShipLoss>().HasOne<WorldNpc>().WithMany().HasForeignKey(l => l.NpcId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<ShipLoss>().HasIndex(l => new { l.PilotId, l.Time });
@@ -328,6 +335,8 @@ public sealed class WorldDbContext(string path) : DbContext
         model.Entity<TrainingLog>().ToTable("WorldSkillHistory").HasOne<Pilot>().WithMany().HasForeignKey(e => e.PilotId);
         model.Entity<TrainingLog>().HasIndex(e => new { e.PilotId, e.Time });
         model.Entity<Ship>().ToTable("WorldShip");
+        model.Entity<Ship>().Property(s => s.StorageFlagId).HasDefaultValue((int)InventoryFlag.Hangar);
+        model.Entity<Ship>().HasIndex(s => new { s.OwnerId, s.StoredInId });
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
         model.Entity<Pilot>().HasIndex(p => p.AccountId);
         model.Entity<Pilot>().Property(p => p.Name).UseCollation("NOCASE");

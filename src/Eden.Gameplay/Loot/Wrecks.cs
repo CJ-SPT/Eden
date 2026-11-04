@@ -23,7 +23,15 @@ public interface IWrecks
 {
     IReadOnlyList<WreckContact> List(int systemId, long now);
     WreckInventory Read(long pilotId, long wreckId, long now);
-    IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, long wreckId, IReadOnlyList<long> itemIds, int? quantity, long now);
+    IReadOnlyList<InventoryChange> Take(
+        long pilotId,
+        long shipId,
+        long wreckId,
+        IReadOnlyList<long> itemIds,
+        int? quantity,
+        long now,
+        InventoryFlag destinationFlag = InventoryFlag.Cargo
+    );
 }
 
 public static class WreckDefinitions

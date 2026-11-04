@@ -9,6 +9,7 @@ using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
@@ -181,6 +182,8 @@ public sealed class PilotFleetTests
         var state = Assert.IsType<object?[]>(Call("ship", "Board", stack.Id, pilot.ShipId));
         Assert.Equal(4, state.Length);
         Assert.Equal(stack.Id, context.Pilot.ShipId);
+        var brain = Assert.Single(context.Notifications.OfType<ServerBrainUpdated>());
+        Assert.NotEmpty(brain.Brain.GrayMatter);
         Assert.IsType<BlueConstructor>(Call(originalContainer, "GetSelfInvItem"));
         var flags = new Dictionary<string, object?> { ["flags"] = new List<object?> { (long)InventoryFlag.Cargo } };
         Assert.Single(

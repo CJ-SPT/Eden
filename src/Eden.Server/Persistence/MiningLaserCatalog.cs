@@ -1,5 +1,6 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
@@ -7,17 +8,19 @@ namespace Eden.Server.Persistence;
 internal static class MiningLaserCatalog
 {
     private const int AbyssalMetaGroup = 15;
-    private const int ExpectedEffectCount = 4;
+    private const int LaserEffectCount = 4;
+    private const int StripMinerEffectCount = 3;
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
         var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
-            group != InventoryDefinitions.MiningLaserGroup
+            !InventoryDefinitions.IsOreMiningGroup(group)
+            || (group == InventoryDefinitions.StripMinerGroup && !MiningDefinitions.IsOrdinaryStripMiner(attributes))
             || type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
-            || InventoryDefinitions.RequiresSpecificShip(attributes)
+            || (group != InventoryDefinitions.StripMinerGroup && InventoryDefinitions.RequiresSpecificShip(attributes))
             // Deep-core lasers need Mercoxit cloud hazards before being enabled.
             || attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) != 0
         )
@@ -25,7 +28,7 @@ internal static class MiningLaserCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
-        return effects.Count == ExpectedEffectCount
+        return effects.Count == (group == InventoryDefinitions.StripMinerGroup ? StripMinerEffectCount : LaserEffectCount)
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
             && effects.Any(effect =>
                 effect.EffectID == (int)DogmaEffect.MiningLaser

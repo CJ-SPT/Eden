@@ -10,15 +10,28 @@ internal static class InventoryPersistence
     internal static OwnedItem? OwnedStack(WorldDbContext world, long pilotId, long id) =>
         world.Set<OwnedItem>().Find(id) is { } item && item.OwnerId == pilotId ? item : null;
 
-    internal static double UsedVolume(WorldDbContext world, CatalogDbContext catalog, long pilotId, long location, int flag) =>
-        world
+    internal static double UsedVolume(WorldDbContext world, CatalogDbContext catalog, long pilotId, long location, int flag)
+    {
+        var hold = ShipHoldRules.Definition(flag) ?? throw new InvalidDataException("Unknown inventory hold.");
+        double items = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && i.LocationId == location)
             .AsEnumerable()
             .Concat(world.Set<OwnedItem>().Local)
             .DistinctBy(i => i.Id)
             .Where(i => i.OwnerId == pilotId && i.LocationId == location && i.FlagId == flag && world.Entry(i).State != EntityState.Deleted)
-            .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+            .Sum(i => hold.RequiredCapacity(PilotInventoryStore.Read(catalog, i), i.Quantity));
+        double ships = world
+            .Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == location)
+            .AsEnumerable()
+            .Concat(world.Ships.Local)
+            .DistinctBy(s => s.Id)
+            .Where(s =>
+                s.OwnerId == pilotId && s.StoredInId == location && s.StorageFlagId == flag && world.Entry(s).State != EntityState.Deleted
+            )
+            .Sum(s => hold.RequiredCapacity(PilotFleetStore.Read(catalog, s), 1));
+        return items + ships;
+    }
 
     internal static InventoryChange MergeOutput(
         WorldDbContext world,

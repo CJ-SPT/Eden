@@ -1,11 +1,13 @@
 using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, DeferredRefitPrimes refits) : ISelectedPilotCallHandler
+internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, DeferredRefitPrimes refits, PilotBrain brain)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -15,6 +17,16 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
         Dictionary<string, object?>? keywords = null
     )
     {
+        if ((service, method) == ("ship", "GetShipConfiguration"))
+        {
+            return args is [long id] && id == context.Pilot.ShipId
+                ? new ShipSharingConfiguration()
+                : new PilotCallResult.Failure("Read the configuration of your active ship.");
+        }
+        if ((service, method) == ("ship", "ConfigureShip"))
+        {
+            return new PilotCallResult.Failure("Fleet and corporation access to personal ship holds is not available yet.");
+        }
         if (!(service == "ship" && method is "AssembleShip" or "Board") && !(service == "dogmaIM" && method == "CreateNewbieShip"))
         {
             return PilotCallResult.Unsupported;
@@ -26,6 +38,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
                 var recovery = fleet.RecoverCorvette(context.Pilot.PilotId, previousShip, station);
                 refits.Clear();
                 context.ChangeShip(recovery.Pilot);
+                RefreshBrain(context);
                 foreach (var change in recovery.Changes)
                 {
                     InventoryChangesWire.NotifyItemChange(context, change);
@@ -56,6 +69,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
                 var pilot = fleet.Board(context.Pilot.PilotId, shipId, oldShipId);
                 refits.Clear();
                 context.ChangeShip(pilot);
+                RefreshBrain(context);
                 return dogma.ShipState(pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
@@ -64,5 +78,12 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
         {
             return new PilotCallResult.Failure(error.Message);
         }
+    }
+
+    private void RefreshBrain(PilotCallContext context)
+    {
+        // GetDogmaLocation(charBrain=...) reuses the existing client location on
+        // boarding. Explicitly replace its old hull's skill selectors as well.
+        context.Notifications.Add(new ServerBrainUpdated(brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)));
     }
 }

@@ -83,7 +83,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             );
     }
 
-    internal static void CreatePlayer(
+    internal static WorldWreck CreatePlayer(
         WorldDbContext world,
         CatalogDbContext catalog,
         Ship ship,
@@ -143,6 +143,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 world.Remove(item);
             }
         }
+        return wreck;
     }
 
     public IReadOnlyList<WreckContact> List(int systemId, long now)
@@ -154,6 +155,14 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Set<OwnedItem>()
             .Where(i => world.Set<WorldWreck>().Where(w => w.ExpiresAt <= now).Select(w => w.Id).Contains(i.LocationId))
             .ExecuteDelete();
+        var expiredShips = world
+            .Ships.Where(s => world.Set<WorldWreck>().Where(w => w.ExpiresAt <= now).Select(w => (long?)w.Id).Contains(s.StoredInId))
+            .ToArray();
+        foreach (var expired in expiredShips)
+        {
+            ShipStoragePersistence.Destroy(world, expired);
+        }
+        world.SaveChanges();
         var wrecks = world
             .Set<WorldWreck>()
             .AsNoTracking()
@@ -165,6 +174,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Where(i => wrecks.Select(w => w.Id).Contains(i.LocationId))
             .Select(i => i.LocationId)
             .Distinct()
+            .Concat(world.Ships.Where(s => wrecks.Select(w => (long?)w.Id).Contains(s.StoredInId)).Select(s => s.StoredInId!.Value))
             .ToHashSet();
         return wrecks
             .Select(w =>
@@ -239,13 +249,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 PilotInventoryStore.Volume(catalog, wreck.TypeId),
                 true
             ),
-            world
-                .Set<OwnedItem>()
-                .Where(i => i.LocationId == wreckId && i.OwnerId == pilotId)
-                .OrderBy(i => i.Id)
-                .AsEnumerable()
-                .Select(i => PilotInventoryStore.Read(catalog, i))
-                .ToArray()
+            PilotInventoryStore.List(world, catalog, pilotId, wreckId)
         );
     }
 
@@ -255,7 +259,8 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         long wreckId,
         IReadOnlyList<long> itemIds,
         int? quantity,
-        long now
+        long now,
+        InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
         using WorldDbContext world = new(database.Path);
@@ -277,13 +282,37 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Where(i => itemIds.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == wreckId)
             .OrderBy(i => i.Id)
             .ToArray();
-        if (items.Length != itemIds.Count || items.Any(i => i.Quantity <= 0 || quantity > i.Quantity))
+        var storedShips = world
+            .Ships.Where(s => itemIds.Contains(s.Id) && s.OwnerId == pilotId && s.StoredInId == wreckId)
+            .OrderBy(s => s.Id)
+            .ToArray();
+        if (
+            items.Length + storedShips.Length != itemIds.Count
+            || items.Any(i => i.Quantity <= 0 || quantity > i.Quantity)
+            || (storedShips.Length > 0 && quantity is > 1)
+        )
         {
             throw new InvalidDataException("The requested wreck contents are no longer available.");
         }
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
-        double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)InventoryFlag.Cargo);
-        double added = items.Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * (quantity ?? i.Quantity));
+        var hold = ShipHoldRules.Definition((int)destinationFlag);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)destinationFlag);
+        if (
+            hold is null
+            || (capacity <= 0 && destinationFlag != InventoryFlag.Cargo)
+            || items.Any(i => !hold.Allows(PilotInventoryStore.Read(catalog, i)))
+            || storedShips.Any(s => !hold.AllowsAssembledShip || !hold.Allows(PilotFleetStore.Read(catalog, s)))
+        )
+        {
+            throw new InvalidDataException("The destination hold cannot accept these wreck contents.");
+        }
+        if (destinationFlag == InventoryFlag.FrigateEscapeBay)
+        {
+            throw new InvalidDataException("Load the frigate escape bay while docked.");
+        }
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)destinationFlag);
+        double added =
+            items.Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId, i.Singleton) * (quantity ?? i.Quantity))
+            + storedShips.Sum(s => PilotInventoryStore.Volume(catalog, s.TypeId, singleton: true));
         if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
         {
             throw new CargoCapacityException(Math.Max(0, capacity - used), added);
@@ -306,7 +335,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                             OwnerId = pilotId,
                             TypeId = item.TypeId,
                             LocationId = shipId,
-                            FlagId = (int)InventoryFlag.Cargo,
+                            FlagId = (int)destinationFlag,
                             Quantity = moved,
                         }
                     )
@@ -316,10 +345,17 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             else
             {
                 item.LocationId = shipId;
-                item.FlagId = (int)InventoryFlag.Cargo;
+                item.FlagId = (int)destinationFlag;
                 item.Online = false;
                 changes.Add(new(PilotInventoryStore.Read(catalog, item), before));
             }
+        }
+        foreach (var stored in storedShips)
+        {
+            var previous = PilotFleetStore.Read(catalog, stored);
+            stored.StoredInId = shipId;
+            stored.StorageFlagId = (int)destinationFlag;
+            changes.Add(new(PilotFleetStore.Read(catalog, stored), previous));
         }
         world.SaveChanges();
         transaction.Commit();

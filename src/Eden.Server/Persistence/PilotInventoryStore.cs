@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -22,12 +23,21 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
 
     internal static IReadOnlyList<InventoryItem> List(WorldDbContext world, CatalogDbContext catalog, long pilotId, long locationId)
     {
-        return world
+        var items = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && i.LocationId == locationId)
             .OrderBy(i => i.Id)
             .AsEnumerable()
-            .Select(i => Read(catalog, i))
+            .Select(i => Read(catalog, i));
+        return items
+            .Concat(
+                world
+                    .Ships.Include(s => s.Position)
+                    .Where(s => s.OwnerId == pilotId && s.StoredInId == locationId)
+                    .AsEnumerable()
+                    .Select(s => PilotFleetStore.Read(catalog, s))
+            )
+            .OrderBy(i => i.Id)
             .ToArray();
     }
 
@@ -42,11 +52,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             ship.Position is not null
             || !(
                 (sourceId == ship.Id && destinationId == ship.StationId && flagId == (int)InventoryFlag.Hangar)
-                || (
-                    (sourceId == ship.StationId || sourceId == ship.Id)
-                    && destinationId == ship.Id
-                    && flagId is (int)InventoryFlag.Cargo or (int)InventoryFlag.GeneralMiningHold
-                )
+                || ((sourceId == ship.StationId || sourceId == ship.Id) && destinationId == ship.Id && ShipHoldRules.IsHold(flagId))
             )
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
@@ -58,6 +64,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         }
 
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var holdFlags = ShipHoldRules.Definitions.Select(h => (int)h.Flag).ToArray();
         var items = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -66,15 +73,27 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
                 && i.LocationId == sourceId
                 && (
                     sourceId == ship.Id
-                        ? i.FlagId == (int)InventoryFlag.Cargo
-                            || i.FlagId == (int)InventoryFlag.GeneralMiningHold
+                        ? holdFlags.Contains(i.FlagId)
                             || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
                         : i.FlagId == (int)InventoryFlag.Hangar
                 )
             )
             .OrderBy(i => i.Id)
             .ToArray();
-        if (items.Length != itemIds.Count || items.Any(i => quantity > i.Quantity))
+        var storedShips = world
+            .Ships.Include(s => s.Position)
+            .Where(s => itemIds.Contains(s.Id) && s.OwnerId == pilotId)
+            .AsEnumerable()
+            .Where(s =>
+                s.Position is null && (sourceId == ship.Id ? s.StoredInId == ship.Id : s.StoredInId is null && s.StationId == sourceId)
+            )
+            .OrderBy(s => s.Id)
+            .ToArray();
+        if (
+            items.Length + storedShips.Length != itemIds.Count
+            || items.Any(i => quantity > i.Quantity)
+            || storedShips.Any(s => quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
+        )
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");
         }
@@ -93,18 +112,43 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         if (destinationId == ship.Id)
         {
             double capacity = HoldCapacity(world, catalog, pilotId, ship.Id, flagId);
+            var hold = ShipHoldRules.Definition(flagId)!;
             if (
-                flagId == (int)InventoryFlag.GeneralMiningHold
-                && (capacity <= 0 || items.Any(i => Read(catalog, i).CategoryId != (int)InventoryCategory.Asteroid))
+                (capacity <= 0 && flagId != (int)InventoryFlag.Cargo)
+                || items.Concat(magazines).Any(i => !hold.Allows(Read(catalog, i)))
+                || storedShips.Any(s => !hold.AllowsAssembledShip || !hold.Allows(PilotFleetStore.Read(catalog, s)))
             )
             {
-                throw new InvalidDataException("Only mined ore can enter this ship's mining hold.");
+                throw new InvalidDataException("This hold is unavailable or does not permit the requested cargo.");
+            }
+            foreach (var contained in storedShips)
+            {
+                if (hold.Flag == InventoryFlag.FrigateEscapeBay)
+                {
+                    PilotSkillReader.CheckRequirements(world, catalog, pilotId, contained.TypeId);
+                }
+                ShipStorageRules.CheckContents(
+                    List(world, catalog, pilotId, contained.Id),
+                    world.Ships.Any(s => s.StoredInId == contained.Id)
+                );
             }
             double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, flagId);
             double added = items
                 .Where(i => i.LocationId != ship.Id || i.FlagId != flagId)
-                .Sum(i => Read(catalog, i).Volume * (quantity ?? i.Quantity));
-            added += magazines.Sum(i => Read(catalog, i).Volume * i.Quantity);
+                .Sum(i => hold.RequiredCapacity(Read(catalog, i), quantity ?? i.Quantity));
+            added += magazines.Sum(i => hold.RequiredCapacity(Read(catalog, i), i.Quantity));
+            added += storedShips
+                .Where(s => s.StoredInId != ship.Id || s.StorageFlagId != flagId)
+                .Sum(s => hold.RequiredCapacity(PilotFleetStore.Read(catalog, s), 1));
+            if (
+                flagId == (int)InventoryFlag.FrigateEscapeBay
+                && world.Ships.Count(s => s.StoredInId == ship.Id && s.StorageFlagId == flagId && !itemIds.Contains(s.Id))
+                    + storedShips.Length
+                    > 1
+            )
+            {
+                throw new InvalidDataException("The frigate escape bay holds one assembled frigate.");
+            }
             if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
             {
                 throw new CargoCapacityException(Math.Max(0, capacity - used), added);
@@ -156,6 +200,17 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
                 changes.Add(new(Read(catalog, item), previous));
             }
         }
+        foreach (var stored in storedShips)
+        {
+            var previous = PilotFleetStore.Read(catalog, stored);
+            stored.StoredInId = destinationId == ship.Id ? ship.Id : null;
+            stored.StorageFlagId = flagId;
+            if (stored.StoredInId is null)
+            {
+                stored.StationId = checked((int)destinationId);
+            }
+            changes.Add(new(PilotFleetStore.Read(catalog, stored), previous));
+        }
         world.SaveChanges();
         if (checkpoint is not null)
         {
@@ -177,7 +232,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             item.Quantity,
             type.GroupId,
             type.Group.CategoryId,
-            Volume(catalog, item.TypeId),
+            Volume(catalog, item.TypeId, item.Singleton, type),
             item.Singleton,
             item.Online,
             item.CrystalDamage
@@ -188,17 +243,17 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         var ship = world.Ships.Find(shipId) ?? throw new InvalidDataException("The ship is unavailable.");
-        return flagId == (int)InventoryFlag.GeneralMiningHold
-            ? HoldCapacity(catalog, ship.TypeId, flagId)
-            : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.CargoCapacity);
+        return ShipHoldRules.Capacity(flagId, PilotFittingStore.ShipAttributes(world, catalog, pilot, ship));
     }
 
-    internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId) =>
-        flagId == (int)InventoryFlag.GeneralMiningHold
-            ? catalog.Set<TypeAttribute>().Find(typeId, (int)DogmaAttributeId.GeneralMiningHoldCapacity)?.Value ?? 0
-            : catalog.Set<ItemType>().Single(t => t.Id == typeId).Capacity ?? 0;
+    internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId)
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId).ToDictionary();
+        attributes[DogmaAttributeId.CargoCapacity] = catalog.Set<ItemType>().Find(typeId)?.Capacity ?? 0;
+        return ShipHoldRules.Capacity(flagId, attributes);
+    }
 
-    internal static double Volume(CatalogDbContext catalog, int typeId)
+    internal static double Volume(CatalogDbContext catalog, int typeId, bool singleton = false, ItemType? type = null)
     {
         double volume =
             catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>().Volume
@@ -207,7 +262,14 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         {
             throw new InvalidDataException($"Invalid volume for item type {typeId}.");
         }
-        return volume;
+        if (singleton)
+        {
+            return volume;
+        }
+        type ??= catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
+        return type.Group.CategoryId == (int)InventoryCategory.Ship
+            ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume)
+            : volume;
     }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)

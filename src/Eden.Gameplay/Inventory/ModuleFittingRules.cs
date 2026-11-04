@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
@@ -54,8 +55,12 @@ public static class ModuleFittingRules
             || MissileDefinitions.SupportedLauncher(groupId, attributes) && effects.Contains(DogmaEffect.UseMissiles)
             || groupId switch
             {
-                InventoryDefinitions.MiningLaserGroup => effects.Contains(DogmaEffect.MiningLaser)
-                    && !InventoryDefinitions.RequiresSpecificShip(attributes)
+                InventoryDefinitions.MiningLaserGroup or InventoryDefinitions.StripMinerGroup => effects.Contains(DogmaEffect.MiningLaser)
+                    && (
+                        groupId == InventoryDefinitions.StripMinerGroup
+                            ? MiningDefinitions.IsOrdinaryStripMiner(attributes)
+                            : !InventoryDefinitions.RequiresSpecificShip(attributes)
+                    )
                     && attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) == 0,
                 ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)

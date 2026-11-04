@@ -224,8 +224,17 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                 .Where(i => i.OwnerId == pilotId && (i.LocationId == shipId || moduleIds.Contains(i.LocationId)))
                 .OrderBy(i => i.Id)
                 .ToArray();
+            var storedShips = world.Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == shipId).OrderBy(s => s.Id).ToArray();
+            string storedManifest = JsonSerializer.Serialize(storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)));
             string manifest = JsonSerializer.Serialize(items);
             var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
+            foreach (var stored in storedShips)
+            {
+                if (lootRoll.Survives())
+                {
+                    survivors.Add(stored.Id);
+                }
+            }
             var capsuleType =
                 catalog
                     .Set<ItemType>()
@@ -264,13 +273,26 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                         Time = now,
                         Name = old.Name,
                         ItemsJson = manifest,
+                        StoredShipsJson = storedManifest,
                         DroppedItemIdsJson = JsonSerializer.Serialize(survivors.Order()),
                         X = position.X,
                         Y = position.Y,
                         Z = position.Z,
                     }
                 );
-            WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
+            var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
+            foreach (var stored in storedShips)
+            {
+                if (survivors.Contains(stored.Id))
+                {
+                    stored.StoredInId = wreck.Id;
+                    stored.StorageFlagId = (int)InventoryFlag.Cargo;
+                }
+                else
+                {
+                    ShipStoragePersistence.Destroy(world, stored);
+                }
+            }
             pilot.ActiveShip = capsule;
             pilot.ActiveShipId = capsule.Id;
             // Satisfy the active-ship FK before deleting the old hull. Both saves

@@ -61,6 +61,19 @@ internal sealed class InventoryHandler(
             ? id
         : 0;
 
+    private bool CanReadShip(PilotCallContext context, InventoryItem ship)
+    {
+        var pilot = context.Pilot;
+        var parent = ShipHoldRules.Definition(ship.FlagId)?.AllowsAssembledShip == true ? fleet.Find(pilot.PilotId, ship.LocationId) : null;
+        var wreck = context.Flight.CanTarget ? context.Flight.VisibleWrecks.FirstOrDefault(w => w.Id == ship.LocationId) : null;
+        return ShipStorageRules.CanRead(
+            new(pilot.PilotId, pilot.ShipId, pilot.StationId, pilot.Position is null),
+            ship,
+            parent,
+            wreck is not null && pilot.Position is { } position ? new(wreck, position, pilot.Flight.ShipRadius) : null
+        );
+    }
+
     private PilotCallResult MoveFromWire(
         PilotCallContext context,
         string service,
@@ -180,7 +193,7 @@ internal sealed class InventoryHandler(
                 };
             }
             var ship = fleet.Find(pilot.PilotId, container);
-            if (ship is null || (container != pilot.ShipId && (pilot.Position is not null || ship.LocationId != pilot.StationId)))
+            if (ship is null || !CanReadShip(context, ship))
             {
                 return new PilotCallResult.Failure("The ship inventory is unavailable at your current location.");
             }
@@ -226,9 +239,7 @@ internal sealed class InventoryHandler(
                 PilotBindingLifetime.Location
             ),
             ("invbroker", "GetInventoryFromId")
-                when args is [long id, ..]
-                    && fleet.Find(pilot.PilotId, id) is { } ship
-                    && (id == pilot.ShipId || (pilot.Position is null && ship.LocationId == pilot.StationId)) => context.Reference(
+                when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship && CanReadShip(context, ship) => context.Reference(
                 $"{ShipInventoryPrefix}{id}",
                 PilotBindingLifetime.Location
             ),
@@ -245,6 +256,7 @@ internal sealed class InventoryHandler(
             ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => ShipDogmaBuilder.Item(pilot, service[1..]),
             ("dogmaIM", "GetAllInfo") => dogma.AllInfo(pilot),
+            ("dogmaIM", "GetLayerDamageValuesByItems") when args is [HashSet<long> ids] => dogma.DroneBayDamage(pilot, ids),
             ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(context, id),
             ("dogmaIM", "ItemGetInfo")
                 when args is [object?[] { Length: 3 } key] && key is [long hull, long slot, long type] && hull == pilot.ShipId => ammunition

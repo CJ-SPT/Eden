@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -77,7 +78,14 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                             .Except(context.Flight.VisiblePilots().Select(p => p.ShipId))
                             .Select(id => fleet.Find(pilot.PilotId, id))
                             .OfType<InventoryItem>()
-                            .Where(ship => pilot.Position is null && ship.LocationId == pilot.StationId)
+                            .Where(ship =>
+                                ShipStorageRules.CanRead(
+                                    new(pilot.PilotId, pilot.ShipId, pilot.StationId, pilot.Position is null),
+                                    ship,
+                                    fleet.Find(pilot.PilotId, ship.LocationId)
+                                )
+                                || context.Flight.VisibleWrecks.Any(wreck => wreck.OwnerId == pilot.PilotId && wreck.Id == ship.LocationId)
+                            )
                             .Select(ship => new LocationRow(
                                 ship.Id,
                                 fleet.Name(pilot.PilotId, ship.Id),
@@ -106,6 +114,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("XmppChatMgr", "GetDeprecatedPrefsFallback") => PilotCallResult.None,
             ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => new CorporationMemberInfo(id, pilot.CorpId),
             ("insuranceSvc", "GetContracts") => BlueEmpty.List,
+            // Native ship menus ask for a quote before exposing cargo actions.
+            // Zero means uninsurable and keeps the deferred insurance role closed.
+            ("insuranceSvc", "GetInsurancePrice") when args is [long type] && type is > 0 and <= int.MaxValue => 0d,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("station", "GetGuests") => new BlueList<StationGuest>([new(pilot.PilotId, pilot.CorpId)]),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
@@ -127,6 +138,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
                 "isLocator",
             ]),
             ("fighterMgr", "GetFightersForShip") => new FighterState(),
+            ("dogmaIM", "ChangeDroneSettings") => ChangeDroneSettings(args),
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("map", "GetStationInfo") => Rows(
                 [
@@ -188,6 +200,26 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
         safety.Set(pilotId, (ShipSafetyLevel)level);
         // The pinned client applies its selection and emits OnSafetyLevelChanged
         // after this RPC succeeds. A separate server event would duplicate it.
+        return PilotCallResult.None;
+    }
+
+    private static PilotCallResult ChangeDroneSettings(object?[] args)
+    {
+        // Build 3662168 initializes its drone panel by mirroring these client-owned
+        // preferences through godma.StateManager.ChangeDroneSettings. Accept only
+        // that initialization, including floating catalog defaults (1.0/0.0);
+        // drone launch and combat remain unavailable.
+        if (
+            args is not [Dictionary<long, object?> settings]
+            || settings.Count is < 1 or > 2
+            || settings.Any(setting =>
+                setting.Key is not ((long)DogmaAttributeId.DroneIsAggressive) and not ((long)DogmaAttributeId.DroneFocusFire)
+                || setting.Value is not bool and not (long and (0 or 1)) and not (double and (0d or 1d))
+            )
+        )
+        {
+            return new PilotCallResult.Failure("Choose valid drone aggression and focus-fire preferences.");
+        }
         return PilotCallResult.None;
     }
 }

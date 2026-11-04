@@ -1194,9 +1194,7 @@ internal sealed class FlightSession(
         if (command is FlightCommand.Undock undock && Pilot.Position is null && undock.ShipId == Pilot.ShipId)
         {
             _simulatedStamp = Stamp;
-            // Separate the two local launch lanes even on simultaneous undocks.
-            double lane = (Pilot.ShipId % 2 == 0) ? 1500 : 0;
-            SetPosition(new(Pilot.X + Pilot.Flight.StationRadius + 500, Pilot.Y + lane, Pilot.Z));
+            SetPosition(DockingDefinitions.UndockPosition(Pilot.ShipId, Pilot.Home.Position, Pilot.Flight));
             return PilotCallResult.None;
         }
         if (command is FlightCommand.Undock || Pilot.Position is not { } position)

@@ -216,6 +216,8 @@ public sealed class SmallHullTests
         }
         using FlightSession session = new(f.Db.Store, restarted, f.Clock, new(), f.Db.Objects);
         Assert.IsType<PilotCallResult.Success>(session.Execute(new FlightCommand.Undock(ship)));
+        double separation = session.Pilot.Position!.DistanceTo(restarted.Home.Position);
+        Assert.True(separation - restarted.Flight.StationRadius - restarted.Flight.ShipRadius >= 499);
         session.Snapshot();
         Assert.True(session.InBallpark);
         Assert.Contains(session.Updates, update => update.Command is DestinyCommand.SetState);

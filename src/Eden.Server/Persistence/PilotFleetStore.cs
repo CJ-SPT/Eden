@@ -19,19 +19,21 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         ((int)CombatWeaponType.CivilianGatlingRailgun, InventoryFlag.HighSlot1),
     ];
 
-    private static InventoryItem Read(CatalogDbContext catalog, Ship ship)
+    internal static InventoryItem Read(CatalogDbContext catalog, Ship ship)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == ship.TypeId);
         return new(
             ship.Id,
             ship.TypeId,
             ship.OwnerId,
-            ship.Position is null ? ship.StationId : ship.Position.SystemId ?? ship.StationId,
-            ship.Position is null ? (int)InventoryFlag.Hangar : (int)InventoryFlag.AutoFit,
+            ship.StoredInId ?? (ship.Position is null ? ship.StationId : ship.Position.SystemId ?? ship.StationId),
+            ship.StoredInId is not null ? ship.StorageFlagId
+                : ship.Position is null ? (int)InventoryFlag.Hangar
+                : (int)InventoryFlag.AutoFit,
             1,
             type.GroupId,
             type.Group.CategoryId,
-            PilotInventoryStore.Volume(catalog, ship.TypeId),
+            PilotInventoryStore.Volume(catalog, ship.TypeId, singleton: true),
             true
         );
     }
@@ -43,7 +45,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         return world
             .Ships.AsNoTracking()
             .Include(s => s.Position)
-            .Where(s => s.OwnerId == pilotId && s.StationId == stationId && s.Position == null)
+            .Where(s => s.OwnerId == pilotId && s.StationId == stationId && s.Position == null && s.StoredInId == null)
             .OrderBy(s => s.Id)
             .AsEnumerable()
             .Select(s => Read(catalog, s))
@@ -88,7 +90,12 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             // Retrying an assembled ID must not consume a second unit from its old stack.
             if (world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == id) is { } assembled)
             {
-                if (assembled.OwnerId != pilotId || assembled.StationId != pilot.ActiveShip.StationId || assembled.Position is not null)
+                if (
+                    assembled.OwnerId != pilotId
+                    || assembled.StationId != pilot.ActiveShip.StationId
+                    || assembled.Position is not null
+                    || assembled.StoredInId is not null
+                )
                 {
                     throw new InvalidDataException("The ship is unavailable in your current hangar.");
                 }
@@ -153,6 +160,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             pilot.ActiveShip.Position is not null
             || ship is null
             || ship.Position is not null
+            || ship.StoredInId is not null
             || ship.StationId != pilot.ActiveShip.StationId
             || (pilot.ActiveShipId != previousShipId && pilot.ActiveShipId != shipId)
         )
@@ -183,7 +191,9 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             // A repeated request for the previous hull cannot create another kit.
             if (
                 activeGroup == FleetDefinitions.CorvetteGroup
-                && world.Ships.Any(s => s.Id == previousShipId && s.OwnerId == pilotId && s.StationId == stationId && s.Position == null)
+                && world.Ships.Any(s =>
+                    s.Id == previousShipId && s.OwnerId == pilotId && s.StationId == stationId && s.Position == null && s.StoredInId == null
+                )
             )
             {
                 return new(lookup.FindPilot(pilot.AccountId, pilotId)!, []);
@@ -209,7 +219,9 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
 
         var candidates = world
             .Ships.Include(s => s.Position)
-            .Where(s => s.OwnerId == pilotId && s.TypeId == typeId && s.StationId == stationId && s.Position == null)
+            .Where(s =>
+                s.OwnerId == pilotId && s.TypeId == typeId && s.StationId == stationId && s.Position == null && s.StoredInId == null
+            )
             .OrderBy(s => s.Id)
             .ToArray();
         // Eden reuses an undamaged, equipped recovery hull at this station.

@@ -23,10 +23,17 @@ internal sealed class TestWorld : IDisposable
     public ServiceProvider Services { get; }
     public IReadOnlyList<StaticSpaceObject> Objects => Services.GetRequiredService<ISystemObjects>().Load(30000142);
 
-    // These fixtures replay pre-version-28 migrations; remove the newer live
-    // module table as well, so version 31 can rename the historical table.
-    internal const string DropCloneGradeSchema = "ALTER TABLE WorldAccount DROP COLUMN CloneGrade; ";
+    // Remove newer fields before replaying a historical schema version.
+    internal const string DropShipStorageSchema = """
+        DROP INDEX IX_WorldShip_OwnerId_StoredInId;
+        ALTER TABLE WorldShip DROP COLUMN StoredInId;
+        ALTER TABLE WorldShip DROP COLUMN StorageFlagId;
+        ALTER TABLE WorldShipLoss DROP COLUMN StoredShipsJson;
+        """;
+    internal const string DropCloneGradeSchema = DropShipStorageSchema + "ALTER TABLE WorldAccount DROP COLUMN CloneGrade; ";
     internal const string DropSafetySchema = DropCloneGradeSchema + "ALTER TABLE WorldPilot DROP COLUMN SafetyLevel; ";
+
+    // Remove the newer live-module table so version 31 can rename the historical table.
     internal const string DropTestingMarketSchema =
         DropSafetySchema
         + """

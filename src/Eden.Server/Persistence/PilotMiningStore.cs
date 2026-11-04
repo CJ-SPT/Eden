@@ -63,7 +63,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             || !module.Online
             || !module.Singleton
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
-            || module.GroupId != InventoryDefinitions.MiningLaserGroup
+            || !InventoryDefinitions.IsOreMiningGroup(module.GroupId)
             || FittingCatalog.Definition(catalog, module.TypeId) is null
             || asteroid is null
             || asteroid.Quantity <= 0
@@ -72,6 +72,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var ore = catalog.Set<ItemType>().Find(asteroid.TypeId);
         if (

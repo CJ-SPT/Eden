@@ -23,6 +23,8 @@
     <EmbeddedResource Include="Fixtures/FrigateHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/SmallHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/CombatHullCatalog.json" />
+    <EmbeddedResource Include="Fixtures/UtilityHullCatalog.json" />
+    <EmbeddedResource Include="Fixtures/NativeShipInventory.json" />
     <EmbeddedResource Include="Fixtures/TechOneHulls.json" />
     <Using Include="Xunit" />
   </ItemGroup>

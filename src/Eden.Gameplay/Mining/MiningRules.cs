@@ -89,14 +89,16 @@ public static class MiningRules
     public static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(MiningModuleInputs inputs)
     {
         var attributes = inputs.Attributes.ToDictionary();
-        if (inputs.GroupId != InventoryDefinitions.MiningLaserGroup)
+        if (!InventoryDefinitions.IsOreMiningGroup(inputs.GroupId))
         {
             return attributes;
         }
-        attributes[DogmaAttributeId.MiningAmount] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount)
-            * (1 + MiningDefinitions.YieldBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Mining))
-            * (1 + MiningDefinitions.YieldBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Astrogeology));
+        foreach (var modifier in MiningDefinitions.SkillModifiers)
+        {
+            attributes[modifier.Attribute] =
+                attributes.GetValueOrDefault(modifier.Attribute)
+                * (1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill));
+        }
         if (!inputs.CatalogHullBonuses && inputs.HullTypeId == (int)StarterShipType.Venture)
         {
             // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
@@ -111,12 +113,6 @@ public static class MiningRules
                         / 100
                 );
         }
-        attributes[DogmaAttributeId.MiningCriticalChance] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance)
-            * (1 + MiningDefinitions.CriticalChanceBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Precision));
-        attributes[DogmaAttributeId.MiningCriticalBonusYield] =
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield)
-            * (1 + MiningDefinitions.CriticalYieldBonusPerSkillLevel * inputs.Levels.GetValueOrDefault(MiningSkill.Exploitation));
         return attributes;
     }
 }

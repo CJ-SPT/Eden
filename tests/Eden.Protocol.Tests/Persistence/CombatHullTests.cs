@@ -45,7 +45,7 @@ public sealed class CombatHullTests
         Assert.All(report.Hulls, hull => Assert.DoesNotContain(HullCapability.Unclassified, hull.Deferred));
         Assert.Contains(
             report.Hulls,
-            hull => hull.TypeId == (int)TechOneHullType.Nestor && hull.Deferred.Contains(HullCapability.ShipMaintenance)
+            hull => hull.TypeId == (int)TechOneHullType.Nestor && hull.Deferred.Contains(HullCapability.FleetRefitting)
         );
         Assert.Contains(
             report.Hulls,
