@@ -18,7 +18,7 @@ internal sealed record MailHeaderReply(MailHeader Header) : BlueModel
                 ["senderID"] = Header.SenderId,
                 ["sentDate"] = Header.SentAt,
                 ["toCharacterIDs"] = string.Join(',', Header.Recipients.Select(id => id.ToString(CultureInfo.InvariantCulture))),
-                ["toListID"] = null,
+                ["toListID"] = Header.ListId?.ToString(CultureInfo.InvariantCulture),
                 ["toCorpOrAllianceID"] = null,
                 ["title"] = new BlueUnicode(Header.Subject),
             }
@@ -89,7 +89,7 @@ internal sealed record MailSent(MailHeader Header, MailEntryState State) : Pilot
             Header.SenderId,
             Header.SentAt,
             new BlueList<long>(Header.Recipients),
-            null,
+            Header.ListId,
             null,
             new BlueUnicode(Header.Subject),
             (int)State.Status,

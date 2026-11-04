@@ -12,11 +12,13 @@ public sealed class SavedMail
     // Historical headers may outlive their sender; mailbox ownership has its own FK.
     public long SenderId { get; set; }
     public long SentAt { get; set; }
+    public long? ListId { get; set; }
     public string Subject { get; set; } = "";
     public string Body { get; set; } = "";
     public string RecipientsJson { get; set; } = "[]";
 
-    public MailHeader Header() => new(Id, SenderId, SentAt, JsonSerializer.Deserialize<long[]>(RecipientsJson)!, Subject);
+    public MailHeader Header() =>
+        new(Id, SenderId, SentAt, JsonSerializer.Deserialize<long[]>(RecipientsJson)!, Subject) { ListId = ListId };
 }
 
 [PrimaryKey(nameof(PilotId), nameof(MessageId))]
@@ -53,6 +55,15 @@ public sealed class SavedMailChange
     public long Labels { get; set; }
     public long LabelId { get; set; }
 }
+
+internal sealed record MailDeliveryPlan(
+    long SenderId,
+    long? SentCopyPilotId,
+    MailDraft Draft,
+    IReadOnlyList<long> Audience,
+    long Time,
+    bool Automated = false
+);
 
 [Injectable]
 internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock) : IPilotMail
@@ -210,6 +221,11 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         {
             throw new InvalidDataException("A recipient is blocking mail from you.");
         }
+        HashSet<long> audience = draft.Recipients.ToHashSet();
+        if (draft.ListId is long listId)
+        {
+            audience.UnionWith(PilotMailingListStore.Audience(world, pilotId, listId));
+        }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         long cutoff = checked(now - TimeSpan.TicksPerMinute);
         if (world.Set<SavedMail>().Count(m => m.SenderId == pilotId && m.SentAt > cutoff) >= MailRules.MaximumPerMinute)
@@ -222,38 +238,45 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             var source = Entry(world, pilotId, sourceId.Value);
             source.Status |= draft.ReplyTo.HasValue ? MailStatus.Replied : MailStatus.Forwarded;
         }
+        long id = Deliver(world, new(pilotId, pilotId, draft, audience.Order().ToArray(), now), origin);
+        transaction.Commit();
+        return id;
+    }
+
+    internal static long Deliver(WorldDbContext world, MailDeliveryPlan plan, Guid origin)
+    {
         var mail = world
             .Add(
                 new SavedMail
                 {
-                    SenderId = pilotId,
-                    SentAt = now,
-                    Subject = draft.Subject,
-                    Body = draft.Body,
-                    RecipientsJson = JsonSerializer.Serialize(draft.Recipients),
+                    SenderId = plan.SenderId,
+                    SentAt = plan.Time,
+                    ListId = plan.Draft.ListId,
+                    Subject = plan.Draft.Subject,
+                    Body = plan.Draft.Body,
+                    RecipientsJson = JsonSerializer.Serialize(plan.Draft.Recipients),
                 }
             )
             .Entity;
         world.SaveChanges();
-        foreach (long owner in draft.Recipients.Append(pilotId).Distinct())
+        var owners = plan.SentCopyPilotId is long sender ? plan.Audience.Append(sender) : plan.Audience;
+        foreach (long owner in owners.Distinct())
         {
+            var initial = MailRules.InitialState(mail.Id, owner, plan.SentCopyPilotId, plan.Draft, plan.Automated);
             var entry = world
                 .Add(
                     new SavedMailEntry
                     {
                         PilotId = owner,
                         MessageId = mail.Id,
-                        Status = owner == pilotId ? MailStatus.Read : MailStatus.None,
-                        Labels =
-                            (owner == pilotId ? (long)SystemMailLabel.Sent : 0)
-                            | (draft.Recipients.Contains(owner) ? (long)SystemMailLabel.Inbox : 0),
+                        Status = initial.Status,
+                        Labels = initial.Labels,
                     }
                 )
                 .Entity;
             Feed(world, entry, MailChangeKind.Sent, origin);
         }
         world.SaveChanges();
-        transaction.Commit();
         return mail.Id;
     }
 
@@ -277,6 +300,12 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
                 return query.Where(e => (e.Status & MailStatus.Trashed) == 0).ToArray();
             case MailSelection.Trash:
                 return query.Where(e => (e.Status & MailStatus.Trashed) != 0).ToArray();
+            case MailSelection.List list when list.Id > 0:
+                return query
+                    .Where(e =>
+                        (e.Status & MailStatus.Trashed) == 0 && world.Set<SavedMail>().Any(m => m.Id == e.MessageId && m.ListId == list.Id)
+                    )
+                    .ToArray();
             case MailSelection.Label label:
                 CheckMask(world, pilot, label.Mask);
                 return query.Where(e => (e.Labels & label.Mask) != 0 && (e.Status & MailStatus.Trashed) == 0).ToArray();

@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 62;
+    internal const int CurrentVersion = 63;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -900,7 +900,42 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=62");
+            if (version is >= 6 and < 63)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldMailingList(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, OwnerId INTEGER NOT NULL,
+                        Key TEXT NOT NULL, Name TEXT NOT NULL, DefaultAccess INTEGER NOT NULL, DefaultRole INTEGER NOT NULL,
+                        Deleted INTEGER NOT NULL, WelcomeTitle TEXT, WelcomeBody TEXT);
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldMailingList_Key ON WorldMailingList(Key) WHERE Deleted = 0;
+                    CREATE TABLE IF NOT EXISTS WorldMailingListMember(
+                        ListId INTEGER NOT NULL REFERENCES WorldMailingList(Id) ON DELETE CASCADE,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Role INTEGER NOT NULL, PRIMARY KEY(ListId,PilotId));
+                    CREATE INDEX IF NOT EXISTS IX_WorldMailingListMember_PilotId ON WorldMailingListMember(PilotId);
+                    CREATE TABLE IF NOT EXISTS WorldMailingListAccess(
+                        ListId INTEGER NOT NULL REFERENCES WorldMailingList(Id) ON DELETE CASCADE,
+                        EntityId INTEGER NOT NULL, Access INTEGER NOT NULL, PRIMARY KEY(ListId,EntityId));
+                    CREATE TABLE IF NOT EXISTS WorldMailingListChange(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        ListId INTEGER NOT NULL, Origin TEXT NOT NULL, Kind INTEGER NOT NULL, Role INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldMailingListChange_PilotId_Id ON WorldMailingListChange(PilotId,Id);
+                    """
+                );
+                if (
+                    world
+                        .Database.SqlQueryRaw<long>("SELECT COUNT(*) AS Value FROM pragma_table_info('WorldMail') WHERE name='ListId'")
+                        .AsEnumerable()
+                        .Single() == 0
+                )
+                {
+                    world.Database.ExecuteSqlRaw("ALTER TABLE WorldMail ADD COLUMN ListId INTEGER");
+                }
+                world.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorldMail_ListId ON WorldMail(ListId)");
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=63");
         }
         world.Database.ExecuteSqlRaw(
             """

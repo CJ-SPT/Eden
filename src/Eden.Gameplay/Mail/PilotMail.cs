@@ -23,9 +23,15 @@ public enum SystemMailLabel
     Alliance = 8,
 }
 
-public sealed record MailDraft(IReadOnlyList<long> Recipients, string Subject, string Body, long? ReplyTo, long? ForwardedFrom);
+public sealed record MailDraft(IReadOnlyList<long> Recipients, string Subject, string Body, long? ReplyTo, long? ForwardedFrom)
+{
+    public long? ListId { get; init; }
+}
 
-public sealed record MailHeader(long Id, long SenderId, long SentAt, IReadOnlyList<long> Recipients, string Subject);
+public sealed record MailHeader(long Id, long SenderId, long SentAt, IReadOnlyList<long> Recipients, string Subject)
+{
+    public long? ListId { get; init; }
+}
 
 public sealed record MailEntryState(long Id, MailStatus Status, long Labels);
 
@@ -42,6 +48,8 @@ public abstract record MailSelection
     public sealed record Label(long Mask) : MailSelection;
 
     public sealed record Trash : MailSelection;
+
+    public sealed record List(long Id) : MailSelection;
 }
 
 public enum MailOperation
@@ -106,7 +114,9 @@ public static partial class MailRules
     public static void Draft(MailDraft draft)
     {
         if (
-            draft.Recipients.Count is < 1 or > MaximumRecipients
+            draft.Recipients.Count > MaximumRecipients
+            || (draft.Recipients.Count == 0 && !draft.ListId.HasValue)
+            || draft.ListId <= 0
             || draft.Recipients.Any(id => id <= 0)
             || draft.Recipients.Distinct().Count() != draft.Recipients.Count
         )
@@ -141,6 +151,16 @@ public static partial class MailRules
         {
             throw new InvalidDataException("Choose one mail label.");
         }
+    }
+
+    public static MailEntryState InitialState(long message, long owner, long? sentCopy, MailDraft draft, bool automated)
+    {
+        bool direct = draft.Recipients.Contains(owner);
+        long labels = (owner == sentCopy ? (long)SystemMailLabel.Sent : 0) | (direct ? (long)SystemMailLabel.Inbox : 0);
+        // Native OnMailSent marks only an outgoing, non-received personal copy
+        // read. Self-mail and the sender's subscribed list copy start unread.
+        var status = owner == sentCopy && !direct && !draft.ListId.HasValue ? MailStatus.Read : MailStatus.None;
+        return new(message, status | (automated ? MailStatus.Automated : MailStatus.None), labels);
     }
 
     public static MailEntryState Change(MailEntryState before, MailOperation operation, long mask) =>

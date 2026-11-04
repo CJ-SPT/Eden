@@ -6,13 +6,15 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Mailing lists now support native creation/joining, membership and role management, access rules, welcome messages and subscriber broadcasts. Delivery snapshots keep subscriber identities private, preserve each mailbox's state and retain list names in historical mail. Native presentation remains unverified. Organization mail, alliance access and paid CSPA remain pending. See the [mailing-list notes](docs/protocol.md#persistent-mailing-lists).
+
 Mail-arrival events now match the stock client's eight-argument callback. An extra label-mask argument previously caused the recipient callback to be rejected before its native unread/popup handling. See the [arrival-event correction](docs/protocol.md#mail-arrival-notification-arity); live popup/blink confirmation remains pending.
 
 Inventory stack division now supports Shift-drag within the same hangar or active ship hold, plus the native Divide Stack menu while docked. A 50-unit injector stack can become separate 49- and one-unit stacks without changing location or consuming extra capacity. Splits preserve metadata, update the native inventory cache and survive restarts. See the [stack division correction](docs/protocol.md#native-inventory-stack-division); native presentation remains unverified.
 
 New personal mail now accepts the stock compose window's `False` defaults for unused reply/forward IDs. This fixes the reported **Expected a mail identifier or None** rejection when sending to another pilot. See the [compose-default correction](docs/protocol.md#mail-compose-optional-source-defaults); live confirmation of the fix remains pending.
 
-Personal EVE Mail now supports local-pilot sending, inbox/sent state, replies/forwards, compressed bodies, read/unread actions, trash/restoration/deletion and private labels. Mail and change notifications persist across restarts, with recipient ownership, blocking and rate limits enforced atomically. Native presentation remains unverified. Mailing lists, organization mail and paid CSPA remain pending. See the [personal mail notes](docs/protocol.md#persistent-personal-eve-mail).
+Personal EVE Mail now supports local-pilot sending, inbox/sent state, replies/forwards, compressed bodies, read/unread actions, trash/restoration/deletion and private labels. Mail and change notifications persist across restarts, with recipient ownership, blocking and rate limits enforced atomically. Native presentation remains unverified. Organization mail and paid CSPA remain pending; mailing lists are implemented above. See the [personal mail notes](docs/protocol.md#persistent-personal-eve-mail).
 
 Skill extraction now supports the native client request with atomic skill removal, extractor consumption and Large Skill Injector delivery. It enforces the allocated-SP minimum, docked capsule requirement, Alpha level floors, queued/trained prerequisites and clone/implant restrictions. Receipts, history, restart persistence, concurrent requests and connected-session notifications have automated coverage; native presentation remains unverified. See the [skill extraction notes](docs/protocol.md#persistent-skill-extraction).
 

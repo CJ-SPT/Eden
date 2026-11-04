@@ -39,6 +39,7 @@ internal sealed class PilotUpdateCoordinator(
     CalendarHandler calendar,
     InboxHandler inbox,
     MailHandler mail,
+    MailingListHandler mailingLists,
     ContractHandler contracts,
     SecurityStatusHandler security,
     RedemptionHandler redemption,
@@ -58,6 +59,7 @@ internal sealed class PilotUpdateCoordinator(
         || calendar.IsMonitoring
         || inbox.IsMonitoring
         || mail.IsMonitoring
+        || mailingLists.IsMonitoring
         || contracts.IsMonitoring
         || security.IsMonitoring
         || freePoints.IsMonitoring
@@ -72,6 +74,7 @@ internal sealed class PilotUpdateCoordinator(
         guests.Advance(context);
         calendar.Enter(context);
         inbox.Enter(context);
+        mailingLists.Enter(context);
         mail.Enter(context);
         contracts.Enter(context);
         security.Enter(context);
@@ -92,6 +95,7 @@ internal sealed class PilotUpdateCoordinator(
         online.Reset();
         calendar.Reset();
         inbox.Reset();
+        mailingLists.Reset();
         mail.Reset();
         contracts.Reset();
         security.Reset();
@@ -141,6 +145,7 @@ internal sealed class PilotUpdateCoordinator(
         online.Advance(context);
         calendar.Advance(context);
         inbox.Advance(context);
+        mailingLists.Advance(context);
         mail.Advance(context);
         contracts.Advance(context);
         security.Advance(context);

@@ -66,12 +66,6 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service == "mailingListsMgr" && method == "GetJoinedLists" && args.Length == 0 && keywords is null or { Count: 0 })
-        {
-            // Eden has no created/joined mailing lists. This read lets personal
-            // mail initialize without inventing a group membership.
-            return BlueEmpty.Dictionary;
-        }
         if (
             service != "mailMgr"
             || method
@@ -133,13 +127,16 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
                 case ("GetBody", [long id, bool read]) when id > 0:
                     return new MailBodyReply(mail.Body(pilot, id, read, _origin));
                 case ("SendMail", [List<object?> recipients, var list, var corporation, var subject, var body, var reply, var forward]):
-                    if (OptionalId(list).HasValue || OptionalId(corporation).HasValue)
+                    if (OptionalId(corporation).HasValue)
                     {
-                        throw new InvalidDataException("Mailing-list and corporation/alliance sends are not available.");
+                        throw new InvalidDataException("Corporation/alliance mail is not available.");
                     }
                     return mail.Send(
                         pilot,
-                        new(Ids(recipients), Text(subject), Text(body), OptionalId(reply), OptionalId(forward)),
+                        new MailDraft(Ids(recipients), Text(subject), Text(body), OptionalId(reply), OptionalId(forward))
+                        {
+                            ListId = OptionalId(list),
+                        },
                         _origin
                     );
                 case ("GetLabels", []):
@@ -169,16 +166,13 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
             {
                 throw new InvalidDataException("Invalid mail request arguments.");
             }
-            if (method.EndsWith("ByList", StringComparison.Ordinal))
-            {
-                throw new InvalidDataException("Mailing lists are not available.");
-            }
             long labels = 0;
             MailSelection selection = (method, args) switch
             {
                 ("AssignLabels" or "RemoveLabels" or "ReplaceLabels", [List<object?> ids, long mask]) => WithLabels(ids, mask),
                 (_, [List<object?> ids]) => new MailSelection.Ids(Ids(ids)),
                 (_, [long mask]) when method.EndsWith("ByLabel", StringComparison.Ordinal) => new MailSelection.Label(mask),
+                (_, [long listId]) when listId > 0 && method.EndsWith("ByList", StringComparison.Ordinal) => new MailSelection.List(listId),
                 ("MoveAllFromTrash" or "EmptyTrash", []) => new MailSelection.Trash(),
                 ("MarkAllAsRead" or "MarkAllAsUnread" or "MoveAllToTrash", []) => new MailSelection.All(),
                 _ => throw new InvalidDataException("Invalid mailbox operation arguments."),

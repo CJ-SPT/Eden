@@ -215,8 +215,19 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedMailingList>().ToTable("WorldMailingList").HasKey(list => list.Id);
+        model.Entity<SavedMailingList>().HasIndex(list => list.Key).IsUnique().HasFilter("Deleted = 0");
+        model.Entity<SavedMailingListMember>().ToTable("WorldMailingListMember");
+        model.Entity<SavedMailingListMember>().HasOne<SavedMailingList>().WithMany().HasForeignKey(member => member.ListId);
+        model.Entity<SavedMailingListMember>().HasOne<Pilot>().WithMany().HasForeignKey(member => member.PilotId);
+        model.Entity<SavedMailingListAccess>().ToTable("WorldMailingListAccess");
+        model.Entity<SavedMailingListAccess>().HasOne<SavedMailingList>().WithMany().HasForeignKey(access => access.ListId);
+        model.Entity<SavedMailingListChange>().ToTable("WorldMailingListChange").HasKey(change => change.Id);
+        model.Entity<SavedMailingListChange>().HasOne<Pilot>().WithMany().HasForeignKey(change => change.PilotId);
+        model.Entity<SavedMailingListChange>().HasIndex(change => new { change.PilotId, change.Id });
         model.Entity<SavedMail>().ToTable("WorldMail").HasKey(mail => mail.Id);
         model.Entity<SavedMail>().HasIndex(mail => new { mail.SenderId, mail.SentAt });
+        model.Entity<SavedMail>().HasIndex(mail => mail.ListId);
         model.Entity<SavedMailEntry>().ToTable("WorldMailEntry").HasOne<Pilot>().WithMany().HasForeignKey(entry => entry.PilotId);
         model.Entity<SavedMailEntry>().HasOne<SavedMail>().WithMany().HasForeignKey(entry => entry.MessageId);
         model.Entity<SavedMailLabel>().ToTable("WorldMailLabel").HasOne<Pilot>().WithMany().HasForeignKey(label => label.PilotId);

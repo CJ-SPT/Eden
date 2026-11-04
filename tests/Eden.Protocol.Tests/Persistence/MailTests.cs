@@ -55,7 +55,7 @@ public sealed class MailTests
     }
 
     [Fact]
-    public void SelfMailIsOneReadCopyWithInboxAndSentLabels()
+    public void SelfMailIsOneUnreadCopyWithInboxAndSentLabels()
     {
         var clock = CalendarTestData.Clock();
         using TestWorld db = new(clock: clock);
@@ -63,7 +63,7 @@ public sealed class MailTests
         store.Send(MailTestData.Sender, MailTestData.Draft with { Recipients = [MailTestData.Sender] }, MailTestData.Origin);
         var row = Assert.Single(store.Sync(MailTestData.Sender, null, 0).Status);
         Assert.Equal(3, row.Labels);
-        Assert.Equal(MailStatus.Read, row.Status);
+        Assert.Equal(MailStatus.None, row.Status);
         Assert.Single(store.Changes(MailTestData.Sender, 0).Changes);
     }
 

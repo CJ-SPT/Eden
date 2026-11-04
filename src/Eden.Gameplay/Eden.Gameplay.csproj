@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
+    <EmbeddedResource Include="Mail/MailingListCaseFold.txt" />
   </ItemGroup>
   <Target Name="CheckGameplayDependencies" BeforeTargets="ResolveReferences">
     <Error
