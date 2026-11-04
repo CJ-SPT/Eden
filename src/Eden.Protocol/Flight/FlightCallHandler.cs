@@ -28,9 +28,21 @@ internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks 
         {
             try
             {
-                if (keywords?.Keys.Any(key => key != "minRange") == true)
+                if (keywords?.Keys.Any(key => key is not ("minRange" or "fleet")) == true)
                 {
                     throw new InvalidDataException("Unexpected bookmark warp arguments.");
+                }
+                // Build 3662168's WarpToBookmark always forwards fleet=False for personal warps.
+                if (keywords?.TryGetValue("fleet", out var fleet) == true)
+                {
+                    if (fleet is true or 1L)
+                    {
+                        throw new InvalidDataException("Fleet bookmark warp is not supported.");
+                    }
+                    if (fleet is not (false or 0L))
+                    {
+                        throw new InvalidDataException("Invalid bookmark warp fleet flag.");
+                    }
                 }
                 var bookmark = bookmarks.Find(context.Pilot.PilotId, warp.BookmarkId);
                 if (bookmark.Target.LocationId != context.Pilot.SystemId)

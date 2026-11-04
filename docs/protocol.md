@@ -96,6 +96,20 @@ References: inert inspection of unchanged build-3662168 `code.ccp` SHA-256 **37F
 
 **Optional maintainer checks.** Save a station and an in-space point, reconnect and warp to each. Move/copy a location between personal folders and verify the native lists. Edit expiry and confirm its native presentation/removal. Rendering, input and flight feel remain unverified.
 
+### Bookmark warp personal fleet flag
+
+The reported native Information dialog, **Unexpected bookmark warp arguments**, came from Eden's bookmark-only keyword allowlist. Inert inspection of pinned build **3662168** `menuSvcExtras/movementFunctions.pyj` confirms `WarpToBookmark(bookmark, warpRange=20000.0, fleet=False)` always calls Michelle with both `minRange` and `fleet`. `remote/michelle.pyj` forwards those keywords unchanged for personal warps; it adds `fleetFormationSettings` only when fleet is true. Earlier automated bookmark tests omitted the fleet option and missed this native request shape.
+
+The dispatch boundary now accepts omitted fleet, native boolean **False**, and Python integer **0** for a personal warp. True/1 is rejected because fleet warp is not implemented, and malformed flags or unexpected keywords still reject without moving the ship or changing bookmarks. Both saved points and static bookmarks retain server-side ownership, active-folder, expiry, current-system, range and target validation. No gameplay rules, schema, codec or Destiny format change.
+
+Reference: staged `E:/EdenDev/3662168/tq/code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Rechecked the locally saved [Carbon Destiny Ballpark.cpp at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp): `WarpTo` takes coordinates/minRange and ignores redundant requests to the same active destination. This correction preserves that existing simulation path. The attached screenshot is user-reported evidence of the rejection; no new live client observations were made.
+
+**Automated validation.** Final filter `FullyQualifiedName~Bookmark|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~TackleTests` passed **99 tests** (zero failed/skipped) in **25 seconds**. Tool/solution restores and the solution build passed with zero warnings/errors; both Python policy suites passed (**3 catalog**, **9 formatting**), formatting and diff checks passed. Restore/build took approximately **5 seconds**; focused tests, policies and formatting took **39 seconds** combined. The full .NET suite was not run. Regression cases cover omitted/False/0 on both point and static warps, repeated requests without duplicate updates, simulated arrival, saved position, foreign ownership, and True/1/malformed flags with unchanged flight/bookmark state. Validation uses an isolated checkout of the milestone so unrelated in-progress skill-injector changes are excluded. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Warp to a saved point and a station bookmark using the native menu, including a selected landing distance. Native rendering, input and gameplay feel remain unverified.
+
 ### Personal ship insurance
 
 Replaced insurance compatibility replies with catalog quotes, durable personal policies and wallet settlement. Build **3662168** inert inspection confirms `GetInsurancePrice(typeID)`, `GetInsurancePrices(typeIDs)`, `GetContracts(isCorp=False)`, `GetContractForShip(shipID)`, `InsureShip(shipID, amount, isCorp)` and `UnInsureShip(shipID)`. Native station binding uses the three-field `(stationID, stationID, locationGroup=15)` tuple; mismatched locations and in-space binding are rejected. Station service **21** is required for purchase and cancellation. Native replacement first returns `InsureShipFailedSingleContract` with `ownerName`; the client confirms a second purchase with keyword `voidOld=True`.
