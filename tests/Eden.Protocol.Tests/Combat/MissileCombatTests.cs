@@ -24,7 +24,7 @@ public sealed class MissileCombatTests
     private const int LightMissile = 212;
     private const double Shield = 1_000_000;
 
-    private static Fixture Prepare(params int[] types)
+    internal static Fixture Prepare(params int[] types)
     {
         Fixture f = new();
         PassiveCatalogFixture.LoadMissileTiers(f.CatalogPath, types.Concat(MissileDefinitions.Skills).Append(601).ToHashSet());
@@ -67,11 +67,11 @@ public sealed class MissileCombatTests
         return f;
     }
 
-    private static IPilotMissiles Missiles(Fixture f) => f.Db.Services.GetRequiredService<IPilotMissiles>();
+    internal static IPilotMissiles Missiles(Fixture f) => f.Db.Services.GetRequiredService<IPilotMissiles>();
 
     private static IPilotAmmunition Ammo(Fixture f) => f.Db.Services.GetRequiredService<IPilotAmmunition>();
 
-    private static long Load(Fixture f, int type, int charge, int quantity = 3)
+    internal static long Load(Fixture f, int type, int charge, int quantity = 3)
     {
         long module = f.Fit(type);
         using (CatalogDbContext catalog = new(f.CatalogPath))
@@ -91,14 +91,14 @@ public sealed class MissileCombatTests
         return module;
     }
 
-    private static NpcContact Space(Fixture f, double distance = 1000)
+    internal static NpcContact Space(Fixture f, double distance = 1000)
     {
         var npc = f.Db.Services.GetRequiredService<INpcEncounters>().List(30000144, f.Clock.Now)[0];
         f.Db.Store.SetPosition(f.ShipId, npc.Position + new SpacePosition(distance, 0, 0), npc.SystemId);
         return npc;
     }
 
-    private static MissileLaunch Launch(Fixture f, long module, long npc) =>
+    internal static MissileLaunch Launch(Fixture f, long module, long npc) =>
         Missiles(f).Launch(f.PilotId, module, npc, new HashSet<long> { npc }, new(SpacePosition.Zero, 295, new(0, 0, -1), 42), f.Clock.Now);
 
     [Fact]

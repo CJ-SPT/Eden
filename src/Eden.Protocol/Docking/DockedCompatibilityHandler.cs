@@ -40,7 +40,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             ("bountyProxy", "GetMyKillRights") => BlueEmpty.List,
             ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
             ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
-            ("crimewatch", "GetMySecurityStatus") => 0d,
             ("beyonce", "GetFormations") => BlueEmpty.Tuple,
             ("charMgr", "SetActivityStatus") => PilotCallResult.None,
             ("corpRegistry", "GetAggressionSettings") => PilotCallResult.None,

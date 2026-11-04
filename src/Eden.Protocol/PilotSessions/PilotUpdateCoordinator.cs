@@ -34,11 +34,17 @@ internal sealed class PilotUpdateCoordinator(
     OnlineStatusHandler online,
     CalendarHandler calendar,
     InboxHandler inbox,
-    ContractHandler contracts
+    ContractHandler contracts,
+    SecurityStatusHandler security
 )
 {
     public bool IsMonitoring =>
-        industry.IsMonitoring || guests.IsDocked || calendar.IsMonitoring || inbox.IsMonitoring || contracts.IsMonitoring;
+        industry.IsMonitoring
+        || guests.IsDocked
+        || calendar.IsMonitoring
+        || inbox.IsMonitoring
+        || contracts.IsMonitoring
+        || security.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
@@ -46,6 +52,7 @@ internal sealed class PilotUpdateCoordinator(
         calendar.Enter(context);
         inbox.Enter(context);
         contracts.Enter(context);
+        security.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
     }
@@ -57,6 +64,7 @@ internal sealed class PilotUpdateCoordinator(
         calendar.Reset();
         inbox.Reset();
         contracts.Reset();
+        security.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -96,6 +104,7 @@ internal sealed class PilotUpdateCoordinator(
         calendar.Advance(context);
         inbox.Advance(context);
         contracts.Advance(context);
+        security.Advance(context);
         return beforeAttack;
     }
 }

@@ -3,6 +3,9 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    EntitySecurityStatusKillBonus = 252,
+    EntitySecurityMaxGain = 563,
+    FastTalkMutator = 415,
     MaxJumpClones = 979,
     CloneJumpCooldown = 1921,
     ShipMaintenanceBayCapacity = 908,

@@ -27,10 +27,10 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class PilotCombatTests
 {
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
-        public Clock Clock { get; } = new();
+        public TestWorld Db { get; }
+        public Clock Clock { get; }
         public IPilotCombat Combat => Db.Services.GetRequiredService<IPilotCombat>();
         public IPilotFitting Fitting => Db.Services.GetRequiredService<IPilotFitting>();
         public IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
@@ -38,8 +38,10 @@ public sealed class PilotCombatTests
         public NpcContact Npc { get; }
         public long Module { get; }
 
-        public Fixture()
+        public Fixture(Clock? clock = null)
         {
+            Clock = clock ?? new();
+            Db = new(clock: clock);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {

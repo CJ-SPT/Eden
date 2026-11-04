@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 53;
+    internal const int CurrentVersion = 54;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -733,7 +733,26 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=53");
+            if (version is >= 6 and < 54)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldPilotSecurity(
+                        PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE, Value REAL NOT NULL);
+                    CREATE TABLE IF NOT EXISTS WorldSecurityPending(
+                        PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Due INTEGER NOT NULL, NpcId INTEGER NOT NULL, TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                        CorporationId INTEGER NOT NULL, Fraction REAL NOT NULL, Maximum REAL NOT NULL);
+                    CREATE TABLE IF NOT EXISTS WorldSecurityTransaction(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Time INTEGER NOT NULL, NpcId INTEGER NOT NULL, TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                        CorporationId INTEGER NOT NULL, Modification REAL NOT NULL, NewValue REAL NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldSecurityTransaction_PilotId_Id ON WorldSecurityTransaction(PilotId,Id);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=54");
         }
         world.Database.ExecuteSqlRaw(
             """

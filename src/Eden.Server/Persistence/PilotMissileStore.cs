@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clock) : IPilotMissiles
+internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clock, SecurityStatusSignal security) : IPilotMissiles
 {
     private const int HistorySeconds = 120;
 
@@ -172,6 +172,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
 
     public void Advance(int systemId, long now)
     {
+        bool destroyed = false;
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -261,6 +262,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                     var damage = payload.Warhead.Damage.Scale(application);
                     var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == row.PilotId);
                     var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, row.SourceShipId, attributes, damage, time);
+                    destroyed |= result.Destroyed;
                     world.SaveChanges();
                     MissileImpact outcome = new(
                         row.Id,
@@ -283,6 +285,10 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         world.Set<WorldMissile>().Where(m => m.EndedAt < oldest && (m.Outcome == null || m.Reported)).ExecuteDelete();
         world.SaveChanges();
         transaction.Commit();
+        if (destroyed)
+        {
+            security.Publish();
+        }
     }
 
     private sealed record PendingStep(WorldMissile Row, MissilePayload Payload, WorldNpc? Npc, long Time);

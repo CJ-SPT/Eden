@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
+internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSignal security) : IPilotCombat
 {
     private const int CrystalProbabilityResolution = 1_000_000;
 
@@ -261,6 +261,10 @@ internal sealed class PilotCombatStore(WorldDatabase database) : IPilotCombat
         }
         world.SaveChanges();
         transaction.Commit();
+        if (settlement.Destroyed)
+        {
+            security.Publish();
+        }
         return new(
             weapon,
             settlement.Applied,

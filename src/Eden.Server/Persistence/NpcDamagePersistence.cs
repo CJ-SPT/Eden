@@ -52,6 +52,7 @@ internal static class NpcDamagePersistence
             }
             PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             npc.DestroyedAt = now;
+            PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
             WreckStore.Create(world, catalog, npc, pilot, now);
             double bounty = attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);
             if (!double.IsFinite(bounty) || bounty < 0)
