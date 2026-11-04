@@ -21,15 +21,18 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
     )
     {
         if (
-            service != "home_station"
-            || method
-                is not (
-                    "get_home_station"
-                    or "get_home_station_candidates"
-                    or "get_next_remote_change_time"
-                    or "set_home_station"
-                    or "self_destruct_clone"
-                )
+            (service != "charMgr" || method != "GetHomeStationRow")
+            && (
+                service != "home_station"
+                || method
+                    is not (
+                        "get_home_station"
+                        or "get_home_station_candidates"
+                        or "get_next_remote_change_time"
+                        or "set_home_station"
+                        or "self_destruct_clone"
+                    )
+            )
         )
         {
             return PilotCallResult.Unsupported;
@@ -43,6 +46,8 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
             long pilot = context.Pilot.PilotId;
             switch (method, args)
             {
+                case ("GetHomeStationRow", []):
+                    return new HomeStationRowReply(homes.Read(pilot));
                 case ("get_home_station", []):
                     var home = homes.Read(pilot);
                     return new HomeStationInfo(home.Id, home.TypeId, home.SystemId, home.IsFallback);
@@ -86,6 +91,22 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
             return new PilotCallResult.Failure(error.Message);
         }
     }
+}
+
+internal sealed record HomeStationRowReply(HomeStation Station) : BlueModel
+{
+    // Build 3662168 charactersheet.GetHomeStationRow passes this attribute-bearing
+    // reply to map/home-marker consumers, which use camel-case legacy field names.
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["stationID"] = Station.Id,
+                ["stationTypeID"] = Station.TypeId,
+                ["solarSystemID"] = Station.SystemId,
+            }
+        );
 }
 
 internal sealed record HomeStationCandidateReply(HomeStationCandidate Candidate) : BlueModel

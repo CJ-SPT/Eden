@@ -2,17 +2,89 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class HomeStationServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LegacyMapHomeUsesSavedDestinationAcrossTravelSelectionChangesAndReopen(bool inSpace)
+    {
+        using Fixture fixture = new();
+        HomeStationTestData.Travel(fixture.Db, HomeStationTestData.Other);
+        if (inSpace)
+        {
+            fixture.Db.Store.SetPosition(fixture.Db.Store.FindPilot(1000001)!.ShipId, new(1, 2, 3));
+        }
+        fixture.Select();
+        var homes = fixture.Db.Services.GetRequiredService<IPilotHomeStation>();
+        AssertHome(fixture.Router, fixture.Context, homes.Read(HomeStationTestData.PilotId));
+        Assert.Equal(HomeStationTestData.Other, fixture.Context.Pilot.StationId);
+        Assert.Null(Reply(fixture.Call("set_home_station", [(long)HomeStationTestData.School, false])));
+        fixture.Context.Notifications.Clear();
+        var home = homes.Read(HomeStationTestData.PilotId);
+        Assert.Equal(HomeStationTestData.School, home.Id);
+        AssertHome(fixture.Router, fixture.Context, home);
+        Assert.Empty(fixture.Context.Notifications);
+        Assert.Equal(HomeStationTestData.Other, fixture.Context.Pilot.StationId);
+
+        using var reopened = ServerServices.Build(new(fixture.Db.Path), fixture.Clock);
+        using var scope = reopened.CreateScope();
+        var pilot = reopened.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+            43,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        AssertHome(scope.ServiceProvider.GetRequiredService<PilotCallRouter>(), context, home);
+        Assert.Equal(HomeStationTestData.Origin, homes.Read(90000002).Id);
+        Assert.Empty(context.Notifications);
+    }
+
+    [Fact]
+    public void LegacyMapHomeUsesSchoolFallbackWithoutRewritingTheSavedDestination()
+    {
+        using Fixture fixture = new();
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Set<SavedHomeStation>().Find(HomeStationTestData.PilotId)!.StationId = int.MaxValue;
+            world.SaveChanges();
+        }
+        fixture.Select();
+        var home = fixture.Db.Services.GetRequiredService<IPilotHomeStation>().Read(HomeStationTestData.PilotId);
+        Assert.True(home.IsFallback);
+        Assert.Equal(HomeStationTestData.School, home.Id);
+        AssertHome(fixture.Router, fixture.Context, home);
+        using WorldDbContext saved = new(fixture.Db.Path);
+        Assert.Equal(int.MaxValue, saved.Set<SavedHomeStation>().Find(HomeStationTestData.PilotId)!.StationId);
+        Assert.Equal(50_000_000, fixture.Db.Services.GetRequiredService<IPilotWalletReader>().Balance(HomeStationTestData.PilotId));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    private static void AssertHome(PilotCallRouter router, PilotCallContext context, HomeStation expected)
+    {
+        var fields = Fields(Reply(router.Call(context, "charMgr", "GetHomeStationRow", Array.Empty<object?>(), _ => { })));
+        Assert.Equal(3, fields.Count);
+        Assert.Equal((long)expected.Id, fields["stationID"]);
+        Assert.Equal((long)expected.TypeId, fields["stationTypeID"]);
+        Assert.Equal((long)expected.SystemId, fields["solarSystemID"]);
+    }
+
     [Fact]
     public void NativeHomeCandidatesFeeNotificationsAndJournalUsePersistedStateAndRealSchoolHeadquarters()
     {

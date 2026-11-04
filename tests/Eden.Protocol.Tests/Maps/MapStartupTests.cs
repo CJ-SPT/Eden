@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -15,6 +16,7 @@ public sealed class MapStartupTests
         ("stationSvc", "GetAllianceSystems"),
         ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStates"),
         ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStatesUncached"),
+        ("charMgr", "GetHomeStationRow"),
     ];
 
     [Theory]
@@ -25,6 +27,7 @@ public sealed class MapStartupTests
         using TestWorld world = new();
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
+        var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(savedPilot.PilotId);
         var pilot = savedPilot;
         if (inSpace)
         {
@@ -49,7 +52,7 @@ public sealed class MapStartupTests
             foreach (var (service, method) in StartupCalls)
             {
                 var success = Assert.IsType<PilotCallResult.Success>(Call(service, method, [], new() { ["machoVersion"] = 1L }));
-                AssertStartupReply(service, BlueMarshal.Decode(BlueMarshal.Encode(success.Reply)));
+                AssertStartupReply(service, BlueMarshal.Decode(BlueMarshal.Encode(success.Reply)), home);
             }
         }
         foreach (var (service, method) in StartupCalls)
@@ -74,6 +77,7 @@ public sealed class MapStartupTests
     public async Task NativeMapStartupPacketsReturnBridgeTupleAndFactionLookupsWithoutDestinationErrors()
     {
         using TestWorld world = new();
+        var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(world.Store.FindPilot(1000001)!.PilotId);
         Queue<object?> input = new(
             new[] { PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [90000001L]) }
                 .Concat(StartupCalls.Select(call => PilotServicesTests.Request(call.Service, call.Method, [])))
@@ -104,12 +108,12 @@ public sealed class MapStartupTests
         for (int index = 0; index < StartupCalls.Length; index++)
         {
             var body = BlueRead.Tuple(BlueRead.Tuple(responses[index + 1].State, 14)[4], 1);
-            AssertStartupReply(StartupCalls[index].Service, BlueMarshal.Decode(BlueRead.Bytes(body[0])));
+            AssertStartupReply(StartupCalls[index].Service, BlueMarshal.Decode(BlueRead.Bytes(body[0])), home);
             Assert.Contains($"Call {StartupCalls[index].Service}.{StartupCalls[index].Method}.", reports);
         }
     }
 
-    private static void AssertStartupReply(string service, object? reply)
+    private static void AssertStartupReply(string service, object? reply, HomeStation home)
     {
         switch (service)
         {
@@ -119,6 +123,15 @@ public sealed class MapStartupTests
                 break;
             case "stationSvc":
                 Assert.Empty(Assert.IsType<List<object?>>(reply));
+                break;
+            case "charMgr":
+                var row = Assert.IsType<BlueInstance>(reply);
+                Assert.Equal("utillib.KeyVal", row.Name);
+                var fields = BlueRead.Fields(row.State);
+                Assert.Equal(3, fields.Count);
+                Assert.Equal((long)home.Id, fields["stationID"]);
+                Assert.Equal((long)home.TypeId, fields["stationTypeID"]);
+                Assert.Equal((long)home.SystemId, fields["solarSystemID"]);
                 break;
             default:
                 // An empty Python dictionary carries no key-type information.
