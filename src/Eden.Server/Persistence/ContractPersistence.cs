@@ -6,6 +6,14 @@ namespace Eden.Server.Persistence;
 
 public sealed class SavedContract
 {
+    public ContractType Type { get; set; } = ContractType.ItemExchange;
+    public int EndStationId { get; set; }
+    public int EndSystemId { get; set; }
+    public int EndConstellationId { get; set; }
+    public int EndRegionId { get; set; }
+    public int DurationDays { get; set; }
+    public long CollateralCents { get; set; }
+    public long? PackageId { get; set; }
     public long Id { get; set; }
     public long IssuerId { get; set; }
     public int IssuerCorporationId { get; set; }
@@ -52,7 +60,11 @@ public sealed class SavedContract
             Title,
             Description,
             Volume,
-            new(BrokerCents, DepositCents, SalesTaxCents)
+            new(BrokerCents, DepositCents, SalesTaxCents),
+            Type,
+            Type == ContractType.Courier
+                ? new(new(EndStationId, EndSystemId, EndConstellationId, EndRegionId), DurationDays, CollateralCents, PackageId)
+                : null
         );
 }
 
@@ -115,6 +127,45 @@ internal sealed class ContractChangeSignal
 
 internal static class ContractPersistence
 {
+    internal static void UpgradeCourier(WorldDbContext world)
+    {
+        // Historical test saves can retain newer additive fields. Check the actual
+        // columns before upgrading, as with the existing idempotent feature tables.
+        var columns = world
+            .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldContract')")
+            .AsEnumerable()
+            .ToHashSet();
+        foreach (
+            var (name, sql) in new (string, string)[]
+            {
+                ("Type", "ALTER TABLE WorldContract ADD COLUMN Type INTEGER NOT NULL DEFAULT 1"),
+                ("EndStationId", "ALTER TABLE WorldContract ADD COLUMN EndStationId INTEGER NOT NULL DEFAULT 0"),
+                ("EndSystemId", "ALTER TABLE WorldContract ADD COLUMN EndSystemId INTEGER NOT NULL DEFAULT 0"),
+                ("EndConstellationId", "ALTER TABLE WorldContract ADD COLUMN EndConstellationId INTEGER NOT NULL DEFAULT 0"),
+                ("EndRegionId", "ALTER TABLE WorldContract ADD COLUMN EndRegionId INTEGER NOT NULL DEFAULT 0"),
+                ("DurationDays", "ALTER TABLE WorldContract ADD COLUMN DurationDays INTEGER NOT NULL DEFAULT 0"),
+                ("CollateralCents", "ALTER TABLE WorldContract ADD COLUMN CollateralCents INTEGER NOT NULL DEFAULT 0"),
+                ("PackageId", "ALTER TABLE WorldContract ADD COLUMN PackageId INTEGER"),
+            }
+        )
+        {
+            if (!columns.Contains(name))
+            {
+                world.Database.ExecuteSqlRaw(sql);
+            }
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldItem')")
+                .AsEnumerable()
+                .Contains(nameof(OwnedItem.VolumeOverride))
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldItem ADD COLUMN VolumeOverride REAL");
+        }
+        world.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldContract_PackageId ON WorldContract(PackageId)");
+    }
+
     // Create before historical item/ship migrations query the new escrow filters.
     internal static void CreateSchema(WorldDbContext world) =>
         world.Database.ExecuteSqlRaw(

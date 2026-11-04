@@ -1,5 +1,6 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -29,7 +30,8 @@ internal sealed class InventoryHandler(
     ShipDogmaBuilder dogma,
     InventoryTransfers transfers,
     FittingOperations fittingOperations,
-    DeferredRefitPrimes refits
+    DeferredRefitPrimes refits,
+    IPilotContracts contracts
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
@@ -250,6 +252,19 @@ internal sealed class InventoryHandler(
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference(
                 "@pilot",
                 PilotBindingLifetime.Pilot
+            ),
+            ("invbroker", "GetInventoryFromId")
+                when args is [long id, ..]
+                    && contracts.Package(pilot.PilotId, id) is { } package
+                    && (
+                        (
+                            pilot.Position is null
+                            && package.Item.LocationId == pilot.StationId
+                            && package.Item.FlagId == (int)InventoryFlag.Hangar
+                        ) || (package.Item.LocationId == pilot.ShipId && package.Item.FlagId == (int)InventoryFlag.Cargo)
+                    ) => context.Reference(
+                $"{Eden.Protocol.Contracts.CourierPackageHandler.InventoryPrefix}{id}",
+                PilotBindingLifetime.Location
             ),
             ("@hangar" or "@ship", "List") => List(pilot, service, args.FirstOrDefault() as long?),
             ("@pilot", "List") => BlueEmpty.List,

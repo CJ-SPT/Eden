@@ -476,7 +476,7 @@ public sealed class ContractTests
         }
         WorldInitialization.Open(db.Path);
         using WorldDbContext verify = new(db.Path);
-        Assert.Equal(50, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(20, verify.Set<OwnedItem>().Find(item)!.Quantity);
         Assert.Equal(100_000_000, verify.Set<PilotWallet>().Find(ContractAssetTestData.Pilot)!.Cents);
         Assert.Empty(verify.Set<SavedContractEscrow>());

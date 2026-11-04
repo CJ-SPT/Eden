@@ -18,7 +18,7 @@ internal sealed record ContractRow(PersonalContract Contract) : BlueModel
             new()
             {
                 ["contractID"] = Contract.Id,
-                ["type"] = (int)ContractType.ItemExchange,
+                ["type"] = (int)Contract.Type,
                 ["issuerID"] = Contract.IssuerId,
                 ["issuerCorpID"] = Contract.IssuerCorporationId,
                 ["forCorp"] = false,
@@ -27,22 +27,23 @@ internal sealed record ContractRow(PersonalContract Contract) : BlueModel
                 ["acceptorID"] = Contract.AcceptorId ?? 0,
                 ["status"] = (int)Contract.Status,
                 ["startStationID"] = Contract.StationId,
-                ["endStationID"] = 0,
+                ["endStationID"] = Contract.Courier?.Destination.StationId ?? 0,
                 ["startSolarSystemID"] = Contract.SystemId,
-                ["endSolarSystemID"] = 0,
+                ["endSolarSystemID"] = Contract.Courier?.Destination.SystemId ?? 0,
                 ["startRegionID"] = Contract.RegionId,
-                ["endRegionID"] = 0,
+                ["endRegionID"] = Contract.Courier?.Destination.RegionId ?? 0,
                 ["startConstellationID"] = Contract.ConstellationId,
-                ["endConstellationID"] = 0,
+                ["endConstellationID"] = Contract.Courier?.Destination.ConstellationId ?? 0,
                 ["dateIssued"] = Contract.Issued,
                 ["dateExpired"] = Contract.Expires,
                 ["dateAccepted"] = Contract.Accepted ?? 0,
                 ["dateCompleted"] = Contract.Completed ?? 0,
                 ["price"] = ContractWire.Isk(Contract.PriceCents),
                 ["reward"] = ContractWire.Isk(Contract.RewardCents),
-                ["collateral"] = 0d,
+                ["collateral"] = ContractWire.Isk(Contract.Courier?.CollateralCents ?? 0),
                 ["volume"] = Contract.Volume,
-                ["numDays"] = 0,
+                ["numDays"] = Contract.Courier?.DurationDays ?? 0,
+                ["crateID"] = Contract.Courier?.PackageId,
                 ["title"] = new BlueUnicode(Contract.Title),
                 ["description"] = new BlueUnicode(Contract.Description),
                 ["issuerWalletKey"] = (int)WalletAccountKey.Cash,
@@ -73,14 +74,18 @@ internal sealed record ContractItemRow(ContractItem Item) : BlueModel
         );
 }
 
-internal sealed record ContractDetailsReply(ContractDetails Details) : BlueModel
+internal sealed record ContractDetailsReply(ContractDetails Details, bool ShowCourierManifest = false) : BlueModel
 {
     public override object ToBlue() =>
         ContractWire.Fields(
             new()
             {
                 ["contract"] = new ContractRow(Details.Contract),
-                ["items"] = new BlueList<ContractItemRow>(Details.Items.Select(i => new ContractItemRow(i)).ToArray()),
+                ["items"] = new BlueList<ContractItemRow>(
+                    Details.Contract.Type == ContractType.Courier && !ShowCourierManifest
+                        ? []
+                        : Details.Items.Select(i => new ContractItemRow(i)).ToArray()
+                ),
                 ["bids"] = new List<object?>(),
             }
         );
@@ -95,7 +100,11 @@ internal sealed record ContractListReply(IReadOnlyList<ContractDetails> Contract
                 ["contracts"] = new BlueList<ContractRow>(Contracts.Select(c => new ContractRow(c.Contract)).ToArray()),
                 ["items"] = Contracts.ToDictionary(
                     c => c.Contract.Id,
-                    c => (object?)new BlueList<ContractItemRow>(c.Items.Select(i => new ContractItemRow(i)).ToArray())
+                    c =>
+                        (object?)
+                            new BlueList<ContractItemRow>(
+                                c.Contract.Type == ContractType.Courier ? [] : c.Items.Select(i => new ContractItemRow(i)).ToArray()
+                            )
                 ),
             }
         );
@@ -123,7 +132,7 @@ internal sealed record ContractLoginReply(ContractPageInfo Page) : BlueModel
                 ["needsAttention"] = new BlueList<ContractAttentionRow>(
                     Page.Attention.Select(id => new ContractAttentionRow(id)).ToArray()
                 ),
-                ["inProgress"] = new List<object?>(),
+                ["inProgress"] = new BlueList<CourierProgressRow>((Page.InProgress ?? []).Select(c => new CourierProgressRow(c)).ToArray()),
             }
         );
 }
@@ -141,12 +150,10 @@ internal sealed record ContractPageReply(ContractPageInfo Page) : BlueModel
                 ["numRequiresAttentionCorp"] = 0,
                 ["numBiddingOn"] = 0,
                 ["numBiddingOnCorp"] = 0,
-                ["numInProgress"] = 0,
+                ["numInProgress"] = Page.InProgress?.Count ?? 0,
                 ["numInProgressCorp"] = 0,
                 ["outstandingContracts"] = Page
-                    .Assigned.Select(c =>
-                        (object?)new object?[] { c.IssuerId, c.IssuerCorporationId, c.AssigneeId, (int)ContractType.ItemExchange }
-                    )
+                    .Assigned.Select(c => (object?)new object?[] { c.IssuerId, c.IssuerCorporationId, c.AssigneeId, (int)c.Type })
                     .ToList(),
             }
         );

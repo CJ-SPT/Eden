@@ -106,6 +106,7 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     or "GetMyExpiredContractList"
                     or "GetMyCurrentContractList"
                     or "GetMyBids"
+                    or "GetCourierContractFromItemID"
                 )
         )
         {
@@ -140,7 +141,8 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     // single item exchange. Preserve its list-of-IDs return shape.
                     return new BlueList<long>([contracts.Create(pilot, ContractRequestWire.Draft(draft))]);
                 case ("GetContract", [long id]):
-                    return new ContractDetailsReply(contracts.Details(pilot, id));
+                    var details = contracts.Details(pilot, id);
+                    return new ContractDetailsReply(details, details.Contract.IssuerId == pilot);
                 case ("AcceptContract", [long id, var corporation]):
                     Personal(corporation);
                     return new ContractRow(contracts.Accept(pilot, id));
@@ -150,6 +152,14 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                 case ("DeleteContract", [long id]):
                     contracts.Delete(pilot, id);
                     return true;
+                case ("CompleteContract", [long id, (long)ContractStatus.Finished]):
+                    contracts.Complete(pilot, id);
+                    return true;
+                case ("CompleteContract", [long id, (long)ContractStatus.Failed]):
+                    contracts.Fail(pilot, id);
+                    return true;
+                case ("GetCourierContractFromItemID", [long id]):
+                    return contracts.Package(pilot, id) is { } package ? new CourierPackageReply(package) : PilotCallResult.None;
                 case ("DeleteNotification", [long id, var corporation]):
                     Personal(corporation);
                     contracts.Dismiss(pilot, id);
@@ -193,11 +203,18 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
                     bool forCorp = ContractRequestWire.Flag(corporation);
                     bool isAccepted = ContractRequestWire.Flag(accepted);
                     return new ContractListReply(
-                        forCorp || isAccepted
+                        forCorp
                             ? []
                             : contracts.List(
                                 pilot,
-                                new(pilot, (int)ContractStatus.Outstanding, 0, false, ContractAssetRules.MaximumSelection, null)
+                                new(
+                                    pilot,
+                                    (int)ContractStatus.InProgress,
+                                    (int)ContractType.Courier,
+                                    isAccepted,
+                                    ContractAssetRules.MaximumSelection,
+                                    null
+                                )
                             )
                     );
                 case ("GetMyBids", [var corporation]):
@@ -236,6 +253,8 @@ internal sealed record ContractEvent(long ContractId, ContractChangeKind Kind)
             ContractChangeKind.Rejected => "OnContractRejected",
             ContractChangeKind.Reclaimed => "OnContractEscrowChanged",
             ContractChangeKind.Completed => "OnContractCompleted",
+            ContractChangeKind.CourierAccepted => "OnContractAccepted",
+            ContractChangeKind.Failed => "OnContractFailed",
             _ => throw new InvalidDataException("Unknown contract change."),
         }
     )

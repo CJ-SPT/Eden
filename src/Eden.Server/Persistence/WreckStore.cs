@@ -311,7 +311,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         }
         double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)destinationFlag);
         double added =
-            items.Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId, i.Singleton) * (quantity ?? i.Quantity))
+            items.Sum(i => PilotInventoryStore.Read(catalog, i).Volume * (quantity ?? i.Quantity))
             + storedShips.Sum(s => PilotInventoryStore.Volume(catalog, s.TypeId, singleton: true));
         if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
         {

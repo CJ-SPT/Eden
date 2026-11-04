@@ -18,9 +18,11 @@ public enum ContractType
 public enum ContractStatus
 {
     Outstanding = 0,
+    InProgress = 1,
     Finished = 4,
     Cancelled = 5,
     Rejected = 6,
+    Failed = 7,
     Deleted = 8,
 }
 
@@ -40,6 +42,8 @@ public enum ContractChangeKind
     Rejected,
     Reclaimed,
     Completed,
+    Failed,
+    CourierAccepted,
 }
 
 public enum ContractRequestGroup
@@ -64,7 +68,9 @@ public sealed record ContractDraft(
     string Title,
     string Description,
     IReadOnlyList<ContractOffer> Items,
-    IReadOnlyList<ContractRequest> RequestedItems
+    IReadOnlyList<ContractRequest> RequestedItems,
+    ContractType Type = ContractType.ItemExchange,
+    CourierTerms? Courier = null
 );
 
 public sealed record ContractFees(long BrokerCents, long DepositCents, long SalesTaxCents);
@@ -91,7 +97,9 @@ public sealed record PersonalContract(
     string Title,
     string Description,
     double Volume,
-    ContractFees Fees
+    ContractFees Fees,
+    ContractType Type = ContractType.ItemExchange,
+    CourierContract? Courier = null
 );
 
 public sealed record ContractItem(
@@ -132,7 +140,12 @@ public sealed record ContractChange(
 
 public sealed record ContractChanges(IReadOnlyList<ContractChange> Items, long Cursor, bool More);
 
-public sealed record ContractPageInfo(int Outstanding, IReadOnlyList<PersonalContract> Assigned, IReadOnlyList<long> Attention);
+public sealed record ContractPageInfo(
+    int Outstanding,
+    IReadOnlyList<PersonalContract> Assigned,
+    IReadOnlyList<long> Attention,
+    IReadOnlyList<PersonalContract>? InProgress = null
+);
 
 public sealed record ContractOwnerFilter(long OwnerId, int? Status, int Type, bool? IssuedTo, int Limit, long? BeforeId);
 
@@ -146,6 +159,10 @@ public interface IPilotContracts
     void Reject(long pilotId, long contractId);
     void Delete(long pilotId, long contractId);
     void Dismiss(long pilotId, long contractId);
+    void Complete(long pilotId, long contractId);
+    void Fail(long pilotId, long contractId);
+    CourierPackageInfo? Package(long pilotId, long itemId);
+    void BreakPackage(long pilotId, long itemId);
     ContractDetails Details(long pilotId, long contractId);
     IReadOnlyList<ContractDetails> List(long pilotId, ContractOwnerFilter filter);
     IReadOnlyList<ContractDetails> Available(long pilotId);
@@ -182,6 +199,7 @@ public static class ContractRules
 
     public static void Check(ContractDraft draft)
     {
+        CourierRules.Check(draft);
         if (
             draft.AssigneeId is <= 0
             || draft.StationId <= 0
@@ -204,7 +222,7 @@ public static class ContractRules
             || draft.RequestedItems.Select(i => i.TypeId).Distinct().Count() != draft.RequestedItems.Count
         )
         {
-            throw new InvalidDataException("Choose valid item-exchange terms, quantities and expiry.");
+            throw new InvalidDataException("Choose valid contract terms, quantities and expiry.");
         }
     }
 
@@ -233,8 +251,9 @@ public static class ContractRules
             return new(MinimumBrokerIsk * MarketDefinitions.CentsPerIsk, 0, 0);
         }
         decimal basis = (decimal)Math.Max(draft.PriceCents, draft.RewardCents) / MarketDefinitions.CentsPerIsk;
+        decimal multiplier = draft.Type == ContractType.Courier ? CourierRules.FeeMultiplier : 1;
         int days = draft.ExpiryMinutes / MinutesPerDay - 1;
-        decimal brokerRate = BrokerRate - skills.BrokerRelations * BrokerSkillReduction;
+        decimal brokerRate = (BrokerRate - skills.BrokerRelations * BrokerSkillReduction) * multiplier;
         decimal broker =
             decimal.Truncate(
                 Math.Clamp(basis * brokerRate, MinimumBrokerIsk, MaximumBrokerIsk * (1 - skills.BrokerRelations * BrokerCapReduction))
@@ -246,11 +265,11 @@ public static class ContractRules
                 MaximumTaxIsk * (1 - skills.Accounting * SalesTaxCapReduction)
             )
         );
-        decimal deposit = decimal.Truncate(Math.Clamp(basis * DepositRate, MinimumDepositIsk, MaximumDepositIsk));
+        decimal deposit = decimal.Truncate(Math.Clamp(basis * DepositRate * multiplier, MinimumDepositIsk * multiplier, MaximumDepositIsk));
         return new(
             checked((long)(broker * MarketDefinitions.CentsPerIsk)),
             checked((long)(deposit * MarketDefinitions.CentsPerIsk)),
-            checked((long)(tax * MarketDefinitions.CentsPerIsk))
+            draft.Type == ContractType.Courier ? 0 : checked((long)(tax * MarketDefinitions.CentsPerIsk))
         );
     }
 }

@@ -41,7 +41,7 @@ public sealed class ContractServiceTests
         Assert.Equal(next, Assert.Single(f.Guest.Context.Notifications.OfType<ContractEvent>()).ContractId);
     }
 
-    private static BlueNewObject Request(long item) =>
+    internal static BlueNewObject Request(long item) =>
         new(
             BlueNewObject.ContractClass,
             new Dictionary<string, object?>

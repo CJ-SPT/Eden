@@ -113,6 +113,7 @@ public sealed class WorldAsteroid
 
 public sealed class OwnedItem
 {
+    public double? VolumeOverride { get; set; }
     public double CrystalDamage { get; set; }
     public bool Singleton { get; set; }
     public bool Online { get; set; }
@@ -143,6 +144,8 @@ public sealed class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<SavedContract>().ToTable("WorldContract").HasKey(c => c.Id);
+        model.Entity<SavedContract>().Property(c => c.Type).HasDefaultValue(Eden.Gameplay.Contracts.ContractType.ItemExchange);
+        model.Entity<SavedContract>().HasIndex(c => c.PackageId).IsUnique();
         model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.IssuerId);
         model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.AssigneeId).OnDelete(DeleteBehavior.NoAction);
         model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.AcceptorId).OnDelete(DeleteBehavior.NoAction);

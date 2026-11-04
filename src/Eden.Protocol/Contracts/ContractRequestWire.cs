@@ -37,17 +37,22 @@ internal static class ContractRequestWire
         {
             throw new InvalidDataException("Expected a complete native contract request.");
         }
+        var type = (ContractType)Number(fields["contractType"]);
         if (
-            Id(fields["contractType"]) != (int)ContractType.ItemExchange
+            type is not (ContractType.ItemExchange or ContractType.Courier)
             || Flag(fields["forCorp"])
             || Flag(fields["multiContract"])
-            || Id(fields["numDays"]) != 0
-            || Id(fields["destinationID"]) != 0
-            || Amount(fields["collateral"]) != 0
             || Id(fields["startStationDivision"]) != (int)InventoryFlag.Hangar
         )
         {
-            throw new InvalidDataException("Choose a personal item-exchange contract in a station hangar.");
+            throw new InvalidDataException("Choose a personal item-exchange or courier contract in a station hangar.");
+        }
+        int destination = Number(fields["destinationID"]);
+        int days = Number(fields["numDays"]);
+        long collateral = Amount(fields["collateral"]);
+        if (type == ContractType.ItemExchange && (destination != 0 || days != 0 || collateral != 0))
+        {
+            throw new InvalidDataException("Item exchanges do not have courier delivery terms.");
         }
         long assignee = Id(fields["assignedToID"]);
         if (Flag(fields["isPrivate"]) != (assignee > 0) || assignee < 0)
@@ -65,7 +70,9 @@ internal static class ContractRequestWire
             Text(fields["title"]),
             Text(fields["description"]),
             items.Select(pair => new ContractOffer(Id(pair[0]), Number(pair[1]))).ToArray(),
-            requested.Select(pair => new ContractRequest(Number(pair[0]), Number(pair[1]))).ToArray()
+            requested.Select(pair => new ContractRequest(Number(pair[0]), Number(pair[1]))).ToArray(),
+            type,
+            type == ContractType.Courier ? new(destination, days, collateral) : null
         );
     }
 

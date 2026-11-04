@@ -187,6 +187,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
                             Quantity = moved,
                             Singleton = item.Singleton,
                             CrystalDamage = item.CrystalDamage,
+                            VolumeOverride = item.VolumeOverride,
                         }
                     )
                     .Entity;
@@ -232,7 +233,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             item.Quantity,
             type.GroupId,
             type.Group.CategoryId,
-            Volume(catalog, item.TypeId, item.Singleton, type),
+            item.VolumeOverride ?? Volume(catalog, item.TypeId, item.Singleton, type),
             item.Singleton,
             item.Online,
             item.CrystalDamage

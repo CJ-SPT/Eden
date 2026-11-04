@@ -80,14 +80,24 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                             .ThenInclude(s => s.Constellation)
                         .SingleOrDefault(s => s.Id == draft.StationId)
                     ?? throw new InvalidDataException("Unknown contract station.");
+                var destination = draft.Courier is { } courier
+                    ? catalog
+                        .Set<Station>()
+                        .Include(s => s.SolarSystem)
+                            .ThenInclude(s => s.Constellation)
+                        .SingleOrDefault(s => s.Id == courier.DestinationStationId)
+                        ?? throw new InvalidDataException("Unknown courier destination station.")
+                    : null;
                 var skills = Skills(world, catalog, pilot);
                 // Expired contracts retain escrow for collection but release a creation slot.
                 long now = Now;
                 if (
                     world
                         .Set<SavedContract>()
-                        .Count(c => c.IssuerId == pilotId && c.Status == ContractStatus.Outstanding && c.Expires > now)
-                    >= ContractRules.Limit(skills)
+                        .Count(c =>
+                            c.IssuerId == pilotId
+                            && ((c.Status == ContractStatus.Outstanding && c.Expires > now) || c.Status == ContractStatus.InProgress)
+                        ) >= ContractRules.Limit(skills)
                 )
                 {
                     throw new InvalidDataException("Your outstanding contract limit has been reached.");
@@ -98,6 +108,13 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     .Add(
                         new SavedContract
                         {
+                            Type = draft.Type,
+                            EndStationId = destination?.Id ?? 0,
+                            EndSystemId = destination?.SolarSystemId ?? 0,
+                            EndConstellationId = destination?.SolarSystem.ConstellationId ?? 0,
+                            EndRegionId = destination?.SolarSystem.Constellation.RegionId ?? 0,
+                            DurationDays = draft.Courier?.DurationDays ?? 0,
+                            CollateralCents = draft.Courier?.CollateralCents ?? 0,
                             IssuerId = pilotId,
                             IssuerCorporationId = pilot.CorporationId,
                             AssigneeId = draft.AssigneeId,
@@ -168,6 +185,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     changes.AddRange(contents.Select(item => new InventoryChange(item with { Quantity = 0 }, item)));
                     foreach (var item in contents.Prepend(root))
                     {
+                        if (item.TypeId == CourierRules.PackageType)
+                        {
+                            throw new InvalidDataException("Deliver or break an existing courier package before contracting it again.");
+                        }
                         if (!escrowIds.Add(item.Id) || escrowIds.Count + draft.RequestedItems.Count > ContractRules.MaximumItems)
                         {
                             throw new InvalidDataException("The contract has too many or overlapping nested items.");
@@ -180,6 +201,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                         SaveItem(world, contract.Id, item, true, item.Id == root.Id ? null : item.LocationId);
                     }
                     contract.Volume += root.Volume * offer.Quantity;
+                }
+                if (contract.Type == ContractType.Courier)
+                {
+                    contract.Volume = CourierRules.PackageVolume(contract.Volume);
                 }
                 foreach (var request in draft.RequestedItems)
                 {
@@ -260,6 +285,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 if (contract.IssuerId == pilotId || contract.Status != ContractStatus.Outstanding || contract.Expires <= now)
                 {
                     throw new InvalidDataException("This contract is no longer available for acceptance.");
+                }
+                if (contract.Type == ContractType.Courier)
+                {
+                    return AcceptCourier(world, catalog, contract, pilotId, now);
                 }
                 List<InventoryChange> issuerChanges = [];
                 List<InventoryChange> acceptorChanges = [];
@@ -611,9 +640,17 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 {
                     rows = rows.Where(c => c.Id < before);
                 }
-                if (filter.Type is not (0 or 1 or 10 or 11))
+                if (filter.Type is not (0 or 1 or 3 or 10 or 11))
                 {
                     return [];
+                }
+                if (filter.Type is 1 or 3)
+                {
+                    rows = rows.Where(c => (int)c.Type == filter.Type);
+                }
+                else if (filter.Type == (int)ContractType.AuctionAndItemExchange)
+                {
+                    rows = rows.Where(c => c.Type == ContractType.ItemExchange);
                 }
                 if (filter.Status is >= 0)
                 {
@@ -628,6 +665,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                             (c.Status == ContractStatus.Outstanding && c.Expires <= now)
                             || c.Status == ContractStatus.Rejected
                             || c.Status == ContractStatus.Finished
+                            || c.Status == ContractStatus.Failed
                         )
                     );
                 }
@@ -641,9 +679,15 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             {
                 Pilot(world, pilotId);
                 long now = Now;
-                var rows = world.Set<SavedContract>().Where(c => c.IssuerId == pilotId || c.AssigneeId == pilotId).ToArray();
+                var rows = world
+                    .Set<SavedContract>()
+                    .Where(c => c.IssuerId == pilotId || c.AssigneeId == pilotId || c.AcceptorId == pilotId)
+                    .ToArray();
                 return new(
-                    rows.Count(c => c.IssuerId == pilotId && c.Status == ContractStatus.Outstanding && c.Expires > now),
+                    rows.Count(c =>
+                        c.IssuerId == pilotId
+                        && ((c.Status == ContractStatus.Outstanding && c.Expires > now) || c.Status == ContractStatus.InProgress)
+                    ),
                     rows.Where(c => c.AssigneeId == pilotId && c.Status == ContractStatus.Outstanding && c.Expires > now)
                         .Select(c => c.Snapshot())
                         .ToArray(),
@@ -654,10 +698,12 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                                 (c.Status == ContractStatus.Outstanding && c.Expires <= now)
                                 || c.Status == ContractStatus.Rejected
                                 || c.Status == ContractStatus.Finished
+                                || c.Status == ContractStatus.Failed
                             )
                         )
                         .Select(c => c.Id)
-                        .ToArray()
+                        .ToArray(),
+                    rows.Where(c => c.Status == ContractStatus.InProgress && c.AcceptorId == pilotId).Select(c => c.Snapshot()).ToArray()
                 );
             }
         );
@@ -673,9 +719,19 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                         .Where(c => c.IssuerId == pilotId && !c.Reclaimed)
                         .Sum(c => (long?)(c.RewardCents + c.DepositCents))
                     ?? 0;
+                isk = checked(
+                    isk
+                    + (
+                        world
+                            .Set<SavedContract>()
+                            .Where(c => c.AcceptorId == pilotId && c.Status == ContractStatus.InProgress)
+                            .Sum(c => (long?)c.CollateralCents)
+                        ?? 0
+                    )
+                );
                 var held = world
                     .Set<SavedContractEscrow>()
-                    .Where(e => world.Set<SavedContract>().Any(c => c.Id == e.ContractId && c.IssuerId == pilotId));
+                    .Where(e => world.Set<SavedContract>().Any(c => c.Id == e.ContractId && c.IssuerId == pilotId && !c.Reclaimed));
                 double value = world
                     .Set<SavedContractItem>()
                     .Where(i => i.Offered && held.Any(e => e.ItemId == i.ItemId && e.ContractId == i.ContractId))

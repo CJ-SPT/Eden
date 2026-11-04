@@ -1,6 +1,7 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -342,7 +343,8 @@ public sealed class MiningTests
             dogma,
             dogmaScope.ServiceProvider.GetRequiredService<InventoryTransfers>(),
             dogmaScope.ServiceProvider.GetRequiredService<FittingOperations>(),
-            dogmaScope.ServiceProvider.GetRequiredService<DeferredRefitPrimes>()
+            dogmaScope.ServiceProvider.GetRequiredService<DeferredRefitPrimes>(),
+            fixture.Db.Services.GetRequiredService<IPilotContracts>()
         );
         var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);

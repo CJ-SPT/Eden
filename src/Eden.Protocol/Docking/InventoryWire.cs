@@ -1,3 +1,4 @@
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Serialization;
 
@@ -22,7 +23,11 @@ internal sealed record InventoryRow(
             item.OwnerId,
             item.LocationId,
             item.FlagId,
-            item.Singleton ? InventoryWireDefinitions.AssembledQuantity : item.Quantity,
+            item.Singleton
+                ? item.TypeId == CourierRules.PackageType
+                    ? -CourierRules.VolumeUnits(item.Volume)
+                    : InventoryWireDefinitions.AssembledQuantity
+                : item.Quantity,
             item.GroupId,
             item.CategoryId
         );
