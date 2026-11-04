@@ -93,7 +93,7 @@ Setup downloads and verifies CCP's exact-build export on the first run, decodes 
 
 ## Build and run
 
-Install the .NET SDK version in `global.json` and Python 3.11 or later for the policy checks. Run these commands from the repository root.
+Install the .NET SDK version in `global.json` and Python 3.11 or later for the policy checks. After a code milestone's changes are stable, run the full automated validation once from the repository root, in this order. Stop at a failed step and investigate before continuing.
 
 ```powershell
 dotnet tool restore
@@ -103,10 +103,29 @@ dotnet test --no-build
 python tests/Eden.Protocol.Tests/Persistence/catalog_setup_test.py
 python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
 .\tools\Format.ps1 -Check
+```
+
+During development, build changed code and run focused tests for the affected behavior and its immediate dependencies. Restore tools and packages first when needed, then use `dotnet build --no-restore` followed by a class filter, for example:
+
+```powershell
+dotnet test --no-build --filter 'FullyQualifiedName~Eden.Protocol.Tests.Flight.ShipCollisionTests'
+```
+
+Record the filter and results. Add focused bug regressions when practical; cover expected outcomes across gameplay rules, protocol replies/notifications, and persistence as applicable. Include rejection and unchanged-state checks for inventory/ownership, reopen/restart checks for persistence, and repeated-cycle/order checks using `TestClock` and simulated sessions for timing or synchronization. Exercise catalog variants with data-driven tests.
+
+Do not repeat a successful full suite for unchanged code, reporting, commits, or pushes. After a small correction, rerun affected tests and required build/format checks; repeat the full suite only when later changes invalidate broad coverage, such as shared serialization, initialization, or fixture changes. Investigate failures instead of retrying blindly, and identify the revision or subsequent corrections covered by each result. Interrupted or incomplete runs are not passes. Documentation-only changes require relevant documentation checks rather than the gameplay suite.
+
+The tests use fixtures and loopback sockets. The test runner is limited to four concurrent collections with the conservative scheduler; see [xUnit runner configuration](https://xunit.net/docs/config-xunit-runner-json). The last documented full suite took approximately 36 minutes; this is historical context, not a runtime guarantee.
+
+Agents perform **automated testing only**: no game launch, Computer Use, interactive gameplay acceptance, or extended manual server-testing substitute unless the user explicitly requests live testing. Report automated checks, results, elapsed time, and limitations separately from live acceptance: **"Not performed; agent client testing is disabled."** Provide at most three optional maintainer actions when visual or gameplay checks remain. Native rendering, input, and gameplay feel remain unverified until tested. Automated validation and confirmation that the milestone commit is on the remote branch establish completion; live acceptance is not required. See the [contributor testing policy](AGENTS.md#testing).
+
+To run the local server for play, use the following command separately from validation:
+
+```powershell
 dotnet run --no-build --project src/Eden.Server
 ```
 
-The tests use fixtures and loopback sockets. The test runner is limited to four concurrent collections with the conservative scheduler; see [xUnit runner configuration](https://xunit.net/docs/config-xunit-runner-json). Run the full suite separately from interactive client acceptance so development load does not distort the live result. To try the real client, follow the [Windows client setup](docs/development-client.md). The [protocol notes](docs/protocol.md) describe the verified exchange and flight and two-pilot acceptance results.
+The [Windows client setup](docs/development-client.md) contains optional maintainer procedures. The [protocol notes](docs/protocol.md) retain historical exchange, flight, and two-pilot observations; they do not establish acceptance of later changes.
 
 ## Formatting
 

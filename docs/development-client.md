@@ -1,5 +1,17 @@
 # Windows client setup
 
+## Agent testing policy
+
+Agents perform **automated testing only**, following the [contributor testing policy](../AGENTS.md#testing) and [README build order](../README.md#build-and-run). Use focused tests during development and one full automated validation after a code milestone is stable. Documentation-only changes require relevant documentation checks rather than the gameplay suite. Do not repeat a successful full suite for unchanged code or publishing; after small corrections rerun affected tests and required build/format checks, expanding to the full suite only when broad coverage is invalidated.
+
+Do not launch the game, use Computer Use, or conduct interactive gameplay acceptance unless the user explicitly requests it. This applies to hidden or unattended client launches as well. Do not substitute an extended manual server-testing session. The setup, launch, restart, and gameplay procedures below are optional maintainer checks or instructions for explicitly requested live testing; agents must not run them as routine milestone acceptance.
+
+Report automated checks, results, elapsed time, and limitations separately from **Live acceptance: "Not performed; agent client testing is disabled."** Supply at most three short optional maintainer actions for behavior automated tests cannot establish. If live testing is explicitly requested, record only the actions exercised and visible results, and identify any blocker and remaining unverified behavior.
+
+Automated validation and confirmation that the milestone commit is on the remote branch establish milestone completion. Native rendering, input, and gameplay feel remain unverified until tested. Existing client observations in this guide and the [protocol notes](protocol.md) remain historical evidence, not acceptance of subsequent changes.
+
+## Stage the client
+
 Use a shared EVE installation containing the sibling directories `tq` and `ResFiles`. Choose a separate, empty destination with room for both directories. The example paths below can be changed.
 
 ```powershell
