@@ -6,7 +6,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
-The personal contract wizard's station picker now resolves and binds the selected pilot's global inventory before listing local and remote station assets. This fixes the reported `Unsupported local call charMgr.MachoResolveObject` failure on Pick Items. See the [binding fix notes](docs/protocol.md#contract-wizard-global-inventory-binding).
+The personal contract wizard now supports the global inventory binding used by Pick Items and the station lookup used by public-contract confirmation. These fix the reported unsupported `charMgr.MachoResolveObject` and `stationSvc.GetStation` calls. See the [binding fix](docs/protocol.md#contract-wizard-global-inventory-binding) and [confirmation lookup](docs/protocol.md#contract-confirmation-station-lookup) notes.
 
 Cerebral accelerators now support native consumption, active-booster reads, timed attribute bonuses and expiry-aware training. All **186 published pure learning-booster profiles** from the pinned catalog use their own slots, durations, age limits and injection deadlines. Biology extends timed effects; clone jumps and capsule loss preserve these character-owned boosters. Training predicts expirations, including offline progress and multiple boosters. Native presentation remains unverified. Combat boosters remain pending. See the [cerebral accelerator notes](docs/protocol.md#persistent-cerebral-accelerators).
 

@@ -195,6 +195,12 @@ public sealed class ContractServiceTests
         var values = Assert.IsType<Dictionary<string, object?>>(request.State);
         values["isPrivate"] = false;
         values["assignedToID"] = 0L;
+        // BuildPage3's public branch calls cfg.evelocations.Get(startStation).Station().regionID.
+        var station = Fields(Reply(f.Owner.Call("GetStation", [60003760L], service: "stationSvc")));
+        Assert.Equal(60003760L, station["stationID"]);
+        Assert.Equal(10000002L, station["regionID"]);
+        Assert.Equal(30000142L, station["solarSystemID"]);
+        Assert.Equal(52678L, station["stationTypeID"]);
         long id = Created(f.Owner.Call("CreateContract", [request]));
         object selection = set ? new BlueConstructor("__builtin__.set", [new List<object?> { 3651L }]) : new List<object?> { 3651L };
         var found = Fields(
@@ -312,8 +318,8 @@ public sealed class ContractServiceTests
 
     private static object? Reply(PilotCallResult result)
     {
-        Assert.True(result is PilotCallResult.Success, result.ToString());
-        return BlueMarshal.Decode(BlueMarshal.Encode(((PilotCallResult.Success)result).Reply));
+        var success = Assert.IsType<PilotCallResult.Success>(result);
+        return BlueMarshal.Decode(BlueMarshal.Encode(success.Reply));
     }
 
     private static Dictionary<string, object?> Fields(object? value) =>

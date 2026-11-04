@@ -9,16 +9,7 @@ internal sealed record StationDirectoryReply(StationDirectorySnapshot Directory)
 
     public override object ToBlue()
     {
-        // Build 3662168 evestations.data.get_station_service_masks enumerates
-        // sorted service IDs. IDs may have gaps: shifting by the ID is incorrect.
-        var serviceIds = Directory.ServiceIds.Distinct().Order().ToArray();
-        if (serviceIds.Length > MaximumServiceBits)
-        {
-            throw new InvalidDataException("Too many catalog station services for a signed service mask.");
-        }
-        var masks = serviceIds
-            .Select((id, index) => (Id: id, Mask: 1L << index))
-            .ToDictionary(service => service.Id, service => service.Mask);
+        var masks = ServiceMasks(Directory);
         return new CompatibilityRowset(
             [
                 "stationID",
@@ -44,4 +35,49 @@ internal sealed record StationDirectoryReply(StationDirectorySnapshot Directory)
                 .ToArray()
         ).ToBlue();
     }
+
+    internal static long ServiceMask(StationDirectorySnapshot directory, StationDirectoryEntry station)
+    {
+        var masks = ServiceMasks(directory);
+        return station.Services.Aggregate(0L, (mask, service) => mask | masks[service]);
+    }
+
+    private static Dictionary<int, long> ServiceMasks(StationDirectorySnapshot directory)
+    {
+        // Build 3662168 evestations.data.get_station_service_masks enumerates
+        // sorted service IDs. IDs may have gaps: shifting by the ID is incorrect.
+        var serviceIds = directory.ServiceIds.Distinct().Order().ToArray();
+        if (serviceIds.Length > MaximumServiceBits)
+        {
+            throw new InvalidDataException("Too many catalog station services for a signed service mask.");
+        }
+        return serviceIds.Select((id, index) => (Id: id, Mask: 1L << index)).ToDictionary(service => service.Id, service => service.Mask);
+    }
+}
+
+internal sealed record StationDetailsReply(StationDirectoryEntry Station, long ServiceMask) : BlueModel
+{
+    // The pinned location row's Station() returns an attribute-bearing object.
+    // Public contract confirmation reads regionID; map consumers also update stationName.
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["stationID"] = Station.Id,
+                ["stationTypeID"] = Station.TypeId,
+                ["stationName"] = new BlueUnicode(Station.Name),
+                ["solarSystemID"] = Station.SystemId,
+                ["constellationID"] = Station.ConstellationId,
+                ["regionID"] = Station.RegionId,
+                ["corporationID"] = Station.OwnerId,
+                ["ownerID"] = Station.OwnerId,
+                ["operationID"] = Station.OperationId,
+                ["orbitID"] = Station.OrbitId,
+                ["x"] = Station.Position.X,
+                ["y"] = Station.Position.Y,
+                ["z"] = Station.Position.Z,
+                ["serviceMask"] = ServiceMask,
+            }
+        );
 }

@@ -47,6 +47,7 @@ public sealed class StationDirectoryTests
         );
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         Assert.IsType<PilotCallResult.UnsupportedCall>(router.Call(context, "map", "GetStationInfo", Array.Empty<object?>(), _ => { }));
+        Assert.Same(PilotCallResult.Unsupported, router.Call(context, "stationSvc", "GetStation", new object?[] { 60015159L }, _ => { }));
         context.Select(pilot);
         var reply = Assert.IsType<PilotCallResult.Success>(router.Call(context, "map", "GetStationInfo", Array.Empty<object?>(), _ => { }));
         var rowset = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply)));
@@ -101,6 +102,28 @@ public sealed class StationDirectoryTests
         using CatalogDbContext check = new(new WorldDatabase(db.Path).CatalogPath);
         Assert.Equal(check.Set<Station>().Count(), rows.Length);
         Assert.Equal(rows.Length, rows.Select(row => row[0]).Distinct().Count());
+        foreach (var row in rows)
+        {
+            var details = Assert.IsType<PilotCallResult.Success>(
+                router.Call(context, "stationSvc", "GetStation", new object?[] { row[0] }, _ => { }, new() { ["machoVersion"] = 1L })
+            );
+            var native = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(details.Reply)));
+            Assert.Equal("utillib.KeyVal", native.Name);
+            var values = BlueRead.Fields(native.State);
+            Assert.Equal(header.Length, values.Count);
+            for (int index = 0; index < header.Length; index++)
+            {
+                Assert.Equal(index == 2 ? BlueMarshal.Text(row[index]) : row[index], values[header[index]]);
+            }
+        }
+        Assert.Equal(PilotCallResult.None, router.Call(context, "stationSvc", "GetStation", new object?[] { 60000000L }, _ => { }));
+        foreach (object?[] args in new object?[][] { [], [0L], [-1L], [long.MaxValue], ["60015159"], [60015159L, 60003760L] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(router.Call(context, "stationSvc", "GetStation", args, _ => { }));
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            router.Call(context, "stationSvc", "GetStation", new object?[] { 60015159L }, _ => { }, new() { ["ownerID"] = 90000002L })
+        );
         Assert.IsType<PilotCallResult.Failure>(router.Call(context, "map", "GetStationInfo", new object?[] { 60015159L }, _ => { }));
         Assert.IsType<PilotCallResult.Failure>(
             router.Call(context, "map", "GetStationInfo", Array.Empty<object?>(), _ => { }, new() { ["stationId"] = 60015159L })

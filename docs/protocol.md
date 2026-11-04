@@ -7,7 +7,7 @@ The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibili
 | Feature | Audited routes | State |
 | --- | --- | --- |
 | Character settings | `charMgr.GetCharacterSettings`, `SaveCharacterSetting`, `DeleteCharacterSetting` | Implemented with private persistent values |
-| Station directory | `map.GetStationInfo` | Implemented for every catalog station, including service masks |
+| Station directory | `map.GetStationInfo`, `stationSvc.GetStation` | Implemented for every catalog station, including service masks |
 | Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState`, `GetOnlineStatus` | Implemented for local pilots and saved NPC agents, including optional notification messages; organization contacts pending |
 | Personal locations | `accessGroupBookmarkMgr.GetMyActiveBookmarks` and private folder/bookmark operations; `beyonce.BookmarkLocation` and bookmark warp | Implemented for personal folders; shared ACLs and scan-result bookmarks pending |
 | Ship insurance | `insuranceSvc` quotes, contracts, purchase/replacement and cancellation | Implemented for personal station-owned hulls and NPC-loss payouts; corporation policies pending |
@@ -235,6 +235,20 @@ World version **49** adds `WorldInboxNotification`, with a recipient foreign key
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Send a contact add/edit message to another pilot and inspect its inbox entry and live indicator. Mark/delete notifications and reconnect to inspect saved state. Native mail-window rendering, message formatting and interaction remain unverified.
+
+### Contract confirmation station lookup
+
+The maintainer's next 2026-11-04 screenshot reaches **Confirm (4/4)** and reports **Invalid Packet Destination: Unsupported local call stationSvc.GetStation**. Inert inspection of pinned build **3662168** `createContractWnd.BuildPage3` shows that the public-availability branch calls `cfg.evelocations.Get(startStation).Station().regionID`. The location row's `Station` method in `eveCfg.pyj` calls `stationSvc.GetStation(stationID)` directly. `mapSvc.GetStation` also consumes the reply as an attribute-bearing object and can update its `stationName`. Private-assignment creation tests had bypassed this public-confirmation dependency.
+
+The selected-pilot station directory handler now owns `stationSvc.GetStation`. It reads the requested catalog station independently of the pilot's location and returns a named immutable model converted to native `utillib.KeyVal`. The fields match the existing station directory: station/type/name, solar system, constellation, region, corporation/owner, operation, orbit, coordinates and service mask. Names use Unicode. The two replies share service-mask construction, including sorted/gapped service IDs and the signed-width limit. Unknown positive station IDs return None, matching the native map consumer's optional-result check. Malformed IDs, extra arguments and unexpected service keywords reject without notifications or mutations. No world schema, station ownership or contract-settlement behavior changes.
+
+Source: pinned `E:\EdenDev\3662168\tq\code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**. Inspection used inert code objects; no game code ran. [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) was consulted again; this reuses existing class/dictionary conversion without a codec or simulation change.
+
+**Automated validation.** Final filter FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~Contract|FullyQualifiedName~Courier|FullyQualifiedName~Auction|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~DockedServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting, run with dotnet test --no-build and -- xUnit.MaxParallelThreads=4, passed **216 of 217 tests** in approximately **16 seconds**. The remaining HomeCloneTransferSendsInventoryAndStationSessionChangeBeforeItsSuccessfulReply test expects three notifications but receives nine; running that exact test against the pre-fix main snapshot reproduced the identical failure in approximately three seconds. It does not call the new station lookup. This existing failure remains outside this fix. Tool/solution restore, build (zero warnings/errors), both Python suites (3 catalog and 9 formatting tests), formatting across 547 files and diff checks passed. The resumed Python/style/format checks took **12.13 seconds**. No full .NET suite was requested or run. Development filter `FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~ContractServiceTests` passed **15 tests** in approximately **6 seconds** after replacing a test helper's eagerly evaluated result `ToString()` with a typed success assertion. The initial run passed 13 and failed two public-contract cases because printing the new station model recursively printed `SpacePosition.Unit`; no production string-formatting behavior was changed. Coverage compares every single-station field against the complete directory for both docked and in-space callers, exercises remote and missing stations, selection gating and malformed requests, and performs public confirmation lookup before creating/searching the offer.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The new screenshot establishes progress past Pick Items and the reported confirmation failure; post-fix native rendering and interaction remain unverified. No game or server process was started, stopped or restarted for this fix.
+
+**Optional maintainer checks.** With the updated server, create a public personal item-exchange contract and inspect its region and station on Confirm before submitting.
 
 ### Contract wizard global inventory binding
 
