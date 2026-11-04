@@ -501,6 +501,34 @@ public sealed class PilotServicesTests
         Assert.Equal(30005305L, home["solar_system_id"]);
     }
 
+    [Fact]
+    public async Task HomeCloneTransferSendsInventoryAndStationSessionChangeBeforeItsSuccessfulReply()
+    {
+        using TestWorld world = new();
+        Persistence.HomeStationTestData.Prepare(world);
+        long previousShip = Persistence.HomeStationTestData.MakeActiveCapsule(world);
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("home_station", "self_destruct_clone", []),
+            Request("home_station", "get_home_station", [])
+        );
+        Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var transitions = packets.Where(packet => packet.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(2, transitions.Length);
+        var body = BlueRead.Tuple(BlueRead.Tuple(transitions[1].State, 14)[4], 3);
+        var delta = BlueRead.Fields(BlueRead.Tuple(body[1], 2)[1]);
+        Assert.Equal(new object?[] { previousShip, world.Store.FindPilot(1000001)!.ShipId }, delta["shipid"]);
+        Assert.Equal(new object?[] { Persistence.HomeStationTestData.Other, Persistence.HomeStationTestData.Origin }, delta["stationid"]);
+        int transitionIndex = packets.IndexOf(transitions[1]);
+        Assert.Equal(3, packets.Take(transitionIndex).Count(packet => packet.Name.EndsWith(".Notification", StringComparison.Ordinal)));
+        Assert.EndsWith(".CallRsp", packets[transitionIndex + 1].Name);
+        Assert.Null(Result(packets[transitionIndex + 1]));
+        var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State);
+        Assert.Equal((long)Persistence.HomeStationTestData.Origin, home["id"]);
+    }
+
     private static void AssertUserError(BlueInstance packet, string name, Dictionary<string, object?> values)
     {
         Assert.EndsWith(".ErrorResponse", packet.Name);

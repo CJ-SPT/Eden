@@ -57,6 +57,7 @@ public static class TaskEvents
     public const string TotalMined = "totalMined";
     public const string NpcDestroyed = "destroyHostileNPC";
     public const string ShipLost = "shipLossCount";
+    public const string PodLost = "podLossCount";
     public const string Boarded = "shipBoarded";
     public const string Fitted = "fitItemCount";
     public const string FittedHigh = "fitHiSlotCount";

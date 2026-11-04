@@ -142,6 +142,13 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedHomeStation>().ToTable("WorldHomeStation").HasKey(home => home.PilotId);
+        model.Entity<SavedHomeStation>().HasOne<Pilot>().WithMany().HasForeignKey(home => home.PilotId);
+        model.Entity<SavedHomeStationPayment>().ToTable("WorldHomeStationPayment").HasKey(payment => payment.Id);
+        model.Entity<SavedHomeStationPayment>().HasOne<Pilot>().WithMany().HasForeignKey(payment => payment.PilotId);
+        model.Entity<SavedHomeCloneTransfer>().ToTable("WorldHomeCloneTransfer").HasKey(transfer => transfer.Id);
+        model.Entity<SavedHomeCloneTransfer>().HasOne<Pilot>().WithMany().HasForeignKey(transfer => transfer.PilotId);
+        model.Entity<SavedHomeCloneTransfer>().HasIndex(transfer => transfer.OldShipId).IsUnique();
         model.Entity<SavedTaskCounter>().ToTable("WorldTaskCounter").HasKey(counter => new { counter.PilotId, counter.Name });
         model.Entity<SavedTaskCounter>().HasOne<Pilot>().WithMany().HasForeignKey(counter => counter.PilotId);
         model.Entity<SavedCompletedTask>().ToTable("WorldCompletedTask").HasKey(task => new { task.PilotId, task.Id });

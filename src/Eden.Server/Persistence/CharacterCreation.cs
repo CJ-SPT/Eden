@@ -91,6 +91,8 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         StartingSkills.Grant(world, catalog, pilotId, character.RaceId);
         PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
         TestingWalletFunding.Grant(world, pilotId, created);
+        world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
+        world.SaveChanges();
         transaction.Commit();
         return pilotId;
 

@@ -80,6 +80,7 @@ public enum WalletEntryType
     GmCashTransfer = 3,
     RepairBill = 15,
     Insurance = 19,
+    CloneTransfer = 52,
     TransactionTax = 54,
     BountyPrizes = 85,
 }

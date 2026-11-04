@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 44;
+    internal const int CurrentVersion = 45;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -615,8 +615,36 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=44");
+            if (version is >= 6 and < 45)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldHomeStation(
+                        PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE, StationId INTEGER NOT NULL);
+                    CREATE TABLE IF NOT EXISTS WorldHomeStationPayment(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        StationId INTEGER NOT NULL, OperatorId INTEGER NOT NULL, AmountCents INTEGER NOT NULL,
+                        BalanceCents INTEGER NOT NULL, Time INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldHomeStationPayment_PilotId ON WorldHomeStationPayment(PilotId);
+                    CREATE TABLE IF NOT EXISTS WorldHomeCloneTransfer(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        OldShipId INTEGER NOT NULL, NewShipId INTEGER NOT NULL,
+                        SourceStationId INTEGER NOT NULL, DestinationStationId INTEGER NOT NULL, Time INTEGER NOT NULL);
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldHomeCloneTransfer_OldShipId ON WorldHomeCloneTransfer(OldShipId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldHomeCloneTransfer_PilotId ON WorldHomeCloneTransfer(PilotId);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=45");
         }
+        world.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO WorldHomeStation(PilotId,StationId)
+                SELECT p.Id,s.StationId FROM WorldPilot p JOIN WorldShip s ON s.Id=p.ActiveShipId;
+            """
+        );
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog
             .Set<ItemType>()

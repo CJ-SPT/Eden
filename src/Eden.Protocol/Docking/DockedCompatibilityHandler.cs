@@ -31,7 +31,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => BlueEmpty.List,
             ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
-            ("home_station", "get_home_station") => new HomeStationInfo(pilot.StationId, pilot.StationTypeId, pilot.HomeSystemId),
             ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,
             ("contractProxy", "GetLoginInfo") => new ContractLoginState(),
             ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),

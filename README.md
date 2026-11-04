@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Home stations now persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters for **100,000 ISK**. A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule; other ships, wallet and skills stay in place. New pilots retain their starting station as home. Player-corporation remote offices and jump clones remain pending. See the [home-station notes](docs/protocol.md#persistent-home-stations-and-docked-clone-transfer).
+
 Task tracking now retains per-pilot client counters and catalog task completions across restarts. Supported server gameplay records its own progress, and the first-warp camera query reflects actual warp entry. Build 3662168 disables its legacy achievement UI; these routes do not enable that interface. See the [task tracking notes](docs/protocol.md#persistent-task-tracking).
 
 Personal Locations now saves private folders, subfolders and bookmarks across reconnects and restarts. Save stations or map destinations, or save your authoritative position in space and warp back within that solar system. Edit, move, copy, delete, activate/forget folders, and use automatic expiry. Shared access-group folders and scan-result bookmarks remain pending. Native bookmark-window presentation remains unverified; see the [personal bookmark notes](docs/protocol.md#personal-bookmarks-and-saved-location-warp).
