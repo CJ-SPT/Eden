@@ -16,6 +16,8 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
     internal const int AccessSeconds = 15 * 60;
     internal const int RefreshSeconds = 30 * 24 * 60 * 60;
     internal const int TicketSeconds = 180;
+    private const int MinimumPasswordLength = 6;
+    private const int MaximumPasswordLength = 128;
     private readonly PasswordHasher<string> _hasher = new(Options.Create(new PasswordHasherOptions { IterationCount = 210000 }));
     private readonly string _dummy = new PasswordHasher<string>().HashPassword("", "invalid-user-dummy-password");
     private long Now => clock.GetUtcNow().ToUnixTimeSeconds();
@@ -116,7 +118,7 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
                 hash = reader.GetString(2);
             }
         }
-        var verified = request.Password is { Length: <= 128 }
+        var verified = request.Password is { Length: <= MaximumPasswordLength }
             ? _hasher.VerifyHashedPassword(name, hash, request.Password)
             : PasswordVerificationResult.Failed;
         if (id == 0 || verified == PasswordVerificationResult.Failed)
@@ -306,9 +308,12 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
 
     private static void ValidatePassword(string password)
     {
-        if (password is not { Length: >= 12 and <= 128 })
+        if (password is not { Length: >= MinimumPasswordLength and <= MaximumPasswordLength })
         {
-            throw new LauncherException("invalid_password", "Use a password containing 12–128 characters.");
+            throw new LauncherException(
+                "invalid_password",
+                $"Use a password containing {MinimumPasswordLength}–{MaximumPasswordLength} characters."
+            );
         }
     }
 

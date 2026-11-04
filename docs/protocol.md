@@ -24,6 +24,16 @@ Integrated launcher branch `73da857` into main while retaining the hull audit ex
 
 **Optional maintainer checks:** Sign in and launch through the desktop launcher; check remembered sign-in and tray/relay behavior with a running client.
 
+### Six-character launcher passwords (November 4, 2026)
+
+Launcher registration and the account-password command now accept 6–128 characters. The launcher password hint and hosting guides use the same range. Boundary coverage checks empty, five-, six-, 128- and 129-character passwords for both registration and password changes. Accepted credentials survive reopening; rejected changes preserve the prior password and active session and create no account. The HTTP registration/sign-in flow also uses a six-character password.
+
+**Automated validation:** restore/build, 21 focused server tests (`FullyQualifiedName~Eden.Protocol.Tests.Launcher`, six seconds), both Python policy suites (three catalog and nine formatting cases), and formatting verification passed; the server validation sequence took approximately 32 seconds. Four launcher view-model tests (`FullyQualifiedName~Eden.Launcher.Tests.ViewModelTests`) passed in under one second using a clean Release build. The initial launcher Debug build was blocked by the open desktop executable; Release validation avoided that lock. No full regression suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart the server to apply the new password policy and use six characters in launcher account creation.
+
 ## Startup exchange
 
 The startup configuration identifies release 24.01, codename `V24.01`, region `ccp`, and port 26000. The client's packaged MachoNet version module specifies **496**. The installed GPS transport and the build-matched Blue marshaller supplied the message order, field types, and serialization rules. [Blue marshal implementation](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)

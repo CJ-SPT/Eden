@@ -153,6 +153,43 @@ public sealed class LauncherAccountTests
     }
 
     [Theory]
+    [InlineData(0, false)]
+    [InlineData(5, false)]
+    [InlineData(6, true)]
+    [InlineData(128, true)]
+    [InlineData(129, false)]
+    public void PasswordLengthLimitsApplyToRegistrationAndPasswordChanges(int length, bool accepted)
+    {
+        using TestWorld world = new();
+        var database = new WorldDatabase(world.Path);
+        var store = new LauncherStore(database, TimeProvider.System);
+        store.Initialize();
+        store.SetPassword("Eden", Password);
+        var previous = store.SignIn(new("Eden", Password, true));
+        string password = new('p', length);
+        if (!accepted)
+        {
+            var registration = Assert.Throws<LauncherException>(() => store.Register(new("Length User", password)));
+            Assert.Equal("invalid_password", registration.Code);
+            Assert.Contains("6–128", registration.Message);
+            var reset = Assert.Throws<LauncherException>(() => store.SetPassword("Eden", password));
+            Assert.Equal("invalid_password", reset.Code);
+            using WorldDbContext saved = new(world.Path);
+            Assert.False(saved.Set<Account>().Any(account => account.UserName == "Length User"));
+            Assert.Equal(previous.AccountId, store.SignIn(new("Eden", Password, false)).AccountId);
+            Assert.NotNull(store.IssueTicket(previous.AccessToken));
+            return;
+        }
+        var account = store.Register(new("Length User", password));
+        store.SetPassword("Eden", password);
+        var reopened = new LauncherStore(database, TimeProvider.System);
+        reopened.Initialize();
+        Assert.Equal(account.AccountId, reopened.SignIn(new("Length User", password, false)).AccountId);
+        Assert.Equal(previous.AccountId, reopened.SignIn(new("Eden", password, false)).AccountId);
+        Assert.Throws<LauncherException>(() => reopened.IssueTicket(previous.AccessToken));
+    }
+
+    [Theory]
     [InlineData("ab", "long enough test password")]
     [InlineData("Valid", "short")]
     [InlineData("wrong/name", "long enough test password")]

@@ -14,6 +14,7 @@ public sealed class LauncherApiTests
     [Fact]
     public async Task HttpContractRegistersSignsInAndRevokesWithoutCreatingPilots()
     {
+        const string password = "secret";
         using TestWorld world = new();
         var options = new LauncherOptions { ApiPort = AvailablePort() };
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
@@ -24,11 +25,11 @@ public sealed class LauncherApiTests
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
         var server = await client.GetFromJsonAsync<ServerReply>("server");
         Assert.Equal(1, server!.ApiVersion);
-        using var registration = await client.PostAsJsonAsync("accounts", new AccountRequest("Http Pilot", "a long HTTP password"));
+        using var registration = await client.PostAsJsonAsync("accounts", new AccountRequest("Http Pilot", password));
         Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
         var account = await registration.Content.ReadFromJsonAsync<AccountReply>();
         Assert.Empty(world.Store.ListPilots(account!.AccountId));
-        using var signIn = await client.PostAsJsonAsync("sessions", new SignInRequest("Http Pilot", "a long HTTP password", true));
+        using var signIn = await client.PostAsJsonAsync("sessions", new SignInRequest("Http Pilot", password, true));
         var session = await signIn.Content.ReadFromJsonAsync<SessionReply>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session!.AccessToken);
         using var manifest = await client.PostAsJsonAsync("launch-tickets", new LaunchRequest(3662168, "bad"));

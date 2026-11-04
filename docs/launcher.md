@@ -39,6 +39,6 @@ For a private CA, set `EDEN_LAUNCHER_CA_FILE` to its DER certificate before open
 
 API v1 provides metadata, registration, sign-in, refresh, logout and launch tickets. Access tokens last 15 minutes; optional remembered sessions rotate and expire after 30 days. Refresh replay revokes the token family. Game tickets are single-use with a 180-second lifetime. Credentials and token hashes use additive Launcher tables in the world database, independent of gameplay migration numbering.
 
-The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 12–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New accounts have three empty character slots.
+The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 6–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New accounts have three empty character slots.
 
 API responses disable caching. Registration and authentication are rate limited. Manifest signing accepts only the fingerprinted build's exact prefix; private keys remain in the server's Windows key store. Legacy development tickets require explicit `--development-login` on the host and provisioning command, with loopback-only hosting.
