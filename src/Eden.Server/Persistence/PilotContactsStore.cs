@@ -36,7 +36,7 @@ public sealed class SavedContactLabel
 }
 
 [Injectable]
-internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory npcs, TimeProvider? clock = null)
+internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory npcs, InboxChangeSignal inbox, TimeProvider? clock = null)
     : IPilotContacts,
         ICharacterDirectory
 {
@@ -80,8 +80,8 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
         );
     }
 
-    public void Add(long pilotId, long contactId, double standing, bool inWatchlist) =>
-        SaveContact(pilotId, contactId, standing, inWatchlist, true);
+    public void Add(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null) =>
+        SaveContact(pilotId, contactId, standing, inWatchlist, true, notification);
 
     public void AddAgent(long pilotId, long agentId) =>
         Write(
@@ -108,10 +108,10 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             }
         );
 
-    public void Edit(long pilotId, long contactId, double standing, bool inWatchlist) =>
-        SaveContact(pilotId, contactId, standing, inWatchlist, false);
+    public void Edit(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null) =>
+        SaveContact(pilotId, contactId, standing, inWatchlist, false, notification);
 
-    private void SaveContact(long pilotId, long contactId, double standing, bool inWatchlist, bool add)
+    private void SaveContact(long pilotId, long contactId, double standing, bool inWatchlist, bool add, string? notification)
     {
         ContactRules.CheckStanding(standing);
         Write(
@@ -139,7 +139,20 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
                 }
                 contact.Standing = standing;
                 contact.InWatchlist = inWatchlist;
-            }
+                if (notification is not null)
+                {
+                    PilotInboxStore.AddContact(
+                        world,
+                        pilotId,
+                        contactId,
+                        add,
+                        standing,
+                        notification,
+                        (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
+                    );
+                }
+            },
+            publishInbox: notification is not null
         );
     }
 
@@ -311,7 +324,7 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             }
         );
 
-    private void Write(long pilotId, Action<WorldDbContext> operation)
+    private void Write(long pilotId, Action<WorldDbContext> operation, bool publishInbox = false)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -319,6 +332,10 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
         operation(world);
         world.SaveChanges();
         transaction.Commit();
+        if (publishInbox)
+        {
+            inbox.Publish();
+        }
     }
 
     private static SavedContact[] RequireContacts(WorldDbContext world, long pilotId, IReadOnlyList<long> contacts)

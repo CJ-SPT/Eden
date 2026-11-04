@@ -6,6 +6,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Mining;
+using Eden.Protocol.Notifications;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Targeting;
@@ -30,15 +31,17 @@ internal sealed class PilotUpdateCoordinator(
     DeferredRefitPrimes refits,
     StationGuestHandler guests,
     OnlineStatusHandler online,
-    CalendarHandler calendar
+    CalendarHandler calendar,
+    InboxHandler inbox
 )
 {
-    public bool IsMonitoring => industry.IsMonitoring || guests.IsDocked || calendar.IsMonitoring;
+    public bool IsMonitoring => industry.IsMonitoring || guests.IsDocked || calendar.IsMonitoring || inbox.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
         guests.Advance(context);
         calendar.Enter(context);
+        inbox.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
     }
@@ -48,6 +51,7 @@ internal sealed class PilotUpdateCoordinator(
         guests.Dispose();
         online.Reset();
         calendar.Reset();
+        inbox.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -85,6 +89,7 @@ internal sealed class PilotUpdateCoordinator(
         guests.Advance(context);
         online.Advance(context);
         calendar.Advance(context);
+        inbox.Advance(context);
         return beforeAttack;
     }
 }

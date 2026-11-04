@@ -142,6 +142,9 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedInboxNotification>().ToTable("WorldInboxNotification").HasKey(n => n.Id);
+        model.Entity<SavedInboxNotification>().HasOne<Pilot>().WithMany().HasForeignKey(n => n.ReceiverId);
+        model.Entity<SavedInboxNotification>().HasIndex(n => new { n.ReceiverId, n.Id });
         model.Entity<SavedCalendarEvent>().ToTable("WorldCalendarEvent").HasKey(e => e.Id);
         model.Entity<SavedCalendarEvent>().HasOne<Pilot>().WithMany().HasForeignKey(e => e.OwnerId);
         model.Entity<SavedCalendarEvent>().HasIndex(e => e.Time);

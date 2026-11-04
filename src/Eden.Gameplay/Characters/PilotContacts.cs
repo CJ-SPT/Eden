@@ -16,9 +16,9 @@ public interface ICharacterDirectory
 public interface IPilotContacts
 {
     PersonalContacts Read(long pilotId);
-    void Add(long pilotId, long contactId, double standing, bool inWatchlist);
+    void Add(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null);
     void AddAgent(long pilotId, long agentId);
-    void Edit(long pilotId, long contactId, double standing, bool inWatchlist);
+    void Edit(long pilotId, long contactId, double standing, bool inWatchlist, string? notification = null);
     void EditStanding(long pilotId, IReadOnlyList<long> contacts, double standing);
     void Delete(long pilotId, IReadOnlyList<long> contacts);
     void SetBlocked(long pilotId, IReadOnlyList<long> contacts, bool blocked);

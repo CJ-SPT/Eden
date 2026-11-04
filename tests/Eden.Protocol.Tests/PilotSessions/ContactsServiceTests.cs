@@ -73,7 +73,7 @@ public sealed class ContactsServiceTests
             {
                 ("AddContact", [90000001L, 0L, false, false, null]),
                 ("AddContact", [123L]),
-                ("EditContact", [90000002L, 0L, false, true, "Notify"]),
+                ("EditContact", [90000002L, 0L, false, true, new string('x', 121)]),
                 ("EditContact", [90000002L, double.NaN, false, false, null]),
                 ("EditContact", [90000002L, 0L, false, false, 7L]),
                 ("DeleteContacts", [90000002L]),

@@ -42,7 +42,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
             ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
             ("crimewatch", "GetMySecurityStatus") => 0d,
-            ("notificationMgr", "GetAllNotifications") => BlueEmpty.List,
             ("beyonce", "GetFormations") => BlueEmpty.Tuple,
             ("charMgr", "SetActivityStatus") => PilotCallResult.None,
             ("corpRegistry", "GetAggressionSettings") => PilotCallResult.None,

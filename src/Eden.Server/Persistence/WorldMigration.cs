@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 48;
+    internal const int CurrentVersion = 49;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -698,7 +698,20 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=48");
+            if (version is >= 6 and < 49)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldInboxNotification(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Type INTEGER NOT NULL, SenderId INTEGER NOT NULL,
+                        ReceiverId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Processed INTEGER NOT NULL, Deleted INTEGER NOT NULL, Created INTEGER NOT NULL,
+                        ContactLevel REAL NOT NULL, Message TEXT NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldInboxNotification_ReceiverId_Id ON WorldInboxNotification(ReceiverId,Id);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=49");
         }
         world.Database.ExecuteSqlRaw(
             """

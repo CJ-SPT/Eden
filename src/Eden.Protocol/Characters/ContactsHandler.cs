@@ -58,20 +58,33 @@ internal sealed class ContactsHandler(IPilotContacts contacts) : ISelectedPilotC
                     {
                         throw new InvalidDataException("Expected a contact message.");
                     }
-                    if (notify)
-                    {
-                        // Notification delivery and CSPA fees are a separate feature.
-                        throw new InvalidDataException(
-                            "Contact notifications are unavailable. Clear Send Notification to save this contact."
-                        );
-                    }
                     if (method == "AddContact")
                     {
-                        contacts.Add(pilotId, id, Standing(standing), watchlist);
+                        contacts.Add(
+                            pilotId,
+                            id,
+                            Standing(standing),
+                            watchlist,
+                            notify
+                                ? message is null
+                                    ? ""
+                                    : Text(message)
+                                : null
+                        );
                     }
                     else
                     {
-                        contacts.Edit(pilotId, id, Standing(standing), watchlist);
+                        contacts.Edit(
+                            pilotId,
+                            id,
+                            Standing(standing),
+                            watchlist,
+                            notify
+                                ? message is null
+                                    ? ""
+                                    : Text(message)
+                                : null
+                        );
                     }
                     break;
                 case ("EditContactsRelationshipID", [var ids, var standing]):
