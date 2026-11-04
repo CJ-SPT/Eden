@@ -490,6 +490,30 @@ public sealed class PilotServicesTests
     }
 
     [Fact]
+    public async Task ShowInfoNotesLoadSaveAndClearThroughAuthenticatedPackets()
+    {
+        const string note = "<b>Private</b> 星間 — пилот 🚀";
+        var packets = await ExchangeAsync(
+            42,
+            Request("charMgr", "GetNote", [90000002L]),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("charMgr", "GetNote", [90000002L]),
+            Request("charMgr", "SetNote", [90000002L, new BlueUnicode(note)]),
+            Request("charMgr", "GetNote", [90000002L]),
+            Request("charMgr", "SetNote", [90000002L, ""]),
+            Request("charMgr", "GetNote", [90000002L])
+        );
+        Assert.EndsWith(".ErrorResponse", packets[0].Name);
+        Assert.EndsWith(".SessionChangeNotification", packets[1].Name);
+        Assert.All(packets.Skip(2), packet => Assert.EndsWith(".CallRsp", packet.Name));
+        Assert.Equal("", Result(packets[3]));
+        Assert.Null(Result(packets[4]));
+        Assert.Equal(note, Result(packets[5]));
+        Assert.Null(Result(packets[6]));
+        Assert.Equal("", Result(packets[7]));
+    }
+
+    [Fact]
     public async Task UnknownMethodsReceiveAnError()
     {
         var packets = await ExchangeAsync("charUnboundMgr", "DeleteCharacter", [90000001], 42);
