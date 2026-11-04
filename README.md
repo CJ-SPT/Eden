@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Contract Search now uses `None` for the unused delivery station on exchanges and auctions, preventing a bogus structure-access lookup for station zero. Native `structureSettings.CharacterHasService` reads also return boolean docking access instead of **Invalid Packet Destination**. Existing offers need no migration. See the [endpoint-access correction](docs/protocol.md#contract-search-endpoint-access).
+
 Contract search replies now provide valid endpoint systems for item exchanges and auctions. The native search window resolves both system names before it renders results, so a zero endpoint could leave its status at **Search not started**. Existing saved offers need no migration or recreation. See the [search endpoint notes](docs/protocol.md#contract-search-endpoint-metadata); native click-to-results acceptance remains unverified.
 
 Undocking now uses each NPC station model's catalogued exit lane and launches with the pinned client's initial velocity. Static collisions retain thrust and tangential movement instead of cancelling the course. All 44 NPC station models have automated coverage, including Amsen VI - AIR Laboratories. Launches remain outside Eden's spherical station collision boundary, so exact placement at the visible hangar mouth remains approximate. See the [undocking correction](docs/protocol.md#station-exit-lanes-and-collision-response).

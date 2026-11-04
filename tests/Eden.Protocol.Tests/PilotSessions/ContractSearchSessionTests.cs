@@ -73,5 +73,8 @@ public sealed class ContractSearchSessionTests
         Assert.Equal(id, contract["contractID"]);
         Assert.Equal(30000142L, contract["startSolarSystemID"]);
         Assert.Equal(30000142L, contract["endSolarSystemID"]);
+        // RenderPage calls IsStationInaccessible for both endpoints. The pinned helper returns false
+        // for None; integer zero instead triggers a remote structure-service probe and hides the row.
+        Assert.Null(contract["endStationID"]);
     }
 }

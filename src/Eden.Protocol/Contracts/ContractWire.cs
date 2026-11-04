@@ -27,11 +27,13 @@ internal sealed record ContractRow(PersonalContract Contract) : BlueModel
                 ["acceptorID"] = Contract.AcceptorId ?? 0,
                 ["status"] = (int)Contract.Status,
                 ["startStationID"] = Contract.StationId,
-                ["endStationID"] = Contract.Courier?.Destination.StationId ?? 0,
+                // RenderPage checks both stations for accessibility. None means no delivery endpoint;
+                // zero instead falls through to structureSettings.CharacterHasService(0, SERVICE_DOCKING).
+                ["endStationID"] = Contract.Courier?.Destination.StationId,
                 ["startSolarSystemID"] = Contract.SystemId,
                 // ContractSearchPanel resolves both endpoint system names even for
                 // exchanges/auctions. Their settlement location is the pickup system;
-                // keep endStationID zero so this does not invent courier delivery.
+                // endStationID remains None so this does not invent courier delivery.
                 ["endSolarSystemID"] = Contract.Courier?.Destination.SystemId ?? Contract.SystemId,
                 ["startRegionID"] = Contract.RegionId,
                 ["endRegionID"] = Contract.Courier?.Destination.RegionId ?? Contract.RegionId,

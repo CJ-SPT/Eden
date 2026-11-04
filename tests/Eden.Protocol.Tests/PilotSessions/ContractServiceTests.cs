@@ -326,7 +326,7 @@ public sealed class ContractServiceTests
         var bundle = Fields(Assert.Single(Assert.IsType<List<object?>>(found["contracts"])));
         var row = Fields(bundle["contract"]);
         Assert.Equal(id, row["contractID"]);
-        Assert.Equal(0L, row["endStationID"]);
+        Assert.Null(row["endStationID"]);
         Assert.Equal(row["startSolarSystemID"], row["endSolarSystemID"]);
         Assert.Equal(row["startConstellationID"], row["endConstellationID"]);
         Assert.Equal(row["startRegionID"], row["endRegionID"]);
@@ -370,7 +370,7 @@ public sealed class ContractServiceTests
         var contract = Fields(details["contract"]);
         Assert.Equal(0L, contract["availability"]);
         Assert.Equal(0L, contract["assigneeID"]);
-        Assert.Equal(0L, contract["endStationID"]);
+        Assert.Null(contract["endStationID"]);
         Assert.Equal(0L, contract["numDays"]);
         Assert.Equal(1000d, contract["price"]);
         Assert.Equal("", contract["title"]);
