@@ -57,9 +57,17 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
             var data = creation.ReadAppearance(portraitId, true);
             return new CharacterPortraitReply(data);
         }
+        if (service == "facWarMgr" && method == "GetMyCharacterRankInfo")
+        {
+            return args.Length == 0 && keywords is null or { Count: 0 }
+                ? PilotCallResult.None
+                : new PilotCallResult.Failure("Invalid public character request.");
+        }
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
             || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
+            || (service == "corporationSvc" && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers")
+            || (service == "facWarMgr" && method == "GetCharacterRankInfo")
         )
         {
             if (keywords is { Count: > 0 } || args is not [long id] || id <= 0)
@@ -94,6 +102,9 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
                 "GetInfoWindowDataForChar" => new CharacterCorporationInfo(profile.CorporationId),
+                "GetMedalsReceived" => new PublicCharacterMedals(),
+                "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(profile),
+                "GetCharacterRankInfo" => PilotCallResult.None,
                 _ => new PublicCharacterInfo(profile),
             };
         }

@@ -72,6 +72,9 @@ public sealed class CharacterSheetServiceTests
     [InlineData("charMgr", "GetPublicInfo")]
     [InlineData("charMgr", "GetPublicInfo3")]
     [InlineData("corpRegistry", "GetInfoWindowDataForChar")]
+    [InlineData("corporationSvc", "GetMedalsReceived")]
+    [InlineData("corporationSvc", "GetEmployementRecordAndCharacterTransfers")]
+    [InlineData("facWarMgr", "GetCharacterRankInfo")]
     public void PublicInfoRequiresSelectionAndValidArgumentsWithoutChangingEitherPilot(string service, string method)
     {
         using Fixture fixture = new();
@@ -99,7 +102,7 @@ public sealed class CharacterSheetServiceTests
         var header = Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text).ToArray();
         var line = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(state["lines"])));
         var fields = header.Zip(line).ToDictionary(p => p.First, p => p.Second);
-        Assert.Equal(10, fields.Count);
+        Assert.Equal(11, fields.Count);
         Assert.Equal(target, fields["characterID"]);
         Assert.Equal(name, fields["characterName"]);
         Assert.Equal(1000044L, fields["corporationID"]);
@@ -109,7 +112,62 @@ public sealed class CharacterSheetServiceTests
         Assert.Equal(19L, fields["schoolID"]);
         Assert.Equal(14L, fields["ancestryID"]);
         Assert.Equal(born, fields["startDateTime"]);
+        // The native header reads this on the public row after the visible corporation header,
+        // before UpdateDataCharacter or construct_main_tabs can run. It must exist even when None.
+        Assert.Null(fields["militiaFactionID"]);
         Assert.Equal(biography, fields["description"]);
+    }
+
+    [Theory]
+    [InlineData(90000001L)]
+    [InlineData(90000002L)]
+    public void ShowInfoDecorationAndDefaultEmploymentTabReadsUseNativeShapesWithoutCreatingState(long target)
+    {
+        using Fixture fixture = new();
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000001)!);
+        var profile = fixture.Db.Services.GetRequiredService<IPilotCharacterSheet>().ReadPublicProfile(target)!;
+        // UpdateDataCharacter runs these decoration reads before constructing tabs, even without any medals.
+        for (int read = 0; read < 3; read++)
+        {
+            var medals = BlueRead.Tuple(Reply(fixture.Call("corporationSvc", "GetMedalsReceived", [target])), 2);
+            AssertEmptyRowset(medals[0], ["medalID", "status"]);
+            AssertEmptyRowset(medals[1], ["medalID"]);
+        }
+        Assert.Null(Reply(fixture.Call("facWarMgr", "GetCharacterRankInfo", [target])));
+        Assert.Null(Reply(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [])));
+
+        // A blank biography can cause Employment History to be selected first.
+        var history = BlueRead.Tuple(Reply(fixture.Call("corporationSvc", "GetEmployementRecordAndCharacterTransfers", [target])), 2);
+        var job = BlueRead.Fields(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(history[0]))).State);
+        Assert.Equal((long)profile.CorporationId, job["corporationID"]);
+        Assert.Equal(profile.CreatedAt, job["startDate"]);
+        Assert.Equal(false, job["deleted"]);
+        Assert.Empty(Assert.IsType<List<object?>>(history[1]));
+        using WorldDbContext world = new(fixture.Db.Path);
+        Assert.Empty(world.Set<SavedCharacterSheet>());
+        Assert.Equal(profile, fixture.Db.Services.GetRequiredService<IPilotCharacterSheet>().ReadPublicProfile(target));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    [Fact]
+    public void OwnPublicRankRequiresSelectionAndNoArguments()
+    {
+        using Fixture fixture = new();
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call("facWarMgr", "GetMyCharacterRankInfo", []));
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000001)!);
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [90000002L]));
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [], new() { ["unexpected"] = true }));
+        Assert.Null(Reply(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [], new() { ["machoVersion"] = 1L })));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    private static void AssertEmptyRowset(object? value, string[] expectedHeader)
+    {
+        var rowset = Assert.IsType<BlueInstance>(value);
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rowset.Name);
+        var fields = BlueRead.Fields(rowset.State);
+        Assert.Equal(expectedHeader, Assert.IsType<List<object?>>(fields["header"]).Select(BlueMarshal.Text));
+        Assert.Empty(Assert.IsType<List<object?>>(fields["lines"]));
     }
 
     [Fact]

@@ -452,7 +452,10 @@ public sealed class PilotServicesTests
             Request("charMgr", "GetPublicInfo", [90000001L]),
             Request("charMgr", "GetPublicInfo3", [90000002L]),
             Request("corpRegistry", "MachoBindObject", [1000044L, null]),
-            Request(null, "GetInfoWindowDataForChar", [90000002L], "N=10001:42-2")
+            Request(null, "GetInfoWindowDataForChar", [90000002L], "N=10001:42-2"),
+            Request("corporationSvc", "GetMedalsReceived", [90000002L]),
+            Request("facWarMgr", "GetCharacterRankInfo", [90000002L]),
+            Request("corporationSvc", "GetEmployementRecordAndCharacterTransfers", [90000002L])
         );
         Assert.EndsWith(".ErrorResponse", packets[0].Name);
         Assert.EndsWith(".CallRsp", packets[3].Name);
@@ -468,9 +471,22 @@ public sealed class PilotServicesTests
         var row = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(state["lines"])));
         Assert.Equal(90000002L, row[0]);
         Assert.Equal("", row[^1]);
+        var header = Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text).ToList();
+        Assert.Null(row[header.IndexOf("militiaFactionID")]);
         Assert.EndsWith(".CallRsp", packets[6].Name);
         Assert.EndsWith(".CallRsp", packets[7].Name);
         Assert.Equal(1000044L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[7])).State)["corpID"]);
+        Assert.All(packets.Skip(8), packet => Assert.EndsWith(".CallRsp", packet.Name));
+        var medals = BlueRead.Tuple(Result(packets[8]), 2);
+        Assert.All(
+            medals,
+            value => Assert.Empty(Assert.IsType<List<object?>>(BlueRead.Fields(Assert.IsType<BlueInstance>(value).State)["lines"]))
+        );
+        Assert.Null(Result(packets[9]));
+        var history = BlueRead.Tuple(Result(packets[10]), 2);
+        var employment = BlueRead.Fields(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(history[0]))).State);
+        Assert.Equal(1000044L, employment["corporationID"]);
+        Assert.Equal(134000000000000000L, employment["startDate"]);
     }
 
     [Fact]

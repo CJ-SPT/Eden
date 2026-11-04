@@ -67,6 +67,7 @@ internal sealed record PublicCharacterInfo3(PublicCharacterProfile Profile) : Bl
                 "schoolID",
                 "ancestryID",
                 "startDateTime",
+                "militiaFactionID",
                 "description",
             ],
             [new PublicCharacterInfoRow(Profile)]
@@ -87,8 +88,42 @@ internal sealed record PublicCharacterInfoRow(PublicCharacterProfile Profile) : 
             Profile.SchoolId,
             Profile.AncestryId,
             Profile.CreatedAt,
+            // CharacterInfoWindow reads this on the public row before constructing any tabs.
+            null,
             new BlueUnicode(Profile.Biography),
         };
+}
+
+internal sealed record PublicCharacterMedals : BlueModel
+{
+    // Build 3662168 medals.GetMedalsReceived unpacks info and graphics rowsets even when empty.
+    public override object ToBlue() =>
+        new object?[] { new CompatibilityRowset(["medalID", "status"], []), new CompatibilityRowset(["medalID"], []) };
+}
+
+internal sealed record PublicCharacterEmployment(PublicCharacterProfile Profile) : BlueModel
+{
+    public override object ToBlue() =>
+        new object?[]
+        {
+            // Eden currently only supports the saved starter corporation, with no transfers or corp changes.
+            new BlueList<CharacterEmploymentRow>(Profile.CreatedAt is long born ? [new(Profile.CorporationId, born)] : []),
+            new List<object?>(),
+        };
+}
+
+internal sealed record CharacterEmploymentRow(int CorporationId, long StartedAt) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["corporationID"] = CorporationId,
+                ["startDate"] = StartedAt,
+                ["deleted"] = false,
+            }
+        );
 }
 
 internal sealed record CharacterCorporationInfo(int CorporationId) : BlueModel
