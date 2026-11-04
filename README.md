@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Map startup now answers the native jump-bridge access and faction ownership lookups that previously stopped scene loading with **Invalid Packet Destination**. The bridge reply preserves the client's three-part tuple; unimplemented player bridges, alliance sovereignty and faction-war occupations return empty collections, allowing the client to use its bundled universe and NPC faction data. Rendering and navigation remain unverified. See the [map startup notes](docs/protocol.md#native-map-startup).
+
 Mailing lists now support native creation/joining, membership and role management, access rules, welcome messages and subscriber broadcasts. Delivery snapshots keep subscriber identities private, preserve each mailbox's state and retain list names in historical mail. Native presentation remains unverified. Organization mail, alliance access and paid CSPA remain pending. See the [mailing-list notes](docs/protocol.md#persistent-mailing-lists).
 
 Mail-arrival events now match the stock client's eight-argument callback. An extra label-mask argument previously caused the recipient callback to be rejected before its native unread/popup handling. See the [arrival-event correction](docs/protocol.md#mail-arrival-notification-arity); live popup/blink confirmation remains pending.
