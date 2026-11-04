@@ -119,6 +119,7 @@ public enum StationService
     Manufacturing = 14,
     Laboratory = 15,
     Fitting = 17,
+    Insurance = 21,
 }
 
 public static class InventoryDefinitions

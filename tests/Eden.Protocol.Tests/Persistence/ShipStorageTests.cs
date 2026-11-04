@@ -203,7 +203,7 @@ public sealed class ShipStorageTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void NativeCarriedShipMenusReadZeroInsuranceQuotesWithoutOpeningTheDeferredRole(bool bound)
+    public void NativeCarriedShipMenusCanReadZeroInsuranceQuotesWhenTheCatalogHasNoValuation(bool bound)
     {
         using TestWorld db = new();
         var pilot = db.Store.FindPilot(1000001)!;
@@ -223,7 +223,11 @@ public sealed class ShipStorageTests
                 context,
                 "insuranceSvc",
                 "MachoBindObject",
-                new object?[] { pilot.StationId, new object?[] { "GetInsurancePrice", new object?[] { 587L } } },
+                new object?[]
+                {
+                    new object?[] { (long)pilot.StationId, (long)pilot.StationId, 15L },
+                    new object?[] { "GetInsurancePrice", new object?[] { 587L } },
+                },
                 _ => { }
             )
             : router.CallWire(context, "insuranceSvc", "GetInsurancePrice", new object?[] { 587L }, _ => { });
@@ -238,10 +242,10 @@ public sealed class ShipStorageTests
         {
             Assert.Equal(0d, Assert.IsType<double>(reply));
         }
-        Assert.Equal(
-            PilotCallResult.Unsupported,
+        Assert.IsType<PilotCallResult.Failure>(
             router.Call(context, "insuranceSvc", "InsureShip", new object?[] { pilot.ShipId }, _ => { })
         );
+        Assert.Empty(context.Notifications);
     }
 
     [Theory]

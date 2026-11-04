@@ -142,6 +142,19 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedInsurancePolicy>().ToTable("WorldInsurancePolicy").HasKey(p => p.Id);
+        model.Entity<SavedInsurancePolicy>().HasOne<Pilot>().WithMany().HasForeignKey(p => p.PilotId);
+        // Policies and ledger entries retain ship identities after hull deletion.
+        model.Entity<SavedInsurancePolicy>().HasIndex(p => p.ShipId).IsUnique().HasFilter("Status = 0");
+        model.Entity<SavedInsuranceLedger>().ToTable("WorldInsuranceLedger").HasKey(entry => entry.Id);
+        model.Entity<SavedInsuranceLedger>().HasOne<Pilot>().WithMany().HasForeignKey(entry => entry.PilotId);
+        model
+            .Entity<SavedInsuranceLedger>()
+            .HasOne<SavedInsurancePolicy>()
+            .WithMany()
+            .HasForeignKey(entry => entry.PolicyId)
+            .OnDelete(DeleteBehavior.Restrict);
+        model.Entity<SavedInsuranceLedger>().HasIndex(entry => entry.ShipId).IsUnique().HasFilter("IsPayout = 1");
         model.Entity<SavedBookmarkFolder>().ToTable("WorldBookmarkFolder").HasKey(f => f.Id);
         model.Entity<SavedBookmarkFolder>().HasOne<Pilot>().WithMany().HasForeignKey(f => f.PilotId);
         model.Entity<SavedBookmarkSubfolder>().ToTable("WorldBookmarkSubfolder").HasKey(s => s.Id);

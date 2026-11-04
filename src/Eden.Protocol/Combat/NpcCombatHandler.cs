@@ -2,8 +2,10 @@ using System.Security.Cryptography;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
@@ -104,6 +106,12 @@ internal sealed class NpcCombatHandler(
             );
             if (shot.Capsule is { } capsule)
             {
+                if (shot.Insurance is { } payout)
+                {
+                    context.Notifications.Add(
+                        new AccountBalanceChanged(context.Pilot.PilotId, (double)payout.BalanceCents / MarketDefinitions.CentsPerIsk)
+                    );
+                }
                 shipLoss.Replace(context, capsule);
                 Clear();
                 _shipId = capsule.ShipId;

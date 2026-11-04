@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
 
 namespace Eden.Gameplay.Market;
@@ -9,7 +10,8 @@ public sealed record WalletJournal(
     IReadOnlyList<MarketTrade> Trades,
     IReadOnlyList<CombatReward> Rewards,
     IReadOnlyList<RepairPayment> Repairs,
-    IReadOnlyList<WalletGrant> Grants
+    IReadOnlyList<WalletGrant> Grants,
+    IReadOnlyList<InsuranceLedgerEntry> Insurance
 );
 
 public interface IPilotWalletReader

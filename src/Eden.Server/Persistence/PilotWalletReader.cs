@@ -49,6 +49,13 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
                 .AsNoTracking()
                 .Where(g => g.PilotId == pilotId)
                 .Select(g => new WalletGrant(g.PilotId, g.AmountCents, g.BalanceCents, g.Time))
+                .ToArray(),
+            world
+                .Set<SavedInsuranceLedger>()
+                .Where(entry => entry.PilotId == pilotId)
+                .OrderBy(entry => entry.Id)
+                .AsEnumerable()
+                .Select(entry => entry.Snapshot())
                 .ToArray()
         );
     }

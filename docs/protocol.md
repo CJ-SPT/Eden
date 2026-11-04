@@ -10,7 +10,7 @@ The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibili
 | Station directory | `map.GetStationInfo` | Implemented for every catalog station, including service masks |
 | Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState`, `GetOnlineStatus` | Implemented for local pilots; contact notifications and NPC/organization contacts pending |
 | Personal locations | `accessGroupBookmarkMgr.GetMyActiveBookmarks` and private folder/bookmark operations; `beyonce.BookmarkLocation` and bookmark warp | Implemented for personal folders; shared ACLs and scan-result bookmarks pending |
-| Ship insurance | `insuranceSvc.GetContracts`, `GetInsurancePrice` and policy operations | Pending |
+| Ship insurance | `insuranceSvc` quotes, contracts, purchase/replacement and cancellation | Implemented for personal station-owned hulls and NPC-loss payouts; corporation policies pending |
 | Task tracking | `monolithTaskTrackerMgr.HasEverWarped`, `GetCompletedAchievementsAndClientEventCount`, `UpdateClientAchievmentsAndCounters` | Pending |
 | Larger feature systems | Agents/journal, standings, jump clones, contracts, calendar, drones/fighters and player corporations | Compatibility states; gameplay pending |
 
@@ -81,6 +81,24 @@ References: inert inspection of unchanged build-3662168 `code.ccp` SHA-256 **37F
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Save a station and an in-space point, reconnect and warp to each. Move/copy a location between personal folders and verify the native lists. Edit expiry and confirm its native presentation/removal. Rendering, input and flight feel remain unverified.
+
+### Personal ship insurance
+
+Replaced insurance compatibility replies with catalog quotes, durable personal policies and wallet settlement. Build **3662168** inert inspection confirms `GetInsurancePrice(typeID)`, `GetInsurancePrices(typeIDs)`, `GetContracts(isCorp=False)`, `GetContractForShip(shipID)`, `InsureShip(shipID, amount, isCorp)` and `UnInsureShip(shipID)`. Native station binding uses the three-field `(stationID, stationID, locationGroup=15)` tuple; mismatched locations and in-space binding are rejected. Station service **21** is required for purchase and cancellation. Native replacement first returns `InsureShipFailedSingleContract` with `ownerName`; the client confirms a second purchase with keyword `voidOld=True`.
+
+`insuranceConst` defines six paid coverages, **50–100%**, with premiums **5–30%** of the quote and a free **40%** baseline. Eden policies last **84 days**. Only owned assembled hulls in the caller's station hangar qualify; carried hulls, other owners, invalid amounts, missing service and insufficient funds fail without mutation. Replacement charges a new full premium without refunding the old one; cancellation has no refund. Contracts expire at their exact end timestamp and do not appear in active queries afterward. Corporation purchase is explicitly unavailable.
+
+**Valuation policy:** Eden uses pinned `client/types.basePrice`, separately from testing-market offers. Missing/zero values, values below 1 ISK and capsules yield zero and cannot be insured. This is a local reproducible policy: [CCP's insurance description](https://www.eveonline.com/news/view/the-circle-of-life) uses periodically updated manufacturing-material prices and hull multipliers; Eden has no equivalent live index. In particular, pinned corvettes with zero base price have no default payout. Prices and premiums use integer cents with midpoint-to-even rounding.
+
+World version **43** adds policy history and an insurance ledger. Purchase, debit and journal entry commit together. Fatal NPC damage settles active coverage or the free baseline inside the same transaction as hull destruction, wreck/drop creation and the capsule transition. The payout uses the saved policy valuation when covered. A unique per-hull payout key prevents duplicate credits; failed ledger writes roll back the entire loss. Removing an unpiloted/carried hull closes its policy without a payout. Hull identities and type IDs remain in history after deletion; reopening retains policies and wallet entries. Client balance notifications follow committed payments. Wallet entry type **19** uses Pend Insurance **1000113**, negative ship references for premiums and positive hull-type references for payouts, as required by native `FormatReference`.
+
+References: unchanged pinned archive hash and Carbon Blue revision recorded above; existing KeyVal/list/numeric adapters are reused without codec changes. Native insurance service, insurance constants, moniker binding and wallet formatting were inspected as inert code objects. No gameplay Python executed or client launched. Insurance mail, corporation policies, structures and a retail valuation index remain pending.
+
+**Automated validation.** Final filter `FullyQualifiedName~Insurance|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcOrbitTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions|FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Repair.RepairTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, run with `dotnet test --no-build` and `-- xUnit.MaxParallelThreads=4`: **215 passed**, approximately **48 seconds**. Coverage includes all six packages, catalog hull variants, native calls/binding and wallet references, replacement/cancellation/expiry, rejection with unchanged state, concurrent purchase and loss settlement, exact expiry, rollback and restart/migration persistence. Tool/solution restores, solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting tests), formatting and diff checks passed in **69.50 seconds** combined. Early development failures identified no-tracking fixture edits, shield recharge at the 84-day expiry boundary and an obsolete station binding fixture; these were corrected before passing runs. Final client inspection also corrected premium/payout journal reference signs and retained hull type after deletion. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** At an insurance station, buy/replace/cancel a policy on a nonzero-value hull and reconnect to inspect it. Check the wallet premium description and payout description after an NPC loss. Native rendering and interactions remain unverified.
 
 ## Launcher accounts and developer roles
 

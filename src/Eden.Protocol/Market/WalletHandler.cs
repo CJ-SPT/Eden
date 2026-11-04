@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Repair;
@@ -125,6 +126,28 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                         grant.PilotId,
                         grant.AmountCents,
                         grant.BalanceCents
+                    )
+                );
+            }
+        }
+        foreach (var entry in journal.Insurance)
+        {
+            if (filter.Includes(entry.Time, clock.GetUtcNow().UtcDateTime))
+            {
+                entries.Add(
+                    new(
+                        InsuranceRules.FirstJournalId + entry.Id,
+                        entry.Time,
+                        WalletEntryType.Insurance,
+                        entry.AmountCents > 0 ? InsuranceRules.InsurerCorporationId : entry.PilotId,
+                        entry.AmountCents > 0 ? entry.PilotId : InsuranceRules.InsurerCorporationId,
+                        // Build 3662168 FormatReference uses positive type IDs for
+                        // loss payouts and negative ship IDs for policy purchases.
+                        entry.AmountCents > 0
+                            ? entry.TypeId
+                            : -entry.ShipId,
+                        entry.AmountCents,
+                        entry.BalanceCents
                     )
                 );
             }

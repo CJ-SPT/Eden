@@ -4,6 +4,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
@@ -11,11 +12,13 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Loot;
+using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -91,7 +94,10 @@ public sealed class NpcCombatTests
                     UpdatedAt = Clock.Now,
                 }
             );
-            world.Add(new PilotWallet { PilotId = PilotId, Cents = 12345 });
+            if (world.Set<PilotWallet>().Find(PilotId) is null)
+            {
+                world.Add(new PilotWallet { PilotId = PilotId, Cents = 12345 });
+            }
             world.SaveChanges();
         }
 
@@ -442,10 +448,21 @@ public sealed class NpcCombatTests
         Assert.Equal(1.5939, shot.Applied, 8);
     }
 
-    [Fact]
-    public void FatalRetaliationStopsTheGunLoadsACapsuleAndRemovesTheOldHullForObservers()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FatalRetaliationStopsTheGunLoadsACapsuleAndRemovesTheOldHullForObservers(bool insured)
     {
         using Fixture f = new();
+        if (insured)
+        {
+            InsuranceTestData.Prepare(f.Db);
+            InsuranceTestData.Fund(f.Db);
+            var position = f.Pilot.Position!;
+            f.Db.Store.SetPosition(Fixture.ShipId, null);
+            new PilotInsuranceStore(new(f.Db.Path), f.Clock).Insure(Fixture.PilotId, f.Pilot.StationId, Fixture.ShipId, 30000, false);
+            f.Db.Store.SetPosition(Fixture.ShipId, position, f.Npc.SystemId);
+        }
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=10000 WHERE ItemTypeId=30380 AND AttributeId=54");
@@ -533,6 +550,25 @@ public sealed class NpcCombatTests
         observer.RefreshWrecks();
         observer.RefreshPeers();
         Assert.Equal(FleetDefinitions.CapsuleType, context.Pilot.ShipTypeId);
+        if (insured)
+        {
+            Assert.Equal(10700d, Assert.Single(context.Notifications.OfType<AccountBalanceChanged>()).Balance);
+            WalletHandler wallet = new(f.Db.Services.GetRequiredService<IPilotWalletReader>(), f.Clock);
+            var journal = Assert.IsType<BlueList<WalletJournalEntry>>(
+                Assert.IsType<PilotCallResult.Success>(wallet.Call(context, "account", "GetTransactions", [1000L, null, null, false])).Reply
+            );
+            var payout = Assert.Single(journal.Items, entry => entry.Type == WalletEntryType.Insurance && entry.AmountCents > 0);
+            Assert.Equal(100000, payout.AmountCents);
+            Assert.Equal(1070000, payout.BalanceCents);
+            Assert.Equal(1000113, payout.OwnerId1);
+            Assert.Equal(Fixture.PilotId, payout.OwnerId2);
+            Assert.Equal(601, payout.ReferenceId);
+            Assert.NotEmpty(BlueMarshal.Encode(payout));
+        }
+        else
+        {
+            Assert.Empty(context.Notifications.OfType<AccountBalanceChanged>());
+        }
         Assert.Contains(
             context.Notifications,
             n => n.Name == "OnGodmaShipEffect" && Equals(n.Arguments[0], f.Module) && Equals(n.Arguments[3], false)

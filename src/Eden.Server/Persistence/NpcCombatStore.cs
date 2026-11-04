@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
@@ -215,6 +216,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         aggression.LastShotAt = now;
         aggression.ReadyAt = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
         NpcWeaponContact weapon = new(shipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), now, duration);
+        InsurancePayout? insurance = null;
         if (result.Remaining.Destroyed)
         {
             var old = pilot.ActiveShip;
@@ -293,6 +295,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                     ShipStoragePersistence.Destroy(world, stored);
                 }
             }
+            insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
             pilot.ActiveShip = capsule;
             pilot.ActiveShipId = capsule.Id;
             // Satisfy the active-ship FK before deleting the old hull. Both saves
@@ -310,7 +313,8 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             result.Applied,
             quality,
             new(shipId, defense, result.Remaining),
-            result.Remaining.Destroyed ? lookup.FindPilot(pilot.AccountId, pilotId)! : null
+            result.Remaining.Destroyed ? lookup.FindPilot(pilot.AccountId, pilotId)! : null,
+            insurance
         );
     }
 }

@@ -37,6 +37,7 @@ internal static class ShipStoragePersistence
 
     internal static void Destroy(WorldDbContext world, Ship ship)
     {
+        PilotInsuranceStore.VoidRemovedHull(world, ship.Id);
         world.RemoveRange(Contents(world, ship.OwnerId, ship.Id));
         world.Remove(ship);
     }

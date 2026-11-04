@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -187,6 +188,19 @@ internal sealed class PilotCallRouter(
             if (method == "MachoBindObject" && args.Length == 2)
             {
                 long locationGroup = context.Pilot.Position is null ? 15 : 5;
+                if (
+                    service == "insuranceSvc"
+                    && (
+                        context.Pilot.Position is not null
+                        || args[0] is not object?[] insuranceBind
+                        || insuranceBind is not [long insuranceStation, long insuranceLocation, (long)InsuranceRules.StationGroup]
+                        || insuranceStation != context.Pilot.StationId
+                        || insuranceLocation != insuranceStation
+                    )
+                )
+                {
+                    return PilotCallResult.Unsupported;
+                }
                 if (
                     service == "repairSvc"
                     && (

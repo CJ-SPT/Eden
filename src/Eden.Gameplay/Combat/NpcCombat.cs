@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Insurance;
 
 namespace Eden.Gameplay.Combat;
 
@@ -16,7 +17,8 @@ public sealed record NpcShot(
     double Applied,
     double Quality,
     ShipHealth Health,
-    DockedPilot? Capsule
+    DockedPilot? Capsule,
+    InsurancePayout? Insurance = null
 );
 
 public interface INpcCombat

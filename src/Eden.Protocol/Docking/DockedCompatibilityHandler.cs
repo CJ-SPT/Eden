@@ -111,10 +111,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("nonDiminishingInjectionMgr", "GetAvailableNonDiminishingInjections") => BlueEmpty.IndexedDictionary,
             ("XmppChatMgr", "GetDeprecatedPrefsFallback") => PilotCallResult.None,
             ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => new CorporationMemberInfo(id, pilot.CorpId),
-            ("insuranceSvc", "GetContracts") => BlueEmpty.List,
-            // Native ship menus ask for a quote before exposing cargo actions.
-            // Zero means uninsurable and keeps the deferred insurance role closed.
-            ("insuranceSvc", "GetInsurancePrice") when args is [long type] && type is > 0 and <= int.MaxValue => 0d,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
             ("crimewatch", "GetClientStates") when args.Length == 0 => new CrimewatchClientState(safety.Read(pilot.PilotId)),
