@@ -18,6 +18,13 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     private IReadOnlyDictionary<int, long> _available = new Dictionary<int, long>();
     public bool IsMonitoring => _station.HasValue;
 
+    public void Reset()
+    {
+        _station = null;
+        _monitor = 0;
+        _available = new Dictionary<int, long>();
+    }
+
     private IndustryFacilityReply Facility(IndustryFacility facility) => new(facility, industry.ProductTypes());
 
     private static BlueprintReply Blueprint(OwnedBlueprint blueprint) => new(blueprint);

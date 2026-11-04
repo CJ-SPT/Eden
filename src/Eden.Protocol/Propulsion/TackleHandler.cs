@@ -217,6 +217,12 @@ internal sealed class TackleHandler(
         }
     }
 
+    public void Leave(PilotCallContext context)
+    {
+        Cancel(context);
+        _received = [];
+    }
+
     public PilotCallResult Call(PilotCallContext context, string service, string method, object?[] args)
     {
         if (service != "dogmaIM" || args.Length < 2 || TackleWire.Effect(BlueMarshal.Text(args[1])) is not { } effect)

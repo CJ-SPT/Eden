@@ -1,4 +1,6 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -16,6 +18,74 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CharacterLogoffClearsSessionFieldsBeforeReplyAndAllowsAnotherOwnedPilotOnTheSameConnection(bool inSpace)
+    {
+        using TestWorld world = new();
+        TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        long other = world
+            .Services.GetRequiredService<ICharacterCreation>()
+            .Create(1000001, new("Second Pilot", 1, 1, 1, 64, [1], [2], 18));
+        if (inSpace)
+        {
+            world.Store.SetPosition(1000000000001, new SpacePosition(1_000_000, 0, 0));
+        }
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("invbroker", "GetInventoryFromId", [1000000000001L]),
+            Request("skillMgr2", "GetMySkillHandler", []),
+            Request("userSvc", "UserLogOffCharacter", []),
+            Request("charUnboundMgr", "GetCharacterSelectionData", []),
+            Request(null, "List", [4L], "N=10001:42-2"),
+            Request("charUnboundMgr", "SelectCharacterID", [other]),
+            Request("userSvc", "UserLogOffCharacter", []),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("charMgr", "GetPublicInfo", [90000001L])
+        );
+        var changes = packets.Where(p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(5, changes.Length);
+        for (int index = 1; index <= 3; index += 2)
+        {
+            var state = BlueRead.Tuple(changes[index].State, 14);
+            Assert.Equal(1000001L, state[3]);
+            var fields = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(state[4], 3)[1], 2)[1]);
+            Assert.Equal(new object?[] { index == 1 ? 90000001L : other, null }, fields["charid"]);
+            Assert.All(fields.Values, value => Assert.Null(BlueRead.Tuple(value, 2)[1]));
+            Assert.Contains("shipid", fields.Keys);
+            Assert.Contains("locationid", fields.Keys);
+            Assert.DoesNotContain("userid", fields.Keys);
+            Assert.DoesNotContain("role", fields.Keys);
+            int packetIndex = packets.IndexOf(changes[index]);
+            Assert.EndsWith(".CallRsp", packets[packetIndex + 1].Name);
+            Assert.True(Assert.IsType<bool>(Result(packets[packetIndex + 1])));
+        }
+        var error = Assert.Single(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var errorBody = BlueRead.Tuple(BlueRead.Tuple(error.State, 14)[4], 3);
+        Assert.Equal("Unsupported local call unknown binding.List", errorBody[2]);
+        var publicInfo = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State);
+        Assert.Equal(90000001L, publicInfo["characterID"]);
+    }
+
+    [Fact]
+    public async Task CharacterLogoffWithoutSelectionIsDeniedAndMalformedRequestsDoNotLogOffThePilot()
+    {
+        var packets = await ExchangeAsync(
+            42,
+            Request("userSvc", "UserLogOffCharacter", []),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("userSvc", "UserLogOffCharacter", [90000002L]),
+            Request("charMgr", "GetPublicInfo", [90000001L])
+        );
+        Assert.False(Assert.IsType<bool>(Result(packets[0])));
+        Assert.Single(packets, p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal));
+        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "Character logoff does not accept arguments." });
+        Assert.Equal(90000001L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State)["characterID"]);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

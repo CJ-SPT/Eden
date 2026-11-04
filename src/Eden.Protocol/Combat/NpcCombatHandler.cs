@@ -126,5 +126,11 @@ internal sealed class NpcCombatHandler(
         context.Flight.RefreshNpcs();
     }
 
-    public void Dispose() => Clear();
+    public void Leave()
+    {
+        Clear();
+        _shipId = 0;
+    }
+
+    public void Dispose() => Leave();
 }

@@ -184,5 +184,14 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         }
     }
 
-    public void Dispose() => shared.RemoveShip(_shipId);
+    public void Reset()
+    {
+        shared.RemoveShip(_shipId);
+        _pending.Clear();
+        _locked.Clear();
+        _targeters = [];
+        _shipId = 0;
+    }
+
+    public void Dispose() => Reset();
 }

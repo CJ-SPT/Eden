@@ -22,6 +22,40 @@ namespace Eden.Protocol.Tests.Propulsion;
 
 public sealed class PropulsionTests
 {
+    [Fact]
+    public void CharacterLogoffStopsBoostAndReselectionDoesNotResumeItsRepeats()
+    {
+        using Fixture fixture = new();
+        using var services = Eden.Server.ServerServices.Build(new(fixture.Db.Path), fixture.Clock);
+        using var scope = services.CreateScope();
+        using var context = fixture.Client();
+        var pilot = context.Pilot;
+        double baseline = fixture.Store.MaxSpeed(pilot.PilotId);
+        var propulsion = scope.ServiceProvider.GetRequiredService<PropulsionHandler>();
+        Assert.Null(
+            propulsion.CallWire(context, "dogmaIM", "Activate", [fixture.Module, PropulsionWireDefinitions.EffectName, null, 100L])
+        );
+        Assert.NotNull(propulsion.ActiveEffect(pilot, fixture.Module));
+        Assert.True(context.Pilot.Flight.MaxSpeed > baseline);
+        var result = Assert.IsType<PilotCallResult.Success>(
+            scope
+                .ServiceProvider.GetRequiredService<CharacterLogoffHandler>()
+                .Call(context, "userSvc", "UserLogOffCharacter", Array.Empty<object?>(), null)
+        );
+        Assert.True(Assert.IsType<bool>(result.Reply.ToBlue()));
+        Assert.False(context.Selected);
+        Assert.Null(propulsion.ActiveEffect(pilot, fixture.Module));
+        Assert.Equal(baseline, fixture.Store.MaxSpeed(pilot.PilotId));
+        Assert.Empty(context.Notifications);
+        context.Select(Assert.Single(context.Roster));
+        context.Flight.Snapshot();
+        fixture.Clock.Milliseconds += 60_000;
+        propulsion.Advance(context);
+        Assert.Null(propulsion.ActiveEffect(context.Pilot, fixture.Module));
+        Assert.Equal(baseline, context.Pilot.Flight.MaxSpeed);
+        Assert.Equal(baseline, fixture.Store.MaxSpeed(pilot.PilotId));
+    }
+
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();

@@ -28,10 +28,11 @@ internal static class PilotSessionWire
         };
     }
 
-    internal static BlueInstance SessionChange(long accountId, long clientId, DockedPilot pilot, DockedPilot? previous = null)
+    internal static BlueInstance SessionChange(long accountId, long clientId, DockedPilot? pilot, DockedPilot? previous = null)
     {
         var before = previous is null ? new Dictionary<string, object?>() : SessionFields(previous);
-        var changes = SessionFields(pilot)
+        var after = pilot is null ? before.ToDictionary(field => field.Key, _ => (object?)null) : SessionFields(pilot);
+        var changes = after
             .Where(field => !Equals(before.GetValueOrDefault(field.Key), field.Value))
             .ToDictionary(field => field.Key, field => (object?)new object?[] { before.GetValueOrDefault(field.Key), field.Value });
         return new(

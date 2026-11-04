@@ -17,6 +17,15 @@ internal sealed class PilotBindings(long sessionId)
     private readonly Dictionary<string, Binding> _references = [];
     private int _nextSlot = 2;
 
+    public void ReleasePilotReferences()
+    {
+        foreach (var binding in _references.Values.Where(b => b.Lifetime != PilotBindingLifetime.Account).ToArray())
+        {
+            _references.Remove(binding.Service);
+            _bindings.Remove(binding.Reference.Id);
+        }
+    }
+
     public void ReleaseLocationReferences()
     {
         foreach (var binding in _references.Values.Where(b => b.Lifetime == PilotBindingLifetime.Location).ToArray())

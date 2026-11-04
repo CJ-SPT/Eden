@@ -72,6 +72,17 @@ internal sealed class PilotCallContext(
 
     public void Dispose() => ActiveFlight?.Dispose();
 
+    public void LogOff()
+    {
+        ActiveFlight?.Dispose();
+        ActiveFlight = null;
+        DestroyedShip = null;
+        NextSkillCompletion = null;
+        _bindings.ReleasePilotReferences();
+        NotificationsBeforeFlight.Clear();
+        Notifications.Clear();
+    }
+
     public DockedPilot Pilot => Flight.Pilot;
     public SignedSettings SignedSettings { get; } = signedSettings;
     public bool Selected => ActiveFlight is not null;

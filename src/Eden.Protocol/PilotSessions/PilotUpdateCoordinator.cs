@@ -24,7 +24,8 @@ internal sealed class PilotUpdateCoordinator(
     CapacitorBoosterHandler capacitorBoosters,
     MissileHandler missiles,
     SupportModuleHandler support,
-    TackleHandler tackle
+    TackleHandler tackle,
+    DeferredRefitPrimes refits
 )
 {
     public bool IsMonitoring => industry.IsMonitoring;
@@ -33,6 +34,25 @@ internal sealed class PilotUpdateCoordinator(
     {
         repairs.Enter(context);
         npcCombat.Enter(context);
+    }
+
+    public void Leave(PilotCallContext context)
+    {
+        context.Flight.Checkpoint();
+        mining.Cancel(context);
+        combat.Cancel(context);
+        missiles.Cancel(context);
+        shields.Cancel(context);
+        repairs.Cancel(context);
+        hardeners.Cancel(context);
+        capacitorBoosters.Cancel(context);
+        support.Cancel(context);
+        tackle.Leave(context);
+        propulsion.Cancel(context);
+        targeting.Reset();
+        npcCombat.Leave();
+        industry.Reset();
+        refits.Clear();
     }
 
     public DockedPilot? Advance(PilotCallContext context)

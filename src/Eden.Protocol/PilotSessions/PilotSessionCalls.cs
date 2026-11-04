@@ -72,7 +72,12 @@ internal sealed class PilotSessionCalls(
         }
         // A timer-driven loss can happen while rejecting an unrelated RPC.
         // Its durable capsule transition still has to reach the client.
-        if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
+        if (previous is not null && !context.Selected)
+        {
+            await output.WriteAsync(new PilotSessionChange(accountId, clientId, null, previous).ToBlue());
+            report($"Logged off pilot {previous.PilotId}; returned account {accountId} to character selection.");
+        }
+        else if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
         {
             await output.AnnounceTransitionAsync(previous);
         }
