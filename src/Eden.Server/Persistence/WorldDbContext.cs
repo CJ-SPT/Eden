@@ -214,6 +214,11 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedImplantState>().ToTable("WorldImplantState").HasKey(state => state.PilotId);
+        model.Entity<SavedImplantState>().HasOne<Pilot>().WithMany().HasForeignKey(state => state.PilotId);
+        model.Entity<SavedPilotImplant>().ToTable("WorldPilotImplant").HasKey(implant => implant.ItemId);
+        model.Entity<SavedPilotImplant>().HasOne<SavedJumpClone>().WithMany().HasForeignKey(implant => implant.CloneId);
+        model.Entity<SavedPilotImplant>().HasIndex(implant => new { implant.CloneId, implant.Slot }).IsUnique();
         model.Entity<SavedJumpCloneTimer>().ToTable("WorldJumpCloneTimer").HasKey(timer => timer.PilotId);
         model.Entity<SavedJumpCloneTimer>().HasOne<Pilot>().WithMany().HasForeignKey(timer => timer.PilotId);
         model.Entity<SavedJumpClonePayment>().ToTable("WorldJumpClonePayment").HasKey(payment => payment.Id);

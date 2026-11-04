@@ -45,7 +45,8 @@ public sealed class SavedJumpClonePayment
 }
 
 [Injectable]
-internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock) : IPilotJumpClones
+internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)
+    : IPilotJumpClones
 {
     private static Pilot Pilot(WorldDbContext world, long id) =>
         world.Pilots.Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
@@ -129,7 +130,19 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
                 .Select(c => new JumpClone(c.Id, c.StationId!.Value, c.Name))
                 .ToArray(),
             world.Set<SavedJumpCloneTimer>().Find(pilotId)?.Time
-        );
+        )
+        {
+            Implants = (
+                from implant in world.Set<SavedPilotImplant>()
+                join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
+                where body.PilotId == pilotId && !body.Active
+                orderby body.Id, implant.Slot
+                select implant
+            )
+                .AsEnumerable()
+                .Select(i => i.Snapshot())
+                .ToArray(),
+        };
     }
 
     public long Price(long pilotId)
@@ -272,15 +285,22 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
                 }
             )
             .Entity;
-        var outgoing =
-            world.Set<SavedJumpClone>().SingleOrDefault(c => c.PilotId == pilotId && c.Active)
-            ?? world.Add(new SavedJumpClone { PilotId = pilotId }).Entity;
-        outgoing.Active = false;
-        outgoing.StationId = source.Id;
-        // Release the filtered unique active-body key before activating the target.
-        world.SaveChanges();
-        incoming.Active = true;
-        incoming.StationId = null;
+        training.ChangeAttributes(
+            world,
+            pilotId,
+            () =>
+            {
+                var outgoing =
+                    world.Set<SavedJumpClone>().SingleOrDefault(c => c.PilotId == pilotId && c.Active)
+                    ?? world.Add(new SavedJumpClone { PilotId = pilotId }).Entity;
+                outgoing.Active = false;
+                outgoing.StationId = source.Id;
+                // Release the filtered unique active-body key before activating the target.
+                world.SaveChanges();
+                incoming.Active = true;
+                incoming.StationId = null;
+            }
+        );
         if (source.Id != stationId)
         {
             timer ??= world.Add(new SavedJumpCloneTimer { PilotId = pilotId }).Entity;

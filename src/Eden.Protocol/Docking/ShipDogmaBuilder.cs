@@ -75,8 +75,8 @@ internal sealed class ShipDogmaBuilder(
             new DogmaItemKey.Item(pilot.PilotId),
             Item(pilot, "pilot"),
             sheet
-                .ReadAttributes(pilot.PilotId)
-                .Attributes.ToDogma()
+                .ReadEffectiveAttributes(pilot.PilotId)
+                .ToDogma()
                 .Concat(
                     new Dictionary<DogmaAttributeId, int>
                     {

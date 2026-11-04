@@ -82,16 +82,19 @@ internal static class InventoryPersistence
 
     internal static long NextId(WorldDbContext world)
     {
-        // Packaged items become assembled ships without changing identity. Both
-        // AUTOINCREMENT sequences retain their high-water IDs after deletion.
+        // Items can become ships or installed implants without changing identity.
+        // All three AUTOINCREMENT sequences retain high-water IDs after deletion.
         long last = world
-            .Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name IN ('WorldItem','WorldShip')")
+            .Database.SqlQueryRaw<long>(
+                "SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name IN ('WorldItem','WorldShip','WorldPilotImplant')"
+            )
             .AsEnumerable()
             .Single();
         long tracked = world
             .ChangeTracker.Entries<OwnedItem>()
             .Select(e => e.Entity.Id)
             .Concat(world.ChangeTracker.Entries<Ship>().Select(e => e.Entity.Id))
+            .Concat(world.ChangeTracker.Entries<SavedPilotImplant>().Select(e => e.Entity.ItemId))
             .DefaultIfEmpty(0)
             .Max();
         return checked(Math.Max(Math.Max(last, tracked), InventoryDefinitions.FirstOwnedItemId) + 1);

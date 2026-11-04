@@ -20,7 +20,10 @@ public sealed record JumpCloneSkills(int Psychology, int AdvancedPsychology, int
 
 public sealed record JumpClone(long Id, int StationId, string Name);
 
-public sealed record JumpCloneSnapshot(IReadOnlyList<JumpClone> Clones, long? LastJump);
+public sealed record JumpCloneSnapshot(IReadOnlyList<JumpClone> Clones, long? LastJump)
+{
+    public IReadOnlyList<InstalledImplant> Implants { get; init; } = [];
+}
 
 public sealed record JumpCloneChange(long BalanceCents, int StationId);
 

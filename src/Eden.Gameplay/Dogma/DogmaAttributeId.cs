@@ -3,6 +3,12 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ImplantSlot = 331,
+    CharismaBonus = 175,
+    IntelligenceBonus = 176,
+    MemoryBonus = 177,
+    PerceptionBonus = 178,
+    WillpowerBonus = 179,
     EntitySecurityStatusKillBonus = 252,
     EntitySecurityMaxGain = 563,
     FastTalkMutator = 415,

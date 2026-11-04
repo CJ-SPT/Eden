@@ -28,6 +28,7 @@ public sealed record CharacterRemapResult(TrainingState Training, bool Changed);
 public interface IPilotCharacterSheet
 {
     NeuralRemapState ReadAttributes(long pilotId);
+    CharacterAttributes ReadEffectiveAttributes(long pilotId);
     CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes);
     string ReadBiography(long pilotId);
     void SaveBiography(long pilotId, string biography);

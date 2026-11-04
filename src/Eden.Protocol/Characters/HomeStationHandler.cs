@@ -9,7 +9,8 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitPrimes refits, PilotBrain brain) : ISelectedPilotCallHandler
+internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitPrimes refits, PilotBrain brain, ImplantHandler implants)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -69,6 +70,7 @@ internal sealed class HomeStationHandler(IPilotHomeStation homes, DeferredRefitP
                     var transfer = homes.SelfDestruct(pilot, context.Pilot.ShipId);
                     refits.Clear();
                     context.ChangeShip(transfer.Pilot);
+                    implants.Refresh(context);
                     foreach (var change in transfer.Changes)
                     {
                         InventoryChangesWire.NotifyItemChange(context, change);

@@ -32,6 +32,9 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         return new(result.Training, result.Remapped);
     }
 
+    internal TrainingState ChangeAttributes(WorldDbContext world, long pilotId, Action change) =>
+        UpdateCore(world, pilotId, null, false, false, null, null, false, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), change).Training;
+
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
         using WorldDbContext world = new(database.Path);
@@ -75,7 +78,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         CharacterAttributes? attributes,
         PointOperation? points,
         bool preview,
-        long now
+        long now,
+        Action? changeAttributes = null
     )
     {
         bool remapped = false;
@@ -124,11 +128,31 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         }
         world.SaveChanges();
         var first = queue.FirstOrDefault();
-        TrainingEntry? pointHead = null;
+        TrainingEntry? rebasedHead = null;
         if (alphaBudgetStopped)
         {
             targets = queue.Select(e => e.Target).ToArray();
             activate = false;
+        }
+        if (changeAttributes is not null)
+        {
+            bool wasActive = first?.StartTime is not null;
+            if (wasActive)
+            {
+                rebasedHead = first;
+                world.Set<PilotSkill>().Find(pilotId, first!.Target.TypeId)!.Points = first.PointsAt(now);
+                changed.Add(first.Target.TypeId);
+                world.SaveChanges();
+            }
+            // Materialize elapsed progress using the saved queue's old rate, then
+            // change the physical body/implants and plan the remaining work once.
+            changeAttributes();
+            var revision = world.Set<SavedImplantState>().Find(pilotId) ?? world.Add(new SavedImplantState { PilotId = pilotId }).Entity;
+            revision.Revision = checked(revision.Revision + 1);
+            world.SaveChanges();
+            targets = queue.Select(e => e.Target).ToArray();
+            activate = wasActive;
+            first = null;
         }
         FreePointPlan? pointPlan = null;
         if (points is not null)
@@ -136,7 +160,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             bool wasActive = first?.StartTime is not null;
             if (wasActive)
             {
-                pointHead = first;
+                rebasedHead = first;
             }
             if (wasActive)
             {
@@ -183,7 +207,16 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 Record(world, pilotId, now, first.Target.TypeId, earned, Cancelled);
                 world.SaveChanges();
             }
-            queue = Plan(world, pilotId, targets, activate, keepHead ? first : null, now, points is not null, queue);
+            queue = Plan(
+                world,
+                pilotId,
+                targets,
+                activate,
+                keepHead ? first : null,
+                now,
+                points is not null || changeAttributes is not null,
+                queue
+            );
             activate = queue.FirstOrDefault()?.StartTime is not null;
             world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).ExecuteDelete();
             for (int i = 0; i < queue.Count; i++)
@@ -203,14 +236,14 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                     }
                 );
             }
-            if (activate && !keepHead && queue.Count > 0 && (pointHead is null || pointHead.Target != queue[0].Target))
+            if (activate && !keepHead && queue.Count > 0 && (rebasedHead is null || rebasedHead.Target != queue[0].Target))
             {
                 Record(world, pilotId, now, queue[0].Target.TypeId, queue[0].StartPoints, Started);
             }
-            if (pointHead is not null && queue is [{ StartTime: null }, ..])
+            if (rebasedHead is not null && queue is [{ StartTime: null }, ..])
             {
-                long earned = world.Set<PilotSkill>().Find(pilotId, pointHead.Target.TypeId)!.Points;
-                Record(world, pilotId, now, pointHead.Target.TypeId, earned, Cancelled);
+                long earned = world.Set<PilotSkill>().Find(pilotId, rebasedHead.Target.TypeId)!.Points;
+                Record(world, pilotId, now, rebasedHead.Target.TypeId, earned, Cancelled);
             }
         }
         // The next queued level starts at its predecessor's end, including while offline.
@@ -274,7 +307,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             .Where(r => types.Contains(r.Key))
             .AsEnumerable()
             .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
-        var pilotAttributes = PilotCharacterSheetStore.ReadAttributes(world, pilotId).Attributes.ToDogma();
+        var pilotAttributes = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
         var inputs = points.ToDictionary(
             p => p.Key,
             p =>

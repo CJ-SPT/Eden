@@ -40,7 +40,8 @@ public sealed class SavedHomeCloneTransfer
 }
 
 [Injectable]
-internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock) : IPilotHomeStation
+internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)
+    : IPilotHomeStation
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -211,7 +212,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
             }
         );
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.PodLost);
-        PilotJumpCloneStore.ResetActive(world, pilotId);
+        training.ChangeAttributes(world, pilotId, () => PilotJumpCloneStore.ResetActive(world, pilotId));
         pilot.ActiveShip = capsule;
         pilot.ActiveShipId = capsule.Id;
         world.SaveChanges();

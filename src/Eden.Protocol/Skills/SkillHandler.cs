@@ -41,14 +41,14 @@ internal sealed class SkillHandler(
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
                 ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,
                 ("@skills", "GetAttributes") when args.Length == 0 => new BlueMap<DogmaAttributeId, int>(
-                    sheet.ReadAttributes(pilotId).Attributes.ToDogma()
+                    sheet.ReadEffectiveAttributes(pilotId).ToDogma()
                 ),
                 ("@skills", "GetRespecInfo") when args.Length == 0 => new NeuralRemapReply(sheet.ReadAttributes(pilotId)),
                 ("@skills", "RespecCharacter") => Remap(context, CharacterAttributesWire.Read(args)),
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
                 ("@skills", "SaveNewQueue") => Save(context, args, keywords),
                 ("@skills", "AbortTraining") when args.Length == 0 => Pause(context),
-                ("@skills", "GetBoosters" or "GetImplants") => BlueEmpty.IndexedDictionary,
+                ("@skills", "GetBoosters") => BlueEmpty.IndexedDictionary,
                 ("@skills", "CheckAndSendNotifications") => PilotCallResult.None,
                 _ => PilotCallResult.Unsupported,
             };
@@ -76,7 +76,8 @@ internal sealed class SkillHandler(
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             context.Notifications.Add(
                 new ModuleAttributesChanged(
-                    attributes
+                    sheet
+                        .ReadEffectiveAttributes(pilotId)
                         .ToDogma()
                         .Select(a => new ModuleAttributeChange(pilotId, new DogmaItemKey.Item(pilotId), a.Key, now, a.Value))
                         .ToArray()

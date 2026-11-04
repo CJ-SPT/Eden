@@ -9,7 +9,8 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPrimes refits, PilotBrain brain) : ISelectedPilotCallHandler
+internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPrimes refits, PilotBrain brain, ImplantHandler implants)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -83,6 +84,7 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     var transfer = clones.Jump(pilot, context.Pilot.ShipId, (int)station, id, JumpCloneRules.FeeCents);
                     refits.Clear();
                     context.ChangeShip(transfer.Pilot);
+                    implants.Refresh(context);
                     foreach (var change in transfer.Changes)
                     {
                         InventoryChangesWire.NotifyItemChange(context, change);
@@ -122,11 +124,18 @@ internal sealed record JumpCloneState(JumpCloneSnapshot Snapshot) : BlueModel
                     ["jumpCloneID", "locationID", "cloneName"],
                     Snapshot.Clones.Select(clone => new JumpCloneRow(clone)).ToArray()
                 ),
-                // Implant installation is not implemented; all currently creatable bodies are empty.
-                ["implants"] = new CompatibilityRowset(["jumpCloneID", "typeID"], []),
+                ["implants"] = new CompatibilityRowset(
+                    ["jumpCloneID", "typeID"],
+                    Snapshot.Implants.Select(i => new JumpCloneImplantRow(i)).ToArray()
+                ),
                 ["timeLastJump"] = Snapshot.LastJump,
             }
         );
+}
+
+internal sealed record JumpCloneImplantRow(InstalledImplant Implant) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Implant.CloneId, Implant.Profile.TypeId };
 }
 
 internal sealed record JumpCloneRow(JumpClone Body) : BlueModel

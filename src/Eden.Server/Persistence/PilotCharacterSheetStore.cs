@@ -39,6 +39,12 @@ internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrai
         return ReadAttributes(world, pilotId);
     }
 
+    public CharacterAttributes ReadEffectiveAttributes(long pilotId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return PilotImplantStore.Read(world, pilotId).Attributes;
+    }
+
     internal static NeuralRemapState ReadAttributes(WorldDbContext world, long pilotId)
     {
         CheckPilot(world, pilotId);
