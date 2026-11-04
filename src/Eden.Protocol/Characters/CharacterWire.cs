@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Market;
@@ -47,6 +48,26 @@ internal sealed record PublicCharacterInfo(DockedPilot Pilot) : BlueModel
                 ["schoolID"] = Pilot.Profile.SchoolId,
                 ["ancestryID"] = Pilot.Profile.AncestryId,
                 ["createDateTime"] = Pilot.Profile.CreatedAt,
+            }
+        );
+}
+
+internal sealed record PublicNpcInfo(NpcCharacter Npc) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["characterID"] = Npc.Identity.Id,
+                ["characterName"] = new BlueUnicode(Npc.Identity.Name),
+                ["corporationID"] = Npc.CorporationId,
+                ["raceID"] = Npc.RaceId,
+                ["bloodlineID"] = Npc.BloodlineId,
+                ["gender"] = Npc.Identity.Gender,
+                ["schoolID"] = Npc.SchoolId,
+                ["ancestryID"] = Npc.AncestryId,
+                ["createDateTime"] = Npc.CreatedAt,
             }
         );
 }

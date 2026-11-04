@@ -6,7 +6,7 @@ public sealed record ContactLabel(long Id, string Name, int? Color);
 
 public sealed record PersonalContacts(IReadOnlyList<PersonalContact> Addresses, IReadOnlyList<long> Blocked);
 
-public sealed record CharacterIdentity(long Id, string Name, int Gender);
+public sealed record CharacterIdentity(long Id, string Name, int Gender, long? NameId = null, bool IsNpc = false);
 
 public interface ICharacterDirectory
 {
@@ -17,6 +17,7 @@ public interface IPilotContacts
 {
     PersonalContacts Read(long pilotId);
     void Add(long pilotId, long contactId, double standing, bool inWatchlist);
+    void AddAgent(long pilotId, long agentId);
     void Edit(long pilotId, long contactId, double standing, bool inWatchlist);
     void EditStanding(long pilotId, IReadOnlyList<long> contacts, double standing);
     void Delete(long pilotId, IReadOnlyList<long> contacts);

@@ -60,7 +60,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
         List<OwnerRow> rows = [];
         foreach (var pilot in directory.Read(ids.OfType<long>().ToArray()))
         {
-            rows.Add(new(pilot.Id, pilot.Name, pilot.Gender));
+            rows.Add(new(pilot.Id, pilot.Name, pilot.Gender, pilot.NameId, pilot.IsNpc));
         }
 
         return new(rows);

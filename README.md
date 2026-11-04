@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+The agent directory now contains all **10,966 active agents** in the pinned catalog, with station, corporation, faction, division, level and locator metadata. NPC names and public profiles resolve from the catalog. Saved agents survive reconnects and restarts in each pilot’s private address book. Mission conversations, offers, journal progression and earned NPC standings remain pending. Native agent-window presentation is unverified; see the [agent directory notes](docs/protocol.md#catalog-agent-directory-and-saved-agents).
+
 Home stations now persist independently of ship travel. Select the current NPC station or your school corporation’s headquarters for **100,000 ISK**. A docked capsule away from home can use **Self-Destruct** in the home-station panel to return there in a replacement capsule; other ships, wallet and skills stay in place. New pilots retain their starting station as home. Player-corporation remote offices and jump clones remain pending. See the [home-station notes](docs/protocol.md#persistent-home-stations-and-docked-clone-transfer).
 
 Task tracking now retains per-pilot client counters and catalog task completions across restarts. Supported server gameplay records its own progress, and the first-warp camera query reflects actual warp entry. Build 3662168 disables its legacy achievement UI; these routes do not enable that interface. See the [task tracking notes](docs/protocol.md#persistent-task-tracking).
@@ -14,7 +16,7 @@ Personal Locations now saves private folders, subfolders and bookmarks across re
 
 The station directory returns every catalog station for remote station lookup and map consumers, with catalog names, locations, owners and service masks. The pinned client assigns mask bits by sorted service IDs. Native map/window presentation remains unverified; see the [station directory notes](docs/protocol.md#catalog-station-directory).
 
-Personal contacts support add/edit/delete, standings, blocking and labels for local Eden pilots, including offline pilots. Values survive restarts. Watchlists show online state and receive login/logoff updates without docking flicker. Contact notifications, NPC agents and corporation/alliance contacts remain pending. Native contact-window presentation is unverified; see the [personal contact implementation notes](docs/protocol.md#personal-contacts-and-online-status).
+Personal contacts support add/edit/delete, standings, blocking and labels for local Eden pilots, including offline pilots. Values survive restarts. Watchlists show online state and receive login/logoff updates without docking flicker. NPC agents can be saved through their native address-book action. Contact notifications and corporation/alliance contacts remain pending. Native contact-window presentation is unverified; see the [personal contact implementation notes](docs/protocol.md#personal-contacts-and-online-status).
 
 Character settings support the stock client's read, save and delete calls. Each pilot's opaque text or binary values survive reconnects and server restarts, with the client's 100 KiB value limit. Native settings presentation remains unverified; see the [placeholder route implementation record](docs/protocol.md#placeholder-route-implementation-november-4-2026).
 

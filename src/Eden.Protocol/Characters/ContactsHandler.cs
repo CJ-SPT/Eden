@@ -50,6 +50,9 @@ internal sealed class ContactsHandler(IPilotContacts contacts) : ISelectedPilotC
                     return new PersonalContactsReply(contacts.Read(pilotId));
                 case ("GetLabels", []):
                     return new ContactLabelsReply(contacts.Labels(pilotId));
+                case ("AddContact", [long agentId]):
+                    contacts.AddAgent(pilotId, agentId);
+                    break;
                 case ("AddContact" or "EditContact", [long id, var standing, bool watchlist, bool notify, var message]):
                     if (message is not null and not string and not byte[])
                     {

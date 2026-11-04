@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -5,7 +6,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotCharacterSheet sheet) : ISelectedPilotCallHandler
+internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotCharacterSheet sheet, INpcDirectory npcs)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -22,6 +24,10 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
             {
                 if (method == "GetCharacterDescription" && args is [long character])
                 {
+                    if (npcs.Character(character) is { } npc)
+                    {
+                        return new CharacterBiographyReply(npc.Description);
+                    }
                     return new CharacterBiographyReply(sheet.ReadBiography(character));
                 }
                 if (method == "SetCharacterDescription" && args.Length == 1 && args[0] is string or byte[])
@@ -51,9 +57,16 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
             var data = creation.ReadAppearance(portraitId, true);
             return new CharacterPortraitReply(data);
         }
-        if (service == "charMgr" && method == "GetPublicInfo" && args is [long id] && id == pilot.PilotId)
+        if (service == "charMgr" && method == "GetPublicInfo" && args is [long id])
         {
-            return new PublicCharacterInfo(pilot);
+            if (id == pilot.PilotId)
+            {
+                return new PublicCharacterInfo(pilot);
+            }
+            if (npcs.Character(id) is { } npc)
+            {
+                return new PublicNpcInfo(npc);
+            }
         }
         return PilotCallResult.Unsupported;
     }
