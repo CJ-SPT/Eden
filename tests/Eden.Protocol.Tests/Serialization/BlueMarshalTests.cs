@@ -132,6 +132,7 @@ public sealed class BlueMarshalTests
     [Theory]
     [InlineData(BlueNewObject.BrainEffectClass)]
     [InlineData(BlueNewObject.IndustryLocationClass)]
+    [InlineData(BlueNewObject.ContractClass)]
     public void NewStyleDataObjectsCarryStateWithoutExecutingIncomingGlobals(string className)
     {
         BlueNewObject value = new(className, new Dictionary<string, object?> { ["value"] = 5d });

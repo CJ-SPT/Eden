@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
 
@@ -14,7 +15,8 @@ public sealed record WalletJournal(
     IReadOnlyList<WalletGrant> Grants,
     IReadOnlyList<InsuranceLedgerEntry> Insurance,
     IReadOnlyList<HomeStationPayment> HomeStationPayments,
-    IReadOnlyList<JumpClonePayment> JumpClonePayments
+    IReadOnlyList<JumpClonePayment> JumpClonePayments,
+    IReadOnlyList<ContractPayment> Contracts
 );
 
 public interface IPilotWalletReader

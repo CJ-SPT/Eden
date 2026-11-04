@@ -18,6 +18,7 @@ internal sealed record BlueNewObject(string Name, object? State)
 {
     internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
     internal const string IndustryLocationClass = "industry.job.Location";
+    internal const string ContractClass = "contracts.contractStruct.ContractStruct";
 }
 
 internal sealed record PaperDollRow(string Name, object?[] Fields);
@@ -207,7 +208,7 @@ internal static class BlueMarshal
         object ReadNewObject(int depth)
         {
             // Carbon NEWOBJ (35) stores ((class,), state) and empty iterators.
-            // Retain only known brain/location values as inert data; never allocate a
+            // Retain only known brain/location/contract values as inert data; never allocate a
             // Python class or invoke a client-provided __new__ implementation.
             if (
                 Read(depth + 1) is not object?[] { Length: 1 or 2 } parts
@@ -222,7 +223,7 @@ internal static class BlueMarshal
             if (
                 parts.Length == 2
                 && args.Length == 1
-                && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass
+                && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass or BlueNewObject.ContractClass
                 && parts[1] is Dictionary<string, object?> state
             )
             {

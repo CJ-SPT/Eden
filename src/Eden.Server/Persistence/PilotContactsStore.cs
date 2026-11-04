@@ -40,6 +40,13 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
     : IPilotContacts,
         ICharacterDirectory
 {
+    public int? Corporation(long characterId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world.Pilots.Where(p => p.Id == characterId).Select(p => (int?)p.CorporationId).SingleOrDefault()
+            ?? npcs.Character(characterId)?.CorporationId;
+    }
+
     public IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids)
     {
         using WorldDbContext world = new(database.Path);

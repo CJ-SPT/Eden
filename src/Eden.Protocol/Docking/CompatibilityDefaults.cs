@@ -4,21 +4,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 // These records preserve the implemented empty compatibility states. They do not
-// define schemas or behavior for contracts, contacts, fighters, clones, or campaigns.
-internal sealed record ContractLoginState() : BlueModel
-{
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["assignedToMe"] = new List<object?>(),
-                ["needsAttention"] = new List<object?>(),
-                ["inProgress"] = new List<object?>(),
-            }
-        );
-}
-
+// define schemas or behavior for contacts, fighters, clones, or campaigns.
 internal sealed record BountiesAndKillRightsState() : BlueModel
 {
     public override object ToBlue() => new object?[] { new List<object?>(), new List<object?>() };

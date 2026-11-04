@@ -11,6 +11,7 @@ public sealed record CharacterIdentity(long Id, string Name, int Gender, long? N
 public interface ICharacterDirectory
 {
     IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids);
+    int? Corporation(long characterId);
 }
 
 public interface IPilotContacts

@@ -95,7 +95,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database) : IPilotCo
         }
     }
 
-    private static IReadOnlyList<InventoryItem> Assets(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
+    internal static IReadOnlyList<InventoryItem> Assets(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
     {
         var items = world
             .Set<OwnedItem>()
@@ -122,7 +122,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database) : IPilotCo
         }
     }
 
-    private static IReadOnlyList<InventoryItem> Contents(WorldDbContext world, CatalogDbContext catalog, long pilotId, long root)
+    internal static IReadOnlyList<InventoryItem> Contents(WorldDbContext world, CatalogDbContext catalog, long pilotId, long root)
     {
         // Include fitted modules, their loaded charges and ships in bays. Keep the
         // original location/flag on every row so a later escrow transfer can retain the graph.

@@ -142,6 +142,27 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedContract>().ToTable("WorldContract").HasKey(c => c.Id);
+        model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.IssuerId);
+        model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.AssigneeId).OnDelete(DeleteBehavior.NoAction);
+        model.Entity<SavedContract>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.AcceptorId).OnDelete(DeleteBehavior.NoAction);
+        model.Entity<SavedContract>().HasIndex(c => new { c.IssuerId, c.Status });
+        model.Entity<SavedContract>().HasIndex(c => new { c.AssigneeId, c.Status });
+        model.Entity<SavedContractItem>().ToTable("WorldContractItem").HasKey(i => i.Id);
+        model.Entity<SavedContractItem>().HasOne<SavedContract>().WithMany().HasForeignKey(i => i.ContractId);
+        model.Entity<SavedContractEscrow>().ToTable("WorldContractEscrow").HasKey(e => e.ItemId);
+        model.Entity<SavedContractEscrow>().Property(e => e.ItemId).ValueGeneratedNever();
+        model.Entity<SavedContractEscrow>().HasOne<SavedContract>().WithMany().HasForeignKey(e => e.ContractId);
+        model.Entity<SavedContractPayment>().ToTable("WorldContractPayment").HasKey(p => p.Id);
+        model.Entity<SavedContractPayment>().HasOne<Pilot>().WithMany().HasForeignKey(p => p.PilotId);
+        model.Entity<SavedContractPayment>().HasOne<SavedContract>().WithMany().HasForeignKey(p => p.ContractId);
+        model.Entity<SavedContractPayment>().HasIndex(p => new { p.PilotId, p.Id });
+        model.Entity<SavedContractChange>().ToTable("WorldContractChange").HasKey(c => c.Id);
+        model.Entity<SavedContractChange>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        model.Entity<SavedContractChange>().HasOne<SavedContract>().WithMany().HasForeignKey(c => c.ContractId);
+        model.Entity<SavedContractChange>().HasIndex(c => new { c.PilotId, c.Id });
+        model.Entity<OwnedItem>().HasQueryFilter(i => !Set<SavedContractEscrow>().Any(e => e.ItemId == i.Id));
+        model.Entity<Ship>().HasQueryFilter(s => !Set<SavedContractEscrow>().Any(e => e.ItemId == s.Id));
         model.Entity<SavedInboxNotification>().ToTable("WorldInboxNotification").HasKey(n => n.Id);
         model.Entity<SavedInboxNotification>().HasOne<Pilot>().WithMany().HasForeignKey(n => n.ReceiverId);
         model.Entity<SavedInboxNotification>().HasIndex(n => new { n.ReceiverId, n.Id });

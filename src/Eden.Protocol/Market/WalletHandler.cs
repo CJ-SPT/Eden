@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -186,6 +187,24 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                         payment.OperatorId,
                         payment.StationId,
                         -payment.AmountCents,
+                        payment.BalanceCents
+                    )
+                );
+            }
+        }
+        foreach (var payment in journal.Contracts)
+        {
+            if (filter.Includes(payment.Time, clock.GetUtcNow().UtcDateTime))
+            {
+                entries.Add(
+                    new(
+                        ContractRules.FirstJournalId + payment.Id,
+                        payment.Time,
+                        payment.Type,
+                        payment.AmountCents < 0 ? payment.PilotId : payment.CounterpartyId,
+                        payment.AmountCents < 0 ? payment.CounterpartyId : payment.PilotId,
+                        payment.ContractId,
+                        payment.AmountCents,
                         payment.BalanceCents
                     )
                 );

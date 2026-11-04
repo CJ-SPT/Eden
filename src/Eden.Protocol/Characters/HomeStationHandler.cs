@@ -109,7 +109,8 @@ internal sealed record HomeStationChanged(int Id) : PilotNotification("OnHomeSta
 }
 
 [Injectable]
-internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporations) : ISelectedPilotCallHandler
+internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporations, ICharacterDirectory characters)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -119,7 +120,10 @@ internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporation
         Dictionary<string, object?>? keywords = null
     )
     {
-        if ((service, method) is not (("corpRegistry", "GetCorporation") or ("corpmgr", "GetCorporations")))
+        if (
+            (service, method)
+            is not (("corpRegistry", "GetCorporation") or ("corpmgr", "GetCorporations" or "GetCorporationIDForCharacter"))
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -128,6 +132,12 @@ internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporation
             if (keywords is { Count: > 0 })
             {
                 throw new InvalidDataException("Unexpected corporation arguments.");
+            }
+            if (method == "GetCorporationIDForCharacter")
+            {
+                return args is [long character] && characters.Corporation(character) is { } corporation
+                    ? corporation
+                    : new PilotCallResult.Failure("Unknown character.");
             }
             int id = (service, args) switch
             {

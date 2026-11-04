@@ -121,7 +121,7 @@ public sealed class TypedCallResultTests
         (BlueModel Model, object Value)[] fixtures =
         [
             (
-                new ContractLoginState(),
+                new Eden.Protocol.Contracts.ContractLoginReply(new(0, [], [])),
                 new BlueInstance(
                     "utillib.KeyVal",
                     new Dictionary<string, object?>

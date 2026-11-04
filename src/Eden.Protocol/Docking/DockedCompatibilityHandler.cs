@@ -29,10 +29,9 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => PilotCallResult.None,
             // No loyalty points or EverMarks have been earned in Eden yet.
             ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => BlueEmpty.List,
-            ("marketProxy", "GetCharEscrow") or ("contractProxy", "GetMyContractEscrow") => new EscrowInfo(),
+            ("marketProxy", "GetCharEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,
-            ("contractProxy", "GetLoginInfo") => new ContractLoginState(),
             ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),
             ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => new BlueList<BountyReply>(
                 owners.Order().Select(owner => new BountyReply(owner)).ToArray()
