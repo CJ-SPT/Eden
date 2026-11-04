@@ -34,6 +34,35 @@ To recheck an installed catalog independently, run the following command.
 dotnet run --no-build --project src/Eden.Server -- --verify-catalog "$env:LOCALAPPDATA\Eden\catalog.sqlite"
 ```
 
+## Issuing account redeem rewards
+
+Create a local JSON grant file for an existing account. For example, save the following as `reward.json` outside the repository:
+
+```json
+{
+  "AccountId": 1000001,
+  "Reference": "testing-tritanium-2026-11-04",
+  "TypeId": 34,
+  "Quantity": 100,
+  "Label": "Testing supplies",
+  "Description": "Tritanium for your station hangar."
+}
+```
+
+Issue it against the intended world database:
+
+```powershell
+dotnet run --no-build --project src/Eden.Server -- --grant-redeem 'C:\Eden\reward.json'
+```
+
+Pass `--world 'C:\Eden\world.sqlite'` to target a nondefault save. This local administrator command writes the token and exits; it does not start server listeners. Connected clients that have fetched the redeem queue receive a refresh on the next one-second poll, including before pilot selection. A fresh client reads the persisted queue. There is no client RPC for issuing grants.
+
+Keep each account/reference pair unique for a distinct reward. Repeating exactly the same grant returns the original token, even after it was claimed, trashed or expired; changing its payload under the same reference rejects. References are case sensitive, nonblank, at most 128 characters, and may not begin with `#` (reserved for reversal provenance). Labels allow 255 characters and descriptions 4096; no field accepts NUL. Quantities are positive 32-bit integers. Optional `StationId` pins delivery to an existing NPC station. Optional `ExpiresAt` is a future UTC FILETIME integer; omit it for no expiry. These field names match the JSON example's casing.
+
+The native redeem window can deliver ordinary inventory to a docked owned pilot or its saved home station, including before selecting the pilot. Fixed-station tokens retain their station. Claims return individual unavailable/expired/type-mismatch errors while eligible tokens succeed in the same committed transaction. Trash requires a valid owned batch. Batches permit one to 100 distinct tokens. A claimed stack may be reverse redeemed only while intact, packaged and in the original pilot's current station hangar, before any token expiry; splitting, consuming, assembling or transferring it removes eligibility. Reversal creates a new pending token and removes the old item atomically. Claim/trash/reversal records remain in the grant ledger, so retries cannot duplicate inventory.
+
+Supported rewards are catalog types delivered as inventory, including minerals, ships, modules, charges and skillbooks. The command rejects categories requiring separate activation or metadata: blueprint rewards, special-edition/skill-point/subscription rewards, SKIN licenses and personalization rewards. It does not grant free skill points, activate boosters, alter subscriptions or open reward crates. Existing gameplay restrictions still govern use or assembly of delivered items. Native rendering and input remain unverified; see the [redemption milestone](protocol.md#persistent-account-redemption).
+
 ## Run the startup test
 
 Start the host in one terminal. Launch the staged game from another.

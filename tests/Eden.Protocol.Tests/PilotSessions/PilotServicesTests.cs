@@ -586,7 +586,7 @@ public sealed class PilotServicesTests
     private static Task<List<BlueInstance>> ExchangeAsync(string service, string method, object?[] args, long sessionId) =>
         ExchangeAsync(sessionId, Request(service, method, args));
 
-    private static BlueInstance Request(
+    internal static BlueInstance Request(
         string? service,
         string method,
         object?[] args,

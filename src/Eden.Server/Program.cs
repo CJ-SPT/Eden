@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Redemption;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
 using Eden.Server.Authentication;
@@ -74,6 +75,15 @@ internal static class Program
         WorldInitialization.Initialize(new WorldDatabase(worldPath));
         var accounts = services.GetRequiredService<LauncherStore>();
         accounts.Initialize();
+        if (Value("--grant-redeem") is { } redeemPath)
+        {
+            var grant =
+                JsonSerializer.Deserialize<RedeemGrant>(File.ReadAllText(redeemPath))
+                ?? throw new InvalidDataException("The redeem grant file is empty.");
+            var token = services.GetRequiredService<IAccountRedemption>().Grant(grant);
+            Console.WriteLine($"Redeem token {token.Id} issued to account {grant.AccountId}.");
+            return;
+        }
         if (Value("--set-account-password") is { } userName)
         {
             Console.Write("New password: ");

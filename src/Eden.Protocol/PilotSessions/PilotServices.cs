@@ -51,9 +51,13 @@ internal sealed class PilotServices(
         while (true)
         {
             var incoming = read();
+            // Account rewards can change while the native character selector is open.
             while (
-                context.ActiveFlight is { } flight
-                && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
+                updates.IsAccountMonitoring
+                || (
+                    context.ActiveFlight is { } flight
+                    && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
+                )
             )
             {
                 checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);

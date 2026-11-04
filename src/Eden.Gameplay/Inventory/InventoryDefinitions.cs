@@ -7,6 +7,7 @@ namespace Eden.Gameplay.Inventory;
 public enum InventoryCategory
 {
     Station = 3,
+    Material = 4,
     Ship = 6,
     Module = 7,
     Charge = 8,

@@ -21,6 +21,12 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
     )
     {
         long started = Stopwatch.GetTimestamp();
+        if (!context.Selected)
+        {
+            updates.Advance(context);
+            await output.FlushNotificationsAsync();
+            return;
+        }
         var flight = context.Flight;
         if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
         {

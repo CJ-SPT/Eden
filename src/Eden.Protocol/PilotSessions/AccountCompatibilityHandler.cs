@@ -40,7 +40,6 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => (int)context.Account.CloneGrade,
             ("map", "GetSecurityModifiedSystems") => new CompatibilityRowset(["solarSystemID", "security", "modifiedSecurity"], []),
-            ("userSvc", "GetRedeemTokens") => BlueEmpty.List,
             ("seasonalLoginCampaignManager", "get_active_campaign") => new SeasonalCampaignState(),
             ("alert", "BeanCount") => new AlertCountReply(),
             ("loginCampaignManager", "get_client_campaign_state") => PilotCallResult.None,

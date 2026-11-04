@@ -9,6 +9,7 @@ using Eden.Protocol.Industry;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Notifications;
 using Eden.Protocol.Propulsion;
+using Eden.Protocol.Redemption;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Targeting;
 
@@ -35,9 +36,11 @@ internal sealed class PilotUpdateCoordinator(
     CalendarHandler calendar,
     InboxHandler inbox,
     ContractHandler contracts,
-    SecurityStatusHandler security
+    SecurityStatusHandler security,
+    RedemptionHandler redemption
 )
 {
+    public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
         industry.IsMonitoring
         || guests.IsDocked
@@ -84,6 +87,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public DockedPilot? Advance(PilotCallContext context)
     {
+        redemption.Advance(context);
         targeting.Advance(context);
         capacitorBoosters.Advance(context);
         hardeners.Advance(context);

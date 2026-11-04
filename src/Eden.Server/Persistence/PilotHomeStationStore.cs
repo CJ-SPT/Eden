@@ -71,7 +71,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         return station is > 0 and <= int.MaxValue ? (int)station : null;
     }
 
-    private static HomeStation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    internal static HomeStation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         int id = world.Set<SavedHomeStation>().Find(pilot.Id)?.StationId ?? pilot.ActiveShip.StationId;
         if (Station(catalog, id) is { } saved)
