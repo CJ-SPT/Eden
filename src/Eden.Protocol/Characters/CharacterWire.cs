@@ -8,6 +8,11 @@ using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Characters;
 
+internal sealed record CharacterBiographyReply(string Biography) : BlueModel
+{
+    public override object ToBlue() => new BlueUnicode(Biography);
+}
+
 // Appearance schemas are client-defined, validated inert data stored as Blue bytes.
 internal sealed record CharacterAppearanceReply(byte[] Data) : BlueModel
 {

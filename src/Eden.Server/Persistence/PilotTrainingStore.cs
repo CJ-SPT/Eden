@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
@@ -18,12 +19,14 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
     private const int Cancelled = 38;
     private const int Completed = 53;
 
-    public TrainingState Advance(long pilotId) => Update(pilotId, null, false, false);
+    public TrainingState Advance(long pilotId) => Update(pilotId, null, false, false).Training;
 
     public TrainingState Save(long pilotId, IReadOnlyList<TrainingTarget> targets, bool activate) =>
-        Update(pilotId, targets, activate, false);
+        Update(pilotId, targets, activate, false).Training;
 
-    public TrainingState Pause(long pilotId) => Update(pilotId, null, false, true);
+    public TrainingState Pause(long pilotId) => Update(pilotId, null, false, true).Training;
+
+    internal CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes) => Update(pilotId, null, false, false, attributes);
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
@@ -38,11 +41,28 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             .ToArray();
     }
 
-    private TrainingState Update(long pilotId, IReadOnlyList<TrainingTarget>? targets, bool activate, bool pause)
+    private CharacterRemapResult Update(
+        long pilotId,
+        IReadOnlyList<TrainingTarget>? targets,
+        bool activate,
+        bool pause,
+        CharacterAttributes? attributes = null
+    )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        bool remapped = false;
+        if (attributes is not null)
+        {
+            var before = PilotCharacterSheetStore.ReadAttributes(world, pilotId);
+            var after = CharacterSheetRules.Remap(before, attributes, now);
+            remapped = after != before;
+            if (remapped)
+            {
+                PilotCharacterSheetStore.GetOrCreate(world, pilotId).Apply(after);
+            }
+        }
         var saved = world.Set<QueuedLevel>().AsNoTracking().Where(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
         List<TrainingEntry> queue = [];
         HashSet<int> changed = [];
@@ -67,9 +87,14 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         {
             targets = queue.Select(e => e.Target).ToArray();
         }
+        if (remapped)
+        {
+            targets = queue.Select(e => e.Target).ToArray();
+            activate = first?.StartTime is not null;
+        }
         if (targets is not null)
         {
-            bool keepHead = activate && first?.StartTime is not null && targets.Count > 0 && targets[0] == first.Target;
+            bool keepHead = !remapped && activate && first?.StartTime is not null && targets.Count > 0 && targets[0] == first.Target;
             if (!keepHead && first?.StartTime is not null)
             {
                 long earned = first.PointsAt(now);
@@ -112,7 +137,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(queue, changed.ToArray());
+        return new(new(queue, changed.ToArray()), remapped);
     }
 
     private List<TrainingEntry> Plan(
@@ -159,7 +184,7 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
             .Where(r => types.Contains(r.Key))
             .AsEnumerable()
             .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
-        var pilotAttributes = PilotProfile.TrainingAttributes();
+        var pilotAttributes = PilotCharacterSheetStore.ReadAttributes(world, pilotId).Attributes.ToDogma();
         var inputs = points.ToDictionary(
             p => p.Key,
             p =>

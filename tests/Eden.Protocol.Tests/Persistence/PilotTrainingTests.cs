@@ -85,7 +85,8 @@ public sealed class PilotTrainingTests
                 db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
             ),
             new(clock, db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotPropulsion>()),
-            scope.ServiceProvider.GetRequiredService<Eden.Protocol.Docking.FittingOperations>()
+            scope.ServiceProvider.GetRequiredService<Eden.Protocol.Docking.FittingOperations>(),
+            db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotCharacterSheet>()
         );
         using (WorldDbContext world = new(db.Path))
         {

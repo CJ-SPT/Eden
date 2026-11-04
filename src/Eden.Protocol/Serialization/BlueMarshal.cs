@@ -11,6 +11,9 @@ internal sealed record BlueConstructor(string Name, object?[] Arguments, object?
 
 internal sealed record BlueGlobal(string Name);
 
+// Explicit Python unicode; ordinary CLR strings retain their existing byte-string wire form.
+internal sealed record BlueUnicode(string Value);
+
 internal sealed record BlueNewObject(string Name, object? State)
 {
     internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
@@ -285,6 +288,7 @@ internal static class BlueMarshal
                 15 => Bytes(1),
                 17 => MarshalStrings.Get(reader.ReadByte()),
                 16 or 19 => Bytes(Length()),
+                18 => Encoding.Unicode.GetString(Bytes(checked(Length() * sizeof(char)))),
                 20 => Items(Length(), depth),
                 21 => Items(Length(), depth).ToList(),
                 22 => Map(depth),
@@ -300,6 +304,8 @@ internal static class BlueMarshal
                 37 => Items(1, depth),
                 38 => new List<object?>(),
                 39 => Items(1, depth).ToList(),
+                40 => string.Empty,
+                41 => Encoding.Unicode.GetString(Bytes(sizeof(char))),
                 42 => ReadPackedRow(depth),
                 43 => new BlueStream(Bytes(Length())),
                 44 => Items(2, depth),
@@ -399,6 +405,13 @@ internal static class BlueMarshal
                 break;
             case string text:
                 Write(writer, Encoding.UTF8.GetBytes(text));
+                break;
+            case BlueUnicode text:
+                // Carbon TY_UTF8 constructs Python unicode, including empty strings.
+                writer.Write((byte)46);
+                byte[] utf8 = Encoding.UTF8.GetBytes(text.Value);
+                Size(writer, utf8.Length);
+                writer.Write(utf8);
                 break;
             case byte[] bytes:
                 if (bytes.Length == 0)

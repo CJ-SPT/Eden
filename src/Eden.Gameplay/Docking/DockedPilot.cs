@@ -144,19 +144,7 @@ public enum AccountCloneGrade
 
 public sealed record AccountProfile(string UserName, long CreatedAt, AccountCloneGrade CloneGrade = AccountCloneGrade.Alpha);
 
-public sealed record PilotProfile(int RaceId, int BloodlineId, int GenderId, int AncestryId, int SchoolId, long CreatedAt)
-{
-    // The standard neural map puts 19 points in charisma and 20 in each other attribute.
-    public static Dictionary<DogmaAttributeId, int> TrainingAttributes() =>
-        new()
-        {
-            [DogmaAttributeId.Charisma] = 19,
-            [DogmaAttributeId.Intelligence] = 20,
-            [DogmaAttributeId.Memory] = 20,
-            [DogmaAttributeId.Perception] = 20,
-            [DogmaAttributeId.Willpower] = 20,
-        };
-}
+public sealed record PilotProfile(int RaceId, int BloodlineId, int GenderId, int AncestryId, int SchoolId, long CreatedAt);
 
 public sealed record FlightSystem(int Id, int ConstellationId, int RegionId);
 

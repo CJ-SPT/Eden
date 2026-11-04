@@ -6,6 +6,27 @@ namespace Eden.Protocol.Tests.Serialization;
 
 public sealed class BlueMarshalTests
 {
+    [Theory]
+    [InlineData("7E0000000028", "")]
+    [InlineData("7E00000000294100", "A")]
+    [InlineData("7E0000000012021F66DC66", "星曜")]
+    public void ReadsNativeUnicodeTokens(string hex, string expected)
+    {
+        Assert.Equal(expected, BlueMarshal.Decode(Convert.FromHexString(hex)));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("Explorer")]
+    [InlineData("星間旅行 — пилот 🚀")]
+    public void BiographyUnicodeRetainsItsPythonTypeAndText(string text)
+    {
+        byte[] bytes = BlueMarshal.Encode(new BlueUnicode(text));
+        Assert.Equal(46, bytes[5]);
+        Assert.Equal(text, BlueMarshal.Decode(bytes));
+        Assert.IsType<byte[]>(BlueMarshal.Decode(BlueMarshal.Encode(text)));
+    }
+
     [Fact]
     public void InventoryVirtualColumnsSurvivePackedRowsWithoutBecomingPhysicalFields()
     {

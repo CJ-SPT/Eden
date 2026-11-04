@@ -1,4 +1,5 @@
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -33,7 +34,8 @@ internal sealed class ShipDogmaBuilder(
     IPilotAmmunition ammunition,
     MagazineWire magazinesWire,
     PilotBrain brain,
-    IEnumerable<IModuleEffectSource> moduleEffects
+    IEnumerable<IModuleEffectSource> moduleEffects,
+    IPilotCharacterSheet sheet
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -69,7 +71,7 @@ internal sealed class ShipDogmaBuilder(
         new(
             new DogmaItemKey.Item(pilot.PilotId),
             Item(pilot, "pilot"),
-            PilotProfile.TrainingAttributes(),
+            sheet.ReadAttributes(pilot.PilotId).Attributes.ToDogma(),
             new Dictionary<DogmaEffect, DogmaActiveEffect>(),
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );

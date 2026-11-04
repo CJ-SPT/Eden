@@ -1,6 +1,8 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
@@ -16,7 +18,8 @@ internal sealed class SkillHandler(
     TimeProvider clock,
     PilotBrain brain,
     PropulsionHandler propulsion,
-    FittingOperations fittingOperations
+    FittingOperations fittingOperations,
+    IPilotCharacterSheet sheet
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -36,7 +39,11 @@ internal sealed class SkillHandler(
                 ("dogmaIM", "InjectSkillIntoBrain") => Inject(context, args),
                 ("@skills", "GetSkills" or "GetAllSkills") when args.Length == 0 => SkillRows(skills.ReadSkills(pilotId)),
                 ("expertSystemMgr", "GetMyExpertSystems") => BlueEmpty.IndexedDictionary,
-                ("@skills", "GetAttributes") => new BlueMap<DogmaAttributeId, int>(PilotProfile.TrainingAttributes()),
+                ("@skills", "GetAttributes") when args.Length == 0 => new BlueMap<DogmaAttributeId, int>(
+                    sheet.ReadAttributes(pilotId).Attributes.ToDogma()
+                ),
+                ("@skills", "GetRespecInfo") when args.Length == 0 => new NeuralRemapReply(sheet.ReadAttributes(pilotId)),
+                ("@skills", "RespecCharacter") => Remap(context, CharacterAttributesWire.Read(args)),
                 ("@skills", "GetFreeSkillPoints") => 0,
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
                 ("@skills", "GetSkillQueueAndFreePoints") => new SkillQueueReply(Advance(context)),
@@ -47,6 +54,10 @@ internal sealed class SkillHandler(
                 _ => PilotCallResult.Unsupported,
             };
         }
+        catch (InvalidCharacterSheet error)
+        {
+            return new PilotCallResult.NamedFailure(error.Message, new RemapErrorValues(error.NextTime));
+        }
         catch (InvalidTrainingQueue error)
         {
             return new PilotCallResult.Failure(error.Message);
@@ -55,6 +66,27 @@ internal sealed class SkillHandler(
         {
             return new PilotCallResult.Failure(error.Message);
         }
+    }
+
+    private PilotCallResult Remap(PilotCallContext context, CharacterAttributes attributes)
+    {
+        var result = sheet.Remap(context.Pilot.PilotId, attributes);
+        if (result.Changed)
+        {
+            long pilotId = context.Pilot.PilotId;
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            context.Notifications.Add(
+                new ModuleAttributesChanged(
+                    attributes
+                        .ToDogma()
+                        .Select(a => new ModuleAttributeChange(pilotId, new DogmaItemKey.Item(pilotId), a.Key, now, a.Value))
+                        .ToArray()
+                )
+            );
+            context.Notifications.Add(new RespecInfoChanged());
+        }
+        Apply(context, result.Training, result.Changed || result.Training.ChangedSkills.Count > 0);
+        return PilotCallResult.None;
     }
 
     private PilotCallResult Inject(PilotCallContext context, object?[] args)
