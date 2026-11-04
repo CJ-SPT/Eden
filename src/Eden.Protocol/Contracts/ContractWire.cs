@@ -29,11 +29,14 @@ internal sealed record ContractRow(PersonalContract Contract) : BlueModel
                 ["startStationID"] = Contract.StationId,
                 ["endStationID"] = Contract.Courier?.Destination.StationId ?? 0,
                 ["startSolarSystemID"] = Contract.SystemId,
-                ["endSolarSystemID"] = Contract.Courier?.Destination.SystemId ?? 0,
+                // ContractSearchPanel resolves both endpoint system names even for
+                // exchanges/auctions. Their settlement location is the pickup system;
+                // keep endStationID zero so this does not invent courier delivery.
+                ["endSolarSystemID"] = Contract.Courier?.Destination.SystemId ?? Contract.SystemId,
                 ["startRegionID"] = Contract.RegionId,
-                ["endRegionID"] = Contract.Courier?.Destination.RegionId ?? 0,
+                ["endRegionID"] = Contract.Courier?.Destination.RegionId ?? Contract.RegionId,
                 ["startConstellationID"] = Contract.ConstellationId,
-                ["endConstellationID"] = Contract.Courier?.Destination.ConstellationId ?? 0,
+                ["endConstellationID"] = Contract.Courier?.Destination.ConstellationId ?? Contract.ConstellationId,
                 ["dateIssued"] = Contract.Issued,
                 ["dateExpired"] = Contract.Expires,
                 ["dateAccepted"] = Contract.Accepted ?? 0,

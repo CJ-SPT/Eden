@@ -6,6 +6,7 @@ using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -272,6 +273,75 @@ public sealed class ContractServiceTests
         using WorldDbContext world = new(f.Db.Path);
         Assert.Empty(world.Set<SavedContract>());
         Assert.Equal(20, world.Set<OwnedItem>().Find(f.Item)!.Quantity);
+    }
+
+    [Theory]
+    [InlineData(ContractType.ItemExchange)]
+    [InlineData(ContractType.Auction)]
+    public void NativeCurrentRegionSearchProvidesResolvableEndpointSystemsForContractsWithoutDelivery(ContractType type)
+    {
+        using Fixture f = new();
+        f.Select();
+        var request = Request(f.Item);
+        var values = Assert.IsType<Dictionary<string, object?>>(request.State);
+        values["contractType"] = (long)type;
+        if (type == ContractType.Auction)
+        {
+            values["price"] = 1000000d;
+        }
+        values["isPrivate"] = false;
+        values["assignedToID"] = null;
+        long id = Created(f.Owner.Call("CreateContract", [request], new() { ["confirm"] = null }));
+        Dictionary<string, object?> filters = new()
+        {
+            ["itemTypes"] = null,
+            ["itemTypeName"] = null,
+            ["itemCategoryID"] = null,
+            ["itemGroupID"] = null,
+            ["contractType"] = 10L,
+            ["securityClasses"] = null,
+            ["locationID"] = (long)f.Guest.Context.Pilot.RegionId,
+            ["endLocationID"] = null,
+            ["issuerID"] = null,
+            ["minPrice"] = null,
+            ["maxPrice"] = null,
+            ["minReward"] = null,
+            ["maxReward"] = null,
+            ["minCollateral"] = null,
+            ["maxCollateral"] = null,
+            ["minVolume"] = null,
+            ["maxVolume"] = null,
+            ["excludeTrade"] = null,
+            ["excludeMultiple"] = false,
+            ["excludeNoBuyout"] = null,
+            ["availability"] = 0L,
+            ["description"] = null,
+            ["searchHint"] = null,
+            ["sortBy"] = 1L,
+            ["sortDir"] = 0L,
+            ["startNum"] = 0L,
+        };
+        var found = Fields(Reply(f.Guest.Call("SearchContracts", [], filters)));
+        Assert.Equal(1L, found["numFound"]);
+        var bundle = Fields(Assert.Single(Assert.IsType<List<object?>>(found["contracts"])));
+        var row = Fields(bundle["contract"]);
+        Assert.Equal(id, row["contractID"]);
+        Assert.Equal(0L, row["endStationID"]);
+        Assert.Equal(row["startSolarSystemID"], row["endSolarSystemID"]);
+        Assert.Equal(row["startConstellationID"], row["endConstellationID"]);
+        Assert.Equal(row["startRegionID"], row["endRegionID"]);
+        // The native search resolves both names unconditionally before it updates
+        // the status or appends rows. Neither lookup may address sentinel zero.
+        using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        foreach (string field in new[] { "startSolarSystemID", "endSolarSystemID" })
+        {
+            int systemId = checked((int)Assert.IsType<long>(row[field]));
+            Assert.NotEmpty(catalog.Set<SolarSystem>().Single(system => system.Id == systemId).Name);
+        }
+        filters["locationID"] = 10000016L;
+        var elsewhere = Fields(Reply(f.Guest.Call("SearchContracts", [], filters)));
+        Assert.Equal(0L, elsewhere["numFound"]);
+        Assert.Empty(Assert.IsType<List<object?>>(elsewhere["contracts"]));
     }
 
     [Theory]
