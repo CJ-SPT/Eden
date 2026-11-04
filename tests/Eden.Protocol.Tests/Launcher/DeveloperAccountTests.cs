@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
@@ -61,6 +62,7 @@ public sealed class DeveloperAccountTests
             Assert.Throws<LauncherException>(() => store.Register(new("Developer", password, true, "wrong")));
             var account = store.Register(new("Developer", password, true, "invitation"));
             Assert.True(account.Developer);
+            Assert.Equal(AccountCloneGrade.Omega, world.Store.ReadAccount(account.AccountId).CloneGrade);
             Assert.Equal((long)PilotRole.Developer, store.ReadRoles(account.AccountId));
             var session = store.SignIn(new("Developer", password, true));
             Assert.True(session.Developer);
@@ -75,6 +77,9 @@ public sealed class DeveloperAccountTests
             Assert.Equal((long)PilotRole.Developer, store.ReadRoles(account.AccountId));
             var player = store.Register(new("Standard", password, false, "invitation"));
             Assert.Equal((long)PilotRole.Player, store.ReadRoles(player.AccountId));
+            var reopened = WorldInitialization.Open(new WorldDatabase(world.Path));
+            Assert.Equal(AccountCloneGrade.Omega, reopened.ReadAccount(account.AccountId).CloneGrade);
+            Assert.Equal(AccountCloneGrade.Omega, reopened.ReadAccount(player.AccountId).CloneGrade);
         }
         finally
         {

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Authentication;
@@ -17,6 +18,25 @@ public sealed class LauncherAccountTests
         public DateTimeOffset Now { get; set; } = DateTimeOffset.UtcNow;
 
         public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    [Fact]
+    public void RegistrationPersistsOmegaWithoutChangingExistingAccountGrades()
+    {
+        using TestWorld world = new();
+        var database = new WorldDatabase(world.Path);
+        var store = new LauncherStore(database, TimeProvider.System);
+        store.Initialize();
+        var account = store.Register(new("Omega Pilot", Password));
+
+        var reopened = WorldInitialization.Open(database);
+        var reopenedStore = new LauncherStore(database, TimeProvider.System);
+        reopenedStore.Initialize();
+        Assert.Equal(AccountCloneGrade.Omega, reopened.ReadAccount(account.AccountId).CloneGrade);
+        Assert.Equal(AccountCloneGrade.Alpha, reopened.ReadAccount(1000001).CloneGrade);
+        Assert.Equal(account.AccountId, reopenedStore.SignIn(new("Omega Pilot", Password, false)).AccountId);
+        Assert.Equal((long)PilotRole.Player, reopenedStore.ReadRoles(account.AccountId));
+        Assert.Empty(reopened.ListPilots(account.AccountId));
     }
 
     [Fact]

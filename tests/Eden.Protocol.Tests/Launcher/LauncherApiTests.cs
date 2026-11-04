@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using Eden.Gameplay.Docking;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
@@ -29,6 +30,7 @@ public sealed class LauncherApiTests
         Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
         var account = await registration.Content.ReadFromJsonAsync<AccountReply>();
         Assert.Empty(world.Store.ListPilots(account!.AccountId));
+        Assert.Equal(AccountCloneGrade.Omega, world.Store.ReadAccount(account.AccountId).CloneGrade);
         using var signIn = await client.PostAsJsonAsync("sessions", new SignInRequest("Http Pilot", password, true));
         var session = await signIn.Content.ReadFromJsonAsync<SessionReply>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session!.AccessToken);

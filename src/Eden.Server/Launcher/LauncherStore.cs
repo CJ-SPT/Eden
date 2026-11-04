@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Eden.Gameplay.Docking;
 using Eden.Protocol;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Persistence;
@@ -75,10 +76,11 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
         Execute(
             db,
             tx,
-            "INSERT INTO WorldAccount(Id,UserName,CreatedAt) VALUES($id,$name,$created)",
+            "INSERT INTO WorldAccount(Id,UserName,CreatedAt,CloneGrade) VALUES($id,$name,$created,$grade)",
             ("$id", id),
             ("$name", name),
-            ("$created", clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+            ("$created", clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            ("$grade", (int)AccountCloneGrade.Omega)
         );
         Execute(
             db,

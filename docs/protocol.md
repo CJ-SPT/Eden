@@ -1,5 +1,17 @@
 # Startup protocol and milestones
 
+## Launcher Omega account default (November 4, 2026)
+
+Launcher API registration now explicitly saves `AccountCloneGrade.Omega` in the same transaction as the new account and credentials. Both standard and invitation-authorized developer registrations receive Omega; role assignment is independent. Existing launcher builds use the updated server behavior. The general database Alpha default and the existing native clone-grade adapters remain unchanged, and registration does not upgrade unrelated accounts. This is Eden's account-registration policy; no Carbon serialization, transport or simulation behavior changes.
+
+The active local development world was backed up before a one-time conversion of all four existing accounts to Omega. Reopening the database and restarting the development server confirmed all four saved grades remained Omega. This conversion is local runtime data, not a migration that upgrades other worlds.
+
+**Automated validation.** Tool and solution restores, solution build (zero warnings/errors), focused .NET filter `FullyQualifiedName~Eden.Protocol.Tests.Launcher|FullyQualifiedName~CloneGradeTests|FullyQualifiedName~PilotLoginTests` with `xUnit.MaxParallelThreads=4` (**29 passed**, **9 seconds**), catalog setup policy (**3 passed**), formatting policy (**9 passed**), formatting verification (**567 files**) and diff checks passed. Coverage includes actual HTTP registration, standard/developer roles, persisted Omega after world reopen, existing Alpha isolation, and native clone-grade/login/training behavior. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Reconnect an existing pilot and inspect the native Omega status; its rendering remains unverified.
+
 ## Placeholder route implementation (November 4, 2026)
 
 The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibilityHandler`. Empty replies are valid for features with no earned or configured state, but these handlers also conceal missing persistence and feature operations. Work proceeds by client feature, with a single handler owning each implemented service/method pair.
