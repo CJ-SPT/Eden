@@ -12,7 +12,15 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class MailServiceTests
 {
     private static object?[] Draft(long recipient = MailTestData.Recipient) =>
-        [new List<object?> { recipient }, null, null, new BlueUnicode("Étoile 学習"), new BlueUnicode(MailTestData.Draft.Body), null, null];
+        [
+            new List<object?> { recipient },
+            null,
+            null,
+            new BlueUnicode("Étoile 学習"),
+            new BlueUnicode(MailTestData.Draft.Body),
+            false,
+            false,
+        ];
 
     private static object? Reply(PilotCallResult result) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));

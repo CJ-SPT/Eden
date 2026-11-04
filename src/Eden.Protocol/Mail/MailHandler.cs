@@ -207,7 +207,8 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
     private static long? OptionalId(object? value) =>
         value switch
         {
-            null or 0L => null,
+            // Stock NewNewMessage initializes both source fields to Python False.
+            null or false or 0L => null,
             long id when id > 0 => id,
             _ => throw new InvalidDataException("Expected a mail identifier or None."),
         };

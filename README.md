@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+New personal mail now accepts the stock compose window's `False` defaults for unused reply/forward IDs. This fixes the reported **Expected a mail identifier or None** rejection when sending to another pilot. See the [compose-default correction](docs/protocol.md#mail-compose-optional-source-defaults); live confirmation of the fix remains pending.
+
 Personal EVE Mail now supports local-pilot sending, inbox/sent state, replies/forwards, compressed bodies, read/unread actions, trash/restoration/deletion and private labels. Mail and change notifications persist across restarts, with recipient ownership, blocking and rate limits enforced atomically. Native presentation remains unverified. Mailing lists, organization mail and paid CSPA remain pending. See the [personal mail notes](docs/protocol.md#persistent-personal-eve-mail).
 
 Skill extraction now supports the native client request with atomic skill removal, extractor consumption and Large Skill Injector delivery. It enforces the allocated-SP minimum, docked capsule requirement, Alpha level floors, queued/trained prerequisites and clone/implant restrictions. Receipts, history, restart persistence, concurrent requests and connected-session notifications have automated coverage; native presentation remains unverified. See the [skill extraction notes](docs/protocol.md#persistent-skill-extraction).
