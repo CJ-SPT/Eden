@@ -215,6 +215,14 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedMail>().ToTable("WorldMail").HasKey(mail => mail.Id);
+        model.Entity<SavedMail>().HasIndex(mail => new { mail.SenderId, mail.SentAt });
+        model.Entity<SavedMailEntry>().ToTable("WorldMailEntry").HasOne<Pilot>().WithMany().HasForeignKey(entry => entry.PilotId);
+        model.Entity<SavedMailEntry>().HasOne<SavedMail>().WithMany().HasForeignKey(entry => entry.MessageId);
+        model.Entity<SavedMailLabel>().ToTable("WorldMailLabel").HasOne<Pilot>().WithMany().HasForeignKey(label => label.PilotId);
+        model.Entity<SavedMailChange>().ToTable("WorldMailChange").HasKey(change => change.Id);
+        model.Entity<SavedMailChange>().HasOne<Pilot>().WithMany().HasForeignKey(change => change.PilotId);
+        model.Entity<SavedMailChange>().HasIndex(change => new { change.PilotId, change.Id });
         model.Entity<SavedSkillExtraction>().ToTable("WorldSkillExtraction").HasKey(extraction => extraction.Id);
         model.Entity<SavedSkillExtraction>().HasOne<Pilot>().WithMany().HasForeignKey(extraction => extraction.PilotId);
         model.Entity<SavedSkillExtraction>().HasIndex(extraction => new { extraction.PilotId, extraction.Id });

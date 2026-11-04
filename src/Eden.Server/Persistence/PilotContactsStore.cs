@@ -38,13 +38,30 @@ public sealed class SavedContactLabel
 [Injectable]
 internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory npcs, InboxChangeSignal inbox, TimeProvider? clock = null)
     : IPilotContacts,
-        ICharacterDirectory
+        ICharacterDirectory,
+        ILocalCharacterSearch
 {
     public int? Corporation(long characterId)
     {
         using WorldDbContext world = new(database.Path);
         return world.Pilots.Where(p => p.Id == characterId).Select(p => (int?)p.CorporationId).SingleOrDefault()
             ?? npcs.Character(characterId)?.CorporationId;
+    }
+
+    public IReadOnlyList<long> Search(string query, CharacterSearchMatch match)
+    {
+        CharacterSearchRules.Check(query, match);
+        using WorldDbContext world = new(database.Path);
+        return world
+            .Pilots.AsNoTracking()
+            .Select(p => new { p.Id, p.Name })
+            .AsEnumerable()
+            .Where(p => CharacterSearchRules.Matches(query, p.Name, match))
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.Id)
+            .Take(CharacterSearchRules.MaximumResults)
+            .Select(p => p.Id)
+            .ToArray();
     }
 
     public IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids)

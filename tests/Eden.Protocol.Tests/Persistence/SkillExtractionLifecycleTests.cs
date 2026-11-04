@@ -116,7 +116,7 @@ public sealed class SkillExtractionLifecycleTests
         using WorldDbContext saved = new(db.Path);
         Assert.Equal(250, saved.Set<PilotSkill>().Find(SkillExtractionTestData.Pilot, 3327)!.Points);
         Assert.Equal(5_000_000, saved.Set<PilotSkill>().Where(s => s.PilotId == SkillExtractionTestData.Pilot).Sum(s => s.Points));
-        Assert.Equal(61, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]

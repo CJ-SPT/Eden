@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 61;
+    internal const int CurrentVersion = 62;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -873,7 +873,34 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=61");
+            if (version is >= 6 and < 62)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldMail(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        SenderId INTEGER NOT NULL,
+                        SentAt INTEGER NOT NULL, Subject TEXT NOT NULL, Body TEXT NOT NULL, RecipientsJson TEXT NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldMail_SenderId_SentAt ON WorldMail(SenderId,SentAt);
+                    CREATE TABLE IF NOT EXISTS WorldMailEntry(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        MessageId INTEGER NOT NULL REFERENCES WorldMail(Id) ON DELETE CASCADE,
+                        Status INTEGER NOT NULL, Labels INTEGER NOT NULL, Deleted INTEGER NOT NULL,
+                        PRIMARY KEY(PilotId,MessageId));
+                    CREATE INDEX IF NOT EXISTS IX_WorldMailEntry_MessageId ON WorldMailEntry(MessageId);
+                    CREATE TABLE IF NOT EXISTS WorldMailLabel(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Id INTEGER NOT NULL, Name TEXT NOT NULL, Color INTEGER, PRIMARY KEY(PilotId,Id));
+                    CREATE TABLE IF NOT EXISTS WorldMailChange(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        MessageId INTEGER NOT NULL, Origin TEXT NOT NULL, Kind INTEGER NOT NULL,
+                        Status INTEGER NOT NULL, Labels INTEGER NOT NULL, LabelId INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldMailChange_PilotId_Id ON WorldMailChange(PilotId,Id);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=62");
         }
         world.Database.ExecuteSqlRaw(
             """

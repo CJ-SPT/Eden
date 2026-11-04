@@ -6,6 +6,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Mail;
 using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Notifications;
@@ -37,6 +38,7 @@ internal sealed class PilotUpdateCoordinator(
     OnlineStatusHandler online,
     CalendarHandler calendar,
     InboxHandler inbox,
+    MailHandler mail,
     ContractHandler contracts,
     SecurityStatusHandler security,
     RedemptionHandler redemption,
@@ -55,6 +57,7 @@ internal sealed class PilotUpdateCoordinator(
         || guests.IsDocked
         || calendar.IsMonitoring
         || inbox.IsMonitoring
+        || mail.IsMonitoring
         || contracts.IsMonitoring
         || security.IsMonitoring
         || freePoints.IsMonitoring
@@ -69,6 +72,7 @@ internal sealed class PilotUpdateCoordinator(
         guests.Advance(context);
         calendar.Enter(context);
         inbox.Enter(context);
+        mail.Enter(context);
         contracts.Enter(context);
         security.Enter(context);
         freePoints.Enter(context);
@@ -88,6 +92,7 @@ internal sealed class PilotUpdateCoordinator(
         online.Reset();
         calendar.Reset();
         inbox.Reset();
+        mail.Reset();
         contracts.Reset();
         security.Reset();
         freePoints.Reset();
@@ -136,6 +141,7 @@ internal sealed class PilotUpdateCoordinator(
         online.Advance(context);
         calendar.Advance(context);
         inbox.Advance(context);
+        mail.Advance(context);
         contracts.Advance(context);
         security.Advance(context);
         freePoints.Advance(context);
