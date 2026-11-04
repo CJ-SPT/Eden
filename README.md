@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Personal calendar events now support saved invitations, details, replies, edits, rescheduling and cancellation. Creators can invite up to **50 local Eden pilots**; connected invitees receive ordered calendar updates, and offline invitees see their events after reconnecting. Removing an invitee revokes access. Corporation/alliance calendars, official events and paid CSPA invitations remain pending. Native calendar presentation is unverified; see the [calendar notes](docs/protocol.md#persistent-personal-calendar).
+
 Personal jump clones now support installation, naming, destruction and activation at NPC stations, with saved bodies, fees and cooldowns. Installation and activation each cost **900,000 ISK**; swaps within one station do not start or reset a cooldown. Infomorph skills and Alpha limits apply. The client can leave a docked ship in its hangar before jumping. Implants, structure/capital clone bays and Pochven installation remain pending; native presentation is unverified. See the [jump-clone notes](docs/protocol.md#persistent-personal-jump-clones).
 
 The agent directory now contains all **10,966 active agents** in the pinned catalog, with station, corporation, faction, division, level and locator metadata. NPC names and public profiles resolve from the catalog. Saved agents survive reconnects and restarts in each pilot’s private address book. Mission conversations, offers, journal progression and earned NPC standings remain pending. Native agent-window presentation is unverified; see the [agent directory notes](docs/protocol.md#catalog-agent-directory-and-saved-agents).

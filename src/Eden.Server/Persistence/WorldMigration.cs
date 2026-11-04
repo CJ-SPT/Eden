@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 47;
+    internal const int CurrentVersion = 48;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -670,7 +670,35 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=47");
+            if (version is >= 6 and < 48)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldCalendarEvent(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        OwnerId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Time INTEGER NOT NULL, DurationMinutes INTEGER, Title TEXT NOT NULL, Description TEXT NOT NULL,
+                        Important INTEGER NOT NULL, Deleted INTEGER NOT NULL, Modified INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldCalendarEvent_OwnerId ON WorldCalendarEvent(OwnerId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldCalendarEvent_Time ON WorldCalendarEvent(Time);
+                    CREATE TABLE IF NOT EXISTS WorldCalendarParticipant(
+                        EventId INTEGER NOT NULL REFERENCES WorldCalendarEvent(Id) ON DELETE CASCADE,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Response INTEGER NOT NULL, PRIMARY KEY(EventId,PilotId));
+                    CREATE INDEX IF NOT EXISTS IX_WorldCalendarParticipant_PilotId ON WorldCalendarParticipant(PilotId);
+                    CREATE TABLE IF NOT EXISTS WorldCalendarChange(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        EventId INTEGER NOT NULL REFERENCES WorldCalendarEvent(Id) ON DELETE CASCADE,
+                        Kind INTEGER NOT NULL, OwnerId INTEGER NOT NULL, Time INTEGER NOT NULL, OldTime INTEGER NOT NULL,
+                        DurationMinutes INTEGER, Title TEXT NOT NULL, Important INTEGER NOT NULL,
+                        Deleted INTEGER NOT NULL, Modified INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldCalendarChange_EventId ON WorldCalendarChange(EventId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldCalendarChange_PilotId_Id ON WorldCalendarChange(PilotId,Id);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=48");
         }
         world.Database.ExecuteSqlRaw(
             """

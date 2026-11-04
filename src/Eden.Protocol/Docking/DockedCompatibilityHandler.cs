@@ -136,9 +136,7 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")
             or
             ("officeManager", "GetMyCorporationsOffices")
-            or
-            ("insurgencySolarsystem", "GetAllVisibleCampaigns")
-            or ("calendarProxy", "GetEventList") => BlueEmpty.List,
+            or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };
     }

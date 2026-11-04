@@ -142,6 +142,16 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedCalendarEvent>().ToTable("WorldCalendarEvent").HasKey(e => e.Id);
+        model.Entity<SavedCalendarEvent>().HasOne<Pilot>().WithMany().HasForeignKey(e => e.OwnerId);
+        model.Entity<SavedCalendarEvent>().HasIndex(e => e.Time);
+        model.Entity<SavedCalendarParticipant>().ToTable("WorldCalendarParticipant").HasKey(p => new { p.EventId, p.PilotId });
+        model.Entity<SavedCalendarParticipant>().HasOne<SavedCalendarEvent>().WithMany().HasForeignKey(p => p.EventId);
+        model.Entity<SavedCalendarParticipant>().HasOne<Pilot>().WithMany().HasForeignKey(p => p.PilotId);
+        model.Entity<SavedCalendarChange>().ToTable("WorldCalendarChange").HasKey(c => c.Id);
+        model.Entity<SavedCalendarChange>().HasOne<SavedCalendarEvent>().WithMany().HasForeignKey(c => c.EventId);
+        model.Entity<SavedCalendarChange>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        model.Entity<SavedCalendarChange>().HasIndex(c => new { c.PilotId, c.Id });
         model.Entity<SavedJumpClone>().ToTable("WorldJumpClone").HasKey(clone => clone.Id);
         model.Entity<SavedJumpClone>().HasOne<Pilot>().WithMany().HasForeignKey(clone => clone.PilotId);
         model.Entity<SavedJumpClone>().HasIndex(clone => clone.PilotId).IsUnique().HasFilter("Active = 1");
