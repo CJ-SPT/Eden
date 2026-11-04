@@ -6,6 +6,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Notifications;
 using Eden.Protocol.Propulsion;
@@ -39,7 +40,9 @@ internal sealed class PilotUpdateCoordinator(
     ContractHandler contracts,
     SecurityStatusHandler security,
     RedemptionHandler redemption,
-    FreeSkillPointHandler freePoints
+    FreeSkillPointHandler freePoints,
+    LoyaltyWalletHandler loyalty,
+    WalletBalanceMonitor walletBalance
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -50,7 +53,8 @@ internal sealed class PilotUpdateCoordinator(
         || inbox.IsMonitoring
         || contracts.IsMonitoring
         || security.IsMonitoring
-        || freePoints.IsMonitoring;
+        || freePoints.IsMonitoring
+        || loyalty.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
@@ -60,6 +64,8 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Enter(context);
         security.Enter(context);
         freePoints.Enter(context);
+        loyalty.Enter(context);
+        walletBalance.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
     }
@@ -73,6 +79,8 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Reset();
         security.Reset();
         freePoints.Reset();
+        loyalty.Reset();
+        walletBalance.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -115,6 +123,8 @@ internal sealed class PilotUpdateCoordinator(
         contracts.Advance(context);
         security.Advance(context);
         freePoints.Advance(context);
+        loyalty.Advance(context);
+        walletBalance.Advance(context);
         return beforeAttack;
     }
 }

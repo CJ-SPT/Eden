@@ -69,9 +69,9 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckType(catalog, grant.TypeId);
-        if (SkillPointRewards.Amount(grant.TypeId) > 0 && grant.StationId.HasValue)
+        if ((SkillPointRewards.Amount(grant.TypeId) > 0 || CurrencyRewardRules.Kind(grant.TypeId).HasValue) && grant.StationId.HasValue)
         {
-            throw new InvalidDataException("Skill point rewards have no fixed station.");
+            throw new InvalidDataException("Automatic rewards have no fixed station.");
         }
         if (grant.StationId is int station)
         {
@@ -127,6 +127,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         long now = Now;
         List<RedeemedItem> items = [];
         List<RedeemFailure> errors = [];
+        List<RedeemedCurrency> currencies = [];
         long skillPoints = 0;
         long? freeSkillPoints = null;
         long? freePointRevision = null;
@@ -146,6 +147,15 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
                 continue;
             }
             long reward = SkillPointRewards.Amount(token.TypeId);
+            if (CurrencyRewardRules.Kind(token.TypeId) is { } currency)
+            {
+                CheckType(catalog, token.TypeId);
+                currencies.Add(PilotLoyaltyWalletStore.Credit(world, pilotId, token, currency, now));
+                token.State = RedeemTokenState.Claimed;
+                token.FinishedAt = now;
+                token.PilotId = pilotId;
+                continue;
+            }
             if (reward > 0)
             {
                 CheckType(catalog, token.TypeId);
@@ -198,7 +208,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(pilotId, items, errors, skillPoints, freeSkillPoints, training, freePointRevision);
+        return new(pilotId, items, errors, skillPoints, freeSkillPoints, training, freePointRevision) { Currencies = currencies };
     }
 
     public void Trash(long accountId, IReadOnlyList<long> tokens)
@@ -302,7 +312,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
     private static void CheckType(CatalogDbContext catalog, int id)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == id);
-        if (type is not null && SkillPointRewards.Amount(id) > 0)
+        if (type is not null && (SkillPointRewards.Amount(id) > 0 || CurrencyRewardRules.Kind(id).HasValue))
         {
             return;
         }

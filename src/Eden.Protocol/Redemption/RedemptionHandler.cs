@@ -1,6 +1,8 @@
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
@@ -8,8 +10,12 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Redemption;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvider clock, FreeSkillPointHandler freePoints)
-    : IPilotCallHandler
+internal sealed class RedemptionHandler(
+    IAccountRedemption redemption,
+    TimeProvider clock,
+    FreeSkillPointHandler freePoints,
+    LoyaltyWalletHandler loyalty
+) : IPilotCallHandler
 {
     private long[]? _tokens;
     private long _nextPoll;
@@ -74,6 +80,12 @@ internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvi
                     var result = redemption.Claim(context.AccountId, pilot, selected, home);
                     if (context.Selected && context.Pilot.PilotId == pilot)
                     {
+                        var cash = result.Currencies.LastOrDefault(r => r.Kind == RedeemCurrencyKind.Isk);
+                        if (cash is not null)
+                        {
+                            context.Notifications.Add(new AccountBalanceChanged(pilot, (double)cash.After / MarketDefinitions.CentsPerIsk));
+                        }
+                        loyalty.Notify(context, result.Currencies);
                         if (
                             result.FreeSkillPoints is long balance
                             && result.Training is { } state
@@ -91,7 +103,7 @@ internal sealed class RedemptionHandler(IAccountRedemption redemption, TimeProvi
                             InventoryChangesWire.NotifyItemChange(context, new(item.Item, null));
                         }
                     }
-                    if (result.Items.Count > 0 || result.SkillPoints > 0)
+                    if (result.Items.Count > 0 || result.SkillPoints > 0 || result.Currencies.Count > 0)
                     {
                         Changed(context);
                     }
@@ -179,7 +191,7 @@ internal sealed record RedeemTokenRow(RedeemToken Token) : BlueModel
                 ["dateTime"] = Token.CreatedAt,
                 ["expireDateTime"] = Token.ExpiresAt,
                 ["soulbound"] = false,
-                ["isAutoInject"] = SkillPointRewards.Amount(Token.TypeId) > 0,
+                ["isAutoInject"] = SkillPointRewards.Amount(Token.TypeId) > 0 || CurrencyRewardRules.Kind(Token.TypeId).HasValue,
                 ["blueprintInfo"] = null,
             }
         );

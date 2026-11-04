@@ -100,6 +100,9 @@ public enum WalletEntryType
     ContractRewardAdded = 83,
     JumpCloneActivation = 128,
     BountyPrizes = 85,
+
+    // Build 3662168 accountingentrytypes / appConst.refRedeemedISKToken.
+    RedeemedIskToken = 147,
 }
 
 public enum WalletAccountKey

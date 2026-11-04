@@ -27,8 +27,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             // The native wallet asks even for NPC-corporation pilots. No private
             // player-corporation membership record exists; None disables EM donation.
             ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => PilotCallResult.None,
-            // No loyalty points or EverMarks have been earned in Eden yet.
-            ("LPSvc", "GetAllMyCharacterWalletLPBalances") when args.Length == 0 => BlueEmpty.List,
             ("marketProxy", "GetCharEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,

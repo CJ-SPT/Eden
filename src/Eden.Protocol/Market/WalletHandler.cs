@@ -4,6 +4,7 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -206,6 +207,24 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                         payment.ContractId,
                         payment.AmountCents,
                         payment.BalanceCents
+                    )
+                );
+            }
+        }
+        foreach (var reward in journal.RedeemedCurrencies ?? [])
+        {
+            if (filter.Includes(reward.Time, clock.GetUtcNow().UtcDateTime))
+            {
+                entries.Add(
+                    new(
+                        CurrencyRewardRules.FirstJournalId + reward.TokenId,
+                        reward.Time,
+                        WalletEntryType.RedeemedIskToken,
+                        MarketDefinitions.SccCorporationId,
+                        reward.PilotId,
+                        reward.TokenId,
+                        reward.Amount,
+                        reward.After
                     )
                 );
             }

@@ -39,7 +39,10 @@ public sealed record RedeemResult(
     long? FreeSkillPoints = null,
     TrainingState? Training = null,
     long? FreePointRevision = null
-);
+)
+{
+    public IReadOnlyList<RedeemedCurrency> Currencies { get; init; } = [];
+}
 
 public interface IAccountRedemption
 {

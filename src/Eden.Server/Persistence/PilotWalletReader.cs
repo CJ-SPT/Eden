@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Redemption;
 using Eden.Protocol;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +78,13 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
                 .OrderBy(payment => payment.Id)
                 .AsEnumerable()
                 .Select(payment => payment.Snapshot())
+                .ToArray(),
+            world
+                .Set<SavedRedeemedCurrency>()
+                .Where(entry => entry.PilotId == pilotId && entry.Kind == RedeemCurrencyKind.Isk)
+                .OrderByDescending(entry => entry.TokenId)
+                .AsEnumerable()
+                .Select(entry => entry.Snapshot())
                 .ToArray()
         );
     }

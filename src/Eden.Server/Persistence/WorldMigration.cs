@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 56;
+    internal const int CurrentVersion = 57;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -777,7 +777,24 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=56");
+            if (version is >= 6 and < 57)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldLoyaltyWallet(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        IssuerCorporationId INTEGER NOT NULL, Points INTEGER NOT NULL,
+                        PRIMARY KEY(PilotId,IssuerCorporationId));
+                    CREATE TABLE IF NOT EXISTS WorldRedeemedCurrency(
+                        TokenId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldRedeemToken(Id) ON DELETE CASCADE,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Kind INTEGER NOT NULL, Amount INTEGER NOT NULL, Before INTEGER NOT NULL,
+                        After INTEGER NOT NULL, Time INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldRedeemedCurrency_PilotId_Time ON WorldRedeemedCurrency(PilotId,Time);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=57");
         }
         world.Database.ExecuteSqlRaw(
             """
