@@ -20,6 +20,10 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
         {
             ("machoNet", "GetServiceInfo") => BlueEmpty.Dictionary,
             ("machoNet", "GetTime") => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            // Build 3662168 ClientStatsSvc.OnProcessExit also sends this before pilot selection.
+            // It records exit intent; the transport closing owns disconnect cleanup.
+            ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
+                PilotCallResult.None,
             ("config", "GetMultiOwnersEx") => OwnerRows(
                 arguments,
                 context.ActiveFlight?.VisiblePilots() ?? context.Roster.Select(PilotContact.From)

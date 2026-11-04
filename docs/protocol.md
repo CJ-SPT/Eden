@@ -222,6 +222,18 @@ For wire behavior, Carbon Blue's reduce reader resolves the outbound callable an
 
 Keep build-specific definitions in the catalog and mutable progress in the world save. Expose each new service through a narrow persistence interface keyed by the authenticated account or selected pilot. Add a separate public lookup when other pilots need to view shareable fields.
 
+## Client-requested exit logging, November 4, 2026
+
+The user reported an **Invalid Packet Destination** dialog while exiting the client: `Unsupported local call eventLog.LogPlayerRequestedDisconnect`. Build 3662168's `eve/client/script/sys/clientStatsSvc.py` confirms that `ClientStatsSvc.OnProcessExit` calls `sm.ProxySvc('eventLog').LogPlayerRequestedDisconnect()` with no arguments whenever MachoNet is connected, regardless of whether a character has been selected. The preceding `LogClientStats(session.sid, session.locationid, [finalPackage], isShutdown=True)` is only sent with a selected character and was already acknowledged. The inspected script archive has SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. This is a client service compatibility contract; no Carbon transport or serialization change is needed.
+
+The account-phase compatibility handler now acknowledges the exact no-argument disconnect-log call with Python None, before and after selection. Retries also succeed. This acknowledges exit intent without prematurely closing the connection; ordinary transport teardown continues to own session cleanup. No gameplay or world state is changed. Malformed calls and other event-log methods retain their unsupported-call response.
+
+**Automated validation.** Tool restore, solution restore, Release build (zero warnings/errors), 32 focused .NET tests (4 seconds), both Python policy suites (3 catalog and 9 formatting cases), and `Format.ps1 -Check` passed in 17.22 seconds overall. Simulated-session regression tests assert successful None replies before/after selection, repeated exit reports, a successful subsequent time query, unchanged saved pilot state, and rejection of extra arguments/unknown methods. The filter was `FullyQualifiedName~PilotServicesTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, run with `dotnet test --no-build -c Release` and `-- xUnit.MaxParallelThreads=4`. Release output avoided the running Debug server's locked files; that process remains on its existing binaries. No full .NET regression run was requested or performed.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The user's screenshot establishes the original failure, not acceptance of the fix.
+
+**Optional maintainer checks.** Rebuild/restart the server, then exit the client from character selection and from a selected pilot to check that the reported dialog no longer appears.
+
 ## Character-sheet attributes and biography, November 4, 2026
 
 Build 3662168's `charsheet/attributesPanel.py`, `neocom/attributes.py` and `services/skillsvc.py` use the pilot-bound skill handler's `GetAttributes`, `GetRespecInfo` and `RespecCharacter`. Remap information is a dictionary containing `freeRespecs` and nullable FILETIME `nextTimedRespec`. Remapping submits one integer-keyed dictionary with exactly the five attribute IDs. The packaged `appConst.py` defines a 17-point minimum, 27-point maximum, 99-point total and 365-day interval. Eden grants both new and migrated pilots two initial bonus remaps. A timed remap takes precedence; bonus remaps leave the timed deadline unchanged. Saving the current map is a no-op. [CCP neural remap rules](https://support.eveonline.com/hc/en-us/articles/203267991-Neural-Remaps)

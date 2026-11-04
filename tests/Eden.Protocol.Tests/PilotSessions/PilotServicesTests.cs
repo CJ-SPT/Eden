@@ -16,6 +16,44 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PilotServicesTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RequestedDisconnectLoggingReturnsNoneBeforeAndAfterSelectionAndToleratesRetries(bool selected)
+    {
+        using TestWorld world = new();
+        var before = world.Store.FindPilot(1000001);
+        List<BlueInstance> requests = [];
+        if (selected)
+        {
+            requests.Add(Request("charUnboundMgr", "SelectCharacterID", [90000001L]));
+        }
+        requests.Add(Request("eventLog", "LogPlayerRequestedDisconnect", []));
+        requests.Add(Request("eventLog", "LogPlayerRequestedDisconnect", []));
+        requests.Add(Request("machoNet", "GetTime", []));
+        var packets = await ExchangeAsync(world, 42, requests.ToArray());
+        Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        Assert.Equal(selected ? 5 : 3, packets.Count);
+        var replies = packets.TakeLast(3).ToArray();
+        Assert.All(replies, packet => Assert.EndsWith(".CallRsp", packet.Name));
+        Assert.Null(Result(replies[0]));
+        Assert.Null(Result(replies[1]));
+        Assert.True(Assert.IsType<long>(Result(replies[2])) > 0);
+        Assert.Equal(before, world.Store.FindPilot(1000001));
+    }
+
+    [Theory]
+    [InlineData("LogPlayerRequestedDisconnect", true)]
+    [InlineData("UnknownExitMethod", false)]
+    public async Task ShutdownCompatibilityDoesNotAcceptMalformedOrUnknownCalls(string method, bool extraArgument)
+    {
+        var packet = Assert.Single(await ExchangeAsync("eventLog", method, extraArgument ? [90000001L] : [], 42));
+        Assert.EndsWith(".ErrorResponse", packet.Name);
+        var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
+        Assert.Equal(0, body[1]);
+        Assert.Equal($"Unsupported local call eventLog.{method}", body[2]);
+    }
+
     private sealed class RejectingHandler : ISelectedPilotCallHandler
     {
         public PilotCallResult Call(
