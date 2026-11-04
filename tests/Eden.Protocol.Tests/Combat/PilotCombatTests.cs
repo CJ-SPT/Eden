@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -15,6 +16,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -165,6 +167,7 @@ public sealed class PilotCombatTests
         Assert.False(shot.Destroyed);
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => f.Fire());
+        Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.NpcDestroyed));
         using WorldDbContext world = new(f.Db.Path);
         Assert.Equal(129, world.Set<ShipEnergy>().Single().Charge);
         Assert.Equal(14.06, world.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge, 8);
@@ -235,6 +238,8 @@ public sealed class PilotCombatTests
         var kill = Assert.Single(results.OfType<CombatShot>());
         Assert.True(kill.Destroyed);
         Assert.Equal(300000, kill.Reward!.AmountCents);
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.NpcDestroyed, kill.Reward.PilotId));
+        Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.NpcDestroyed, kill.Reward.PilotId == 90000001 ? 90000002 : 90000001));
         _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<NpcBounty>());

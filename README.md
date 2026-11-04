@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Task tracking now retains per-pilot client counters and catalog task completions across restarts. Supported server gameplay records its own progress, and the first-warp camera query reflects actual warp entry. Build 3662168 disables its legacy achievement UI; these routes do not enable that interface. See the [task tracking notes](docs/protocol.md#persistent-task-tracking).
+
 Personal Locations now saves private folders, subfolders and bookmarks across reconnects and restarts. Save stations or map destinations, or save your authoritative position in space and warp back within that solar system. Edit, move, copy, delete, activate/forget folders, and use automatic expiry. Shared access-group folders and scan-result bookmarks remain pending. Native bookmark-window presentation remains unverified; see the [personal bookmark notes](docs/protocol.md#personal-bookmarks-and-saved-location-warp).
 
 The station directory returns every catalog station for remote station lookup and map consumers, with catalog names, locations, owners and service masks. The pinned client assigns mask bits by sorted service IDs. Native map/window presentation remains unverified; see the [station directory notes](docs/protocol.md#catalog-station-directory).

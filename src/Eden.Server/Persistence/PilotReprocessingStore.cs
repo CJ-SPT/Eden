@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Reprocessing;
@@ -13,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotReprocessing
+internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvider? clock = null) : IPilotReprocessing
 {
     private static Pilot ReadPilot(WorldDbContext world, long pilotId) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
@@ -216,6 +217,13 @@ internal sealed class PilotReprocessingStore(WorldDatabase database) : IPilotRep
         {
             changes.Add(InventoryPersistence.MergeOutput(world, catalog, pilotId, outputLocationId, outputFlagId, typeId, quantity));
         }
+        PilotTaskTrackingStore.Record(
+            world,
+            catalog,
+            pilotId,
+            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            TaskEvents.Reprocessed
+        );
         world.SaveChanges();
         transaction.Commit();
         return new(items.Select(i => i.Id).ToArray(), output, changes);

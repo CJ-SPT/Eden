@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -384,6 +385,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
                     .Entity
             );
         }
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Sold, trades.Count);
         world.SaveChanges();
         transaction.Commit();
         return new(wallet.Cents, trades.Select(Read).ToArray(), changes);
@@ -439,6 +441,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
                     .Entity
             );
         }
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Bought, trades.Count);
         world.SaveChanges();
         transaction.Commit();
         return new(wallet.Cents, trades.Select(Read).ToArray(), changes);

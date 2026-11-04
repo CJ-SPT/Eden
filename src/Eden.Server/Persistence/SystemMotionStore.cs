@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -79,6 +80,14 @@ public sealed partial class SqliteWorld
                     ?? objects.FirstOrDefault(o => o.Id == id),
                 obstacles
             );
+            if (ship.Navigation.Warp is null && navigation.Warp is not null)
+            {
+                var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == ship.Id);
+                if (pilot is not null)
+                {
+                    PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Warped);
+                }
+            }
             bodies.Add(
                 new(
                     ship.Id,

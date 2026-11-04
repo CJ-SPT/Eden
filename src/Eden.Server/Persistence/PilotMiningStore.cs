@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -165,6 +166,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             laser.CapacitorNeed,
             now
         );
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.MiningLaserActivated);
         world.SaveChanges();
         transaction.Commit();
         return new(laser, charge);
@@ -213,6 +215,12 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             );
         }
         asteroid.Quantity -= (long)extracted + collected.Residue;
+        if (extracted + bonus > 0)
+        {
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
+        }
         world.SaveChanges();
         transaction.Commit();
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull);

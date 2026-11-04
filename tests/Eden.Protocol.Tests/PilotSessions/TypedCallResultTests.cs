@@ -148,7 +148,7 @@ public sealed class TypedCallResultTests
             (new BountiesAndKillRightsState(), new object?[] { new List<object?>(), new List<object?>() }),
             (new AgentJournalState(), new object?[] { new List<object?>(), new List<object?>() }),
             (
-                new AchievementState(),
+                new TaskProgressReply(new([], [], false)),
                 new Dictionary<string, object?>
                 {
                     ["completedDict"] = new Dictionary<string, object?>(),

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -144,6 +145,7 @@ public sealed class ReprocessingTests
         Assert.Equal(55, saved.Single(i => i.TypeId == PyeriteType).Quantity);
         Assert.Throws<InvalidDataException>(() => f.Run());
         Assert.Equal(saved, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId));
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Reprocessed));
     }
 
     [Fact]

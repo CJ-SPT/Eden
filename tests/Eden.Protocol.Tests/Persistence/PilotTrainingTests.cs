@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
@@ -45,6 +46,7 @@ public sealed class PilotTrainingTests
         Assert.Equal(1415, Assert.Single(db.Services.GetRequiredService<IPilotSkillReader>().ReadSkills(pilot)).Points);
         Assert.Empty(store.Advance(90000002).Queue);
         Assert.Empty(store.History(90000002, 10));
+        Assert.Equal(3, TaskTrackingTestData.Count(db, TaskEvents.TrainingStarted));
     }
 
     [Fact]

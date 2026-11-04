@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -295,6 +296,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
                     ShipStoragePersistence.Destroy(world, stored);
                 }
             }
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.ShipLost);
             insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
             pilot.ActiveShip = capsule;
             pilot.ActiveShipId = capsule.Id;

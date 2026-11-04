@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -91,6 +92,7 @@ public sealed class PilotSkillBookTests
         Assert.Equal(250, reopened.Set<PilotSkill>().Find(Pilot, ShieldOperation)!.Points);
         Assert.Equal(1, reopened.Set<OwnedItem>().Find(f.Book)!.Quantity);
         Assert.Equal(1999800, reopened.Set<PilotWallet>().Find(Pilot)!.Cents);
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.SkillInjected));
         Assert.Equal(
             1000000,
             f.Db.Services.GetRequiredService<IPilotMarket>().Orders(Pilot).Single(o => o.TypeId == ShieldOperation).Remaining

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Protocol;
+using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
@@ -28,7 +29,7 @@ public sealed class SavedContactLabel
 }
 
 [Injectable]
-internal sealed class PilotContactsStore(WorldDatabase database) : IPilotContacts, ICharacterDirectory
+internal sealed class PilotContactsStore(WorldDatabase database, TimeProvider? clock = null) : IPilotContacts, ICharacterDirectory
 {
     public IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids)
     {
@@ -78,6 +79,14 @@ internal sealed class PilotContactsStore(WorldDatabase database) : IPilotContact
                 {
                     contact = new SavedContact { PilotId = pilotId, ContactId = contactId };
                     world.Add(contact);
+                    using CatalogDbContext catalog = new(database.CatalogPath);
+                    PilotTaskTrackingStore.Record(
+                        world,
+                        catalog,
+                        pilotId,
+                        (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                        TaskEvents.ContactAdded
+                    );
                 }
                 contact.Standing = standing;
                 contact.InWatchlist = inWatchlist;

@@ -142,6 +142,10 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedTaskCounter>().ToTable("WorldTaskCounter").HasKey(counter => new { counter.PilotId, counter.Name });
+        model.Entity<SavedTaskCounter>().HasOne<Pilot>().WithMany().HasForeignKey(counter => counter.PilotId);
+        model.Entity<SavedCompletedTask>().ToTable("WorldCompletedTask").HasKey(task => new { task.PilotId, task.Id });
+        model.Entity<SavedCompletedTask>().HasOne<Pilot>().WithMany().HasForeignKey(task => task.PilotId);
         model.Entity<SavedInsurancePolicy>().ToTable("WorldInsurancePolicy").HasKey(p => p.Id);
         model.Entity<SavedInsurancePolicy>().HasOne<Pilot>().WithMany().HasForeignKey(p => p.PilotId);
         // Policies and ledger entries retain ship identities after hull deletion.

@@ -209,7 +209,13 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
         return TrainingRules.Plan(targets, new(inputs, grade), activate, running, now);
     }
 
-    private static void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>
+    private void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId)
+    {
+        if (eventId == Started)
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, time, TaskEvents.TrainingStarted);
+        }
         world.Add(
             new TrainingLog
             {
@@ -220,4 +226,5 @@ internal sealed class PilotTrainingStore(WorldDatabase database, TimeProvider cl
                 EventId = eventId,
             }
         );
+    }
 }

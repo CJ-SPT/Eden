@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -278,6 +279,25 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 c.Previous
             ))
             .ToArray();
+        foreach (
+            var change in result.Where(change =>
+                change.Item.LocationId == ship.Id
+                && InventoryDefinitions.IsFittedSlot(change.Item.FlagId)
+                && (
+                    change.Previous is null
+                    || change.Previous.LocationId != ship.Id
+                    || !InventoryDefinitions.IsFittedSlot(change.Previous.FlagId)
+                )
+            )
+        )
+        {
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Fitted);
+            string rackEvent =
+                InventoryDefinitions.IsHighSlot(change.Item.FlagId) ? TaskEvents.FittedHigh
+                : InventoryDefinitions.IsMediumSlot(change.Item.FlagId) ? TaskEvents.FittedMedium
+                : TaskEvents.FittedLow;
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, rackEvent);
+        }
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         transaction.Commit();
         return result.Concat(cascaded).ToArray();

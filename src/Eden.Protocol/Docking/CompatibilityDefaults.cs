@@ -84,13 +84,3 @@ internal sealed record AgentJournalState() : BlueModel
 {
     public override object ToBlue() => new object?[] { new List<object?>(), new List<object?>() };
 }
-
-internal sealed record AchievementState() : BlueModel
-{
-    public override object ToBlue() =>
-        new Dictionary<string, object?>
-        {
-            ["completedDict"] = new Dictionary<string, object?>(),
-            ["eventDict"] = new Dictionary<string, object?>(),
-        };
-}

@@ -40,10 +40,8 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ),
             ("bountyProxy", "GetMyKillRights") when args.Length == 0 => BlueEmpty.List,
             ("bountyProxy", "GetMyKillRights") => BlueEmpty.List,
-            ("monolithTaskTrackerMgr", "HasEverWarped") => false,
             ("essMgr", "GetDataForClientSolarSystem") => PilotCallResult.None,
             ("insurgencySolarsystem", "GetLocalCampaignClientSnapshot") => new LocalSystemState(pilot.SystemId),
-            ("monolithTaskTrackerMgr", "UpdateClientAchievmentsAndCounters") => PilotCallResult.None,
             ("crimewatch", "GetMySecurityStatus") => 0d,
             ("notificationMgr", "GetAllNotifications") => BlueEmpty.List,
             ("beyonce", "GetFormations") => BlueEmpty.Tuple,
@@ -136,7 +134,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
             ("agentMgr", "GetMyJournalDetails") => new AgentJournalState(),
-            ("monolithTaskTrackerMgr", "GetCompletedAchievementsAndClientEventCount") => new AchievementState(),
             ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 
 

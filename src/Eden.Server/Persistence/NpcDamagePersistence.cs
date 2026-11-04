@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
@@ -49,6 +50,7 @@ internal static class NpcDamagePersistence
             {
                 world.Remove(aggression);
             }
+            PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             npc.DestroyedAt = now;
             WreckStore.Create(world, catalog, npc, pilot, now);
             double bounty = attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty);

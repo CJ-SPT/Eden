@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Docking;
@@ -5,6 +6,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
@@ -462,6 +464,7 @@ public sealed class FlightSessionTests
         );
         Assert.Same(PilotCallResult.Unsupported, session.StartJump(args, systems));
         Assert.False(session.CompleteJump());
+        Assert.Equal(0, TaskTrackingTestData.Count(db, TaskEvents.Jumped));
         clock.Seconds += 10;
         Assert.True(session.CompleteJump());
         Assert.False(session.InBallpark);
@@ -479,6 +482,8 @@ public sealed class FlightSessionTests
         Assert.True(session.CompleteJump());
         Assert.Equal(pilot.SystemId, session.Pilot.SystemId);
         Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
+
+        Assert.Equal(2, TaskTrackingTestData.Count(db, TaskEvents.Jumped));
 
         static IEnumerable<object?[]> EffectArguments(FlightSession flight) =>
             flight

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotSkillBookStore(WorldDatabase database) : IPilotSkillBooks
+internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? clock = null) : IPilotSkillBooks
 {
     public SkillInjection Inject(long pilotId, IReadOnlyList<long> itemIds)
     {
@@ -74,6 +75,14 @@ internal sealed class PilotSkillBookStore(WorldDatabase database) : IPilotSkillB
                 world.Remove(item);
             }
         }
+        PilotTaskTrackingStore.Record(
+            world,
+            catalog,
+            pilotId,
+            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            TaskEvents.SkillInjected,
+            items.Length
+        );
         world.SaveChanges();
         transaction.Commit();
         return new(items.Select(i => i.TypeId).ToArray(), changes);

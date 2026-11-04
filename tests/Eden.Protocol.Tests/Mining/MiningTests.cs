@@ -1,4 +1,5 @@
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -47,6 +48,8 @@ public sealed class MiningTests
         Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, MiningWireDefinitions.EffectName]));
         Assert.False(mining.IsActive(module));
         Assert.False(Assert.Single(context.Notifications.OfType<ShipEffectChanged>()).Start);
+        Assert.Equal(2, TaskTrackingTestData.Count(f.Db, TaskEvents.Mined));
+        Assert.Equal(3, TaskTrackingTestData.Count(f.Db, TaskEvents.MiningLaserActivated));
     }
 
     [Fact]
@@ -359,7 +362,7 @@ public sealed class MiningTests
         fixture.Clock.Milliseconds++;
         mining.Advance(context);
         var ore = Assert.Single(fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId), i => i.TypeId == 1230);
-        Assert.Equal(63, ore.Quantity); // Mining I: 6 * 1.05 mÂ³, 0.1 mÂ³ per unit.
+        Assert.Equal(63, ore.Quantity); // Mining I: 6 * 1.05 mÃ‚Â³, 0.1 mÃ‚Â³ per unit.
         Assert.Equal(9937, fixture.Remaining());
         Assert.False(mining.IsActive(module));
         var insertion = Assert.IsType<Dictionary<long, object?>>(

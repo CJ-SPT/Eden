@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -23,14 +24,37 @@ public sealed record WorldDatabase(string Path)
 public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystemMotionStore
 {
     private readonly WorldDatabase _database;
+    private readonly TimeProvider _clock;
 
-    public SqliteWorld(WorldDatabase database) => _database = database;
+    public SqliteWorld(WorldDatabase database, TimeProvider? clock = null)
+    {
+        _database = database;
+        _clock = clock ?? TimeProvider.System;
+    }
 
     public void SetPosition(long shipId, SpacePosition? position, int? systemId = null)
     {
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         var saved = world.Positions.Find(shipId);
+        using CatalogDbContext catalog = new(_database.CatalogPath);
+        var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
+        if (pilot is not null && position is not null)
+        {
+            long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            if (saved is null)
+            {
+                PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Undocked);
+            }
+            else if (systemId is int destination)
+            {
+                int origin = saved.SystemId ?? catalog.Set<Station>().Find(world.Ships.Find(shipId)!.StationId)!.SolarSystemId;
+                if (origin != destination)
+                {
+                    PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Jumped);
+                }
+            }
+        }
         if (position is null)
         {
             if (saved is not null)
@@ -79,6 +103,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         {
             throw new InvalidDataException("The station is outside docking range.");
         }
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), TaskEvents.Docked);
         pilot.ActiveShip.StationId = stationId;
         world.Positions.Remove(position);
         world.SaveChanges();

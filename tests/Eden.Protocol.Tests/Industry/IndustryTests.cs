@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -18,6 +19,7 @@ using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -264,6 +266,8 @@ public sealed class IndustryTests
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(f.Store.Jobs(f.Pilot.PilotId, false));
         Assert.Single(f.Store.Jobs(f.Pilot.PilotId, true));
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.IndustryStarted));
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.IndustryDelivered));
         Assert.Equal(100, f.Quantity(215));
     }
 

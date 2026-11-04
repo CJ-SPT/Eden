@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -69,6 +70,8 @@ public sealed class PilotFittingTests
         Assert.Equal((int)InventoryFlag.Cargo, unfit.FlagId);
         Assert.True(unfit.Singleton);
         Assert.False(unfit.Online);
+        Assert.Equal(2, TaskTrackingTestData.Count(db, TaskEvents.Fitted));
+        Assert.Equal(2, TaskTrackingTestData.Count(db, TaskEvents.FittedHigh));
     }
 
     [Fact]

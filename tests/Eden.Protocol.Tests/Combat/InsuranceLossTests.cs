@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Tests.Persistence;
@@ -117,9 +118,11 @@ public sealed class InsuranceLossTests
             Assert.Equal(InsurancePolicyStatus.Active, world.Set<SavedInsurancePolicy>().Find(purchase.Policy.Id)!.Status);
             Assert.Single(world.Set<SavedInsuranceLedger>());
             Assert.Null(world.Set<NpcAggression>().Single().LastShotAt);
+            Assert.Empty(world.Set<SavedTaskCounter>().Where(counter => counter.Name == TaskEvents.ShipLost));
             world.Database.ExecuteSqlRaw("DROP TRIGGER RejectInsurancePayout");
         }
         Assert.Equal(100000, fixture.Fire()!.Insurance!.AmountCents);
+        Assert.Equal(1, TaskTrackingTestData.Count(fixture.Db, TaskEvents.ShipLost));
         Assert.Empty(insurance.Contracts(Fixture.PilotId));
     }
 

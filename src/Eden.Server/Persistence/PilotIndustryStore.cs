@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
@@ -490,6 +491,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 }
             )
             .Entity;
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.IndustryStarted);
         world.SaveChanges();
         transaction.Commit();
         return new(ReadJob(catalog, job), changes);
@@ -538,6 +540,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         // materials. A completed job delivers once, even after reconnect/retry.
         job.Status = status;
         job.CompletedAt = Now;
+        if (!cancel)
+        {
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, job.CompletedAt.Value, TaskEvents.IndustryDelivered);
+        }
         world.SaveChanges();
         transaction.Commit();
         return new(ReadJob(catalog, job), changes);

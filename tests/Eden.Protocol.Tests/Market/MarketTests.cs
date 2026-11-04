@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
@@ -109,6 +110,8 @@ public sealed class MarketTests
         Assert.Equal(1000000, Assert.Single(book, o => o.TypeId == InventoryDefinitions.CivilianMinerType).Remaining);
         Assert.Equal(999867, Assert.Single(book, o => o.TypeId == Scordite && o.Bid).Remaining);
         Assert.Equal(2, f.Store.Transactions(f.Pilot.PilotId).Count);
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Bought));
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Sold));
         using WorldDbContext world = new(f.Db.Path);
         Assert.Single(world.Set<MarketStation>());
         Assert.Equal(9, world.Set<NpcMarketOrder>().Count());

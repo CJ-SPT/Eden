@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -122,6 +123,7 @@ public sealed class PilotFleetTests
         Assert.Equal(original.ShipId, f.Fleet.Board(original.PilotId, original.ShipId, first).ShipId);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.True(InventoryPersistence.NextId(saved) > Math.Max(first, second));
+        Assert.Equal(2, TaskTrackingTestData.Count(f.Db, TaskEvents.Boarded));
     }
 
     [Fact]

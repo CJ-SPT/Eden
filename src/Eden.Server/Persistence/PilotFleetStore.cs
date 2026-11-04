@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup) : IPilotFleet
+internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup, TimeProvider? clock = null) : IPilotFleet
 {
     private static readonly (int TypeId, InventoryFlag Slot)[] s_recoveryEquipment =
     [
@@ -168,6 +169,16 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             throw new InvalidDataException("Board an assembled ship you own at your current docked station.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, ship.TypeId);
+        if (pilot.ActiveShipId != shipId)
+        {
+            PilotTaskTrackingStore.Record(
+                world,
+                catalog,
+                pilotId,
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                TaskEvents.Boarded
+            );
+        }
         pilot.ActiveShipId = shipId;
         world.SaveChanges();
         transaction.Commit();
@@ -300,6 +311,13 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                 changes.Add(new(PilotInventoryStore.Read(catalog, module), null));
             }
         }
+        PilotTaskTrackingStore.Record(
+            world,
+            catalog,
+            pilotId,
+            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            TaskEvents.Boarded
+        );
         pilot.ActiveShipId = recovered.Id;
         world.SaveChanges();
         transaction.Commit();
