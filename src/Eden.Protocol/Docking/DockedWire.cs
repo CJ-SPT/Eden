@@ -93,24 +93,24 @@ internal sealed record EveOwnerRow(long Id, string Name) : BlueModel
     public override object ToBlue() => new object?[] { Id, Name, CharacterTypeId };
 }
 
-internal sealed record StationInfoRow(DockedPilot Pilot) : BlueModel
+internal sealed record StationInfoRow(StationDirectoryEntry Station, long ServiceMask) : BlueModel
 {
     public override object ToBlue() =>
         new object?[]
         {
-            Pilot.StationId,
-            Pilot.StationTypeId,
-            Pilot.Station.Name,
-            Pilot.HomeSystemId,
-            Pilot.HomeConstellationId,
-            Pilot.HomeRegionId,
-            Pilot.StationOwnerId,
-            Pilot.StationOwnerId,
-            Pilot.OperationId,
-            Pilot.OrbitId,
-            Pilot.X,
-            Pilot.Y,
-            Pilot.Z,
-            0,
+            Station.Id,
+            Station.TypeId,
+            Station.Name,
+            Station.SystemId,
+            Station.ConstellationId,
+            Station.RegionId,
+            Station.OwnerId,
+            Station.OwnerId,
+            Station.OperationId,
+            Station.OrbitId,
+            Station.Position.X,
+            Station.Position.Y,
+            Station.Position.Z,
+            ServiceMask,
         };
 }

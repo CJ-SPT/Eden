@@ -7,6 +7,7 @@ The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibili
 | Feature | Audited routes | State |
 | --- | --- | --- |
 | Character settings | `charMgr.GetCharacterSettings`, `SaveCharacterSetting`, `DeleteCharacterSetting` | Implemented with private persistent values |
+| Station directory | `map.GetStationInfo` | Implemented for every catalog station, including service masks |
 | Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState`, `GetOnlineStatus` | Implemented for local pilots; contact notifications and NPC/organization contacts pending |
 | Personal locations | `accessGroupBookmarkMgr.GetMyActiveBookmarks` and folder/bookmark operations | Pending |
 | Ship insurance | `insuranceSvc.GetContracts`, `GetInsurancePrice` and policy operations | Pending |
@@ -44,6 +45,22 @@ References: unchanged pinned `code.ccp` hash and Carbon Blue revision **fcbf0c2e
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Add another local pilot with Send Notification cleared, assign a label and reconnect; verify the contact and label remain. With both pilots connected, check watchlist indicators through logoff/reconnect. Native rendering and interaction remain unverified.
+
+### Catalog station directory
+
+The old `map.GetStationInfo` compatibility reply contained one row for the caller's home/current station and a zero service mask. Build **3662168** `eve/client/script/ui/services/uisvc.pyj`, `UI.GetStation`, calls the method without arguments and caches the whole reply through `Index('stationID')`. Market bid lookup and nearest faction-warfare station lookup also consume this directory. Returning one station makes other stations disappear from those consumers, even though Eden can travel and dock there.
+
+The route now returns all pinned catalog stations in stable ID order, using the existing native Rowset descriptor. Each row carries the station's type, formatted name, solar system, constellation, region, owner/corporation, operation, orbit and coordinates. It is independent of the selected pilot's position and station. `evestations/data.pyj` `get_station_service_masks` assigns `2**index` to **sorted service IDs**; `get_station_service_mask` ORs the bits belonging to the station operation's services. The adapter follows this exact rule, including gaps and repeated service IDs. Missing/empty operation services produce zero. It does not assume service IDs are bit positions. These are catalog capabilities; reporting a service does not implement its missing gameplay.
+
+Server loads typed directory entries and service IDs from SQLite once, through a singleton lazy snapshot. Protocol owns service-bit encoding and the native descriptor. No world data or schema changes are needed; world version remains **41**. Selection gating is retained, and arguments/keywords are rejected. The installed catalog is treated as immutable until the server restarts.
+
+References: unchanged build-3662168 archive hash and Carbon Blue revision recorded in the preceding route milestones. Inspection was inert; no gameplay Python executed. The existing Rowset/tuple adapters are unchanged.
+
+**Automated validation.** Development filter `FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **9 tests** in approximately **2 seconds**. Coverage includes remote-station rows, every native column, total/unique station counts, selection and request validation, docked/in-space callers, server-provider reopen, gapped service IDs, duplicate services, empty services and signed-mask boundaries. Initial development corrected missing test/model imports and escaped JSON in fixture SQL before the passing run. Final filter `FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **41 tests** in approximately **6 seconds**. Tool/solution restores, solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting tests), formatting and diff checks passed; final build/test/policy/format checks took approximately **19 seconds** combined. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect information for a remote station and check station/service map filters. Native rendering and interactions remain unverified.
 
 ## Launcher accounts and developer roles
 
