@@ -89,6 +89,37 @@ public sealed class PilotServicesTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task SessionExitRemovesStationPresenceBeforeTheConnectionScopeIsDisposed(bool writeFailure)
+    {
+        using TestWorld world = new();
+        using var scope = world.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var pilot = world.Store.FindPilot(1000001)!;
+        var guests = services.GetRequiredService<SharedStationGuests>();
+        Queue<object?> requests = new([Request("charUnboundMgr", "SelectCharacterID", [pilot.PilotId])]);
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            services
+                .GetRequiredService<IPilotSession>()
+                .RunAsync(
+                    () => requests.TryDequeue(out var request) ? Task.FromResult(request) : throw new EndOfStreamException(),
+                    _ =>
+                    {
+                        Assert.Equal(pilot.PilotId, Assert.Single(guests.List(pilot)).PilotId);
+                        return writeFailure ? throw new EndOfStreamException() : Task.CompletedTask;
+                    },
+                    _ => { },
+                    1000001,
+                    42,
+                    SignedSettings.Empty,
+                    CancellationToken.None
+                )
+        );
+        Assert.Empty(guests.List(pilot));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task RequestedDisconnectLoggingReturnsNoneBeforeAndAfterSelectionAndToleratesRetries(bool selected)
     {
         using TestWorld world = new();

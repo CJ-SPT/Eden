@@ -6,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable]
-internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCallHandler
+internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStationGuests guests) : IPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -24,13 +24,10 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
             // It records exit intent; the transport closing owns disconnect cleanup.
             ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
                 PilotCallResult.None,
-            ("config", "GetMultiOwnersEx") => OwnerRows(
-                arguments,
-                context.ActiveFlight?.VisiblePilots() ?? context.Roster.Select(PilotContact.From)
-            ),
+            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, KnownPilots(context)),
             ("config", "GetMultiCorpTickerNamesEx")
                 when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new CorporationTickerTable(
-                (context.ActiveFlight?.VisiblePilots() ?? context.Roster.Select(PilotContact.From))
+                KnownPilots(context)
                     .DistinctBy(pilot => pilot.CorpId)
                     .Where(pilot => ids.Contains((long)pilot.CorpId))
                     .Select(pilot => new CorporationTickerRow(pilot.CorpId, pilot.CorporationTicker))
@@ -49,6 +46,11 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock) : IPilotCa
             _ => PilotCallResult.Unsupported,
         };
     }
+
+    private IEnumerable<PilotContact> KnownPilots(PilotCallContext context) =>
+        context.ActiveFlight is { } flight
+            ? flight.VisiblePilots().Concat(guests.List(flight.Pilot)).DistinctBy(pilot => pilot.PilotId)
+            : context.Roster.Select(PilotContact.From);
 
     private static OwnerTable OwnerRows(object? arguments, IEnumerable<PilotContact> pilots)
     {

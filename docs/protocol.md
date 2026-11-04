@@ -222,6 +222,24 @@ For wire behavior, Carbon Blue's reduce reader resolves the outbound callable an
 
 Keep build-specific definitions in the catalog and mutable progress in the world save. Expose each new service through a narrow persistence interface keyed by the authenticated account or selected pilot. Add a separate public lookup when other pilots need to view shareable fields.
 
+## Station guests, November 4, 2026
+
+The user's screenshot showed two pilots at the same station, each seeing only themselves under Guests. The compatibility handler returned a hard-coded singleton containing the requesting pilot, and no station presence notifications existed.
+
+Build 3662168's `eve/client/script/ui/station/base.pyj`, lines 122–141, caches `station.GetGuests()` until the station changes. Its response is a Python list of `(characterID, corporationID, allianceID, warFactionID)` tuples. Both `OnCharNowInStation(rec)` and `OnCharNoLongerInStation(rec)` accept one such tuple. `eve/client/script/ui/shared/dockedUI/guests.pyj`, lines 222–229, consumes the same arrival/departure events for the displayed list. Alliance and faction remain None for Eden's current pilots. The inspected `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. These service contracts come from the pinned client; [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) remains the consulted list/tuple serialization reference. No codec or transport change is required.
+
+`SharedStationGuests` now holds immutable, connected-pilot contacts under a lock, scoped by exact station ID. `StationGuestHandler` publishes selected docked pilots, returns a deterministic list including self, and compares snapshots on the existing one-second session updates. Idle docked sessions keep that update loop active even without training or flight. Arrivals and departures use named notifications with the native tuple shape. A GetGuests refresh also resets its notification baseline, preventing duplicate arrival events. Station changes reset the observer baseline; same-station ship changes retain membership. Other-station, in-space, offline and character-selection pilots are excluded. Guest names and corporation tickers resolve through the existing account compatibility calls. Presence is transient, with removal on character logoff, dependency-scope disposal, and session termination including read/write failures; reconnect rebuilds it without a world schema change.
+
+**Automated validation.** Tool/solution restore and Debug build passed with zero warnings/errors (2.30 seconds). All 97 focused .NET tests passed (13.62 seconds command time, 12 seconds reported test duration), including six new regression cases. Both Python policy suites passed (3 catalog setup and 9 formatting cases), and `Format.ps1 -Check` passed across 405 files with the 140-character policy (9.26 seconds combined policy/format command time). Regressions cover the initial two-pilot list, offline/other-station/in-space exclusion, owner/ticker replies, exact list/tuple bytes, idle observer updates across three docking cycles, native notification envelopes, no duplicate events, ship refresh, logoff/reselection, disconnect/reconnect, malformed calls, selection gating and read/write failure cleanup. No full .NET regression run was requested or performed. The focused filter was:
+
+```powershell
+dotnet test --no-build --filter 'FullyQualifiedName~Eden.Protocol.Tests.Docking|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions|FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Combat.ShipSafetyTests'
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. The screenshot establishes the original defect; native rendering and list refresh remain unverified.
+
+**Optional maintainer checks.** Restart the updated server and reconnect both pilots at the same station; confirm both guest names/counts, then undock/redock or log off one pilot while watching the other's Guests panel.
+
 ## Character logoff to selection, November 4, 2026
 
 The user reported an **Invalid Packet Destination** dialog for `userSvc.UserLogOffCharacter` when choosing Log Off. In build 3662168's `eve/client/script/parklife/gameui.py`, `GameUI.LogOffCharacter` passes the no-argument remote method to `sessionMgr.PerformSessionChange('logoff', ...)`. A truthy result invokes `DoCharacterLogoff`, which chains `ProcessSessionReset`, closes character windows, broadcasts `OnSessionReset` and activates `charsel` on the existing connection. Python None would deny the transition. The inspected `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.

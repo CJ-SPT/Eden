@@ -25,19 +25,22 @@ internal sealed class PilotUpdateCoordinator(
     MissileHandler missiles,
     SupportModuleHandler support,
     TackleHandler tackle,
-    DeferredRefitPrimes refits
+    DeferredRefitPrimes refits,
+    StationGuestHandler guests
 )
 {
-    public bool IsMonitoring => industry.IsMonitoring;
+    public bool IsMonitoring => industry.IsMonitoring || guests.IsDocked;
 
     public void Enter(PilotCallContext context)
     {
+        guests.Advance(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
     }
 
     public void Leave(PilotCallContext context)
     {
+        guests.Dispose();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -72,6 +75,7 @@ internal sealed class PilotUpdateCoordinator(
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         npcCombat.Advance(context);
         targeting.Advance(context);
+        guests.Advance(context);
         return beforeAttack;
     }
 }

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Skills;
@@ -15,7 +16,8 @@ internal sealed class PilotServices(
     PilotUpdateCoordinator updates,
     SkillHandler skills,
     IAsteroidField asteroids,
-    ILoginIdentity identity
+    ILoginIdentity identity,
+    StationGuestHandler guests
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -28,6 +30,9 @@ internal sealed class PilotServices(
         CancellationToken cancellationToken
     )
     {
+        // Release station presence even when a read, write or cancellation ends
+        // the session before the connection's dependency scope is disposed.
+        using var stationPresence = guests;
         using PilotCallContext context = new(
             accountId,
             pilots.ReadAccount(accountId),

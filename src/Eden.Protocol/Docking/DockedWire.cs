@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
@@ -48,6 +49,17 @@ internal sealed record StationItemBits(DockedPilot Pilot) : BlueModel
 internal sealed record StationGuest(long CharacterId, int CorporationId) : BlueModel
 {
     public override object ToBlue() => new object?[] { CharacterId, CorporationId, null, null };
+}
+
+// Both native station events take one four-field guest tuple, including departure.
+internal sealed record StationGuestArrived(StationGuest Guest) : PilotNotification("OnCharNowInStation")
+{
+    public override object?[] Arguments => [Guest];
+}
+
+internal sealed record StationGuestDeparted(StationGuest Guest) : PilotNotification("OnCharNoLongerInStation")
+{
+    public override object?[] Arguments => [Guest];
 }
 
 internal sealed record LocationRow(long Id, string Name, int SystemId, double X, double Y, double Z) : BlueModel

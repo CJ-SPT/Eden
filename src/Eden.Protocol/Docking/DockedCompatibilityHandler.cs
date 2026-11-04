@@ -118,7 +118,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             // Zero means uninsurable and keeps the deferred insurance role closed.
             ("insuranceSvc", "GetInsurancePrice") when args is [long type] && type is > 0 and <= int.MaxValue => 0d,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
-            ("station", "GetGuests") => new BlueList<StationGuest>([new(pilot.PilotId, pilot.CorpId)]),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
             ("crimewatch", "GetClientStates") when args.Length == 0 => new CrimewatchClientState(safety.Read(pilot.PilotId)),
             ("crimewatch", "SetSafetyLevel") => SetSafety(pilot.PilotId, args),
