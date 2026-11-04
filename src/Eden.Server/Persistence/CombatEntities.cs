@@ -33,6 +33,7 @@ public sealed class NpcAggression
     public long TargetShipId { get; set; }
     public long ReadyAt { get; set; }
     public long? LastShotAt { get; set; }
+    public long MissileReadyAt { get; set; }
 
     internal static NpcAggression Start(long npcId, long targetShipId, double delayMilliseconds, long now)
     {
@@ -45,6 +46,7 @@ public sealed class NpcAggression
             NpcId = npcId,
             TargetShipId = targetShipId,
             ReadyAt = checked(now + (long)Math.Ceiling(delayMilliseconds * TimeSpan.TicksPerMillisecond)),
+            MissileReadyAt = checked(now + (long)Math.Ceiling(delayMilliseconds * TimeSpan.TicksPerMillisecond)),
         };
     }
 }

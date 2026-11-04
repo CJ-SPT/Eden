@@ -18,7 +18,8 @@ public sealed record NpcShot(
     double Quality,
     ShipHealth Health,
     DockedPilot? Capsule,
-    InsurancePayout? Insurance = null
+    InsurancePayout? Insurance = null,
+    bool IsMissile = false
 );
 
 public interface INpcCombat

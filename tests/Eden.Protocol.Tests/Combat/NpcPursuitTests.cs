@@ -271,8 +271,11 @@ public sealed class NpcPursuitTests
             deadline = world.Set<NpcAggression>().Single().ReadyAt;
             world.Database.ExecuteSqlRaw(TestWorld.DropTestingMarketSchema + TestWorld.DropNpcNavigationColumns + "PRAGMA user_version=25");
         }
-        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
+        using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        // Validate migration preservation separately from startup's deliberate
+        // cancellation of connection-owned aggression.
+        WorldMigration.Open(saved, catalog, f.Clock);
         var npc = saved.Set<WorldNpc>().Find(f.Npc.Id)!;
         Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(f.Npc.Position, NpcMotion.Position(npc));

@@ -1,5 +1,7 @@
 # Eden
 
+NPCs can now launch guided missiles with catalog damage and motor modifiers, independently of their turret cycles. Actual missile contacts apply player damage and share turret ship-loss, insurance, wreck and capsule handling. Restart clears NPC combat and cancels in-flight projectiles. Normal space population remains unchanged until regional spawning is enabled; native missile presentation is unverified. See the [NPC missile notes](docs/protocol.md#npc-missile-combat).
+
 NPC population groundwork now supports mixed catalog types, saved belt/gate/station homes, faction/corporation ownership and distinct pirate, navy and customs roles. Pirate acquisition works across systems; peaceful pilots are excluded from guard detection, and guard kills grant no pirate bounty or positive security reward. World version 65 preserves historical NPC identities and damage. The normal population remains the Perimeter Rookie fixture while regional spawning, NPC missiles, loot and patrol behavior are implemented. See the [population foundation notes](docs/protocol.md#npc-population-foundation).
 
 The separate [Avalonia desktop launcher](https://github.com/CJ-SPT/Eden-Launcher) supports account registration and local/remote launching through API v1. New standard and developer accounts receive Omega clone status by default. See [launcher hosting](docs/launcher.md) for server configuration, existing account passwords and developer invitations. The default launcher API address is `http://127.0.0.1:26002`.

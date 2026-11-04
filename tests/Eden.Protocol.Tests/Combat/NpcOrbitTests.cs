@@ -181,8 +181,9 @@ public sealed class NpcOrbitTests
         f.Clock.Milliseconds = 8500;
         f.Fire();
         var before = Contact(f);
-        _ = WorldInitialization.Open(f.Db.Path);
-        Assert.Equal(before, Contact(f));
+        // Reopening persistence retains the orbit; a server restart now clears
+        // live aggression and is covered separately by NPC combat tests.
+        Assert.Equal(before, new NpcEncounterStore(new(f.Db.Path)).List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id));
         using (WorldDbContext world = new(f.Db.Path))
         {
             Assert.Equal(NpcNavigationState.Orbiting, world.Set<WorldNpc>().Find(f.Npc.Id)!.Navigation);

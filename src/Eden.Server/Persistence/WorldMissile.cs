@@ -7,6 +7,8 @@ namespace Eden.Server.Persistence;
 public sealed class WorldMissile
 {
     public long Id { get; set; }
+    public MissileSourceKind SourceKind { get; set; }
+    public int SourceTypeId { get; set; }
     public long PilotId { get; set; }
     public long SourceShipId { get; set; }
     public long ModuleId { get; set; }
@@ -39,7 +41,7 @@ public sealed class WorldMissile
             ChargeTypeId,
             GroupId,
             SystemId,
-            PilotId,
+            SourceKind == MissileSourceKind.Npc ? CorporationId : PilotId,
             SourceShipId,
             [ModuleId],
             TargetId,

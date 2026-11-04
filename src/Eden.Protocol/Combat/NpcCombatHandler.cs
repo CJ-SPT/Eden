@@ -20,7 +20,8 @@ internal sealed class NpcCombatHandler(
     INpcCombat combat,
     SharedTargetLocks locks,
     ShipLossCoordinator shipLoss,
-    SharedSpace space
+    SharedSpace space,
+    INpcMissiles? missiles = null
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -91,32 +92,26 @@ internal sealed class NpcCombatHandler(
             {
                 continue;
             }
-            context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Incoming(shot)));
-            context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);
-            context.Flight.NotifyHealth(shot.Health);
-            context.Notifications.Add(
-                new ModuleAttributesChanged([
-                    Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
-                    Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
-                    Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
-                ])
-            );
-            if (shot.Capsule is { } capsule)
+            Notify(context, shot);
+            if (shot.Capsule is not null)
             {
-                if (shot.Insurance is { } payout)
-                {
-                    context.Notifications.Add(
-                        new AccountBalanceChanged(context.Pilot.PilotId, (double)payout.BalanceCents / MarketDefinitions.CentsPerIsk)
-                    );
-                }
-                shipLoss.Replace(context, capsule);
-                Clear();
-                _shipId = capsule.ShipId;
                 break;
             }
-
-            ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
-                new(context.Pilot.PilotId, new DogmaItemKey.Item(shot.Health.ShipId), attribute, now, value);
+        }
+        if (missiles is not null && context.Flight.CanTarget && context.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup)
+        {
+            foreach (
+                var impact in missiles.Advance(
+                    context.Pilot.PilotId,
+                    _shipId,
+                    context.Flight.Velocity,
+                    clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+                )
+            )
+            {
+                Notify(context, impact);
+            }
+            context.Flight.RefreshMissiles();
         }
         var current = combat.Aggressors(_shipId).ToArray();
         foreach (long npc in _aggressors.Except(current))
@@ -129,6 +124,45 @@ internal sealed class NpcCombatHandler(
         }
         _aggressors = current;
         context.Flight.RefreshNpcs();
+    }
+
+    private void Notify(PilotCallContext context, NpcShot shot)
+    {
+        context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Incoming(shot)));
+        if (!shot.IsMissile)
+        {
+            context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);
+        }
+        context.Flight.NotifyHealth(shot.Health);
+        context.Notifications.Add(
+            new ModuleAttributesChanged([
+                Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
+                Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
+                Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
+            ])
+        );
+        if (shot.Capsule is { } capsule)
+        {
+            if (shot.Insurance is { } payout)
+            {
+                context.Notifications.Add(
+                    new AccountBalanceChanged(context.Pilot.PilotId, (double)payout.BalanceCents / MarketDefinitions.CentsPerIsk)
+                );
+            }
+            shipLoss.Replace(context, capsule);
+            Clear();
+            _shipId = capsule.ShipId;
+            return;
+        }
+
+        ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(shot.Health.ShipId),
+                attribute,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                value
+            );
     }
 
     public void Leave()

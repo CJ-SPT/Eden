@@ -124,6 +124,17 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             NpcMotion.Return(npc);
         }
         world.RemoveRange(aggression);
+        world
+            .Set<WorldMissile>()
+            .Where(m =>
+                m.SourceKind == MissileSourceKind.Npc
+                && m.TargetId == shipId
+                && (npcId == null || m.SourceShipId == npcId)
+                && m.Status == MissileFlightStatus.Flying
+            )
+            .ExecuteUpdate(set =>
+                set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, m => m.UpdatedAt)
+            );
         world.SaveChanges();
         transaction.Commit();
     }
@@ -183,7 +194,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             transaction.Commit();
             return null;
         }
-        if (!NpcMotion.Engaged(npc) && now < aggression.ReadyAt)
+        if (!NpcMotion.Engaged(npc) && now < Math.Min(aggression.ReadyAt, aggression.MissileReadyAt))
         {
             return null;
         }
@@ -194,7 +205,12 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now, destinyStamp);
         var separation = targetPosition - NpcMotion.Position(npc);
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
-        if (range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange) || now < aggression.ReadyAt)
+        NpcMissileStore.Launch(world, catalog, npc, aggression, attributes, pilot, velocity, now, destinyStamp);
+        if (
+            attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType) <= 0
+            || range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange)
+            || now < aggression.ReadyAt
+        )
         {
             world.SaveChanges();
             transaction.Commit();
@@ -231,90 +247,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         InsurancePayout? insurance = null;
         if (result.Remaining.Destroyed)
         {
-            var old = pilot.ActiveShip;
-            var moduleIds = world.Set<OwnedItem>().Where(i => i.LocationId == shipId && i.OwnerId == pilotId).Select(i => i.Id).ToArray();
-            var items = world
-                .Set<OwnedItem>()
-                .Where(i => i.OwnerId == pilotId && (i.LocationId == shipId || moduleIds.Contains(i.LocationId)))
-                .OrderBy(i => i.Id)
-                .ToArray();
-            var storedShips = world.Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == shipId).OrderBy(s => s.Id).ToArray();
-            string storedManifest = JsonSerializer.Serialize(storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)));
-            string manifest = JsonSerializer.Serialize(items);
-            var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
-            foreach (var stored in storedShips)
-            {
-                if (lootRoll.Survives())
-                {
-                    survivors.Add(stored.Id);
-                }
-            }
-            var capsuleType =
-                catalog
-                    .Set<ItemType>()
-                    .SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
-                ?? throw new InvalidDataException("The catalog has no supported capsule.");
-            var capsule = world
-                .Ships.Add(
-                    new()
-                    {
-                        Id = InventoryPersistence.NextId(world),
-                        OwnerId = pilotId,
-                        TypeId = capsuleType.Id,
-                        StationId = old.StationId,
-                        Name = capsuleType.Name,
-                        Position = new()
-                        {
-                            SystemId = system,
-                            X = position.X,
-                            Y = position.Y,
-                            Z = position.Z,
-                        },
-                    }
-                )
-                .Entity;
-            world
-                .Set<ShipLoss>()
-                .Add(
-                    new()
-                    {
-                        ShipId = shipId,
-                        PilotId = pilotId,
-                        NpcId = npcId,
-                        CapsuleId = capsule.Id,
-                        TypeId = old.TypeId,
-                        SystemId = system,
-                        Time = now,
-                        Name = old.Name,
-                        ItemsJson = manifest,
-                        StoredShipsJson = storedManifest,
-                        DroppedItemIdsJson = JsonSerializer.Serialize(survivors.Order()),
-                        X = position.X,
-                        Y = position.Y,
-                        Z = position.Z,
-                    }
-                );
-            var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
-            foreach (var stored in storedShips)
-            {
-                if (survivors.Contains(stored.Id))
-                {
-                    stored.StoredInId = wreck.Id;
-                    stored.StorageFlagId = (int)InventoryFlag.Cargo;
-                }
-                else
-                {
-                    ShipStoragePersistence.Destroy(world, stored);
-                }
-            }
-            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.ShipLost);
-            insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
-            pilot.ActiveShip = capsule;
-            pilot.ActiveShipId = capsule.Id;
-            // Satisfy the active-ship FK before deleting the old hull. Both saves
-            // belong to this transaction: a failed capsule/loss cannot consume it.
-            world.SaveChanges();
-            world.Remove(old);
+            insurance = NpcShipLossPersistence.Apply(world, catalog, pilot, npcId, shipId, system, position, now, lootRoll);
         }
         world.SaveChanges();
         transaction.Commit();

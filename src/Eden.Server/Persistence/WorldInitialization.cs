@@ -22,6 +22,8 @@ public static class WorldInitialization
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
         world.Set<WorldTackle>().ExecuteDelete();
+        // NPC target ownership is connection activity, not offline combat.
+        world.Set<NpcAggression>().ExecuteDelete();
         // Downtime cancels live projectiles without refunding ammunition or
         // cooldowns. Saved impacts and rewards are never applied again.
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();

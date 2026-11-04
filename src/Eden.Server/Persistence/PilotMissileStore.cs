@@ -178,7 +178,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         using CatalogDbContext catalog = new(database.CatalogPath);
         var rows = world
             .Set<WorldMissile>()
-            .Where(m => m.SystemId == systemId && m.Status == MissileFlightStatus.Flying)
+            .Where(m => m.SourceKind == MissileSourceKind.Pilot && m.SystemId == systemId && m.Status == MissileFlightStatus.Flying)
             .OrderBy(m => m.LaunchedAt)
             .ThenBy(m => m.Id)
             .ToArray();
@@ -317,7 +317,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         using var transaction = world.Database.BeginTransaction();
         var rows = world
             .Set<WorldMissile>()
-            .Where(m => m.PilotId == pilotId && m.Outcome != null && !m.Reported)
+            .Where(m => m.SourceKind == MissileSourceKind.Pilot && m.PilotId == pilotId && m.Outcome != null && !m.Reported)
             .OrderBy(m => m.EndedAt)
             .ThenBy(m => m.Id)
             .ToArray();
@@ -341,7 +341,12 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         world
             .Set<WorldMissile>()
-            .Where(m => m.PilotId == pilotId && m.SourceShipId == shipId && m.Status == MissileFlightStatus.Flying)
+            .Where(m =>
+                m.SourceKind == MissileSourceKind.Pilot
+                && m.PilotId == pilotId
+                && m.SourceShipId == shipId
+                && m.Status == MissileFlightStatus.Flying
+            )
             .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
     }
 }

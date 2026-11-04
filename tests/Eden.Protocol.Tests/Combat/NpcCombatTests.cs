@@ -117,7 +117,7 @@ public sealed class NpcCombatTests
     }
 
     [Fact]
-    public void ArrivalDoesNotAggressAndFirstAttackUsesCatalogDelayAndDurableCooldown()
+    public void ArrivalUsesCatalogDelayAndRestartRequiresFreshAggressionAndReaction()
     {
         using Fixture f = new();
         Assert.Empty(f.Combat.Aggressors(Fixture.ShipId));
@@ -136,6 +136,12 @@ public sealed class NpcCombatTests
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Null(f.Fire());
         f.Clock.Milliseconds = 10000;
+        Assert.Null(f.Fire());
+        Assert.Empty(f.Combat.Aggressors(Fixture.ShipId));
+        f.Aggress();
+        f.Clock.Milliseconds = 17499;
+        Assert.Null(f.Fire());
+        f.Clock.Milliseconds = 17500;
         Assert.NotNull(f.Fire());
         var contact = f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
         Assert.Equal(Fixture.ShipId, contact.Weapon!.TargetId);
