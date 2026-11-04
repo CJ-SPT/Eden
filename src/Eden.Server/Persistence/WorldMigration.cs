@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 41;
+    internal const int CurrentVersion = 42;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -551,7 +551,35 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=41");
+            if (version is >= 6 and < 42)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldBookmarkFolder(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Name TEXT NOT NULL, Description TEXT NOT NULL, IsActive INTEGER NOT NULL, IsKnown INTEGER NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldBookmarkFolder_PilotId ON WorldBookmarkFolder(PilotId);
+                    CREATE TABLE IF NOT EXISTS WorldBookmarkSubfolder(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        FolderId INTEGER NOT NULL REFERENCES WorldBookmarkFolder(Id) ON DELETE CASCADE, Name TEXT NOT NULL,
+                        CONSTRAINT AK_WorldBookmarkSubfolder_Id_FolderId UNIQUE(Id, FolderId));
+                    CREATE INDEX IF NOT EXISTS IX_WorldBookmarkSubfolder_FolderId ON WorldBookmarkSubfolder(FolderId);
+                    CREATE TABLE IF NOT EXISTS WorldBookmark(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        FolderId INTEGER NOT NULL REFERENCES WorldBookmarkFolder(Id) ON DELETE CASCADE,
+                        SubfolderId INTEGER, CreatorId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        ItemId INTEGER, TypeId INTEGER NOT NULL, LocationId INTEGER NOT NULL,
+                        X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL,
+                        Name TEXT NOT NULL, Note TEXT NOT NULL, CreatedAt INTEGER NOT NULL, ExpiresAt INTEGER,
+                        FOREIGN KEY(SubfolderId, FolderId) REFERENCES WorldBookmarkSubfolder(Id, FolderId) ON DELETE RESTRICT);
+                    CREATE INDEX IF NOT EXISTS IX_WorldBookmark_FolderId ON WorldBookmark(FolderId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldBookmark_CreatorId ON WorldBookmark(CreatorId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldBookmark_SubfolderId_FolderId ON WorldBookmark(SubfolderId, FolderId);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=42");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

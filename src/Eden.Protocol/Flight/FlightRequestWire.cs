@@ -28,6 +28,9 @@ internal static class FlightRequestWire
         return (method, arguments) switch
         {
             ("CmdStargateJump", [long source, long exit, long ship]) => new FlightCommand.Jump(source, exit, ship),
+            ("CmdWarpToStuff", [string or byte[], long bookmark])
+                when BlueMarshal.Text(arguments[0]) == "bookmark" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
+                new FlightCommand.WarpToBookmark(bookmark, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
             ("CmdWarpToStuff", [string or byte[], long target])
                 when BlueMarshal.Text(arguments[0]) == "item" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
                 new FlightCommand.WarpTo(target, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),

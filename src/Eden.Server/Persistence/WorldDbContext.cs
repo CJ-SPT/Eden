@@ -142,6 +142,21 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedBookmarkFolder>().ToTable("WorldBookmarkFolder").HasKey(f => f.Id);
+        model.Entity<SavedBookmarkFolder>().HasOne<Pilot>().WithMany().HasForeignKey(f => f.PilotId);
+        model.Entity<SavedBookmarkSubfolder>().ToTable("WorldBookmarkSubfolder").HasKey(s => s.Id);
+        model.Entity<SavedBookmarkSubfolder>().HasAlternateKey(s => new { s.Id, s.FolderId });
+        model.Entity<SavedBookmarkSubfolder>().HasOne<SavedBookmarkFolder>().WithMany().HasForeignKey(s => s.FolderId);
+        model.Entity<SavedBookmark>().ToTable("WorldBookmark").HasKey(b => b.Id);
+        model.Entity<SavedBookmark>().HasOne<SavedBookmarkFolder>().WithMany().HasForeignKey(b => b.FolderId);
+        model.Entity<SavedBookmark>().HasOne<Pilot>().WithMany().HasForeignKey(b => b.CreatorId);
+        model
+            .Entity<SavedBookmark>()
+            .HasOne<SavedBookmarkSubfolder>()
+            .WithMany()
+            .HasForeignKey(b => new { b.SubfolderId, b.FolderId })
+            .HasPrincipalKey(s => new { s.Id, s.FolderId })
+            .OnDelete(DeleteBehavior.Restrict);
         model.Entity<SavedContact>().ToTable("WorldContact").HasKey(c => new { c.PilotId, c.ContactId });
         model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
         model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);

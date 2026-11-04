@@ -1144,7 +1144,7 @@ internal sealed class FlightSession(
     private void ArrivalEffect(long shipId) =>
         Update(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));
 
-    private PilotCallResult StartWarp(long target, double range)
+    private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null)
     {
         RefreshTackle(true);
         if (_warpBlocked)
@@ -1152,11 +1152,18 @@ internal sealed class FlightSession(
             return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
         }
         var body = objects.FirstOrDefault(item => item.Id == target);
-        if (body is null)
+        if (body is null && coordinates is null)
         {
             return PilotCallResult.Unsupported;
         }
-        if (!InBallpark || !_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, body, range, _simulatedStamp))
+        if (
+            !InBallpark
+            || !(
+                coordinates is { } point
+                    ? _navigation.StartWarpPoint(Pilot.ShipId, Pilot.Flight, Pilot.Position!, point, target, range, _simulatedStamp)
+                    : _navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, body!, range, _simulatedStamp)
+            )
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -1218,12 +1225,18 @@ internal sealed class FlightSession(
             {
                 return _navigation.WarpOrder == (retry.TargetId, retry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
             }
+            if (_jump is null && command is FlightCommand.WarpToPoint pointRetry)
+            {
+                return _navigation.WarpOrder == (pointRetry.OrderId, pointRetry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
+            }
             return PilotCallResult.Unsupported;
         }
         switch (command)
         {
             case FlightCommand.WarpTo warp:
                 return StartWarp(warp.TargetId, warp.Range);
+            case FlightCommand.WarpToPoint point:
+                return StartWarp(point.OrderId, point.Range, point.Position);
             case FlightCommand.RefreshState:
                 Snapshot();
                 return PilotCallResult.None;

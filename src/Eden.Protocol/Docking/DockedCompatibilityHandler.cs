@@ -140,7 +140,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
             ("agentMgr", "GetMyJournalDetails") => new AgentJournalState(),
-            ("accessGroupBookmarkMgr", "GetMyActiveBookmarks") => new PersonalBookmarkState(pilot.PilotId),
             ("monolithTaskTrackerMgr", "GetCompletedAchievementsAndClientEventCount") => new AchievementState(),
             ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 

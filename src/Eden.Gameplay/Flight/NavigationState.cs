@@ -38,13 +38,29 @@ public sealed class NavigationState
 
     public void CancelAlignment() => WarpDestination = null;
 
-    public bool StartWarp(long shipId, FlightProperties hull, SpacePosition origin, StaticSpaceObject body, double range, int stamp)
+    public bool StartWarp(long shipId, FlightProperties hull, SpacePosition origin, StaticSpaceObject body, double range, int stamp) =>
+        StartWarpPoint(shipId, hull, origin, CelestialWarpPoint.Resolve(body, origin), body.Id, range, stamp);
+
+    public bool StartWarpPoint(
+        long shipId,
+        FlightProperties hull,
+        SpacePosition origin,
+        SpacePosition anchor,
+        long orderId,
+        double range,
+        int stamp
+    )
     {
-        if (!double.IsFinite(range) || range is < 0 or > 100_000)
+        if (
+            !double.IsFinite(range)
+            || range is < 0 or > 100_000
+            || !double.IsFinite(anchor.X)
+            || !double.IsFinite(anchor.Y)
+            || !double.IsFinite(anchor.Z)
+        )
         {
             return false;
         }
-        var anchor = CelestialWarpPoint.Resolve(body, origin);
         if (origin.DistanceTo(anchor) - hull.ShipRadius < 150_000)
         {
             return false;
@@ -57,7 +73,7 @@ public sealed class NavigationState
             return false;
         }
         WarpDestination = end;
-        WarpOrder = (body.Id, range);
+        WarpOrder = (orderId, range);
         AlignStamp = stamp;
         Direction = toward;
         LastHeading = Direction;
