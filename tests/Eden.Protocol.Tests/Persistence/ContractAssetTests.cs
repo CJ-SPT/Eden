@@ -124,8 +124,47 @@ public sealed class ContractAssetTests
         Assert.Contains(rows, i => i.Id == hull && i.Singleton && i.CategoryId == (int)InventoryCategory.Ship);
         Assert.DoesNotContain(rows, i => new[] { carried, foreign, cargo, installed, db.Store.FindPilot(1000001)!.ShipId }.Contains(i.Id));
         Assert.All(rows, i => Assert.Equal(ContractAssetTestData.Pilot, i.OwnerId));
+        Assert.Equal(
+            new ContractAssetStation(ContractAssetTestData.Station, rows.Count + 1),
+            Assert.Single(assets.Stations(ContractAssetTestData.Pilot))
+        );
         Assert.Throws<InvalidDataException>(() => assets.Split(ContractAssetTestData.Pilot, ContractAssetTestData.Station, installed, 1));
         Assert.Throws<InvalidDataException>(() => assets.Contents(ContractAssetTestData.Pilot, ContractAssetTestData.Station, installed));
+    }
+
+    [Fact]
+    public void StationDirectoryCountsRootsAndHidesEscrowAcrossReopen()
+    {
+        using TestWorld db = new();
+        ContractAssetTestData.AddRemoteStation(db);
+        long remote = ContractAssetTestData.Stack(db, 100, ContractAssetTestData.RemoteStation);
+        ContractAssetTestData.Stack(db, location: ContractAssetTestData.RemoteStation, owner: ContractAssetTestData.Other);
+        long hull = ContractAssetTestData.Hull(db);
+        ContractAssetTestData.Stack(db, location: hull);
+        var assets = db.Services.GetRequiredService<IPilotContractAssets>();
+        Assert.Equal(
+            1,
+            assets.Stations(ContractAssetTestData.Pilot).Single(s => s.StationId == ContractAssetTestData.RemoteStation).ItemCount
+        );
+        ContractTests.Fund(db, ContractAssetTestData.Pilot);
+        db.Services.GetRequiredService<IPilotContracts>()
+            .Create(
+                ContractAssetTestData.Pilot,
+                ContractTests.Draft(remote) with
+                {
+                    StationId = ContractAssetTestData.RemoteStation,
+                    Items = [new(remote, 100)],
+                }
+            );
+        WorldInitialization.Open(db.Path);
+        using var reopened = ServerServices.Build(new(db.Path));
+        var directory = reopened.GetRequiredService<IPilotContractAssets>();
+        Assert.DoesNotContain(directory.Stations(ContractAssetTestData.Pilot), s => s.StationId == ContractAssetTestData.RemoteStation);
+        Assert.Equal(
+            assets.Station(ContractAssetTestData.Pilot, ContractAssetTestData.Station).Count + 1,
+            Assert.Single(directory.Stations(ContractAssetTestData.Pilot)).ItemCount
+        );
+        Assert.Throws<InvalidDataException>(() => directory.Stations(long.MaxValue));
     }
 
     [Fact]

@@ -75,6 +75,20 @@ public sealed class ContractServiceTests
         using Fixture f = new();
         Assert.Same(PilotCallResult.Unsupported, f.Owner.Call("CreateContract", [Request(f.Item)]));
         f.Select();
+        // Reproduce the native wizard's global station lookup before its item picker.
+        object?[] binding = [ContractAssetTestData.Pilot, 10002L];
+        Assert.Equal((long)PilotLogin.NodeId, Reply(f.Owner.Call("MachoResolveObject", [binding], service: "charMgr")));
+        var bound = Assert.IsType<BoundPilotReply>(
+            Assert
+                .IsType<PilotCallResult.Success>(
+                    f.Owner.Call("MachoBindObject", [binding, new object?[] { "ListStations", Array.Empty<object?>() }], service: "charMgr")
+                )
+                .Reply
+        );
+        Assert.NotEmpty(Assert.IsType<List<object?>>(Fields(BlueMarshal.Decode(BlueMarshal.Encode(bound.Reply)))["lines"]));
+        Assert.NotEmpty(
+            Assert.IsType<List<object?>>(WireAssertions.Materialize(f.Owner.Call("GetItemsInDockableLocation", [60003760L, false])))
+        );
         long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)], new() { ["confirm"] = 0L }));
         Assert.Equal("OnContractCreated", Assert.Single(f.Owner.Context.Notifications.OfType<ContractEvent>()).Name);
         var changed = Assert.Single(f.Owner.Context.Notifications.OfType<ItemChanged>());
