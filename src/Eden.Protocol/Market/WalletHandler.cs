@@ -171,6 +171,26 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                 );
             }
         }
+        foreach (var payment in journal.JumpClonePayments)
+        {
+            if (filter.Includes(payment.Time, clock.GetUtcNow().UtcDateTime))
+            {
+                entries.Add(
+                    new(
+                        JumpCloneRules.FirstJournalId + payment.Id,
+                        payment.Time,
+                        payment.Kind == JumpClonePaymentKind.Installation
+                            ? WalletEntryType.JumpCloneInstallation
+                            : WalletEntryType.JumpCloneActivation,
+                        payment.PilotId,
+                        payment.OperatorId,
+                        payment.StationId,
+                        -payment.AmountCents,
+                        payment.BalanceCents
+                    )
+                );
+            }
+        }
         return new BlueList<WalletJournalEntry>(entries.OrderByDescending(entry => entry.Time).ToArray());
     }
 

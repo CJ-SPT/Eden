@@ -443,6 +443,7 @@ public sealed class IndustryTests
             f.Db.Services.GetRequiredService<IPilotSkillReader>(),
             f.Clock,
             f.Store,
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotJumpCloneSkills>(),
             f.Db.Services.GetRequiredService<Eden.Gameplay.Propulsion.IPilotNavigationSkills>()
         ).Read(f.Pilot.PilotId, f.Pilot.ShipId);
         var effects = Assert

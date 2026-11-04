@@ -142,6 +142,21 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedJumpClone>().ToTable("WorldJumpClone").HasKey(clone => clone.Id);
+        model.Entity<SavedJumpClone>().HasOne<Pilot>().WithMany().HasForeignKey(clone => clone.PilotId);
+        model.Entity<SavedJumpClone>().HasIndex(clone => clone.PilotId).IsUnique().HasFilter("Active = 1");
+        model
+            .Entity<SavedJumpClone>()
+            .ToTable(table =>
+                table.HasCheckConstraint(
+                    "CK_JumpClone_Location",
+                    "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
+                )
+            );
+        model.Entity<SavedJumpCloneTimer>().ToTable("WorldJumpCloneTimer").HasKey(timer => timer.PilotId);
+        model.Entity<SavedJumpCloneTimer>().HasOne<Pilot>().WithMany().HasForeignKey(timer => timer.PilotId);
+        model.Entity<SavedJumpClonePayment>().ToTable("WorldJumpClonePayment").HasKey(payment => payment.Id);
+        model.Entity<SavedJumpClonePayment>().HasOne<Pilot>().WithMany().HasForeignKey(payment => payment.PilotId);
         model.Entity<SavedAgentContact>().ToTable("WorldAgentContact").HasKey(contact => new { contact.PilotId, contact.AgentId });
         model.Entity<SavedAgentContact>().HasOne<Pilot>().WithMany().HasForeignKey(contact => contact.PilotId);
         model.Entity<SavedHomeStation>().ToTable("WorldHomeStation").HasKey(home => home.PilotId);

@@ -56,20 +56,6 @@ internal sealed record CrimewatchClientState(ShipSafetyLevel Safety) : BlueModel
         };
 }
 
-internal sealed record JumpCloneState() : BlueModel
-{
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["clones"] = new CompatibilityRowset(["jumpCloneID", "locationID", "cloneName"], []),
-                ["implants"] = new CompatibilityRowset(["jumpCloneID", "typeID"], []),
-                ["timeLastJump"] = null,
-            }
-        );
-}
-
 internal sealed record JumpTimerState() : BlueModel
 {
     public override object ToBlue() => new object?[] { null, null, null };

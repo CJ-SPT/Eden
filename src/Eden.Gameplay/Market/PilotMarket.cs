@@ -82,6 +82,8 @@ public enum WalletEntryType
     Insurance = 19,
     CloneTransfer = 52,
     TransactionTax = 54,
+    JumpCloneInstallation = 55,
+    JumpCloneActivation = 128,
     BountyPrizes = 85,
 }
 

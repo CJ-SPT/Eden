@@ -112,7 +112,6 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,
             ("crimewatch", "GetClientStates") when args.Length == 0 => new CrimewatchClientState(safety.Read(pilot.PilotId)),
             ("crimewatch", "SetSafetyLevel") => SetSafety(pilot.PilotId, args),
-            ("jumpCloneSvc", "GetCloneState") => new JumpCloneState(),
             ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
             ("fighterMgr", "GetFightersForShip") => new FighterState(),

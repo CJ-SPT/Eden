@@ -120,6 +120,7 @@ public enum StationService
     Laboratory = 15,
     Fitting = 17,
     Insurance = 21,
+    JumpCloneFacility = 24,
 }
 
 public static class InventoryDefinitions

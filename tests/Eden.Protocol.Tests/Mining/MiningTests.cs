@@ -330,7 +330,8 @@ public sealed class MiningTests
             dogmaScope.ServiceProvider.GetRequiredService<Eden.Protocol.Ammunition.MagazineWire>(),
             fixture.Db.Services.GetRequiredService<Eden.Protocol.Skills.PilotBrain>(),
             [mining],
-            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotCharacterSheet>()
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotCharacterSheet>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotJumpCloneSkills>()
         );
         var inventoryHandler = new InventoryHandler(
             fixture.Inventory,

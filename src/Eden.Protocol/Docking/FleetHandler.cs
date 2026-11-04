@@ -27,12 +27,27 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
         {
             return new PilotCallResult.Failure("Fleet and corporation access to personal ship holds is not available yet.");
         }
-        if (!(service == "ship" && method is "AssembleShip" or "Board") && !(service == "dogmaIM" && method == "CreateNewbieShip"))
+        if (
+            !(service == "ship" && method is "AssembleShip" or "Board" or "LeaveShip")
+            && !(service == "dogmaIM" && method == "CreateNewbieShip")
+        )
         {
             return PilotCallResult.Unsupported;
         }
         try
         {
+            if (method == "LeaveShip" && args is [long leavingShip] && keywords is not { Count: > 0 })
+            {
+                var leaving = fleet.Leave(context.Pilot.PilotId, leavingShip);
+                refits.Clear();
+                context.ChangeShip(leaving.Pilot);
+                RefreshBrain(context);
+                foreach (var change in leaving.Changes)
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                return PilotCallResult.None;
+            }
             if (service == "dogmaIM" && args is [long previousShip, long station])
             {
                 var recovery = fleet.RecoverCorvette(context.Pilot.PilotId, previousShip, station);

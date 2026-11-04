@@ -1,4 +1,6 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -25,6 +27,7 @@ internal sealed class PilotBrain(
     IPilotSkillReader skills,
     TimeProvider clock,
     IPilotIndustrySkills industry,
+    IPilotJumpCloneSkills clones,
     IPilotNavigationSkills navigation,
     IPilotFitting? fitting = null
 )
@@ -109,6 +112,47 @@ internal sealed class PilotBrain(
             ))
             .Concat(ownerEffects)
             .ToArray();
+        var cloneSkills = clones.ReadCloneSkills(pilotId);
+        var cloneEffects = new[]
+        {
+            new BrainEffect(
+                pilotId,
+                BrainModifier.Item,
+                DogmaAttributeId.MaxJumpClones,
+                BrainOperation.Add,
+                [],
+                [(int)InfomorphSkill.Psychology],
+                cloneSkills.Psychology
+            ),
+            new BrainEffect(
+                pilotId,
+                BrainModifier.Item,
+                DogmaAttributeId.MaxJumpClones,
+                BrainOperation.Add,
+                [],
+                [(int)InfomorphSkill.AdvancedPsychology],
+                cloneSkills.AdvancedPsychology
+            ),
+            new BrainEffect(
+                pilotId,
+                BrainModifier.Item,
+                DogmaAttributeId.MaxJumpClones,
+                BrainOperation.Add,
+                [],
+                [(int)InfomorphSkill.ElitePsychology],
+                cloneSkills.ElitePsychology
+            ),
+            new BrainEffect(
+                pilotId,
+                BrainModifier.Item,
+                DogmaAttributeId.CloneJumpCooldown,
+                BrainOperation.Add,
+                [],
+                [(int)InfomorphSkill.Synchronizing],
+                -cloneSkills.Synchronizing
+            ),
+        };
+        character = character.Concat(cloneEffects.Where(effect => effect.Value != 0)).ToArray();
         return new(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), character, effects, []);
     }
 

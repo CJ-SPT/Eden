@@ -3,6 +3,8 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    MaxJumpClones = 979,
+    CloneJumpCooldown = 1921,
     ShipMaintenanceBayCapacity = 908,
     SpecialFuelBayCapacity = 1549,
     SpecialGasHoldCapacity = 1557,

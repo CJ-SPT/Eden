@@ -13,7 +13,8 @@ public sealed record WalletJournal(
     IReadOnlyList<RepairPayment> Repairs,
     IReadOnlyList<WalletGrant> Grants,
     IReadOnlyList<InsuranceLedgerEntry> Insurance,
-    IReadOnlyList<HomeStationPayment> HomeStationPayments
+    IReadOnlyList<HomeStationPayment> HomeStationPayments,
+    IReadOnlyList<JumpClonePayment> JumpClonePayments
 );
 
 public interface IPilotWalletReader

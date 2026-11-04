@@ -150,6 +150,53 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         return new(ships, changes);
     }
 
+    public ShipBoarding Leave(long pilotId, long expectedShipId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var old = pilot.ActiveShip;
+        if (
+            old.Id != expectedShipId
+            || old.OwnerId != pilotId
+            || old.Position is not null
+            || old.StoredInId is not null
+            || catalog.Set<ItemType>().Find(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup
+        )
+        {
+            throw new InvalidDataException("Leave the ship you are currently piloting while docked in a station.");
+        }
+        var type =
+            catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
+            ?? throw new InvalidDataException("The catalog has no capsule.");
+        var capsule = world
+            .Ships.Where(s =>
+                s.OwnerId == pilotId && s.TypeId == type.Id && s.StationId == old.StationId && s.Position == null && s.StoredInId == null
+            )
+            .OrderBy(s => s.Id)
+            .FirstOrDefault();
+        bool created = capsule is null;
+        capsule ??= world
+            .Add(
+                new Ship
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = pilotId,
+                    TypeId = type.Id,
+                    StationId = old.StationId,
+                    Name = type.Name,
+                }
+            )
+            .Entity;
+        pilot.ActiveShip = capsule;
+        pilot.ActiveShipId = capsule.Id;
+        world.SaveChanges();
+        var changes = created ? new InventoryChange[] { new(Read(catalog, capsule), null) } : [];
+        transaction.Commit();
+        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
+    }
+
     public DockedPilot Board(long pilotId, long shipId, long previousShipId)
     {
         using WorldDbContext world = new(database.Path);

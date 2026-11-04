@@ -211,6 +211,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
             }
         );
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.PodLost);
+        PilotJumpCloneStore.ResetActive(world, pilotId);
         pilot.ActiveShip = capsule;
         pilot.ActiveShipId = capsule.Id;
         world.SaveChanges();

@@ -47,7 +47,10 @@ public sealed class CharacterSheetServiceTests
         Assert.Null(Reply(fixture.Call("@skills", "RespecCharacter", [Wire(attributes)])));
         Assert.True(context.NextSkillCompletion < previous);
         var dogma = fixture.Scope.ServiceProvider.GetRequiredService<ShipDogmaBuilder>().PrimePilot(context.Pilot);
-        Assert.Equal(attributes.ToDogma(), dogma.Attributes);
+        var expected = attributes.ToDogma().ToDictionary();
+        expected[DogmaAttributeId.MaxJumpClones] = 0;
+        expected[DogmaAttributeId.CloneJumpCooldown] = JumpCloneRules.BaseCooldownHours;
+        Assert.Equal(expected, dogma.Attributes);
         var values = Assert.IsType<Dictionary<long, object?>>(Reply(fixture.Call("@skills", "GetAttributes", [])));
         Assert.Equal(5, values.Count);
         Assert.Equal(27L, values[(long)DogmaAttributeId.Perception]);

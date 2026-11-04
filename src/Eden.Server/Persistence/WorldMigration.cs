@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 46;
+    internal const int CurrentVersion = 47;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -647,7 +647,30 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=46");
+            if (version is >= 6 and < 47)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldJumpClone(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Active INTEGER NOT NULL, StationId INTEGER, Name TEXT NOT NULL,
+                        CONSTRAINT CK_JumpClone_Location CHECK (
+                            (Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)));
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldJumpClone_PilotId ON WorldJumpClone(PilotId) WHERE Active = 1;
+                    CREATE TABLE IF NOT EXISTS WorldJumpCloneTimer(
+                        PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE, Time INTEGER NOT NULL);
+                    CREATE TABLE IF NOT EXISTS WorldJumpClonePayment(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        StationId INTEGER NOT NULL, OperatorId INTEGER NOT NULL, Kind INTEGER NOT NULL,
+                        AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL, Time INTEGER NOT NULL,
+                        CloneId INTEGER NOT NULL, DestinationStationId INTEGER, OldShipId INTEGER, NewShipId INTEGER);
+                    CREATE INDEX IF NOT EXISTS IX_WorldJumpClonePayment_PilotId ON WorldJumpClonePayment(PilotId);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=47");
         }
         world.Database.ExecuteSqlRaw(
             """

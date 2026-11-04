@@ -35,7 +35,8 @@ internal sealed class ShipDogmaBuilder(
     MagazineWire magazinesWire,
     PilotBrain brain,
     IEnumerable<IModuleEffectSource> moduleEffects,
-    IPilotCharacterSheet sheet
+    IPilotCharacterSheet sheet,
+    IPilotJumpCloneSkills clones
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -67,14 +68,27 @@ internal sealed class ShipDogmaBuilder(
             ),
         };
 
-    internal DogmaItemInfo<int> PrimePilot(DockedPilot pilot) =>
-        new(
+    internal DogmaItemInfo<int> PrimePilot(DockedPilot pilot)
+    {
+        var cloneSkills = clones.ReadCloneSkills(pilot.PilotId);
+        return new(
             new DogmaItemKey.Item(pilot.PilotId),
             Item(pilot, "pilot"),
-            sheet.ReadAttributes(pilot.PilotId).Attributes.ToDogma(),
+            sheet
+                .ReadAttributes(pilot.PilotId)
+                .Attributes.ToDogma()
+                .Concat(
+                    new Dictionary<DogmaAttributeId, int>
+                    {
+                        [DogmaAttributeId.MaxJumpClones] = cloneSkills.Capacity,
+                        [DogmaAttributeId.CloneJumpCooldown] = cloneSkills.CooldownHours,
+                    }
+                )
+                .ToDictionary(),
             new Dictionary<DogmaEffect, DogmaActiveEffect>(),
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
+    }
 
     internal DogmaItemInfo<double> PrimeShip(DockedPilot pilot)
     {

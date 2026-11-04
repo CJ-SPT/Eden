@@ -223,7 +223,7 @@ internal sealed class PilotCallRouter(
                 }
                 if (
                     service is "invbroker" or "ship" or "jumpCloneSvc"
-                    && args[0] is not null
+                    && (args[0] is not null || service == "jumpCloneSvc")
                     && (
                         args[0] is not object?[] bind
                         || bind is not [long location, long group]

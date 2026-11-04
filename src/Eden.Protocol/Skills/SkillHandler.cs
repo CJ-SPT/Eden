@@ -19,7 +19,8 @@ internal sealed class SkillHandler(
     PilotBrain brain,
     PropulsionHandler propulsion,
     FittingOperations fittingOperations,
-    IPilotCharacterSheet sheet
+    IPilotCharacterSheet sheet,
+    IPilotJumpCloneSkills cloneSkills
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -137,6 +138,18 @@ internal sealed class SkillHandler(
             var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
             context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
             context.Notifications.Add(new ServerBrainUpdated(brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)));
+            if (state.ChangedSkills.Any(skill => Enum.IsDefined((InfomorphSkill)skill)))
+            {
+                var clones = cloneSkills.ReadCloneSkills(context.Pilot.PilotId);
+                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                var item = new DogmaItemKey.Item(context.Pilot.PilotId);
+                context.Notifications.Add(
+                    new ModuleAttributesChanged([
+                        new(context.Pilot.PilotId, item, DogmaAttributeId.MaxJumpClones, now, clones.Capacity),
+                        new(context.Pilot.PilotId, item, DogmaAttributeId.CloneJumpCooldown, now, clones.CooldownHours),
+                    ])
+                );
+            }
             fittingOperations.NotifyShipAttributes(context);
         }
         var rows = state.Queue.Select((entry, index) => new SkillQueueRow(index, entry)).ToArray();

@@ -22,6 +22,7 @@ public interface IPilotFleet
     InventoryItem? Find(long pilotId, long shipId);
     string Name(long pilotId, long shipId);
     ShipAssembly Assemble(long pilotId, IReadOnlyList<long> itemIds, string? name);
+    ShipBoarding Leave(long pilotId, long expectedShipId);
     DockedPilot Board(long pilotId, long shipId, long previousShipId);
     ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId);
 }
