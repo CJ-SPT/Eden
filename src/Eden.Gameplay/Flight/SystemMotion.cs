@@ -33,7 +33,8 @@ public sealed record CollisionMotion(
     SpacePosition InitialVelocity,
     SpacePosition Position,
     SpacePosition Velocity,
-    bool Solid = true
+    bool Solid = true,
+    bool Fixed = false
 );
 
 public sealed record CollisionResult(long Id, SpacePosition Position, SpacePosition Velocity, bool Bumped);
@@ -51,38 +52,58 @@ public static class ShipCollisions
         List<CollisionResult> results = [];
         foreach (var ship in ships)
         {
-            double lastTime = -1;
-            var correction = SpacePosition.Zero;
-            foreach (var other in ships)
-            {
-                if (ship.Id == other.Id || !ship.Solid || !other.Solid)
-                {
-                    continue;
-                }
-                var impact = Potential(ship, other, 0);
-                if (impact is null || impact.Time < lastTime)
-                {
-                    continue;
-                }
-                var acceleration = impact.Acceleration * ResponseScale;
-                if (impact.Time > lastTime || acceleration.Dot(acceleration) > correction.Dot(correction))
-                {
-                    lastTime = impact.Time;
-                    correction = acceleration;
-                }
-            }
-            double tau = ship.Hull.InertiaTime;
-            double decay = Math.Exp(-1 / tau);
-            results.Add(
-                new(
-                    ship.Id,
-                    ship.Position + correction * (tau * (1 - tau * (1 - decay))),
-                    ship.Velocity + correction * (tau * (1 - decay)),
-                    lastTime >= 0
-                )
-            );
+            results.Add(ResolveOne(ship, ships));
         }
         return results;
+    }
+
+    public static CollisionResult ResolveStatic(CollisionMotion ship, IReadOnlyList<StaticSpaceObject> obstacles) =>
+        ResolveOne(
+            ship,
+            obstacles.Select(body => new CollisionMotion(
+                body.Id,
+                ship.Hull with
+                {
+                    ShipRadius = body.Radius,
+                },
+                body.Position,
+                SpacePosition.Zero,
+                body.Position,
+                SpacePosition.Zero,
+                Fixed: true
+            ))
+        );
+
+    private static CollisionResult ResolveOne(CollisionMotion ship, IEnumerable<CollisionMotion> others)
+    {
+        double lastTime = -1;
+        var correction = SpacePosition.Zero;
+        foreach (var other in others)
+        {
+            if (ship.Id == other.Id || !ship.Solid || !other.Solid)
+            {
+                continue;
+            }
+            var impact = Potential(ship, other, 0);
+            if (impact is null || impact.Time < lastTime)
+            {
+                continue;
+            }
+            var acceleration = impact.Acceleration * ResponseScale;
+            if (impact.Time > lastTime || acceleration.Dot(acceleration) > correction.Dot(correction))
+            {
+                lastTime = impact.Time;
+                correction = acceleration;
+            }
+        }
+        double tau = ship.Hull.InertiaTime;
+        double decay = Math.Exp(-1 / tau);
+        return new(
+            ship.Id,
+            ship.Position + correction * (tau * (1 - tau * (1 - decay))),
+            ship.Velocity + correction * (tau * (1 - decay)),
+            lastTime >= 0
+        );
     }
 
     private sealed record Impact(double Time, SpacePosition Acceleration);
@@ -104,7 +125,7 @@ public static class ShipCollisions
             var second = Sample(other, DesiredVelocity(other), time);
             var normal = (second.Position - first.Position).Unit;
             double relative = (second.Velocity - first.Velocity).Dot(normal);
-            double impulse = 2 * other.Hull.Mass / (ship.Hull.Mass + other.Hull.Mass) * relative;
+            double impulse = other.Fixed ? 2 * relative : 2 * other.Hull.Mass / (ship.Hull.Mass + other.Hull.Mass) * relative;
             double remainderDecay = Math.Exp(-(1 - time) / tau);
             // Potential solves for a full-tick acceleration that produces the post-impact end velocity.
             acceleration = normal * (impulse * remainderDecay / (tau * (1 - Math.Exp(-1 / tau))));
@@ -116,8 +137,8 @@ public static class ShipCollisions
             var normal = distance > 0 ? radial.Unit : new SpacePosition(ship.Id > other.Id ? 1 : -1, 0, 0);
             double clearance = radius - distance + OverlapClearance;
             double otherTau = other.Hull.InertiaTime;
-            double displacement = otherTau / (tau + otherTau) * clearance;
-            if (depth < 2)
+            double displacement = other.Fixed ? clearance : otherTau / (tau + otherTau) * clearance;
+            if (!other.Fixed && depth < 2)
             {
                 var offset = normal * displacement;
                 var otherOffset = normal * (tau / (tau + otherTau) * clearance);
@@ -154,6 +175,10 @@ public static class ShipCollisions
 
     private static SpacePosition DesiredVelocity(CollisionMotion ship)
     {
+        if (ship.Fixed)
+        {
+            return SpacePosition.Zero;
+        }
         double decay = Math.Exp(-1 / ship.Hull.InertiaTime);
         return (ship.Velocity - ship.InitialVelocity * decay) * (1 / (1 - decay));
     }

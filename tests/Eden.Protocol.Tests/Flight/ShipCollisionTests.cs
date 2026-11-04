@@ -22,6 +22,87 @@ public sealed class ShipCollisionTests
     }
 
     [Fact]
+    public void FixedBodyReflectsRadialVelocityUsingCarbonsDampedImpulse()
+    {
+        var moving = Coast(1, SpacePosition.Zero, new(200, 0, 0));
+        StaticSpaceObject station = new(2, 0, 15, 3, 1, new(200, 0, 0), Ibis.ShipRadius);
+        var result = ShipCollisions.ResolveStatic(moving, [station]);
+        double time = (200 - 2 * Ibis.ShipRadius) / moving.Position.X;
+        double impactSpeed = 200 * Math.Exp(-time / Ibis.InertiaTime);
+        double endImpulse = 2 * impactSpeed * Math.Exp(-(1 - time) / Ibis.InertiaTime) * 0.85;
+        Assert.True(result.Bumped);
+        Assert.Equal(moving.Velocity.X - endImpulse, result.Velocity.X, 8);
+        Assert.Equal(0, result.Velocity.Y);
+        Assert.Equal(0, result.Velocity.Z);
+        Assert.True(result.Position.X < moving.Position.X);
+    }
+
+    [Fact]
+    public void GlancingFixedContactRetainsTheHeadingThrottleAndTangentialMovement()
+    {
+        NavigationState navigation = new();
+        navigation.SetHeading(1, 1, 0);
+        navigation.SetVelocity(new(200, 200, 0));
+        var heading = navigation.Direction;
+        StaticSpaceObject station = new(2, 0, 15, 3, 1, new(150, 200, 0), 50);
+        var tick = navigation.Advance(1, 1, Ibis, SpacePosition.Zero, _ => null, [station]);
+        Assert.Equal(heading, navigation.Direction);
+        Assert.Equal(1, navigation.SpeedFraction);
+        Assert.True(navigation.Velocity.X > 0);
+        Assert.True(navigation.Velocity.Length > 0);
+        Assert.True(tick.Position.X > 0);
+        Assert.Empty(tick.Changes);
+        var free = new NavigationState();
+        free.SetHeading(1, 1, 0);
+        free.SetVelocity(new(200, 200, 0));
+        var unobstructed = free.Advance(1, 1, Ibis, SpacePosition.Zero, _ => null, []);
+        Assert.True(navigation.Velocity.DistanceTo(free.Velocity) > 1);
+        Assert.True(tick.Position.DistanceTo(unobstructed.Position) > 0.1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StationBumpsRetainCoursesForBothObserversWithoutSendingStopOrMotionResets(bool observerFirst)
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock);
+        db.Store.SetPosition(1000000000001, SpacePosition.Zero);
+        db.Store.SetPosition(1000000000002, new(0, 10000, 0));
+        SharedSpace space = new();
+        StaticSpaceObject station = new(9, 0, 15, 3, 1, new(220, 0, 0), 100);
+        using FlightSession mover = new(db.Store, db.Store.FindPilot(1000001)!, clock, space, [station]);
+        using FlightSession observer = new(db.Store, db.Store.FindPilot(1000002)!, clock, space, [station]);
+        mover.Snapshot();
+        observer.Snapshot();
+        mover.Execute(new FlightCommand.Heading(1, 0, 0));
+        bool bounced = false;
+        foreach (int tick in Enumerable.Range(1, 30))
+        {
+            clock.Seconds = tick;
+            foreach (var session in observerFirst ? new[] { observer, mover } : new[] { mover, observer })
+            {
+                session.Updates.Clear();
+                session.RefreshPeers();
+                Assert.DoesNotContain(
+                    session.Updates,
+                    update => update.Command is DestinyCommand.Stop or DestinyCommand.SetBallPosition or DestinyCommand.SetBallVelocity
+                );
+            }
+            bounced |= mover.Velocity.X < 0;
+        }
+        Assert.True(bounced);
+        Assert.True(mover.Moving);
+        Assert.Equal(mover.Velocity, Assert.Single(space.Peers(observer.Pilot)).Velocity);
+        Assert.Equal(mover.Pilot.Position, db.Store.FindPilot(1000001)!.Position);
+        mover.Execute(new FlightCommand.Heading(0, 1, 0));
+        var contact = mover.Pilot.Position!;
+        clock.Seconds += 20;
+        mover.Checkpoint();
+        Assert.True(mover.Pilot.Position!.Y > contact.Y + 100);
+    }
+
+    [Fact]
     public void CarbonHeadOnResponseUsesRawMassAndDampedAcceleration()
     {
         var moving = Coast(1, SpacePosition.Zero, new(200, 0, 0));

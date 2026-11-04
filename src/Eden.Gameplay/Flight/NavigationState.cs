@@ -251,17 +251,12 @@ public sealed class NavigationState
         var targetVelocity = (Direction ?? SpacePosition.Zero) * cruise;
         var next = position + (targetVelocity + (Velocity - targetVelocity) * (tau * (1 - decay)));
         Velocity = targetVelocity + (Velocity - targetVelocity) * decay;
-        if (FirstContact(position, next, hull.ShipRadius, obstacles) is { } contact)
-        {
-            next = contact;
-            Velocity = SpacePosition.Zero;
-            if (WarpDestination is null)
-            {
-                changes.Add(new NavigationChange.Collision(contact));
-                SetAtRest();
-            }
-        }
-        else if ((Direction is null || SpeedFraction == 0) && Velocity.Length < 0.01)
+        // Carbon Destiny Potential reflects the radial velocity at a fixed ball and retains thrust.
+        // Cancelling the course here strands ships against stations and destroys glancing motion.
+        var collision = ShipCollisions.ResolveStatic(new(shipId, hull, position, initialVelocity, next, Velocity), obstacles);
+        next = collision.Position;
+        Velocity = collision.Velocity;
+        if ((Direction is null || SpeedFraction == 0) && Velocity.Length < 0.01)
         {
             SetAtRest();
         }
@@ -275,35 +270,6 @@ public sealed class NavigationState
         Velocity = new(0, 0, 0);
         SpeedFraction = 0;
     }
-
-    private static SpacePosition? FirstContact(
-        SpacePosition start,
-        SpacePosition end,
-        float shipRadius,
-        IReadOnlyList<StaticSpaceObject> obstacles
-    )
-    {
-        var delta = end - start;
-        double lengthSquared = delta.Dot(delta);
-        double earliest = double.PositiveInfinity;
-        foreach (var body in obstacles)
-        {
-            var radial = start - body.Position;
-            double along = radial.Dot(delta);
-            if (along >= 0)
-            {
-                continue;
-            }
-            double radius = body.Radius + shipRadius;
-            double clearance = Math.Max(0, radial.Dot(radial) - radius * radius);
-            double discriminant = along * along - lengthSquared * clearance;
-            if (discriminant > 0)
-            {
-                earliest = Math.Min(earliest, clearance / (-along + Math.Sqrt(discriminant)));
-            }
-        }
-        return earliest <= 1 ? start + delta * earliest : null;
-    }
 }
 
 public sealed record NavigationTick(SpacePosition Position, IReadOnlyList<NavigationChange> Changes, SpacePosition InitialVelocity);
@@ -315,8 +281,6 @@ public abstract record NavigationChange
     public sealed record Heading(SpacePosition Direction) : NavigationChange;
 
     public sealed record Stopped : NavigationChange;
-
-    public sealed record Collision(SpacePosition Position) : NavigationChange;
 }
 
 public enum NavigationOrderResult

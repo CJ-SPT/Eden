@@ -226,22 +226,6 @@ internal sealed class SharedSpace
                             case NavigationChange.Stopped:
                                 RecordOrder(ship.Id, new(stamp - 1, new DestinyCommand.Stop(ship.Id)));
                                 break;
-                            case NavigationChange.Collision collision:
-                                RecordOrder(
-                                    ship.Id,
-                                    new(
-                                        stamp,
-                                        new DestinyCommand.SetBallPosition(
-                                            ship.Id,
-                                            collision.Position.X,
-                                            collision.Position.Y,
-                                            collision.Position.Z
-                                        )
-                                    )
-                                );
-                                RecordOrder(ship.Id, new(stamp, new DestinyCommand.Stop(ship.Id)));
-                                RecordOrder(ship.Id, new(stamp, new DestinyCommand.SetBallVelocity(ship.Id, 0, 0, 0)));
-                                break;
                         }
                     }
                     _motion[ship.Id] = ship;

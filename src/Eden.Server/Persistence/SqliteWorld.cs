@@ -204,7 +204,8 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 station.OperationId,
                 station.OrbitId,
                 new(station.X, station.Y, station.Z),
-                identity
+                identity,
+                StationUndocking.SelectPoint(ship.Id, type.GroupId, StationUndockCatalog.Read(catalog, station.TypeId))
             ),
             new(
                 ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,

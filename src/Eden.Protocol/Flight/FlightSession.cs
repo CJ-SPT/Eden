@@ -614,13 +614,6 @@ internal sealed class FlightSession(
                 case NavigationChange.Stopped:
                     Send(new DestinyCommand.Stop(Pilot.ShipId), _simulatedStamp - 1);
                     break;
-                case NavigationChange.Collision collision:
-                    Send(
-                        new DestinyCommand.SetBallPosition(Pilot.ShipId, collision.Position.X, collision.Position.Y, collision.Position.Z)
-                    );
-                    Send(new DestinyCommand.Stop(Pilot.ShipId));
-                    Send(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0d, 0d, 0d));
-                    break;
             }
         }
     }
@@ -1233,7 +1226,10 @@ internal sealed class FlightSession(
         if (command is FlightCommand.Undock undock && Pilot.Position is null && undock.ShipId == Pilot.ShipId)
         {
             _simulatedStamp = Stamp;
-            SetPosition(DockingDefinitions.UndockPosition(Pilot.ShipId, Pilot.Home.Position, Pilot.Flight));
+            var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
+            SetPosition(launch.Position);
+            _navigation.SetHeading(launch.Direction.X, launch.Direction.Y, launch.Direction.Z);
+            _navigation.SetVelocity(launch.Velocity);
             return PilotCallResult.None;
         }
         if (command is FlightCommand.Undock || Pilot.Position is not { } position)

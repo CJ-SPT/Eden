@@ -1,0 +1,826 @@
+{
+  "stations": [
+    {
+      "typeId": 54,
+      "radius": 15351.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 56,
+      "radius": 23836.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 57,
+      "radius": 27072.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1529,
+      "radius": 45734.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1530,
+      "radius": 26782.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1531,
+      "radius": 33413.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1926,
+      "radius": 42489.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1927,
+      "radius": 48492.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1928,
+      "radius": 24276.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1929,
+      "radius": 20081.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1930,
+      "radius": 22283.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1931,
+      "radius": 29162.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 1932,
+      "radius": 13887.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2496,
+      "radius": 33811.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2497,
+      "radius": 27681.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2498,
+      "radius": 36902.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2499,
+      "radius": 30592.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2500,
+      "radius": 33481.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2501,
+      "radius": 19714.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 2502,
+      "radius": 15733.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3865,
+      "radius": 45151.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3866,
+      "radius": 24871.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3867,
+      "radius": 29746.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3868,
+      "radius": 17876.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3869,
+      "radius": 37560.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3870,
+      "radius": 28083.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3871,
+      "radius": 24657.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 3872,
+      "radius": 47854.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 4023,
+      "radius": 47854.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 4024,
+      "radius": 55741.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 9868,
+      "radius": 60432.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 10795,
+      "radius": 47270.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 29323,
+      "radius": 52868.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 29387,
+      "radius": 42489.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 29388,
+      "radius": 48532.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 29389,
+      "radius": 13887.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 34325,
+      "radius": 37560.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 34326,
+      "radius": 29746.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 52678,
+      "radius": 100000.0,
+      "pointCount": 17
+    },
+    {
+      "typeId": 59956,
+      "radius": 17876.0,
+      "pointCount": 5
+    },
+    {
+      "typeId": 71361,
+      "radius": 20000.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 74397,
+      "radius": 15733.0,
+      "pointCount": 1
+    },
+    {
+      "typeId": 78334,
+      "radius": 100000.0,
+      "pointCount": 13
+    },
+    {
+      "typeId": 92885,
+      "radius": 70000.0,
+      "pointCount": 22
+    }
+  ],
+  "records": [
+    {
+      "dataset": "client/types",
+      "key": "54",
+      "data": "{\"typeID\":54,\"graphicID\":237,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73474,\"published\":0,\"radius\":15351.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "237",
+      "data": "{\"graphicLocationID\":28,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs4/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs4\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "28",
+      "data": "{\"hull\":\"cs4\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":6854.26220703125,\"x\":36.0,\"n_fields\":3,\"z\":7948.466796875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960465188081798e-08,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "56",
+      "data": "{\"typeID\":56,\"graphicID\":2307,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73475,\"published\":0,\"radius\":23836.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "2307",
+      "data": "{\"graphicLocationID\":2,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs1/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs1\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2",
+      "data": "{\"hull\":\"gs1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6001.50634765625,\"x\":0.0,\"n_fields\":3,\"z\":-4509.06787109375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}],\"locators\":[{\"category\":\"cloningService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":12000.0,\"n_fields\":3,\"z\":9000.0},\"name\":\"cloning service\"},{\"category\":\"factoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-4500.0,\"x\":-5500.0,\"n_fields\":3,\"z\":12000.0},\"name\":\"factory service\"},{\"category\":\"fittingService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-3500.0,\"x\":-11000.0,\"n_fields\":3,\"z\":-14000.0},\"name\":\"fitting service\"},{\"category\":\"laboratoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-10000.0,\"x\":-5500.0,\"n_fields\":3,\"z\":12000.0},\"name\":\"laboratory service\"},{\"category\":\"repairFacilitiesService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-2000.0,\"x\":-13500.0,\"n_fields\":3,\"z\":-5000.0},\"name\":\"repair facilities service\"},{\"category\":\"reprocessingPlantService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":-5500.0,\"n_fields\":3,\"z\":12000.0},\"name\":\"reprocessing plant service\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "57",
+      "data": "{\"typeID\":57,\"graphicID\":2306,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73476,\"published\":0,\"radius\":27072.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "2306",
+      "data": "{\"graphicLocationID\":1,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs2/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs2\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "1",
+      "data": "{\"hull\":\"gs2\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5079.0859375,\"x\":0.0,\"n_fields\":3,\"z\":5337.78466796875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.19517739117145538,\"x\":0.0,\"n_fields\":3,\"z\":-0.9807679653167725},\"name\":\"undockPoint\"}],\"locators\":[{\"category\":\"cloningService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-4000.0,\"x\":-500.0,\"n_fields\":3,\"z\":12000.0},\"name\":\"cloning service\"},{\"category\":\"factoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-500.0,\"x\":-23000.0,\"n_fields\":3,\"z\":-7000.0},\"name\":\"factory service\"},{\"category\":\"fittingService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-400.0,\"x\":-500.0,\"n_fields\":3,\"z\":3000.0},\"name\":\"fitting service\"},{\"category\":\"laboratoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-500.0,\"x\":20000.0,\"n_fields\":3,\"z\":-7000.0},\"name\":\"laboratory service\"},{\"category\":\"repairFacilitiesService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2000.0,\"x\":-500.0,\"n_fields\":3,\"z\":11000.0},\"name\":\"repair facilities service\"},{\"category\":\"reprocessingPlantService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-400.0,\"x\":-500.0,\"n_fields\":3,\"z\":14500.0},\"name\":\"reprocessing plant service\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1529",
+      "data": "{\"typeID\":1529,\"graphicID\":1019,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73477,\"published\":0,\"radius\":45734.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1019",
+      "data": "{\"graphicLocationID\":22,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs1/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs1\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "22",
+      "data": "{\"hull\":\"cs1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3217.0,\"x\":-170.0,\"n_fields\":3,\"z\":12112.154296875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960464477539063e-08,\"x\":0.0,\"n_fields\":3,\"z\":0.9999999403953552},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1530",
+      "data": "{\"typeID\":1530,\"graphicID\":1018,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73478,\"published\":0,\"radius\":26782.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1018",
+      "data": "{\"graphicLocationID\":27,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs2/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs2\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "27",
+      "data": "{\"hull\":\"cs2\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":7499.1279296875,\"x\":11384.4287109375,\"n_fields\":3,\"z\":270.25189208984375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.19309109449386597,\"x\":0.9811808466911316,\"n_fields\":3,\"z\":-1.3769827056364647e-08},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1531",
+      "data": "{\"typeID\":1531,\"graphicID\":1017,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73528,\"published\":0,\"radius\":33413.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1017",
+      "data": "{\"graphicLocationID\":25,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs3/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs3\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "25",
+      "data": "{\"hull\":\"cs3\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-3841.0,\"x\":2447.21484375,\"n_fields\":3,\"z\":2988.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.30901825428009033,\"x\":0.9510561227798462,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1926",
+      "data": "{\"typeID\":1926,\"graphicID\":1068,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73529,\"published\":0,\"radius\":42489.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1068",
+      "data": "{\"graphicLocationID\":4,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as2/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as2\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "4",
+      "data": "{\"hull\":\"as2\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":11158.470703125,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.9999999403953552,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1927",
+      "data": "{\"typeID\":1927,\"graphicID\":1069,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73541,\"published\":0,\"radius\":48492.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1069",
+      "data": "{\"graphicLocationID\":5,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as1/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as1\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "5",
+      "data": "{\"hull\":\"as1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-21987.525390625,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.9999999403953552,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1928",
+      "data": "{\"typeID\":1928,\"graphicID\":1070,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73542,\"published\":0,\"radius\":24276.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1070",
+      "data": "{\"graphicLocationID\":6,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as5/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as5\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "6",
+      "data": "{\"hull\":\"as5\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-21316.451171875,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0000001192092896,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1929",
+      "data": "{\"typeID\":1929,\"graphicID\":1071,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73530,\"published\":0,\"radius\":20081.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1071",
+      "data": "{\"graphicLocationID\":7,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as7/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as7\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "7",
+      "data": "{\"hull\":\"as7\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-12936.939453125,\"x\":199.78848266601562,\"n_fields\":3,\"z\":-51.993953704833984},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1930",
+      "data": "{\"typeID\":1930,\"graphicID\":1072,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73531,\"published\":0,\"radius\":22283.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1072",
+      "data": "{\"graphicLocationID\":8,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as9/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as9\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "8",
+      "data": "{\"hull\":\"as9\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9721.0,\"x\":-10709.0,\"n_fields\":3,\"z\":2069.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1931",
+      "data": "{\"typeID\":1931,\"graphicID\":1073,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73532,\"published\":0,\"radius\":29162.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1073",
+      "data": "{\"graphicLocationID\":9,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as3/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as3\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "9",
+      "data": "{\"hull\":\"as3\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-5689.26806640625,\"x\":-13.0,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.9999999403953552,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "1932",
+      "data": "{\"typeID\":1932,\"graphicID\":1074,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":73533,\"published\":0,\"radius\":13887.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1074",
+      "data": "{\"graphicLocationID\":10,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/amarr/as4/icons\"},\"sofFactionName\":\"amarrbase\",\"sofRaceName\":\"amarr\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"as4\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "10",
+      "data": "{\"hull\":\"as4\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9967.8291015625,\"x\":-1749.890380859375,\"n_fields\":3,\"z\":-27.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2496",
+      "data": "{\"typeID\":2496,\"graphicID\":1132,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73522,\"published\":0,\"radius\":33811.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1132",
+      "data": "{\"graphicLocationID\":14,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms2/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms2\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "14",
+      "data": "{\"hull\":\"ms2\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1437.8804931640625,\"x\":-2909.0,\"n_fields\":3,\"z\":-20657.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960464477539063e-08,\"x\":0.0,\"n_fields\":3,\"z\":-1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2497",
+      "data": "{\"typeID\":2497,\"graphicID\":1133,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73523,\"published\":0,\"radius\":27681.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1133",
+      "data": "{\"graphicLocationID\":15,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms4/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms4\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "15",
+      "data": "{\"hull\":\"ms4\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2654.044189453125,\"x\":6299.0,\"n_fields\":3,\"z\":11165.654296875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.006261647213250399,\"x\":0.0,\"n_fields\":3,\"z\":0.9999804496765137},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2498",
+      "data": "{\"typeID\":2498,\"graphicID\":1134,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73524,\"published\":0,\"radius\":36902.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1134",
+      "data": "{\"graphicLocationID\":16,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms1/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms1\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "16",
+      "data": "{\"hull\":\"ms1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1172.0,\"x\":30416.306640625,\"n_fields\":3,\"z\":-3099.962646484375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960465188081798e-08,\"x\":0.9999999403953552,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2499",
+      "data": "{\"typeID\":2499,\"graphicID\":1135,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73525,\"published\":0,\"radius\":30592.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1135",
+      "data": "{\"graphicLocationID\":17,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms5/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms5\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "17",
+      "data": "{\"hull\":\"ms5\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":8452.4228515625,\"x\":11903.6494140625,\"n_fields\":3,\"z\":9744.4150390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.006261467933654785,\"x\":0.9999804496765137,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2500",
+      "data": "{\"typeID\":2500,\"graphicID\":1136,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73544,\"published\":0,\"radius\":33481.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1136",
+      "data": "{\"graphicLocationID\":18,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms6/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms6\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "18",
+      "data": "{\"hull\":\"ms6\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":27.0,\"x\":1390.301513671875,\"n_fields\":3,\"z\":-28047.037109375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0061676702462136745,\"x\":0.031338226050138474,\"n_fields\":3,\"z\":-0.9994897842407227},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2501",
+      "data": "{\"typeID\":2501,\"graphicID\":1137,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73526,\"published\":0,\"radius\":19714.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1137",
+      "data": "{\"graphicLocationID\":19,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms7/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms7\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "19",
+      "data": "{\"hull\":\"ms7\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3115.0,\"x\":17.0,\"n_fields\":3,\"z\":-18255.197265625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960465188081798e-08,\"x\":0.0,\"n_fields\":3,\"z\":-1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "2502",
+      "data": "{\"typeID\":2502,\"graphicID\":1138,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":73527,\"published\":0,\"radius\":15733.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1138",
+      "data": "{\"graphicLocationID\":11,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms3/icons\"},\"sofFactionName\":\"minmatarbase\",\"sofRaceName\":\"minmatar\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"ms3\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "11",
+      "data": "{\"hull\":\"ms3\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":10096.0,\"x\":17.0,\"n_fields\":3,\"z\":-12607.2060546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960464477539063e-08,\"x\":0.0,\"n_fields\":3,\"z\":-1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3865",
+      "data": "{\"typeID\":3865,\"graphicID\":2308,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73517,\"published\":0,\"radius\":45151.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "2308",
+      "data": "{\"graphicLocationID\":3,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs3/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs3\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "3",
+      "data": "{\"hull\":\"gs3\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":4860.29541015625,\"x\":-1297.7137451171875,\"n_fields\":3,\"z\":-6949.29296875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.019749537110328674,\"x\":0.1105894148349762,\"n_fields\":3,\"z\":-0.9936699271202087},\"name\":\"undockPoint\"}],\"locators\":[{\"category\":\"cloningService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":7900.0,\"x\":-6000.0,\"n_fields\":3,\"z\":16800.0},\"name\":\"cloning service\"},{\"category\":\"factoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-23000.0,\"x\":-1000.0,\"n_fields\":3,\"z\":3000.0},\"name\":\"factory service\"},{\"category\":\"fittingService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1200.0,\"x\":4700.0,\"n_fields\":3,\"z\":-8300.0},\"name\":\"fitting service\"},{\"category\":\"laboratoryService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":8300.0,\"x\":-13000.0,\"n_fields\":3,\"z\":0.0},\"name\":\"laboratory service\"},{\"category\":\"repairFacilitiesService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":7000.0,\"x\":-6900.0,\"n_fields\":3,\"z\":-17500.0},\"name\":\"repair facilities service\"},{\"category\":\"reprocessingPlantService\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-29000.0,\"x\":-1000.0,\"n_fields\":3,\"z\":3000.0},\"name\":\"reprocessing plant service\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3866",
+      "data": "{\"typeID\":3866,\"graphicID\":1253,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73518,\"published\":0,\"radius\":24871.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1253",
+      "data": "{\"graphicLocationID\":35,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs4/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs4\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "35",
+      "data": "{\"hull\":\"gs4\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":884.0,\"x\":9264.6845703125,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.9604641222676946e-08,\"x\":0.9999999403953552,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3867",
+      "data": "{\"typeID\":3867,\"graphicID\":1254,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73519,\"published\":0,\"radius\":29746.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1254",
+      "data": "{\"graphicLocationID\":24,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs5/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_small:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs5\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "24",
+      "data": "{\"hull\":\"gs5\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":208.2364501953125,\"x\":7933.66796875,\"n_fields\":3,\"z\":18212.349609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.00825552735477686,\"x\":0.2808028757572174,\"n_fields\":3,\"z\":0.9597299695014954},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3868",
+      "data": "{\"typeID\":3868,\"graphicID\":1255,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73520,\"published\":0,\"radius\":17876.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1255",
+      "data": "{\"graphicLocationID\":39,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs6/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs6\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "39",
+      "data": "{\"hull\":\"gs6\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1058.9111328125,\"x\":9956.1923828125,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.020150529220700264,\"x\":0.9997969269752502,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3869",
+      "data": "{\"typeID\":3869,\"graphicID\":1256,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73543,\"published\":0,\"radius\":37560.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1256",
+      "data": "{\"graphicLocationID\":33,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs7/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs7\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "33",
+      "data": "{\"hull\":\"gs7\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1006.77294921875,\"x\":10679.8837890625,\"n_fields\":3,\"z\":-14350.2353515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.03386533260345459,\"x\":0.9994263648986816,\"n_fields\":3,\"z\":-8.084960256837803e-09},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3870",
+      "data": "{\"typeID\":3870,\"graphicID\":1257,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73521,\"published\":0,\"radius\":28083.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1257",
+      "data": "{\"graphicLocationID\":26,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/gallente/gs8/icons\"},\"sofFactionName\":\"gallentebase\",\"sofRaceName\":\"gallente\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"gs8\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "26",
+      "data": "{\"hull\":\"gs8\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":938.0,\"x\":9788.60546875,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.012040079571306705,\"x\":0.9997131824493408,\"n_fields\":3,\"z\":-0.020701097324490547},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3871",
+      "data": "{\"typeID\":3871,\"graphicID\":1267,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73570,\"published\":0,\"radius\":24657.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1267",
+      "data": "{\"graphicLocationID\":31,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs5/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_medium:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs5\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "31",
+      "data": "{\"hull\":\"cs5\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-4043.9736328125,\"x\":123.39453125,\"n_fields\":3,\"z\":-17010.32421875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.23963069915771484,\"x\":-2.318967290193541e-06,\"n_fields\":3,\"z\":-0.9708641171455383},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "3872",
+      "data": "{\"typeID\":3872,\"graphicID\":1251,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73510,\"published\":0,\"radius\":47854.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1251",
+      "data": "{\"graphicLocationID\":32,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs7/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs7\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "32",
+      "data": "{\"hull\":\"cs7\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1354.306884765625,\"x\":-27844.548828125,\"n_fields\":3,\"z\":-2399.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960465188081798e-08,\"x\":-1.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "4023",
+      "data": "{\"typeID\":4023,\"graphicID\":1251,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73511,\"published\":0,\"radius\":47854.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "4024",
+      "data": "{\"typeID\":4024,\"graphicID\":1309,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73512,\"published\":0,\"radius\":55741.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "1309",
+      "data": "{\"graphicLocationID\":23,\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/cs8/icons\"},\"sofFactionName\":\"caldaribase\",\"sofRaceName\":\"caldari\",\"animationStateObjects\":{\"triglavianInvasion\":\"tgstate_large:triglavianbase:triglavian\"},\"explosionBucketID\":34,\"sofHullName\":\"cs8\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "23",
+      "data": "{\"hull\":\"cs8\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-2574.0,\"x\":-33431.20703125,\"n_fields\":3,\"z\":-2477.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.192093321833454e-07,\"x\":-1.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "9868",
+      "data": "{\"typeID\":9868,\"graphicID\":3395,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":73540,\"published\":0,\"radius\":60432.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "3395",
+      "data": "{\"sofHullName\":\"cons1_wreck\",\"graphicLocationID\":42,\"sofFactionName\":\"concordbase\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/concord/cons1/wreck/icons\"},\"sofRaceName\":\"concord\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "42",
+      "data": "{\"hull\":\"cons1_wreck\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-39840.25390625,\"x\":-3152.708740234375,\"n_fields\":3,\"z\":8244.7978515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-5.393307583290152e-05,\"x\":-2.1867483610549243e-06,\"n_fields\":3,\"z\":1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "10795",
+      "data": "{\"typeID\":10795,\"graphicID\":2008,\"capacity\":0.0,\"raceID\":16,\"typeNameID\":73509,\"published\":0,\"radius\":47270.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "2008",
+      "data": "{\"graphicLocationID\":58,\"sofFactionName\":\"jovebase\",\"sofRaceName\":\"jove\",\"explosionBucketID\":34,\"sofHullName\":\"js1\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/jove/js1/icons\"}}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "58",
+      "data": "{\"hull\":\"js1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-26555.0,\"x\":-896.0,\"n_fields\":3,\"z\":-4800.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "29323",
+      "data": "{\"typeID\":29323,\"graphicID\":1019,\"capacity\":0.0,\"raceID\":1,\"typeNameID\":73538,\"published\":0,\"radius\":52868.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "29387",
+      "data": "{\"typeID\":29387,\"graphicID\":1068,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":71882,\"published\":0,\"radius\":42489.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "29388",
+      "data": "{\"typeID\":29388,\"graphicID\":1069,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":71961,\"published\":0,\"radius\":48532.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "29389",
+      "data": "{\"typeID\":29389,\"graphicID\":1074,\"capacity\":0.0,\"raceID\":4,\"typeNameID\":71883,\"published\":0,\"radius\":13887.0,\"volume\":0.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "34325",
+      "data": "{\"typeID\":34325,\"graphicID\":20967,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":297301,\"published\":0,\"radius\":37560.0,\"volume\":1.0,\"soundID\":20183,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "20967",
+      "data": "{\"graphicLocationID\":33,\"sofFactionName\":\"soebase\",\"sofRaceName\":\"soe\",\"explosionBucketID\":34,\"sofHullName\":\"soes1\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/soe/soes1/icons\"}}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "34326",
+      "data": "{\"typeID\":34326,\"graphicID\":20968,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":297302,\"published\":0,\"radius\":29746.0,\"volume\":1.0,\"soundID\":20183,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "20968",
+      "data": "{\"graphicLocationID\":24,\"sofFactionName\":\"soebase\",\"sofRaceName\":\"soe\",\"explosionBucketID\":34,\"sofHullName\":\"soes2\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/soe/soes2/icons\"}}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "52678",
+      "data": "{\"typeID\":52678,\"graphicID\":24488,\"capacity\":0.0,\"raceID\":1,\"isDynamicType\":0,\"typeNameID\":551436,\"published\":0,\"radius\":100000.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "24488",
+      "data": "{\"graphicLocationID\":2060,\"sofFactionName\":\"caldarinavy\",\"sofRaceName\":\"caldari\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/caldari/jita/icons\"},\"explosionBucketID\":34,\"graphicFile\":\"res:/dx9/model/spaceobjectfactory/hulls/jita.red\",\"sofHullName\":\"jita\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2060",
+      "data": "{\"hull\":\"jita\",\"directionalLocators\":[{\"category\":\"undockPointCapital\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-10629.6220703125,\"x\":-355.8399658203125,\"n_fields\":3,\"z\":65073.05078125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.03626325726509094,\"x\":0.0,\"n_fields\":3,\"z\":0.9993422627449036},\"name\":\"capital01\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-11151.1455078125,\"x\":1597.4364013671875,\"n_fields\":3,\"z\":65299.984375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.007490701042115688,\"x\":0.0,\"n_fields\":3,\"z\":0.9999719262123108},\"name\":\"large01\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8362.59375,\"x\":-512.1849365234375,\"n_fields\":3,\"z\":64684.953125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.003324352204799652,\"x\":0.0,\"n_fields\":3,\"z\":0.9999944567680359},\"name\":\"large02\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9685.65625,\"x\":-2136.060791015625,\"n_fields\":3,\"z\":64996.2890625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.025020577013492584,\"x\":0.0,\"n_fields\":3,\"z\":0.9996869564056396},\"name\":\"large03\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6561.7431640625,\"x\":634.533447265625,\"n_fields\":3,\"z\":64914.54296875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.012892554514110088,\"x\":0.0,\"n_fields\":3,\"z\":0.9999169111251831},\"name\":\"large04\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6751.16455078125,\"x\":31700.75,\"n_fields\":3,\"z\":53291.4609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.01703711226582527,\"x\":0.0,\"n_fields\":3,\"z\":0.9998548626899719},\"name\":\"large05\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6383.58154296875,\"x\":-1821.087890625,\"n_fields\":3,\"z\":65056.35546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small01\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-14722.0673828125,\"x\":-2480.085205078125,\"n_fields\":3,\"z\":64807.23046875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.03220163658261299,\"x\":0.0,\"n_fields\":3,\"z\":0.9994813799858093},\"name\":\"small02\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-14615.6748046875,\"x\":24.37657928466797,\"n_fields\":3,\"z\":64672.12890625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.055408086627721786,\"x\":0.0,\"n_fields\":3,\"z\":0.9984638094902039},\"name\":\"small03\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-12086.146484375,\"x\":-2466.250732421875,\"n_fields\":3,\"z\":65268.234375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.005454483907669783,\"x\":0.0,\"n_fields\":3,\"z\":0.9999850988388062},\"name\":\"small04\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8557.7705078125,\"x\":1718.0860595703125,\"n_fields\":3,\"z\":64965.6796875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.010048885829746723,\"x\":0.0,\"n_fields\":3,\"z\":0.9999495148658752},\"name\":\"small05\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-13621.3974609375,\"x\":1766.0418701171875,\"n_fields\":3,\"z\":65003.25390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.014783619903028011,\"x\":0.0,\"n_fields\":3,\"z\":0.9998907446861267},\"name\":\"small06\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6832.73095703125,\"x\":12573.7802734375,\"n_fields\":3,\"z\":63863.30859375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.026257719844579697,\"x\":0.0,\"n_fields\":3,\"z\":0.9996551871299744},\"name\":\"small07\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6385.19970703125,\"x\":28167.857421875,\"n_fields\":3,\"z\":53914.50390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.01790463551878929,\"x\":0.0,\"n_fields\":3,\"z\":0.999839723110199},\"name\":\"small08\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-15503.48828125,\"x\":-26322.0234375,\"n_fields\":3,\"z\":57621.2578125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.013737025670707226,\"x\":0.0,\"n_fields\":3,\"z\":0.9999056458473206},\"name\":\"small09\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-7546.20703125,\"x\":18984.638671875,\"n_fields\":3,\"z\":61930.8203125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.006143490318208933,\"x\":0.0,\"n_fields\":3,\"z\":0.9999811053276062},\"name\":\"small10\"},{\"category\":\"undockPointSupercapital\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-13240.5126953125,\"x\":-149.29026794433594,\"n_fields\":3,\"z\":65774.515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.02011759765446186,\"x\":0.0,\"n_fields\":3,\"z\":0.9997976422309875},\"name\":\"supercapital01\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "59956",
+      "data": "{\"typeID\":59956,\"graphicID\":25047,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":585343,\"published\":0,\"radius\":17876.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "25047",
+      "data": "{\"sofHullName\":\"airs1\",\"graphicLocationID\":2063,\"sofFactionName\":\"air\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/air/airs1/icons\"},\"sofRaceName\":\"caldari\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2063",
+      "data": "{\"hull\":\"airs1\",\"directionalLocators\":[{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1902.6505126953125,\"x\":0.0,\"n_fields\":3,\"z\":-6141.43798828125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.0001464895176468417,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"large01\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2464.23876953125,\"x\":93.06725311279297,\"n_fields\":3,\"z\":-6176.37158203125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.1337106015125755e-06,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small01\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1533.7618408203125,\"x\":150.2533721923828,\"n_fields\":3,\"z\":-6110.99560546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.0017748489044606686,\"x\":0.0,\"n_fields\":3,\"z\":0.9999984502792358},\"name\":\"small02\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1232.447265625,\"x\":-126.84021759033203,\"n_fields\":3,\"z\":-6085.712890625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0007815226563252509,\"x\":0.0,\"n_fields\":3,\"z\":0.9999997019767761},\"name\":\"small03\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-413.25079345703125,\"x\":-2328.89208984375,\"n_fields\":3,\"z\":-3909.943603515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-0.0032273344695568085,\"x\":0.600165069103241,\"n_fields\":3,\"z\":0.7998696565628052},\"name\":\"small04\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "71361",
+      "data": "{\"typeID\":71361,\"graphicID\":25623,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":625932,\"published\":0,\"radius\":20000.0,\"volume\":1.0,\"mass\":0.0,\"factionID\":1000419,\"basePrice\":0.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "25623",
+      "data": "{\"graphicLocationID\":2064,\"sofFactionName\":\"paragon\",\"sofRaceName\":\"gallente\",\"explosionBucketID\":34,\"sofHullName\":\"go1_t1\",\"sofMaterialSetID\":3087,\"iconInfo\":{\"folder\":\"res:/dx9/model/outposts/gallente/go1/icons\"}}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2064",
+      "data": "{\"hull\":\"go1_t1\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-15437.4287109375,\"x\":0.0,\"n_fields\":3,\"z\":-3555.86865234375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.02233588509261608,\"x\":0.0,\"n_fields\":3,\"z\":-0.9997504949569702},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "74397",
+      "data": "{\"typeID\":74397,\"graphicID\":25677,\"capacity\":0.0,\"raceID\":2,\"typeNameID\":640430,\"published\":0,\"radius\":15733.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":600000.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "25677",
+      "data": "{\"sofHullName\":\"ms3_wreck\",\"graphicLocationID\":2065,\"sofFactionName\":\"minmatarbase\",\"iconInfo\":{\"folder\":\"res:/dx9/model/station/minmatar/ms3/wreck/icons\"},\"sofRaceName\":\"minmatar\"}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2065",
+      "data": "{\"hull\":\"ms3_wreck\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":10096.0,\"x\":17.0,\"n_fields\":3,\"z\":-12607.2060546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":5.960464477539063e-08,\"x\":0.0,\"n_fields\":3,\"z\":-1.0},\"name\":\"undockPoint\"}]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "78334",
+      "data": "{\"typeID\":78334,\"graphicID\":26281,\"capacity\":0.0,\"raceID\":16,\"isDynamicType\":0,\"typeNameID\":664719,\"published\":0,\"radius\":100000.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":0.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "26281",
+      "data": "{\"graphicLocationID\":26198,\"sofFactionName\":\"jovebase\",\"sofRaceName\":\"jove\",\"iconInfo\":{\"folder\":\"res:\\\\dx9\\\\model\\\\station\\\\jove\\\\js4\\\\icons\"},\"sofHullName\":\"js4\",\"sofLayout\":[\"js4_layout\"]}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "26198",
+      "data": "{\"hull\":\"js4\",\"directionalLocators\":[{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9946.05078125,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8877.6064453125,\"x\":7004.74267578125,\"n_fields\":3,\"z\":1627.768310546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9271.7109375,\"x\":-7720.2744140625,\"n_fields\":3,\"z\":1998.249267578125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9267.908203125,\"x\":-4425.5732421875,\"n_fields\":3,\"z\":-1192.4345703125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8418.2314453125,\"x\":3661.67431640625,\"n_fields\":3,\"z\":847.610595703125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-9243.0693359375,\"x\":0.0,\"n_fields\":3,\"z\":7023.96533203125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-10060.734375,\"x\":0.0,\"n_fields\":3,\"z\":-6670.3056640625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8671.2978515625,\"x\":1552.65625,\"n_fields\":3,\"z\":-3509.623046875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8968.0322265625,\"x\":0.0,\"n_fields\":3,\"z\":3339.078125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-7864.37255859375,\"x\":4013.783447265625,\"n_fields\":3,\"z\":4931.6337890625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8199.59375,\"x\":4124.46044921875,\"n_fields\":3,\"z\":-3838.20849609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8114.7783203125,\"x\":-3878.54443359375,\"n_fields\":3,\"z\":-5214.15185546875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-8409.2939453125,\"x\":-3785.687744140625,\"n_fields\":3,\"z\":4694.54345703125},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":1.0,\"x\":0.0,\"n_fields\":3,\"z\":0.0},\"name\":\"undockPoint\"}],\"locators\":[]}"
+    },
+    {
+      "dataset": "client/types",
+      "key": "92885",
+      "data": "{\"typeID\":92885,\"graphicID\":33585,\"capacity\":0.0,\"raceID\":8,\"typeNameID\":1038441,\"published\":0,\"radius\":70000.0,\"volume\":1.0,\"mass\":0.0,\"basePrice\":0.0,\"portionSize\":1,\"groupID\":15}"
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": "33585",
+      "data": "{\"graphicLocationID\":2074,\"sofFactionName\":\"air\",\"sofRaceName\":\"generic\",\"explosionBucketID\":33,\"sofHullName\":\"airs2\",\"iconInfo\":{\"folder\":\"res:\\\\dx9\\\\model\\\\station\\\\air\\\\airs2\\\\icons\\\\\"},\"sofLayout\":[]}"
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": "2074",
+      "data": "{\"hull\":\"airs2\",\"directionalLocators\":[{\"category\":\"undockPointCapital\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3643.551025390625,\"x\":945.5001831054688,\"n_fields\":3,\"z\":35705.25390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"capital01\"},{\"category\":\"undockPointCapital\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3643.551025390625,\"x\":-1431.267578125,\"n_fields\":3,\"z\":35705.25390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"capital02\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2849.742431640625,\"x\":-61.28969955444336,\"n_fields\":3,\"z\":22551.123046875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"large01\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3101.00439453125,\"x\":-251.49000549316406,\"n_fields\":3,\"z\":23089.24609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"large02\"},{\"category\":\"undockPointLarge\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-6167.62841796875,\"x\":28342.865234375,\"n_fields\":3,\"z\":7320.4228515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"large03\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2849.742431640625,\"x\":-61.28969955444336,\"n_fields\":3,\"z\":22551.123046875},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point01\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":6167.62841796875,\"x\":29738.99609375,\"n_fields\":3,\"z\":7320.4228515625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point02\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":22030.1640625,\"x\":327.8702087402344,\"n_fields\":3,\"z\":-9024.0390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point03\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":22855.560546875,\"x\":-232.86720275878906,\"n_fields\":3,\"z\":-9024.0390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point04\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":23659.87109375,\"x\":467.0788879394531,\"n_fields\":3,\"z\":-9024.0390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point05\"},{\"category\":\"undockPoint\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":24632.763671875,\"x\":-241.3502960205078,\"n_fields\":3,\"z\":-9024.0390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"point06\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2234.682373046875,\"x\":-1220.8455810546875,\"n_fields\":3,\"z\":23089.24609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small02\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3101.00439453125,\"x\":-1220.8455810546875,\"n_fields\":3,\"z\":23089.24609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small03\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2305.921630859375,\"x\":777.58837890625,\"n_fields\":3,\"z\":23089.24609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small04\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":2899.64501953125,\"x\":1885.228515625,\"n_fields\":3,\"z\":23089.24609375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small05\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":30822.3984375,\"x\":50.983299255371094,\"n_fields\":3,\"z\":-9257.0380859375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small06\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":34997.59375,\"x\":50.983299255371094,\"n_fields\":3,\"z\":-9257.0380859375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small07\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":39241.37109375,\"x\":50.983299255371094,\"n_fields\":3,\"z\":-9257.0380859375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small08\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":43416.56640625,\"x\":50.983299255371094,\"n_fields\":3,\"z\":-9257.0380859375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small09\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":-1934.134521484375,\"x\":28958.646484375,\"n_fields\":3,\"z\":8338.5458984375},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small10\"},{\"category\":\"undockPointSmall\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3832.82666015625,\"x\":-7039.29638671875,\"n_fields\":3,\"z\":35359.0390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"small11\"},{\"category\":\"undockPointSupercapital\",\"position\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":3643.551025390625,\"x\":-157.93820190429688,\"n_fields\":3,\"z\":35705.25390625},\"direction\":{\"n_sequence_fields\":3,\"n_unnamed_fields\":0,\"y\":0.0,\"x\":0.0,\"n_fields\":3,\"z\":1.0},\"name\":\"supercapital01\"}]}"
+    }
+  ]
+}

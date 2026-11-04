@@ -24,16 +24,6 @@ public interface IStationDocking
 public static class DockingDefinitions
 {
     public const double MaximumRange = 2500;
-    private const double LaunchClearance = 500;
-    private const double LocalLaunchLaneSpacing = 1500;
-
-    public static SpacePosition UndockPosition(long shipId, SpacePosition station, FlightProperties hull)
-    {
-        // Collision checks measure both radii. Large hulls must start outside
-        // the station sphere, with the same clearance as smaller ships.
-        double lane = shipId % 2 == 0 ? LocalLaunchLaneSpacing : 0;
-        return new(station.X + hull.StationRadius + hull.ShipRadius + LaunchClearance, station.Y + lane, station.Z);
-    }
 }
 
 public sealed record PilotIdentity(
@@ -65,7 +55,8 @@ public sealed record PilotStation(
     int OperationId,
     int OrbitId,
     SpacePosition Position,
-    StationIdentity Identity
+    StationIdentity Identity,
+    StationUndockPoint? UndockPoint = null
 );
 
 public sealed record PilotLocation(SpacePosition? Position = null, FlightSystem? System = null);

@@ -100,7 +100,9 @@ public sealed class FlightSessionTests
             Assert.InRange(slower.Velocity.X, 1, braking.Velocity.X - 1);
             Assert.True(slower.Pilot.Position!.X > braking.Pilot.Position!.X);
         }
-        wing.CallWire("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]);
+        wing.CallWire("beyonce", "CmdFollowBall", [(long)wing.Pilot.StationId, 500d]);
+        clock.Seconds += 120;
+        Assert.Null(wing.CallWire("beyonce", "CmdDock", [(long)wing.Pilot.StationId, wing.Pilot.ShipId]));
         Assert.Empty(space.Peers(pilot.Pilot));
         pilot.Updates.Clear();
         pilot.RefreshPeers();
@@ -275,7 +277,7 @@ public sealed class FlightSessionTests
         session.CallWire("beyonce", "CmdWarpToStuff", ["item", 9L]);
         clock.Seconds = 12;
         Assert.Null(session.CallWire("beyonce", "CmdStop", []));
-        Assert.Equal(3d, session.Pilot.Position!.X, 8);
+        Assert.InRange(session.Pilot.Position!.X, -100, 23);
         session.CallWire("beyonce", "CmdWarpToStuff", ["item", 9L]);
         session.Updates.Clear();
         clock.Seconds += 180;
@@ -353,7 +355,7 @@ public sealed class FlightSessionTests
     }
 
     [Fact]
-    public void DelayedCheckpointStopsAtFirstRemoteBodyAndPersistsContact()
+    public void DelayedCheckpointKeepsThrustAtARemoteBodyAndCanTurnAwayAfterContact()
     {
         using TestWorld db = new();
         var pilot = db.Store.FindPilot(1000001)! with { Position = SpacePosition.Zero };
@@ -364,9 +366,15 @@ public sealed class FlightSessionTests
         session.CallWire("beyonce", "CmdGotoDirection", [1d, 0d, 0d]);
         clock.Seconds = 120;
         session.Checkpoint();
-        Assert.Equal(153, session.Pilot.Position!.X, 8);
-        Assert.False(session.Moving);
+        Assert.InRange(session.Pilot.Position!.X, 0, nearer.Position.X - nearer.Radius);
+        Assert.True(session.Moving);
+        Assert.DoesNotContain(session.Updates, update => update.Command is DestinyCommand.Stop);
         Assert.Equal(session.Pilot.Position, WorldInitialization.Open(db.Path).FindPilot(1000001)!.Position);
+        var contact = session.Pilot.Position;
+        session.CallWire("beyonce", "CmdGotoDirection", [0d, 1d, 0d]);
+        clock.Seconds += 20;
+        session.Checkpoint();
+        Assert.True(session.Pilot.Position!.Y > contact.Y + 100);
     }
 
     [Fact]
@@ -411,6 +419,7 @@ public sealed class FlightSessionTests
         session.CallWire("ship", "Undock", [session.Pilot.ShipId]);
         session.Snapshot();
         var origin = session.Pilot.Position;
+        var launchVelocity = session.Velocity;
         Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", ["item", 1L]));
         Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", ["bookmark", target[1]]));
         foreach (object range in new object[] { -1L, 100_001L, double.NaN, "bad" })
@@ -418,7 +427,8 @@ public sealed class FlightSessionTests
             Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdWarpToStuff", target, new() { ["minRange"] = range }));
         }
         Assert.Equal(origin, session.Pilot.Position);
-        Assert.False(session.Moving);
+        Assert.Equal(launchVelocity, session.Velocity);
+        Assert.True(session.Moving);
     }
 
     [Fact]
@@ -509,18 +519,20 @@ public sealed class FlightSessionTests
     }
 
     [Fact]
-    public void LongInwardCourseStopsAtTheNearStationSurface()
+    public void LongInwardCourseBumpsAtTheNearStationSurfaceWithoutCancellingThrust()
     {
         using TestWorld db = new();
         var pilot = db.Store.FindPilot(1000001)!;
         Clock clock = new();
         using FlightSession session = new(db.Store, pilot, clock, new(), db.Objects);
         session.CallWire("ship", "Undock", [pilot.ShipId]);
-        session.CallWire("beyonce", "CmdGotoDirection", [-1d, 0d, 0d]);
-        clock.Seconds = 1000;
+        var inward = (pilot.Home.Position - session.Pilot.Position!).Unit;
+        session.CallWire("beyonce", "CmdGotoDirection", [inward.X, inward.Y, inward.Z]);
+        clock.Seconds = 120;
         session.Checkpoint();
-        Assert.False(session.Moving);
-        Assert.Equal(pilot.X + pilot.Flight.StationRadius + pilot.Flight.ShipRadius, session.Pilot.Position!.X);
+        Assert.True(session.Moving);
+        double clearance = session.Pilot.Position!.DistanceTo(pilot.Home.Position) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius;
+        Assert.InRange(clearance, -20, 20);
         Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
     }
 
@@ -551,6 +563,8 @@ public sealed class FlightSessionTests
         Assert.True(session.Pilot.Position!.Y > stopped.Y);
         Assert.False(session.Moving);
         var resumed = new FlightSession(reopened, reopened.FindPilot(1000001)!, clock, new(), db.Objects);
+        resumed.CallWire("beyonce", "CmdFollowBall", [(long)pilot.StationId, 500d]);
+        clock.Seconds += 120;
         Assert.Null(resumed.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot, WorldInitialization.Open(db.Path).FindPilot(1000001));
     }
@@ -612,7 +626,11 @@ public sealed class FlightSessionTests
         Assert.Null(session.CallWire("beyonce", "CmdFollowBall", [(long)pilot.StationId, 0d]));
         clock.Seconds = 180;
         session.Checkpoint();
-        Assert.False(session.Moving);
+        Assert.InRange(
+            session.Pilot.Position!.DistanceTo(pilot.Home.Position) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius,
+            -20,
+            DockingDefinitions.MaximumRange
+        );
         Assert.Same(PilotCallResult.Unsupported, session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId + 1]));
         Assert.Null(session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
