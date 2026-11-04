@@ -7,7 +7,7 @@ The route audit starts with `DockedCompatibilityHandler` and `AccountCompatibili
 | Feature | Audited routes | State |
 | --- | --- | --- |
 | Character settings | `charMgr.GetCharacterSettings`, `SaveCharacterSetting`, `DeleteCharacterSetting` | Implemented with private persistent values |
-| Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState` | Pending |
+| Personal contacts | `charMgr.GetContactList`, add/edit/delete, block/unblock, labels; `onlineStatus.GetInitialState`, `GetOnlineStatus` | Implemented for local pilots; contact notifications and NPC/organization contacts pending |
 | Personal locations | `accessGroupBookmarkMgr.GetMyActiveBookmarks` and folder/bookmark operations | Pending |
 | Ship insurance | `insuranceSvc.GetContracts`, `GetInsurancePrice` and policy operations | Pending |
 | Task tracking | `monolithTaskTrackerMgr.HasEverWarped`, `GetCompletedAchievementsAndClientEventCount`, `UpdateClientAchievmentsAndCounters` | Pending |
@@ -26,6 +26,24 @@ Reference: installed `code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Save a client preference using `characterSettings`, reconnect, and confirm it reloads; clear it and confirm it remains cleared after reconnect. Native presentation is unverified.
+
+### Personal contacts and online status
+
+Build **3662168** inert inspection of `eve/client/script/ui/shared/neocom/addressBook/addressbookService.pyj` confirms `GetContactList()` returns a KeyVal with `addresses` and `blocked` lists. Contact entries expose `contactID`, `relationshipID`, `inWatchlist` and `labelMask`; blocked entries expose `senderID`. `AddContact` and `EditContact` receive `(contactID, standing, watchlist, sendNotification, message)`. Bulk standing changes use `EditContactsRelationshipID(ids, standing)`. Deletion, blocking and unblocking take a list of IDs. `GetLabels()` returns a dictionary keyed by each label's bit value, with `labelID`, `name` and `color`. Label operations are `CreateLabel(name, color)`, `EditLabel(id, name, color)`, `DeleteLabel(id)`, `AssignLabels(ids, mask)` and `RemoveLabels(ids, mask)`. The client updates its own contact/label caches after successful edits, so these operations do not send duplicate cache notifications.
+
+Eden now persists these operations for known local pilots. Offline pilots resolve through `config.GetMultiOwnersEx`, rather than disappearing when outside the caller's visible scene. All mutations derive the owner from the selected session. Standings must be finite and between -10 and 10. Eden bounds batches to 1024 entries and label names to 40 nonblank characters without NUL. Up to 63 labels use positive bits in the signed 64-bit mask. Assignment rejects unknown bits, label deletion clears the bit from all of that pilot's contacts, and reused bits never inherit stale assignments. Duplicate contacts/names, unknown pilots, self-targets, malformed arguments and unsupported notification requests fail with unchanged state. Blocks are independent of contact membership. They persist and suppress watchlist presence; chat/mail enforcement awaits those systems.
+
+World version **41** adds `WorldContact`, `WorldBlockedContact` and `WorldContactLabel`, with pilot foreign keys, composite keys and unique per-pilot label names. Every edit/batch and label-bit cleanup commits in one transaction. Migration from version 40 preserves character settings and initializes empty contact data. Reopening does not reset saved contacts, blocks or labels.
+
+`eve/client/script/ui/shared/comtool/onlineStatus.pyj` primes `GetInitialState().Index('contactID')`, fetches missing entries through `GetOnlineStatus(characterID)`, and consumes `OnContactLoggedOn/Off(characterID)`. Eden's online policy exposes selected-session presence for the caller's own local contacts. Initial state includes watchlisted contacts; blocked contacts report offline. The existing connection presence registry now retains in-space pilots as well as docked guests, while station lists still filter by station. A primed watchlist receives each observed online/offline transition once on session ticks, with no docking, undocking or ship-switch flicker. Logoff resets the connection's subscription and disconnect removes its presence. Changes shorter than a session tick can be coalesced. Sending contact notifications/CSPA, NPC-agent contacts and corporation/alliance contacts remain unavailable; selecting Send Notification fails explicitly and instructs the player to clear it before saving.
+
+References: unchanged pinned `code.ccp` hash and Carbon Blue revision **fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae** recorded above; the existing rowset, KeyVal and list adapters remain in use. No gameplay Python was executed and no client was launched.
+
+**Automated validation.** Development filter `FullyQualifiedName~Contacts|FullyQualifiedName~OnlineStatusTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~CharacterSettings|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **64 tests** in approximately **6 seconds**. Coverage includes typed state, actual Blue replies, rejection/unchanged-state checks, Unicode labels, label-bit limits and reuse, version-40 migration, restart persistence, offline names, blocks, repeated docking/reconnect cycles and logoff. Early development found a test KeyVal-unwrapping issue and a concrete dictionary adapter mismatch, both corrected before the passing run. Final filter `FullyQualifiedName~Eden.Protocol.Tests.PilotSessions|FullyQualifiedName~PilotContactsTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~CharacterSettings|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **81 tests** in approximately **7 seconds**. Tool/solution restores, solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting tests), formatting and diff checks passed; final build/test/policy/format checks took approximately **21 seconds** combined. No full .NET suite is authorized or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Add another local pilot with Send Notification cleared, assign a label and reconnect; verify the contact and label remain. With both pilots connected, check watchlist indicators through logoff/reconnect. Native rendering and interaction remain unverified.
 
 ## Launcher accounts and developer roles
 

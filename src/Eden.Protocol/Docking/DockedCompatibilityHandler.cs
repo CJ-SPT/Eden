@@ -53,13 +53,11 @@ internal sealed class DockedCompatibilityHandler(TimeProvider clock, IPilotFleet
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new DynamicBountyState(),
             ("ProjectDiscovery", "is_enabled") => false,
             ("clientStatLogger", "LogString") => PilotCallResult.None,
-            ("onlineStatus", "GetInitialState") => Rows(["contactID", "online"]),
             ("ship", "GetDirtTimestamp") when args.Length == 1 && Equals(args[0], pilot.ShipId) => clock
                 .GetUtcNow()
                 .UtcDateTime.ToFileTimeUtc(),
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
-            ("charMgr", "GetContactList") => new ContactListState(),
             ("corpRegistry", "GetCorporateContacts") => BlueEmpty.List,
             ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new LocationTable(
                 context

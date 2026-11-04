@@ -6,6 +6,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Personal contacts support add/edit/delete, standings, blocking and labels for local Eden pilots, including offline pilots. Values survive restarts. Watchlists show online state and receive login/logoff updates without docking flicker. Contact notifications, NPC agents and corporation/alliance contacts remain pending. Native contact-window presentation is unverified; see the [personal contact implementation notes](docs/protocol.md#personal-contacts-and-online-status).
+
 Character settings support the stock client's read, save and delete calls. Each pilot's opaque text or binary values survive reconnects and server restarts, with the client's 100 KiB value limit. Native settings presentation remains unverified; see the [placeholder route implementation record](docs/protocol.md#placeholder-route-implementation-november-4-2026).
 
 Station Guests lists all connected pilots docked at that station, with live arrival/departure updates for login, docking, undocking, logoff and disconnect. Offline pilots and pilots elsewhere are excluded. Native presentation of this fix remains unverified; see the [station guest protocol notes](docs/protocol.md#station-guests-november-4-2026).

@@ -142,6 +142,15 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedContact>().ToTable("WorldContact").HasKey(c => new { c.PilotId, c.ContactId });
+        model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);
+        model.Entity<SavedBlockedContact>().ToTable("WorldBlockedContact").HasKey(c => new { c.PilotId, c.ContactId });
+        model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);
+        model.Entity<SavedContactLabel>().ToTable("WorldContactLabel").HasKey(l => new { l.PilotId, l.Id });
+        model.Entity<SavedContactLabel>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId);
+        model.Entity<SavedContactLabel>().HasIndex(l => new { l.PilotId, l.Name }).IsUnique();
         model
             .Entity<SavedCharacterSetting>()
             .ToTable(

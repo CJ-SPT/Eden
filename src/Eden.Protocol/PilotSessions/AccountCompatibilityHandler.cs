@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -6,7 +7,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable]
-internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStationGuests guests) : IPilotCallHandler
+internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStationGuests guests, ICharacterDirectory directory)
+    : IPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -24,7 +26,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
             // It records exit intent; the transport closing owns disconnect cleanup.
             ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
                 PilotCallResult.None,
-            ("config", "GetMultiOwnersEx") => OwnerRows(arguments, KnownPilots(context)),
+            ("config", "GetMultiOwnersEx") => OwnerRows(arguments),
             ("config", "GetMultiCorpTickerNamesEx")
                 when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new CorporationTickerTable(
                 KnownPilots(context)
@@ -52,16 +54,13 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
             ? flight.VisiblePilots().Concat(guests.List(flight.Pilot)).DistinctBy(pilot => pilot.PilotId)
             : context.Roster.Select(PilotContact.From);
 
-    private static OwnerTable OwnerRows(object? arguments, IEnumerable<PilotContact> pilots)
+    private OwnerTable OwnerRows(object? arguments)
     {
         var ids = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected owner IDs.");
         List<OwnerRow> rows = [];
-        foreach (var pilot in pilots)
+        foreach (var pilot in directory.Read(ids.OfType<long>().ToArray()))
         {
-            if (ids.Contains(pilot.PilotId))
-            {
-                rows.Add(new(pilot.PilotId, pilot.Name, pilot.GenderId));
-            }
+            rows.Add(new(pilot.Id, pilot.Name, pilot.Gender));
         }
 
         return new(rows);

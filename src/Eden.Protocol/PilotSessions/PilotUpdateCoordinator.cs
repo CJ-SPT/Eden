@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
@@ -26,7 +27,8 @@ internal sealed class PilotUpdateCoordinator(
     SupportModuleHandler support,
     TackleHandler tackle,
     DeferredRefitPrimes refits,
-    StationGuestHandler guests
+    StationGuestHandler guests,
+    OnlineStatusHandler online
 )
 {
     public bool IsMonitoring => industry.IsMonitoring || guests.IsDocked;
@@ -41,6 +43,7 @@ internal sealed class PilotUpdateCoordinator(
     public void Leave(PilotCallContext context)
     {
         guests.Dispose();
+        online.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -76,6 +79,7 @@ internal sealed class PilotUpdateCoordinator(
         npcCombat.Advance(context);
         targeting.Advance(context);
         guests.Advance(context);
+        online.Advance(context);
         return beforeAttack;
     }
 }

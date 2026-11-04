@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 40;
+    internal const int CurrentVersion = 41;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -529,7 +529,29 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=40");
+            if (version is >= 6 and < 41)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldContact(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        ContactId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Standing REAL NOT NULL, InWatchlist INTEGER NOT NULL, LabelMask INTEGER NOT NULL,
+                        PRIMARY KEY(PilotId, ContactId));
+                    CREATE TABLE IF NOT EXISTS WorldBlockedContact(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        ContactId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        PRIMARY KEY(PilotId, ContactId));
+                    CREATE TABLE IF NOT EXISTS WorldContactLabel(
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        Id INTEGER NOT NULL, Name TEXT NOT NULL, Color INTEGER, PRIMARY KEY(PilotId, Id));
+                    CREATE INDEX IF NOT EXISTS IX_WorldContact_ContactId ON WorldContact(ContactId);
+                    CREATE INDEX IF NOT EXISTS IX_WorldBlockedContact_ContactId ON WorldBlockedContact(ContactId);
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldContactLabel_PilotId_Name ON WorldContactLabel(PilotId, Name);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=41");
         }
         var skillTypes = world.Set<PilotSkill>().Select(s => s.TypeId).Distinct().ToArray();
         var rankedSkills = catalog

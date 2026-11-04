@@ -1,3 +1,4 @@
+using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -132,7 +133,7 @@ public sealed class TypedCallResultTests
                 )
             ),
             (
-                new ContactListState(),
+                new PersonalContactsReply(new([], [])),
                 new BlueInstance(
                     "utillib.KeyVal",
                     new Dictionary<string, object?> { ["addresses"] = new List<object?>(), ["blocked"] = new List<object?>() }

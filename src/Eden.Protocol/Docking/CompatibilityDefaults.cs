@@ -44,15 +44,6 @@ internal sealed record DynamicBountyState() : BlueModel
     public override object ToBlue() => new object?[] { 1d, false };
 }
 
-internal sealed record ContactListState() : BlueModel
-{
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?> { ["addresses"] = new List<object?>(), ["blocked"] = new List<object?>() }
-        );
-}
-
 internal sealed record CrimewatchClientState(ShipSafetyLevel Safety) : BlueModel
 {
     public override object ToBlue() =>
