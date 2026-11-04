@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 60;
+    internal const int CurrentVersion = 61;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -861,7 +861,19 @@ internal static class WorldMigration
                     world.Database.ExecuteSqlRaw("ALTER TABLE WorldBooster ADD COLUMN RemainingInjectionUses INTEGER NOT NULL DEFAULT 0");
                 }
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=60");
+            if (version is >= 6 and < 61)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldSkillExtraction(
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        ItemId INTEGER NOT NULL, Time INTEGER NOT NULL, AllocationsJson TEXT NOT NULL);
+                    CREATE INDEX IF NOT EXISTS IX_WorldSkillExtraction_PilotId_Id ON WorldSkillExtraction(PilotId,Id);
+                    """
+                );
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=61");
         }
         world.Database.ExecuteSqlRaw(
             """

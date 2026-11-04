@@ -58,6 +58,13 @@ internal sealed record ServerSkillsChanged(BlueMap<int, TrainedSkillReply> Skill
     public override object?[] Arguments => [Skills.Entries.ToDictionary(p => (long)p.Key, p => (object?)p.Value.ToBlue()), null, Time];
 }
 
+// Extraction uses the native removal event to reset history and queue caches without
+// presenting the decrease as a skill-training completion.
+internal sealed record ServerSkillsRemoved(BlueMap<int, TrainedSkillReply> Skills, long Time) : PilotNotification("OnServerSkillsRemoved")
+{
+    public override object?[] Arguments => [Skills.Entries.ToDictionary(p => (long)p.Key, p => (object?)p.Value.ToBlue()), Time];
+}
+
 internal sealed record SkillQueueSaved(IReadOnlyList<SkillQueueRow> Queue) : PilotNotification("OnNewSkillQueueSaved")
 {
     public override object?[] Arguments => [Queue.Select(row => (object?)row.ToBlue()).ToList()];

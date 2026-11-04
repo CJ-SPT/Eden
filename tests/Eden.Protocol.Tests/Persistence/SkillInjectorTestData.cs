@@ -20,9 +20,9 @@ internal static class SkillInjectorTestData
 
     internal static TestClock Clock() => new(new DateTimeOffset(2018, 12, 15, 12, 0, 0, TimeSpan.Zero));
 
-    internal static TestWorld Create(TestClock clock)
+    internal static TestWorld Create(TestClock clock, bool clones = false)
     {
-        var db = BoosterTestData.Create(clock);
+        var db = BoosterTestData.Create(clock, clones);
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         if (catalog.Set<ItemCategory>().Find(5) is null)
         {

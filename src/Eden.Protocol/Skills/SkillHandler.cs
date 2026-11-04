@@ -127,14 +127,15 @@ internal sealed class SkillHandler(
         return PilotCallResult.None;
     }
 
-    internal IReadOnlyList<SkillQueueRow> Apply(PilotCallContext context, TrainingState state, bool notify)
+    internal IReadOnlyList<SkillQueueRow> Apply(PilotCallContext context, TrainingState state, bool notify, bool removed = false)
     {
         context.NextSkillCompletion = state.Queue.FirstOrDefault()?.EndTime;
         if (state.ChangedSkills.Count > 0)
         {
             propulsion.RefreshNavigation(context);
             var updates = SkillRows(skills.ReadSkills(context.Pilot.PilotId).Where(s => state.ChangedSkills.Contains(s.TypeId)));
-            context.Notifications.Add(new ServerSkillsChanged(updates, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
+            long changedAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            context.Notifications.Add(removed ? new ServerSkillsRemoved(updates, changedAt) : new ServerSkillsChanged(updates, changedAt));
             context.Notifications.Add(new ServerBrainUpdated(brain.Update(context.Pilot.PilotId, context.Pilot.ShipId)));
             if (state.ChangedSkills.Any(skill => Enum.IsDefined((InfomorphSkill)skill)))
             {

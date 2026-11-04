@@ -215,6 +215,9 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedSkillExtraction>().ToTable("WorldSkillExtraction").HasKey(extraction => extraction.Id);
+        model.Entity<SavedSkillExtraction>().HasOne<Pilot>().WithMany().HasForeignKey(extraction => extraction.PilotId);
+        model.Entity<SavedSkillExtraction>().HasIndex(extraction => new { extraction.PilotId, extraction.Id });
         model.Entity<SavedSkillInjectorState>().ToTable("WorldSkillInjectorState").HasKey(state => state.PilotId);
         model.Entity<SavedSkillInjectorState>().HasOne<Pilot>().WithMany().HasForeignKey(state => state.PilotId);
         model.Entity<SavedSkillInjection>().ToTable("WorldSkillInjection").HasKey(injection => injection.Id);
