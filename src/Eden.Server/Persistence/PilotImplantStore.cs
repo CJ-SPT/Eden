@@ -43,6 +43,9 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         Perception = 310,
     }
 
+    internal static bool IsLearningEffects(ClientTypedogmaDogmaEffectsItem[] effects) =>
+        effects.Select(e => e.EffectID).ToHashSet().SetEquals(Enum.GetValues<LearningEffect>().Select(e => (long?)e));
+
     internal static ImplantSnapshot Read(WorldDbContext world, long pilotId)
     {
         var basis = PilotCharacterSheetStore.ReadAttributes(world, pilotId).Attributes;
@@ -79,7 +82,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             || item.GroupId != ImplantRules.LearningGroup
             || type?.Published != 1
             || effects is null
-            || !effects.Select(e => e.EffectID).ToHashSet().SetEquals(Enum.GetValues<LearningEffect>().Select(e => (long?)e))
+            || !IsLearningEffects(effects)
         )
         {
             throw new InvalidDataException("Only published learning implants are supported. Hardwiring and set effects are unavailable.");
@@ -114,7 +117,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         return new(item.TypeId, checked((int)slot), nonzero[0].CharacterAttribute, checked((int)bonus));
     }
 
-    private static void Requirements(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int typeId)
+    internal static void Requirements(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int typeId)
     {
         var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => a.AttributeId, a => a.Value);
         var alpha =
@@ -140,7 +143,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
                 || required != Math.Truncate(required)
             )
             {
-                throw new InvalidDataException("Invalid implant skill requirement.");
+                throw new InvalidDataException("Invalid augmentation skill requirement.");
             }
             int type = checked((int)skill);
             requirements.Add(new(type, checked((int)required)));

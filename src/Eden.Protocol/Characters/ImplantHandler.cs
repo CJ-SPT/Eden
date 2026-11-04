@@ -10,6 +10,7 @@ namespace Eden.Protocol.Characters;
 [Injectable(InjectionType.Scoped)]
 internal sealed class ImplantHandler(
     IPilotImplants implants,
+    IPilotCharacterSheet sheet,
     IPilotTraining training,
     IPilotSkillReader reader,
     SkillHandler skills,
@@ -86,8 +87,9 @@ internal sealed class ImplantHandler(
         long pilot = context.Pilot.PilotId;
         context.Notifications.Add(
             new ModuleAttributesChanged(
-                snapshot
-                    .Attributes.ToDogma()
+                sheet
+                    .ReadEffectiveAttributes(pilot)
+                    .ToDogma()
                     .Select(a => new ModuleAttributeChange(pilot, new DogmaItemKey.Item(pilot), a.Key, now, a.Value))
                     .ToArray()
             )

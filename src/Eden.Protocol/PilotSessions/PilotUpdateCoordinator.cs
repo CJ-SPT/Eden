@@ -43,6 +43,7 @@ internal sealed class PilotUpdateCoordinator(
     FreeSkillPointHandler freePoints,
     LoyaltyWalletHandler loyalty,
     ImplantHandler implants,
+    BoosterHandler boosters,
     WalletBalanceMonitor walletBalance
 )
 {
@@ -56,7 +57,8 @@ internal sealed class PilotUpdateCoordinator(
         || security.IsMonitoring
         || freePoints.IsMonitoring
         || loyalty.IsMonitoring
-        || implants.IsMonitoring;
+        || implants.IsMonitoring
+        || boosters.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
@@ -68,6 +70,7 @@ internal sealed class PilotUpdateCoordinator(
         freePoints.Enter(context);
         loyalty.Enter(context);
         implants.Enter(context);
+        boosters.Enter(context);
         walletBalance.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
@@ -84,6 +87,7 @@ internal sealed class PilotUpdateCoordinator(
         freePoints.Reset();
         loyalty.Reset();
         implants.Reset();
+        boosters.Reset();
         walletBalance.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
@@ -129,6 +133,7 @@ internal sealed class PilotUpdateCoordinator(
         freePoints.Advance(context);
         loyalty.Advance(context);
         implants.Advance(context);
+        boosters.Advance(context);
         walletBalance.Advance(context);
         return beforeAttack;
     }

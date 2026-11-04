@@ -66,7 +66,7 @@ public static class ImplantRules
             }
             if (requirement.Level is < 1 or > 5 || level < requirement.Level)
             {
-                throw new InvalidDataException("Your effective skills and account status do not meet this implant's requirements.");
+                throw new InvalidDataException("Your effective skills and account status do not meet this item's requirements.");
             }
         }
     }

@@ -3,6 +3,13 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    BoosterDuration = 330,
+    BoosterSlot = 1087,
+    BoosterExpiryTime = 1088,
+    BoosterMaximumAgeHours = 1647,
+    NonDestructible = 1890,
+    FollowsJumpClones = 1916,
+    BoosterLastInjectionDate = 2422,
     ImplantSlot = 331,
     CharismaBonus = 175,
     IntelligenceBonus = 176,

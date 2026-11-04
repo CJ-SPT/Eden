@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -32,8 +33,26 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         return new(result.Training, result.Remapped);
     }
 
-    internal TrainingState ChangeAttributes(WorldDbContext world, long pilotId, Action change) =>
-        UpdateCore(world, pilotId, null, false, false, null, null, false, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), change).Training;
+    internal TrainingState ChangeAttributes(
+        WorldDbContext world,
+        long pilotId,
+        Action change,
+        bool implantChange = true,
+        long? effectiveTime = null
+    ) =>
+        UpdateCore(
+            world,
+            pilotId,
+            null,
+            false,
+            false,
+            null,
+            null,
+            false,
+            effectiveTime ?? clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            change,
+            implantChange
+        ).Training;
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
@@ -79,7 +98,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         PointOperation? points,
         bool preview,
         long now,
-        Action? changeAttributes = null
+        Action? changeAttributes = null,
+        bool implantChange = true
     )
     {
         bool remapped = false;
@@ -99,7 +119,10 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         bool alphaBudgetStopped = false;
         foreach (var row in saved)
         {
-            var entry = new TrainingEntry(new(row.TypeId, row.Level), row.StartPoints, row.EndPoints, row.StartTime, row.EndTime);
+            var entry = new TrainingEntry(new(row.TypeId, row.Level), row.StartPoints, row.EndPoints, row.StartTime, row.EndTime)
+            {
+                Periods = JsonSerializer.Deserialize<TrainingProgressPeriod[]>(row.PeriodsJson) ?? [],
+            };
             if (entry.EndTime is long end && end <= now)
             {
                 world.Set<PilotSkill>().Find(pilotId, row.TypeId)!.Points = row.EndPoints;
@@ -147,8 +170,12 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             // Materialize elapsed progress using the saved queue's old rate, then
             // change the physical body/implants and plan the remaining work once.
             changeAttributes();
-            var revision = world.Set<SavedImplantState>().Find(pilotId) ?? world.Add(new SavedImplantState { PilotId = pilotId }).Entity;
-            revision.Revision = checked(revision.Revision + 1);
+            if (implantChange)
+            {
+                var revision =
+                    world.Set<SavedImplantState>().Find(pilotId) ?? world.Add(new SavedImplantState { PilotId = pilotId }).Entity;
+                revision.Revision = checked(revision.Revision + 1);
+            }
             world.SaveChanges();
             targets = queue.Select(e => e.Target).ToArray();
             activate = wasActive;
@@ -178,7 +205,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 {
                     changed.Add(first!.Target.TypeId);
                 }
-                var inputs = ReadInputs(world, pilotId, queue.Select(e => e.Target).ToArray());
+                var inputs = ReadInputs(world, pilotId, queue.Select(e => e.Target).ToArray(), now);
                 targets = queue
                     .Select(e => e.Target)
                     .Where(t => t.Level > new TrainedSkill(t.TypeId, inputs.Skills[t.TypeId].Points, inputs.Skills[t.TypeId].Rank).Level)
@@ -233,6 +260,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                         EndPoints = entry.EndPoints,
                         StartTime = entry.StartTime,
                         EndTime = entry.EndTime,
+                        PeriodsJson = JsonSerializer.Serialize(entry.Periods),
                     }
                 );
             }
@@ -273,13 +301,13 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         {
             return [];
         }
-        var inputs = ReadInputs(world, pilotId, targets);
+        var inputs = ReadInputs(world, pilotId, targets, now);
         bool partial =
             priorQueue?.Any(e => e.EndPoints < TrainedSkill.PointsForLevel(inputs.Skills[e.Target.TypeId].Rank, e.Target.Level)) == true;
         return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial);
     }
 
-    private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets)
+    private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets, long now)
     {
         var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -307,25 +335,45 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             .Where(r => types.Contains(r.Key))
             .AsEnumerable()
             .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
-        var pilotAttributes = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
+        var basis = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
+        var boosters = PilotBoosterStore.Active(world, pilotId, now);
+        int bonus = boosters.Sum(b => b.Bonus);
         var inputs = points.ToDictionary(
             p => p.Key,
             p =>
             {
                 var dogma = attributes.GetValueOrDefault(p.Key, []);
                 var required = prerequisites.GetValueOrDefault(p.Key);
+                var primary = (DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.PrimaryAttribute);
+                var secondary = (DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.SecondaryAttribute);
                 return new TrainingSkill(
                     p.Value,
                     dogma.GetValueOrDefault((int)DogmaAttributeId.SkillTimeConstant, 1),
-                    pilotAttributes.GetValueOrDefault((DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.PrimaryAttribute)),
-                    pilotAttributes.GetValueOrDefault((DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.SecondaryAttribute)),
+                    basis.GetValueOrDefault(primary) + bonus,
+                    basis.GetValueOrDefault(secondary) + bonus,
                     checked((int)alpha.GetValueOrDefault(p.Key)),
                     required is null
                         ? []
                         : required
                             .Select(r => new TrainingTarget(int.Parse(r.Key, CultureInfo.InvariantCulture), checked((int)r.Value)))
                             .ToArray()
-                );
+                )
+                {
+                    RateChanges = boosters
+                        .Select(b => b.ExpiresAt)
+                        .Distinct()
+                        .Order()
+                        .Select(time =>
+                        {
+                            int remaining = boosters.Where(b => b.ExpiresAt > time).Sum(b => b.Bonus);
+                            return new TrainingRateChange(
+                                time,
+                                basis.GetValueOrDefault(primary) + remaining,
+                                basis.GetValueOrDefault(secondary) + remaining
+                            );
+                        })
+                        .ToArray(),
+                };
             }
         );
         var grade = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single();

@@ -9,7 +9,10 @@ public sealed record TrainingSkill(
     double SecondaryAttribute,
     int AlphaLevel,
     IReadOnlyList<TrainingTarget> Prerequisites
-);
+)
+{
+    public IReadOnlyList<TrainingRateChange> RateChanges { get; init; } = [];
+}
 
 public sealed record TrainingInputs(
     IReadOnlyDictionary<int, TrainingSkill> Skills,
@@ -110,10 +113,18 @@ public static class TrainingRules
             double secondary = skill.SecondaryAttribute;
             double rate = (primary + secondary / 2) * (alpha ? .5 : 1);
             long duration = (long)Math.Ceiling((endPoints - before) * TimeSpan.TicksPerMinute / rate);
+            var periods = TrainingTiming.Plan(skill, before, endPoints, start, alpha);
+            if (periods.Count > 0)
+            {
+                duration = periods[^1].EndTime - start;
+            }
             var entry =
                 result.Count == 0 && running is not null
                     ? running
-                    : new TrainingEntry(target, before, endPoints, active ? start : null, active ? start + duration : null);
+                    : new TrainingEntry(target, before, endPoints, active ? start : null, active ? start + duration : null)
+                    {
+                        Periods = active ? periods : [],
+                    };
             start = entry.EndTime ?? start + duration;
             points[target.TypeId] = after;
             result.Add(entry);

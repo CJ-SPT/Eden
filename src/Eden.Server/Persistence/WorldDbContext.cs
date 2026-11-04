@@ -54,6 +54,7 @@ public sealed class QueuedLevel
     public long EndPoints { get; set; }
     public long? StartTime { get; set; }
     public long? EndTime { get; set; }
+    public string PeriodsJson { get; set; } = "[]";
 }
 
 public sealed class TrainingLog
@@ -214,6 +215,11 @@ public sealed class WorldDbContext(string path) : DbContext
                     "(Active = 1 AND StationId IS NULL) OR (Active = 0 AND StationId IS NOT NULL)"
                 )
             );
+        model.Entity<SavedBooster>().ToTable("WorldBooster").HasKey(booster => booster.ItemId);
+        model.Entity<SavedBooster>().HasOne<Pilot>().WithMany().HasForeignKey(booster => booster.PilotId);
+        model.Entity<SavedBooster>().HasIndex(booster => new { booster.PilotId, booster.Slot }).IsUnique();
+        model.Entity<SavedBoosterState>().ToTable("WorldBoosterState").HasKey(state => state.PilotId);
+        model.Entity<SavedBoosterState>().HasOne<Pilot>().WithMany().HasForeignKey(state => state.PilotId);
         model.Entity<SavedImplantState>().ToTable("WorldImplantState").HasKey(state => state.PilotId);
         model.Entity<SavedImplantState>().HasOne<Pilot>().WithMany().HasForeignKey(state => state.PilotId);
         model.Entity<SavedPilotImplant>().ToTable("WorldPilotImplant").HasKey(implant => implant.ItemId);

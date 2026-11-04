@@ -95,7 +95,12 @@ internal sealed partial class PilotTrainingStore
                 FreePointRequest.Targets selected => selected.Levels,
                 _ => queue.Select(e => e.Target).ToArray(),
             };
-            plan = FreeSkillPointRules.Plan(balance, request, ReadInputs(world, pilotId, targets), queue.Select(e => e.Target).ToArray());
+            plan = FreeSkillPointRules.Plan(
+                balance,
+                request,
+                ReadInputs(world, pilotId, targets, now),
+                queue.Select(e => e.Target).ToArray()
+            );
         }
         else
         {

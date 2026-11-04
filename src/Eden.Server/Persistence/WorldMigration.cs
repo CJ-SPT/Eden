@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 58;
+    internal const int CurrentVersion = 59;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -808,7 +808,33 @@ internal static class WorldMigration
                     """
                 );
             }
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=58");
+            if (version is >= 6 and < 59)
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TABLE IF NOT EXISTS WorldBooster(
+                        ItemId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                        TypeId INTEGER NOT NULL, Slot INTEGER NOT NULL, Bonus INTEGER NOT NULL,
+                        StartedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldBooster_PilotId_Slot ON WorldBooster(PilotId,Slot);
+                    CREATE TABLE IF NOT EXISTS WorldBoosterState(
+                        PilotId INTEGER NOT NULL PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE, Revision INTEGER NOT NULL);
+                    """
+                );
+                if (
+                    world
+                        .Database.SqlQueryRaw<long>(
+                            "SELECT COUNT(*) AS Value FROM pragma_table_info('WorldSkillQueue') WHERE name='PeriodsJson'"
+                        )
+                        .AsEnumerable()
+                        .Single() == 0
+                )
+                {
+                    world.Database.ExecuteSqlRaw("ALTER TABLE WorldSkillQueue ADD COLUMN PeriodsJson TEXT NOT NULL DEFAULT '[]'");
+                }
+            }
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=59");
         }
         world.Database.ExecuteSqlRaw(
             """

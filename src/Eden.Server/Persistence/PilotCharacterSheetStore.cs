@@ -31,7 +31,8 @@ public sealed class SavedCharacterSheet
 }
 
 [Injectable]
-internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrainingStore training) : IPilotCharacterSheet
+internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)
+    : IPilotCharacterSheet
 {
     public NeuralRemapState ReadAttributes(long pilotId)
     {
@@ -42,7 +43,8 @@ internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrai
     public CharacterAttributes ReadEffectiveAttributes(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
-        return PilotImplantStore.Read(world, pilotId).Attributes;
+        using var transaction = world.Database.BeginTransaction();
+        return PilotBoosterStore.Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).Attributes;
     }
 
     internal static NeuralRemapState ReadAttributes(WorldDbContext world, long pilotId)

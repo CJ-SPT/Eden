@@ -48,7 +48,6 @@ internal sealed class SkillHandler(
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
                 ("@skills", "SaveNewQueue") => Save(context, args, keywords),
                 ("@skills", "AbortTraining") when args.Length == 0 => Pause(context),
-                ("@skills", "GetBoosters") => BlueEmpty.IndexedDictionary,
                 ("@skills", "CheckAndSendNotifications") => PilotCallResult.None,
                 _ => PilotCallResult.Unsupported,
             };
