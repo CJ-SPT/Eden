@@ -190,6 +190,12 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                     );
                     var damage = payload.Warhead.Damage.Scale(application);
                     var result = PilotHealthStore.Apply(world, shipId, defense, damage, row.UpdatedAt);
+                    PilotInteractionHistoryStore.Damage(
+                        world,
+                        shipId,
+                        PilotInteractionHistoryStore.Npc(npc, row.ChargeTypeId),
+                        result.Applied
+                    );
                     var insurance = result.Remaining.Destroyed
                         ? NpcShipLossPersistence.Apply(
                             world,

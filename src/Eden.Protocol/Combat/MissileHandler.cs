@@ -5,6 +5,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -14,9 +15,12 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles, TargetingHandler targeting)
-    : IModuleEffectSource,
-        IDisposable
+internal sealed class MissileHandler(
+    TimeProvider clock,
+    IPilotMissiles missiles,
+    TargetingHandler targeting,
+    CharacterInteractionHistoryHandler? history = null
+) : IModuleEffectSource, IDisposable
 {
     internal const string EffectName = "useMissiles";
 
@@ -151,6 +155,10 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
         var impacts = missiles.TakeImpacts(context.Pilot.PilotId);
         foreach (var impact in impacts)
         {
+            if (impact.Health.Remaining.Destroyed)
+            {
+                history?.NotifyDestruction(context);
+            }
             context.NotificationsBeforeFlight.Add(
                 new DamageMessageNotification(
                     new OutgoingCombatMessage(

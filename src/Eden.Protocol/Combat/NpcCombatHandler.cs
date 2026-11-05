@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
@@ -21,7 +22,8 @@ internal sealed class NpcCombatHandler(
     SharedTargetLocks locks,
     ShipLossCoordinator shipLoss,
     SharedSpace space,
-    INpcMissiles? missiles = null
+    INpcMissiles? missiles = null,
+    CharacterInteractionHistoryHandler? history = null
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -164,6 +166,7 @@ internal sealed class NpcCombatHandler(
         );
         if (shot.Capsule is { } capsule)
         {
+            history?.NotifyDestruction(context);
             if (shot.Insurance is { } payout)
             {
                 context.Notifications.Add(

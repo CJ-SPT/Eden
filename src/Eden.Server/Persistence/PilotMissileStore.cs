@@ -172,6 +172,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                 {
                     PilotId = pilotId,
                     SourceShipId = pilot.ActiveShipId,
+                    SourceTypeId = pilot.ActiveShip.TypeId,
                     ModuleId = module.Id,
                     LauncherTypeId = module.TypeId,
                     ChargeTypeId = loaded.TypeId,
@@ -294,7 +295,18 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                     );
                     var damage = payload.Warhead.Damage.Scale(application);
                     var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == row.PilotId);
-                    var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, row.SourceShipId, attributes, damage, time);
+                    var result = NpcDamagePersistence.Apply(
+                        world,
+                        catalog,
+                        npc,
+                        pilot,
+                        row.SourceShipId,
+                        attributes,
+                        damage,
+                        time,
+                        row.LauncherTypeId,
+                        row.SourceTypeId
+                    );
                     destroyed |= result.Destroyed;
                     world.SaveChanges();
                     MissileImpact outcome = new(

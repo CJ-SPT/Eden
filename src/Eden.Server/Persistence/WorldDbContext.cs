@@ -147,6 +147,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        ConfigureInteractionHistory(model);
         model.Entity<SavedWeaponLink>().ToTable("WorldWeaponLink").HasKey(l => l.SlaveId);
         model.Entity<SavedWeaponLink>().HasOne<OwnedItem>().WithMany().HasForeignKey(l => l.MasterId);
         model.Entity<SavedWeaponLink>().HasOne<OwnedItem>().WithMany().HasForeignKey(l => l.SlaveId);

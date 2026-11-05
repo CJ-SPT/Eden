@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -118,6 +119,12 @@ public sealed class NpcMissileTests
         Assert.True(shot.Health.Remaining.Destroyed);
         Assert.NotNull(shot.Capsule);
         Assert.NotEqual(ship, shot.Capsule.ShipId);
+        var report = Assert.Single(f.Db.Services.GetRequiredService<IPilotInteractionHistory>().Combat(pilot, 25, null));
+        Assert.Equal(pilot, report.Victim.CharacterId);
+        Assert.Null(report.FinalBlow.CharacterId);
+        Assert.Equal(212, report.FinalBlow.WeaponTypeId);
+        Assert.Equal(f.Npc.TypeId, report.FinalBlow.ShipTypeId);
+        Assert.Equal(shot.Applied, report.Victim.Damage, 8);
         using WorldDbContext world = new(f.Db.Path);
         Assert.Equal(ship, Assert.Single(world.Set<ShipLoss>()).ShipId);
         Assert.Equal(ship, Assert.Single(world.Set<WorldWreck>()).ShipId);

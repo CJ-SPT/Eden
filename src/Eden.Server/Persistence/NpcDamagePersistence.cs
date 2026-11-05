@@ -19,7 +19,9 @@ internal static class NpcDamagePersistence
         long attackingShip,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         DamageVector damage,
-        long now
+        long now,
+        int? weaponType = null,
+        int? sourceType = null
     )
     {
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
@@ -39,6 +41,12 @@ internal static class NpcDamagePersistence
             Math.Max(0, defense.Structure - npc.StructureDamage)
         );
         var result = CombatDamage.Apply(health, defense, damage);
+        var attacker = PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
+        if (sourceType is > 0)
+        {
+            attacker = attacker with { ShipTypeId = sourceType };
+        }
+        PilotInteractionHistoryStore.Damage(world, npc.Id, attacker, result.Applied);
         npc.ShieldCharge = result.Remaining.Shield;
         npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
         npc.StructureDamage = defense.Structure - result.Remaining.Structure;
@@ -56,6 +64,23 @@ internal static class NpcDamagePersistence
             NpcPopulationSeeder.RecordKill(world, npc, now);
             PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
             WreckStore.Create(world, catalog, npc, pilot, now);
+            var wreck = world.Set<WorldWreck>().Local.SingleOrDefault(w => w.NpcId == npc.Id);
+            var loot = world
+                .Set<OwnedItem>()
+                .Local.Where(i => wreck != null && i.LocationId == wreck.Id)
+                .Select(i => new CombatLostItem(i.TypeId, i.FlagId, i.Singleton, i.Quantity, 0, []))
+                .ToArray();
+            PilotInteractionHistoryStore.Destroyed(
+                world,
+                pilot.Id,
+                $"npc:{npc.Id}:{now}",
+                now,
+                npc.SystemId,
+                PilotInteractionHistoryStore.Npc(npc),
+                attacker,
+                loot
+            );
+            PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
             double bounty = NpcPopulationRules.RewardsPirateKill(npc.Role)
                 ? attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty)
                 : 0;

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -232,6 +233,12 @@ public sealed class MissileCombatTests
         await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => Missiles(f).Advance(npc.SystemId, f.Clock.Now))));
         var impact = Assert.Single(Missiles(f).TakeImpacts(f.PilotId));
         Assert.True(impact.Destroyed);
+        var report = Assert.Single(f.Db.Services.GetRequiredService<IPilotInteractionHistory>().Combat(f.PilotId, 25, null));
+        Assert.Equal(f.PilotId, report.FinalBlow.CharacterId);
+        Assert.Equal(LightLauncher, report.FinalBlow.WeaponTypeId);
+        Assert.Equal(601, report.FinalBlow.ShipTypeId);
+        Assert.Equal(npc.Id, report.Victim.EntityId);
+        Assert.Equal(impact.Applied, report.FinalBlow.Damage, 8);
         Assert.Equal(300000, impact.Reward!.AmountCents);
         Assert.Empty(Missiles(f).TakeImpacts(f.PilotId));
         using WorldDbContext world = new(f.Db.Path);

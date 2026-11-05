@@ -33,7 +33,8 @@ internal static class NpcShipLossPersistence
             .OrderBy(i => i.Id)
             .ToArray();
         var storedShips = world.Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == shipId).OrderBy(s => s.Id).ToArray();
-        string storedManifest = JsonSerializer.Serialize(storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)));
+        var storedManifests = storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)).ToArray();
+        string storedManifest = JsonSerializer.Serialize(storedManifests);
         string manifest = JsonSerializer.Serialize(items);
         var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
         foreach (var stored in storedShips)
@@ -86,6 +87,19 @@ internal static class NpcShipLossPersistence
                     Z = position.Z,
                 }
             );
+        // Snapshot original locations and fitted flags before wreck creation
+        // moves surviving inventory into loose cargo.
+        var reportItems = PilotInteractionHistoryStore.LostShipItems(shipId, items, storedManifests, survivors);
+        PilotInteractionHistoryStore.Destroyed(
+            world,
+            pilotId,
+            $"ship:{shipId}",
+            now,
+            system,
+            PilotInteractionHistoryStore.Player(world, pilot, shipId),
+            PilotInteractionHistoryStore.Npc(world.Set<WorldNpc>().Find(npcId)!),
+            reportItems
+        );
         var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
         foreach (var stored in storedShips)
         {

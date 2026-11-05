@@ -20,6 +20,7 @@ public enum DogmaAttributeId
     PerceptionBonus = 178,
     WillpowerBonus = 179,
     EntitySecurityStatusKillBonus = 252,
+    EntityFactionLoss = 562,
     EntitySecurityMaxGain = 563,
     FastTalkMutator = 415,
     MaxJumpClones = 979,

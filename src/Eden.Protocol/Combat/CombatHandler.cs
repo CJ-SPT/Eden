@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
@@ -16,7 +17,12 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, TargetingHandler targeting) : IModuleEffectSource
+internal sealed class CombatHandler(
+    TimeProvider clock,
+    IPilotCombat combat,
+    TargetingHandler targeting,
+    CharacterInteractionHistoryHandler? history = null
+) : IModuleEffectSource
 {
     private sealed record Cycle(
         long ShipId,
@@ -119,6 +125,10 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 : WeaponActivation.Laser
         );
         var result = volley.Shot;
+        if (result.Destroyed)
+        {
+            history?.NotifyDestruction(context);
+        }
         var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats, volley.Weapons);
         _cycles[result.Weapon.ItemId] = cycle;
         context.NotificationsBeforeFlight.Add(

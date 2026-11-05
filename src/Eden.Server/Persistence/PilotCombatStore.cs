@@ -140,7 +140,8 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             pilot.ActiveShipId,
             paid[0].TargetAttributes,
             combined,
-            now
+            now,
+            paid[0].Weapon.TypeId
         );
         world.SaveChanges();
         transaction.Commit();

@@ -121,7 +121,7 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             ("ProjectDiscovery", "initialize_tutorial_status")
             or ("milestoneMgr", "ProcessCharacterLogon") => PilotCallResult.None,
 
-            ("standingMgr", "GetCharStandings" or "GetCorpStandings") or ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
+            ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
 
 
             ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")
