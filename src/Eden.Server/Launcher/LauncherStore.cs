@@ -321,15 +321,7 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
 
     private SqliteConnection Open()
     {
-        var db = new SqliteConnection(
-            new SqliteConnectionStringBuilder
-            {
-                DataSource = database.Path,
-                ForeignKeys = true,
-                DefaultTimeout = 30,
-                Pooling = false,
-            }.ToString()
-        );
+        var db = WorldConnections.Create(database.Path);
         db.Open();
         return db;
     }
@@ -356,12 +348,19 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
     {
         using var command = Command(db, tx, sql, values);
         var value = command.ExecuteScalar();
+        if (value is not null && !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+        {
+            WorldConnections.RequireDurableClose(db);
+        }
         return value is DBNull ? null : value;
     }
 
     private static void Execute(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
     {
         using var command = Command(db, tx, sql, values);
-        command.ExecuteNonQuery();
+        if (command.ExecuteNonQuery() != 0 || sql.TrimStart().StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
+        {
+            WorldConnections.RequireDurableClose(db);
+        }
     }
 }

@@ -60,9 +60,15 @@ internal static class Program
             options = options with { DevelopmentLogin = true };
             options.Validate();
         }
-        using var services = ServerServices.Build(new WorldDatabase(worldPath), options: options);
-        if (Value("--prepare-login") is { } root && OperatingSystem.IsWindows())
+        string? preparationRoot = Value("--prepare-login");
+        // Ticket preparation signs a local claim without opening the saved world.
+        using var services = ServerServices.Build(new WorldDatabase(worldPath), options: options, liveWorld: preparationRoot is null);
+        if (preparationRoot is { } root)
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                throw new PlatformNotSupportedException("Local development ticket preparation requires Windows.");
+            }
             if (!options.DevelopmentLogin)
             {
                 throw new InvalidDataException("Pass --development-login explicitly for local development tickets.");

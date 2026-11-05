@@ -268,3 +268,9 @@ Manufacturing illustrates the persistence boundary. The Server store loads the r
 Set `EDEN_TRACE_PERFORMANCE=1` before startup for request/tick timings, database command/connection counts, and SQL execution, transaction-start and commit durations. Nested phases identify combat, weapon publication, health reads, NPC acquisition and background monitoring. See the isolated full-catalog replay in the [protocol notes](docs/protocol.md#shared-session-performance-diagnostics-november-5-2026) and the [ten-Brutix grouped-gun benchmark](docs/protocol.md#ten-brutix-grouped-gun-benchmark-november-5-2026).
 
 Calculated ship and turret fits stay in a bounded per-world memory cache, with transactionally versioned invalidation in world schema 69. See [resident fit behavior and validation](docs/protocol.md#resident-ship-and-turret-fits-november-5-2026).
+
+### Resident world and background saves
+
+Normal server startup loads the saved world into an authoritative SQLite image in RAM. Existing gameplay transactions, constraints and revision triggers operate on that image. A background worker captures committed state every 15 seconds and writes a complete checkpoint after releasing the world owner. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning.
+
+The last completed checkpoint remains at the configured world path, with its predecessor at `world.sqlite.previous`. A crash restores the last completed checkpoint; the rollback window can exceed 15 seconds when saves are delayed or failing. Save failures retain resident changes and retry on the next interval. Stop the server before editing or restoring its saved world. See [checkpoint behavior and the ten-Brutix comparison](docs/protocol.md#resident-world-checkpoints-and-ten-brutix-replay-november-5-2026).

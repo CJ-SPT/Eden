@@ -9,5 +9,8 @@ artifacts/
 # Local EVE catalog, save, and Python importer cache
 *.sqlite
 *.sqlite-*
+*.sqlite.owner
+*.sqlite.previous
+*.sqlite.save-*
 eve-online-static-data-*-jsonl.zip
 __pycache__/

@@ -205,10 +205,13 @@ public sealed class MissileCombatTests
         Assert.Equal(Shield, world.Set<WorldNpc>().Find(npc.Id)!.ShieldCharge);
     }
 
-    [Fact]
-    public async Task CompetingAdvancersResolveOneKillBountyAndWreckWithoutDuplicatePayment()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompetingAdvancersResolveOneKillBountyAndWreckWithoutDuplicatePayment(bool resident)
     {
         using Fixture f = Prepare(LightLauncher, LightMissile);
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         long first = Load(f, LightLauncher, LightMissile);
         long second = Load(f, LightLauncher, LightMissile);
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))

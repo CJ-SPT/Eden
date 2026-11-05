@@ -13,11 +13,16 @@ internal static class ServerServices
         WorldDatabase database,
         TimeProvider? clock = null,
         LauncherOptions? options = null,
-        INpcPopulationSeeder? population = null
+        INpcPopulationSeeder? population = null,
+        bool liveWorld = false
     )
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
+        if (liveWorld)
+        {
+            services.AddSingleton<LiveWorld>(_ => new(database, clock ?? TimeProvider.System));
+        }
         if (population is null)
         {
             services.AddSingleton<ResidentFitCache>(_ => new(database));
@@ -61,6 +66,7 @@ internal static class ServerServices
             services.AddSingleton(population);
         }
         var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        _ = provider.GetService<LiveWorld>();
         _ = provider.GetService<ResidentFitCache>();
         return provider;
     }

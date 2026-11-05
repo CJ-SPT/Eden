@@ -2,7 +2,6 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
@@ -136,14 +135,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         options
             .AddInterceptors(new FitTransactions(this))
             .TracePerformance()
-            .UseSqlite(
-                new SqliteConnectionStringBuilder
-                {
-                    DataSource = path,
-                    ForeignKeys = true,
-                    Pooling = false,
-                }.ToString()
-            );
+            .UseSqlite(WorldConnections.Create(path), contextOwnsConnection: true);
 
     protected override void OnModelCreating(ModelBuilder model)
     {

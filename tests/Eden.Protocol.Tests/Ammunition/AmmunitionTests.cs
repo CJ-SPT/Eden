@@ -27,7 +27,7 @@ public sealed class AmmunitionTests
 {
     internal sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; }
         public Clock Clock { get; } = new();
         public IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
         public IPilotFitting Fitting => Db.Services.GetRequiredService<IPilotFitting>();
@@ -38,8 +38,9 @@ public sealed class AmmunitionTests
         public NpcContact Npc { get; }
         public long Gun { get; }
 
-        public Fixture()
+        public Fixture(bool liveWorld = false)
         {
+            Db = new(liveWorld: liveWorld);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {

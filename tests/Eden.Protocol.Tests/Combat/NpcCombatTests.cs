@@ -33,7 +33,7 @@ public sealed class NpcCombatTests
     {
         public const long PilotId = 90000001;
         public const long ShipId = 1000000000001;
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; }
         public Clock Clock { get; } = new(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         public IShipLootRoll LootRoll { get; set; } = new FixedLootRoll(true);
         public INpcCombat Combat => new NpcCombatStore(new(Db.Path), Db.Store, LootRoll);
@@ -43,8 +43,9 @@ public sealed class NpcCombatTests
         public long Module { get; }
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
 
-        public Fixture()
+        public Fixture(bool liveWorld = false)
         {
+            Db = new(liveWorld: liveWorld);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
@@ -195,10 +196,12 @@ public sealed class NpcCombatTests
         Assert.Empty(world.Set<ShipHealthState>());
     }
 
-    [Fact]
-    public async Task FatalDamageAtomicallyRecordsLossCreatesOneCapsuleAndRecoverableWreck()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FatalDamageAtomicallyRecordsLossCreatesOneCapsuleAndRecoverableWreck(bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(resident);
         f.Aggress();
         f.Clock.Milliseconds = 7500;
         f.AlmostLost();
@@ -703,11 +706,13 @@ public sealed class NpcCombatTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall, bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(resident);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(

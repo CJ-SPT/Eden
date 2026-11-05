@@ -11,6 +11,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
@@ -49,11 +50,13 @@ public sealed partial class ServerPerformanceReplayTests
         const int brutixNavyIssue = 33151;
         const double sustainedShieldCapacity = 1_000_000_000;
         string mode = concurrent ? "concurrent" : "serial";
+        bool resident = Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_LIVE_WORLD") == "1";
         int shieldCapacity = (int)DogmaAttributeId.ShieldCapacity;
         long setupStarted = Stopwatch.GetTimestamp();
         string directory = CopySnapshot(source);
         List<FleetClient> clients = [];
         ConcurrentQueue<string> reports = new();
+        ServiceProvider? host = null;
         try
         {
             WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
@@ -153,7 +156,9 @@ public sealed partial class ServerPerformanceReplayTests
                 world.SaveChanges();
                 tx.Commit();
             }
-            using var host = ServerServices.Build(database, clock);
+            CheckpointClock checkpointClock = new(clock);
+            host = ServerServices.Build(database, resident ? checkpointClock : clock, liveWorld: resident);
+            var live = host.GetService<LiveWorld>();
             var store = host.GetRequiredService<SqliteWorld>();
             long bytes = 0;
             for (int i = 0; i < pilots; i++)
@@ -245,6 +250,7 @@ public sealed partial class ServerPerformanceReplayTests
                     + $"{Stopwatch.GetElapsedTime(setupStarted).TotalMilliseconds:F2} ms. "
                     + $"System={target.SystemId}, NPCs={npcCount}, target={target.Id}, type={target.TypeId}."
             );
+            reports.Enqueue($"World storage: {(resident ? "resident RAM image with 15-second checkpoints" : "direct SQLite file")}.");
             bytes = 0;
             List<double> totals = [];
             async Task<FleetSample> Advance(FleetClient client)
@@ -274,6 +280,7 @@ public sealed partial class ServerPerformanceReplayTests
             for (int frame = -2; frame < frames; frame++)
             {
                 clock.Seconds++;
+                checkpointClock.FireDueTimers();
                 if (frame == 0)
                 {
                     bytes = 0;
@@ -341,6 +348,42 @@ public sealed partial class ServerPerformanceReplayTests
                     $"Each of {gunIds.Length} guns consumed {spent[0]} rounds during two warmups and {frames} measured frames."
                 );
             }
+            if (live is not null)
+            {
+                await live.FlushAsync();
+                string verification = Path.Combine(directory, "checkpoint.sqlite");
+                File.Copy(database.Path, verification);
+                using WorldDbContext memory = new(database.Path);
+                using WorldDbContext reopened = new(verification);
+                var expected = memory
+                    .Set<OwnedItem>()
+                    .Where(i => gunIds.Contains(i.LocationId))
+                    .OrderBy(i => i.Id)
+                    .Select(i => new { i.Id, i.Quantity })
+                    .ToArray();
+                var actual = reopened
+                    .Set<OwnedItem>()
+                    .Where(i => gunIds.Contains(i.LocationId))
+                    .OrderBy(i => i.Id)
+                    .Select(i => new { i.Id, i.Quantity })
+                    .ToArray();
+                Assert.Equal(expected, actual);
+                Assert.Equal(pilots * 5, reopened.Set<SavedWeaponLink>().Count());
+                long[] shipIds = clients.Select(c => c.Context.Pilot.ShipId).ToArray();
+                Assert.Equal(pilots, reopened.Positions.Count(p => shipIds.Contains(p.ShipId)));
+                Assert.Equal(
+                    memory.Set<WorldNpc>().Single(n => n.Id == target.Id).ShieldCharge,
+                    reopened.Set<WorldNpc>().Single(n => n.Id == target.Id).ShieldCharge
+                );
+                foreach (var save in live.RecentCheckpoints)
+                {
+                    reports.Enqueue(
+                        $"Checkpoint {save.Generation}: wait={save.Wait.TotalMilliseconds:F2} ms, "
+                            + $"capture={save.Capture.TotalMilliseconds:F2} ms, write={save.Write.TotalMilliseconds:F2} ms, "
+                            + $"bytes={save.Bytes}."
+                    );
+                }
+            }
             var ordered = totals.Order().ToArray();
             double median = (ordered[(frames - 1) / 2] + ordered[frames / 2]) / 2;
             reports.Enqueue(
@@ -365,6 +408,7 @@ public sealed partial class ServerPerformanceReplayTests
                 client.Context.Dispose();
                 client.Scope.Dispose();
             }
+            host?.Dispose();
             Directory.Delete(directory, recursive: true);
         }
     }

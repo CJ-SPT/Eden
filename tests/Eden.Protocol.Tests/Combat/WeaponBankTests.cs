@@ -140,10 +140,12 @@ public sealed class WeaponBankTests
         Assert.Empty(WeaponGrouping.Change(initial, weapons, WeaponBankOperation.UnlinkAll).Banks);
     }
 
-    [Fact]
-    public void GroupedReloadVolleyAndUnloadAccountForEveryMagazine()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GroupedReloadVolleyAndUnloadAccountForEveryMagazine(bool resident)
     {
-        using AmmunitionTests.Fixture f = new();
+        using AmmunitionTests.Fixture f = new(resident);
         long second = SecondGun(f);
         Link(f, second);
         f.Load(quantity: 450);
@@ -173,14 +175,19 @@ public sealed class WeaponBankTests
     }
 
     [Theory]
-    [InlineData("empty")]
-    [InlineData("capacitor")]
-    [InlineData("offline")]
-    [InlineData("reload")]
-    [InlineData("different-ammo")]
-    public void ARejectedBankRollsBackEarlierMemberPayments(string reason)
+    [InlineData("empty", false)]
+    [InlineData("capacitor", false)]
+    [InlineData("offline", false)]
+    [InlineData("reload", false)]
+    [InlineData("different-ammo", false)]
+    [InlineData("empty", true)]
+    [InlineData("capacitor", true)]
+    [InlineData("offline", true)]
+    [InlineData("reload", true)]
+    [InlineData("different-ammo", true)]
+    public void ARejectedBankRollsBackEarlierMemberPayments(string reason, bool resident)
     {
-        using AmmunitionTests.Fixture f = new();
+        using AmmunitionTests.Fixture f = new(resident);
         long second = SecondGun(f);
         Link(f, second);
         f.Load(quantity: 400);
@@ -319,10 +326,12 @@ public sealed class WeaponBankTests
         Assert.Equal(4, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
     }
 
-    [Fact]
-    public void FatalVolleyPaysEveryWeaponAndSettlesTheKillOnce()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FatalVolleyPaysEveryWeaponAndSettlesTheKillOnce(bool resident)
     {
-        using AmmunitionTests.Fixture f = new();
+        using AmmunitionTests.Fixture f = new(resident);
         long second = SecondGun(f);
         Link(f, second);
         f.Load(quantity: 400);
