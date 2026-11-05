@@ -7,12 +7,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CorporationWalletHandler(
-    ICorporationWallet wallet,
-    IPlayerCorporations corporations,
-    WalletBalanceMonitor personal,
-    TimeProvider clock
-) : ISelectedPilotCallHandler
+internal sealed class CorporationWalletHandler(ICorporationWallet wallet, IPlayerCorporations corporations, WalletBalanceMonitor personal)
+    : ISelectedPilotCallHandler
 {
     private int? _corporation;
     private Dictionary<int, long> _balances = [];
@@ -73,10 +69,6 @@ internal sealed class CorporationWalletHandler(
         return Dispatch(context, method, args, keywords);
     }
 
-    // WalletHandler owns account.GetCashBalance/GetTransactions in both modes.
-    internal PilotCallResult Read(PilotCallContext context, string method, object?[] args, Dictionary<string, object?>? keywords) =>
-        Dispatch(context, method, args, keywords);
-
     private PilotCallResult Dispatch(PilotCallContext context, string method, object?[] args, Dictionary<string, object?>? keywords)
     {
         try
@@ -88,34 +80,12 @@ internal sealed class CorporationWalletHandler(
                     return new BlueList<CorporationDivisionBalanceReply>(
                         wallet.Divisions(actor).Select(d => new CorporationDivisionBalanceReply(d)).ToArray()
                     );
-                case ("GetCashBalance", [_]):
-                    CheckKeywords(keywords, "accountKey");
-                    int accountKey = Key(keywords?.GetValueOrDefault("accountKey"), context.Pilot.Identity.CorporationAccountKey);
-                    return Isk(wallet.Balance(actor, accountKey));
                 case ("SetAccountKey", [long key])
                     when key is >= CorporationWalletRules.MasterKey and <= CorporationWalletRules.LastKey
                         && keywords is null or { Count: 0 }:
                     wallet.SelectDivision(actor, (int)key);
                     context.Flight.UpdateCorporation(corporations.Identity(actor));
                     return PilotCallResult.None;
-                case ("GetTransactions", [long key, var year, var month, true])
-                    when key is >= CorporationWalletRules.MasterKey and <= CorporationWalletRules.LastKey
-                        && keywords is null or { Count: 0 }:
-                    if (
-                        !(year is null && month is null)
-                        && !(year is long y && y is >= 1601 and <= 9999 && month is long m && m is >= 1 and <= 12)
-                    )
-                    {
-                        throw new InvalidDataException("Choose a valid wallet journal date.");
-                    }
-                    WalletJournalFilter filter = new(year is long yr ? (int)yr : null, month is long mo ? (int)mo : null);
-                    return new BlueList<WalletJournalEntry>(
-                        wallet
-                            .Journal(actor, true, (int)key)
-                            .Where(e => filter.Includes(e.Time, clock.GetUtcNow().UtcDateTime))
-                            .Select(Journal)
-                            .ToArray()
-                    );
                 case ("GiveCash", [long recipient, var amount, var reason]):
                     CheckKeywords(keywords, "toAccountKey");
                     wallet.Transfer(
@@ -159,19 +129,6 @@ internal sealed class CorporationWalletHandler(
         }
     }
 
-    private static WalletJournalEntry Journal(CorporationWalletEntry entry) =>
-        new(
-            CorporationWalletRules.FirstJournalId + entry.Id,
-            entry.Time,
-            (WalletEntryType)entry.EntryType,
-            entry.AmountCents < 0 ? entry.OwnerId : entry.CounterpartyId,
-            entry.AmountCents < 0 ? entry.CounterpartyId : entry.OwnerId,
-            entry.ReferenceId,
-            entry.AmountCents,
-            entry.BalanceCents,
-            entry.Reason
-        );
-
     private static void CheckKeywords(Dictionary<string, object?>? keywords, params string[] allowed)
     {
         if (keywords is not null && keywords.Keys.Any(key => !allowed.Contains(key)))
@@ -187,8 +144,6 @@ internal sealed class CorporationWalletHandler(
             long key when key is >= CorporationWalletRules.MasterKey and <= CorporationWalletRules.LastKey => (int)key,
             _ => throw new InvalidDataException("Choose a corporation wallet division."),
         };
-
-    private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
     private static string Text(object? value) =>
         value is string or byte[] ? BlueMarshal.Text(value) : throw new InvalidDataException("Choose a wallet transfer reason.");

@@ -6,6 +6,12 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model
+            .Entity<SavedCorporationLoyaltyBalance>()
+            .ToTable("WorldCorporationLoyaltyWallet")
+            .HasKey(w => new { w.CorporationId, w.IssuerCorporationId });
+        model.Entity<SavedCorporationLoyaltyBalance>().HasOne<SavedCorporation>().WithMany().HasForeignKey(w => w.CorporationId);
+        model.Entity<SavedCorporationLoyaltyTransfer>().ToTable("WorldCorporationLoyaltyTransfer").HasKey(t => t.Id);
         model.Entity<SavedCorporationWallet>().ToTable("WorldCorporationWallet").HasKey(w => new { w.CorporationId, w.Key });
         model.Entity<SavedCorporationWallet>().HasOne<SavedCorporation>().WithMany().HasForeignKey(w => w.CorporationId);
         model.Entity<SavedCorporationWalletSelection>().ToTable("WorldCorporationWalletSelection").HasKey(w => w.PilotId);
@@ -98,6 +104,14 @@ internal static class CorporationSchema
                 CounterpartyId INTEGER NOT NULL, AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL,
                 EntryType INTEGER NOT NULL, ReferenceId INTEGER NOT NULL, Reason TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS IX_WorldWalletLedger_OwnerId_Key_Id ON WorldWalletLedger(OwnerId,Key,Id);
+            CREATE TABLE IF NOT EXISTS WorldCorporationLoyaltyWallet(
+                CorporationId INTEGER NOT NULL REFERENCES WorldCorporation(Id) ON DELETE CASCADE,
+                IssuerCorporationId INTEGER NOT NULL, Points INTEGER NOT NULL CHECK(Points>=0),
+                PRIMARY KEY(CorporationId,IssuerCorporationId));
+            CREATE TABLE IF NOT EXISTS WorldCorporationLoyaltyTransfer(
+                Id INTEGER PRIMARY KEY AUTOINCREMENT, SourceOwnerId INTEGER NOT NULL, RecipientCorporationId INTEGER NOT NULL,
+                IssuerCorporationId INTEGER NOT NULL, Points INTEGER NOT NULL, SourceBefore INTEGER NOT NULL,
+                SourceAfter INTEGER NOT NULL, RecipientBefore INTEGER NOT NULL, RecipientAfter INTEGER NOT NULL, Time INTEGER NOT NULL);
             """
         );
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpcBounty')").Contains("TaxCents"))

@@ -8,7 +8,6 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Repair;
@@ -17,12 +16,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class WalletHandler(
-    IPilotWalletReader wallet,
-    TimeProvider clock,
-    ICorporationWallet corporationWallet,
-    CorporationWalletHandler corporationHandler
-) : ISelectedPilotCallHandler
+internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider clock, ICorporationWallet corporationWallet)
+    : ISelectedPilotCallHandler
 {
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
@@ -40,7 +35,7 @@ internal sealed class WalletHandler(
         }
         if (method == "GetCashBalance" && args is [true] or [1L] || method == "GetTransactions" && args is [_, _, _, true])
         {
-            return corporationHandler.Read(context, method, args, keywords);
+            return ReadCorporation(context, method, args, keywords);
         }
         if (method == "GetEntryTypes" && args.Length == 0)
         {
@@ -290,4 +285,57 @@ internal sealed class WalletHandler(
             amount,
             balance
         );
+
+    private PilotCallResult ReadCorporation(PilotCallContext context, string method, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        try
+        {
+            if (method == "GetCashBalance")
+            {
+                if (keywords is not null && keywords.Keys.Any(key => key != "accountKey"))
+                {
+                    throw new InvalidDataException("Unexpected corporation balance arguments.");
+                }
+                int key = keywords?.GetValueOrDefault("accountKey") switch
+                {
+                    null => context.Pilot.Identity.CorporationAccountKey,
+                    long number when number is >= CorporationWalletRules.MasterKey and <= CorporationWalletRules.LastKey => (int)number,
+                    _ => throw new InvalidDataException("Choose a corporation wallet division."),
+                };
+                return Isk(corporationWallet.Balance(context.Pilot.PilotId, key));
+            }
+            if (
+                keywords is { Count: > 0 }
+                || args is not [long account, var year, var month, true]
+                || account is < CorporationWalletRules.MasterKey or > CorporationWalletRules.LastKey
+                || !(year is null && month is null)
+                    && !(year is long y && y is >= 1601 and <= 9999 && month is long m && m is >= 1 and <= 12)
+            )
+            {
+                throw new InvalidDataException("Choose a valid corporation wallet division and journal date.");
+            }
+            WalletJournalFilter filter = new(year is long yr ? (int)yr : null, month is long mo ? (int)mo : null);
+            return new BlueList<WalletJournalEntry>(
+                corporationWallet
+                    .Journal(context.Pilot.PilotId, true, (int)account)
+                    .Where(e => filter.Includes(e.Time, clock.GetUtcNow().UtcDateTime))
+                    .Select(e => new WalletJournalEntry(
+                        CorporationWalletRules.FirstJournalId + e.Id,
+                        e.Time,
+                        e.EntryType,
+                        e.AmountCents < 0 ? e.OwnerId : e.CounterpartyId,
+                        e.AmountCents < 0 ? e.CounterpartyId : e.OwnerId,
+                        e.ReferenceId,
+                        e.AmountCents,
+                        e.BalanceCents,
+                        e.Reason
+                    ))
+                    .ToArray()
+            );
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
 }

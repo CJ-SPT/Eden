@@ -24,9 +24,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            // The native wallet asks even for NPC-corporation pilots. No private
-            // player-corporation membership record exists; None disables EM donation.
-            ("charMgr", "GetPrivateInfoOnCorpChange") when args is [long id] && id == pilot.PilotId => PilotCallResult.None,
             ("marketProxy", "GetCharEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,
