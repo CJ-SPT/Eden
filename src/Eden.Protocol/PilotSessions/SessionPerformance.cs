@@ -11,6 +11,7 @@ public sealed class SessionPerformance : IDisposable
     private readonly long _started = Stopwatch.GetTimestamp();
     private readonly string _name;
     private readonly Action<string> _report;
+    public int FittingCalculations { get; private set; }
     public int Commands { get; private set; }
     public int Connections { get; private set; }
     public int TackleReads { get; private set; }
@@ -37,6 +38,14 @@ public sealed class SessionPerformance : IDisposable
                     $"Performance queue: {Stopwatch.GetElapsedTime(received).TotalMilliseconds:F2} ms."
                 )
             );
+        }
+    }
+
+    public static void FittingCalculated()
+    {
+        for (var scope = s_current.Value; scope is not null; scope = scope._parent)
+        {
+            scope.FittingCalculations++;
         }
     }
 
@@ -68,7 +77,8 @@ public sealed class SessionPerformance : IDisposable
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"Performance {_name}: {Stopwatch.GetElapsedTime(_started).TotalMilliseconds:F2} ms, "
-                    + $"commands={Commands}, connections={Connections}, tackleReads={TackleReads}, aggressionReads={AggressionReads}."
+                    + $"commands={Commands}, connections={Connections}, tackleReads={TackleReads}, "
+                    + $"aggressionReads={AggressionReads}, fittings={FittingCalculations}."
             )
         );
     }

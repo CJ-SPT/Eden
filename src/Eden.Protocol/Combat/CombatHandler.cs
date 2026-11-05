@@ -59,6 +59,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         {
             return;
         }
+        bool refreshContacts = false;
         foreach (var (module, cycle) in _cycles.ToArray())
         {
             if (
@@ -79,16 +80,29 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             {
                 try
                 {
-                    Start(context, module, cycle.Target, cycle.Repeats - 1, previous: cycle);
+                    var shot = Start(context, module, cycle.Target, cycle.Repeats - 1, previous: cycle, refreshContacts: false);
+                    refreshContacts = !shot.Destroyed;
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException) { }
             }
             Stop(context, cycle);
         }
+        if (refreshContacts)
+        {
+            RefreshContacts(context);
+        }
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats, string? effectName = null, Cycle? previous = null)
+    private CombatShot Start(
+        PilotCallContext context,
+        long module,
+        long target,
+        long repeats,
+        string? effectName = null,
+        Cycle? previous = null,
+        bool refreshContacts = true
+    )
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -109,15 +123,17 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         if (previous is null)
         {
             Effect(context, cycle, true);
+            context.Flight.SetWeaponEffect(Contact(cycle), true);
         }
         else
         {
-            context.Flight.SetWeaponEffect(Contact(previous), false);
+            context.Flight.RepeatWeaponEffect(Contact(previous), Contact(cycle));
         }
-        context.Flight.SetWeaponEffect(Contact(cycle), true);
         context.Flight.NotifyHealth(result.Health);
-        context.Flight.RefreshWrecks();
-        context.Flight.RefreshNpcs();
+        if (refreshContacts || result.Destroyed)
+        {
+            RefreshContacts(context);
+        }
         context.Notifications.Add(
             new ModuleAttributesChanged([
                 new ModuleAttributeChange(
@@ -143,6 +159,13 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         {
             Stop(context, cycle);
         }
+        return result;
+    }
+
+    private static void RefreshContacts(PilotCallContext context)
+    {
+        context.Flight.RefreshWrecks();
+        context.Flight.RefreshNpcs();
     }
 
     private static WeaponContact Contact(Cycle cycle) =>

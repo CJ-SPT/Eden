@@ -7,6 +7,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Targeting;
+using Eden.Protocol.PilotSessions;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,7 @@ internal sealed record FittingCalculation(
 {
     internal static FittingCalculation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
     {
+        SessionPerformance.FittingCalculated();
         // A fitting graph reads many static rows. Keep this nonpooled connection
         // open for its owning context instead of reopening SQLite for every query.
         if (catalog.Database.GetDbConnection().State != ConnectionState.Open)

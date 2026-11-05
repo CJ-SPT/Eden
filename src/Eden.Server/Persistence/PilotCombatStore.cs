@@ -32,11 +32,14 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        InventoryItem module
+        InventoryItem module,
+        FittingCalculation? calculation = null
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        var levels = Enum.GetValues<CombatSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
+        var combatSkills = Enum.GetValues<CombatSkill>();
+        var skillLevels = PilotSkillReader.Levels(world, catalog, pilotId, combatSkills.Select(s => (int)s).ToArray());
+        var levels = combatSkills.ToDictionary(skill => skill, skill => skillLevels[(int)skill]);
         var loaded = PilotAmmunitionStore.Contents(world, module.Id);
         var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
         IReadOnlyDictionary<DogmaAttributeId, double> hull = HullCatalog.UsesCatalogBonuses(catalog, pilot.ActiveShip.TypeId)
@@ -46,7 +49,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             new(
                 module.TypeId,
                 module.GroupId,
-                PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
+                PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module, calculation),
                 levels,
                 hull.GetValueOrDefault(DogmaAttributeId.RookieHybridOptimalBonus),
                 loaded is null ? null : PilotFittingStore.ReadAttributes(catalog, loaded.TypeId),
@@ -113,12 +116,13 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var separation = new SpacePosition(npc.X - position.X, npc.Y - position.Y, npc.Z - position.Z);
         double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (npcType.Radius ?? 0));
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (npc.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
             throw new InvalidDataException("The NPC is outside targeting range.");
         }
-        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
+        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module), calculation);
         if (attributes.Values.Any(v => !double.IsFinite(v)) || attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) <= 0)
         {
             throw new InvalidDataException("Invalid weapon cycle attributes.");

@@ -1,3 +1,28 @@
+## Repeated turret cycle work (November 5, 2026)
+
+The maintainer reported improved native combat after `26254ce` and requested another optimization pass. A paid turret shot still built two fitting graphs in its owning transaction, once for ship state and again for module attributes. It now passes the same calculation to both readers. Combat skill levels are also loaded in one transaction-local batch. A new diagnostic `fittings` counter records graph builds alongside the existing timing/database counters.
+
+Automatic repeats previously refreshed NPCs and wrecks after every paid gun. The controller now refreshes those contacts after the due shots have completed. Destruction refreshes immediately, before another gun can spend resources against the same target. Per-shot health, ammunition, capacitor and effects keep their existing notification paths. Initial/manual activation still refreshes immediately. Every shot keeps its own atomic payment/damage transaction. Repeated effects now emit the existing stop/start commands in order and publish one replacement ship contact, avoiding the second fitting/health read that previously accompanied the intermediate stopped contact. Observer state contains the new paid cycle, and the single publication still obtains fresh health.
+
+Focused regressions assert one graph for a real paid shot, one contact read for two simultaneous repeats, and immediate removal/stop without advancing the second gun's paid deadline when the first gun kills their target. They also assert damage-state output precedes removal. The death fixture is prepared at the firing boundary to exclude recharge from its one-structure-HP setup.
+
+**Automated validation.** Final isolated build passed with zero warnings/errors. Filter `FullyQualifiedName~PilotCombatTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~HybridTierTests|FullyQualifiedName~EnergyTierTests|FullyQualifiedName~ProjectileTierTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~TypedSessionTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed 200 cases in 55 seconds with two workers. The separate single-worker saved-Brutix replay passed four cases in 38 seconds. Restore, Python catalog/format suites (3 and 9 cases), formatting across 636 files and diff checks passed. The replay's direct fitting attribute file remains identical to the previous milestone. No full .NET suite was requested or run.
+
+```text
+docked ticks median=19.43ms p95=30.81ms
+docked replies median=5.84ms p95=13.19ms
+space ticks median=65.71ms p95=79.23ms
+space replies median=11.81ms p95=19.20ms
+combat ticks median=277.40ms p95=509.87ms
+combat replies median=45.77ms p95=112.74ms
+```
+
+Against the same saved-fit workload recorded for `26254ce`, combat tick median decreased from 351.56 to 277.40 ms. Tick p95 was 509.87 ms versus 516.17 ms previously, so the tail shows little improvement and still exceeds the 250 ms target by 259.87 ms. Reply p95 was 112.74 ms versus 56.39 ms, within the target but slower in this sample. Run-to-run timing variation remains material. An intermediate version with only graph reuse and contact-read batching measured 347.52 ms median / 519.14 ms p95; examining effect publication led to the final single-contact change. Deterministic tests establish the avoided work independently of timing variation: one graph per paid shot, one NPC refresh for simultaneous nonfatal repeats, and one fresh health read per repeated effect with the same ordered stop/start commands and final observer state. These remain isolated server timings with the previously documented immediate output, simulated clock and durability adjustments.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The maintainer's reported improvement applies to the preceding build.
+
+**Optional maintainer checks.** Rebuild/restart and repeat the same fight with `EDEN_TRACE_PERFORMANCE=1`; inspect slow ticks with their new fitting counts.
+
 ## Fitted combat catalog reads (November 5, 2026)
 
 The maintainer supplied a screenshot of a **3,057 ms** pilot update during combat. The running default Debug server had been rebuilt after the prior milestones. A read-only save inspection found pilot **90000006**, account **1000003**, flying a **Brutix Navy Issue (33151)** with 17 online modules, six loaded Heavy Electron Blaster IIs and 90 trained skills. The previous solo replay used a lightly fitted Ibis and did not represent this fitting workload. The screenshot gives a total elapsed time; its individual phase costs were not captured.

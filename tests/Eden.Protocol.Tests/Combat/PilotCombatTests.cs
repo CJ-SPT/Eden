@@ -97,14 +97,23 @@ public sealed class PilotCombatTests
             world.SaveChanges();
         }
 
-        public (PilotCallContext Context, TargetingHandler Targeting, CombatHandler Combat) Client()
+        public (PilotCallContext Context, TargetingHandler Targeting, CombatHandler Combat) Client(INpcEncounters? encounters = null)
         {
             var pilot = Db.Store.FindPilot(1000001)!;
             PilotCallContext context = new(
                 1000001,
                 pilot.Account,
                 [pilot],
-                p => new(Db.Store, p, Clock, new(), [], encounters: Encounters, wrecks: Db.Services.GetRequiredService<IWrecks>()),
+                p =>
+                    new(
+                        Db.Store,
+                        p,
+                        Clock,
+                        new(),
+                        [],
+                        encounters: encounters ?? Encounters,
+                        wrecks: Db.Services.GetRequiredService<IWrecks>()
+                    ),
                 10,
                 SignedSettings.Empty
             );
@@ -121,6 +130,143 @@ public sealed class PilotCombatTests
         }
 
         public void Dispose() => Db.Dispose();
+    }
+
+    private sealed class CountingEncounters(INpcEncounters inner) : INpcEncounters
+    {
+        public int Reads { get; set; }
+
+        public IReadOnlyList<NpcContact> List(int systemId, long now)
+        {
+            Reads++;
+            return inner.List(systemId, now);
+        }
+
+        public bool WasDestroyed(long npcId) => inner.WasDestroyed(npcId);
+    }
+
+    private sealed class CountingHealth(IPilotHealth inner) : IPilotHealth
+    {
+        public int Reads { get; set; }
+
+        public ShipHealth Read(long pilotId, long now)
+        {
+            Reads++;
+            return inner.Read(pilotId, now);
+        }
+
+        public bool WasDestroyed(long shipId) => inner.WasDestroyed(shipId);
+    }
+
+    [Fact]
+    public void RepeatedWeaponPublishesOneFreshContactAndPreservesOrderedEffectsAndObserverState()
+    {
+        using Fixture f = new();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        SharedSpace space = new();
+        CountingHealth health = new(f.Db.Services.GetRequiredService<IPilotHealth>());
+        using FlightSession flight = new(f.Db.Store, pilot, f.Clock, space, [], health: health, encounters: f.Encounters);
+        flight.Snapshot();
+        WeaponContact previous = new(f.Module, (int)CombatWeaponType.CivilianGatlingRailgun, 20132, f.Npc.Id, f.Clock.Now, 1960);
+        flight.SetWeaponEffect(previous, true);
+        f.Clock.Milliseconds += 1960;
+        var current = previous with { StartedAt = f.Clock.Now };
+        health.Reads = 0;
+        flight.Updates.Clear();
+        using var metrics = SessionPerformance.Begin("repeat", _ => { }, force: true)!;
+        flight.RepeatWeaponEffect(previous, current);
+        Assert.Equal(1, health.Reads);
+        Assert.Equal(1, metrics.FittingCalculations);
+        var effects = flight.Updates.Select(update => update.Command).OfType<DestinyCommand.TimedSpecialEffect>().ToArray();
+        Assert.Equal(2, effects.Length);
+        Assert.False(effects[0].Start);
+        Assert.Equal(previous.StartedAt, effects[0].StartedAt);
+        Assert.True(effects[1].Start);
+        Assert.Equal(current.StartedAt, effects[1].StartedAt);
+        var observer = Assert.Single(space.Peers(pilot with { ShipId = pilot.ShipId + 1 }));
+        Assert.Equal(current, Assert.Single(observer.Weapons!));
+    }
+
+    [Fact]
+    public void PaidShotBuildsOneFittingGraphForShipAndWeapon()
+    {
+        using Fixture f = new();
+        using var metrics = SessionPerformance.Begin("shot", _ => { }, force: true)!;
+        var shot = f.Fire();
+        Assert.True(shot.Applied > 0);
+        Assert.Equal(1, metrics.FittingCalculations);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DueGunsShareContactRefreshAndADeathStopsTheNextGunWithoutPayment(bool destroy)
+    {
+        using Fixture f = new();
+        const long secondGun = 8000000000100;
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=100000 WHERE ItemTypeId=30380 AND AttributeId=263");
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge = 100000;
+            world.Add(
+                new OwnedItem
+                {
+                    Id = secondGun,
+                    OwnerId = 90000001,
+                    TypeId = (int)CombatWeaponType.CivilianGatlingRailgun,
+                    LocationId = 1000000000001,
+                    FlagId = (int)InventoryFlag.HighSlot1,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                }
+            );
+            world.SaveChanges();
+        }
+        CountingEncounters encounters = new(f.Encounters);
+        var (context, targeting, combat) = f.Client(encounters);
+        using var owned = context;
+        using var locks = targeting;
+        foreach (long gun in new[] { f.Module, secondGun })
+        {
+            Assert.Null(combat.CallWire(context, "dogmaIM", "Activate", [gun, "targetAttack", f.Npc.Id, 100L]));
+        }
+        long deadline;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            deadline = world.Set<ModuleCooldown>().Find(secondGun)!.ReadyAt;
+        }
+        f.Clock.Milliseconds += 3000;
+        if (destroy)
+        {
+            f.AlmostDefeated();
+        }
+        encounters.Reads = 0;
+        context.Flight.Updates.Clear();
+        combat.Advance(context);
+        Assert.Equal(1, encounters.Reads);
+        using WorldDbContext saved = new(f.Db.Path);
+        if (destroy)
+        {
+            Assert.NotNull(saved.Set<WorldNpc>().Find(f.Npc.Id)!.DestroyedAt);
+            Assert.Equal(deadline, saved.Set<ModuleCooldown>().Find(secondGun)!.ReadyAt);
+            Assert.Null(combat.ActiveEffect(context.Pilot, f.Module));
+            Assert.Null(combat.ActiveEffect(context.Pilot, secondGun));
+            Assert.DoesNotContain(context.Flight.VisibleNpcs, npc => npc.Id == f.Npc.Id);
+            var commands = context.Flight.Updates.Select(update => update.Command).ToArray();
+            int damage = Array.FindIndex(commands, command => command is DestinyCommand.OnDamageStateChange);
+            int removal = Array.FindIndex(commands, command => command is DestinyCommand.RemoveBall);
+            Assert.True(damage >= 0 && removal > damage);
+        }
+        else
+        {
+            Assert.True(saved.Set<ModuleCooldown>().Find(secondGun)!.ReadyAt > deadline);
+            Assert.NotNull(combat.ActiveEffect(context.Pilot, f.Module));
+            Assert.NotNull(combat.ActiveEffect(context.Pilot, secondGun));
+        }
     }
 
     [Fact]

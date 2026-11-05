@@ -384,11 +384,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        InventoryItem module
+        InventoryItem module,
+        FittingCalculation? calculation = null
     )
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        calculation ??= FittingCalculation.Read(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
         var attributes = (
             calculation.Modules.Any(m => m.Item.Id == module.Id)
                 ? calculation.Graph.Attributes(module.Id)

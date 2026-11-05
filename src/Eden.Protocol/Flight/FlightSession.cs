@@ -798,6 +798,17 @@ internal sealed class FlightSession(
         }
     }
 
+    public void RepeatWeaponEffect(WeaponContact previous, WeaponContact current)
+    {
+        _weapons = _weapons.Where(w => w.ModuleId != current.ModuleId).Append(current).ToArray();
+        Effects.WeaponEffect(Pilot.ShipId, previous, false);
+        Effects.WeaponEffect(Pilot.ShipId, current, true);
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
+
     public void SetLocalRepairEffect(LocalRepairContact effect, bool active)
     {
         _localRepairs = _localRepairs
