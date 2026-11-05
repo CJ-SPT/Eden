@@ -28,6 +28,22 @@ Sources: inert inspection/execution of the pinned **3662168** `xmpp/xmpphandler`
 
 
 
+## Corporation Details faction-enlistment service correction
+
+The next reported Details-panel failure was **Unsupported local call fwCharacterEnlistmentMgr.GetCorpAllowedEnlistmentFactions**. Eden already returned the intended empty faction list, but the implementation registered it under `facWarMgr`. The pinned Details panel calls the local `fwEnlistmentSvc.GetCorpAllowedEnlistmentFactions`, whose wrapper forwards to the distinct remote service **fwCharacterEnlistmentMgr** with one corporation ID. The earlier audit stopped at the local method name and missed this final remote-service boundary.
+
+The selected-pilot handler now owns the exact native service/method pair and validates one positive Int32 corporation ID. It returns a native empty **list**, so the Details panel renders no allowed enlistment factions while faction warfare remains unimplemented. Enrollment operations remain unsupported; malformed requests reject without changing corporation membership, roles or assets. No schema or codec changes are introduced.
+
+The expanded automated startup sequence covers selection, voting capability, corporation details, the native enlistment route, structure acceptance, restricted-mail settings, aggression settings and office reads for NPC members and player CEOs. It verifies the actual decoded empty list and surrounding replies, rather than asserting only that a dispatch succeeded. The NPC fixture includes the catalog metadata needed by the real corporation-details reader. An initial expanded test failed on absent NPC fixture metadata; adding that metadata made all eight screen cases pass without changing the reader or relaxing its errors.
+
+Sources: inert inspection of unchanged build **3662168** `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, particularly `corp_ui_home.GetSubContentDetails` and `fwEnlistmentSvc.GetCorpAllowedEnlistmentFactions`. The surrounding Details registry reads were checked at their native call sites. This reuses the existing list adapter and previously consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp); no Carbon-owned simulation or serialization behavior changes. No game launch, client-script execution or normal runtime database modification occurred.
+
+**Automated validation:** after rebasing onto logging milestone **d201912**, tool/solution restore and build passed with zero warnings/errors. Filter `FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **80 tests in 15 seconds**, including all eight corporation-screen cases. Both Python policy suites passed (3 catalog and 9 formatting tests), formatting verified 710 files, and diff checks passed. The complete sequence took **36 seconds**. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The screenshot establishes the original routing failure; corrected native Details rendering remains unverified.
+
+**Optional maintainer checks:** Rebuild/restart, reopen the corporation screen and expand Details for an NPC member and a player-corporation CEO.
+
 ## Corporation window voting-capability startup correction
 
 The maintainer reported **Invalid Packet Destination — Unsupported local call voteManager.CanViewVotes** when opening the corporation screen after the player-corporation milestones. The pinned client's `corporationWindow.construct_corporation_panels` asks `corpvotes.CanViewVotes(session.corpid)` while building the window for both NPC and player corporations. `corporation/voting/voting.CanViewVotes` forwards a single corporation ID to the unbound `voteManager.CanViewVotes` service and caches the boolean reply for the current corporation. Eden had no owner for that service/method, so its router sent the unsupported-call error before window construction could finish.

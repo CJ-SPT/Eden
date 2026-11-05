@@ -77,9 +77,11 @@ internal sealed partial class CorporationHandler
                 ? new CorporationAggressionReply(corporations.Read((int)id)?.Details.FriendlyFireEnabled ?? false)
                 : new PilotCallResult.Failure("Choose a corporation.");
         }
-        if (service == "facWarMgr" && method == "GetCorpAllowedEnlistmentFactions")
+        // Build 3662168 fwEnlistmentSvc forwards this Details-panel query to
+        // fwCharacterEnlistmentMgr, independently of the older facWarMgr service.
+        if (service == "fwCharacterEnlistmentMgr" && method == "GetCorpAllowedEnlistmentFactions")
         {
-            return args is [long id] && id > 0 && keywords is null or { Count: 0 }
+            return args is [long id] && id is > 0 and <= int.MaxValue && keywords is null or { Count: 0 }
                 ? BlueEmpty.List
                 : new PilotCallResult.Failure("Choose a corporation.");
         }
