@@ -106,7 +106,7 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
     {
         lock (_gate)
         {
-            Dispatch(_world.Join(connection, room, requestId));
+            Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
         }
     }
 

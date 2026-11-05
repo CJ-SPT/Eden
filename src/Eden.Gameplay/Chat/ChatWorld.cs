@@ -11,7 +11,10 @@ public sealed class ChatWorld(long roomSeed = 0)
     private readonly Dictionary<ChatRoom, ChatRoomInfo> _rooms = [];
     private readonly Dictionary<ChatRoom, HashSet<long>> _privateAccess = [];
     private readonly Dictionary<Guid, Queue<long>> _sentAt = [];
+    private readonly Dictionary<Guid, PendingMessage> _pendingMessages = [];
     private long _nextRoom = roomSeed;
+
+    private sealed record PendingMessage(ChatRoom Room, string Text, string Id, long QueuedAt);
 
     public ChatPilot? Pilot(Guid session) => _sessions.GetValueOrDefault(session);
 
@@ -28,6 +31,10 @@ public sealed class ChatWorld(long roomSeed = 0)
         }
         foreach (var connection in _connections.Where(c => c.Value == session).Select(c => c.Key).ToArray())
         {
+            if (_pendingMessages.TryGetValue(connection, out var pending) && (pilot is null || !Eligible(pilot, pending.Room)))
+            {
+                _pendingMessages.Remove(connection);
+            }
             if (pilot is null || _sessions[session].Id != pilot.Id)
             {
                 events.AddRange(Disconnect(connection));
@@ -152,7 +159,7 @@ public sealed class ChatWorld(long roomSeed = 0)
         return pilot;
     }
 
-    public IReadOnlyList<ChatDelivery> Join(Guid connection, ChatRoom room, string? correlationId)
+    public IReadOnlyList<ChatDelivery> Join(Guid connection, ChatRoom room, string? correlationId, long now = 0)
     {
         var pilot = ConnectedPilot(connection) ?? throw new InvalidDataException("Chat is not authenticated.");
         if (!Eligible(pilot, room))
@@ -164,33 +171,57 @@ public sealed class ChatWorld(long roomSeed = 0)
             members = [];
             _members.Add(room, members);
         }
-        if (members.Contains(connection))
-        {
-            return [new(connection, new ChatEvent.Presence(room, pilot, true), correlationId)];
-        }
-        if (_members.Count(m => m.Value.Contains(connection)) >= ChatRules.MaximumJoinedRooms)
+        bool joined = members.Contains(connection);
+        if (!joined && _members.Count(m => m.Value.Contains(connection)) >= ChatRules.MaximumJoinedRooms)
         {
             throw new InvalidDataException("Too many joined channels.");
         }
-        List<ChatDelivery> events = members
-            .Where(member => !ChatRules.Delayed(room) || _speakers.GetValueOrDefault(room)?.Contains(member) == true)
-            .Select(member => new ChatDelivery(connection, new ChatEvent.Presence(room, ConnectedPilot(member)!, true)))
-            .ToList();
+        // The native client completes its join/window switch on this acknowledgement.
+        // Deliver the roster afterwards, including on retries that repair a cleared UI.
+        List<ChatDelivery> events = [new(connection, new ChatEvent.Presence(room, pilot, true), correlationId)];
         members.Add(connection);
-        events.AddRange(
-            members
-                .Where(member => member == connection || !ChatRules.Delayed(room))
-                .Select(member => new ChatDelivery(
-                    member,
-                    new ChatEvent.Presence(room, pilot, true),
-                    member == connection ? correlationId : null
-                ))
-        );
+        var visible = members
+            .Where(member => !ChatRules.Delayed(room) || _speakers.GetValueOrDefault(room)?.Contains(member) == true)
+            .Select(member => ConnectedPilot(member)!)
+            .OrderBy(member => member.Id)
+            .ToArray();
+        if (room.Kind == ChatRoomKind.Local)
+        {
+            events.Add(new(connection, new ChatEvent.Roster(room, visible)));
+        }
+        else
+        {
+            events.AddRange(
+                visible
+                    .Where(member => member.Id != pilot.Id)
+                    .Select(member => new ChatDelivery(connection, new ChatEvent.Presence(room, member, true)))
+            );
+        }
+        if (!joined && !ChatRules.Delayed(room))
+        {
+            events.AddRange(
+                members
+                    .Where(member => member != connection)
+                    .Select(member => new ChatDelivery(member, new ChatEvent.Presence(room, pilot, true)))
+            );
+        }
+        if (_pendingMessages.TryGetValue(connection, out var pending) && pending.Room == room)
+        {
+            _pendingMessages.Remove(connection);
+            if (now - pending.QueuedAt < ChatRules.PendingMessageLifetime.Ticks)
+            {
+                events.AddRange(Broadcast(connection, room, pending.Text, pending.Id));
+            }
+        }
         return events;
     }
 
     public IReadOnlyList<ChatDelivery> Leave(Guid connection, ChatRoom room, bool disconnecting = false)
     {
+        if (_pendingMessages.TryGetValue(connection, out var pending) && pending.Room == room)
+        {
+            _pendingMessages.Remove(connection);
+        }
         if (!_members.TryGetValue(room, out var members) || !members.Contains(connection))
         {
             return [];
@@ -225,13 +256,40 @@ public sealed class ChatWorld(long roomSeed = 0)
         }
         _connections.Remove(connection);
         _sentAt.Remove(connection);
+        _pendingMessages.Remove(connection);
         return events;
     }
 
     public IReadOnlyList<ChatDelivery> Send(Guid connection, ChatRoom room, string text, string id, long now)
     {
-        var pilot = RequireMember(connection, room);
         ChatRules.CheckMessage(text);
+        if (!_members.TryGetValue(room, out var members) || !members.Contains(connection))
+        {
+            var selected = ConnectedPilot(connection);
+            bool systemRoom =
+                room.Kind is ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian or ChatRoomKind.Corporation;
+            if (selected is null || !systemRoom || !Eligible(selected, room))
+            {
+                throw new InvalidDataException("Join an authorized channel before using it.");
+            }
+            if (
+                _pendingMessages.TryGetValue(connection, out var pending)
+                && now - pending.QueuedAt < ChatRules.PendingMessageLifetime.Ticks
+            )
+            {
+                throw new InvalidDataException("Wait for the initial channel join before sending another message.");
+            }
+            CheckSendRate(connection, now);
+            _pendingMessages[connection] = new(room, text, id, now);
+            return [];
+        }
+        _ = RequireMember(connection, room);
+        CheckSendRate(connection, now);
+        return Broadcast(connection, room, text, id);
+    }
+
+    private void CheckSendRate(Guid connection, long now)
+    {
         if (!_sentAt.TryGetValue(connection, out var times))
         {
             times = [];
@@ -246,6 +304,11 @@ public sealed class ChatWorld(long roomSeed = 0)
             throw new InvalidDataException("Chat messages are being sent too quickly.");
         }
         times.Enqueue(now);
+    }
+
+    private IReadOnlyList<ChatDelivery> Broadcast(Guid connection, ChatRoom room, string text, string id)
+    {
+        var pilot = RequireMember(connection, room);
         List<ChatDelivery> events = [];
         if (ChatRules.Delayed(room))
         {

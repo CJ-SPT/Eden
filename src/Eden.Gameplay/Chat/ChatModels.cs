@@ -28,6 +28,8 @@ public abstract record ChatEvent
 {
     public sealed record Presence(ChatRoom Room, ChatPilot Pilot, bool Available) : ChatEvent;
 
+    public sealed record Roster(ChatRoom Room, IReadOnlyList<ChatPilot> Pilots) : ChatEvent;
+
     public sealed record Message(ChatRoom Room, ChatPilot Sender, string Text, string Id) : ChatEvent;
 
     public sealed record Invitation(ChatRoom Room, ChatPilot Sender) : ChatEvent;
@@ -57,6 +59,7 @@ public static class ChatRules
     public const int MaximumRoomNameLength = 60;
     public const int MaximumJoinedRooms = 20;
     public const int MaximumCreatedRooms = 20;
+    public static readonly TimeSpan PendingMessageLifetime = TimeSpan.FromSeconds(5);
     private const int FirstWormholeSystem = 31000000;
     private const int LastWormholeSystem = 31999999;
     private const int ZarzakhSystem = 30100000;

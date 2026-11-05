@@ -19,6 +19,48 @@ namespace Eden.Protocol.Tests.Chat;
 public sealed class XmppChatTests
 {
     [Theory]
+    [InlineData("local_30000142")]
+    [InlineData("corp_1000044")]
+    public async Task FirstMessageRacingTheInitialJoinIsDeliveredOnceAfterRosterInitialization(string channel)
+    {
+        using TestWorld world = new();
+        var runtime = world.Services.GetRequiredService<ChatRuntime>();
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        Guid a = Guid.NewGuid(),
+            b = Guid.NewGuid();
+        runtime.Update(a, new(90000001, "First", 1000044, 30000142, 0));
+        runtime.Update(b, new(90000002, "Second", 1000044, 30000142, 0));
+        await using var first = await NativeClient.ConnectAsync(server.Endpoint!, certificate.Certificate, 90000001, runtime.IssueToken(a));
+        await using var second = await NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            90000002,
+            runtime.IssueToken(b)
+        );
+        await second.JoinAsync(channel, "second-ready");
+        await second.UntilAsync(e => (string?)e.Attribute("id") == "second-ready");
+        await first.MessageAsync(channel, "early-message", "hello");
+        await first.JoinAsync(channel, "first-ready");
+        var received = await first.UntilAsync(e => (string?)e.Attribute("id") == "early-message");
+        Assert.DoesNotContain(received, e => (string?)e.Attribute("type") == "error");
+        Assert.Single(received, e => (string?)e.Attribute("id") == "first-ready");
+        Assert.Single(received, e => (string?)e.Attribute("id") == "early-message");
+        if (channel.StartsWith("local_", StringComparison.Ordinal))
+        {
+            var roster = Assert.Single(received, IsRoster);
+            Assert.Equal(new long[] { 90000001, 90000002 }, RosterIds(roster));
+            Assert.True(received.ToList().FindIndex(IsRoster) < received.Count - 1);
+        }
+        var peer = (await second.UntilAsync(e => (string?)e.Attribute("id") == "early-message"))[^1];
+        Assert.Equal("hello", peer.Elements().Single(e => e.Name.LocalName == "body").Value);
+        await first.JoinAsync(channel, "retry");
+        var retried = await first.UntilAsync(e => (string?)e.Attribute("id") == "retry");
+        Assert.DoesNotContain(retried, e => (string?)e.Attribute("id") == "early-message");
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task SystemTransitionRevokesOldLocalWhileKeepingCorporationChatAndJoiningTheDestination(bool liveWorld)
@@ -184,8 +226,9 @@ public sealed class XmppChatTests
         await first.UntilAsync(e => (string?)e.Attribute("id") == "join-a");
         await second.JoinAsync(channel, "join-b");
         var initialB = await second.UntilAsync(e => (string?)e.Attribute("id") == "join-b");
-        Assert.Single(initialB, e => IsControl(e, "join", pilotA.PilotId));
         Assert.Single(initialB, e => e.Name.LocalName == "presence" && (string?)e.Attribute("id") == "join-b");
+        var rosterB = (await second.UntilAsync(IsRoster))[^1];
+        Assert.Equal(new[] { pilotA.PilotId, pilotB.PilotId }, RosterIds(rosterB));
         await first.UntilAsync(e => IsControl(e, "join", pilotB.PilotId));
         const string message = "こんにちは 🚀 <b>two pilots</b> & Local";
         await first.MessageAsync(channel, "a-message", message);
@@ -225,6 +268,19 @@ public sealed class XmppChatTests
         using var json = JsonDocument.Parse(stanza.Elements().Single(e => e.Name.LocalName == "body").Value);
         return json.RootElement.GetProperty("cmd").GetString() == command && json.RootElement.GetProperty("charid").GetInt64() == pilotId;
     }
+
+    private static bool IsRoster(XElement stanza) =>
+        ((string?)stanza.Attribute("from"))?.EndsWith("/viking", StringComparison.Ordinal) == true;
+
+    private static long[] RosterIds(XElement stanza) =>
+        stanza
+            .Elements()
+            .Select(user =>
+            {
+                using var info = JsonDocument.Parse(user.Attribute("info")!.Value);
+                return info.RootElement[0].GetInt64();
+            })
+            .ToArray();
 
     [Fact]
     public async Task ForgedLocalNickAndUserDataWritesAreRejectedWithoutDeliveringMessages()

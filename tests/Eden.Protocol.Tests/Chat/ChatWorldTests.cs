@@ -11,6 +11,67 @@ public sealed class ChatWorldTests
     private static readonly ChatPilot First = new(90000001, "First pilot", 1000044, 30000142, 0);
     private static readonly ChatPilot Second = new(90000002, "Second pilot", 1000044, 30000142, 0);
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstSystemMessageWaitsForJoinAndExpiresAtTheDeadline(bool atDeadline)
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        world.Update(session, First);
+        world.Connect(session, connection);
+        Assert.Empty(world.Send(connection, Local, "first hello", "first-message", 0));
+        Assert.Throws<InvalidDataException>(() => world.Send(connection, Local, "second", "second-message", 0));
+        long delay = ChatRules.PendingMessageLifetime.Ticks - (atDeadline ? 0 : 1);
+        var joined = world.Join(connection, Local, "join", delay);
+        Assert.IsType<ChatEvent.Presence>(joined[0].Event);
+        Assert.IsType<ChatEvent.Roster>(joined[1].Event);
+        Assert.Equal(atDeadline ? 0 : 1, joined.Count(e => e.Event is ChatEvent.Message));
+        Assert.DoesNotContain(world.Join(connection, Local, "retry", delay), e => e.Event is ChatEvent.Message);
+    }
+
+    [Fact]
+    public void QueuedMessageUsesTheRateLimitOnceAndAnExplicitLeaveCancelsIt()
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        ChatRoom corporation = new(ChatRoomKind.Corporation, First.CorporationId);
+        world.Update(session, First);
+        world.Connect(session, connection);
+        world.Join(connection, corporation, "corp");
+        world.Send(connection, Local, "queued", "first", 0);
+        world.Send(connection, corporation, "second", "second", 0);
+        world.Send(connection, corporation, "third", "third", 0);
+        Assert.Single(world.Join(connection, Local, "local"), e => e.Event is ChatEvent.Message);
+        Assert.Throws<InvalidDataException>(() => world.Send(connection, corporation, "fourth", "fourth", 0));
+        world.Leave(connection, Local);
+        world.Send(connection, Local, "canceled", "canceled", TimeSpan.TicksPerSecond);
+        world.Leave(connection, Local);
+        Assert.DoesNotContain(world.Join(connection, Local, "rejoin", TimeSpan.TicksPerSecond), e => e.Event is ChatEvent.Message);
+    }
+
+    [Fact]
+    public void PendingMessageCannotEscapeToAnotherSystemOrSurviveDisconnect()
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        world.Update(session, First);
+        world.Connect(session, connection);
+        Assert.Throws<InvalidDataException>(() => world.Send(connection, new(ChatRoomKind.Local, 30000144), "forged", "bad", 0));
+        Assert.Empty(world.Send(connection, Local, "old hello", "old", 0));
+        world.Update(session, First with { SystemId = 30000144 });
+        world.Update(session, First);
+        Assert.DoesNotContain(world.Join(connection, Local, "join"), e => e.Event is ChatEvent.Message);
+        world.Leave(connection, Local);
+        world.Send(connection, Local, "disconnected", "disconnect", TimeSpan.TicksPerSecond);
+        world.Disconnect(connection);
+        world.Connect(session, connection);
+        Assert.DoesNotContain(world.Join(connection, Local, "reconnect"), e => e.Event is ChatEvent.Message);
+    }
+
     [Fact]
     public void TwoPilotsSeeEachOtherAndReceiveOneOrderedEchoEach()
     {
@@ -23,14 +84,11 @@ public sealed class ChatWorldTests
         world.Update(secondSession, Second);
         world.Connect(firstSession, first);
         world.Connect(secondSession, second);
-        Assert.Single(world.Join(first, Local, "first"));
+        Assert.Equal(2, world.Join(first, Local, "first").Count);
         var joined = world.Join(second, Local, "second");
-        Assert.Equal(
-            new[] { First.Id, Second.Id },
-            joined.Where(e => e.Recipient == second).Select(e => Assert.IsType<ChatEvent.Presence>(e.Event).Pilot.Id)
-        );
+        Assert.Equal(new[] { First.Id, Second.Id }, Assert.IsType<ChatEvent.Roster>(joined[1].Event).Pilots.Select(p => p.Id));
         Assert.Single(joined, e => e.Recipient == first && e.Event is ChatEvent.Presence { Available: true });
-        Assert.Single(world.Join(second, Local, "retry"));
+        Assert.Equal(2, world.Join(second, Local, "retry").Count);
         const string text = "こんにちは 🚀 <b>hello</b> & friends";
         var sent = world.Send(first, Local, text, "message-1", 0);
         Assert.Equal(new[] { first, second }, sent.Select(e => e.Recipient));

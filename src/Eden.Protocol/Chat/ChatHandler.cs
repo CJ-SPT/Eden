@@ -53,8 +53,6 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
             return (service, method, args) switch
             {
                 ("chatAuthenticationService", "GetAuthenticationToken", []) => chat.IssueToken(_session),
-                ("XmppChatMgr", "Hostname", []) => chat.Endpoint.Domain,
-                ("XmppChatMgr", "GetDeprecatedPrefsFallback", []) => chat.Endpoint.Address,
                 ("XmppChatMgr", "ResyncSystemChannelAccess", []) => new ChatChannelList(chat.SystemChannels(_session)),
                 ("XmppChatMgr", "CreatePrivateChannel", [long id]) when id > 0 => XmppWire.Channel(chat.CreatePrivate(_session, id)),
                 ("XmppChatMgr", "CreatePlayerOwnedChannel", [var name]) when name is string or byte[] => XmppWire.Channel(
@@ -66,9 +64,7 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
                 ),
                 (
                     "XmppChatMgr",
-                    "Hostname"
-                        or "GetDeprecatedPrefsFallback"
-                        or "ResyncSystemChannelAccess"
+                    "ResyncSystemChannelAccess"
                         or "CreatePrivateChannel"
                         or "CreatePlayerOwnedChannel"
                         or "AddCharacterToChannel",

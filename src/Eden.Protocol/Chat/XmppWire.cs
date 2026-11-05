@@ -118,6 +118,12 @@ internal static class XmppWire
         delivery.Event switch
         {
             ChatEvent.Presence presence => Presence(delivery, presence, domain, recipient),
+            ChatEvent.Roster roster => new XElement(
+                "presence",
+                new XAttribute("from", RoomJid(roster.Room, domain) + "/viking"),
+                new XAttribute("to", recipient),
+                roster.Pilots.Select(UserData)
+            ),
             ChatEvent.Message message => new XElement(
                 "message",
                 new XAttribute("from", RoomJid(message.Room, domain) + "/" + message.Sender.Id),
