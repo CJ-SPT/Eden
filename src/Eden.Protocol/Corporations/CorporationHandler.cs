@@ -49,6 +49,7 @@ internal sealed partial class CorporationHandler(IPlayerCorporations corporation
                     or "GetSuggestedTickerNames"
                     or "GetEveOwners"
                     or "GetMember"
+                    or "GetTitles"
                     or "DoesMyCorpAcceptStructures"
                     or "DoesCorpRestrictCorpMails"
                 )
@@ -104,6 +105,11 @@ internal sealed partial class CorporationHandler(IPlayerCorporations corporation
                     return new PlayerCorporationMemberReply(member);
                 case ("DoesMyCorpAcceptStructures" or "DoesCorpRestrictCorpMails", []):
                     return false;
+                case ("GetTitles", []):
+                    // Creating a corporation enables the CEO administration panels.
+                    // Their constructors read this map before any panel is selected.
+                    // No titles are assigned while delegated roles remain deferred.
+                    return BlueEmpty.IndexedDictionary;
                 default:
                     throw new InvalidDataException("Invalid corporation request.");
             }
@@ -212,6 +218,21 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
             ("color3", BlueColumnType.Int32),
             ("typeface", BlueColumnType.Int32),
             ("allowWar", BlueColumnType.Boolean),
+            // GetDivisionNames reads these fields while constructing CEO role panels.
+            // None selects the pinned client's localized default division names.
+            ("division1", BlueColumnType.Unicode),
+            ("division2", BlueColumnType.Unicode),
+            ("division3", BlueColumnType.Unicode),
+            ("division4", BlueColumnType.Unicode),
+            ("division5", BlueColumnType.Unicode),
+            ("division6", BlueColumnType.Unicode),
+            ("division7", BlueColumnType.Unicode),
+            ("walletDivision2", BlueColumnType.Unicode),
+            ("walletDivision3", BlueColumnType.Unicode),
+            ("walletDivision4", BlueColumnType.Unicode),
+            ("walletDivision5", BlueColumnType.Unicode),
+            ("walletDivision6", BlueColumnType.Unicode),
+            ("walletDivision7", BlueColumnType.Unicode),
         ]);
 
     public override object ToBlue()
@@ -249,6 +270,19 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
                     logo.Color3,
                     logo.Typeface,
                     false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 },
             ]
         );
