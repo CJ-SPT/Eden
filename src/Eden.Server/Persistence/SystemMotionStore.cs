@@ -37,6 +37,9 @@ public sealed partial class SqliteWorld
     )
     {
         using WorldDbContext world = new(_database.Path);
+        // Keep the ownership lease through synchronization; committing an EF-owned
+        // transaction otherwise closes its connection before the object handoff.
+        world.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
         catalog.Database.OpenConnection();
@@ -168,6 +171,7 @@ public sealed partial class SqliteWorld
         }
         world.SaveChanges();
         transaction.Commit();
+        WorldConnections.SynchronizeCommitted(world);
         _database.MotionStamps[systemId] = stamp;
         foreach (var collision in resolved.Values.Where(c => c.Bumped))
         {

@@ -275,7 +275,7 @@ public sealed class WeaponBankTests
     [Fact]
     public void GroupedTurretsRepeatAndStopTogetherWithOneCombatMessagePerVolley()
     {
-        using AmmunitionTests.Fixture f = new();
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
         long second = SecondGun(f);
         Link(f, second);
         f.Load(quantity: 400);

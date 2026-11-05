@@ -76,6 +76,7 @@ public sealed class ArmorRepairTests
     public void PaysAtStartRepairsOnlyAtEndAndUsesRepairSystemsDurationOnce()
     {
         using Fixture f = new();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         long module = Prepare(f);
         var item = f.Inventory.List(f.PilotId, f.ShipId).Single(i => i.Id == module);
         var attributes = f.Fitting.ModuleAttributes(f.PilotId, item);

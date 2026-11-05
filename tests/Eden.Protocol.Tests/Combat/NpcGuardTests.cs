@@ -88,7 +88,7 @@ public sealed class NpcGuardTests
     [Fact]
     public void ARealTurretMissAlertsOnlyTheAttackedAnchorsGroup()
     {
-        using CombatFixture f = new();
+        using CombatFixture f = new(liveWorld: true);
         Prepare(f.Db);
         var guards = Seed(f.Db, f.Clock.Now);
         using WorldDbContext world = new(f.Db.Path);
@@ -116,7 +116,7 @@ public sealed class NpcGuardTests
     [Fact]
     public void LethalOpeningAttackAlertsSurvivorsAndGrantsNoPirateRewardsOrLoot()
     {
-        using CombatFixture f = new();
+        using CombatFixture f = new(liveWorld: true);
         Prepare(f.Db);
         var guards = Seed(f.Db, f.Clock.Now);
         using (WorldDbContext world = new(f.Db.Path))

@@ -42,6 +42,36 @@ internal sealed class LiveWorld : IDisposable
     private Exception? _lastSaveFailure;
 
     internal string ConnectionString { get; }
+    internal LiveCombatRuntime? Combat { get; }
+    internal int SqlConnections { get; private set; }
+
+    internal void SqlOpened() => SqlConnections++;
+
+    internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        SqlConnections--;
+        Combat?.Observe(changes);
+    }
+
+    internal void ObjectsChanged() => _generation++;
+
+    internal static void CatalogChanged(string path)
+    {
+        foreach (
+            var world in s_worlds.Values.Where(w =>
+                string.Equals(
+                    Path.Combine(Path.GetDirectoryName(w._path)!, "catalog.sqlite"),
+                    Path.GetFullPath(path),
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+        )
+        {
+            using var ownership = world.Enter();
+            world.Combat?.Clear();
+        }
+    }
+
     internal WorldCheckpoint? LastCheckpoint => Volatile.Read(ref _lastCheckpoint);
     internal Exception? LastSaveFailure => Volatile.Read(ref _lastSaveFailure);
     internal IReadOnlyList<WorldCheckpoint> RecentCheckpoints
@@ -69,7 +99,8 @@ internal sealed class LiveWorld : IDisposable
         WorldDatabase database,
         TimeProvider clock,
         Action<string>? report = null,
-        Action<SqliteConnection, string>? persist = null
+        Action<SqliteConnection, string>? persist = null,
+        bool combatObjects = true
     )
     {
         _path = Path.GetFullPath(database.Path);
@@ -113,6 +144,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
+            Combat = combatObjects ? new(this, database) : null;
             _timer = clock.CreateTimer(_ => QueueSave(), null, SaveInterval, SaveInterval);
         }
         catch
@@ -131,11 +163,14 @@ internal sealed class LiveWorld : IDisposable
 
     internal IDisposable Enter()
     {
+        bool nested = Monitor.IsEntered(_gate);
         Monitor.Enter(_gate);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            if (Volatile.Read(ref _stopping))
+            // A final checkpoint already owns the gate and must project dirty objects.
+            // New external work is refused while admitted operations can finish nesting.
+            if (Volatile.Read(ref _stopping) && !nested)
             {
                 throw new InvalidOperationException("The resident world is shutting down.");
             }
@@ -237,6 +272,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 wait = Stopwatch.GetElapsedTime(started);
                 started = Stopwatch.GetTimestamp();
+                Combat?.Flush();
                 if (_disposed || (generation = ObserveGeneration()) == _savedGeneration)
                 {
                     return null;

@@ -269,6 +269,7 @@ public sealed class HullRepairTests
     public void HullSettlementDoesNotRewriteSavedArmorDamageAboveItsCurrentMaximum()
     {
         using Fixture f = WithTiers(524);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         long module = Prepare(f);
         f.Train(RepairSystems, 3);
         Store(f).Start(f.PilotId, module, f.Clock.Now, RepairLayer.Hull);
@@ -289,6 +290,7 @@ public sealed class HullRepairTests
     public void TwoHullRepairersAddIndependentlyClipToMissingHullAndCannotResurrect()
     {
         using Fixture f = WithTiers(524);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         long first = Prepare(f, damage: 60);
         f.Db.Store.SetPosition(f.ShipId, null);
         long second = f.Fit(524);

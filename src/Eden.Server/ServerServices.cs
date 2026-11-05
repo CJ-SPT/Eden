@@ -14,14 +14,15 @@ internal static class ServerServices
         TimeProvider? clock = null,
         LauncherOptions? options = null,
         INpcPopulationSeeder? population = null,
-        bool liveWorld = false
+        bool liveWorld = false,
+        bool combatObjects = true
     )
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
         if (liveWorld)
         {
-            services.AddSingleton<LiveWorld>(_ => new(database, clock ?? TimeProvider.System));
+            services.AddSingleton<LiveWorld>(_ => new(database, clock ?? TimeProvider.System, combatObjects: combatObjects));
         }
         if (population is null)
         {

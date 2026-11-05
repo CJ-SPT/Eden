@@ -131,6 +131,7 @@ public sealed class ProjectileTierTests
     )
     {
         using Fixture f = WithTiers(type, charge);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         foreach (var skill in Enum.GetValues<CombatSkill>())
         {
             f.Train((int)skill, 5);

@@ -54,6 +54,10 @@ internal sealed class NpcEncounterStore(
     {
         lock (database.MotionLock)
         {
+            if (LiveCombatRuntime.Find(database.Path)?.Contacts(systemId, now, () => Read(systemId, now)) is { } resident)
+            {
+                return resident;
+            }
             return Read(systemId, now);
         }
     }

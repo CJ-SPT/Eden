@@ -104,6 +104,26 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
     )
     {
         using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("bank.volley");
+        if (
+            LiveCombatRuntime
+                .Find(database.Path)
+                ?.Fire(
+                    pilotId,
+                    moduleId,
+                    targetId,
+                    velocity,
+                    now,
+                    roll,
+                    activation,
+                    crystalRoll,
+                    banked,
+                    plan => SettleLiveFatal(plan, now)
+                ) is
+            { } resident
+        )
+        {
+            return resident;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -377,6 +397,44 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
     }
 
     private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);
+
+    private CombatVolley SettleLiveFatal(Eden.Gameplay.Combat.LiveVolley plan, long now)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == plan.Ship.PilotId);
+        var npc = world.Set<WorldNpc>().Find(plan.Target.Id)!;
+        // Previous object volleys have been projected. This transaction pays every member
+        // and settles destruction, loot, history and rewards together.
+        var before = LiveCombatRuntime.Find(database.Path)!.CurrentShip(plan.Ship.PilotId);
+        LiveCombatRuntime.ProjectShip(world, before, plan.Ship);
+        var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+        var settled = NpcDamagePersistence.Apply(
+            world,
+            catalog,
+            npc,
+            pilot,
+            plan.Ship.ShipId,
+            attributes,
+            plan.Damage,
+            now,
+            plan.Volley.Shot.Weapon.TypeId
+        );
+        world.SaveChanges();
+        transaction.Commit();
+        security.Publish();
+        return plan.Volley with
+        {
+            Shot = plan.Volley.Shot with
+            {
+                Health = settled.Health,
+                Applied = settled.Applied,
+                Destroyed = settled.Destroyed,
+                Reward = settled.Reward is null ? null : Read(settled.Reward),
+            },
+        };
+    }
 
     public IReadOnlyList<CombatReward> Rewards(long pilotId)
     {

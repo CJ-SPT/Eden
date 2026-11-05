@@ -133,7 +133,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
         options
-            .AddInterceptors(new FitTransactions(this))
+            .AddInterceptors(new FitTransactions(this), new CombatPersistenceBridge(path), new CombatTransactionBridge(path))
             .TracePerformance()
             .UseSqlite(WorldConnections.Create(path), contextOwnsConnection: true);
 

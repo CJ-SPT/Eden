@@ -140,6 +140,24 @@ public sealed class TypeAttribute
 
 public sealed partial class CatalogDbContext(string path, bool writable = false) : DbContext
 {
+    public override void Dispose()
+    {
+        base.Dispose();
+        if (writable)
+        {
+            LiveWorld.CatalogChanged(path);
+        }
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        if (writable)
+        {
+            LiveWorld.CatalogChanged(path);
+        }
+    }
+
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
         options
             .TracePerformance()
