@@ -75,6 +75,13 @@ public sealed class WorldMigrationTests
                 """
             + (version == 6 ? "ALTER TABLE WorldPosition DROP COLUMN SystemId;" : "")
             + $"PRAGMA user_version={version}";
+        command.CommandText =
+            """
+                DROP TRIGGER IF EXISTS Fit_WorldContractEscrow_INSERT_new;
+                DROP TRIGGER IF EXISTS Fit_WorldContractEscrow_DELETE_old;
+                DROP TRIGGER IF EXISTS Fit_WorldContractEscrow_UPDATE_old;
+                DROP TRIGGER IF EXISTS Fit_WorldContractEscrow_UPDATE_new;
+                """ + command.CommandText;
         command.ExecuteNonQuery();
 
         var world = WorldInitialization.Open(db.Path);

@@ -988,6 +988,11 @@ internal static class WorldMigration
             }
         }
         ShipStoragePersistence.Check(world);
+        if (version < 69)
+        {
+            ResidentFitSchema.Create(world);
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=69");
+        }
         if (version < 70)
         {
             world.Database.ExecuteSqlRaw(

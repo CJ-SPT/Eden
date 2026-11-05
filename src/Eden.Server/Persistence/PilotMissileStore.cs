@@ -48,11 +48,11 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         using CatalogDbContext catalog = new(database.CatalogPath);
         long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
         var members = banked ? PilotWeaponBankStore.Members(world, shipId, moduleId) : [moduleId];
-        if (members.Select(id => PilotAmmunitionStore.Contents(world, id)?.TypeId).Distinct().Count() > 1)
+        var launches = members.Select(id => LaunchCore(world, catalog, pilotId, id, targetId, lockedTargets, motion, now)).ToArray();
+        if (launches.Select(l => l.Launcher.ChargeTypeId).Distinct().Count() > 1)
         {
             throw new InvalidDataException("Load the same ammunition in every grouped launcher.");
         }
-        var launches = members.Select(id => LaunchCore(world, catalog, pilotId, id, targetId, lockedTargets, motion, now)).ToArray();
         transaction.Commit();
         return launches;
     }

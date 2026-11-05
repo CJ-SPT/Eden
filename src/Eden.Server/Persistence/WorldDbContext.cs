@@ -126,7 +126,7 @@ public sealed class OwnedItem
     public int Quantity { get; set; }
 }
 
-public sealed class WorldDbContext(string path) : DbContext
+public sealed partial class WorldDbContext(string path) : DbContext
 {
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<Ship> Ships => Set<Ship>();
@@ -134,6 +134,7 @@ public sealed class WorldDbContext(string path) : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
         options
+            .AddInterceptors(new FitTransactions(this))
             .TracePerformance()
             .UseSqlite(
                 new SqliteConnectionStringBuilder

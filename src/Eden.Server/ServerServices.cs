@@ -18,6 +18,10 @@ internal static class ServerServices
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
+        if (population is null)
+        {
+            services.AddSingleton<ResidentFitCache>(_ => new(database));
+        }
         services.AddSingleton(new NpcProfileCatalog(cache: population is null));
         services.AddSingleton(clock ?? TimeProvider.System);
         services.AddSingleton(options ?? new LauncherOptions());
@@ -56,6 +60,8 @@ internal static class ServerServices
         {
             services.AddSingleton(population);
         }
-        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        _ = provider.GetService<ResidentFitCache>();
+        return provider;
     }
 }

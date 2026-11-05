@@ -57,6 +57,45 @@ public sealed class WeaponBankTests
         Assert.Equal(101, f.Total(222));
     }
 
+    [Fact]
+    public void ResidentFitsStayWarmAcrossGroupedShotsAndRefreshAfterAnAmmoChange()
+    {
+        using AmmunitionTests.Fixture f = new();
+        long second = SecondGun(f);
+        Link(f, second);
+        f.Load(quantity: 400);
+        f.Clock.Milliseconds += 5000;
+        f.Space();
+        long pilotId = f.Pilot.PilotId;
+        using ResidentFitCache cache = new(new(f.Db.Path));
+        _ = Fire();
+        f.Clock.Milliseconds += 3000;
+        using (var measure = SessionPerformance.Begin("grouped-warm", _ => { }, force: true)!)
+        {
+            Assert.Equal(2, Fire().Weapons.Count);
+            Assert.Equal(0, measure.FittingCalculations);
+        }
+        f.Clock.Milliseconds += 3000;
+        f.Db.Store.SetPosition(f.Pilot.ShipId, null);
+        f.Ammo.Unload(f.Pilot.PilotId, f.Pilot.ShipId, [f.Gun], f.Pilot.StationId, (int)InventoryFlag.Hangar, null, f.Clock.Now);
+        f.Load(type: 215, quantity: 400);
+        f.Clock.Milliseconds += 5000;
+        f.Space();
+        using (var measure = SessionPerformance.Begin("grouped-changed", _ => { }, force: true)!)
+        {
+            Assert.All(Fire().Weapons, weapon => Assert.Equal(215, weapon.ChargeTypeId));
+            Assert.True(measure.FittingCalculations > 0);
+        }
+        f.Clock.Milliseconds += 3000;
+        using (var measure = SessionPerformance.Begin("grouped-warm-again", _ => { }, force: true)!)
+        {
+            _ = Fire();
+            Assert.Equal(0, measure.FittingCalculations);
+        }
+
+        CombatVolley Fire() => f.Combat.FireBank(pilotId, f.Gun, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, WeaponActivation.AmmoFed);
+    }
+
     [Theory]
     [InlineData(WeaponBankOperation.Link)]
     [InlineData(WeaponBankOperation.LinkAll)]

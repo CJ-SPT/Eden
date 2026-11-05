@@ -34,32 +34,41 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
             return;
         }
         long pilot = long.Parse(Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_PILOT") ?? "90000001");
-        using var services = ServerServices.Build(new(Path.Combine(source, "world.sqlite")));
-        var fitting = services.GetRequiredService<IPilotFitting>();
-        List<string> reports = [];
-        IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double>? previous = null;
-        for (int sample = 0; sample < 10; sample++)
+        string directory = CopySnapshot(source);
+        try
         {
-            using var metrics = SessionPerformance.Begin($"fitting {pilot} sample {sample}", reports.Add, force: true);
-            var attributes = fitting.ShipAttributes(pilot);
-            if (previous is not null)
+            WorldInitialization.Initialize(new(Path.Combine(directory, "world.sqlite")));
+            using var services = ServerServices.Build(new(Path.Combine(directory, "world.sqlite")));
+            var fitting = services.GetRequiredService<IPilotFitting>();
+            List<string> reports = [];
+            IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double>? previous = null;
+            for (int sample = 0; sample < 10; sample++)
             {
-                Assert.Equal(previous.OrderBy(p => p.Key), attributes.OrderBy(p => p.Key));
+                using var metrics = SessionPerformance.Begin($"fitting {pilot} sample {sample}", reports.Add, force: true);
+                var attributes = fitting.ShipAttributes(pilot);
+                if (previous is not null)
+                {
+                    Assert.Equal(previous.OrderBy(p => p.Key), attributes.OrderBy(p => p.Key));
+                }
+                previous = attributes;
             }
-            previous = attributes;
+            if (Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_OUTPUT") is { } destination)
+            {
+                Directory.CreateDirectory(destination);
+                File.WriteAllLines(Path.Combine(destination, "fitting.log"), reports);
+                File.WriteAllLines(
+                    Path.Combine(destination, "fitting-values.log"),
+                    previous!.OrderBy(p => p.Key).Select(p => $"{p.Key}={p.Value:R}")
+                );
+            }
+            foreach (string report in reports)
+            {
+                output.WriteLine(report);
+            }
         }
-        if (Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_OUTPUT") is { } destination)
+        finally
         {
-            Directory.CreateDirectory(destination);
-            File.WriteAllLines(Path.Combine(destination, "fitting.log"), reports);
-            File.WriteAllLines(
-                Path.Combine(destination, "fitting-values.log"),
-                previous!.OrderBy(p => p.Key).Select(p => $"{p.Key}={p.Value:R}")
-            );
-        }
-        foreach (string report in reports)
-        {
-            output.WriteLine(report);
+            Directory.Delete(directory, recursive: true);
         }
     }
 
@@ -77,25 +86,11 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
         }
         long pilotId = long.Parse(Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_PILOT") ?? "90000001");
         long account;
-        string directory = TestDirectory.Create("eden-performance-").FullName;
+        string directory = CopySnapshot(source);
         try
         {
-            foreach (string file in new[] { "world.sqlite", "catalog.sqlite" })
-            {
-                using SqliteConnection original = new(
-                    new SqliteConnectionStringBuilder
-                    {
-                        DataSource = Path.Combine(source, file),
-                        Mode = SqliteOpenMode.ReadOnly,
-                        Pooling = false,
-                    }.ToString()
-                );
-                using SqliteConnection copy = new($"Data Source={Path.Combine(directory, file)};Pooling=False");
-                original.Open();
-                copy.Open();
-                original.BackupDatabase(copy);
-            }
             TestClock clock = new(new DateTimeOffset(2026, 11, 6, 5, 0, 0, TimeSpan.Zero));
+            WorldInitialization.Initialize(new(Path.Combine(directory, "world.sqlite")), clock);
             using var services = ServerServices.Build(new(Path.Combine(directory, "world.sqlite")), clock);
             var store = services.GetRequiredService<SqliteWorld>();
             WorldNpc target;
@@ -235,13 +230,17 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
             {
                 clock.Seconds++;
                 long start = Stopwatch.GetTimestamp();
-                using (SessionPerformance.Begin($"{scenario} sample {sample}", reports.Add, force: true))
+                using (var measurement = SessionPerformance.Begin($"{scenario} sample {sample}", reports.Add, force: true)!)
                 {
                     await tick.AdvanceAsync(context, sessionOutput, reports.Add, account, 42);
                     ticks.Add(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
                     start = Stopwatch.GetTimestamp();
                     await calls.ProcessAsync(Request("config", "GetMultiLocationsEx", new List<object?> { target.Id }));
                     replies.Add(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+                    if (sample >= 2 && scenario == "combat")
+                    {
+                        Assert.Equal(0, measurement.FittingCalculations);
+                    }
                 }
             }
             if (scenario == "combat")
@@ -271,6 +270,35 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
         finally
         {
             Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static string CopySnapshot(string source)
+    {
+        string directory = TestDirectory.Create("eden-performance-").FullName;
+        try
+        {
+            foreach (string file in new[] { "world.sqlite", "catalog.sqlite" })
+            {
+                using SqliteConnection original = new(
+                    new SqliteConnectionStringBuilder
+                    {
+                        DataSource = Path.Combine(source, file),
+                        Mode = SqliteOpenMode.ReadOnly,
+                        Pooling = false,
+                    }.ToString()
+                );
+                using SqliteConnection copy = new($"Data Source={Path.Combine(directory, file)};Pooling=False");
+                original.Open();
+                copy.Open();
+                original.BackupDatabase(copy);
+            }
+            return directory;
+        }
+        catch
+        {
+            Directory.Delete(directory, recursive: true);
+            throw;
         }
     }
 

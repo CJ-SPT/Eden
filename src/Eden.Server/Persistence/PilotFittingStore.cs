@@ -61,6 +61,12 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     )
     {
         ship ??= pilot.ActiveShip;
+        var key = new FitCacheKey(pilot.Id, ship.Id, 0);
+        string? revision = world.FitRevision(pilot.Id);
+        if (world.CachedFit(key, revision) is { } cached)
+        {
+            return cached;
+        }
         calculation ??= FittingCalculation.Read(world, catalog, pilot, ship);
         var attributes = calculation.Graph.Attributes(ship.Id);
         attributes[DogmaAttributeId.MaxVelocity] = PilotPropulsionStore.NavigationSpeed(
@@ -80,7 +86,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted)
             ))
             .ToArray();
-        return FittingRules.Apply(attributes, calculation.SkillLevels, usage);
+        var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
+        world.StageFit(key, revision, result);
+        return result;
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
@@ -88,7 +96,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
+        var result = ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
+        transaction.Commit();
+        return result;
     }
 
     public double SignatureRadius(long itemId, int typeId)
