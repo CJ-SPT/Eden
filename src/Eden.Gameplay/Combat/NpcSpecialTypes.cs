@@ -27,7 +27,19 @@ public enum NpcCloneSoldierType
     GuristasNegotiator = 33189,
 }
 
+// These development assets also occupy ordinary asteroid pirate groups in
+// build 3662168. Their IDs come from the pinned client/types catalog.
+public enum NpcDevelopmentType
+{
+    TestDrainer = 24630,
+    TestAttacker = 25806,
+}
+
 public static class NpcSpecialTypes
 {
-    public static IReadOnlySet<int> Excluded { get; } = Enum.GetValues<NpcCloneSoldierType>().Select(type => (int)type).ToHashSet();
+    public static IReadOnlySet<int> Excluded { get; } =
+        Enum.GetValues<NpcCloneSoldierType>()
+            .Select(type => (int)type)
+            .Concat(Enum.GetValues<NpcDevelopmentType>().Select(type => (int)type))
+            .ToHashSet();
 }

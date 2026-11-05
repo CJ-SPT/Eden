@@ -1,5 +1,17 @@
 # Startup protocol and milestones
 
+## Development NPCs excluded from regional belts
+
+The maintainer's screenshot shows **TEST DRAINER** at 16 km. In the pinned build-3662168 catalog, this is type **24630**, in ordinary Blood Raider asteroid cruiser group **555**. The same group audit found **TEST ATTACKER**, type **25806**, in Guristas asteroid frigate group **562**. Both carry usable combat and wreck definitions, so the previous group and profile checks admitted them. Their `client/types` records have `published=0`. Admission now explicitly excludes these two development IDs alongside the Clone Soldier exclusions. The existing 510-type fixture already contains both definitions.
+
+Population policy version **3** applies the existing retirement transaction to living saved pirate instances of both types. System activation retires those rows, removes their aggression and expires their flying NPC missiles. A fully emptied occupied encounter can regenerate an ordinary group. A group with survivors retains those survivors. Automated checks cover both cases, unrelated aggression/projectiles, reward suppression and repeated reads after reopening. The normal save receives this cleanup through the updated server's activation path. World schema version remains **68**.
+
+**Automated validation.** Tool/solution restore and build passed with zero warnings or errors. The filter `FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcMissileTests` passed **71 tests in 42 seconds** with four workers. Both Python suites passed (**3 catalog and 9 formatting-policy tests**), formatting verification passed, and the complete sequence took **60 seconds**. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The screenshot establishes the original unwanted spawn.
+
+**Optional maintainer check.** Rebuild/restart the server and return to the affected belt to verify that the development NPC has retired.
+
 ## NPC visibility after same-system GM translocation
 
 Build 3662168's `Michelle.Park.FlushState` combines commands for the same tick. `Park.RealFlushState` applies `SetState` only when it is the first command and skips subsequent occurrences during dispatch. Eden's same-system TR queued position, velocity and stop commands before its snapshot. The snapshot carried the destination NPCs, so skipping it could leave the pilot on the new grid with the old overview while Eden already counted the new contacts as visible. The handler also released the client's location-bound park reference despite the solar system staying the same. This failure is reproducible from the command order. The original C-7SBM incident lacks a matching native packet or exception capture identifying its precise sequence.
