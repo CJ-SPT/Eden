@@ -1,3 +1,35 @@
+## Resident ship and turret fits (November 5, 2026)
+
+Calculated ship attributes and paid turret attributes now reside in a shared, bounded per-world cache. Entries are keyed by pilot, hull and attribute role/module identity, carry a committed pilot fitting revision, and contain frozen scalar attribute maps. Every caller receives its own mutable copy. The cache holds at most 8,192 maps and evicts individual entries in insertion order. It retains neither EF entities nor mutable dogma evaluators. Existing graph-building paths used for missile/support setup continue to evaluate their own inputs.
+
+World version **69** introduces `WorldFitRevision`. Transactional SQLite triggers replace a pilot's 128-bit revision stamp when fitted module/charge identity, location, owner, online/assembly state, ship state, skills, active-module membership, incoming tackle, clone/booster state or escrow visibility changes. This conservatively invalidates all owned hull snapshots for that pilot. Ordinary magazine quantity and crystal-wear updates retain their live transaction paths; removal of the final charge invalidates through the item delete trigger. Health, capacitor, position, cycle/reload deadlines and damage remain live operation state. Turret firing still validates ownership, target, ammunition, cooldown, capacitor and damage in its original transaction. Public module inspection computes its live reload information separately.
+
+Readers check the revision inside the same SQLite transaction as the gameplay operation. Contexts with pending tracked changes or without a transaction use fresh calculations. Newly computed entries are private to their transaction and publish after a successful commit. Rollback discards them. A transaction identity guard prevents a disposed/rolled-back transaction publishing through a later transaction on the same context. Old reader publications can cause a later cache miss, while the revision check preserves snapshot correctness. Random stamps prevent a rolled-back version number being reused for a different fit. Reopening the provider starts a cold cache. Mutable-catalog fixtures keep fresh reads by default; dedicated resident-fit cases explicitly enable the cache. Catalog rebuilds require the normal host restart.
+
+The saved-fit benchmark now copies and migrates both direct-fit and session scenarios before constructing readers. Its source files remain read-only. Historical downgrade fixtures remove new cross-table escrow triggers before reconstructing the old schema. Focused resident cases cover pending/committed online changes, rollback, disposed transactions, reopen, immutable copies under concurrent readers, incoming webs/removal, active-effect membership, paid shots, skill changes and revision isolation between pilots. Shared-grid fixtures create separate scoped pilot sessions and drive synchronized volleys for **1, 5 and 10 one-gun Ibis pilots** over six cycles; all warm volleys require zero fitting builds. A mid-fight skill-level change rebuilds only the affected pilot's snapshot and changes the next paid weapon duration.
+
+**Automated validation.** The final isolated build passed with zero warnings/errors. Filter `FullyQualifiedName~ResidentFitTests|FullyQualifiedName~ResidentFitFleetTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **64 cases in 32 seconds**. The broader equipment filter covering the same resident cases plus hybrid/energy/projectile tiers, tackle, hardeners, typed sessions and catalog reads initially passed 243/244 in 97 seconds; its one new web fixture failure was corrected by supplying the pinned web-resistance input/definition, then the resident cases passed. Earlier migration checks exposed a wrong implant owner-column assumption, which was removed in favor of existing implant-state revision ownership, and new escrow trigger references in historical downgrade fixtures, which now explicitly drop those references. A benchmark helper initially opened its old source save directly and failed on the missing revision table; all helpers now copy and migrate before reading.
+
+The saved-Brutix replay passed **four scenarios in 45 seconds** with one worker. Ordered ship attributes match the prior build's file exactly, and every measured warm combat tick plus its following request asserts **zero fitting calculations**. The final one-worker fleet timing pass ran three cases in 21 seconds; earlier parallel correctness timings were excluded from the following fleet totals. Tool/package restore, Python catalog/format policy suites (3 and 9 cases), formatting verification (640 files) and diff checks passed. The full .NET suite was not requested or run.
+
+```text
+docked ticks median=22.48ms p95=33.66ms
+docked replies median=4.12ms p95=6.42ms
+space ticks median=97.63ms p95=127.19ms
+space replies median=21.64ms p95=33.70ms
+combat ticks median=192.79ms p95=292.47ms
+combat replies median=40.70ms p95=66.75ms
+1 pilots, serialized shared-grid tick totals ms: 160.2, 210.0, 181.2, 145.3, 123.7, 120.4
+5 pilots, serialized shared-grid tick totals ms: 611.1, 589.6, 679.7, 649.5, 594.6, 598.1
+10 pilots, serialized shared-grid tick totals ms: 983.4, 961.0, 885.6, 856.5, 853.7, 892.9
+```
+
+The final solo Brutix combat tick measured **192.79 ms median / 292.47 ms p95**, versus **277.40 / 509.87 ms** in the preceding committed replay. Reply p95 measured **66.75 ms** versus 112.74 ms previously. The 250 ms tick target remains missed by 42.47 ms in this sample; an earlier development replay measured 240.02 ms p95, demonstrating timing variability. The fleet totals are serial processing time for all separate sessions on a shared grid, with one gun per ship and six measured volleys. They cover simultaneous scheduling, shared NPC state, committed skill-change refresh and cache isolation. They do not establish ten-Brutix or hundred-pilot capacity. Remaining per-session persistence/monitoring work is visible in the aggregate totals even when fitting builds are zero.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Validation uses copied full catalogs/worlds and fixture worlds, simulated clocks, immediate output sinks and controlled durability. The running server and live save were left running throughout validation.
+
+**Optional maintainer checks.** Rebuild/restart and repeat the native six-blaster fight with performance tracing enabled. Verify module on/off or ammunition-type changes update the displayed fit and paid cycles.
+
 ## Repeated turret cycle work (November 5, 2026)
 
 The maintainer reported improved native combat after `26254ce` and requested another optimization pass. A paid turret shot still built two fitting graphs in its owning transaction, once for ship state and again for module attributes. It now passes the same calculation to both readers. Combat skill levels are also loaded in one transaction-local batch. A new diagnostic `fittings` counter records graph builds alongside the existing timing/database counters.

@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 68;
+    internal const int CurrentVersion = 69;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -988,6 +988,11 @@ internal static class WorldMigration
             }
         }
         ShipStoragePersistence.Check(world);
+        if (version < 69)
+        {
+            ResidentFitSchema.Create(world);
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=69");
+        }
         transaction.Commit();
     }
 

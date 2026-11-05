@@ -262,3 +262,5 @@ Manufacturing illustrates the persistence boundary. The Server store loads the r
 ### Session performance diagnostics
 
 Set `EDEN_TRACE_PERFORMANCE=1` before startup for request/tick timings and database command/connection counts. See the isolated full-catalog replay in the [protocol notes](docs/protocol.md#shared-session-performance-diagnostics-november-5-2026).
+
+Calculated ship and turret fits stay in a bounded per-world memory cache, with transactionally versioned invalidation in world schema 69. See [resident fit behavior and validation](docs/protocol.md#resident-ship-and-turret-fits-november-5-2026).

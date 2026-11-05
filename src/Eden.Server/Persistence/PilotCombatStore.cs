@@ -25,6 +25,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         return ModuleAttributes(world, catalog, pilotId, module);
     }
 
@@ -79,6 +80,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         var npc = world.Set<WorldNpc>().Find(targetId);
@@ -116,13 +118,20 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var separation = new SpacePosition(npc.X - position.X, npc.Y - position.Y, npc.Z - position.Z);
         double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (npcType.Radius ?? 0));
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
+        string? revision = world.FitRevision(pilotId);
+        var cachedShip = world.CachedFit(new(pilotId, pilot.ActiveShipId, 0), revision);
+        var cachedWeapon = world.CachedFit(new(pilotId, pilot.ActiveShipId, moduleId), revision);
+        var calculation = cachedShip is not null && cachedWeapon is not null ? null : FittingCalculation.Read(world, catalog, pilot);
+        var ship = cachedShip ?? PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (npc.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
             throw new InvalidDataException("The NPC is outside targeting range.");
         }
-        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module), calculation);
+        var attributes = cachedWeapon ?? ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module), calculation);
+        if (cachedWeapon is null)
+        {
+            world.StageFit(new(pilotId, pilot.ActiveShipId, moduleId), revision, attributes);
+        }
         if (attributes.Values.Any(v => !double.IsFinite(v)) || attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) <= 0)
         {
             throw new InvalidDataException("Invalid weapon cycle attributes.");
