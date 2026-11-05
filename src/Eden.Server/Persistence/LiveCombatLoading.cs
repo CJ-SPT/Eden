@@ -231,9 +231,18 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var type = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
-        var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
-        var defense = ShipHealth.DefenseFrom(attributes);
+        catalog.Database.OpenConnection();
+        var profile = _simulationProfiles.Read(catalog, npc.TypeId);
+        var type = profile.Type;
+        var attributes = profile.Attributes;
+        var defense = profile.Defense;
+        double missileRange = 0;
+        if (attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType) is > 0 and var missile)
+        {
+            int chargeId = checked((int)missile);
+            var charge = PilotFittingStore.ReadAttributes(catalog, chargeId);
+            missileRange = NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
+        }
         var contributions = Contributions(world, id);
         return new(
             npc.Id,
@@ -259,8 +268,17 @@ internal sealed partial class LiveCombatRuntime
             npc.CorporationId,
             npc.FactionId,
             NpcMotion.Home(npc, catalog),
-            attributes.ToFrozenDictionary()
-        );
+            attributes
+        )
+        {
+            Navigation = npc.Navigation,
+            MotionAt = npc.MotionAt,
+            Mass = type.Mass ?? 0,
+            GroupId = type.GroupId,
+            CategoryId = type.Group.CategoryId,
+            Name = type.Name,
+            MissileRange = missileRange,
+        };
     }
 
     private static IReadOnlyDictionary<long, CombatParty> Contributions(WorldDbContext world, long id) =>

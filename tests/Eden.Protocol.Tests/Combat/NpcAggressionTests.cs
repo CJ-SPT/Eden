@@ -24,10 +24,12 @@ public sealed class NpcAggressionTests
     private static readonly NpcTargetCandidate s_pilot = new(NpcCombatTests.Fixture.PilotId, NpcCombatTests.Fixture.ShipId);
     private static readonly NpcTargetCandidate s_wing = new(90000002, 1000000000002);
 
-    [Fact]
-    public void DetectionStartsARealFightWithoutAPlayerShotAndPreservesReactionDelay()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DetectionStartsARealFightWithoutAPlayerShotAndPreservesReactionDelay(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         f.Combat.Acquire([s_pilot], f.Clock.Now);
         Assert.Equal(new[] { f.Npc.Id }, f.Combat.Aggressors(s_pilot.ShipId));
         f.Clock.Milliseconds = 7499;
@@ -43,10 +45,12 @@ public sealed class NpcAggressionTests
         Assert.Empty(saved.Set<ModuleCooldown>());
     }
 
-    [Fact]
-    public async Task ClosestShipWinsDeterministicallyAndConcurrentViewersDoNotResetItsDeadline()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClosestShipWinsDeterministicallyAndConcurrentViewersDoNotResetItsDeadline(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         f.Db.Store.SetPosition(s_wing.ShipId, f.Pilot.Position!, f.Npc.SystemId);
         await Task.WhenAll(
             Enumerable
@@ -74,10 +78,12 @@ public sealed class NpcAggressionTests
         Assert.Equal(new[] { f.Npc.Id }, f.Combat.Aggressors(s_wing.ShipId));
     }
 
-    [Fact]
-    public void InactiveMismatchedDockedRemoteAndCapsuleCandidatesCannotStartAnEncounter()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InactiveMismatchedDockedRemoteAndCapsuleCandidatesCannotStartAnEncounter(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         f.Combat.Acquire([new(s_pilot.PilotId, s_wing.ShipId), new(s_wing.PilotId, s_pilot.ShipId)], f.Clock.Now);
         Assert.Empty(f.Combat.Aggressors(s_pilot.ShipId));
         f.Combat.Acquire([], f.Clock.Now);
@@ -98,10 +104,12 @@ public sealed class NpcAggressionTests
         Assert.Empty(saved.Set<ShipHealthState>());
     }
 
-    [Fact]
-    public void DetectionUsesSurfaceDistanceAndNeverTargetsDestroyedNpcs()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DetectionUsesSurfaceDistanceAndNeverTargetsDestroyedNpcs(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         double boundary = NpcEncounterDefinitions.DetectionRange + f.Npc.Radius + f.Pilot.Flight.ShipRadius;
         f.Db.Store.SetPosition(s_pilot.ShipId, f.Npc.Position + new SpacePosition(boundary + 1, 0, 0), f.Npc.SystemId);
         f.Combat.Acquire([s_pilot], f.Clock.Now);
@@ -121,10 +129,12 @@ public sealed class NpcAggressionTests
         Assert.Empty(f.Combat.Aggressors(s_pilot.ShipId));
     }
 
-    [Fact]
-    public void ReturningNpcCompletesItsReturnBeforeAcquiringWithAFreshDelay()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReturningNpcCompletesItsReturnBeforeAcquiringWithAFreshDelay(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         f.Db.Store.SetPosition(s_pilot.ShipId, f.Npc.Position + new SpacePosition(8000, 0, 0), f.Npc.SystemId);
         f.Combat.Acquire([s_pilot], f.Clock.Now);
         f.Clock.Milliseconds = 7500;
@@ -151,10 +161,12 @@ public sealed class NpcAggressionTests
         Assert.Null(f.Fire());
     }
 
-    [Fact]
-    public void FirstPlayerAttackerRetainsItsTargetAndInvalidReactionDelayCannotSaveAggression()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstPlayerAttackerRetainsItsTargetAndInvalidReactionDelayCannotSaveAggression(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         f.Aggress();
         f.Db.Store.SetPosition(s_wing.ShipId, f.Npc.Position, f.Npc.SystemId);
         f.Combat.Acquire([s_wing, s_pilot], f.Clock.Now);
@@ -164,10 +176,12 @@ public sealed class NpcAggressionTests
         Assert.Throws<InvalidDataException>(() => NpcAggression.Start(f.Npc.Id, s_pilot.ShipId, -1, f.Clock.Now));
     }
 
-    [Fact]
-    public void SharedCandidatesExcludeShipsThatCannotParticipateInCombat()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SharedCandidatesExcludeShipsThatCannotParticipateInCombat(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         SharedSpace space = new();
         ShipContact contact = new(PilotContact.From(f.Pilot), SpacePosition.Zero, null, 0, null);
         space.Publish(contact);
@@ -215,10 +229,12 @@ public sealed class NpcAggressionTests
         Assert.Empty(space.NpcTargets(f.Npc.SystemId));
     }
 
-    [Fact]
-    public void SessionDetectionNotifiesIncomingLockAndWarpDisengagesWithoutAPaidShot()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SessionDetectionNotifiesIncomingLockAndWarpDisengagesWithoutAPaidShot(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         SharedSpace space = new();
         SharedTargetLocks locks = new();
         var fitting = f.Db.Services.GetRequiredService<IPilotFitting>();

@@ -164,7 +164,8 @@ public sealed partial class ServerPerformanceReplayTests
                 resident ? checkpointClock : clock,
                 liveWorld: resident,
                 combatObjects: combatObjects,
-                residentReads: residentReads
+                residentReads: residentReads,
+                simulationObjects: Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_SIMULATION_OBJECTS") != "0"
             );
             var live = host.GetService<LiveWorld>();
             var store = host.GetRequiredService<SqliteWorld>();
@@ -261,6 +262,14 @@ public sealed partial class ServerPerformanceReplayTests
             reports.Enqueue($"World storage: {(resident ? "resident RAM image with 15-second checkpoints" : "direct SQLite file")}.");
             reports.Enqueue($"Combat objects: {resident && combatObjects}.");
             reports.Enqueue($"Resident reads: {resident && residentReads}.");
+            reports.Enqueue(
+                $"Simulation objects: {resident && combatObjects
+                && Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_SIMULATION_OBJECTS") != "0"}."
+            );
+            if (live is not null)
+            {
+                live.MeasureCheckpoints = true;
+            }
             bytes = 0;
             List<double> totals = [];
             async Task<FleetSample> Advance(FleetClient client)
@@ -344,6 +353,12 @@ public sealed partial class ServerPerformanceReplayTests
                     )
                 );
             }
+            if (live is not null)
+            {
+                // Include final dirty projection in the measured saver rather than
+                // allowing the verification query to project it outside every scope.
+                await live.FlushAsync();
+            }
             using (WorldDbContext world = new(database.Path))
             {
                 var remaining = world
@@ -360,7 +375,6 @@ public sealed partial class ServerPerformanceReplayTests
             }
             if (live is not null)
             {
-                await live.FlushAsync();
                 string verification = Path.Combine(directory, "checkpoint.sqlite");
                 File.Copy(database.Path, verification);
                 using WorldDbContext memory = new(database.Path);
@@ -390,7 +404,7 @@ public sealed partial class ServerPerformanceReplayTests
                     reports.Enqueue(
                         $"Checkpoint {save.Generation}: wait={save.Wait.TotalMilliseconds:F2} ms, "
                             + $"capture={save.Capture.TotalMilliseconds:F2} ms, write={save.Write.TotalMilliseconds:F2} ms, "
-                            + $"bytes={save.Bytes}."
+                            + $"bytes={save.Bytes}, commands={save.Commands}, connections={save.Connections}."
                     );
                 }
             }

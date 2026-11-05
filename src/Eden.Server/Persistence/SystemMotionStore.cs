@@ -24,6 +24,10 @@ public sealed partial class SqliteWorld
     {
         lock (_database.MotionLock)
         {
+            if (LiveCombatRuntime.Find(_database.Path)?.Advance(systemId, stamp, now, ships, objects) is { } resident)
+            {
+                return resident;
+            }
             return AdvanceSystem(systemId, stamp, now, ships, objects);
         }
     }

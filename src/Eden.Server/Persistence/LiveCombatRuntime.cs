@@ -7,7 +7,7 @@ namespace Eden.Server.Persistence;
 
 internal readonly record struct CombatRowChange(string Table, long Id);
 
-internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase database)
+internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase database, bool simulationObjects = true)
 {
     private const int ProbabilityResolution = 1_000_000;
     private const int RetainedShips = 512;
@@ -81,6 +81,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 _aggressions = null;
                 _guardGroups.Clear();
                 _contactEpoch++;
+                _acquisitions.Clear();
+                _systemNpcs.Clear();
+                _populationDue.Clear();
+                _effectiveNpcs.Clear();
                 return result;
             }
             finally
@@ -108,6 +112,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             _shipPilots.Count >= RetainedShips
             || _npcs.Count >= RetainedNpcs
             || _staleNpcs.Count >= RetainedNpcs
+            || _systemNpcs.Count >= RetainedSystems
+            || _positions.Count >= RetainedShips
+            || _acquisitionShips.Count >= RetainedShips
             || _contacts.Count >= RetainedSystems
             || _guardGroups.Count >= RetainedNpcs
             || _itemPilots.Count >= RetainedItems
@@ -235,6 +242,8 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             _savedShips[pilotId] = ship;
             _staleShips.Remove(pilotId);
         }
+        ship = Positioned(ship);
+        _ships[pilotId] = ship;
         return ship;
     }
 
@@ -273,7 +282,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void BeforeSql(string sql)
     {
-        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count == 0)
+        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count == 0)
         {
             return;
         }
@@ -297,7 +306,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void Flush()
     {
-        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count == 0)
+        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count == 0)
         {
             return;
         }
@@ -307,6 +316,17 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
+            foreach (long id in _dirtyPositions)
+            {
+                var position = _positions[id];
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldPosition(ShipId,SystemId,X,Y,Z)
+                    VALUES({id},{position.System},{position.Position.X},{position.Position.Y},{position.Position.Z})
+                    ON CONFLICT(ShipId) DO UPDATE SET X=excluded.X,Y=excluded.Y,Z=excluded.Z
+                    """
+                );
+            }
             foreach (long id in _dirtyShips)
             {
                 ProjectShip(world, _savedShips[id], _ships[id]);
@@ -336,6 +356,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             {
                 _savedNpcs[id] = _npcs[id];
             }
+            foreach (long id in _dirtyPositions)
+            {
+                _savedPositions[id] = _positions[id];
+            }
+            _dirtyPositions.Clear();
             _dirtyShips.Clear();
             _dirtyNpcs.Clear();
             _dirtyAggressions.Clear();
@@ -363,7 +388,15 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     _ships.Remove(change.Id);
                     _savedShips.Remove(change.Id);
                     break;
+                case "WorldPilot":
+                case "WorldShip":
+                    _acquisitionShips.Clear();
+                    _acquisitions.Clear();
+                    break;
                 case "WorldPosition":
+                    _positions.Remove(change.Id);
+                    _savedPositions.Remove(change.Id);
+                    _acquisitionShips.Clear();
                     _acquisitions.Clear();
                     goto case "WorldShipHealth";
                 case "WorldShipHealth":
@@ -396,16 +429,25 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                         _savedShips.Remove(groupedPilot);
                     }
                     break;
+                case "WorldNpcEncounter":
+                    _populationDue.Clear();
+                    break;
                 case "WorldNpc":
+                    _systemNpcs.Clear();
+                    _populationDue.Clear();
+                    _effectiveNpcs.Remove(change.Id);
+                    _acquisitions.Clear();
                     _contactEpoch++;
                     _guardGroups.Clear();
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpcAggression":
+                    _acquisitions.Clear();
                     _contactEpoch++;
                     _aggressions = null;
                     break;
                 case "WorldTackle":
+                    _effectiveNpcs.Clear();
                     _contactEpoch++;
                     break;
                 case "WorldCombatDamage":
@@ -431,5 +473,6 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         _guardGroups.Clear();
         _contacts.Clear();
         _acquisitions.Clear();
+        ClearSimulation();
     }
 }

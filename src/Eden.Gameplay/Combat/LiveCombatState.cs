@@ -118,7 +118,16 @@ public sealed record LiveCombatNpc(
     int FactionId,
     SpacePosition Home,
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes
-);
+)
+{
+    public NpcNavigationState Navigation { get; init; }
+    public long MotionAt { get; init; }
+    public double Mass { get; init; }
+    public double MissileRange { get; init; }
+    public int GroupId { get; init; }
+    public int CategoryId { get; init; }
+    public string Name { get; init; } = string.Empty;
+}
 
 public sealed record LiveAggression(long NpcId, long ShipId, long ReadyAt, long MissileReadyAt, long? LastShotAt);
 

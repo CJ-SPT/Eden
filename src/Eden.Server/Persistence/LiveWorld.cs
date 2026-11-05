@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.ExceptionServices;
+using Eden.Protocol.PilotSessions;
 using Microsoft.Data.Sqlite;
 
 namespace Eden.Server.Persistence;
@@ -12,7 +13,9 @@ internal sealed record WorldCheckpoint(
     TimeSpan Wait,
     TimeSpan Capture,
     TimeSpan Write,
-    long Bytes
+    long Bytes,
+    int? Commands = null,
+    int? Connections = null
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
@@ -44,6 +47,7 @@ internal sealed class LiveWorld : IDisposable
     internal string ConnectionString { get; }
     internal LiveCombatRuntime? Combat { get; }
     internal LiveReadModels? Reads { get; }
+    internal bool MeasureCheckpoints { get; set; }
     internal int SqlConnections { get; private set; }
 
     internal void SqlOpened() => SqlConnections++;
@@ -104,7 +108,8 @@ internal sealed class LiveWorld : IDisposable
         Action<string>? report = null,
         Action<SqliteConnection, string>? persist = null,
         bool combatObjects = true,
-        bool residentReads = true
+        bool residentReads = true,
+        bool simulationObjects = true
     )
     {
         _path = Path.GetFullPath(database.Path);
@@ -148,7 +153,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
-            Combat = combatObjects ? new(this, database) : null;
+            Combat = combatObjects ? new(this, database, simulationObjects) : null;
             Reads = residentReads ? new(this, database) : null;
             _timer = clock.CreateTimer(_ => QueueSave(), null, SaveInterval, SaveInterval);
         }
@@ -266,6 +271,7 @@ internal sealed class LiveWorld : IDisposable
 
     private Exception? Save()
     {
+        using var metrics = SessionPerformance.Begin("checkpoint", Report, force: MeasureCheckpoints);
         SqliteConnection? snapshot = null;
         try
         {
@@ -290,7 +296,16 @@ internal sealed class LiveWorld : IDisposable
             started = Stopwatch.GetTimestamp();
             _persist(snapshot, _path);
             TimeSpan write = Stopwatch.GetElapsedTime(started);
-            WorldCheckpoint completed = new(generation, _clock.GetUtcNow(), wait, capture, write, new FileInfo(_path).Length);
+            WorldCheckpoint completed = new(
+                generation,
+                _clock.GetUtcNow(),
+                wait,
+                capture,
+                write,
+                new FileInfo(_path).Length,
+                metrics?.Commands,
+                metrics?.Connections
+            );
             lock (_gate)
             {
                 _savedGeneration = generation;

@@ -28,6 +28,8 @@ public sealed class WorldNpcEncounter
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards) : INpcPopulationSeeder
 {
+    public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
+
     private readonly HashSet<string> _diagnostics = [];
 
     private void Report(string message)

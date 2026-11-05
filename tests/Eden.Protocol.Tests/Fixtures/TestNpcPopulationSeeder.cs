@@ -10,6 +10,8 @@ namespace Eden.Protocol.Tests.Fixtures;
 // Explicit isolated encounter fixture. Production uses regional population rules.
 internal sealed class TestNpcPopulationSeeder : INpcPopulationSeeder
 {
+    public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
+
     public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
     {
         if (systemId != NpcEncounterDefinitions.PerimeterSystem)

@@ -43,9 +43,9 @@ public sealed class NpcCombatTests
         public long Module { get; }
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
 
-        public Fixture(bool liveWorld = false)
+        public Fixture(bool liveWorld = false, bool simulationObjects = true)
         {
-            Db = new(liveWorld: liveWorld);
+            Db = new(liveWorld: liveWorld, simulationObjects: simulationObjects);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {

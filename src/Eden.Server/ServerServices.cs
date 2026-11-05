@@ -16,7 +16,8 @@ internal static class ServerServices
         INpcPopulationSeeder? population = null,
         bool liveWorld = false,
         bool combatObjects = true,
-        bool residentReads = true
+        bool residentReads = true,
+        bool simulationObjects = true
     )
     {
         IServiceCollection services = new ServiceCollection();
@@ -24,7 +25,13 @@ internal static class ServerServices
         if (liveWorld)
         {
             services.AddSingleton<LiveWorld>(_ =>
-                new(database, clock ?? TimeProvider.System, combatObjects: combatObjects, residentReads: residentReads)
+                new(
+                    database,
+                    clock ?? TimeProvider.System,
+                    combatObjects: combatObjects,
+                    residentReads: residentReads,
+                    simulationObjects: simulationObjects
+                )
             );
         }
         if (population is null)

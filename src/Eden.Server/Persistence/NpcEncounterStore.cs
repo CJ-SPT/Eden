@@ -54,12 +54,23 @@ internal sealed class NpcEncounterStore(
     {
         lock (database.MotionLock)
         {
-            if (LiveCombatRuntime.Find(database.Path)?.Contacts(systemId, now, () => Read(systemId, now)) is { } resident)
+            if (
+                LiveCombatRuntime
+                    .Find(database.Path)
+                    ?.Contacts(systemId, now, () => Read(systemId, now), () => NextPopulation(systemId, now)) is
+                { } resident
+            )
             {
                 return resident;
             }
             return Read(systemId, now);
         }
+    }
+
+    private long NextPopulation(int systemId, long now)
+    {
+        using WorldDbContext world = new(database.Path);
+        return population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
     }
 
     private IReadOnlyList<NpcContact> Read(int systemId, long now)

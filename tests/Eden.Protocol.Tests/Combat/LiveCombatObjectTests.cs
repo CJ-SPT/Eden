@@ -4,6 +4,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Tests.Ammunition;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;
 
@@ -101,10 +102,16 @@ public sealed class LiveCombatObjectTests
                 WeaponActivation.AmmoFed
             );
         _ = Fire();
+        var encounters = fixture.Db.Services.GetRequiredService<INpcEncounters>();
+        _ = encounters.List(fixture.Npc.SystemId, fixture.Clock.Now);
         fixture.Clock.Milliseconds += 3000;
         context.Flight.Checkpoint();
         using var measure = SessionPerformance.Begin("objects after motion", _ => { }, force: true)!;
         var volley = Fire();
+        var visible = encounters.List(fixture.Npc.SystemId, fixture.Clock.Now).Single(n => n.Id == fixture.Npc.Id);
+        Assert.Equal(volley.Shot.Health.Remaining.Shield, visible.Health.Remaining.Shield, 8);
+        Assert.Equal(volley.Shot.Health.Remaining.Armor, visible.Health.Remaining.Armor);
+        Assert.Equal(volley.Shot.Health.Remaining.Structure, visible.Health.Remaining.Structure);
         Assert.Equal(grouped ? 2 : 1, volley.Weapons.Count);
         Assert.All(volley.Magazines, magazine => Assert.Equal(198, magazine.Quantity));
         Assert.Equal(0, measure.Commands);

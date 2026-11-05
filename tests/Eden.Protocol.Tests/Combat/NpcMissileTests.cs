@@ -280,10 +280,12 @@ public sealed class NpcMissileTests
         Assert.Throws<InvalidDataException>(() => NpcMissileRules.Drive(drive, modifiers));
     }
 
-    [Fact]
-    public void CombatHandlerStreamsNpcMissilesAndDeliversIncomingDamage()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CombatHandlerStreamsNpcMissilesAndDeliversIncomingDamage(bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: resident);
         Prepare(f);
         using var scope = f.Db.Services.CreateScope();
         SharedSpace space = new();
@@ -340,10 +342,12 @@ public sealed class NpcMissileTests
         Assert.Empty(context.Flight.VisibleMissiles);
     }
 
-    [Fact]
-    public void FasterNewerMissileOwnsTheEarlierFatalContact()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FasterNewerMissileOwnsTheEarlierFatalContact(bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: resident);
         Prepare(f);
         long ship = f.Pilot.ShipId;
         Fire(f);

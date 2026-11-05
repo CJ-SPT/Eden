@@ -104,10 +104,12 @@ public sealed class NpcPursuitTests
         Assert.Equal(second.Navigation, Contact(f).Navigation);
     }
 
-    [Fact]
-    public void DisengagingReturnsTheSameDamagedNpcWithoutResettingHealthOrSpawningAnother()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisengagingReturnsTheSameDamagedNpcWithoutResettingHealthOrSpawningAnother(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         StartDistantFight(f);
         f.Clock.Milliseconds = 7500;
         f.Fire();
@@ -175,10 +177,12 @@ public sealed class NpcPursuitTests
         Assert.Equal(0, incoming.Quality);
     }
 
-    [Fact]
-    public void MovingNpcSnapshotsAndObserverUpdatesCarryCourseWithoutResettingTheBallpark()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MovingNpcSnapshotsAndObserverUpdatesCarryCourseWithoutResettingTheBallpark(bool resident)
     {
-        using NpcCombatTests.Fixture f = new();
+        using NpcCombatTests.Fixture f = new(liveWorld: resident);
         StartDistantFight(f);
         using FlightSession observer = new(
             f.Db.Store,

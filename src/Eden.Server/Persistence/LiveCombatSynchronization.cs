@@ -23,6 +23,7 @@ internal sealed partial class LiveCombatRuntime
                 || _staleNpcs.Contains(row.Id)
                 || !_npcs.TryGetValue(row.Id, out var npc)
                 || npc.TypeId != row.TypeId
+                || npc.SystemId != row.SystemId
             )
             {
                 continue;
@@ -32,6 +33,8 @@ internal sealed partial class LiveCombatRuntime
             {
                 Position = NpcMotion.Position(row),
                 Velocity = NpcMotion.Velocity(row),
+                Navigation = row.Navigation,
+                MotionAt = row.MotionAt,
                 Health = new(
                     defense,
                     new(
@@ -58,6 +61,9 @@ internal sealed partial class LiveCombatRuntime
                 var next = ship with { Position = new SpacePosition(row.X, row.Y, row.Z), SystemId = row.SystemId ?? ship.SystemId };
                 _ships[pilot] = next;
                 _savedShips[pilot] = next;
+                _positions.Remove(row.ShipId);
+                _savedPositions.Remove(row.ShipId);
+                _acquisitionShips.Clear();
                 _acquisitions.Clear();
                 consumed.Add(key);
             }

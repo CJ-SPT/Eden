@@ -78,15 +78,28 @@ internal sealed partial class LiveCombatRuntime
 
     private static void ProjectNpc(WorldDbContext world, LiveCombatNpc before, LiveCombatNpc after)
     {
-        if (before.Health != after.Health)
+        if (
+            before.Health != after.Health
+            || before.Position != after.Position
+            || before.Velocity != after.Velocity
+            || before.Navigation != after.Navigation
+            || before.MotionAt != after.MotionAt
+        )
         {
+            bool healthChanged = before.Health != after.Health;
             var health = after.Health;
             double armor = health.Defense.Armor - health.Remaining.Armor;
             double structure = health.Defense.Structure - health.Remaining.Structure;
             world.Database.ExecuteSql(
                 $"""
-                UPDATE WorldNpc SET ShieldCharge={health.Remaining.Shield},ArmorDamage={armor},
-                    StructureDamage={structure},UpdatedAt={health.UpdatedAt} WHERE Id={after.Id}
+                UPDATE WorldNpc SET
+                    ShieldCharge=CASE WHEN {healthChanged} THEN {health.Remaining.Shield} ELSE ShieldCharge END,
+                    ArmorDamage=CASE WHEN {healthChanged} THEN {armor} ELSE ArmorDamage END,
+                    StructureDamage=CASE WHEN {healthChanged} THEN {structure} ELSE StructureDamage END,
+                    UpdatedAt=CASE WHEN {healthChanged} THEN {health.UpdatedAt} ELSE UpdatedAt END,
+                    X={after.Position.X},Y={after.Position.Y},Z={after.Position.Z},
+                    VelocityX={after.Velocity.X},VelocityY={after.Velocity.Y},VelocityZ={after.Velocity.Z},
+                    Navigation={(int)after.Navigation},MotionAt={after.MotionAt} WHERE Id={after.Id}
                 """
             );
         }
