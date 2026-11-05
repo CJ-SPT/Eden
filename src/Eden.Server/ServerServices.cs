@@ -18,6 +18,7 @@ internal static class ServerServices
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
+        services.AddSingleton(new NpcProfileCatalog(cache: population is null));
         services.AddSingleton(clock ?? TimeProvider.System);
         services.AddSingleton(options ?? new LauncherOptions());
         foreach (Assembly assembly in new[] { typeof(ServerServices).Assembly, typeof(InjectableAttribute).Assembly })

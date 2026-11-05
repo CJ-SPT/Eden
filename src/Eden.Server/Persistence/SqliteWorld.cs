@@ -26,10 +26,12 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 {
     private readonly WorldDatabase _database;
     private readonly TimeProvider _clock;
+    private readonly NpcProfileCatalog _npcProfiles;
 
-    public SqliteWorld(WorldDatabase database, TimeProvider? clock = null)
+    public SqliteWorld(WorldDatabase database, TimeProvider? clock = null, NpcProfileCatalog? npcProfiles = null)
     {
         _database = database;
+        _npcProfiles = npcProfiles ?? new NpcProfileCatalog(cache: false);
         _clock = clock ?? TimeProvider.System;
     }
 

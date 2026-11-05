@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Protocol;
 using Eden.Protocol.Combat;
@@ -46,8 +47,7 @@ public sealed class WorldNpc
 internal sealed class NpcEncounterStore(
     WorldDatabase database,
     INpcPopulationSeeder? population = null,
-    NpcSpawnCatalog? spawnCatalog = null,
-    NpcGuardSeeder? guards = null
+    NpcProfileCatalog? hullProfiles = null
 ) : INpcEncounters
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
@@ -62,6 +62,7 @@ internal sealed class NpcEncounterStore(
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         long populationStamp = now / TimeSpan.TicksPerSecond;
         if (population is not null && database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp)
@@ -77,19 +78,23 @@ internal sealed class NpcEncounterStore(
         var ids = npcs.Select(n => n.Id).ToArray();
         var aggression = world.Set<NpcAggression>().AsNoTracking().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
         var profiles = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => ReadProfile(catalog, id));
-        NpcWeaponContact? Weapon(long npcId)
+        NpcWeaponContact? Weapon(WorldNpc npc)
         {
-            var attributes = profiles[npcs.Single(n => n.Id == npcId).TypeId].Attributes;
+            var attributes = profiles[npc.TypeId].Attributes;
             double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
             return
-                aggression.TryGetValue(npcId, out var active)
+                aggression.TryGetValue(npc.Id, out var active)
                 && active.LastShotAt is long started
                 && now >= started
                 && now - started < duration * TimeSpan.TicksPerMillisecond
                 ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration)
                 : null;
         }
-        var effective = npcs.ToDictionary(n => n.Id, n => PilotTackleStore.NpcAttributes(world, n.Id, profiles[n.TypeId].Attributes));
+        var tackle = PilotTackleStore.NpcTackles(world, ids);
+        var effective = npcs.ToDictionary(
+            n => n.Id,
+            n => TackleDefinitions.NpcAttributes(profiles[n.TypeId].Attributes, tackle[n.Id].Select(t => t.Module()).ToArray())
+        );
         foreach (var npc in npcs)
         {
             if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
@@ -132,7 +137,7 @@ internal sealed class NpcEncounterStore(
                             Math.Max(0, defense.Structure - n.StructureDamage)
                         )
                     ),
-                    Weapon(n.Id),
+                    Weapon(n),
                     NpcMotion.Contact(
                         n,
                         effective[n.Id],
@@ -159,37 +164,8 @@ internal sealed class NpcEncounterStore(
 
     private Profile ReadProfile(CatalogDbContext catalog, int typeId)
     {
-        if (population is NpcPopulationSeeder && spawnCatalog?.Profiles.FirstOrDefault(p => p.TypeId == typeId) is { } saved)
-        {
-            // Normal catalog inputs are immutable. Test fixtures deliberately
-            // edit their catalogs, so their injected seeder retains fresh reads.
-            ItemType cached = new()
-            {
-                Id = saved.TypeId,
-                Name = saved.Name,
-                GroupId = saved.GroupId,
-                Mass = saved.Mass,
-                Radius = saved.Radius,
-                Group = new() { Id = saved.GroupId, CategoryId = NpcEncounterDefinitions.EntityCategory },
-            };
-            return new(cached, saved.Attributes, ShipHealth.DefenseFrom(saved.Attributes));
-        }
-        if (population is NpcPopulationSeeder && guards?.Cached(typeId) is { } guard)
-        {
-            ItemType cached = new()
-            {
-                Id = guard.TypeId,
-                Name = guard.Name,
-                GroupId = guard.GroupId,
-                Mass = guard.Mass,
-                Radius = guard.Radius,
-                Group = new() { Id = guard.GroupId, CategoryId = NpcEncounterDefinitions.EntityCategory },
-            };
-            return new(cached, guard.Attributes, ShipHealth.DefenseFrom(guard.Attributes));
-        }
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
-        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
-        return new(type, attributes, ShipHealth.DefenseFrom(attributes));
+        var profile = (hullProfiles ?? new NpcProfileCatalog(cache: false)).Read(catalog, typeId);
+        return new(profile.Type, profile.Attributes, profile.Defense);
     }
 
     public bool WasDestroyed(long npcId)

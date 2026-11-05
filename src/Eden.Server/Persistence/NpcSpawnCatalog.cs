@@ -35,6 +35,7 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
     private static IReadOnlyList<NpcSpawnProfile> Load(WorldDatabase database)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         var groups = NpcPirateGroups.All.ToDictionary(g => g.GroupId);
         int[] groupIds = groups.Keys.ToArray();
         var types = catalog.Set<ItemType>().Where(t => groupIds.Contains(t.GroupId)).OrderBy(t => t.Id).ToArray();

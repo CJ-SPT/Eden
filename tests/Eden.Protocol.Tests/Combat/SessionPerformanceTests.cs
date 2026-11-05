@@ -28,6 +28,44 @@ public sealed class SessionPerformanceTests
         public void Disengage(long shipId, long? npcId = null) { }
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(24)]
+    public void MotionBatchesTackleAndAggressionReadsRegardlessOfNpcCount(int count)
+    {
+        using TestWorld db = new();
+        NpcEncounterTests.Prepare(db);
+        var contact = db.Services.GetRequiredService<INpcEncounters>().List(30000144, DateTime.UtcNow.ToFileTimeUtc())[0];
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Set<WorldNpc>().ExecuteDelete();
+            for (int index = 0; index < count; index++)
+            {
+                world.Add(
+                    new WorldNpc
+                    {
+                        Id = contact.Id + index,
+                        TypeId = contact.TypeId,
+                        SystemId = contact.SystemId,
+                        HomeX = contact.Position.X + index * 1000,
+                        HomeY = contact.Position.Y,
+                        HomeZ = contact.Position.Z,
+                        X = contact.Position.X + index * 1000,
+                        Y = contact.Position.Y,
+                        Z = contact.Position.Z,
+                        ShieldCharge = 20,
+                    }
+                );
+            }
+            world.SaveChanges();
+        }
+        using var metrics = SessionPerformance.Begin("motion", _ => { }, force: true)!;
+        db.Store.Advance(contact.SystemId, 1, DateTime.UtcNow.ToFileTimeUtc(), [], []);
+        Assert.Equal(1, metrics.TackleReads);
+        Assert.Equal(1, metrics.AggressionReads);
+        Assert.Equal(2, metrics.Connections);
+    }
+
     [Fact]
     public void UnrelatedCallBurstsAcquireOnceAndCandidateChangesAndDeadlinesAcquireAgain()
     {

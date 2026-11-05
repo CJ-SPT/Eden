@@ -1,0 +1,26 @@
+using System.Collections.Concurrent;
+using System.Collections.Frozen;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Ships;
+using Eden.Server.Catalog;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.Server.Persistence;
+
+internal sealed record NpcHullProfile(ItemType Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense);
+
+public sealed class NpcProfileCatalog(bool cache = true)
+{
+    private readonly ConcurrentDictionary<int, NpcHullProfile> _profiles = new();
+
+    internal NpcHullProfile Read(CatalogDbContext catalog, int typeId) =>
+        cache ? _profiles.GetOrAdd(typeId, id => Load(catalog, id)) : Load(catalog, typeId);
+
+    private static NpcHullProfile Load(CatalogDbContext catalog, int typeId)
+    {
+        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId).ToFrozenDictionary();
+        return new(type, attributes, ShipHealth.DefenseFrom(attributes));
+    }
+}

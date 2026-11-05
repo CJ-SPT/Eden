@@ -4,6 +4,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,6 +39,7 @@ public sealed partial class SqliteWorld
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
+        catalog.Database.OpenConnection();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
@@ -45,8 +47,16 @@ public sealed partial class SqliteWorld
             .ToArray();
         var starts = npcs.ToDictionary(n => n.Id, NpcMotion.Position);
         var velocities = npcs.ToDictionary(n => n.Id, NpcMotion.Velocity);
-        var types = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => catalog.Set<ItemType>().Single(t => t.Id == id));
-        var attributes = types.Keys.ToDictionary(id => id, id => PilotFittingStore.ReadAttributes(catalog, id));
+        var profiles = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => _npcProfiles.Read(catalog, id));
+        var types = profiles.ToDictionary(p => p.Key, p => p.Value.Type);
+        var attributes = profiles.ToDictionary(p => p.Key, p => p.Value.Attributes);
+        var ids = npcs.Select(n => n.Id).ToArray();
+        var tackle = PilotTackleStore.NpcTackles(world, ids);
+        var aggressionByNpc = world.Set<NpcAggression>().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
+        var effectiveByNpc = npcs.ToDictionary(
+            n => n.Id,
+            n => TackleDefinitions.NpcAttributes(attributes[n.TypeId], tackle[n.Id].Select(t => t.Module()).ToArray())
+        );
         var hulls = npcs.ToDictionary(
             n => n.Id,
             n => new FlightProperties(
@@ -54,10 +64,7 @@ public sealed partial class SqliteWorld
                 (float)(types[n.TypeId].Radius ?? 0),
                 types[n.TypeId].Mass ?? 0,
                 NpcMotion.Agility(attributes[n.TypeId]),
-                (float)
-                    PilotTackleStore
-                        .NpcAttributes(world, n.Id, attributes[n.TypeId])
-                        .GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.MaxVelocity),
+                (float)effectiveByNpc[n.Id].GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.MaxVelocity),
                 0
             )
         );
@@ -108,8 +115,8 @@ public sealed partial class SqliteWorld
         foreach (var npc in npcs)
         {
             var type = types[npc.TypeId];
-            var effective = PilotTackleStore.NpcAttributes(world, npc.Id, attributes[npc.TypeId]);
-            var aggression = world.Set<NpcAggression>().Find(npc.Id);
+            var effective = effectiveByNpc[npc.Id];
+            var aggression = aggressionByNpc.GetValueOrDefault(npc.Id);
             var initialVelocity = velocities[npc.Id];
             if (
                 aggression is not null

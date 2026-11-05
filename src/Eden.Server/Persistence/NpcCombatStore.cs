@@ -15,8 +15,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup, IShipLootRoll lootRoll, NpcSpawnCatalog? profiles = null)
-    : INpcCombat
+internal sealed class NpcCombatStore(
+    WorldDatabase database,
+    SqliteWorld lookup,
+    IShipLootRoll lootRoll,
+    NpcSpawnCatalog? profiles = null,
+    NpcProfileCatalog? hullProfiles = null
+) : INpcCombat
 {
     private double MissileRange(CatalogDbContext catalog, WorldNpc npc, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
@@ -42,6 +47,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         var requested = candidates.ToHashSet();
         var pilotIds = requested.Select(c => c.PilotId).ToArray();
         var pilots = world
@@ -84,13 +90,14 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
             .ToArray();
         foreach (var npc in npcs)
         {
-            var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+            var profile = hullProfiles?.Read(catalog, npc.TypeId);
+            var attributes = profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
             double missileRange = MissileRange(catalog, npc, attributes);
             if (!attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
             {
                 continue;
             }
-            var type = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+            var type = profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
             var home = NpcMotion.Home(npc, catalog);
             var target = targets
                 .Where(t =>
@@ -169,6 +176,7 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        catalog.Database.OpenConnection();
         var aggression = world.Set<NpcAggression>().Find(npcId);
         if (aggression is null || aggression.TargetShipId != shipId)
         {
@@ -177,10 +185,11 @@ internal sealed class NpcCombatStore(WorldDatabase database, SqliteWorld lookup,
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var npc = world.Set<WorldNpc>().Find(npcId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        var source = npc is null ? null : catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+        var profile = npc is null ? null : hullProfiles?.Read(catalog, npc.TypeId);
+        var source = npc is null ? null : profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
         var attributes = npc is null
             ? new Dictionary<DogmaAttributeId, double>()
-            : PilotTackleStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
+            : PilotTackleStore.NpcAttributes(world, npc.Id, profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         if (

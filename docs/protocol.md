@@ -49,6 +49,34 @@ combat replies median=58.03ms p95=72.11ms
 
 **Optional maintainer checks.** Compare native combat responsiveness after the final milestone.
 
+### Batched NPC motion and catalog inputs
+
+Motion now loads NPC tackle effects and aggression in one query each, builds effective attributes once per NPC, and reuses those inputs throughout the atomic motion step. Contact building also batches tackle effects and indexes identities instead of repeatedly searching the contact list. Production motion, acquisition, firing and contacts share a singleton NPC hull/profile catalog with frozen attribute maps. Mutable fixture catalogs explicitly use fresh reads. Unlisted/legacy types are read through the same catalog loader. Runtime catalog changes take effect after rebuilding the service provider/restarting the host.
+
+Catalog connections stay open for their bounded motion/contact/combat operations and initial spawn-profile loading, closing on disposal. Contact refreshes after mutable combat phases remain fresh to preserve same-tick damage, kills, navigation and observer ordering. All motion writes still commit together. One-NPC and 24-NPC regressions each assert exactly one tackle read, one aggression read and two connection opens for a motion step.
+
+The existing one-second Destiny step was checked against locally saved Carbon Destiny `Ballpark.cpp` revision `27ee40b38a563d29054b32f64c3ebc87fabaec1f`, including its 1000 ms interval and deadline-adjusted scheduling. The refactor retains the existing simulation and wire adapters.
+
+**Milestone 3 automated validation.** Final isolated build passed with zero warnings/errors. Filter `FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~ServerPerformanceReplayTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcOrbitTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~MissileFlightTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~MotionSynchronizationTests|FullyQualifiedName~TackleTests|FullyQualifiedName~TypedSessionTests` passed 191 cases in 61 seconds with two workers. Additional filter `FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~NpcGuardTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed 53 cases in 15 seconds. A separate single-worker full-catalog replay passed three scenarios in 27 seconds. Both Python suites (3 and 9 cases), tool/solution restore, formatting and diff checks passed. The full .NET suite was not requested or run. The known parent targeting failures above remain outside these passing filters.
+
+```text
+Performance docked cold: 32.12 ms, commands=56, connections=30, tackleReads=1, aggressionReads=1.
+docked ticks median=10.78ms p95=12.52ms
+docked replies median=2.34ms p95=2.58ms
+Performance space cold: 209.21 ms, commands=2905, connections=73, tackleReads=11, aggressionReads=7.
+space ticks median=53.83ms p95=57.26ms
+space replies median=9.42ms p95=10.27ms
+Performance combat cold: 854.18 ms, commands=2923, connections=79, tackleReads=14, aggressionReads=10.
+combat ticks median=179.45ms p95=308.43ms
+combat replies median=61.01ms p95=68.25ms
+```
+
+Combat motion median decreased from 22.57 to 8.49 ms, with median motion commands decreasing from 39 to 13 and connection opens from 14 to 5. Across a combat tick plus one following request, median command counts decreased from 1,341 to 1,266.5 and opens from 126 to 88. Cold setup connection counts also fell substantially. These figures include the controlled durability changes described above. Timing variability is material: final combat tick median was 179.45 ms versus baseline 179.41 ms, and p95 was 308.43 ms versus baseline 218.59 ms. The 250 ms target is therefore missed by 58.43 ms on the final replay. Update processing remains the largest slow phase. Reply p95 was 68.25 ms, under the target. The database and motion improvements do not establish an end-to-end latency improvement. Packet queue contention and native responsiveness remain unmeasured by this replay.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Compare native targeting/firing responsiveness with the opt-in performance diagnostics enabled after restarting onto the new build.
+
 ## Development NPCs excluded from regional belts
 
 The maintainer's screenshot shows **TEST DRAINER** at 16 km. In the pinned build-3662168 catalog, this is type **24630**, in ordinary Blood Raider asteroid cruiser group **555**. The same group audit found **TEST ATTACKER**, type **25806**, in Guristas asteroid frigate group **562**. Both carry usable combat and wreck definitions, so the previous group and profile checks admitted them. Their `client/types` records have `published=0`. Admission now explicitly excludes these two development IDs alongside the Clone Soldier exclusions. The existing 510-type fixture already contains both definitions.

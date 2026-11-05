@@ -299,6 +299,7 @@ internal sealed class FlightSession(
             return;
         }
         var current = ReadNpcs();
+        var previousById = _npcs.ToDictionary(n => n.Id);
         foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
             if (departed.Weapon is { } weapon)
@@ -314,7 +315,7 @@ internal sealed class FlightSession(
         }
         foreach (var npc in current)
         {
-            var previous = _npcs.FirstOrDefault(n => n.Id == npc.Id);
+            var previous = previousById.GetValueOrDefault(npc.Id);
             if (previous is not null && previous.MaxSpeed != npc.MaxSpeed)
             {
                 Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));

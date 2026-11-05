@@ -266,6 +266,14 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             .ExecuteDelete();
     }
 
+    internal static ILookup<long, WorldTackle> NpcTackles(WorldDbContext world, long[] ids) =>
+        world
+            .Set<WorldTackle>()
+            .AsNoTracking()
+            .Where(t => t.TargetKind == TackleTargetKind.Npc && ids.Contains(t.TargetId))
+            .ToArray()
+            .ToLookup(t => t.TargetId);
+
     internal static IReadOnlyDictionary<DogmaAttributeId, double> NpcAttributes(
         WorldDbContext world,
         long npcId,
