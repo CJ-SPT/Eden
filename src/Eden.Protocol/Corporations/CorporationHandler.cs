@@ -8,7 +8,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CorporationHandler(IPlayerCorporations corporations) : ISelectedPilotCallHandler
+internal sealed partial class CorporationHandler(IPlayerCorporations corporations, ICorporationMembership membership)
+    : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
     {
@@ -16,6 +17,7 @@ internal sealed class CorporationHandler(IPlayerCorporations corporations) : ISe
         {
             return;
         }
+        DrainChanges(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
         if (context.Pilot.CorpId == identity.Id && context.Pilot.Identity.CorporationRoles == identity.Roles)
         {
@@ -34,6 +36,11 @@ internal sealed class CorporationHandler(IPlayerCorporations corporations) : ISe
         Dictionary<string, object?>? keywords = null
     )
     {
+        var memberResult = CallMembership(context, service, method, args, keywords);
+        if (memberResult is not PilotCallResult.UnsupportedCall)
+        {
+            return memberResult;
+        }
         if (
             service != "corpRegistry"
             || method

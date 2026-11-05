@@ -189,7 +189,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 pilot.CorporationId,
                 new(pilot.Account.UserName, pilot.Account.CreatedAt, pilot.Account.CloneGrade),
                 new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt),
-                CorporationRoles: corporation?.CeoId == pilot.Id ? CorporationRules.DirectorRole : 0
+                CorporationRoles: corporation?.CeoId == pilot.Id ? CorporationRules.CeoRoles : 0
             ),
             new(
                 ship.Id,

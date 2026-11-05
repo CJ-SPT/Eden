@@ -5,6 +5,7 @@ using Eden.Protocol.Characters;
 using Eden.Protocol.Chat;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Mail;
@@ -51,12 +52,14 @@ internal sealed class PilotUpdateCoordinator(
     ImplantHandler implants,
     BoosterHandler boosters,
     WalletBalanceMonitor walletBalance,
-    ChatHandler chat
+    ChatHandler chat,
+    CorporationHandler corporations
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
-        industry.IsMonitoring
+        corporations.IsMonitoring
+        || industry.IsMonitoring
         || guests.IsDocked
         || calendar.IsMonitoring
         || inbox.IsMonitoring
@@ -73,6 +76,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Enter(PilotCallContext context)
     {
+        corporations.Enter(context);
         chat.Advance(context);
         guests.Advance(context);
         calendar.Enter(context);
@@ -94,6 +98,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        corporations.Reset();
         chat.Dispose();
         guests.Dispose();
         online.Reset();
@@ -168,6 +173,7 @@ internal sealed class PilotUpdateCoordinator(
         }
         using (SessionPerformance.Phase("update.background"))
         {
+            corporations.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
             online.Advance(context);

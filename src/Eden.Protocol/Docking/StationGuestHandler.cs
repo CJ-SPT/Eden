@@ -39,11 +39,11 @@ internal sealed class StationGuestHandler(SharedStationGuests guests) : ISelecte
         var current = Read(context);
         if (_stationId == previousStation && _stationId.HasValue)
         {
-            foreach (var departed in _observed.ExceptBy(current.Select(guest => guest.CharacterId), guest => guest.CharacterId))
+            foreach (var departed in _observed.Except(current))
             {
                 context.Notifications.Add(new StationGuestDeparted(departed));
             }
-            foreach (var arrived in current.ExceptBy(_observed.Select(guest => guest.CharacterId), guest => guest.CharacterId))
+            foreach (var arrived in current.Except(_observed))
             {
                 context.Notifications.Add(new StationGuestArrived(arrived));
             }

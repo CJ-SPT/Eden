@@ -54,6 +54,8 @@ public static class CorporationRules
     public const long CreationFeeCents = 1_599_800 * MarketDefinitions.CentsPerIsk;
     public const int ManagementSkill = 3363;
     public const long DirectorRole = 1;
+    public const long PersonnelManagerRole = 128;
+    public const long CeoRoles = DirectorRole | PersonnelManagerRole;
     public const int FirstCorporationId = 98000000;
     public const int CorporationType = 2;
     public const int MembersPerManagementLevel = 20;

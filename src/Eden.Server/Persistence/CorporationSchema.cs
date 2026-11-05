@@ -6,6 +6,13 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model.Entity<SavedCorporationApplication>().ToTable("WorldCorporationApplication").HasKey(a => a.Id);
+        model.Entity<SavedCorporationApplication>().HasOne<Pilot>().WithMany().HasForeignKey(a => a.PilotId);
+        model.Entity<SavedCorporationApplication>().HasOne<SavedCorporation>().WithMany().HasForeignKey(a => a.CorporationId);
+        model.Entity<SavedCorporationApplication>().HasIndex(a => new { a.PilotId, a.CorporationId });
+        model.Entity<SavedCorporationChange>().ToTable("WorldCorporationChange").HasKey(c => c.Id);
+        model.Entity<SavedCorporationChange>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        model.Entity<SavedCorporationChange>().HasIndex(c => new { c.PilotId, c.Id });
         model.Entity<SavedCorporation>().ToTable("WorldCorporation").HasKey(c => c.Id);
         model.Entity<SavedCorporation>().Property(c => c.Id).ValueGeneratedNever();
         model.Entity<SavedCorporation>().Property(c => c.Name).UseCollation("NOCASE");
@@ -38,6 +45,17 @@ internal static class CorporationSchema
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCorporation_Name ON WorldCorporation(Name);
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCorporation_Ticker ON WorldCorporation(Ticker);
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCorporation_CeoId ON WorldCorporation(CeoId);
+            CREATE TABLE IF NOT EXISTS WorldCorporationApplication(
+                Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                CorporationId INTEGER NOT NULL REFERENCES WorldCorporation(Id) ON DELETE CASCADE,
+                Text TEXT NOT NULL, Status INTEGER NOT NULL, AppliedAt INTEGER NOT NULL, UpdatedAt INTEGER NOT NULL,
+                Response TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS IX_WorldCorporationApplication_PilotId_CorporationId
+                ON WorldCorporationApplication(PilotId,CorporationId);
+            CREATE TABLE IF NOT EXISTS WorldCorporationChange(
+                Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                ApplicationJson TEXT, MembershipJson TEXT);
+            CREATE INDEX IF NOT EXISTS IX_WorldCorporationChange_PilotId_Id ON WorldCorporationChange(PilotId,Id);
             CREATE TABLE IF NOT EXISTS WorldCorporationEmployment(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                 CorporationId INTEGER NOT NULL, StartedAt INTEGER NOT NULL);

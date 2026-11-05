@@ -80,7 +80,14 @@ internal sealed class PilotSessionTick(
         {
             beforeAttack = updates.Advance(context);
         }
-        if (beforeAttack is not null && beforeAttack.ShipId != context.Pilot.ShipId)
+        if (
+            beforeAttack is not null
+            && (
+                beforeAttack.ShipId != context.Pilot.ShipId
+                || beforeAttack.CorpId != context.Pilot.CorpId
+                || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
+            )
+        )
         {
             await output.AnnounceTransitionAsync(beforeAttack);
         }

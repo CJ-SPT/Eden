@@ -96,7 +96,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                 .Select(e => (long?)e.StartedAt)
                 .FirstOrDefault()
             ?? pilot.CreatedAt;
-        return new(pilot.CorporationId, ticker, corporation?.CeoId == pilotId ? CorporationRules.DirectorRole : 0, joined);
+        return new(pilot.CorporationId, ticker, corporation?.CeoId == pilotId ? CorporationRules.CeoRoles : 0, joined);
     }
 
     public IReadOnlyList<CorporationEmployment> Employment(long pilotId)
@@ -132,7 +132,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     .Select(e => (long?)e.StartedAt)
                     .FirstOrDefault()
                     ?? p.CreatedAt,
-                p.Id == ceo ? CorporationRules.DirectorRole : 0
+                p.Id == ceo ? CorporationRules.CeoRoles : 0
             ))
             .ToArray();
     }
@@ -198,26 +198,8 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                 }
             )
             .Entity;
-        if (!world.Set<SavedCorporationEmployment>().Any(e => e.PilotId == pilotId))
-        {
-            world.Add(
-                new SavedCorporationEmployment
-                {
-                    PilotId = pilotId,
-                    CorporationId = pilot.CorporationId,
-                    StartedAt = pilot.CreatedAt,
-                }
-            );
-        }
-        world.Add(
-            new SavedCorporationEmployment
-            {
-                PilotId = pilotId,
-                CorporationId = id,
-                StartedAt = now,
-            }
-        );
-        pilot.CorporationId = id;
+        CorporationMembershipStore.Move(world, pilot, id, now);
+        CorporationMembershipStore.WithdrawOtherApplications(world, pilotId, null, now);
         wallet!.Cents = balance;
         world.Add(
             new SavedCorporationPayment

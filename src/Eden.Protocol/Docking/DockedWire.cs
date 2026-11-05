@@ -25,22 +25,6 @@ internal sealed record HomeStationInfo(int Id, int TypeId, int SystemId, bool Is
         );
 }
 
-internal sealed record CorporationMemberInfo(long CharacterId, int CorporationId) : BlueModel
-{
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["characterID"] = CharacterId,
-                ["corporationID"] = CorporationId,
-                ["title"] = "",
-                ["roles"] = 0,
-                ["titleMask"] = 0,
-            }
-        );
-}
-
 internal sealed record StationItemBits(DockedPilot Pilot) : BlueModel
 {
     public override object ToBlue() => new object?[] { Pilot.StationOwnerId, Pilot.StationId, Pilot.OperationId, Pilot.StationTypeId };

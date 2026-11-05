@@ -91,7 +91,7 @@ public sealed class PlayerCorporationTests
         Assert.Equal(2, changes.Length);
         var delta = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(changes[1].State, 14)[4], 3)[1], 2)[1]);
         Assert.Equal(new object?[] { 1000044, CorporationRules.FirstCorporationId }, delta["corpid"]);
-        Assert.Equal(new object?[] { 0L, CorporationRules.DirectorRole }, delta["corprole"]);
+        Assert.Equal(new object?[] { 0L, CorporationRules.CeoRoles }, delta["corprole"]);
         Assert.EndsWith(".CallRsp", packets[packets.IndexOf(changes[1]) + 1].Name);
         Assert.Single(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
     }
@@ -104,6 +104,8 @@ public sealed class PlayerCorporationTests
         {
             world.Database.ExecuteSqlRaw(
                 """
+                DROP TABLE WorldCorporationApplication;
+                DROP TABLE WorldCorporationChange;
                 DROP TABLE WorldCorporationPayment;
                 DROP TABLE WorldCorporationEmployment;
                 DROP TABLE WorldCorporation;
@@ -113,7 +115,7 @@ public sealed class PlayerCorporationTests
         }
         WorldInitialization.Initialize(new(db.Path));
         using WorldDbContext migrated = new(db.Path);
-        Assert.Equal(72, migrated.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, migrated.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.All(migrated.Pilots, p => Assert.Equal(1000044, p.CorporationId));
         Assert.Empty(migrated.Set<PilotWallet>());
         Assert.Empty(migrated.Set<SavedCorporation>());
@@ -140,7 +142,7 @@ public sealed class PlayerCorporationTests
         Assert.Equal(Details(), created.Corporation.Details);
         Assert.Equal(created.Corporation, corporations.Read(created.Corporation.Id));
         var member = Assert.Single(corporations.Members(90000001));
-        Assert.Equal(CorporationRules.DirectorRole, member.Roles);
+        Assert.Equal(CorporationRules.CeoRoles, member.Roles);
         Assert.Equal(created.Corporation.Id, member.CorporationId);
         Assert.Equal(created.Corporation.CreatedAt, member.JoinedAt);
         var history = corporations.Employment(90000001);
@@ -149,7 +151,7 @@ public sealed class PlayerCorporationTests
         var selected = db.Store.FindPilot(1000001)!;
         Assert.Equal(created.Corporation.Id, selected.CorpId);
         Assert.Equal("EDEN", selected.CorporationTicker);
-        Assert.Equal(CorporationRules.DirectorRole, selected.Identity.CorporationRoles);
+        Assert.Equal(CorporationRules.CeoRoles, selected.Identity.CorporationRoles);
         Assert.Equal(1000044, db.Store.FindPilot(1000002)!.CorpId);
         Assert.Equal(created.BalanceCents, db.Services.GetRequiredService<IPilotWalletReader>().Balance(90000001));
         Assert.Single(db.Services.GetRequiredService<IPilotWalletReader>().Journal(90000001).CorporationPayments!);
@@ -270,7 +272,7 @@ public sealed class PlayerCorporationTests
         Assert.Equal(1, values[12]);
         Assert.NotEmpty(BlueMarshal.Encode(own));
         var member = BlueRead.Fields(Assert.IsType<BlueInstance>(Reply(Call("corpRegistry", "GetMember", [90000001L]))).State);
-        Assert.Equal(CorporationRules.DirectorRole, member["roles"]);
+        Assert.Equal(CorporationRules.CeoRoles, member["roles"]);
         Assert.IsType<PilotCallResult.Failure>(Call("corpRegistry", "GetMember", [90000002L]));
         var ownerTable = BlueRead.Tuple(Reply(Call("config", "GetMultiOwnersEx", [new List<object?> { (long)id }])), 2);
         var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(ownerTable[1])), 5);
@@ -286,7 +288,7 @@ public sealed class PlayerCorporationTests
         var packet = PilotSessionWire.SessionChange(1000001, 42, context.Pilot, pilot);
         var changes = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3)[1], 2)[1]);
         Assert.Equal(new object?[] { 1000044, id }, changes["corpid"]);
-        Assert.Equal(new object?[] { 0L, CorporationRules.DirectorRole }, changes["corprole"]);
+        Assert.Equal(new object?[] { 0L, CorporationRules.CeoRoles }, changes["corprole"]);
         Assert.DoesNotContain("shipid", changes.Keys);
         Assert.Equal(2, db.Services.GetRequiredService<IPlayerCorporations>().Employment(pilot.PilotId).Count);
     }

@@ -169,7 +169,7 @@ internal sealed class NpcCorporationHandler(
             }
             int id = (service, args) switch
             {
-                ("corpRegistry", []) => context.Pilot.CorpId,
+                ("corpRegistry", []) => players.Identity(context.Pilot.PilotId).Id,
                 ("corpmgr", [long corporation]) when corporation is > 0 and <= int.MaxValue => (int)corporation,
                 _ => throw new InvalidDataException("Choose a valid NPC corporation."),
             };
