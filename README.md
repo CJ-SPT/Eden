@@ -15,6 +15,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. Tw
 
 ## Current status
 
+Native chat now supports multi-pilot Local, corporation chat and private conversations over TLS. Local membership follows the selected pilot’s system and cleans up on disconnect/logoff; delayed Local hides silent peers. The companion launcher provisions certificate trust only in prepared client copies. Server-side archives and persistent custom channel settings remain deferred. See the [chat notes](docs/protocol.md#native-chat-and-multi-pilot-local-november-5-2026).
+
 Character-sheet Combat Log now shows saved NPC kills and player ship losses, with native report details and historical records recovered from existing loss/bounty data. Catalog-driven NPC faction losses now persist their standing values and dated history together with each kill. See the [interaction history notes](docs/protocol.md#character-interaction-history-november-5-2026).
 
 Developer accounts can use **GM / WM Extras → TR me here!** on known solar systems, NPC stations and standard static celestials. Travel preserves the active hull, fittings, cargo, wallet and medical home. Cross-system space destinations use a three-tick native jump transition to hand off the camera and input controls; a docked departure first undocks and loads its source ballpark. Same-system moves keep the current flight connection and stream nearby contacts as the ship relocates. Station destinations are immediate. Native camera/menu recovery remains unverified. See the [translocation notes](docs/protocol.md#developer-translocation) and [developer travel guide](docs/development-client.md#developer-travel).

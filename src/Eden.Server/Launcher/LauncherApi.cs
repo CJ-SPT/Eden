@@ -13,7 +13,13 @@ namespace Eden.Server.Launcher;
 
 internal static class LauncherApi
 {
-    public static WebApplication Create(LauncherOptions settings, LauncherStore accounts, DevelopmentIdentity identity, TimeProvider clock)
+    public static WebApplication Create(
+        LauncherOptions settings,
+        LauncherStore accounts,
+        DevelopmentIdentity identity,
+        TimeProvider clock,
+        string? chatCertificatePem = null
+    )
     {
         settings.Validate();
         var builder = WebApplication.CreateSlimBuilder();
@@ -84,7 +90,8 @@ internal static class LauncherApi
                     1,
                     CompatibilityHandshake.Build,
                     settings.GameAddress,
-                    settings.GatewayAddress
+                    settings.GatewayAddress,
+                    chatCertificatePem
                 )
         );
         app.MapPost("/api/v1/accounts", (AccountRequest request) => accounts.Register(request)).RequireRateLimiting("register");

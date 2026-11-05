@@ -94,10 +94,8 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
                     )
                     .ToArray()
             ),
-            ("XmppChatMgr", "Hostname") => "127.0.0.1",
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => BlueEmpty.Dictionary,
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
-            ("XmppChatMgr", "GetDeprecatedPrefsFallback") => PilotCallResult.None,
             ("corpRegistry", "GetMember") when args is [long id] && id == pilot.PilotId => new CorporationMemberInfo(id, pilot.CorpId),
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("warRegistry", "GetWars") or ("corpRegistry", "GetMyApplications") => BlueEmpty.Dictionary,

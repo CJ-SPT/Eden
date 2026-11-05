@@ -1,9 +1,12 @@
+using System.Net;
 using System.Text.Json;
 using Eden.Gameplay.Redemption;
+using Eden.Protocol.Chat;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
 using Eden.Server.Authentication;
 using Eden.Server.Catalog;
+using Eden.Server.Chat;
 using Eden.Server.Gateway;
 using Eden.Server.Launcher;
 using Eden.Server.Persistence;
@@ -74,7 +77,9 @@ internal static class Program
                 throw new InvalidDataException("Pass --development-login explicitly for local development tickets.");
             }
             long accountId = args.Contains("Wing") ? 1000002 : 1000001;
-            Console.WriteLine(services.GetRequiredService<DevelopmentIdentity>().Prepare(root, accountId));
+            string claim = services.GetRequiredService<DevelopmentIdentity>().Prepare(root, accountId);
+            services.GetRequiredService<ChatCertificate>().TrustClient(root);
+            Console.WriteLine(claim);
             return;
         }
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
@@ -108,11 +113,15 @@ internal static class Program
             options,
             accounts,
             services.GetRequiredService<DevelopmentIdentity>(),
-            TimeProvider.System
+            TimeProvider.System,
+            services.GetRequiredService<ChatCertificate>().PublicPem
         );
+        await using var chat = services.GetRequiredService<ChatServer>();
+        await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
         await gateway.StartAsync();
         await api.StartAsync();
         Console.WriteLine($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
+        Console.WriteLine($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
         try
         {
             await services.GetRequiredService<LoopbackServer>().RunAsync();

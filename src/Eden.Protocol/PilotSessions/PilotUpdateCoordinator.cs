@@ -2,6 +2,7 @@ using Eden.Gameplay.Docking;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.Characters;
+using Eden.Protocol.Chat;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Docking;
@@ -49,7 +50,8 @@ internal sealed class PilotUpdateCoordinator(
     LoyaltyWalletHandler loyalty,
     ImplantHandler implants,
     BoosterHandler boosters,
-    WalletBalanceMonitor walletBalance
+    WalletBalanceMonitor walletBalance,
+    ChatHandler chat
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -71,6 +73,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Enter(PilotCallContext context)
     {
+        chat.Advance(context);
         guests.Advance(context);
         calendar.Enter(context);
         inbox.Enter(context);
@@ -91,6 +94,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        chat.Dispose();
         guests.Dispose();
         online.Reset();
         calendar.Reset();
@@ -164,6 +168,7 @@ internal sealed class PilotUpdateCoordinator(
         }
         using (SessionPerformance.Phase("update.background"))
         {
+            chat.Advance(context);
             guests.Advance(context);
             online.Advance(context);
             calendar.Advance(context);

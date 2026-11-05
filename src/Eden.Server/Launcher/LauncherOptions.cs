@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Eden.Server.Chat;
 
 namespace Eden.Server.Launcher;
 
@@ -44,6 +45,10 @@ public sealed record LauncherOptions
         )
         {
             throw new InvalidDataException("Specify a server identity and three distinct valid ports.");
+        }
+        if (new[] { GamePort, GatewayPort, ApiPort }.Contains(ChatServer.ClientPort))
+        {
+            throw new InvalidDataException("Keep port 5222 available for native chat.");
         }
     }
 }
