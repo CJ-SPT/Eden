@@ -6,7 +6,7 @@ public sealed record SignInRequest(string UserName, string Password, bool Rememb
 
 public sealed record RefreshRequest(string RefreshToken);
 
-public sealed record LaunchRequest(int Build, string ManifestPrefix);
+public sealed record LaunchRequest(int Build, string ManifestPrefix, string? ChatBundleSha256 = null);
 
 public sealed record AccountReply(long AccountId, string UserName, bool Developer = false);
 

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Eden.Protocol;
 using Eden.Protocol.PilotSessions;
+using Eden.Server.Chat;
 using Eden.Server.Launcher;
 
 namespace Eden.Server.Authentication;
@@ -11,7 +12,6 @@ namespace Eden.Server.Authentication;
 internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore accounts, LauncherOptions options) : ILoginIdentity, IDisposable
 {
     private const string KeyName = "Eden.LocalLogin.3662168";
-    private const string ManifestHash = "895B2827174D7BDDC54870763E9D5AEA056066C01E3D56F0DDF76927DCD3AA26";
 
     private RSA? _key = OperatingSystem.IsWindows() ? Open() : null;
     public RSA Key => _key ?? throw new InvalidDataException("The local pilot session is unavailable.");
@@ -34,7 +34,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
         return new RSACng(key);
     }
 
-    internal string Prepare(string root, long accountId)
+    internal string Prepare(string root, long accountId, ChatCertificate chatCertificate)
     {
         if (!File.Exists(Path.Combine(root, ".eden-client-ready")))
         {
@@ -43,34 +43,11 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
 
         string path = Path.Combine(root, "tq", "manifest.dat");
         byte[] original = File.ReadAllBytes(path);
-        // Every byte through the public-key flag is part of the fingerprinted build.
-        const int prefixLength = 17769;
-        if (
-            original.Length < prefixLength
-            || Convert.ToHexString(SHA256.HashData(original.AsSpan(0, prefixLength)))
-                != "04EB4A00671E7289BF14AAFBEE6849D490678A291DAD0DF333E519913921C631"
-        )
-        {
-            throw new InvalidDataException("Unrecognized manifest prefix.");
-        }
-
-        using MemoryStream buffer = new();
-        using BinaryWriter writer = new(buffer);
-        writer.Write(original, 0, prefixLength);
-        byte[] pem = Encoding.ASCII.GetBytes(Key.ExportSubjectPublicKeyInfoPem() + "\n");
-        writer.Write(pem.Length);
-        writer.Write(pem);
-        byte[] signature = Key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        writer.Write(signature.Length);
-        writer.Write(signature);
-        byte[] local = buffer.ToArray();
+        byte[] prefix = ClientManifest.ReadOriginalPrefix(original);
+        string chatHash = chatCertificate.TrustClient(root);
+        byte[] local = SignManifest(Convert.ToBase64String(prefix), chatHash);
         if (!original.AsSpan().SequenceEqual(local))
         {
-            if (Convert.ToHexString(SHA256.HashData(original)) != ManifestHash)
-            {
-                throw new InvalidDataException("Restore the pinned manifest before provisioning this copy.");
-            }
-
             string temporary = path + "." + Guid.NewGuid().ToString("N");
             File.WriteAllBytes(temporary, local);
             File.Move(temporary, path, overwrite: true);
@@ -124,7 +101,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
             : null;
     }
 
-    internal byte[] SignManifest(string encodedPrefix)
+    internal byte[] SignManifest(string encodedPrefix, string? chatBundleSha256 = null)
     {
         byte[] prefix;
         try
@@ -135,12 +112,11 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
         {
             throw new LauncherException("invalid_manifest", "Invalid manifest prefix.");
         }
-        const int prefixLength = 17769;
-        const string prefixHash = "04EB4A00671E7289BF14AAFBEE6849D490678A291DAD0DF333E519913921C631";
-        if (prefix.Length != prefixLength || Convert.ToHexString(SHA256.HashData(prefix)) != prefixHash)
+        if (!ClientManifest.IsOriginal(prefix))
         {
             throw new LauncherException("invalid_manifest", "Only the original build 3662168 manifest is supported.");
         }
+        prefix = ClientManifest.WithChatHash(prefix, chatBundleSha256);
         lock (Key)
         {
             using MemoryStream buffer = new();

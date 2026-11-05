@@ -61,7 +61,7 @@ internal sealed class ChatCertificate : IDisposable
         Certificate = X509CertificateLoader.LoadPkcs12FromFile(path, null, StorageFlags);
     }
 
-    internal void TrustClient(string root)
+    internal string TrustClient(string root)
     {
         root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
         if (!File.Exists(Path.Combine(root, ".eden-client-ready")))
@@ -90,6 +90,7 @@ internal sealed class ChatCertificate : IDisposable
                 File.Delete(temporary);
             }
         }
+        return Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(bundle)));
     }
 
     public void Dispose() => Certificate.Dispose();

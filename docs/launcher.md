@@ -41,9 +41,11 @@ API v1 provides metadata, registration, sign-in, refresh, logout and launch tick
 
 The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 6–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New standard and developer accounts are Omega and have three empty character slots. The server assigns the clone grade during registration; existing launcher builds use this default without an update. Registration does not change existing accounts' clone grades.
 
-API responses disable caching. Registration and authentication are rate limited. Manifest signing accepts only the fingerprinted build's exact prefix; private keys remain in the server's Windows key store. Legacy development tickets require explicit `--development-login` on the host and provisioning command, with loopback-only hosting.
+API responses disable caching. Registration and authentication are rate limited. Manifest signing validates the exact pinned prefix and permits only the explicit chat-bundle hash to vary; private keys remain in the server's Windows key store. Legacy development tickets require explicit `--development-login` on the host and provisioning command, with loopback-only hosting.
 
 
 ## Native chat trust
 
 The server also listens on direct-TLS TCP **5222**, fixed by client build 3662168. Keep this port distinct from the configured game, gateway and API ports and expose it on remote hosts. The API server descriptor adds optional `ChatCertificatePem`; the companion launcher installs that public root only into the prepared client's `tq/bin64/packages/certifi/cacert.pem`. Existing certificate roots are preserved, repeated launches do not duplicate the root, and servers without the metadata remain compatible. The chat private key stays in `chat-tls.pfx` beside the world save. Keep that file private and out of version control. No OS trust-store installation or TLS-disable option is required.
+
+Because this certificate bundle is manifest-covered, the launcher sends its prospective SHA-256 with each launch request. The server signs that one updated file entry; every other build fingerprint stays fixed. Both Play and launch groups verify the matching signed manifest before changing files or starting the client. Update/restart both components together. A prepared copy affected by the earlier chat trust bug is repaired on its next corrected launch.

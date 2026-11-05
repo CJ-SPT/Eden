@@ -115,7 +115,7 @@ internal static class LauncherApi
                         throw new LauncherException("unsupported_build", "This server requires client build 3662168.");
                     }
                     string ticket = accounts.IssueTicket(Access(context));
-                    byte[] manifest = identity.SignManifest(request.ManifestPrefix);
+                    byte[] manifest = identity.SignManifest(request.ManifestPrefix, request.ChatBundleSha256);
                     return new LaunchReply(
                         ticket,
                         clock.GetUtcNow().ToUnixTimeSeconds() + LauncherStore.TicketSeconds,

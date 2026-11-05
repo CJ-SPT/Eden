@@ -77,8 +77,9 @@ internal static class Program
                 throw new InvalidDataException("Pass --development-login explicitly for local development tickets.");
             }
             long accountId = args.Contains("Wing") ? 1000002 : 1000001;
-            string claim = services.GetRequiredService<DevelopmentIdentity>().Prepare(root, accountId);
-            services.GetRequiredService<ChatCertificate>().TrustClient(root);
+            string claim = services
+                .GetRequiredService<DevelopmentIdentity>()
+                .Prepare(root, accountId, services.GetRequiredService<ChatCertificate>());
             Console.WriteLine(claim);
             return;
         }
