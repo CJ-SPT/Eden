@@ -40,6 +40,7 @@ internal sealed class NpcCombatStore(
 
     public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("npc.acquire");
         if (candidates.Count == 0)
         {
             return;

@@ -150,18 +150,51 @@ public sealed class SessionPerformanceTests
         using (var outer = SessionPerformance.Begin("test", reports.Add, force: true)!)
         {
             await Task.Yield();
-            using (var inner = SessionPerformance.Begin("read", reports.Add)!)
+            using (var inner = SessionPerformance.Phase("read")!)
             {
                 using WorldDbContext world = new(db.Path);
+                using var transaction = world.Database.BeginTransaction();
                 _ = world.Set<WorldNpc>().AsNoTracking().ToArray();
+                transaction.Commit();
                 Assert.Equal(1, inner.Commands);
                 Assert.Equal(1, inner.Connections);
+                Assert.True(inner.SqlMilliseconds > 0);
+                Assert.True(inner.CommitMilliseconds > 0);
+                Assert.True(inner.TransactionStartMilliseconds > 0);
             }
             Assert.True(SessionPerformance.IsActive);
             Assert.Equal(1, outer.Commands);
             Assert.Equal(1, outer.Connections);
         }
         Assert.False(SessionPerformance.IsActive);
+        Assert.Equal(2, reports.Count);
+        Assert.All(reports, report => Assert.Contains("sql=", report));
+        Assert.All(reports, report => Assert.Contains("commit=", report));
+        Assert.All(reports, report => Assert.Contains("begin=", report));
+    }
+
+    [Fact]
+    public void PhaseDurationsRollUpOnceAndStopAtDisposal()
+    {
+        List<string> reports = [];
+        using (var outer = SessionPerformance.Begin("operation", reports.Add, force: true)!)
+        {
+            using (var inner = SessionPerformance.Phase("phase")!)
+            {
+                SessionPerformance.DatabaseElapsed(TimeSpan.FromMilliseconds(2));
+                SessionPerformance.DatabaseElapsed(TimeSpan.FromMilliseconds(3), commit: true);
+                SessionPerformance.TransactionStarted(TimeSpan.FromMilliseconds(5));
+                Assert.Equal(2, inner.SqlMilliseconds);
+                Assert.Equal(3, inner.CommitMilliseconds);
+                Assert.Equal(5, inner.TransactionStartMilliseconds);
+            }
+            SessionPerformance.DatabaseElapsed(TimeSpan.FromMilliseconds(4));
+            Assert.Equal(6, outer.SqlMilliseconds);
+            Assert.Equal(3, outer.CommitMilliseconds);
+            Assert.Equal(5, outer.TransactionStartMilliseconds);
+        }
+        Assert.False(SessionPerformance.IsActive);
+        Assert.Null(SessionPerformance.Phase("outside"));
         Assert.Equal(2, reports.Count);
     }
 }

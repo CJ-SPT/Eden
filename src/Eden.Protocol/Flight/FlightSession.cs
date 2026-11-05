@@ -294,6 +294,7 @@ internal sealed class FlightSession(
 
     public void RefreshNpcs()
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("contact.npcs");
         if (!InBallpark)
         {
             return;
@@ -800,6 +801,7 @@ internal sealed class FlightSession(
 
     public void RepeatWeaponEffect(WeaponContact previous, WeaponContact current)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("weapon.publish");
         _weapons = _weapons.Where(w => w.ModuleId != current.ModuleId).Append(current).ToArray();
         Effects.WeaponEffect(Pilot.ShipId, previous, false);
         Effects.WeaponEffect(Pilot.ShipId, current, true);
@@ -863,6 +865,7 @@ internal sealed class FlightSession(
 
     public void RefreshPeers()
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("contact.peers");
         lock (space.MotionLock)
         {
             RefreshPeersCore();

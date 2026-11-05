@@ -28,6 +28,35 @@ public sealed class SessionPerformance : IDisposable
     public static SessionPerformance? Begin(string name, Action<string> report, bool force = false) =>
         force || s_enabled || IsActive ? new(name, report) : null;
 
+    public static SessionPerformance? Phase(string name) => s_current.Value is { } parent ? new(name, parent._report) : null;
+
+    public double SqlMilliseconds { get; private set; }
+    public double CommitMilliseconds { get; private set; }
+    public double TransactionStartMilliseconds { get; private set; }
+
+    public static void TransactionStarted(TimeSpan duration)
+    {
+        for (var scope = s_current.Value; scope is not null; scope = scope._parent)
+        {
+            scope.TransactionStartMilliseconds += duration.TotalMilliseconds;
+        }
+    }
+
+    public static void DatabaseElapsed(TimeSpan duration, bool commit = false)
+    {
+        for (var scope = s_current.Value; scope is not null; scope = scope._parent)
+        {
+            if (commit)
+            {
+                scope.CommitMilliseconds += duration.TotalMilliseconds;
+            }
+            else
+            {
+                scope.SqlMilliseconds += duration.TotalMilliseconds;
+            }
+        }
+    }
+
     public static void ReportQueue(long received, Action<string> report)
     {
         if (s_enabled || IsActive)
@@ -78,7 +107,8 @@ public sealed class SessionPerformance : IDisposable
                 CultureInfo.InvariantCulture,
                 $"Performance {_name}: {Stopwatch.GetElapsedTime(_started).TotalMilliseconds:F2} ms, "
                     + $"commands={Commands}, connections={Connections}, tackleReads={TackleReads}, "
-                    + $"aggressionReads={AggressionReads}, fittings={FittingCalculations}."
+                    + $"aggressionReads={AggressionReads}, fittings={FittingCalculations}, "
+                    + $"sql={SqlMilliseconds:F2} ms, commit={CommitMilliseconds:F2} ms, begin={TransactionStartMilliseconds:F2} ms."
             )
         );
     }

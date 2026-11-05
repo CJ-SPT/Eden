@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Combat;
 
-public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
+public sealed partial class ServerPerformanceReplayTests(ITestOutputHelper output)
 {
     private const long Module = 8000000000001;
     private const int Samples = 20;

@@ -126,36 +126,60 @@ internal sealed class PilotUpdateCoordinator(
     public DockedPilot? Advance(PilotCallContext context)
     {
         redemption.Advance(context);
-        targeting.Advance(context);
+        using (SessionPerformance.Phase("update.targeting"))
+        {
+            targeting.Advance(context);
+        }
         capacitorBoosters.Advance(context);
         hardeners.Advance(context);
         support.Advance(context);
-        tackle.Advance(context);
+        using (SessionPerformance.Phase("update.tackle"))
+        {
+            tackle.Advance(context);
+        }
         mining.Advance(context);
-        combat.Advance(context);
-        missiles.Advance(context);
+        using (SessionPerformance.Phase("update.combat"))
+        {
+            combat.Advance(context);
+        }
+        using (SessionPerformance.Phase("update.missiles"))
+        {
+            missiles.Advance(context);
+        }
         shields.Advance(context);
-        repairs.Advance(context);
+        using (SessionPerformance.Phase("update.repairs"))
+        {
+            repairs.Advance(context);
+        }
         propulsion.Advance(context);
         industry.Advance(context);
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
-        npcCombat.Advance(context);
-        targeting.Advance(context);
-        guests.Advance(context);
-        online.Advance(context);
-        calendar.Advance(context);
-        inbox.Advance(context);
-        mailingLists.Advance(context);
-        mail.Advance(context);
-        contracts.Advance(context);
-        security.Advance(context);
-        freePoints.Advance(context);
-        injectors.Advance(context);
-        extraction.Advance(context);
-        loyalty.Advance(context);
-        implants.Advance(context);
-        boosters.Advance(context);
-        walletBalance.Advance(context);
+        using (SessionPerformance.Phase("update.npcCombat"))
+        {
+            npcCombat.Advance(context);
+        }
+        using (SessionPerformance.Phase("update.targeting"))
+        {
+            targeting.Advance(context);
+        }
+        using (SessionPerformance.Phase("update.background"))
+        {
+            guests.Advance(context);
+            online.Advance(context);
+            calendar.Advance(context);
+            inbox.Advance(context);
+            mailingLists.Advance(context);
+            mail.Advance(context);
+            contracts.Advance(context);
+            security.Advance(context);
+            freePoints.Advance(context);
+            injectors.Advance(context);
+            extraction.Advance(context);
+            loyalty.Advance(context);
+            implants.Advance(context);
+            boosters.Advance(context);
+            walletBalance.Advance(context);
+        }
         return beforeAttack;
     }
 }

@@ -1,3 +1,52 @@
+## Ten-Brutix grouped-gun benchmark (November 5, 2026)
+
+The opt-in `ServerPerformanceReplayTests.TenBrutixesFireSixGunBanksOnOneGrid` replay clones saved pilot 90000006's Brutix Navy Issue, skills, fit and loaded charges into ten independent accounts and scoped production sessions. Each ship links six Heavy Electron Blaster IIs with Void M through `dogmaIM.LinkAllWeapons`, locks one NPC and activates the bank normally. Other fitted modules remain online without active tanking. The migrated snapshot's target is NPC 4000000000008, type 23267, in system 30003995, which has six active NPCs. Hull and target shield capacities are raised only in the scratch catalog/world to sustain the workload.
+
+Both cases use the full catalog, schema-70 migration, `TestClock`, normal `PilotSessionTick`, normal output construction and Blue packet encoding. The serial case processes all ten sessions in order. The concurrent case releases ten thread-pool workers together, with one serialized owner per session. Each case excludes two warmup frames and measures 30 one-second simulation steps. The clock advances only after all ten sessions finish; this is a synchronized load replay, without real-time arrival pacing or overlapping frame backlogs. Fifteen measured frames contain ten simultaneous six-gun volleys. Every gun remains active, all sixty magazines consume sixteen rounds across warmups and samples, and every warm worker scope requires zero fitting calculations.
+
+To reproduce, provide the saved-fit snapshot directory containing `world.sqlite` and `catalog.sqlite` through `EDEN_PERFORMANCE_SOURCE`, and an ignored report directory through `EDEN_PERFORMANCE_OUTPUT`. Run filter `FullyQualifiedName~TenBrutixesFire` with `xUnit.MaxParallelThreads=1`. The two theory cases write `grouped-fleet-serial.log` and `grouped-fleet-concurrent.log`. The one test worker does not restrict the concurrent case's ten explicit workers. Without a configured snapshot these opt-in cases return without running the workload. Source databases open read-only and are backed up into separate scratch directories; the running server and live world are untouched.
+
+The completed fresh restart on parent `0453410` plus the diagnostic changes produced these results in the default Debug build. Frame latency covers release/start through the last session's completion. Individual tick latency covers its own session processing; worker scheduling before entry is included only in frame latency. Percentiles use nearest rank, and even-count medians average the two middle samples.
+
+| Measurement | Serial median / p95 | Concurrent median / p95 |
+| --- | ---: | ---: |
+| All ten sessions, 30 warm frames | 688.06 / 838.58 ms | 3,721.33 / 5,740.59 ms |
+| Individual ticks, 300 samples | 77.18 / 90.87 ms | 2,682.40 / 5,247.58 ms |
+| Firing frames only, 15 samples | 835.64 / 838.66 ms | 5,013.83 / 6,332.78 ms |
+| Individual firing ticks, 150 samples | 81.15 / 103.12 ms | 3,719.38 / 5,560.05 ms |
+
+Cold setup, including backup, migration, cloning, grouping, locking and first volleys, took 9,762.17 ms serial and 14,946.15 ms concurrent, separately from the warm samples. Encoded output over the 30 measured frames was 2,793,122 bytes serial and 2,805,790 bytes concurrent. The sink completes immediately after encoding, so these timings omit transport encryption, socket backpressure, client rendering and native gameplay feel. The replay contains no ordinary request-arrival/reply samples. The 250 ms target is missed by **4,997.58 ms** at concurrent individual-tick p95; the serial case meets it for individual ticks while its full ten-session pass approaches the one-second budget.
+
+Firing frames issue approximately **2,548 database commands and 578 connection opens across ten sessions**, with **zero fitting calculations**. Frames between paid volleys still issue 793 commands and 438 opens. Warm fitting reuse works; transaction traffic and shared refresh work remain substantial.
+
+| Phase on firing frames | Serial median summed across ten sessions | Commands / opens across ten sessions |
+| --- | ---: | ---: |
+| Player combat, inclusive | 289.93 ms | about 1,754 / 140 |
+| Paid bank settlement, inside combat | 135.79 ms | about 1,384 / 20 |
+| Sixty weapon publications, inside combat | 90.67 ms | 300 / 60 |
+| Pre-update contacts | 159.93 ms | 193 / 130 |
+| Background monitoring | 132.57 ms | 210 / 110 |
+| NPC combat, inclusive | 114.32 ms | about 241 / 86 |
+| NPC acquisition, inside NPC combat | 36.84 ms | 130 / 20 |
+| Motion | 39.73 ms | 49 / 32 |
+| Final output flush | 0.90 ms | 0 / 0 |
+
+These are separate phase medians with inclusive children, so they must not be summed as independent costs. Each bank still invokes per-member preparation and saves the member payments before the final settlement. Repeated weapon publication rebuilds a contact and reads health for each of sixty guns; those publications alone account for 300 commands and sixty opens. Overall, public health reads run seventy times on a firing frame. NPC acquisition still runs once per pilot each second, producing ten scans of the same candidate population. Contact reads recur before updates, after paid volleys and during NPC updates.
+
+Opt-in diagnostics now include `sql`, `begin` and `commit` durations and nested combat, publication, health, contact, acquisition and background phases. SQL duration comes from EF's command-executed event and excludes subsequent reader materialization. Transaction-start duration includes time spent obtaining the transaction. The fresh firing frames average **4.92 ms** starting transactions in serial execution versus **6,351.91 ms accumulated across concurrent workers**. SQL execution similarly rises from 506.60 to 9,667.69 ms and commits from 31.71 to 1,561.51 ms. Concurrent durations overlap and can exceed frame wall time.
+
+The slowest fresh frame took 6,332.78 ms. Its slowest pilot spent 2,945.92 ms in player combat, 1,464.85 ms in pre-update contacts and 1,233.57 ms in NPC combat. Its bank call took 1,417.71 ms, including 1,402.25 ms starting its transaction. `FlightSession.RefreshPeers` holds the shared-space motion lock while building a health-backed contact. `NpcEncounterStore.List` holds the database motion lock across contact reads and a transaction. This combination lets database delays hold up other sessions' refreshes. These measurements strongly implicate database and shared-lock contention; they do not isolate every lock wait individually.
+
+The next candidates are moving database access outside shared motion locks using coherent snapshots, publishing one updated contact per bank, sharing system acquisition/contact work while preserving committed-change ordering, and replacing unchanged background reads with committed-change signals. A database migration remains a separate experiment. SQLite permits one writer at a time even with [WAL](https://www.sqlite.org/wal.html); [MySQL/InnoDB](https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-model.html) supports row-level locking and nonlocking reads. This can improve independent-ship concurrency, while updates to a shared NPC and Eden's own shared locks can still serialize. No MySQL performance result is established by this replay.
+
+**Automated validation.** Tool and solution restore and the isolated build passed with zero warnings/errors. `FullyQualifiedName~SessionPerformanceTests` passed six cases in three seconds, including actual SQL/start/commit event capture, nested duration attribution and scope cleanup. The fresh benchmark filter passed both cases in 2 minutes 48 seconds with one worker. An earlier development run was interrupted while changing the shared report collector to a concurrent queue; its results are excluded. The full .NET suite was not requested or run.
+
+Filter `FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~WeaponBankTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~ResidentFitFleetTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~TypedSessionTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **110 cases in 34 seconds** with two workers. Both Python policy suites passed (three catalog setup and nine formatting cases). Formatting and diff verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Check grouped-gun timing and observer effects in the native client after a future server restart. Capture real transport/queue timings under ten connected clients if available.
+
 ## Resident ship and turret fits (November 5, 2026)
 
 Calculated ship attributes and paid turret attributes now reside in a shared, bounded per-world cache. Entries are keyed by pilot, hull and attribute role/module identity, carry a committed pilot fitting revision, and contain frozen scalar attribute maps. Every caller receives its own mutable copy. The cache holds at most 8,192 maps and evicts individual entries in insertion order. It retains neither EF entities nor mutable dogma evaluators. Existing graph-building paths used for missile/support setup continue to evaluate their own inputs.

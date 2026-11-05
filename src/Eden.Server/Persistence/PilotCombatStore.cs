@@ -103,6 +103,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         bool banked
     )
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("bank.volley");
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
