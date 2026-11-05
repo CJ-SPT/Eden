@@ -28,11 +28,16 @@ internal sealed class NpcCombatHandler(
     private long _shipId;
     private bool _disengaged = true;
     private long[] _aggressors = [];
+    private long _nextAcquire;
+    private int _acquireSystem;
+    private NpcTargetCandidate[] _candidates = [];
 
     public void Enter(PilotCallContext context)
     {
         // Reconnecting starts without an offline fight or overdue burst. Local
         // detection can establish a fresh fight with a new reaction interval.
+        _nextAcquire = 0;
+        _candidates = [];
         combat.Disengage(context.Pilot.ShipId);
         _shipId = context.Pilot.ShipId;
         _disengaged = true;
@@ -48,6 +53,8 @@ internal sealed class NpcCombatHandler(
         {
             combat.Disengage(_shipId);
         }
+        _nextAcquire = 0;
+        _candidates = [];
         _aggressors = [];
         _disengaged = true;
     }
@@ -70,7 +77,16 @@ internal sealed class NpcCombatHandler(
             return;
         }
         _disengaged = false;
-        combat.Acquire(space.NpcTargets(context.Pilot.SystemId), clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        long acquiredAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var candidates = space.NpcTargets(context.Pilot.SystemId).OrderBy(c => c.ShipId).ToArray();
+        bool refresh = acquiredAt >= _nextAcquire || _acquireSystem != context.Pilot.SystemId || !_candidates.SequenceEqual(candidates);
+        if (refresh)
+        {
+            combat.Acquire(candidates, acquiredAt);
+            _nextAcquire = checked(acquiredAt + TimeSpan.TicksPerSecond);
+            _acquireSystem = context.Pilot.SystemId;
+            _candidates = candidates;
+        }
         foreach (long npc in combat.Aggressors(_shipId))
         {
             if (!context.Flight.VisibleNpcs.Any(n => n.Id == npc))
@@ -92,6 +108,7 @@ internal sealed class NpcCombatHandler(
             {
                 continue;
             }
+            refresh = true;
             Notify(context, shot);
             if (shot.Capsule is not null)
             {
@@ -109,6 +126,7 @@ internal sealed class NpcCombatHandler(
                 )
             )
             {
+                refresh = true;
                 Notify(context, impact);
             }
             context.Flight.RefreshMissiles();
@@ -123,7 +141,10 @@ internal sealed class NpcCombatHandler(
             locks.Add(npc, _shipId);
         }
         _aggressors = current;
-        context.Flight.RefreshNpcs();
+        if (refresh)
+        {
+            context.Flight.RefreshNpcs();
+        }
     }
 
     private void Notify(PilotCallContext context, NpcShot shot)

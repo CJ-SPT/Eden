@@ -54,6 +54,7 @@ internal sealed class PilotServices(
             return (packet, Stopwatch.GetTimestamp());
         }
         Task? checkpoint = null;
+        SessionTickSchedule? schedule = null;
         while (true)
         {
             var incoming = ReadArrivalAsync();
@@ -66,12 +67,14 @@ internal sealed class PilotServices(
                 )
             )
             {
-                checkpoint ??= Task.Delay(TimeSpan.FromSeconds(1), clock, cancellationToken);
+                schedule ??= new SessionTickSchedule(clock);
+                checkpoint ??= Task.Delay(schedule.Remaining, clock, cancellationToken);
                 await Task.WhenAny(incoming, checkpoint);
                 if (checkpoint.IsCompleted)
                 {
                     await checkpoint;
                     await tick.AdvanceAsync(context, output, report, accountId, clientId);
+                    schedule.Complete();
                     checkpoint = null;
                 }
                 if (incoming.IsCompleted)

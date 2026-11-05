@@ -26,6 +26,29 @@ combat replies median=58.81ms p95=61.68ms
 
 **Optional maintainer checks.** Compare native combat responsiveness after the final milestone.
 
+### Shared session scheduling
+
+The session now retains a monotonic next-tick deadline across calls and tick processing. Slow ticks skip expired wakeups instead of adding processing time to every following one-second interval. Calls and ticks retain one serialized owner. Due targeting, module payments, damage and ship-loss consequences still run before replies. Existing background monitors retain their revision/deadline guards.
+
+NPC acquisition runs at most once per second for an unchanged system/candidate set in a pilot session. Enter/leave and changed candidate membership invalidate that deadline. Paid shots and impacts still advance on calls, and changed combat state refreshes contacts before output. Deterministic coverage checks 20 repeated updates, the next deadline, candidate changes, reconnect and timer drift/overdue wakeups.
+
+Three targeting cases failed identically on isolated parent `4712b8a` and the milestone: `DeclinedCallsCannotCheckpointOrCompleteALock`, `ChecksRangeSelfDockingAndPendingSlotsAndAllowsRetryAfterCancellation`, and the dock case of `DepartureOrRangeLossClearsBothSides`. They are recorded baseline failures. The initial expanded run had 45 passes and those three failures. A concurrent development rebuild encountered a locked test assembly; final validation runs builds and tests sequentially.
+
+**Milestone 2 automated validation.** Final isolated build passed with zero warnings/errors. Filter `FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~ServerPerformanceReplayTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~TypedSessionTests` passed 38 cases in 51 seconds. Restore, both Python policy suites, formatting and diff checks passed. Timing variability remained substantial. Combat tick p95 was 279 ms, 29 ms above the target, with database-heavy updates still the largest phase.
+
+```text
+docked ticks median=11.63ms p95=20.57ms
+docked replies median=2.47ms p95=4.82ms
+space ticks median=93.97ms p95=101.11ms
+space replies median=9.75ms p95=14.55ms
+combat ticks median=192.85ms p95=278.98ms
+combat replies median=58.03ms p95=72.11ms
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Compare native combat responsiveness after the final milestone.
+
 ## Development NPCs excluded from regional belts
 
 The maintainer's screenshot shows **TEST DRAINER** at 16 km. In the pinned build-3662168 catalog, this is type **24630**, in ordinary Blood Raider asteroid cruiser group **555**. The same group audit found **TEST ATTACKER**, type **25806**, in Guristas asteroid frigate group **562**. Both carry usable combat and wreck definitions, so the previous group and profile checks admitted them. Their `client/types` records have `published=0`. Admission now explicitly excludes these two development IDs alongside the Clone Soldier exclusions. The existing 510-type fixture already contains both definitions.
