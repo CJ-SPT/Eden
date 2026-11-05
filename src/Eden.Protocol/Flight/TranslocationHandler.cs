@@ -62,7 +62,6 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
             {
                 _ = TranslocationRules.Arrival(target, context.Pilot.Flight.ShipRadius, destinationObjects);
             }
-            bool refresh = context.Flight.InBallpark && context.Pilot.SystemId == target.System.Id && target.StationId is null;
             // Cancel old activities before committing the move. Their checkpoints must
             // never write a source-system position over the committed destination.
             updates.Leave(context);
@@ -91,15 +90,15 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
                 return PilotCallResult.None;
             }
             var moved = travel.Move(context.Pilot.PilotId, context.Pilot.ShipId, targetId);
+            bool locationChanged = moved.Pilot.LocationId != context.Pilot.LocationId;
             context.Flight.Relocate(moved.Pilot, destinationObjects);
-            context.ReleaseLocationReferences();
+            if (locationChanged)
+            {
+                context.ReleaseLocationReferences();
+            }
             context.Roster = context.Roster.Select(p => p.PilotId == moved.Pilot.PilotId ? moved.Pilot : p).ToArray();
             InventoryChangesWire.NotifyItemChange(context, moved.ShipChange);
             updates.Enter(context);
-            if (refresh)
-            {
-                context.Flight.Snapshot();
-            }
             return PilotCallResult.None;
         }
         catch (InvalidDataException error)

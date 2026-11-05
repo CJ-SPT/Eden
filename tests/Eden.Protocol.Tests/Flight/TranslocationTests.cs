@@ -34,22 +34,7 @@ public sealed class TranslocationTests
     public async Task TranslocationIncludesDestinationNpcsInFirstStateBeforeCombat(bool stationOrigin)
     {
         using Fixture f = new(inSpace: !stationOrigin);
-        NpcEncounterTests.Prepare(f.Db);
-        using (Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
-        {
-            foreach (int belt in new[] { 40009232, 40009245 })
-            {
-                catalog.Add(
-                    new Eden.Server.Catalog.SourceRecord
-                    {
-                        Dataset = "client/asteroidcountbytypeidbeltid",
-                        Key = belt.ToString(global::System.Globalization.CultureInfo.InvariantCulture),
-                        Data = "{}",
-                    }
-                );
-            }
-            catalog.SaveChanges();
-        }
+        PrepareBelts(f.Db);
         f.Select();
         if (!stationOrigin)
         {
@@ -92,6 +77,80 @@ public sealed class TranslocationTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Contains(saved.Set<NpcAggression>(), a => a.NpcId == npc.Id);
         Assert.Empty(saved.Set<ShipLoss>());
+    }
+
+    [Fact]
+    public async Task SameSystemBeltTransfersRemoveSourceNpcsAndAddDestinationNpcsOnTheBoundPark()
+    {
+        using Fixture f = new(inSpace: true);
+        PrepareBelts(f.Db);
+        f.Select();
+        var flight = f.Context.Flight;
+        flight.Snapshot();
+        Assert.Equal(PilotCallResult.None, f.Call("/tr me 40009232"));
+        f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
+        await f.TickAsync([]);
+        flight.Snapshot();
+        long previous = Assert.Single(flight.VisibleNpcs).Id;
+        var binding = f.Context.Reference("beyonce", PilotBindingLifetime.Location);
+        foreach (int belt in new[] { 40009245, 40009232, 40009245 })
+        {
+            flight.Updates.Clear();
+            Assert.Equal(PilotCallResult.None, f.Call($"/tr me {belt}"));
+            Assert.True(flight.InBallpark);
+            Assert.Equal("beyonce", f.Context.ResolveReference(binding.Id));
+            Assert.DoesNotContain(flight.Updates, u => u.Command is DestinyCommand.SetState);
+            var removed = Assert.Single(flight.Updates, u => u.Command is DestinyCommand.RemoveBall { Id: var id } && id == previous);
+            var added = Assert.Single(
+                flight.Updates,
+                u => u.Command is DestinyCommand.AddBalls a && a.Addition.Slims.OfType<NpcSlimItem>().Any()
+            );
+            Assert.True(flight.Updates.IndexOf(removed) < flight.Updates.IndexOf(added));
+            var chunk = ((DestinyCommand.AddBalls)added.Command).Addition;
+            var npc = Assert.Single(chunk.Slims.OfType<NpcSlimItem>()).Npc;
+            Assert.NotEqual(previous, npc.Id);
+            Assert.Equal(Assert.Single(flight.VisibleNpcs).Id, npc.Id);
+            Assert.Contains(npc.Id, chunk.Damage.Keys);
+            var wire = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(added.Command)), 2);
+            Assert.Equal("AddBalls", BlueMarshal.Text(wire[0]));
+            var addition = BlueRead.Tuple(BlueRead.Tuple(wire[1], 1)[0], 3);
+            var slim = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(addition[1])));
+            Assert.Equal(npc.Id, BlueRead.Fields(slim.State)["itemID"]);
+            using BinaryReader ball = new(new MemoryStream(BlueRead.Bytes(addition[0])));
+            Assert.Equal(0, ball.ReadByte());
+            Assert.Equal(added.Stamp, ball.ReadInt32());
+            Assert.Equal(npc.Id, ball.ReadInt64());
+            flight.RefreshNpcs();
+            Assert.Single(flight.Updates, u => u.Command is DestinyCommand.AddBalls a && a.Addition.Slims.OfType<NpcSlimItem>().Any());
+            previous = npc.Id;
+        }
+        f.Clock.Seconds += FlightSession.ArrivalDurationTicks - 1;
+        await f.TickAsync([]);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Empty(world.Set<NpcAggression>());
+        f.Clock.Seconds++;
+        await f.TickAsync([]);
+        Assert.Contains(world.Set<NpcAggression>(), a => a.NpcId == previous);
+    }
+
+    private static void PrepareBelts(TestWorld db)
+    {
+        NpcEncounterTests.Prepare(db);
+        using (Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            foreach (int belt in new[] { 40009232, 40009245 })
+            {
+                catalog.Add(
+                    new Eden.Server.Catalog.SourceRecord
+                    {
+                        Dataset = "client/asteroidcountbytypeidbeltid",
+                        Key = belt.ToString(global::System.Globalization.CultureInfo.InvariantCulture),
+                        Data = "{}",
+                    }
+                );
+            }
+            catalog.SaveChanges();
+        }
     }
 
     [Theory]
@@ -350,7 +409,7 @@ public sealed class TranslocationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task RepeatedMovesResetNavigationInvalidateBindingsAndUpdateObservers(bool acrossSystems)
+    public async Task RepeatedMovesResetNavigationRetainOnlyCurrentLocationBindingsAndUpdateObservers(bool acrossSystems)
     {
         using Fixture f = new(inSpace: true);
         f.Db.Store.SetPosition(1000000000002, new(2_000_000, 20_000, 0));
@@ -372,7 +431,7 @@ public sealed class TranslocationTests
                 f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
                 await f.TickAsync([]);
             }
-            Assert.Null(f.Context.ResolveReference(binding.Id));
+            Assert.Equal(acrossSystems ? null : "invbroker", f.Context.ResolveReference(binding.Id));
             Assert.False(f.Context.Flight.Moving);
             Assert.False(f.Context.Flight.InWarp);
             var moved = f.Context.Pilot;
@@ -393,7 +452,7 @@ public sealed class TranslocationTests
                 if (!acrossSystems)
                 {
                     Assert.Contains(observer.Updates, u => u.Command is DestinyCommand.SetBallPosition setter && setter.Id == moved.ShipId);
-                    Assert.Contains(f.Context.Flight.Updates, u => u.Command is DestinyCommand.SetState);
+                    Assert.Contains(f.Context.Flight.Updates, u => u.Command is DestinyCommand.SetBallPosition);
                 }
             }
             else

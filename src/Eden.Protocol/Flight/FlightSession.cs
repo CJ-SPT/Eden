@@ -475,6 +475,11 @@ internal sealed class FlightSession(
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
     {
         objects = objects.Where(o => o.CategoryId != AsteroidDefinitions.Category).Concat(asteroids).ToArray();
+        RefreshVisibleAsteroids();
+    }
+
+    private void RefreshVisibleAsteroids()
+    {
         if (!InBallpark)
         {
             return;
@@ -953,7 +958,7 @@ internal sealed class FlightSession(
 
     public IEnumerable<PilotContact> VisiblePilots() => space.Peers(Pilot).Select(ship => ship.Pilot).Prepend(PilotContact.From(Pilot));
 
-    private void LeaveSpace()
+    private void LeaveSpace(bool keepBallpark = false)
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
@@ -964,16 +969,20 @@ internal sealed class FlightSession(
                 MaxSpeed = (float)tackle.ShipAttributes(Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity),
             };
         }
-        _missiles = [];
+        if (!keepBallpark)
+        {
+            InBallpark = false;
+            _peers = [];
+            _peerOrderSequences.Clear();
+            _visibleAsteroids = [];
+            _missiles = [];
+            _npcs = [];
+            _wrecks = [];
+        }
         _propulsion = null;
         Pilot = Pilot with { Flight = _baseFlight };
-        InBallpark = false;
-        _peers = [];
-        _peerOrderSequences.Clear();
-        _visibleAsteroids = [];
         _mining = [];
         _weapons = [];
-        _npcs = [];
         _shieldBoosts = [];
         _localRepairs = [];
         _hardeners = [];
@@ -982,7 +991,6 @@ internal sealed class FlightSession(
         _incomingTackle = [];
         _warpBlocked = false;
         _mwdBlocked = false;
-        _wrecks = [];
         space.Leave(Pilot.ShipId);
     }
 
@@ -1003,10 +1011,13 @@ internal sealed class FlightSession(
     {
         lock (space.MotionLock)
         {
-            bool sameSystem = Pilot.Position is not null && destination.Position is not null && Pilot.SystemId == destination.SystemId;
+            bool keepBallpark = InBallpark && destination.Position is not null && Pilot.SystemId == destination.SystemId;
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
-            LeaveSpace();
-            Updates.Clear();
+            LeaveSpace(keepBallpark);
+            if (!keepBallpark)
+            {
+                Updates.Clear();
+            }
             Pilot = destination;
             objects = destinationObjects;
             _baseFlight = destination.Flight;
@@ -1021,7 +1032,7 @@ internal sealed class FlightSession(
             {
                 WarpEffect(Pilot.ShipId, false);
             }
-            if (sameSystem)
+            if (keepBallpark)
             {
                 // This is an actual teleport, so observers need absolute setters
                 // rather than predicting a course across the intervening distance.
@@ -1035,6 +1046,14 @@ internal sealed class FlightSession(
                 );
                 Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0, 0, 0));
                 Update(new DestinyCommand.Stop(Pilot.ShipId));
+                // Michelle retains this park and skips a SetState after another command at the same tick.
+                // Diff the contacts the viewer actually has against the destination grid.
+                _arrivalStamp = _simulatedStamp;
+                RefreshVisibleAsteroids();
+                RefreshWrecks();
+                RefreshMissiles();
+                RefreshNpcs();
+                RefreshPeersCore();
             }
         }
     }

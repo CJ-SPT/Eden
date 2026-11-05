@@ -1,5 +1,17 @@
 # Startup protocol and milestones
 
+## NPC visibility after same-system GM translocation
+
+Build 3662168's `Michelle.Park.FlushState` combines commands for the same tick. `Park.RealFlushState` applies `SetState` only when it is the first command and skips subsequent occurrences during dispatch. Eden's same-system TR queued position, velocity and stop commands before its snapshot. The snapshot carried the destination NPCs, so skipping it could leave the pilot on the new grid with the old overview while Eden already counted the new contacts as visible. The handler also released the client's location-bound park reference despite the solar system staying the same. This failure is reproducible from the command order. The original C-7SBM incident lacks a matching native packet or exception capture identifying its precise sequence.
+
+Same-system TR now keeps the bound park and its previously visible contacts, moves the ship, then sends departures and additions for the destination. NPC additions carry the Destiny ball, slim identity and damage state together. The existing eight-tick arrival window now also applies to these transfers. Cross-system transfers load the full state on the destination park. These observations come from inert inspection of the pinned `michelle.pyj` methods `FlushState`, `RealFlushState` and `AddBalls`. The binary layout was compared with [Carbon Destiny's Thunkers.cpp at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp).
+
+**Automated validation.** Tool and solution restores, build (zero warnings/errors), 181 focused .NET tests (63 seconds), both Python suites (3 catalog and 9 formatting-policy tests), and formatting verification passed in 84 seconds overall. The filter was `FullyQualifiedName~TranslocationTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~NpcGuardTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~StationUndockTests` with four workers and isolated outputs. The belt-to-belt regression exercises three moves on one bound park and checks the old contact's removal, new ball/slim IDs, damage state, duplicate suppression and acquisition at tick eight. Existing station- and space-origin cross-system tests cover destination state ordering. Validation was limited to the focused suite.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** From a capsule, compare the overview and space models before and after a same-system TR between two occupied belts.
+
 ## NPC spawn and translocation follow-up
 
 The maintainer reported an unseen attacker immediately after **TR me here!**, with no NPCs in either overview or space. Read-only inspection of the normal save identified the Ibis loss in **C-7SBM (30003995)**: its saved killer was **Blood Clone Soldier Transporter (33172)**. Its pinned direct weapon is 8 EM + 8 thermal with a 21.9375 multiplier, or **351 raw damage per 2.5-second cycle**. This special tag encounter shares ordinary asteroid cruiser group **555**, so the group-only admission rule incorrectly included it. This establishes a spawn-policy defect; it does not establish the cause of the missing native presentation.
