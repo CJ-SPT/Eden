@@ -56,17 +56,18 @@ internal sealed class AccountCompatibilityHandler(
     {
         var values = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected corporation IDs.");
         var ids = values.OfType<long>().Where(id => id is > 0 and <= int.MaxValue).Select(id => (int)id).Distinct().ToArray();
-        var known = KnownPilots(context)
-            .Where(p => ids.Contains(p.CorpId))
-            .DistinctBy(p => p.CorpId)
-            .Select(p => new CorporationTickerRow(p.CorpId, p.CorporationTicker))
+        // Pilot contacts carry only a ticker. Read saved corporations first so
+        // roster/visible-pilot shortcuts cannot discard their logo layers.
+        var known = ids.Select(players.Read)
+            .OfType<PlayerCorporation>()
+            .Select(c => new CorporationTickerRow(c.Id, c.Details.Ticker, c.Details.Logo))
             .ToArray();
         known = known
             .Concat(
-                ids.Except(known.Select(c => c.CorporationId))
-                    .Select(players.Read)
-                    .OfType<PlayerCorporation>()
-                    .Select(c => new CorporationTickerRow(c.Id, c.Details.Ticker))
+                KnownPilots(context)
+                    .Where(p => ids.Contains(p.CorpId) && !known.Any(c => c.CorporationId == p.CorpId))
+                    .DistinctBy(p => p.CorpId)
+                    .Select(p => new CorporationTickerRow(p.CorpId, p.CorporationTicker))
             )
             .ToArray();
         // Michelle primes every NPC corp before dispatching newly added balls.
