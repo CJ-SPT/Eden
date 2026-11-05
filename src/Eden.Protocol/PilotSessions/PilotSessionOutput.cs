@@ -9,7 +9,8 @@ internal sealed class PilotSessionOutput(
     long accountId,
     long clientId,
     Func<object?, Task> write,
-    Action<string> report
+    Action<string> report,
+    SessionDiagnostics? diagnostics = null
 )
 {
     public Task WriteAsync(object? packet) => write(packet);
@@ -52,7 +53,9 @@ internal sealed class PilotSessionOutput(
             {
                 foreach (var update in flight.Updates)
                 {
-                    report($"MotionUpdate viewer={flight.Pilot.ShipId} tick={update.Stamp} command={update.Command.GetType().Name}");
+                    (diagnostics?.Trace ?? report)(
+                        $"MotionUpdate viewer={flight.Pilot.ShipId} tick={update.Stamp} command={update.Command.GetType().Name}"
+                    );
                     var slims = update.Command switch
                     {
                         DestinyCommand.SetState state => state.Snapshot.Slims,
@@ -62,13 +65,13 @@ internal sealed class PilotSessionOutput(
                     foreach (var slim in slims.OfType<NpcSlimItem>())
                     {
                         var npc = slim.Npc;
-                        report(
+                        (diagnostics?.Trace ?? report)(
                             $"MotionNpc viewer={flight.Pilot.ShipId} tick={update.Stamp} id={npc.Id} type={npc.TypeId} "
                                 + $"group={npc.GroupId} corp={npc.CorporationId} position={npc.Position}"
                         );
                     }
                 }
-                report($"MotionHull viewer={flight.Pilot.ShipId} hull={flight.Pilot.Flight}");
+                (diagnostics?.Trace ?? report)($"MotionHull viewer={flight.Pilot.ShipId} hull={flight.Pilot.Flight}");
             }
             await SendNotificationAsync(new DestinyUpdatesNotification(flight.Updates));
             flight.Updates.Clear();

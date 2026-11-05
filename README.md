@@ -224,6 +224,8 @@ To run the local server for play, use the following command separately from vali
 dotnet run --no-build --project src/Eden.Server
 ```
 
+The console shows timestamped startup/shutdown and account/character session summaries, warnings and failures by default. Routine service calls, notifications, gateway requests, handshakes, movement and successful world checkpoints are quiet. Warnings and errors go to standard error. Set `$env:EDEN_VERBOSE_LOGGING = '1'` before starting the server to include routine diagnostics; remove it with `Remove-Item Env:EDEN_VERBOSE_LOGGING` to return to quiet output. The existing `EDEN_TRACE_PERFORMANCE=1` and `EDEN_TRACE_MOTION=1` switches still enable their targeted traces independently of verbose logging. Checkpoint failures always remain visible and pending changes retain the existing save/retry behavior.
+
 The [Windows client setup](docs/development-client.md) contains optional maintainer procedures. The [protocol notes](docs/protocol.md) retain historical exchange, flight, and two-pilot observations; they do not establish acceptance of later changes.
 
 ## Formatting

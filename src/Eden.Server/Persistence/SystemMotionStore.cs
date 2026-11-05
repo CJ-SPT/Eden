@@ -193,7 +193,7 @@ public sealed partial class SqliteWorld
                     double range = Math.Max(0, first.Position.DistanceTo(second.Position) - ship.Hull.ShipRadius - other.Hull.ShipRadius);
                     if (range <= NpcEncounterDefinitions.VisibilityRange)
                     {
-                        Console.WriteLine(
+                        ServerLog.Console.Trace(
                             string.Create(
                                 CultureInfo.InvariantCulture,
                                 $"Motion system={systemId} tick={stamp} ships={ship.Id},{other.Id} range={range:F3}m"

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Eden.Gameplay.Combat;
 using Eden.Protocol;
+using Eden.Protocol.PilotSessions;
 using Eden.Server.Launcher;
 using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ internal static class ServerServices
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
+        services.AddSingleton(new SessionDiagnostics(ServerLog.Console.Information, ServerLog.Console.Warning, ServerLog.Console.Trace));
         if (liveWorld)
         {
             services.AddSingleton<LiveWorld>(_ =>

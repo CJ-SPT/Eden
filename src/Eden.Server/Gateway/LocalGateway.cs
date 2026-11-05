@@ -54,7 +54,7 @@ internal sealed class RequestStream(GatewayRequests requests) : Requests.Request
         await foreach (var request in input.ReadAllAsync(context.CancellationToken))
         {
             var response = requests.Handle(request);
-            Console.WriteLine($"Gateway {Any.GetTypeName(request.Payload?.TypeUrl ?? "")} ({response.StatusCode}).");
+            ServerLog.Console.Debug($"Gateway {Any.GetTypeName(request.Payload?.TypeUrl ?? "")} ({response.StatusCode}).");
             await output.WriteAsync(response);
         }
     }

@@ -21,7 +21,8 @@ internal sealed class PilotServices(
     ILoginIdentity identity,
     StationGuestHandler guests,
     IPilotOperationScope? operations = null,
-    ChatHandler? chat = null
+    ChatHandler? chat = null,
+    SessionDiagnostics? diagnostics = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -49,9 +50,21 @@ internal sealed class PilotServices(
         {
             Roles = identity.ReadRoles(accountId),
         };
-        PilotSessionOutput output = new(context, accountId, clientId, write, report);
-        PilotSessionCalls calls = new(context, output, router, updates, skills, clock, report, accountId, clientId, operations);
-        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations);
+        PilotSessionOutput output = new(context, accountId, clientId, write, report, diagnostics);
+        PilotSessionCalls calls = new(
+            context,
+            output,
+            router,
+            updates,
+            skills,
+            clock,
+            report,
+            accountId,
+            clientId,
+            operations,
+            diagnostics
+        );
+        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics);
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();
@@ -87,7 +100,7 @@ internal sealed class PilotServices(
                 }
             }
             var arrived = await incoming;
-            SessionPerformance.ReportQueue(arrived.Received, report);
+            SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);
             await calls.ProcessAsync(arrived.Packet);
         }
     }

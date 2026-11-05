@@ -125,7 +125,7 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
             }
             catch (InvalidDataException error)
             {
-                Console.Error.WriteLine($"NPC population skips type {type.Id}: {error.Message}");
+                ServerLog.Console.Warning($"NPC population skips type {type.Id}: {error.Message}");
             }
         }
         return profiles.AsReadOnly();

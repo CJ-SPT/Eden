@@ -38,7 +38,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         {
             if (_diagnostics.Add(message))
             {
-                Console.Error.WriteLine("NPC population: " + message);
+                ServerLog.Console.Warning("NPC population: " + message);
             }
         }
     }

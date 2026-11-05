@@ -121,8 +121,9 @@ internal static class Program
         await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
         await gateway.StartAsync();
         await api.StartAsync();
-        Console.WriteLine($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
-        Console.WriteLine($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
+        ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
+        ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");
+        ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
         try
         {
             await services.GetRequiredService<LoopbackServer>().RunAsync();

@@ -35,7 +35,7 @@ internal sealed class NpcGuardSeeder
     {
         if (_diagnostics.Add(message))
         {
-            Console.Error.WriteLine("NPC guards: " + message);
+            ServerLog.Console.Warning("NPC guards: " + message);
         }
     }
 

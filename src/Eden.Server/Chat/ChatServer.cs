@@ -59,7 +59,7 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
                     _sessions.TryRemove(id, out _);
                     if (completed.Exception is { } error)
                     {
-                        Console.WriteLine($"Chat connection failed ({error.GetType().Name}).");
+                        ServerLog.Console.Error($"Chat connection failed ({error.GetType().Name}).");
                     }
                 },
                 CancellationToken.None,
@@ -93,7 +93,10 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
         }
         catch (AuthenticationException error)
         {
-            Console.WriteLine($"Chat TLS negotiation failed: {error.InnerException?.Message ?? error.Message}");
+            if (!_stop.IsCancellationRequested)
+            {
+                ServerLog.Console.Warning($"Chat TLS negotiation failed ({error.GetType().Name}).");
+            }
         }
         catch (ObjectDisposedException) when (_stop.IsCancellationRequested) { }
         catch (Exception error)
@@ -110,7 +113,14 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
             // Stanzas and authentication tokens must never enter host logs.
             if (!_stop.IsCancellationRequested)
             {
-                Console.WriteLine($"Chat connection closed ({error.GetType().Name}).");
+                if (error is IOException or SocketException or OperationCanceledException)
+                {
+                    ServerLog.Console.Debug($"Chat connection closed ({error.GetType().Name}).");
+                }
+                else
+                {
+                    ServerLog.Console.Warning($"Chat connection rejected ({error.GetType().Name}).");
+                }
             }
         }
         finally

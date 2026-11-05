@@ -14,7 +14,8 @@ internal sealed class PilotSessionTick(
     PilotUpdateCoordinator updates,
     SkillHandler skills,
     IAsteroidField asteroids,
-    IPilotOperationScope? operations = null
+    IPilotOperationScope? operations = null,
+    SessionDiagnostics? diagnostics = null
 )
 {
     private const int SlowUpdateMilliseconds = 250;
@@ -28,7 +29,7 @@ internal sealed class PilotSessionTick(
     )
     {
         using var operation = operations?.Begin();
-        using var performance = SessionPerformance.Begin("tick", report);
+        using var performance = SessionPerformance.Begin("tick", diagnostics?.Trace ?? report);
         long started = Stopwatch.GetTimestamp();
         if (!context.Selected)
         {
@@ -42,7 +43,7 @@ internal sealed class PilotSessionTick(
             skills.Advance(context);
             await output.FlushNotificationsAsync();
         }
-        using (SessionPerformance.Begin("motion", report))
+        using (SessionPerformance.Begin("motion", diagnostics?.Trace ?? report))
         {
             flight.Checkpoint();
         }
@@ -62,7 +63,7 @@ internal sealed class PilotSessionTick(
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
-        using (SessionPerformance.Begin("contacts", report))
+        using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
         {
             if (flight.InBallpark)
             {
@@ -76,7 +77,7 @@ internal sealed class PilotSessionTick(
         }
 
         DockedPilot? beforeAttack;
-        using (SessionPerformance.Begin("updates", report))
+        using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
         {
             beforeAttack = updates.Advance(context);
         }
@@ -91,13 +92,13 @@ internal sealed class PilotSessionTick(
         {
             await output.AnnounceTransitionAsync(beforeAttack);
         }
-        using var outputPerformance = SessionPerformance.Begin("output", report);
+        using var outputPerformance = SessionPerformance.Begin("output", diagnostics?.Trace ?? report);
         await output.FlushFlightUpdatesAsync();
         await output.FlushNotificationsAsync();
         var elapsed = Stopwatch.GetElapsedTime(started);
         if (elapsed.TotalMilliseconds >= SlowUpdateMilliseconds)
         {
-            report($"Slow pilot update: {elapsed.TotalMilliseconds:F0} ms.");
+            (diagnostics?.Warning ?? report)($"Slow pilot update: {elapsed.TotalMilliseconds:F0} ms.");
         }
     }
 }

@@ -34,6 +34,8 @@ internal sealed class LiveWorld : IDisposable
     private readonly TimeProvider _clock;
     private readonly Action<SqliteConnection, string> _persist;
     private readonly Action<string> _report;
+    private readonly Action<string> _reportFailure;
+    private readonly Action<string> _reportTrace;
     private readonly ITimer _timer;
     private Task<Exception?> _pending = Task.FromResult<Exception?>(null);
     private long _observedDataVersion;
@@ -114,7 +116,9 @@ internal sealed class LiveWorld : IDisposable
     {
         _path = Path.GetFullPath(database.Path);
         _clock = clock;
-        _report = report ?? Console.WriteLine;
+        _report = report ?? ServerLog.Console.Debug;
+        _reportFailure = report ?? ServerLog.Console.Error;
+        _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist ?? PersistSnapshot;
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _ownership = new(_path + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
@@ -271,7 +275,7 @@ internal sealed class LiveWorld : IDisposable
 
     private Exception? Save()
     {
-        using var metrics = SessionPerformance.Begin("checkpoint", Report, force: MeasureCheckpoints);
+        using var metrics = SessionPerformance.Begin("checkpoint", message => Report(message, trace: true), force: MeasureCheckpoints);
         SqliteConnection? snapshot = null;
         try
         {
@@ -329,7 +333,7 @@ internal sealed class LiveWorld : IDisposable
         catch (Exception exception)
         {
             Volatile.Write(ref _lastSaveFailure, exception);
-            Report($"World checkpoint failed; resident changes remain pending: {exception.Message}");
+            Report($"World checkpoint failed; resident changes remain pending: {exception.Message}", failure: true);
             return exception;
         }
         finally
@@ -367,11 +371,15 @@ internal sealed class LiveWorld : IDisposable
         }
     }
 
-    private void Report(string message)
+    private void Report(string message, bool failure = false, bool trace = false)
     {
         try
         {
-            _report(message);
+            (
+                failure ? _reportFailure
+                : trace ? _reportTrace
+                : _report
+            )(message);
         }
         catch (Exception)
         {

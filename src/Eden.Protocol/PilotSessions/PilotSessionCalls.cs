@@ -17,7 +17,8 @@ internal sealed class PilotSessionCalls(
     Action<string> report,
     long accountId,
     long clientId,
-    IPilotOperationScope? operations = null
+    IPilotOperationScope? operations = null,
+    SessionDiagnostics? diagnostics = null
 )
 {
     private const int SlowCallMilliseconds = 250;
@@ -47,19 +48,19 @@ internal sealed class PilotSessionCalls(
         }
         catch (InvalidDataException error)
         {
-            report(error.Message);
+            (diagnostics?.Warning ?? report)($"Invalid service call: {error.Message}");
             await output.WriteAsync(packet.InvalidArguments());
             return;
         }
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
         report($"Call {service}.{method}.");
-        using var performance = SessionPerformance.Begin($"call {service}.{method}", report);
+        using var performance = SessionPerformance.Begin($"call {service}.{method}", diagnostics?.Trace ?? report);
         long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
         PilotCallResult result;
-        using (SessionPerformance.Begin("dispatch", report))
+        using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
         {
             result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
         }
@@ -68,25 +69,27 @@ internal sealed class PilotSessionCalls(
         {
             updates.Enter(context);
         }
-        using (SessionPerformance.Begin("updates", report))
+        using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
         {
             updates.Advance(context);
         }
         var elapsed = Stopwatch.GetElapsedTime(started);
         if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
         {
-            report(
+            (diagnostics?.Warning ?? report)(
                 $"Slow call {service}.{method}: {elapsed.TotalMilliseconds:F0} ms before reply; "
                     + $"{dispatchTime.TotalMilliseconds:F0} ms dispatch, {(elapsed - dispatchTime).TotalMilliseconds:F0} ms updates."
             );
         }
-        using var outputPerformance = SessionPerformance.Begin("output", report);
+        using var outputPerformance = SessionPerformance.Begin("output", diagnostics?.Trace ?? report);
         // A timer-driven loss can happen while rejecting an unrelated RPC.
         // Its durable capsule transition still has to reach the client.
         if (previous is not null && !context.Selected)
         {
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, null, previous).ToBlue());
-            report($"Logged off pilot {previous.PilotId}; returned account {accountId} to character selection.");
+            (diagnostics?.Information ?? report)(
+                $"Logged off pilot {previous.PilotId}; returned account {accountId} to character selection."
+            );
         }
         else if (
             previous is not null
@@ -128,7 +131,9 @@ internal sealed class PilotSessionCalls(
             var pilot = context.Pilot;
             skills.Advance(context);
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, pilot).ToBlue());
-            report($"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}.");
+            (diagnostics?.Information ?? report)(
+                $"Accepted selection of {pilot.Name} ({pilot.PilotId}) at {pilot.LocationId} in ship {pilot.ShipId}."
+            );
         }
 
         await output.WriteAsync(packet.CallSucceeded(((PilotCallResult.Success)result).Reply));

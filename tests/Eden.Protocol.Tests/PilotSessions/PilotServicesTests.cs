@@ -19,6 +19,48 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class PilotServicesTests
 {
     [Fact]
+    public async Task QuietLoggingKeepsSelectionAndMalformedCallWarningsWithoutRoutineTraffic()
+    {
+        using TestWorld world = new();
+        using var scope = world.Services.CreateScope();
+        using StringWriter output = new();
+        using StringWriter errors = new();
+        Eden.Server.ServerLog log = new(false, output, errors);
+        SessionDiagnostics diagnostics = new(log.Information, log.Warning, log.Trace);
+        var session = ActivatorUtilities.CreateInstance<PilotServices>(scope.ServiceProvider, diagnostics);
+        var malformed = Request("station", "GetGuests", []);
+        // Preserve the Macho envelope but supply an invalid service-call tuple.
+        var fields = BlueRead.Tuple(malformed.State, 14);
+        fields[4] = new object?[] { new object?[] { 0L, BlueMarshal.Encode(new object?[] { null }) } };
+        Queue<object?> requests = new([
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("station", "GetGuests", []),
+            malformed,
+        ]);
+        List<BlueInstance> replies = [];
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                () => requests.TryDequeue(out var packet) ? Task.FromResult(packet) : throw new EndOfStreamException(),
+                packet =>
+                {
+                    replies.Add(Assert.IsType<BlueInstance>(packet));
+                    return Task.CompletedTask;
+                },
+                log.Debug,
+                1000001,
+                42,
+                SignedSettings.Empty,
+                CancellationToken.None
+            )
+        );
+        Assert.Contains("[INFO] Accepted selection", output.ToString());
+        Assert.DoesNotContain("Call ", output.ToString());
+        Assert.DoesNotContain("Notify ", output.ToString());
+        Assert.Contains("[WARN] Invalid service call:", errors.ToString());
+        Assert.EndsWith(".ErrorResponse", replies[^1].Name);
+    }
+
+    [Fact]
     public async Task NativeStationGuestRequestReturnsBothDockedPilotsAndResolvesTheOtherName()
     {
         using TestWorld world = new();

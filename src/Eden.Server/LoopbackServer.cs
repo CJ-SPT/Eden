@@ -21,7 +21,7 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
 
         using TcpListener listener = new(IPAddress.Parse((options ?? new()).ListenAddress), (options ?? new()).GamePort);
         listener.Start();
-        Console.WriteLine($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
+        ServerLog.Console.Information($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
         Console.CancelKeyPress += OnCancel;
         try
         {
@@ -30,6 +30,7 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
         finally
         {
             Console.CancelKeyPress -= OnCancel;
+            ServerLog.Console.Information("Eden stopped.");
         }
     }
 
@@ -78,7 +79,7 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
             catch (Exception exception)
             {
                 // Include scope-disposal failures. One failed session must not stop the accept loop.
-                Console.Error.WriteLine($"Connection failed: {exception}");
+                ServerLog.Console.Error($"Connection failed: {exception}");
             }
         }
     }

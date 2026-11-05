@@ -14,24 +14,26 @@ internal sealed class ClientConnection(PilotLogin login)
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown))
         {
             timeout.CancelAfter(TimeSpan.FromSeconds(30));
-            Console.WriteLine($"{DateTimeOffset.Now:O} Accepted {client.Client.RemoteEndPoint}.");
+            long? activeAccount = null;
+            ServerLog.Console.Debug($"Accepted {client.Client.RemoteEndPoint}.");
             try
             {
                 NetworkStream stream = client.GetStream();
                 await CompatibilityHandshake.ServeAsync(
                     stream,
-                    Console.WriteLine,
+                    ServerLog.Console.Debug,
                     timeout.Token,
                     async (command, token) =>
                     {
                         await login.RunAsync(
                             stream,
                             command,
-                            Console.WriteLine,
+                            ServerLog.Console.Debug,
                             token,
                             accountId =>
                             {
                                 admission.Enter(accountId);
+                                activeAccount = accountId;
                                 timeout.CancelAfter(Timeout.InfiniteTimeSpan);
                             }
                         );
@@ -40,7 +42,10 @@ internal sealed class ClientConnection(PilotLogin login)
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine(shutdown.IsCancellationRequested ? "Session closed." : "Login timed out.");
+                if (!shutdown.IsCancellationRequested)
+                {
+                    ServerLog.Console.Warning("Login timed out.");
+                }
             }
             catch (Exception exception)
                 when (exception
@@ -52,7 +57,21 @@ internal sealed class ClientConnection(PilotLogin login)
                             or ArgumentException
                 )
             {
-                Console.WriteLine(exception.Message);
+                if (exception is EndOfStreamException or SocketException)
+                {
+                    ServerLog.Console.Debug($"Session disconnected ({exception.GetType().Name}).");
+                }
+                else
+                {
+                    ServerLog.Console.Warning($"Session rejected: {exception.Message}");
+                }
+            }
+            finally
+            {
+                if (activeAccount is { } accountId)
+                {
+                    ServerLog.Console.Information($"Account {accountId} disconnected.");
+                }
             }
         }
     }
