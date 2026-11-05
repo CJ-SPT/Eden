@@ -87,6 +87,9 @@ internal static class XmppWire
 
     internal static string Xml(XElement element) => element.ToString(SaveOptions.DisableFormatting);
 
+    internal static XElement Availability(string boundJid) =>
+        new("presence", new XAttribute("from", boundJid), new XAttribute("to", boundJid));
+
     internal static XElement UserData(ChatPilot pilot) =>
         new(
             "eve_user_data",

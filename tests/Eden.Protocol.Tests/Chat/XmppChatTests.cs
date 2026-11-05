@@ -18,6 +18,70 @@ namespace Eden.Protocol.Tests.Chat;
 
 public sealed class XmppChatTests
 {
+    [Fact]
+    public async Task InitialAvailabilityUsesTheAuthenticatedResourceAndDoesNotEchoClientSuppliedIdentity()
+    {
+        using TestWorld world = new();
+        var runtime = world.Services.GetRequiredService<ChatRuntime>();
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        Guid session = Guid.NewGuid();
+        runtime.Update(session, new(90000001, "Pilot", 1000044, 30000142, 0));
+        await using var client = await NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            90000001,
+            runtime.IssueToken(session)
+        );
+        await client.SendAsync(
+            "<presence from='90000002@eden.chat/forged' id='not-a-join'>" + "<eve_user_data corpid='1' role='999999'/></presence>"
+        );
+        var available = await client.ReadAsync();
+        Assert.Equal("presence", available.Name.LocalName);
+        Assert.Equal("90000001@eden.chat/eveclient", (string?)available.Attribute("from"));
+        Assert.Equal("90000001@eden.chat/eveclient", (string?)available.Attribute("to"));
+        Assert.Null(available.Attribute("id"));
+        Assert.Empty(available.Elements());
+        Assert.Equal(1000044, runtime.User(90000001)!.CorporationId);
+        Assert.Equal(0, runtime.User(90000001)!.Roles);
+    }
+
+    [Fact]
+    public async Task SilentPilotsCompleteTheNativeReadyHandshakeAndSeeLocalBeforeAnyMessage()
+    {
+        using TestWorld world = new();
+        var runtime = world.Services.GetRequiredService<ChatRuntime>();
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        Guid a = Guid.NewGuid(),
+            b = Guid.NewGuid();
+        runtime.Update(a, new(90000001, "First silent pilot", 1000044, 30000142, 0));
+        runtime.Update(b, new(90000002, "Second silent pilot", 1000044, 30000142, 0));
+        await using var first = await NativeClient.ConnectAsync(server.Endpoint!, certificate.Certificate, 90000001, runtime.IssueToken(a));
+        await first.JoinAsync("local_30000142", "first-ready");
+        await first.UntilAsync(e => (string?)e.Attribute("id") == "first-ready");
+        Assert.Equal(new long[] { 90000001 }, RosterIds((await first.UntilAsync(IsRoster))[^1]));
+        await using var second = await NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            90000002,
+            runtime.IssueToken(b)
+        );
+        await second.JoinAsync("local_30000142", "second-ready");
+        await second.UntilAsync(e => (string?)e.Attribute("id") == "second-ready");
+        Assert.Equal(new long[] { 90000001, 90000002 }, RosterIds((await second.UntilAsync(IsRoster))[^1]));
+        await first.UntilAsync(e => IsControl(e, "join", 90000002));
+        await second.MessageAsync("local_30000142", "first-message", "hello");
+        foreach (var client in new[] { first, second })
+        {
+            var received = await client.UntilAsync(e => (string?)e.Attribute("id") == "first-message");
+            Assert.DoesNotContain(received, e => (string?)e.Attribute("type") == "error");
+            Assert.Single(received, e => (string?)e.Attribute("id") == "first-message");
+        }
+    }
+
     [Theory]
     [InlineData("local_30000142")]
     [InlineData("corp_1000044")]
@@ -357,6 +421,14 @@ public sealed class XmppChatTests
                 await client.SendAsync("<iq type='set' id='session'><session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>");
                 Assert.Equal("result", (string?)(await client.ReadAsync()).Attribute("type"));
                 await client.SendAsync("<presence><show/></presence>");
+                // Build 3662168 handles the session IQ callback separately. Its
+                // handle_logged_in hook fires only on the next non-IQ stanza.
+                // Channel joins must wait for this initial self-presence.
+                var available = await client.ReadAsync();
+                Assert.Equal("presence", available.Name.LocalName);
+                Assert.Equal(pilot + "@eden.chat/eveclient", (string?)available.Attribute("from"));
+                Assert.Equal(pilot + "@eden.chat/eveclient", (string?)available.Attribute("to"));
+                Assert.Null(available.Attribute("type"));
                 return client;
             }
             catch

@@ -181,6 +181,13 @@ public sealed class XmppSession(IXmppChat chat)
                                     chat.Join(connection.Id, room, (string?)stanza.Attribute("id"));
                                 }
                             }
+                            else if ((string?)stanza.Attribute("type") is null or "available")
+                            {
+                                // The pinned handler's session-IQ callback sets state=ready,
+                                // but handle_logged_in runs only on the next non-IQ stanza.
+                                // Echoing initial availability starts its system-channel joins.
+                                await WriteAsync(XmppWire.Xml(XmppWire.Availability(jid!)));
+                            }
                             break;
                         case "message":
                             var messageRoom = XmppWire.ParseRoom(to, domain);
