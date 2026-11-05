@@ -10,6 +10,8 @@ Same-system TR now keeps the bound park and its previously visible contacts, mov
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+**Maintainer observation.** The supplied Vellaine screenshot shows the Outlaw Wrecker and Dire Guristas Saboteur at 14 km in the General overview, with two red brackets in space. Those names match the saved population of belt 40088018. The running server binary included the interim park-retention change and preceded the final validated build. The image establishes overview and bracket visibility at that belt. It does not record the route of arrival or resolve individual hull models.
+
 **Optional maintainer check.** From a capsule, compare the overview and space models before and after a same-system TR between two occupied belts.
 
 ## NPC spawn and translocation follow-up
