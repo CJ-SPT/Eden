@@ -35,10 +35,7 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
         var corporation =
             world.Set<SavedCorporation>().Find(actor.CorporationId)
             ?? throw new InvalidDataException("Join a player corporation before editing its details.");
-        if (corporation.CeoId != actorId)
-        {
-            throw new InvalidDataException("Only the corporation CEO can edit these settings.");
-        }
+        CorporationRoleStore.RequireDirector(world, actorId, corporation);
         var before = corporation.Snapshot(0).Details;
         var after = CorporationRules.Validate(update(before));
         if (before == after)

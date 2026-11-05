@@ -48,10 +48,12 @@ public sealed record CorporationChange(
     long Id,
     CorporationApplication? Application,
     CorporationMemberChange? Membership,
-    CorporationAdministrationChange? Administration = null
+    CorporationAdministrationChange? Administration = null,
+    CorporationRoleChange? Roles = null,
+    CorporationTitleChange? Title = null
 );
 
-public sealed record CorporationLeavePermission(bool Allowed, string Reason);
+public sealed record CorporationLeavePermission(bool Allowed, string Reason, string ErrorName = "CustomInfo");
 
 public interface ICorporationMembership
 {

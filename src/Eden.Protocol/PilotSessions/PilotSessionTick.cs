@@ -87,6 +87,7 @@ internal sealed class PilotSessionTick(
                 beforeAttack.ShipId != context.Pilot.ShipId
                 || beforeAttack.CorpId != context.Pilot.CorpId
                 || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
+                || beforeAttack.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess
             )
         )
         {

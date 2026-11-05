@@ -9,7 +9,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Creation, identity, applications, joining/leaving | Published |
 | Login and corporation-window compatibility | Published |
 | Persistent settings, logos and division names | Published; 116 focused tests and required checks passed |
-| Delegated roles, titles and member administration | Pending |
+| Delegated roles, titles and member administration | Published; 177 focused tests and required checks passed |
 | Shared wallets, journals and tax collection | Pending |
 | Offices and corporation asset access | Pending |
 | Member communications and recruitment services | Pending |

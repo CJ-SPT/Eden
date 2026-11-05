@@ -122,7 +122,12 @@ public sealed class PlayerCorporationTests
         object? Decode(BlueInstance packet) =>
             BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 1)[0]));
         Assert.Equal(
-            BlueMarshal.Encode(new BoundPilotReply(new("N=10001:42-3", 3), BlueEmpty.IndexedDictionary)),
+            BlueMarshal.Encode(
+                new BoundPilotReply(
+                    new("N=10001:42-3", 3),
+                    new CorporationTitlesReply(db.Services.GetRequiredService<ICorporationRoles>().Titles(90000001))
+                )
+            ),
             BlueRead.Bytes(BlueRead.Tuple(BlueRead.Tuple(replies[3].State, 14)[4], 1)[0])
         );
         var owners = BlueRead.Fields(Assert.IsType<BlueInstance>(Decode(replies[4])).State);
@@ -142,7 +147,7 @@ public sealed class PlayerCorporationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void UnassignedTitlesReadAsAnEmptyMapWithoutAllowingRoleOrTitleMutations(bool playerCorporation)
+    public void UnassignedTitlesReadAsNativeSlotsAndMalformedMutationsAreRejected(bool playerCorporation)
     {
         using TestWorld db = new();
         if (playerCorporation)
@@ -167,12 +172,15 @@ public sealed class PlayerCorporationTests
         context.Select(pilot);
         for (int read = 0; read < 3; read++)
         {
-            Assert.Empty(Assert.IsAssignableFrom<System.Collections.IDictionary>(Reply(Call("GetTitles", []))));
+            Assert.Equal(
+                playerCorporation ? CorporationRoleRules.TitleCount : 0,
+                Assert.IsAssignableFrom<System.Collections.IDictionary>(Reply(Call("GetTitles", []))).Count
+            );
         }
         Assert.IsType<PilotCallResult.Failure>(Call("GetTitles", [1000045L]));
         Assert.IsType<PilotCallResult.Failure>(Call("GetTitles", [], new() { ["corporationID"] = 1000045L }));
-        Assert.Same(PilotCallResult.Unsupported, Call("UpdateTitle", [1L, "Director"]));
-        Assert.Same(PilotCallResult.Unsupported, Call("UpdateMember", [pilot.PilotId, CorporationRules.DirectorRole]));
+        Assert.IsType<PilotCallResult.Failure>(Call("UpdateTitle", [1L, "Director"]));
+        Assert.IsType<PilotCallResult.Failure>(Call("UpdateMember", [pilot.PilotId, CorporationRules.DirectorRole]));
         Assert.Equal(pilot, context.Pilot);
         Assert.Empty(context.Notifications);
     }

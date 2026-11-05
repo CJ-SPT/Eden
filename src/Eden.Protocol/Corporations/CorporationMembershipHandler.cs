@@ -38,6 +38,14 @@ internal sealed partial class CorporationHandler
             {
                 context.Notifications.Add(new CorporationDetailsChanged(administrationChange));
             }
+            if (change.Roles is { } roleChange)
+            {
+                context.Notifications.Add(new CorporationRolesChanged(roleChange));
+            }
+            if (change.Title is { } titleChange)
+            {
+                context.Notifications.Add(new CorporationTitleChanged(titleChange));
+            }
             if (change.Application is { } application)
             {
                 context.Notifications.Add(new CorporationApplicationChanged(application));
@@ -264,10 +272,10 @@ internal sealed record CorporationLeaveReply(CorporationLeavePermission Permissi
         new object?[]
         {
             Permission.Allowed,
-            Permission.Allowed ? null : "CustomInfo",
-            Permission.Allowed
-                ? null
-                : new Dictionary<string, object?> { ["info"] = new BlueUnicode(Permission.Reason) },
+            Permission.Allowed ? null : Permission.ErrorName,
+            Permission.Allowed ? null
+            : Permission.ErrorName == "CustomInfo" ? new Dictionary<string, object?> { ["info"] = new BlueUnicode(Permission.Reason) }
+            : new Dictionary<string, object?>(),
         };
 }
 

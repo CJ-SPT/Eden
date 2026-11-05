@@ -96,7 +96,10 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                 .Select(e => (long?)e.StartedAt)
                 .FirstOrDefault()
             ?? pilot.CreatedAt;
-        return new(pilot.CorporationId, ticker, corporation?.CeoId == pilotId ? CorporationRules.CeoRoles : 0, joined);
+        var access = CorporationRoleStore.Effective(world, pilotId, corporation);
+        var ship = world.Ships.Include(s => s.Position).Single(s => s.Id == pilot.ActiveShipId);
+        long currentRoles = access.Roles.At(ship.Position is null ? ship.StationId : null, corporation?.StationId ?? 0, access.BaseId);
+        return new(pilot.CorporationId, ticker, currentRoles, joined, access);
     }
 
     public IReadOnlyList<CorporationEmployment> Employment(long pilotId)
@@ -117,10 +120,11 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var viewer = world.Pilots.Find(viewerId) ?? throw new InvalidDataException("Unknown pilot.");
-        long? ceo = world.Set<SavedCorporation>().Find(viewer.CorporationId)?.CeoId;
+        var corporation = world.Set<SavedCorporation>().Find(viewer.CorporationId);
         return world
             .Pilots.Where(p => p.CorporationId == viewer.CorporationId)
             .OrderBy(p => p.Id)
+            .AsEnumerable()
             .Select(p => new CorporationMember(
                 p.Id,
                 p.Name,
@@ -132,7 +136,8 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     .Select(e => (long?)e.StartedAt)
                     .FirstOrDefault()
                     ?? p.CreatedAt,
-                p.Id == ceo ? CorporationRules.CeoRoles : 0
+                CorporationRoleStore.Effective(world, p.Id, corporation).Roles.Roles,
+                CorporationRoleStore.Effective(world, p.Id, corporation)
             ))
             .ToArray();
     }

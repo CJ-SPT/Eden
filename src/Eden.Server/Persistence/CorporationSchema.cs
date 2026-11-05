@@ -7,6 +7,10 @@ public sealed partial class WorldDbContext
     private static void ConfigureCorporations(ModelBuilder model)
     {
         model.Entity<SavedCorporationApplication>().ToTable("WorldCorporationApplication").HasKey(a => a.Id);
+        model.Entity<SavedCorporationMemberAccess>().ToTable("WorldCorporationMemberAccess").HasKey(m => m.PilotId);
+        model.Entity<SavedCorporationMemberAccess>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId);
+        model.Entity<SavedCorporationTitle>().ToTable("WorldCorporationTitle").HasKey(t => new { t.CorporationId, t.TitleId });
+        model.Entity<SavedCorporationTitle>().HasOne<SavedCorporation>().WithMany().HasForeignKey(t => t.CorporationId);
         model.Entity<SavedCorporationApplication>().HasOne<Pilot>().WithMany().HasForeignKey(a => a.PilotId);
         model.Entity<SavedCorporationApplication>().HasOne<SavedCorporation>().WithMany().HasForeignKey(a => a.CorporationId);
         model.Entity<SavedCorporationApplication>().HasIndex(a => new { a.PilotId, a.CorporationId });
@@ -54,7 +58,7 @@ internal static class CorporationSchema
                 ON WorldCorporationApplication(PilotId,CorporationId);
             CREATE TABLE IF NOT EXISTS WorldCorporationChange(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
-                ApplicationJson TEXT, MembershipJson TEXT, AdministrationJson TEXT);
+                ApplicationJson TEXT, MembershipJson TEXT, AdministrationJson TEXT, RoleJson TEXT, TitleJson TEXT);
             CREATE INDEX IF NOT EXISTS IX_WorldCorporationChange_PilotId_Id ON WorldCorporationChange(PilotId,Id);
             CREATE TABLE IF NOT EXISTS WorldCorporationEmployment(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
@@ -63,6 +67,12 @@ internal static class CorporationSchema
             CREATE TABLE IF NOT EXISTS WorldCorporationPayment(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                 CorporationId INTEGER NOT NULL, Time INTEGER NOT NULL, BalanceCents INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldCorporationMemberAccess(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                CorporationId INTEGER NOT NULL, DataJson TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldCorporationTitle(
+                CorporationId INTEGER NOT NULL REFERENCES WorldCorporation(Id) ON DELETE CASCADE,
+                TitleId INTEGER NOT NULL, DataJson TEXT NOT NULL, PRIMARY KEY(CorporationId,TitleId));
             """
         );
         if (
@@ -72,6 +82,21 @@ internal static class CorporationSchema
         )
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCorporationChange ADD COLUMN AdministrationJson TEXT");
+        }
+        foreach (string column in new[] { "RoleJson", "TitleJson" })
+        {
+            if (
+                !world
+                    .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporationChange')")
+                    .Contains(column)
+            )
+            {
+                world.Database.ExecuteSqlRaw(
+                    column == "RoleJson"
+                        ? "ALTER TABLE WorldCorporationChange ADD COLUMN RoleJson TEXT"
+                        : "ALTER TABLE WorldCorporationChange ADD COLUMN TitleJson TEXT"
+                );
+            }
         }
         if (
             world

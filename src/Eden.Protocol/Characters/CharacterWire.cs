@@ -131,9 +131,10 @@ internal sealed record CharacterEmploymentRow(int CorporationId, long StartedAt)
         );
 }
 
-internal sealed record CharacterCorporationInfo(int CorporationId) : BlueModel
+internal sealed record CharacterCorporationInfo(int CorporationId, string Title = "", IReadOnlyList<CorporationTitle>? Titles = null)
+    : BlueModel
 {
-    // NPC starter corporations have no alliance, militia membership or player titles.
+    // Standalone corporations have no alliance or militia membership.
     private const int CorporationTitleCount = 16;
 
     public override object ToBlue()
@@ -143,11 +144,12 @@ internal sealed record CharacterCorporationInfo(int CorporationId) : BlueModel
             ["corpID"] = CorporationId,
             ["allianceID"] = null,
             ["militiaFactionID"] = null,
-            ["title"] = new BlueUnicode(""),
+            ["title"] = new BlueUnicode(Title),
         };
         for (int index = 1; index <= CorporationTitleCount; index++)
         {
-            fields[$"title{index}"] = null;
+            string? name = Titles?.SingleOrDefault(t => t.Id == 1L << (index - 1))?.Name;
+            fields[$"title{index}"] = name is null ? null : new BlueUnicode(name);
         }
         return new BlueInstance("utillib.KeyVal", fields);
     }

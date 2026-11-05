@@ -11,7 +11,8 @@ namespace Eden.Protocol.Corporations;
 internal sealed partial class CorporationHandler(
     IPlayerCorporations corporations,
     ICorporationMembership membership,
-    ICorporationAdministration administration
+    ICorporationAdministration administration,
+    ICorporationRoles roles
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
@@ -22,11 +23,18 @@ internal sealed partial class CorporationHandler(
         }
         DrainChanges(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
-        if (context.Pilot.CorpId == identity.Id && context.Pilot.Identity.CorporationRoles == identity.Roles)
+        if (
+            context.Pilot.CorpId == identity.Id
+            && context.Pilot.Identity.CorporationRoles == identity.Roles
+            && context.Pilot.Identity.CorporationAccess == identity.Access
+        )
         {
             return;
         }
-        context.ReleaseCorporationReferences();
+        if (context.Pilot.CorpId != identity.Id)
+        {
+            context.ReleaseCorporationReferences();
+        }
         context.Flight.UpdateCorporation(identity);
         context.Roster = context.Roster.Select(p => p.PilotId == context.Pilot.PilotId ? context.Pilot : p).ToArray();
     }
@@ -44,6 +52,11 @@ internal sealed partial class CorporationHandler(
         {
             return adminResult;
         }
+        var roleResult = CallRoles(context, service, method, args, keywords);
+        if (roleResult is not PilotCallResult.UnsupportedCall)
+        {
+            return roleResult;
+        }
         var memberResult = CallMembership(context, service, method, args, keywords);
         if (memberResult is not PilotCallResult.UnsupportedCall)
         {
@@ -57,7 +70,6 @@ internal sealed partial class CorporationHandler(
                     or "GetSuggestedTickerNames"
                     or "GetEveOwners"
                     or "GetMember"
-                    or "GetTitles"
                     or "DoesMyCorpAcceptStructures"
                     or "DoesCorpRestrictCorpMails"
                 )
@@ -113,11 +125,6 @@ internal sealed partial class CorporationHandler(
                     return new PlayerCorporationMemberReply(member);
                 case ("DoesMyCorpAcceptStructures" or "DoesCorpRestrictCorpMails", []):
                     return false;
-                case ("GetTitles", []):
-                    // Creating a corporation enables the CEO administration panels.
-                    // Their constructors read this map before any panel is selected.
-                    // No titles are assigned while delegated roles remain deferred.
-                    return BlueEmpty.IndexedDictionary;
                 default:
                     throw new InvalidDataException("Invalid corporation request.");
             }
@@ -170,31 +177,14 @@ internal sealed record SuggestedTicker(string Ticker) : BlueModel
 
 internal sealed record PlayerCorporationMemberReply(CorporationMember Member) : BlueModel
 {
-    public override object ToBlue() =>
-        new BlueInstance(
-            "utillib.KeyVal",
-            new Dictionary<string, object?>
-            {
-                ["characterID"] = Member.PilotId,
-                ["corporationID"] = Member.CorporationId,
-                ["title"] = "",
-                ["roles"] = Member.Roles,
-                ["titleMask"] = 0,
-                ["startDateTime"] = Member.JoinedAt,
-                ["baseID"] = null,
-                ["rolesAtAll"] = Member.Roles,
-                ["rolesAtHQ"] = 0L,
-                ["rolesAtBase"] = 0L,
-                ["rolesAtOther"] = 0L,
-                ["grantableRoles"] = 0L,
-                ["grantableRolesAtHQ"] = 0L,
-                ["grantableRolesAtBase"] = 0L,
-                ["grantableRolesAtOther"] = 0L,
-                ["squadronID"] = null,
-                ["divisionID"] = null,
-                ["blockRoles"] = false,
-            }
-        );
+    public override object ToBlue()
+    {
+        var fields = CorporationRoleFields.Values(Member.Access ?? new(new(Member.Roles)));
+        fields.Add("characterID", Member.PilotId);
+        fields.Add("corporationID", Member.CorporationId);
+        fields.Add("startDateTime", Member.JoinedAt);
+        return new BlueInstance("utillib.KeyVal", fields);
+    }
 }
 
 internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : BlueModel

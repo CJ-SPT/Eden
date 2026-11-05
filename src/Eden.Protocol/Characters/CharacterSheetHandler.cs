@@ -11,7 +11,8 @@ internal sealed class CharacterSheetHandler(
     ICharacterCreation creation,
     IPilotCharacterSheet sheet,
     INpcDirectory npcs,
-    IPlayerCorporations corporations
+    IPlayerCorporations corporations,
+    ICorporationRoles corporationRoles
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -106,7 +107,9 @@ internal sealed class CharacterSheetHandler(
             return method switch
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
-                "GetInfoWindowDataForChar" => new CharacterCorporationInfo(profile.CorporationId),
+                "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
+                    ? new CharacterCorporationInfo(profile.CorporationId)
+                    : PublicCorporationInfo(id, profile.CorporationId),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
                 "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
                     profile,
@@ -117,5 +120,12 @@ internal sealed class CharacterSheetHandler(
             };
         }
         return PilotCallResult.Unsupported;
+    }
+
+    private CharacterCorporationInfo PublicCorporationInfo(long pilotId, int corporationId)
+    {
+        var member = corporations.Members(pilotId).Single(m => m.PilotId == pilotId);
+        long mask = member.Access?.TitleMask ?? 0;
+        return new(corporationId, member.Access?.Title ?? "", corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray());
     }
 }

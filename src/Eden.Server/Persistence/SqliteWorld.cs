@@ -182,6 +182,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             fitted.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
         );
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
+        var corporationAccess = CorporationRoleStore.Effective(world, pilot.Id, corporation);
         return new(
             new(
                 pilot.Id,
@@ -189,7 +190,12 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 pilot.CorporationId,
                 new(pilot.Account.UserName, pilot.Account.CreatedAt, pilot.Account.CloneGrade),
                 new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt),
-                CorporationRoles: corporation?.CeoId == pilot.Id ? CorporationRules.CeoRoles : 0
+                CorporationRoles: corporationAccess.Roles.At(
+                    ship.Position is null ? ship.StationId : null,
+                    corporation?.StationId ?? 0,
+                    corporationAccess.BaseId
+                ),
+                CorporationAccess: corporationAccess
             ),
             new(
                 ship.Id,

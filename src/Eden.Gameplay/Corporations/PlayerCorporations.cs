@@ -29,7 +29,14 @@ public sealed record PlayerCorporation(
     int MemberCount
 );
 
-public sealed record CorporationMember(long PilotId, string Name, int CorporationId, long JoinedAt, long Roles);
+public sealed record CorporationMember(
+    long PilotId,
+    string Name,
+    int CorporationId,
+    long JoinedAt,
+    long Roles,
+    CorporationMemberAccess? Access = null
+);
 
 public sealed record CorporationEmployment(int CorporationId, long StartedAt);
 
@@ -37,7 +44,7 @@ public sealed record CorporationCreation(PlayerCorporation Corporation, long Bal
 
 public sealed record CorporationPayment(long Id, long PilotId, int CorporationId, long Time, long BalanceCents);
 
-public sealed record CorporationIdentity(int Id, string Ticker, long Roles, long JoinedAt);
+public sealed record CorporationIdentity(int Id, string Ticker, long Roles, long JoinedAt, CorporationMemberAccess? Access = null);
 
 public interface IPlayerCorporations
 {

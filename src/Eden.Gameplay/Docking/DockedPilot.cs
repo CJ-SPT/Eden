@@ -1,3 +1,4 @@
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 
@@ -33,7 +34,8 @@ public sealed record PilotIdentity(
     AccountProfile Account,
     PilotProfile Profile,
     string CorporationTicker = "",
-    long CorporationRoles = 0
+    long CorporationRoles = 0,
+    CorporationMemberAccess? CorporationAccess = null
 );
 
 public sealed record PilotShip(

@@ -27,13 +27,17 @@ public sealed class SavedCorporationChange
     public string? ApplicationJson { get; set; }
     public string? MembershipJson { get; set; }
     public string? AdministrationJson { get; set; }
+    public string? RoleJson { get; set; }
+    public string? TitleJson { get; set; }
 
     public CorporationChange Snapshot() =>
         new(
             Id,
             ApplicationJson is null ? null : JsonSerializer.Deserialize<CorporationApplication>(ApplicationJson),
             MembershipJson is null ? null : JsonSerializer.Deserialize<CorporationMemberChange>(MembershipJson),
-            AdministrationJson is null ? null : JsonSerializer.Deserialize<CorporationAdministrationChange>(AdministrationJson)
+            AdministrationJson is null ? null : JsonSerializer.Deserialize<CorporationAdministrationChange>(AdministrationJson),
+            RoleJson is null ? null : JsonSerializer.Deserialize<CorporationRoleChange>(RoleJson),
+            TitleJson is null ? null : JsonSerializer.Deserialize<CorporationTitleChange>(TitleJson)
         );
 }
 
@@ -47,9 +51,13 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var pilot = Pilot(world, pilotId);
-        if (forCorporation && !world.Set<SavedCorporation>().Any(c => c.Id == pilot.CorporationId && c.CeoId == pilotId))
+        var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
+        if (
+            forCorporation
+            && (corporation is null || !CorporationRoleStore.Has(world, pilotId, corporation, CorporationRole.PersonnelManager))
+        )
         {
-            throw new InvalidDataException("Only the CEO can review corporation applications.");
+            throw new InvalidDataException("Personnel management is required to review corporation applications.");
         }
         return world
             .Set<SavedCorporationApplication>()
@@ -122,7 +130,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         }
         var corporation = Corporation(world, application.CorporationId);
         bool applicant = actorId == application.PilotId;
-        bool ceo = actor.CorporationId == corporation.Id && corporation.CeoId == actorId;
+        bool ceo = CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.PersonnelManager);
         CorporationMembershipRules.CheckTransition(application.Status, update.Status, applicant, ceo);
         var pilot = Pilot(world, application.PilotId);
         if (update.Status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
@@ -185,22 +193,44 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         transaction.Commit();
     }
 
-    private static CorporationLeavePermission Permission(WorldDbContext world, long actorId, long pilotId)
+    private CorporationLeavePermission Permission(WorldDbContext world, long actorId, long pilotId)
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
-        if (corporation is null || actor.CorporationId != pilot.CorporationId || actorId != pilotId && corporation.CeoId != actorId)
+        if (
+            corporation is null
+            || actor.CorporationId != pilot.CorporationId
+            || actorId != pilotId && !CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.PersonnelManager)
+        )
         {
-            return new(false, "Only a player corporation member can leave, and only its CEO can remove another member.");
+            return new(false, "Only members may leave, and personnel management is required to remove another member.");
         }
-        return corporation.CeoId == pilotId
-            ? new(false, "The CEO must remain until CEO transfer or corporation dissolution is available.")
-            : new(true, "");
+        if (corporation.CeoId == pilotId)
+        {
+            return new(false, "The CEO must transfer ownership before leaving.");
+        }
+        var access = CorporationRoleStore.Effective(world, pilotId, corporation);
+        if (access.Roles.HasAuthority)
+        {
+            return new(false, "Remove corporation roles and titles before leaving or removing this member.", "CrpCantQuitNotInStasis");
+        }
+        if (
+            access.RolesRemovedAt is long removed
+            && clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() < removed + CorporationRoleRules.RemovalDelay.Ticks
+        )
+        {
+            return new(false, "Wait 24 hours after the last corporation role was removed.");
+        }
+        return new(true, "");
     }
 
     internal static void Move(WorldDbContext world, Pilot pilot, int corporationId, long now)
     {
+        if (world.Set<SavedCorporationMemberAccess>().Find(pilot.Id) is { } access)
+        {
+            world.Remove(access);
+        }
         int previous = pilot.CorporationId;
         int oldCount = world.Pilots.Count(p => p.CorporationId == previous);
         int newCount = world.Pilots.Count(p => p.CorporationId == corporationId);
@@ -266,9 +296,14 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     private static void NotifyApplication(WorldDbContext world, SavedCorporationApplication application)
     {
-        long ceo = Corporation(world, application.CorporationId).CeoId;
+        var corporation = Corporation(world, application.CorporationId);
         string json = JsonSerializer.Serialize(application.Snapshot());
-        foreach (long recipient in new[] { application.PilotId, ceo }.Distinct())
+        var recruiters = world
+            .Pilots.Where(p => p.CorporationId == corporation.Id)
+            .Select(p => p.Id)
+            .ToArray()
+            .Where(id => CorporationRoleStore.Has(world, id, corporation, CorporationRole.PersonnelManager));
+        foreach (long recipient in recruiters.Append(application.PilotId).Distinct())
         {
             world.Add(new SavedCorporationChange { PilotId = recipient, ApplicationJson = json });
         }

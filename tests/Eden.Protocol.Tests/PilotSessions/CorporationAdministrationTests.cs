@@ -154,7 +154,7 @@ public sealed class CorporationAdministrationTests
         reopened.GetRequiredService<ICorporationAdministration>().Update(90000001, new("Migrated", "", 0.1, true, 0));
         Assert.Equal("Migrated", reopened.GetRequiredService<IPlayerCorporations>().Read(id)!.Details.Description);
         using WorldDbContext check = new(world.Path);
-        Assert.Equal(74, check.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, check.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(2, check.Set<SavedCorporationChange>().Count(c => c.AdministrationJson != null));
         Assert.Single(check.Set<SavedCorporationPayment>());
     }

@@ -98,6 +98,7 @@ internal sealed class PilotSessionCalls(
                 || previous.ShipId != context.Pilot.ShipId
                 || previous.CorpId != context.Pilot.CorpId
                 || previous.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
+                || previous.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess
             )
         )
         {
