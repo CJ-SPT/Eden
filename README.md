@@ -180,6 +180,8 @@ On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage t
 
 Setup downloads and verifies CCP's exact-build export on the first run, decodes the staged client, and checks the replacement catalog before installing it. Normal play uses the installed catalog and save offline. See the [Windows client guide](docs/development-client.md#creating-and-recreating-the-databases) for offline setup, save migration, and verification.
 
+Weapon grouping supports native linking, merging, splitting, group-all and ungroup-all for supported matching turrets and missile launchers. Groups persist per assembled ship and return through the native ship-state prime. Grouped activation, stopping and ammunition transfers cover every member, with atomic volley payments. See the [weapon grouping notes](docs/protocol.md#persistent-weapon-grouping).
+
 ## Build and run
 
 Install the .NET SDK version in `global.json` and Python 3.11 or later for the policy checks. After a code milestone's changes are stable, run automated validation from the repository root in this order, choosing a .NET filter for the affected behavior and immediate dependencies. Stop at a failed step and investigate before continuing.

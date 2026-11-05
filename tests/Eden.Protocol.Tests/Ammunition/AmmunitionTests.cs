@@ -25,7 +25,7 @@ namespace Eden.Protocol.Tests.Ammunition;
 
 public sealed class AmmunitionTests
 {
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
         public Clock Clock { get; } = new();

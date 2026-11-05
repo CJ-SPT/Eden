@@ -27,6 +27,7 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
         long Started,
         long StartTime,
         long Repeats,
+        IReadOnlyList<MissileLauncher> Launchers,
         bool Stopping = false
     );
 
@@ -35,7 +36,9 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
     private long _shipId;
 
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
-        _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId ? Effect(pilot.PilotId, cycle) : null;
+        _cycles.Values.FirstOrDefault(c => c.Launchers.Any(l => l.ItemId == module)) is { } cycle && cycle.ShipId == pilot.ShipId
+            ? Effect(pilot.PilotId, cycle with { Launcher = cycle.Launchers.Single(l => l.ItemId == module) })
+            : null;
 
     private static DogmaActiveEffect Effect(long pilot, Cycle cycle) =>
         new(
@@ -52,7 +55,18 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
     private void Notify(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(new ShipEffectChanged(Effect(context.Pilot.PilotId, cycle), now, active, active, active ? null : now));
+        foreach (var launcher in cycle.Launchers)
+        {
+            context.Notifications.Add(
+                new ShipEffectChanged(
+                    Effect(context.Pilot.PilotId, cycle with { Launcher = launcher }),
+                    now,
+                    active,
+                    active,
+                    active ? null : now
+                )
+            );
+        }
     }
 
     private void Stop(PilotCallContext context, Cycle cycle)
@@ -81,7 +95,7 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var locked = context.Flight.VisibleNpcs.Where(n => targeting.IsLocked(n.Id)).Select(n => n.Id).ToHashSet();
-        var result = missiles.Launch(
+        var launches = missiles.LaunchBank(
             context.Pilot.PilotId,
             module,
             target,
@@ -89,15 +103,30 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
             new(context.Flight.Velocity, context.Flight.Pilot.Flight.MaxSpeed, new(0, 0, -1), context.Flight.CurrentStamp),
             now
         );
+        var result = launches[0];
         _pilotId = context.Pilot.PilotId;
         _shipId = context.Pilot.ShipId;
-        Cycle cycle = new(_shipId, result.Launcher, result.Projectile.TargetId, clock.GetTimestamp(), now, repeats);
-        _cycles[module] = cycle;
+        Cycle cycle = new(
+            _shipId,
+            result.Launcher with
+            {
+                CycleMilliseconds = launches.Max(l => l.Launcher.CycleMilliseconds),
+            },
+            result.Projectile.TargetId,
+            clock.GetTimestamp(),
+            now,
+            repeats,
+            launches.Select(l => l.Launcher).ToArray()
+        );
+        _cycles[result.Launcher.ItemId] = cycle;
         if (!continuing)
         {
             Notify(context, cycle, true);
         }
-        MagazineWire.NotifyState(context, result.Magazine, now);
+        foreach (var launch in launches)
+        {
+            MagazineWire.NotifyState(context, launch.Magazine, now);
+        }
         context.Flight.RefreshMissiles();
     }
 
@@ -200,7 +229,7 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
                 {
                     return new PilotCallResult.Failure("Launch missiles while in space and outside warp.");
                 }
-                if (_cycles.TryGetValue(module, out var active))
+                if (_cycles.Values.FirstOrDefault(c => c.Launchers.Any(l => l.ItemId == module)) is { } active)
                 {
                     return !active.Launcher.Automatic && target is long requested && requested != active.Target
                         ? new PilotCallResult.Failure("The launcher is already active on another target.")
@@ -211,9 +240,9 @@ internal sealed class MissileHandler(TimeProvider clock, IPilotMissiles missiles
             }
             if (method == "Deactivate" && args is [long id, _])
             {
-                if (_cycles.TryGetValue(id, out var cycle))
+                if (_cycles.Values.FirstOrDefault(c => c.Launchers.Any(l => l.ItemId == id)) is { } cycle)
                 {
-                    _cycles[id] = cycle with { Stopping = true };
+                    _cycles[cycle.Launcher.ItemId] = cycle with { Stopping = true };
                 }
                 return PilotCallResult.None;
             }

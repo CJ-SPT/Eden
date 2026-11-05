@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 68;
+    internal const int CurrentVersion = 69;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -949,7 +949,18 @@ internal static class WorldMigration
             NpcMissileSchema.Upgrade(world);
             NpcEncounterSchema.Upgrade(world);
             NpcGuardSchema.Upgrade(world);
-            world.Database.ExecuteSqlRaw("PRAGMA user_version=68");
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE IF NOT EXISTS WorldWeaponLink(
+                    SlaveId INTEGER PRIMARY KEY REFERENCES WorldItem(Id) ON DELETE CASCADE,
+                    MasterId INTEGER NOT NULL REFERENCES WorldItem(Id) ON DELETE CASCADE,
+                    ShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE,
+                    CHECK(SlaveId<>MasterId));
+                CREATE INDEX IF NOT EXISTS IX_WorldWeaponLink_MasterId ON WorldWeaponLink(MasterId);
+                CREATE INDEX IF NOT EXISTS IX_WorldWeaponLink_ShipId ON WorldWeaponLink(ShipId);
+                PRAGMA user_version=69;
+                """
+            );
         }
         world.Database.ExecuteSqlRaw(
             """

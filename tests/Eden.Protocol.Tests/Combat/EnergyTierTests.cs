@@ -25,7 +25,7 @@ public sealed class EnergyTierTests
     private const int Scorch = 12563;
     private const double ArtificialBudget = 1_000_000;
 
-    private static Fixture WithTiers(params int[] types)
+    internal static Fixture WithTiers(params int[] types)
     {
         Fixture f = new();
         PassiveCatalogFixture.LoadEnergyTiers(f.CatalogPath, types.Concat(Enum.GetValues<CombatSkill>().Select(s => (int)s)).ToHashSet());

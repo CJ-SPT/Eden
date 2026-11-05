@@ -35,6 +35,14 @@ public interface IPilotMissiles
         MissileFiringState motion,
         long now
     );
+    IReadOnlyList<MissileLaunch> LaunchBank(
+        long pilotId,
+        long moduleId,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now
+    ) => [Launch(pilotId, moduleId, targetId, lockedTargets, motion, now)];
     void Advance(int systemId, long now);
     IReadOnlyList<MissileContact> List(int systemId);
     bool Impacted(long projectileId);

@@ -61,7 +61,113 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         );
     }
 
+    private sealed record PaidShot(CombatWeapon Weapon, double Quality, double Capacitor, Magazine? Magazine);
+
     public CombatShot Fire(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null,
+        double? crystalRoll = null
+    ) => FireVolley(pilotId, moduleId, targetId, velocity, now, roll, activation, crystalRoll, false).Shot;
+
+    public CombatVolley FireBank(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null
+    ) => FireVolley(pilotId, moduleId, targetId, velocity, now, roll, activation, null, true);
+
+    private CombatVolley FireVolley(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation,
+        double? crystalRoll,
+        bool banked
+    )
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
+        var charges = members.Select(id => PilotAmmunitionStore.Contents(world, id)?.TypeId).Distinct().ToArray();
+        if (charges.Length > 1)
+        {
+            throw new InvalidDataException("Load the same ammunition in every grouped weapon.");
+        }
+        List<PaidShot> paid = [];
+        foreach (long member in members)
+        {
+            double accuracy =
+                member == members[0]
+                    ? roll
+                    : System.Security.Cryptography.RandomNumberGenerator.GetInt32(CrystalProbabilityResolution)
+                        / (double)CrystalProbabilityResolution;
+            paid.Add(Prepare(world, catalog, pilot, pilotId, member, targetId, velocity, now, accuracy, activation, crystalRoll));
+        }
+        var npc = world.Set<WorldNpc>().Find(targetId)!;
+        var damage = paid.Select(p => p.Weapon.Damage.Scale(p.Quality)).ToArray();
+        DamageVector combined = new(
+            damage.Sum(d => d.Em),
+            damage.Sum(d => d.Explosive),
+            damage.Sum(d => d.Kinetic),
+            damage.Sum(d => d.Thermal)
+        );
+        var settlement = NpcDamagePersistence.Apply(
+            world,
+            catalog,
+            npc,
+            pilot,
+            pilot.ActiveShipId,
+            PilotFittingStore.ReadAttributes(catalog, npc.TypeId),
+            combined,
+            now
+        );
+        world.SaveChanges();
+        transaction.Commit();
+        if (settlement.Destroyed)
+        {
+            security.Publish();
+        }
+        var first = paid[0];
+        double quality = paid.Average(p => p.Quality);
+        // Preserve the damage/quality relation consumed by the native combat message adapter.
+        var weapon =
+            paid.Count == 1
+                ? first.Weapon
+                : first.Weapon with
+                {
+                    Damage = quality > 0 ? combined.Scale(1 / quality) : combined,
+                    CycleMilliseconds = paid.Max(p => p.Weapon.CycleMilliseconds),
+                };
+        CombatShot shot = new(
+            weapon,
+            settlement.Applied,
+            quality,
+            settlement.Health,
+            paid[^1].Capacitor,
+            settlement.Destroyed,
+            settlement.Reward is null ? null : Read(settlement.Reward),
+            first.Magazine
+        );
+        return new(shot, paid.Select(p => p.Weapon).ToArray(), paid.Where(p => p.Magazine is not null).Select(p => p.Magazine!).ToArray());
+    }
+
+    private static PaidShot Prepare(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        Pilot pilot,
         long pilotId,
         long moduleId,
         long targetId,
@@ -76,10 +182,6 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         {
             throw new InvalidDataException("Invalid weapon accuracy draw.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         var npc = world.Set<WorldNpc>().Find(targetId);
         bool ammoFed =
@@ -218,16 +320,6 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
-        var settlement = NpcDamagePersistence.Apply(
-            world,
-            catalog,
-            npc,
-            pilot,
-            pilot.ActiveShipId,
-            target,
-            weapon.Damage.Scale(quality),
-            now
-        );
         Magazine? magazine = null;
         if (loadedAmmo is not null)
         {
@@ -265,21 +357,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             }
         }
         world.SaveChanges();
-        transaction.Commit();
-        if (settlement.Destroyed)
-        {
-            security.Publish();
-        }
-        return new(
-            weapon,
-            settlement.Applied,
-            quality,
-            settlement.Health,
-            capacitor,
-            settlement.Destroyed,
-            settlement.Reward is null ? null : Read(settlement.Reward),
-            magazine
-        );
+        return new(weapon, quality, capacitor, magazine);
     }
 
     private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);

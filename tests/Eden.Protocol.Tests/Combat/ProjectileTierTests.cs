@@ -23,7 +23,7 @@ public sealed class ProjectileTierTests
     private const int HailSmall = 12608;
     private const double ArtificialBudget = 1_000_000;
 
-    private static Fixture WithTiers(params int[] types)
+    internal static Fixture WithTiers(params int[] types)
     {
         Fixture f = new();
         PassiveCatalogFixture.LoadProjectileTiers(

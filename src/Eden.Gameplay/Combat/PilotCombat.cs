@@ -48,6 +48,8 @@ public sealed record CombatShot(
     Magazine? Magazine = null
 );
 
+public sealed record CombatVolley(CombatShot Shot, IReadOnlyList<CombatWeapon> Weapons, IReadOnlyList<Magazine> Magazines);
+
 public interface IPilotCombat
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
@@ -61,5 +63,18 @@ public interface IPilotCombat
         WeaponActivation? activation = null,
         double? crystalRoll = null
     );
+    CombatVolley FireBank(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null
+    )
+    {
+        var shot = Fire(pilotId, moduleId, targetId, velocity, now, roll, activation);
+        return new(shot, [shot.Weapon], shot.Magazine is { } magazine ? [magazine] : []);
+    }
     IReadOnlyList<CombatReward> Rewards(long pilotId);
 }

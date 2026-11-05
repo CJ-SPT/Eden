@@ -20,15 +20,21 @@ internal abstract record CombatMessage(double Damage, CombatHitQuality HitQualit
         };
 }
 
-internal sealed record OutgoingCombatMessage(double Applied, CombatHitQuality Quality, long Target, int WeaponType, DamageVector Attributes)
-    : CombatMessage(Applied, Quality, WeaponType, Attributes)
+internal sealed record OutgoingCombatMessage(
+    double Applied,
+    CombatHitQuality Quality,
+    long Target,
+    int WeaponType,
+    DamageVector Attributes,
+    bool Banked = false
+) : CombatMessage(Applied, Quality, WeaponType, Attributes)
 {
     public override Dictionary<string, object?> ToBlue() =>
         new()
         {
             ["damage"] = Damage,
             ["hitQuality"] = (int)HitQuality,
-            ["isBanked"] = false,
+            ["isBanked"] = Banked,
             ["attackType"] = "me",
             ["target"] = Target,
             ["weapon"] = Weapon,

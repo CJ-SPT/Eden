@@ -25,6 +25,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
         long Started,
         long StartTime,
         long Repeats,
+        IReadOnlyList<CombatWeapon> Weapons,
         bool Stopping = false
     );
 
@@ -40,7 +41,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     }
 
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
-        _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
+        _cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } cycle && cycle.ShipId == pilot.ShipId
             ? new(
                 module,
                 pilot.PilotId,
@@ -106,7 +107,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = combat.Fire(
+        var volley = combat.FireBank(
             context.Pilot.PilotId,
             module,
             target,
@@ -117,17 +118,26 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
                 : WeaponActivation.Laser
         );
-        var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats);
-        _cycles[module] = cycle;
-        context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Outgoing(result, target)));
+        var result = volley.Shot;
+        var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats, volley.Weapons);
+        _cycles[result.Weapon.ItemId] = cycle;
+        context.NotificationsBeforeFlight.Add(
+            new DamageMessageNotification(CombatMessages.Outgoing(result, target) with { Banked = volley.Weapons.Count > 1 })
+        );
         if (previous is null)
         {
             Effect(context, cycle, true);
-            context.Flight.SetWeaponEffect(Contact(cycle), true);
+            foreach (var weapon in cycle.Weapons)
+            {
+                context.Flight.SetWeaponEffect(Contact(cycle with { Weapon = weapon }), true);
+            }
         }
         else
         {
-            context.Flight.RepeatWeaponEffect(Contact(previous), Contact(cycle));
+            foreach (var weapon in cycle.Weapons)
+            {
+                context.Flight.RepeatWeaponEffect(Contact(previous with { Weapon = weapon }), Contact(cycle with { Weapon = weapon }));
+            }
         }
         context.Flight.NotifyHealth(result.Health);
         if (refreshContacts || result.Destroyed)
@@ -151,7 +161,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 new AccountBalanceChanged(context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk)
             );
         }
-        if (result.Magazine is { } magazine)
+        foreach (var magazine in volley.Magazines)
         {
             MagazineWire.NotifyState(context, magazine, now);
         }
@@ -186,30 +196,36 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             return;
         }
         Effect(context, cycle, false);
-        context.Flight.SetWeaponEffect(Contact(cycle), false);
+        foreach (var weapon in cycle.Weapons)
+        {
+            context.Flight.SetWeaponEffect(Contact(cycle with { Weapon = weapon }), false);
+        }
     }
 
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        context.Notifications.Add(
-            new ShipEffectChanged(
-                new DogmaActiveEffect(
-                    cycle.Weapon.ItemId,
-                    context.Pilot.PilotId,
-                    cycle.ShipId,
-                    cycle.Target,
-                    (DogmaEffect)cycle.Weapon.EffectId,
-                    cycle.StartTime,
-                    cycle.Weapon.CycleMilliseconds,
-                    cycle.Repeats
-                ),
-                now,
-                active,
-                active,
-                active ? null : now
-            )
-        );
+        foreach (var weapon in cycle.Weapons)
+        {
+            context.Notifications.Add(
+                new ShipEffectChanged(
+                    new DogmaActiveEffect(
+                        weapon.ItemId,
+                        context.Pilot.PilotId,
+                        cycle.ShipId,
+                        cycle.Target,
+                        (DogmaEffect)cycle.Weapon.EffectId,
+                        cycle.StartTime,
+                        cycle.Weapon.CycleMilliseconds,
+                        cycle.Repeats
+                    ),
+                    now,
+                    active,
+                    active,
+                    active ? null : now
+                )
+            );
+        }
     }
 
     public PilotCallResult Call(
@@ -240,7 +256,7 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
                 {
                     return new PilotCallResult.Failure("Lock a nearby NPC before activating the weapon.");
                 }
-                if (_cycles.TryGetValue(module, out var current))
+                if (_cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } current)
                 {
                     return current.Target == target ? PilotCallResult.None : new PilotCallResult.Failure("The weapon is already active.");
                 }
@@ -255,9 +271,9 @@ internal sealed class CombatHandler(TimeProvider clock, IPilotCombat combat, Tar
             {
                 // Turret damage is paid at cycle start; stop repeating after the
                 // current cycle. A reconnect cannot bypass the saved cooldown.
-                if (_cycles.TryGetValue(item, out var stopping))
+                if (_cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == item)) is { } stopping)
                 {
-                    _cycles[item] = stopping with { Stopping = true };
+                    _cycles[stopping.Weapon.ItemId] = stopping with { Stopping = true };
                 }
                 return PilotCallResult.None;
             }

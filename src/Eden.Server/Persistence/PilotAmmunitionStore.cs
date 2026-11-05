@@ -100,6 +100,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         {
             throw new InvalidDataException("Select distinct fitted weapons.");
         }
+        ids = ids.SelectMany(id => PilotWeaponBankStore.Members(world, pilot.ActiveShipId, id)).Distinct().ToArray();
         int firstFlag = (int)InventoryFlag.LowSlot0;
         var modules = world
             .Set<OwnedItem>()
@@ -339,6 +340,16 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             changes.Add(new(PilotInventoryStore.Read(catalog, source), beforeSources[source.Id]));
         }
         world.SaveChanges();
+        var grouped = PilotWeaponBankStore
+            .Read(world, shipId)
+            .Where(b => modules.Any(m => m.Id == b.MasterId || b.SlaveIds.Contains(m.Id)));
+        foreach (var bank in grouped)
+        {
+            if (new[] { bank.MasterId }.Concat(bank.SlaveIds).Any(id => Contents(world, id)?.TypeId != typeId))
+            {
+                throw new InvalidDataException("Supply ammunition for every weapon in the group.");
+            }
+        }
         CheckCargo(world, catalog, pilot);
         transaction.Commit();
         return new(changes, magazines, duration);

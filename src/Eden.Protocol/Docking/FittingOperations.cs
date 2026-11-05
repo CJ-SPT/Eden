@@ -26,11 +26,25 @@ internal sealed class FittingOperations(
     IPilotFitting fitting,
     IPilotInventory inventory,
     IPilotShipResources resources,
-    ShipDogmaBuilder dogma
+    ShipDogmaBuilder dogma,
+    IPilotWeaponBanks banks
 )
 {
-    internal void NotifyShipAttributes(PilotCallContext context)
+    internal IReadOnlyList<WeaponBank> ReadBanks(PilotCallContext context) => banks.Read(context.Pilot.PilotId, context.Pilot.ShipId);
+
+    internal void NotifyShipAttributes(PilotCallContext context, IReadOnlyList<WeaponBank>? previousBanks = null)
     {
+        if (previousBanks is not null)
+        {
+            var current = ReadBanks(context);
+            if (
+                previousBanks.Count != current.Count
+                || previousBanks.Any(b => !current.Any(c => c.MasterId == b.MasterId && c.SlaveIds.SequenceEqual(b.SlaveIds)))
+            )
+            {
+                context.Notifications.Add(new WeaponBanksChanged(context.Pilot.ShipId, current));
+            }
+        }
         var modules = inventory.List(context.Pilot.PilotId, context.Pilot.ShipId);
         context.Flight.RefreshModules(modules);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -75,9 +89,10 @@ internal sealed class FittingOperations(
     {
         try
         {
+            var previousBanks = ReadBanks(context);
             var changes = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
             NotifyOnlineChanges(context, changes);
-            NotifyShipAttributes(context);
+            NotifyShipAttributes(context, previousBanks);
             return PilotCallResult.None;
         }
         catch (CargoCapacityException error)

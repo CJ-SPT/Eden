@@ -36,7 +36,8 @@ internal sealed class ShipDogmaBuilder(
     PilotBrain brain,
     IEnumerable<IModuleEffectSource> moduleEffects,
     IPilotCharacterSheet sheet,
-    IPilotJumpCloneSkills clones
+    IPilotJumpCloneSkills clones,
+    IPilotWeaponBanks banks
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -197,7 +198,7 @@ internal sealed class ShipDogmaBuilder(
             quantities[pilot.ShipId] = magazines.ToDictionary(m => m.FlagId, m => new MagazineQuantity(m));
         }
         return new(
-            new(instances, quantities),
+            new(instances, quantities, banks.Read(pilot.PilotId, pilot.ShipId)),
             shipInfo,
             magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => magazinesWire.Prime(pilot.PilotId, m)),
             PrimePilot(pilot),
@@ -219,7 +220,7 @@ internal sealed class ShipDogmaBuilder(
         {
             quantities[pilot.ShipId] = magazines.ToDictionary(m => m.FlagId, m => new MagazineQuantity(m));
         }
-        return new(instances, quantities);
+        return new(instances, quantities, banks.Read(pilot.PilotId, pilot.ShipId));
     }
 
     private static Dictionary<long, DogmaInstanceState> Instances(DockedPilot pilot, ShipResourceSnapshot snapshot)

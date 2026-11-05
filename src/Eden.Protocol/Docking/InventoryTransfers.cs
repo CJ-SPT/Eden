@@ -40,6 +40,7 @@ internal sealed class InventoryTransfers(
         long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
         try
         {
+            var previousBanks = fittingOperations.ReadBanks(context);
             var previousMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId);
             bool looting =
                 context.Pilot.Position is not null
@@ -105,7 +106,7 @@ internal sealed class InventoryTransfers(
                 // OnGodmaPrimeItem replaces its inventory row with an incompatible
                 // godma row in build 3662168, removing it from clientDogmaLocation.
                 fittingOperations.NotifyOnlineChanges(context, changes);
-                fittingOperations.NotifyShipAttributes(context);
+                fittingOperations.NotifyShipAttributes(context, previousBanks);
             }
             var movedMagazines = changedMagazines
                 .Where(m => currentMagazines.ContainsKey(m.ModuleId))

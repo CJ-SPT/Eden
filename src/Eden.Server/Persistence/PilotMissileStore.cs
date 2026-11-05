@@ -22,11 +22,52 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         IReadOnlySet<long> lockedTargets,
         MissileFiringState motion,
         long now
+    ) => LaunchVolley(pilotId, moduleId, targetId, lockedTargets, motion, now, false)[0];
+
+    public IReadOnlyList<MissileLaunch> LaunchBank(
+        long pilotId,
+        long moduleId,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now
+    ) => LaunchVolley(pilotId, moduleId, targetId, lockedTargets, motion, now, true);
+
+    private IReadOnlyList<MissileLaunch> LaunchVolley(
+        long pilotId,
+        long moduleId,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now,
+        bool banked
     )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
+        var members = banked ? PilotWeaponBankStore.Members(world, shipId, moduleId) : [moduleId];
+        if (members.Select(id => PilotAmmunitionStore.Contents(world, id)?.TypeId).Distinct().Count() > 1)
+        {
+            throw new InvalidDataException("Load the same ammunition in every grouped launcher.");
+        }
+        var launches = members.Select(id => LaunchCore(world, catalog, pilotId, id, targetId, lockedTargets, motion, now)).ToArray();
+        transaction.Commit();
+        return launches;
+    }
+
+    private static MissileLaunch LaunchCore(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now
+    )
+    {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         if (
@@ -159,7 +200,6 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         // Retaliation begins on the offensive launch, not after flight time.
         NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
         world.SaveChanges();
-        transaction.Commit();
         return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);
     }
 

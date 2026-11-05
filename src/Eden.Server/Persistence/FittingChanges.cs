@@ -88,6 +88,8 @@ internal static class FittingChanges
             energy.UpdatedAt = Math.Max(now, energy.UpdatedAt);
         }
         world.SaveChanges();
+        PilotWeaponBankStore.Prune(world, pilot.ActiveShipId);
+        world.SaveChanges();
         return changed;
     }
 }

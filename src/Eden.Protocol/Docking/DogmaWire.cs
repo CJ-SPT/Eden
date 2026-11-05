@@ -130,7 +130,8 @@ internal sealed record MagazineQuantity(Magazine Magazine) : BlueModel
 
 internal sealed record DogmaShipState(
     IReadOnlyDictionary<long, DogmaInstanceState> Instances,
-    IReadOnlyDictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> Quantities
+    IReadOnlyDictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> Quantities,
+    IReadOnlyList<WeaponBank>? Banks = null
 ) : BlueModel
 {
     public override object ToBlue() =>
@@ -140,7 +141,7 @@ internal sealed record DogmaShipState(
             new BlueMap<long, BlueMap<int, MagazineQuantity>>(
                 Quantities.ToDictionary(p => p.Key, p => new BlueMap<int, MagazineQuantity>(p.Value))
             ),
-            new Dictionary<long, object?>(),
+            new Eden.Protocol.Combat.WeaponBanksWire(Banks ?? []),
             new List<object?>(),
         };
 }
