@@ -32,7 +32,7 @@ public sealed class MailServiceTests
     public void NativeSyncHeadersCompressedBodyAndDeliveryWorkAcrossSessionsWithoutWriterEcho()
     {
         var clock = CalendarTestData.Clock();
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: true);
         using CourierServiceTests.Client sender = new(db, clock, 1000001);
         using CourierServiceTests.Client recipient = new(db, clock, 1000002);
         using CourierServiceTests.Client observer = new(db, clock, 1000001);

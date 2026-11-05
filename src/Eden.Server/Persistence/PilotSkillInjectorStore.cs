@@ -50,6 +50,11 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public SkillInjectorStatus Read(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.injectors");
+        if (LiveReadModels.Find(database.Path) is { } resident)
+        {
+            return resident.Learning(pilotId).InjectionsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         _ = Pilot(world, pilotId);

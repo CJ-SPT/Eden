@@ -183,6 +183,14 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
 
     public IReadOnlyList<WreckContact> List(int systemId, long now)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.wrecks");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Wrecks(systemId, now, () => ListSql(systemId, now))
+            : ListSql(systemId, now);
+    }
+
+    private IReadOnlyList<WreckContact> ListSql(int systemId, long now)
+    {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         // Expired containers cannot be opened, even before this lazy cleanup.

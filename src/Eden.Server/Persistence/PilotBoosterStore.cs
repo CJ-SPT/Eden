@@ -53,6 +53,11 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
 
     public BoosterSnapshot Read(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.boosters");
+        if (LiveReadModels.Find(database.Path) is { } resident)
+        {
+            return resident.Learning(pilotId).At(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         return Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());

@@ -31,6 +31,12 @@ internal sealed class PilotLoyaltyWalletStore(WorldDatabase database) : IPilotLo
 {
     public IReadOnlyList<LoyaltyBalance> Read(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.loyalty");
+        return LiveReadModels.Find(database.Path) is { } resident ? resident.Loyalty(pilotId, () => ReadSql(pilotId)) : ReadSql(pilotId);
+    }
+
+    private IReadOnlyList<LoyaltyBalance> ReadSql(long pilotId)
+    {
         using WorldDbContext world = new(database.Path);
         if (!world.Pilots.Any(p => p.Id == pilotId))
         {

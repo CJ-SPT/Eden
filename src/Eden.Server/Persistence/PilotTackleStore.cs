@@ -159,6 +159,11 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
 
     public void Sweep(long now)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.tackleSweep");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasTackleWork())
+        {
+            return;
+        }
         using WorldDbContext world = new(database.Path);
         if (!world.Set<WorldTackle>().Any() && !world.Set<ActiveFittedModule>().Any())
         {
@@ -228,6 +233,10 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
 
     public IReadOnlyList<TackleEffect> Incoming(long shipId)
     {
+        if (LiveReadModels.Find(database.Path) is { } resident)
+        {
+            return resident.Incoming(shipId);
+        }
         using WorldDbContext world = new(database.Path);
         return world
             .Set<WorldTackle>()

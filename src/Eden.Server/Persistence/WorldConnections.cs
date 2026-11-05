@@ -40,6 +40,8 @@ internal static class WorldConnections
     {
         private IDisposable? _lease;
         private readonly HashSet<CombatRowChange> _changes = [];
+        private bool _itemMembershipWrite;
+        private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
 
         internal void Synchronize(WorldDbContext context)
@@ -67,20 +69,60 @@ internal static class WorldConnections
                 using var command = CreateCommand();
                 command.CommandText = "PRAGMA temp_store=MEMORY";
                 command.ExecuteNonQuery();
-                if (world.Combat is not null)
+                if (world.Combat is not null || world.Reads is not null)
                 {
                     SQLitePCL.raw.sqlite3_update_hook(
                         Handle!,
-                        (SQLitePCL.strdelegate_update)((_, _, _, table, id) => _changes.Add(new(table, id))),
+                        (SQLitePCL.strdelegate_update)(
+                            (_, operation, _, table, id) =>
+                            {
+                                _changes.Add(new(table, id));
+                                if (
+                                    string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
+                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
+                                )
+                                {
+                                    _changes.Add(new("WorldItemMembership", 0));
+                                }
+                            }
+                        ),
                         null
                     );
                     SQLitePCL.raw.sqlite3_set_authorizer(
                         Handle!,
                         (SQLitePCL.strdelegate_authorizer)(
-                            (_, action, _, _, _, _) =>
+                            (_, action, table, column, _, _) =>
                             {
+                                if (
+                                    action
+                                    is SQLitePCL.raw.SQLITE_ALTER_TABLE
+                                        or SQLitePCL.raw.SQLITE_CREATE_TABLE
+                                        or SQLitePCL.raw.SQLITE_DROP_TABLE
+                                        or SQLitePCL.raw.SQLITE_DROP_INDEX
+                                        or SQLitePCL.raw.SQLITE_CREATE_TRIGGER
+                                        or SQLitePCL.raw.SQLITE_DROP_TRIGGER
+                                )
+                                {
+                                    _schemaWrite = true;
+                                    _changes.Add(new("schema", 0));
+                                }
+                                if (
+                                    action == SQLitePCL.raw.SQLITE_UPDATE
+                                    && string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
+                                    && !string.Equals(column, "Quantity", StringComparison.OrdinalIgnoreCase)
+                                    && !string.Equals(column, "CrystalDamage", StringComparison.OrdinalIgnoreCase)
+                                )
+                                {
+                                    _itemMembershipWrite = true;
+                                }
                                 // Row callbacks must also cover unqualified bulk DELETE operations.
-                                return action == SQLitePCL.raw.SQLITE_DELETE ? SQLitePCL.raw.SQLITE_IGNORE : SQLitePCL.raw.SQLITE_OK;
+                                // Schema writes must retain SQLite's normal DROP/ALTER behavior.
+                                return
+                                    action == SQLitePCL.raw.SQLITE_DELETE
+                                    && !_schemaWrite
+                                    && table?.StartsWith("World", StringComparison.OrdinalIgnoreCase) == true
+                                    ? SQLitePCL.raw.SQLITE_IGNORE
+                                    : SQLitePCL.raw.SQLITE_OK;
                             }
                         ),
                         null
@@ -118,6 +160,8 @@ internal static class WorldConnections
                     {
                         world.SqlClosed(_changes);
                         _changes.Clear();
+                        _itemMembershipWrite = false;
+                        _schemaWrite = false;
                     }
                     finally
                     {

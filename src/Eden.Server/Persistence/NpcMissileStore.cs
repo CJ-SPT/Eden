@@ -92,6 +92,11 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         {
             throw new InvalidDataException("Invalid NPC missile target velocity.");
         }
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.npcMissileWork");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasNpcMissileWork(pilotId, now, HistorySeconds))
+        {
+            return [];
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = world.Database.BeginTransaction();

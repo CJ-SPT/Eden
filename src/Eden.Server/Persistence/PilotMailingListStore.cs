@@ -453,6 +453,11 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public MailingListChanges Changes(long pilotId, long cursor)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.listChanges");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasListChanges(pilotId, cursor))
+        {
+            return new(cursor, false, []);
+        }
         using WorldDbContext world = new(database.Path);
         var rows = world
             .Set<SavedMailingListChange>()

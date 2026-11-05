@@ -206,6 +206,11 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
 
     public void Advance(int systemId, long now)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.pilotMissileWork");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasPilotMissiles(systemId))
+        {
+            return;
+        }
         bool destroyed = false;
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -340,6 +345,14 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
 
     public IReadOnlyList<MissileContact> List(int systemId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.missileContacts");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.MissileContacts(systemId, () => ListSql(systemId))
+            : ListSql(systemId);
+    }
+
+    private IReadOnlyList<MissileContact> ListSql(int systemId)
+    {
         using WorldDbContext world = new(database.Path);
         return world
             .Set<WorldMissile>()
@@ -352,12 +365,21 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
 
     public bool Impacted(long projectileId)
     {
+        if (LiveReadModels.Find(database.Path) is { } resident)
+        {
+            return resident.Impacted(projectileId);
+        }
         using WorldDbContext world = new(database.Path);
         return world.Set<WorldMissile>().Any(m => m.Id == projectileId && m.Status == MissileFlightStatus.Impact);
     }
 
     public IReadOnlyList<MissileImpact> TakeImpacts(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.missileReports");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasMissileReports(pilotId))
+        {
+            return [];
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var rows = world

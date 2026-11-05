@@ -562,6 +562,8 @@ public sealed class TackleTests
     public void CoreStrengthExpiresWithoutAdvancingItsOwningConnection()
     {
         using Fixture f = Prepare(10998);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        Store(f).Sweep(f.Clock.Now);
         long module = f.Fit(10998);
         Space(f);
         var activation = Activate(f, module, DogmaEffect.WarpCoreStabilizer);

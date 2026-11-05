@@ -43,6 +43,7 @@ internal sealed class LiveWorld : IDisposable
 
     internal string ConnectionString { get; }
     internal LiveCombatRuntime? Combat { get; }
+    internal LiveReadModels? Reads { get; }
     internal int SqlConnections { get; private set; }
 
     internal void SqlOpened() => SqlConnections++;
@@ -50,6 +51,7 @@ internal sealed class LiveWorld : IDisposable
     internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
     {
         SqlConnections--;
+        Reads?.Observe(changes);
         Combat?.Observe(changes);
     }
 
@@ -69,6 +71,7 @@ internal sealed class LiveWorld : IDisposable
         {
             using var ownership = world.Enter();
             world.Combat?.Clear();
+            world.Reads?.Clear();
         }
     }
 
@@ -100,7 +103,8 @@ internal sealed class LiveWorld : IDisposable
         TimeProvider clock,
         Action<string>? report = null,
         Action<SqliteConnection, string>? persist = null,
-        bool combatObjects = true
+        bool combatObjects = true,
+        bool residentReads = true
     )
     {
         _path = Path.GetFullPath(database.Path);
@@ -145,6 +149,7 @@ internal sealed class LiveWorld : IDisposable
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
             Combat = combatObjects ? new(this, database) : null;
+            Reads = residentReads ? new(this, database) : null;
             _timer = clock.CreateTimer(_ => QueueSave(), null, SaveInterval, SaveInterval);
         }
         catch

@@ -70,6 +70,14 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
 
     public long Revision(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.extraction");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Extraction(pilotId, () => RevisionSql(pilotId))
+            : RevisionSql(pilotId);
+    }
+
+    private long RevisionSql(long pilotId)
+    {
         using WorldDbContext world = new(database.Path);
         return Revision(world, pilotId);
     }

@@ -72,7 +72,7 @@ public sealed class MiningTests
 
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; } = new(liveWorld: true);
         public Clock Clock { get; } = new(new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
         public SharedSpace Space { get; } = new();
         public SharedTargetLocks Locks { get; } = new();
@@ -116,6 +116,7 @@ public sealed class MiningTests
             using WorldDbContext world = new(Db.Path);
             world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3386,250),(90000002,3386,250)");
             var pilot = Db.Store.FindPilot(1000001)!;
+            var launch = StationUndocking.Launch(pilot.ShipId, pilot.Home, pilot.Flight).Position;
             world
                 .Set<WorldAsteroid>()
                 .Add(
@@ -126,9 +127,9 @@ public sealed class MiningTests
                         SystemId = pilot.SystemId,
                         TypeId = 1230,
                         Quantity = 10000,
-                        X = pilot.X + pilot.Flight.StationRadius + 1500,
-                        Y = pilot.Y,
-                        Z = pilot.Z,
+                        X = launch.X + 1000,
+                        Y = launch.Y,
+                        Z = launch.Z,
                         Radius = 100,
                     }
                 );
@@ -170,6 +171,7 @@ public sealed class MiningTests
             );
             context.Select(pilot);
             _ = context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
+            _ = context.Flight.CallWire("beyonce", "CmdStop", []);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, fitting, Locks);
             MiningHandler mining = new(Clock, Store, targeting);
@@ -572,8 +574,8 @@ public sealed class MiningTests
         Assert.Equal(unloaded, Assert.Single(fixture.Inventory.List(pilot.PilotId, 60000100)));
         Assert.Null(flight.CallWire("ship", "Undock", [pilot.ShipId]));
         Assert.Equal(30000144, fixture.Db.Store.FindPilot(1000001)!.SystemId);
-        double clearance = flight.Pilot.Position!.DistanceTo(station.Position) - station.Radius - flight.Pilot.Flight.ShipRadius;
-        Assert.InRange(clearance, 499, 501);
+        var expectedLaunch = StationUndocking.Launch(pilot.ShipId, flight.Pilot.Home, flight.Pilot.Flight);
+        Assert.Equal(expectedLaunch.Position, flight.Pilot.Position);
     }
 
     [Fact]

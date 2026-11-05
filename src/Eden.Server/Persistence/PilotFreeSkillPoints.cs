@@ -16,13 +16,17 @@ internal sealed partial class PilotTrainingStore
 
     private sealed record TrainingUpdateResult(TrainingState Training, bool Remapped, FreePointPlan? Points, long PointRevision = 0);
 
-    public long Balance(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return ReadFreePoints(world, pilotId);
-    }
+    public long Balance(long pilotId) => Observe(pilotId).Points;
 
     public FreeSkillPointBalance Observe(long pilotId)
+    {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.freePoints");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Points(pilotId, () => ObserveSql(pilotId))
+            : ObserveSql(pilotId);
+    }
+
+    private FreeSkillPointBalance ObserveSql(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
         return ReadPointBalance(world, pilotId);

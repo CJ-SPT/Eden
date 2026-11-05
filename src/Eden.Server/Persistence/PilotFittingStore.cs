@@ -93,6 +93,14 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.fit");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Fit(pilotId, () => ShipAttributesSql(pilotId))
+            : ShipAttributesSql(pilotId);
+    }
+
+    private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId)
+    {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);

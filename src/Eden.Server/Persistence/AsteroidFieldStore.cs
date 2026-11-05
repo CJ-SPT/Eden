@@ -18,6 +18,14 @@ internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidFiel
 
     public IReadOnlyList<StaticSpaceObject> List(int systemId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.asteroids");
+        return LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Asteroids(systemId, () => ListSql(systemId))
+            : ListSql(systemId);
+    }
+
+    private IReadOnlyList<StaticSpaceObject> ListSql(int systemId)
+    {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         lock (_gate)

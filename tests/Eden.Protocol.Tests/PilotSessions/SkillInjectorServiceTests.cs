@@ -5,6 +5,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -27,6 +28,7 @@ public sealed class SkillInjectorServiceTests
     {
         var clock = SkillInjectorTestData.Clock();
         using var db = SkillInjectorTestData.Create(clock);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
         SkillInjectorTestData.Total(db, 80_000_000);
         using CourierServiceTests.Client client = new(db, clock, 1000001);
         Assert.Same(PilotCallResult.Unsupported, client.Call("GetAvailableNonDiminishingInjections", [], "nonDiminishingInjectionMgr"));

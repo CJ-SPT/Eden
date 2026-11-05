@@ -25,7 +25,7 @@ public sealed class WreckTests
 
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; } = new(liveWorld: true);
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public IWrecks Store => Db.Services.GetRequiredService<IWrecks>();
         public WreckContact Wreck { get; }

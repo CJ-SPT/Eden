@@ -15,14 +15,17 @@ internal static class ServerServices
         LauncherOptions? options = null,
         INpcPopulationSeeder? population = null,
         bool liveWorld = false,
-        bool combatObjects = true
+        bool combatObjects = true,
+        bool residentReads = true
     )
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
         if (liveWorld)
         {
-            services.AddSingleton<LiveWorld>(_ => new(database, clock ?? TimeProvider.System, combatObjects: combatObjects));
+            services.AddSingleton<LiveWorld>(_ =>
+                new(database, clock ?? TimeProvider.System, combatObjects: combatObjects, residentReads: residentReads)
+            );
         }
         if (population is null)
         {

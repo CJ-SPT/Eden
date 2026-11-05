@@ -356,6 +356,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             switch (change.Table)
             {
+                case "schema":
+                    Clear();
+                    break;
                 case "WorldFitRevision":
                     _ships.Remove(change.Id);
                     _savedShips.Remove(change.Id);

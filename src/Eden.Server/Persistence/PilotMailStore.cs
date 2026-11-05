@@ -116,6 +116,11 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
 
     public MailChangeBatch Changes(long pilotId, long cursor)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.mailChanges");
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasMailChanges(pilotId, cursor))
+        {
+            return new(cursor, false, []);
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var rows = world

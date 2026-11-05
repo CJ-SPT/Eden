@@ -52,6 +52,7 @@ public sealed partial class ServerPerformanceReplayTests
         string mode = concurrent ? "concurrent" : "serial";
         bool resident = Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_LIVE_WORLD") == "1";
         bool combatObjects = Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_COMBAT_OBJECTS") != "0";
+        bool residentReads = Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_RESIDENT_READS") != "0";
         int shieldCapacity = (int)DogmaAttributeId.ShieldCapacity;
         long setupStarted = Stopwatch.GetTimestamp();
         string directory = CopySnapshot(source);
@@ -158,7 +159,13 @@ public sealed partial class ServerPerformanceReplayTests
                 tx.Commit();
             }
             CheckpointClock checkpointClock = new(clock);
-            host = ServerServices.Build(database, resident ? checkpointClock : clock, liveWorld: resident, combatObjects: combatObjects);
+            host = ServerServices.Build(
+                database,
+                resident ? checkpointClock : clock,
+                liveWorld: resident,
+                combatObjects: combatObjects,
+                residentReads: residentReads
+            );
             var live = host.GetService<LiveWorld>();
             var store = host.GetRequiredService<SqliteWorld>();
             long bytes = 0;
@@ -253,6 +260,7 @@ public sealed partial class ServerPerformanceReplayTests
             );
             reports.Enqueue($"World storage: {(resident ? "resident RAM image with 15-second checkpoints" : "direct SQLite file")}.");
             reports.Enqueue($"Combat objects: {resident && combatObjects}.");
+            reports.Enqueue($"Resident reads: {resident && residentReads}.");
             bytes = 0;
             List<double> totals = [];
             async Task<FleetSample> Advance(FleetClient client)

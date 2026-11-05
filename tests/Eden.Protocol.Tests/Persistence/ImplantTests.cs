@@ -203,6 +203,8 @@ public sealed class ImplantTests
     {
         var clock = CalendarTestData.Clock();
         using var db = ImplantTestData.Create(clock);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
+        Assert.Empty(ImplantTestData.Store(db).Read(ImplantTestData.Pilot).Implants);
         long item = ImplantTestData.Item(db, type, 2);
         var result = ImplantTestData.Store(db).Install(ImplantTestData.Pilot, item);
         var installed = Assert.Single(result.Snapshot.Implants);

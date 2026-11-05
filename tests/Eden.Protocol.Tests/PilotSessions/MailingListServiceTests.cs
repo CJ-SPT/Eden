@@ -22,7 +22,7 @@ public sealed class MailingListServiceTests
     public void NativeCreateJoinWelcomeAndBroadcastUseTheActualListAndMailWireShapes()
     {
         var clock = CalendarTestData.Clock();
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: true);
         using CourierServiceTests.Client owner = new(db, clock, 1000001);
         using CourierServiceTests.Client member = new(db, clock, 1000002);
         Assert.Same(PilotCallResult.Unsupported, owner.Call("Create", ["Fleet List", 1L, 1L, 0L], "mailingListsMgr"));

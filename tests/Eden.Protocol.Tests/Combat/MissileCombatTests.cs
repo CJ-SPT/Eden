@@ -106,6 +106,11 @@ public sealed class MissileCombatTests
     public void LaunchPaysOneRoundAndCooldownWhileDamageWaitsForPhysicalContact()
     {
         using Fixture f = Prepare(LightLauncher, LightMissile);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var projectiles = Missiles(f);
+        Assert.Empty(projectiles.List(30000144));
+        projectiles.Advance(30000144, f.Clock.Now);
+        Assert.Empty(projectiles.TakeImpacts(f.PilotId));
         long launcher = Load(f, LightLauncher, LightMissile);
         var npc = Space(f, 10000);
         var launch = Launch(f, launcher, npc.Id);
@@ -300,6 +305,7 @@ public sealed class MissileCombatTests
     public void ProductionDispatchRetainsOneRepeatRingAndStreamsProjectilesToObservers()
     {
         using Fixture f = Prepare(LightLauncher, LightMissile);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         long launcher = Load(f, LightLauncher, LightMissile);
         var npc = Space(f, 10000);
         using var scope = f.Db.Services.CreateScope();

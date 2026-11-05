@@ -1,3 +1,4 @@
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -19,7 +20,7 @@ public sealed class TargetingTests
 {
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; } = new(liveWorld: true);
         public Clock Clock { get; } = new();
         public SharedSpace Space { get; } = new();
         public SharedTargetLocks Locks { get; } = new();
@@ -46,7 +47,7 @@ public sealed class TargetingTests
             );
             Fitting = Db.Services.GetRequiredService<IPilotFitting>();
             var pilot = Db.Store.FindPilot(1000001)!;
-            var launch = new SpacePosition(pilot.X + pilot.Flight.StationRadius + 500, pilot.Y, pilot.Z);
+            var launch = StationUndocking.Launch(pilot.ShipId, pilot.Home, pilot.Flight).Position;
             Objects = Db
                 .Objects.Concat(
                     Enumerable
@@ -72,7 +73,7 @@ public sealed class TargetingTests
                 account,
                 pilot.Account,
                 [pilot],
-                selected => new(Db.Store, selected, Clock, Space, Objects),
+                selected => new(Db.Store, selected, Clock, Space, Objects, docking: Db.Store),
                 account,
                 SignedSettings.Empty
             );
@@ -80,6 +81,7 @@ public sealed class TargetingTests
             if (undock)
             {
                 context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
+                context.Flight.CallWire("beyonce", "CmdStop", []);
                 context.Flight.Snapshot();
             }
             TargetingHandler handler = new(Clock, Fitting, Locks);
@@ -229,6 +231,15 @@ public sealed class TargetingTests
             SpacePosition station = new(saved.X, saved.Y, saved.Z);
             var gate = fixture.Objects.First(o => o.DestinationGateId.HasValue);
             var point = station + (gate.Position - station).Unit * (saved.Flight.StationRadius + 50000);
+            fixture.Db.Store.SetPosition(1000000000001, point);
+            fixture.Db.Store.SetPosition(1000000000002, point + new SpacePosition(0, 1500, 0));
+        }
+        else if (action == "dock")
+        {
+            var saved = fixture.Db.Store.FindPilot(1000001)!;
+            var point =
+                saved.Home.Position
+                + new SpacePosition(saved.Flight.StationRadius + saved.Flight.ShipRadius + DockingDefinitions.MaximumRange / 2d, 0, 0);
             fixture.Db.Store.SetPosition(1000000000001, point);
             fixture.Db.Store.SetPosition(1000000000002, point + new SpacePosition(0, 1500, 0));
         }

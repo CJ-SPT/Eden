@@ -26,6 +26,7 @@ public sealed class BoosterTests
             clock.UtcNow = new DateTimeOffset(DateTime.UnixEpoch.AddDays(last).AddHours(-1));
         }
         using var db = BoosterTestData.Create(clock, types: [type]);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
         long item = BoosterTestData.Item(db, type, 2);
         var result = BoosterTestData.Consume(db, item);
         var booster = Assert.Single(result.Snapshot.Boosters);

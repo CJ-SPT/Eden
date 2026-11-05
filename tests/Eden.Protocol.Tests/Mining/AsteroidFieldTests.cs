@@ -45,7 +45,7 @@ public sealed class AsteroidFieldTests
     [Fact]
     public async Task CatalogCountsCreateOnePersistentFieldAcrossConcurrentLoadsAndRestarts()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         Prepare(db);
         var field = db.Services.GetRequiredService<IAsteroidField>();
         var loads = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => field.List(30000144))));

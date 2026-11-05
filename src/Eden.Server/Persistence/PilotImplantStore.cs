@@ -67,6 +67,11 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     public ImplantSnapshot Read(long pilotId)
     {
+        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("read.implants");
+        if (LiveReadModels.Find(database.Path) is { } resident)
+        {
+            return resident.Learning(pilotId).Implants;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         return Read(world, pilotId);

@@ -6,6 +6,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -17,6 +18,7 @@ public sealed class BoosterServiceTests
     {
         var clock = CalendarTestData.Clock();
         using var db = BoosterTestData.Create(clock);
+        using LiveWorld live = new(new(db.Path), clock, _ => { });
         BoosterTestData.ShortLifetime(db);
         long item = BoosterTestData.Item(db);
         ImplantTestData.Training(db).Save(BoosterTestData.Pilot, [new(3327, 1)], true);
