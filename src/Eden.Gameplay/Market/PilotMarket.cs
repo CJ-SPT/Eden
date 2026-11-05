@@ -78,6 +78,7 @@ public enum WalletEntryType
 {
     MarketTransaction = 2,
     GmCashTransfer = 3,
+    CorporationRegistration = 39,
     RepairBill = 15,
     Insurance = 19,
     CloneTransfer = 52,

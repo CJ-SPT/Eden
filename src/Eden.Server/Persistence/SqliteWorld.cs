@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -180,13 +181,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             fitted.GetValueOrDefault(DogmaAttributeId.ArmorHitPoints),
             fitted.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
         );
+        var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         return new(
             new(
                 pilot.Id,
                 pilot.Name,
                 pilot.CorporationId,
                 new(pilot.Account.UserName, pilot.Account.CreatedAt, pilot.Account.CloneGrade),
-                new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt)
+                new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt),
+                CorporationRoles: corporation?.CeoId == pilot.Id ? CorporationRules.DirectorRole : 0
             ),
             new(
                 ship.Id,
@@ -217,7 +220,8 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         )
         {
             CorporationTicker =
-                catalog
+                corporation?.Ticker
+                ?? catalog
                     .Set<SourceRecord>()
                     .Find("client/npccorporations", pilot.CorporationId.ToString(CultureInfo.InvariantCulture))
                     ?.Read<ClientNpccorporations>()

@@ -32,7 +32,8 @@ public sealed record PilotIdentity(
     int CorporationId,
     AccountProfile Account,
     PilotProfile Profile,
-    string CorporationTicker = ""
+    string CorporationTicker = "",
+    long CorporationRoles = 0
 );
 
 public sealed record PilotShip(

@@ -26,6 +26,14 @@ internal sealed class PilotBindings(long sessionId)
         }
     }
 
+    public void ReleaseCorporationReferences()
+    {
+        if (_references.Remove("corpRegistry", out var binding))
+        {
+            _bindings.Remove(binding.Reference.Id);
+        }
+    }
+
     public void ReleaseLocationReferences()
     {
         foreach (var binding in _references.Values.Where(b => b.Lifetime == PilotBindingLifetime.Location).ToArray())

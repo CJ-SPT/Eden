@@ -96,6 +96,8 @@ internal sealed class PilotCallContext(
 
     private readonly PilotBindings _bindings = new(sessionId);
 
+    public void ReleaseCorporationReferences() => _bindings.ReleaseCorporationReferences();
+
     public void ReleaseLocationReferences()
     {
         DestroyedShip = null;
@@ -195,6 +197,18 @@ internal sealed class PilotCallRouter(
             )
             {
                 return PilotCallResult.Unsupported;
+            }
+            if (
+                service == "corpRegistry"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || !Equals(args[0], (long)context.Pilot.CorpId)
+                    || keywords is { Count: > 0 }
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind your current corporation registry.");
             }
             if (method == "MachoResolveObject")
             {

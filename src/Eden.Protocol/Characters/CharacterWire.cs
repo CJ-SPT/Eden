@@ -1,5 +1,6 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
@@ -101,13 +102,17 @@ internal sealed record PublicCharacterMedals : BlueModel
         new object?[] { new CompatibilityRowset(["medalID", "status"], []), new CompatibilityRowset(["medalID"], []) };
 }
 
-internal sealed record PublicCharacterEmployment(PublicCharacterProfile Profile) : BlueModel
+internal sealed record PublicCharacterEmployment(PublicCharacterProfile Profile, IReadOnlyList<CorporationEmployment>? Employment = null)
+    : BlueModel
 {
     public override object ToBlue() =>
         new object?[]
         {
-            // Eden currently only supports the saved starter corporation, with no transfers or corp changes.
-            new BlueList<CharacterEmploymentRow>(Profile.CreatedAt is long born ? [new(Profile.CorporationId, born)] : []),
+            new BlueList<CharacterEmploymentRow>(
+                Employment is not null ? Employment.Select(e => new CharacterEmploymentRow(e.CorporationId, e.StartedAt)).ToArray()
+                : Profile.CreatedAt is long born ? [new(Profile.CorporationId, born)]
+                : []
+            ),
             new List<object?>(),
         };
 }

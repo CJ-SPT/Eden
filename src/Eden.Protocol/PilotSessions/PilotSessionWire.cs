@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 
@@ -14,6 +15,12 @@ internal static class PilotSessionWire
         {
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
+            ["corprole"] = pilot.Identity.CorporationRoles,
+            ["rolesAtAll"] = pilot.Identity.CorporationRoles,
+            ["rolesAtHQ"] = 0L,
+            ["rolesAtBase"] = 0L,
+            ["rolesAtOther"] = 0L,
+            ["corpAccountKey"] = (long)WalletAccountKey.Cash,
             ["shipid"] = pilot.ShipId,
             ["stationid"] = pilot.Position is null ? pilot.StationId : null,
             ["solarsystemid"] = pilot.Position is null ? null : pilot.SystemId,

@@ -1,13 +1,18 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotCharacterSheet sheet, INpcDirectory npcs)
-    : ISelectedPilotCallHandler
+internal sealed class CharacterSheetHandler(
+    ICharacterCreation creation,
+    IPilotCharacterSheet sheet,
+    INpcDirectory npcs,
+    IPlayerCorporations corporations
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -103,7 +108,10 @@ internal sealed class CharacterSheetHandler(ICharacterCreation creation, IPilotC
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
                 "GetInfoWindowDataForChar" => new CharacterCorporationInfo(profile.CorporationId),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
-                "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(profile),
+                "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
+                    profile,
+                    sheet.ReadPublicProfile(id) is null ? null : corporations.Employment(id)
+                ),
                 "GetCharacterRankInfo" => PilotCallResult.None,
                 _ => new PublicCharacterInfo(profile),
             };

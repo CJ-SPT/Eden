@@ -1,5 +1,7 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -132,8 +134,11 @@ internal sealed record HomeStationChanged(int Id) : PilotNotification("OnHomeSta
 }
 
 [Injectable]
-internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporations, ICharacterDirectory characters)
-    : ISelectedPilotCallHandler
+internal sealed class NpcCorporationHandler(
+    INpcCorporationDirectory corporations,
+    ICharacterDirectory characters,
+    IPlayerCorporations players
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -168,7 +173,7 @@ internal sealed class NpcCorporationHandler(INpcCorporationDirectory corporation
                 ("corpmgr", [long corporation]) when corporation is > 0 and <= int.MaxValue => (int)corporation,
                 _ => throw new InvalidDataException("Choose a valid NPC corporation."),
             };
-            return new NpcCorporationReply(corporations.Read(id));
+            return players.Read(id) is { } player ? new PlayerCorporationReply(player) : new NpcCorporationReply(corporations.Read(id));
         }
         catch (InvalidDataException error)
         {
@@ -183,19 +188,7 @@ internal sealed record NpcCorporationReply(NpcCorporationInfo Corporation) : Blu
         new BlueConstructor(
             "blue.DBRow",
             [
-                BlueRows.Descriptor([
-                    ("corporationID", BlueColumnType.Int32),
-                    ("corporationName", BlueColumnType.Unicode),
-                    ("tickerName", BlueColumnType.String),
-                    ("stationID", BlueColumnType.Int32),
-                    ("solarSystemID", BlueColumnType.Int32),
-                    ("factionID", BlueColumnType.Int32),
-                    ("ceoID", BlueColumnType.Int64),
-                    ("taxRate", BlueColumnType.Float64),
-                    ("shares", BlueColumnType.Int64),
-                    ("memberLimit", BlueColumnType.Int64),
-                    ("url", BlueColumnType.String),
-                ]),
+                PlayerCorporationReply.Descriptor(),
                 new object?[]
                 {
                     Corporation.Id,
@@ -209,6 +202,20 @@ internal sealed record NpcCorporationReply(NpcCorporationInfo Corporation) : Blu
                     Corporation.Shares,
                     Corporation.MemberLimit,
                     Corporation.Url,
+                    Corporation.CeoId,
+                    0,
+                    new BlueUnicode(""),
+                    0d,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    false,
                 },
             ]
         );

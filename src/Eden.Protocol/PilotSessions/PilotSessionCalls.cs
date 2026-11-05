@@ -88,7 +88,15 @@ internal sealed class PilotSessionCalls(
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, null, previous).ToBlue());
             report($"Logged off pilot {previous.PilotId}; returned account {accountId} to character selection.");
         }
-        else if (previous is not null && (previous.LocationId != context.Pilot.LocationId || previous.ShipId != context.Pilot.ShipId))
+        else if (
+            previous is not null
+            && (
+                previous.LocationId != context.Pilot.LocationId
+                || previous.ShipId != context.Pilot.ShipId
+                || previous.CorpId != context.Pilot.CorpId
+                || previous.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
+            )
+        )
         {
             await output.AnnounceTransitionAsync(previous);
         }

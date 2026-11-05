@@ -93,6 +93,13 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
                 .OrderByDescending(entry => entry.TokenId)
                 .AsEnumerable()
                 .Select(entry => entry.Snapshot())
+                .ToArray(),
+            world
+                .Set<SavedCorporationPayment>()
+                .Where(p => p.PilotId == pilotId)
+                .OrderBy(p => p.Id)
+                .AsEnumerable()
+                .Select(p => p.Snapshot())
                 .ToArray()
         );
     }

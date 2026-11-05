@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -11,7 +12,8 @@ internal sealed class AccountCompatibilityHandler(
     TimeProvider clock,
     SharedStationGuests guests,
     ICharacterDirectory directory,
-    INpcCorporationDirectory corporations
+    INpcCorporationDirectory corporations,
+    IPlayerCorporations players
 ) : IPilotCallHandler
 {
     public PilotCallResult Call(
@@ -59,6 +61,14 @@ internal sealed class AccountCompatibilityHandler(
             .DistinctBy(p => p.CorpId)
             .Select(p => new CorporationTickerRow(p.CorpId, p.CorporationTicker))
             .ToArray();
+        known = known
+            .Concat(
+                ids.Except(known.Select(c => c.CorporationId))
+                    .Select(players.Read)
+                    .OfType<PlayerCorporation>()
+                    .Select(c => new CorporationTickerRow(c.Id, c.Details.Ticker))
+            )
+            .ToArray();
         // Michelle primes every NPC corp before dispatching newly added balls.
         // The lookup must also work before selection and without visible pilots.
         return new(
@@ -82,6 +92,13 @@ internal sealed class AccountCompatibilityHandler(
             rows.Add(new(pilot.Id, pilot.Name, pilot.Gender, pilot.NameId, pilot.IsNpc));
         }
 
+        foreach (long id in ids.OfType<long>().Where(id => id is > 0 and <= int.MaxValue).Distinct())
+        {
+            if (players.Read((int)id) is { } corporation)
+            {
+                rows.Add(new(id, corporation.Details.Name, 0, TypeId: CorporationRules.CorporationType));
+            }
+        }
         return new(rows);
     }
 }

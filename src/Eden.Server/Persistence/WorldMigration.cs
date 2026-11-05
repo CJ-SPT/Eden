@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 71;
+    internal const int CurrentVersion = 72;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -980,9 +980,12 @@ internal static class WorldMigration
                 throw new InvalidDataException($"Save references unknown station {station}.");
             }
         }
+        CorporationSchema.Upgrade(world);
         foreach (int corporation in world.Pilots.Select(p => p.CorporationId).Distinct())
         {
-            if (!catalog.Set<NpcCorporation>().Any(c => c.Id == corporation))
+            if (
+                !catalog.Set<NpcCorporation>().Any(c => c.Id == corporation) && !world.Set<SavedCorporation>().Any(c => c.Id == corporation)
+            )
             {
                 throw new InvalidDataException($"Save references unknown pilot corporation {corporation}.");
             }
@@ -1013,6 +1016,7 @@ internal static class WorldMigration
             InteractionHistorySchema.Upgrade(world);
             world.Database.ExecuteSqlRaw("PRAGMA user_version=71");
         }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=72");
         transaction.Commit();
     }
 

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -49,6 +50,25 @@ internal sealed class FlightSession(
             _dirt = appearance.Read(Pilot.PilotId, Pilot.ShipId);
         }
         return _dirt?.Timestamp;
+    }
+
+    public void UpdateCorporation(CorporationIdentity identity)
+    {
+        Pilot = Pilot with
+        {
+            Identity = Pilot.Identity with
+            {
+                CorporationId = identity.Id,
+                CorporationTicker = identity.Ticker,
+                CorporationRoles = identity.Roles,
+            },
+        };
+        if (InBallpark && !_destroying)
+        {
+            var contact = CreateContact();
+            Update(new DestinyCommand.OnSlimItemChange(Pilot.ShipId, new ShipSlimItem(contact)));
+            space.Publish(contact);
+        }
     }
 
     public void RefreshDirtTimestamp(long shipId, long timestamp)
@@ -916,7 +936,7 @@ internal sealed class FlightSession(
                 continue;
             }
             Effects.Replay(ship, previous);
-            if (ship.DirtTime != previous.DirtTime)
+            if (ship.DirtTime != previous.DirtTime || ship.Pilot.CorpId != previous.Pilot.CorpId)
             {
                 Update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));
             }

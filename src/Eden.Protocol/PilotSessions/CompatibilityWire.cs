@@ -3,11 +3,9 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;
 
-internal sealed record OwnerRow(long Id, string Name, int Gender, long? NameId = null, bool IsNpc = false) : BlueModel
+internal sealed record OwnerRow(long Id, string Name, int Gender, long? NameId = null, bool IsNpc = false, int TypeId = 1373) : BlueModel
 {
-    private const int CharacterTypeId = 1373;
-
-    public override object ToBlue() => new object?[] { Id, IsNpc ? new BlueUnicode(Name) : Name, CharacterTypeId, Gender, NameId };
+    public override object ToBlue() => new object?[] { Id, IsNpc ? new BlueUnicode(Name) : Name, TypeId, Gender, NameId };
 }
 
 internal sealed record OwnerTable(IReadOnlyList<OwnerRow> Owners) : BlueModel
