@@ -28,6 +28,20 @@ Sources: inert inspection/execution of the pinned **3662168** `xmpp/xmpphandler`
 
 
 
+## Persistent corporation administration
+
+`corpRegistry.UpdateCorporation` now saves description, website, ISK/LP tax rates and application availability using the pinned five-argument request. `UpdateLogo` saves all seven nullable logo identifiers; `UpdateDivisionNames` saves fourteen nullable names. Identity names/tickers remain immutable. Validation rejects nonfinite/out-of-range rates, oversized/control-bearing fields, negative logo IDs and unauthorized actors. These operations initially require the current CEO; delegated access follows in the roles milestone. Identical edits emit no events.
+
+World schema **74** adds `AdministrationJson` to the existing ordered per-pilot corporation change stream. Detail edits commit with an event for each current member; connected sessions receive `OnCorporationChanged(corporationID, changes)` with explicit before/after field pairs. A polling member sees each edit once in order. Existing JSON details gain an optional typed division-names record, preserving saves without it. Native corporation DBRows return the saved names using the existing shared descriptor. Settings edits neither charge a fee nor change membership/assets.
+
+Sources: inert pinned build **3662168** inspection of `bco_corporations.UpdateCorporation`/`UpdateLogo`/`OnCorporationChanged` and `base_corporation.UpdateDivisionNames`; the pinned `code.ccp` hash and Carbon Blue **fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae** reference from the preceding corrections remain unchanged. Explicit Unicode, tuple, None and notification adapters are reused; no codec change or native client execution occurred.
+
+**Automated validation:** focused tests cover native arguments, unchanged-state rejections, no-op writes, ordered notifications without duplicates, exact saved division fields, disk/resident reopen and migration from schema 73. Development filter `FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~PlayerCorporationTests` passed 38 tests in 6 seconds. Tool/solution restore and build passed with zero warnings/errors. Final filter `FullyQualifiedName~Corporation|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **116 tests in 24 seconds**. Both Python suites passed (3 catalog and 9 formatting tests), formatting verified 715 files, and diff checks passed. The complete validation sequence took **42 seconds**; no full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Edit corporation details/logo/division names, then inspect them from another connected member.
+
 ## Player corporation character-selection logo correction
 
 The maintainer's character-selection screenshot showed the NPC-corporation pilot's complete card, while the player-corporation pilot had a name but no skill, wallet or mail information. In pinned build 3662168, `characterSlots.LoadSlot` constructs the corporation logo synchronously before filling those fields. `eveIcon.CorpIcon.DoLayout` reads `shape1`, `shape2`, `shape3`, `color1`, `color2` and `color3` from `cfg.corptickernames`. Eden's `config.GetMultiCorpTickerNamesEx` returned only `corporationID` and `tickerName`, omitting all six attributes. The NPC logo uses a different native path, explaining the different card behavior.

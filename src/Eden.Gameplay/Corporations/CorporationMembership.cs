@@ -44,7 +44,12 @@ public sealed record CorporationMemberChange(
     long Time
 );
 
-public sealed record CorporationChange(long Id, CorporationApplication? Application, CorporationMemberChange? Membership);
+public sealed record CorporationChange(
+    long Id,
+    CorporationApplication? Application,
+    CorporationMemberChange? Membership,
+    CorporationAdministrationChange? Administration = null
+);
 
 public sealed record CorporationLeavePermission(bool Allowed, string Reason);
 

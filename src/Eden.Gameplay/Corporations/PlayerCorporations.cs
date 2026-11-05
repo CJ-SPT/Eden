@@ -13,7 +13,8 @@ public sealed record CorporationDetails(
     double LoyaltyPointTaxRate,
     CorporationLogo Logo,
     bool ApplicationsEnabled,
-    bool FriendlyFireEnabled
+    bool FriendlyFireEnabled,
+    CorporationDivisions? Divisions = null
 );
 
 public sealed record PlayerCorporation(
@@ -95,6 +96,22 @@ public static class CorporationRules
         {
             throw new InvalidDataException("Corporation tax rates must be between zero and 100 percent.");
         }
+        if (
+            new int?[]
+            {
+                details.Logo.Shape1,
+                details.Logo.Shape2,
+                details.Logo.Shape3,
+                details.Logo.Color1,
+                details.Logo.Color2,
+                details.Logo.Color3,
+                details.Logo.Typeface,
+            }.Any(value => value < 0)
+        )
+        {
+            throw new InvalidDataException("Corporation logo identifiers cannot be negative.");
+        }
+        details.Divisions?.Validate();
         return details with { Name = name, Ticker = ticker };
     }
 

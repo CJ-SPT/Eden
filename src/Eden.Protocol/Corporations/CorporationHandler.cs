@@ -8,8 +8,11 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed partial class CorporationHandler(IPlayerCorporations corporations, ICorporationMembership membership)
-    : ISelectedPilotCallHandler
+internal sealed partial class CorporationHandler(
+    IPlayerCorporations corporations,
+    ICorporationMembership membership,
+    ICorporationAdministration administration
+) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
     {
@@ -36,6 +39,11 @@ internal sealed partial class CorporationHandler(IPlayerCorporations corporation
         Dictionary<string, object?>? keywords = null
     )
     {
+        var adminResult = CallAdministration(context, service, method, args, keywords);
+        if (adminResult is not PilotCallResult.UnsupportedCall)
+        {
+            return adminResult;
+        }
         var memberResult = CallMembership(context, service, method, args, keywords);
         if (memberResult is not PilotCallResult.UnsupportedCall)
         {
@@ -239,6 +247,7 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
     {
         var details = Corporation.Details;
         var logo = details.Logo;
+        var divisions = CorporationDivisionNames.Values(details.Divisions);
         return new BlueConstructor(
             "blue.DBRow",
             [
@@ -270,19 +279,19 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
                     logo.Color3,
                     logo.Typeface,
                     false,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
+                    divisions["division1"],
+                    divisions["division2"],
+                    divisions["division3"],
+                    divisions["division4"],
+                    divisions["division5"],
+                    divisions["division6"],
+                    divisions["division7"],
+                    divisions["walletDivision2"],
+                    divisions["walletDivision3"],
+                    divisions["walletDivision4"],
+                    divisions["walletDivision5"],
+                    divisions["walletDivision6"],
+                    divisions["walletDivision7"],
                 },
             ]
         );

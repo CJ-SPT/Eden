@@ -355,7 +355,7 @@ public sealed class CorporationMembershipTests
         }
         WorldInitialization.Initialize(new(db.Path));
         using WorldDbContext migrated = new(db.Path);
-        Assert.Equal(73, migrated.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(74, migrated.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Equal(Ceo, migrated.Set<SavedCorporation>().Find(id)!.CeoId);
         Assert.Equal(id, migrated.Pilots.Find(Ceo)!.CorporationId);
         Assert.Equal(2, migrated.Set<SavedCorporationEmployment>().Count(e => e.PilotId == Ceo));

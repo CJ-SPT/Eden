@@ -26,12 +26,14 @@ public sealed class SavedCorporationChange
     public long PilotId { get; set; }
     public string? ApplicationJson { get; set; }
     public string? MembershipJson { get; set; }
+    public string? AdministrationJson { get; set; }
 
     public CorporationChange Snapshot() =>
         new(
             Id,
             ApplicationJson is null ? null : JsonSerializer.Deserialize<CorporationApplication>(ApplicationJson),
-            MembershipJson is null ? null : JsonSerializer.Deserialize<CorporationMemberChange>(MembershipJson)
+            MembershipJson is null ? null : JsonSerializer.Deserialize<CorporationMemberChange>(MembershipJson),
+            AdministrationJson is null ? null : JsonSerializer.Deserialize<CorporationAdministrationChange>(AdministrationJson)
         );
 }
 

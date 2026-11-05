@@ -34,6 +34,10 @@ internal sealed partial class CorporationHandler
         }
         foreach (var change in membership.Changes(context.Pilot.PilotId, _cursor))
         {
+            if (change.Administration is { } administrationChange)
+            {
+                context.Notifications.Add(new CorporationDetailsChanged(administrationChange));
+            }
             if (change.Application is { } application)
             {
                 context.Notifications.Add(new CorporationApplicationChanged(application));

@@ -54,7 +54,7 @@ internal static class CorporationSchema
                 ON WorldCorporationApplication(PilotId,CorporationId);
             CREATE TABLE IF NOT EXISTS WorldCorporationChange(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
-                ApplicationJson TEXT, MembershipJson TEXT);
+                ApplicationJson TEXT, MembershipJson TEXT, AdministrationJson TEXT);
             CREATE INDEX IF NOT EXISTS IX_WorldCorporationChange_PilotId_Id ON WorldCorporationChange(PilotId,Id);
             CREATE TABLE IF NOT EXISTS WorldCorporationEmployment(
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
@@ -65,6 +65,14 @@ internal static class CorporationSchema
                 CorporationId INTEGER NOT NULL, Time INTEGER NOT NULL, BalanceCents INTEGER NOT NULL);
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporationChange')")
+                .Contains("AdministrationJson")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCorporationChange ADD COLUMN AdministrationJson TEXT");
+        }
         if (
             world
                 .Set<SavedCorporation>()
