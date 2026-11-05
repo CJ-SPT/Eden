@@ -42,6 +42,20 @@ Sources: inert inspection/execution of the pinned **3662168** `xmpp/xmpphandler`
 
 
 
+## Corporation ISK header permission correction
+
+The reported blank Corporation Wallet ISK header came from the pinned client's local permission gates. Build 3662168 `corpISKTab.Update`, `walletUtil.AmAccountantOrJuniorAccountant`, and `HaveAccessToCorpWalletDivision` test individual Accountant and division-take bits; they do not infer those capabilities from Director. The server correctly authorized Directors, but advertised only their explicit assignments in session fields, so the client disabled ISK before requesting its balance.
+
+Session serialization now expands CEO/Director capabilities to the known global and location-specific role masks. Stored assignments, member administration and grant limits retain their explicit values. Ordinary and limited members receive their existing permissions; Director revocation removes the expanded session capabilities. No balance, role assignment or live save is rewritten.
+
+Evidence: inert disassembly of the pinned `code.ccp` archive, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The existing [Carbon Blue reference](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) at revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae` remains the serialization reference; no codec behavior changes.
+
+**Automated validation:** the two CEO/Director startup regressions failed before the correction. Five new cases check native permission predicates against encoded session packets, all seven division bits, an actual corporate balance reply, unchanged explicit assignments, limited-member isolation and revocation. Tool/solution restore and build passed with zero warnings/errors. Final filter `FullyQualifiedName~Corporation|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~PilotSessionTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, with `xUnit.MaxParallelThreads=4`, passed **136 tests in 22 seconds**. Both Python policy suites passed (3 catalog and 9 formatting tests), formatting verified 728 files and diff checks passed. The required sequence took **42.5 seconds**; no full .NET suite was run. Integration with the concurrently published localization correction passed a fresh build, 34 startup/localization/hosting tests in 6 seconds, formatting (730 files) and diff checks.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After updating and restarting the server, reconnect a CEO/Director pilot and open Corporation Wallet to inspect the ISK header, division selector and journal.
+
 ## Corporate LP and EverMark wallets
 
 World schema **77** adds corporate loyalty balances per NPC issuer and a saved transfer ledger. `LPSvc.GetAllMyCorporationWalletLPBalances` returns the pinned list of `(issuerCorporationID, points)` tuples for authorized financial readers; ordinary members/NPC corporations receive an empty list. Accountants/Junior Accountants and Directors may read; corporate transfers require Accountant or Director. `TransferLPFromMyWalletToOtherCorp` donates personal points to a player corporation, and `TransferLPFromMyCorpWalletToOtherCorp` transfers corporate LP to another player corporation. Both sides and the ledger commit together. Unknown actors/issuers/recipients, forged arguments, fractional/nonpositive amounts, insufficient funds and overflow reject without spending points. Donations are gifts and are not taxed as earned LP.

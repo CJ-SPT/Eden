@@ -1,3 +1,4 @@
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
@@ -11,15 +12,19 @@ internal static class PilotSessionWire
 
     private static Dictionary<string, object?> SessionFields(DockedPilot pilot)
     {
+        // Build 3662168 walletUtil checks individual Accountant/division bits,
+        // without treating Director as an implicit grant. Session roles are effective
+        // capabilities; member records retain their explicit assignments.
+        var rights = CorporationRoleRules.ForSession(pilot.Identity.CorporationAccess?.Roles ?? new(pilot.Identity.CorporationRoles));
         return new()
         {
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
-            ["corprole"] = pilot.Identity.CorporationRoles,
-            ["rolesAtAll"] = pilot.Identity.CorporationAccess?.Roles.Roles ?? pilot.Identity.CorporationRoles,
-            ["rolesAtHQ"] = pilot.Identity.CorporationAccess?.Roles.RolesAtHQ ?? 0L,
-            ["rolesAtBase"] = pilot.Identity.CorporationAccess?.Roles.RolesAtBase ?? 0L,
-            ["rolesAtOther"] = pilot.Identity.CorporationAccess?.Roles.RolesAtOther ?? 0L,
+            ["corprole"] = rights.Has(CorporationRole.Director) ? rights.Roles : pilot.Identity.CorporationRoles,
+            ["rolesAtAll"] = rights.Roles,
+            ["rolesAtHQ"] = rights.RolesAtHQ,
+            ["rolesAtBase"] = rights.RolesAtBase,
+            ["rolesAtOther"] = rights.RolesAtOther,
             ["corpAccountKey"] = (long)pilot.Identity.CorporationAccountKey,
             ["shipid"] = pilot.ShipId,
             ["stationid"] = pilot.Position is null ? pilot.StationId : null,

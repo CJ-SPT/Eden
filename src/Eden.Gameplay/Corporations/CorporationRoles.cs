@@ -112,6 +112,17 @@ public static class CorporationRoleRules
     public static readonly long LocationalRoles =
         (long)(CorporationRole.HangarCanTake1 | CorporationRole.HangarCanQuery1 | CorporationRole.ContainerCanTake1) * ((1L << 7) - 1);
 
+    public static CorporationRoleSet ForSession(CorporationRoleSet assigned) =>
+        assigned.Has(CorporationRole.Director)
+            ? assigned with
+            {
+                Roles = KnownRoles,
+                RolesAtHQ = LocationalRoles,
+                RolesAtBase = LocationalRoles,
+                RolesAtOther = LocationalRoles,
+            }
+            : assigned;
+
     public static void Validate(CorporationRoleSet roles)
     {
         long[] masks =

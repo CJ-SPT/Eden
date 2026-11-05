@@ -262,7 +262,7 @@ public sealed class PlayerCorporationTests
         Assert.Equal(2, changes.Length);
         var delta = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(changes[1].State, 14)[4], 3)[1], 2)[1]);
         Assert.Equal(new object?[] { 1000044, CorporationRules.FirstCorporationId }, delta["corpid"]);
-        Assert.Equal(new object?[] { 0L, CorporationRules.CeoRoles }, delta["corprole"]);
+        Assert.Equal(new object?[] { 0L, CorporationRoleRules.KnownRoles }, delta["corprole"]);
         Assert.EndsWith(".CallRsp", packets[packets.IndexOf(changes[1]) + 1].Name);
         Assert.Single(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
     }
@@ -459,7 +459,7 @@ public sealed class PlayerCorporationTests
         var packet = PilotSessionWire.SessionChange(1000001, 42, context.Pilot, pilot);
         var changes = BlueRead.Fields(BlueRead.Tuple(BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3)[1], 2)[1]);
         Assert.Equal(new object?[] { 1000044, id }, changes["corpid"]);
-        Assert.Equal(new object?[] { 0L, CorporationRules.CeoRoles }, changes["corprole"]);
+        Assert.Equal(new object?[] { 0L, CorporationRoleRules.KnownRoles }, changes["corprole"]);
         Assert.DoesNotContain("shipid", changes.Keys);
         Assert.Equal(2, db.Services.GetRequiredService<IPlayerCorporations>().Employment(pilot.PilotId).Count);
     }
