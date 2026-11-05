@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Docking;
@@ -47,10 +48,15 @@ internal sealed class PilotServices(
         PilotSessionOutput output = new(context, accountId, clientId, write, report);
         PilotSessionCalls calls = new(context, output, router, updates, skills, clock, report, accountId, clientId);
         PilotSessionTick tick = new(clock, updates, skills, asteroids);
+        async Task<(object? Packet, long Received)> ReadArrivalAsync()
+        {
+            var packet = await read();
+            return (packet, Stopwatch.GetTimestamp());
+        }
         Task? checkpoint = null;
         while (true)
         {
-            var incoming = read();
+            var incoming = ReadArrivalAsync();
             // Account rewards can change while the native character selector is open.
             while (
                 updates.IsAccountMonitoring
@@ -73,7 +79,9 @@ internal sealed class PilotServices(
                     break;
                 }
             }
-            await calls.ProcessAsync(await incoming);
+            var arrived = await incoming;
+            SessionPerformance.ReportQueue(arrived.Received, report);
+            await calls.ProcessAsync(arrived.Packet);
         }
     }
 }

@@ -21,6 +21,7 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         long clientId
     )
     {
+        using var performance = SessionPerformance.Begin("tick", report);
         long started = Stopwatch.GetTimestamp();
         if (!context.Selected)
         {
@@ -34,7 +35,10 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
             skills.Advance(context);
             await output.FlushNotificationsAsync();
         }
-        flight.Checkpoint();
+        using (SessionPerformance.Begin("motion", report))
+        {
+            flight.Checkpoint();
+        }
         var departure = flight.Pilot;
         if (flight.CompleteTranslocation() is { } moved)
         {
@@ -51,20 +55,29 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
-        if (flight.InBallpark)
+        using (SessionPerformance.Begin("contacts", report))
         {
-            flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
-            flight.RefreshWrecks();
-            flight.RefreshMissiles();
-            flight.RefreshNpcs();
-            flight.RefreshPeers();
-            await output.FlushFlightUpdatesAsync();
+            if (flight.InBallpark)
+            {
+                flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
+                flight.RefreshWrecks();
+                flight.RefreshMissiles();
+                flight.RefreshNpcs();
+                flight.RefreshPeers();
+                await output.FlushFlightUpdatesAsync();
+            }
         }
-        var beforeAttack = updates.Advance(context);
+
+        DockedPilot? beforeAttack;
+        using (SessionPerformance.Begin("updates", report))
+        {
+            beforeAttack = updates.Advance(context);
+        }
         if (beforeAttack is not null && beforeAttack.ShipId != context.Pilot.ShipId)
         {
             await output.AnnounceTransitionAsync(beforeAttack);
         }
+        using var outputPerformance = SessionPerformance.Begin("output", report);
         await output.FlushFlightUpdatesAsync();
         await output.FlushNotificationsAsync();
         var elapsed = Stopwatch.GetElapsedTime(started);

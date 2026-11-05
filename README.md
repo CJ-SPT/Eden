@@ -258,3 +258,7 @@ Eden's original source and documentation are available under the [MIT License](L
 Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.Server references both to compose the host and implement catalog and SQLite operations. Gameplay references neither adapter assembly. Combat health, fitting and module modifiers, targeting, mining yield, propulsion, skill planning, character rules and feature persistence contracts use this boundary. Client effect names and notification construction stay in Protocol. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by Server.
 
 Manufacturing illustrates the persistence boundary. The Server store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. Server then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.
+
+### Session performance diagnostics
+
+Set `EDEN_TRACE_PERFORMANCE=1` before startup for request/tick timings and database command/connection counts. See the isolated full-catalog replay in the [protocol notes](docs/protocol.md#shared-session-performance-diagnostics-november-5-2026).

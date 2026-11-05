@@ -133,14 +133,16 @@ public sealed class WorldDbContext(string path) : DbContext
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
-        options.UseSqlite(
-            new SqliteConnectionStringBuilder
-            {
-                DataSource = path,
-                ForeignKeys = true,
-                Pooling = false,
-            }.ToString()
-        );
+        options
+            .TracePerformance()
+            .UseSqlite(
+                new SqliteConnectionStringBuilder
+                {
+                    DataSource = path,
+                    ForeignKeys = true,
+                    Pooling = false,
+                }.ToString()
+            );
 
     protected override void OnModelCreating(ModelBuilder model)
     {

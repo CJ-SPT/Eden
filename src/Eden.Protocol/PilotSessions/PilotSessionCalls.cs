@@ -52,16 +52,24 @@ internal sealed class PilotSessionCalls(
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
         report($"Call {service}.{method}.");
+        using var performance = SessionPerformance.Begin($"call {service}.{method}", report);
         long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
-        PilotCallResult result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+        PilotCallResult result;
+        using (SessionPerformance.Begin("dispatch", report))
+        {
+            result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+        }
         var dispatchTime = Stopwatch.GetElapsedTime(started);
         if (!selected && context.Selected)
         {
             updates.Enter(context);
         }
-        updates.Advance(context);
+        using (SessionPerformance.Begin("updates", report))
+        {
+            updates.Advance(context);
+        }
         var elapsed = Stopwatch.GetElapsedTime(started);
         if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
         {
@@ -70,6 +78,7 @@ internal sealed class PilotSessionCalls(
                     + $"{dispatchTime.TotalMilliseconds:F0} ms dispatch, {(elapsed - dispatchTime).TotalMilliseconds:F0} ms updates."
             );
         }
+        using var outputPerformance = SessionPerformance.Begin("output", report);
         // A timer-driven loss can happen while rejecting an unrelated RPC.
         // Its durable capsule transition still has to reach the client.
         if (previous is not null && !context.Selected)

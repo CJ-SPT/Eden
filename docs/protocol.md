@@ -1,4 +1,30 @@
+## Shared session performance diagnostics (November 5, 2026)
+
+Set `EDEN_TRACE_PERFORMANCE=1` before server startup for call/tick phase timings and EF command/connection-open counts. Reports cover dispatch, updates, contacts, motion and output. Queue time covers decoded packet delivery to session processing, including intervening ticks. Nested counts roll into their enclosing operation. Reports omit SQL values and packet payloads. Timing uses a monotonic clock and scopes follow asynchronous execution.
+
+`ServerPerformanceReplayTests` is an opt-in isolated replay. Set `EDEN_PERFORMANCE_SOURCE` to a snapshot directory containing `world.sqlite` and the full `catalog.sqlite`, and `EDEN_PERFORMANCE_OUTPUT` to an ignored output directory. Run filter `FullyQualifiedName~ServerPerformanceReplayTests` with `xUnit.MaxParallelThreads=1`. Each scenario uses SQLite backup into separate scratch files, production scoped handlers, `PilotSessionCalls` and `PilotSessionTick`, a simulated clock and a completed output sink. It exercises docked idle, populated-space idle and locking/repeating civilian railgun combat. It uses saved pilot 90000001 and the first active pirate, supplying one online civilian gun in the copy. Combat raises pilot/target shield capacity and charge only in the copies to sustain 20 samples, asserting the original ship and repeating weapon survive. Cold setup is separate from warm median/p95. Snapshots are read-only. Without a configured source the opt-in replay returns without measuring a workload.
+
+Replay timings exclude socket transport, native client processing and packet contention. Queue timing is instrumented in the normal session loop. An exploratory replay let the pilot die after three samples and is excluded from sustained-combat comparisons.
+
 # Startup protocol and milestones
+
+**Milestone 1 automated validation.** Isolated build passed with zero warnings/errors. Filter `FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~ServerPerformanceReplayTests|FullyQualifiedName~NpcCombatTests` passed 23 cases in 59 seconds. Tool/package restore, both Python policy suites (3 and 9 cases), formatting and diff checks passed. Sustained-combat baseline results follow.
+
+```text
+Performance docked cold: 36.71 ms, commands=56, connections=30, tackleReads=1, aggressionReads=1.
+docked ticks median=13.16ms p95=18.14ms
+docked replies median=2.56ms p95=4.06ms
+Performance space cold: 4886.32 ms, commands=2922, connections=2588, tackleReads=26, aggressionReads=7.
+space ticks median=121.24ms p95=132.63ms
+space replies median=38.46ms p95=47.47ms
+Performance combat cold: 3880.04 ms, commands=2946, connections=2600, tackleReads=29, aggressionReads=10.
+combat ticks median=179.41ms p95=218.59ms
+combat replies median=58.81ms p95=61.68ms
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Compare native combat responsiveness after the final milestone.
 
 ## Development NPCs excluded from regional belts
 

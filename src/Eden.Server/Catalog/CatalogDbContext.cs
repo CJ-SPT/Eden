@@ -1,3 +1,4 @@
+using Eden.Server.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -141,6 +142,7 @@ public sealed class CatalogDbContext(string path, bool writable = false) : DbCon
 {
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
         options
+            .TracePerformance()
             .UseSqlite(
                 new SqliteConnectionStringBuilder
                 {
