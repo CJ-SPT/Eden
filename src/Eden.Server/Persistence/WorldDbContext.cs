@@ -70,7 +70,6 @@ public sealed class Ship
 {
     public long Id { get; set; }
     public long OwnerId { get; set; }
-    public Pilot Owner { get; set; } = null!;
     public int TypeId { get; set; }
     public int StationId { get; set; }
     public string Name { get; set; } = "";
@@ -141,6 +140,8 @@ public sealed partial class WorldDbContext(string path) : DbContext
     {
         ConfigureInteractionHistory(model);
         ConfigureCorporations(model);
+        model.Entity<InventoryOwner>().ToTable("WorldInventoryOwner").HasKey(o => o.Id);
+        model.Entity<InventoryOwner>().Property(o => o.Id).ValueGeneratedNever();
         model.Entity<SavedWeaponLink>().ToTable("WorldWeaponLink").HasKey(l => l.SlaveId);
         model.Entity<SavedWeaponLink>().HasOne<OwnedItem>().WithMany().HasForeignKey(l => l.MasterId);
         model.Entity<SavedWeaponLink>().HasOne<OwnedItem>().WithMany().HasForeignKey(l => l.SlaveId);
@@ -509,7 +510,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<OwnedItem>().Property(i => i.CrystalDamage).HasDefaultValue(0d);
         model.Entity<OwnedItem>().Property(i => i.Singleton).HasDefaultValue(false);
         model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);
-        model.Entity<OwnedItem>().HasOne<Pilot>().WithMany().HasForeignKey(i => i.OwnerId);
+        model.Entity<OwnedItem>().HasOne<InventoryOwner>().WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<OwnedItem>().HasIndex(i => new { i.OwnerId, i.LocationId });
         model.Entity<Account>().ToTable("WorldAccount");
         model.Entity<Account>().Property(a => a.CloneGrade).HasDefaultValue(AccountCloneGrade.Alpha);
@@ -543,7 +544,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             .HasForeignKey(p => new { p.ActiveShipId, p.Id })
             .HasPrincipalKey(s => new { s.Id, s.OwnerId })
             .OnDelete(DeleteBehavior.Restrict);
-        model.Entity<Ship>().HasOne(s => s.Owner).WithMany().HasForeignKey(s => s.OwnerId).OnDelete(DeleteBehavior.Restrict);
+        model.Entity<Ship>().HasOne<InventoryOwner>().WithMany().HasForeignKey(s => s.OwnerId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<Ship>().HasOne(s => s.Position).WithOne().HasForeignKey<FlightPosition>(p => p.ShipId);
     }
 }

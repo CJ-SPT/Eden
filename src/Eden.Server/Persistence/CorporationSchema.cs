@@ -114,6 +114,7 @@ internal static class CorporationSchema
                 SourceAfter INTEGER NOT NULL, RecipientBefore INTEGER NOT NULL, RecipientAfter INTEGER NOT NULL, Time INTEGER NOT NULL);
             """
         );
+        InventoryOwnershipSchema.Register(world);
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpcBounty')").Contains("TaxCents"))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpcBounty ADD COLUMN TaxCents INTEGER NOT NULL DEFAULT 0");

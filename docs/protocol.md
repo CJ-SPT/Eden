@@ -42,6 +42,7 @@ Sources: inert inspection/execution of the pinned **3662168** `xmpp/xmpphandler`
 
 
 
+
 ## Corporation ISK header permission correction
 
 The reported blank Corporation Wallet ISK header came from the pinned client's local permission gates. Build 3662168 `corpISKTab.Update`, `walletUtil.AmAccountantOrJuniorAccountant`, and `HaveAccessToCorpWalletDivision` test individual Accountant and division-take bits; they do not infer those capabilities from Director. The server correctly authorized Directors, but advertised only their explicit assignments in session fields, so the client disabled ISK before requesting its balance.
@@ -55,6 +56,19 @@ Evidence: inert disassembly of the pinned `code.ccp` archive, SHA-256 `37FB2AF4F
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** After updating and restarting the server, reconnect a CEO/Director pilot and open Corporation Wallet to inspect the ISK header, division selector and journal.
+
+## Corporation inventory ownership storage
+
+World schema **78** replaces inventory/ship pilot-only owner references with a registry of valid pilot and player-corporation owners. Creation triggers register both kinds atomically. The pilot active-ship composite foreign key remains unchanged, so an active hull cannot be handed to a corporation. Personal asset operations retain their owner filters; no corporate read/transfer permission is added by this storage milestone alone. See the [ownership migration notes](inventory-ownership.md) for table replacement, sequence/index/trigger preservation and rollback behavior.
+
+This is SQLite persistence behavior, not a new Blue or Destiny shape. The existing pinned protocol/source references remain applicable. During development, historical-save tests exposed SQLite ALTER's validation of fitting triggers while the inventory name is temporarily absent; holding legacy ALTER mode during the atomic replacement preserves those other-table triggers. The final foreign-key check precedes commit and both connection settings are restored.
+
+**Automated validation:** five new cases cover registered corporate owners, personal asset isolation, the active-ship constraint, unknown-owner rejection, disk/resident reopen, version-77 table replacement with custom indexes and fitting triggers, and corrupted-owner rollback. Filter `FullyQualifiedName~InventoryOwnershipTests` passed five tests in 3 seconds. The historical migration and immediate corporation tests also passed 22 focused cases after the ALTER correction. An initial broader run stopped with four historical-migration failures: older migrations can leave one inventory table on the current schema and the other pilot-only. The upgrade now validates each target independently and rebuilds both when either is old. The corrected historical/inventory run passed 20 tests in 6 seconds. Final tool/solution restore and build passed with zero warnings/errors. Filter `FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~PilotFleetTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~ContractAssetTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Corporation|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, with `xUnit.MaxParallelThreads=4`, passed **176 tests in 37 seconds**. Both Python suites passed (3 catalog and 9 formatting tests), formatting verified 732 files and diff checks passed. The required sequence took **58.3 seconds**; no full .NET suite was run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for the storage-only milestone; office and corporation inventory behavior follows separately.
+
 
 ## Corporate LP and EverMark wallets
 
