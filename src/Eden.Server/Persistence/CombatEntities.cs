@@ -25,6 +25,7 @@ public sealed class NpcBounty
     public long Time { get; set; }
     public long AmountCents { get; set; }
     public long BalanceCents { get; set; }
+    public long TaxCents { get; set; }
 }
 
 public sealed class NpcAggression

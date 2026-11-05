@@ -8,6 +8,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Repair;
@@ -16,7 +17,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class WalletHandler(
+    IPilotWalletReader wallet,
+    TimeProvider clock,
+    ICorporationWallet corporationWallet,
+    CorporationWalletHandler corporationHandler
+) : ISelectedPilotCallHandler
 {
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
@@ -31,6 +37,10 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
         if (service != "account")
         {
             return PilotCallResult.Unsupported;
+        }
+        if (method == "GetCashBalance" && args is [true] or [1L] || method == "GetTransactions" && args is [_, _, _, true])
+        {
+            return corporationHandler.Read(context, method, args, keywords);
         }
         if (method == "GetEntryTypes" && args.Length == 0)
         {
@@ -93,7 +103,7 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                     reward.PilotId,
                     reward.SystemId,
                     reward.AmountCents,
-                    reward.BalanceCents
+                    reward.BalanceCents + reward.TaxCents
                 )
             );
         }
@@ -248,6 +258,22 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                 );
             }
         }
+        entries.AddRange(
+            corporationWallet
+                .Journal(context.Pilot.PilotId, false, (int)WalletAccountKey.Cash)
+                .Where(entry => filter.Includes(entry.Time, clock.GetUtcNow().UtcDateTime))
+                .Select(entry => new WalletJournalEntry(
+                    CorporationWalletRules.FirstJournalId + entry.Id,
+                    entry.Time,
+                    (WalletEntryType)entry.EntryType,
+                    entry.AmountCents < 0 ? entry.OwnerId : entry.CounterpartyId,
+                    entry.AmountCents < 0 ? entry.CounterpartyId : entry.OwnerId,
+                    entry.ReferenceId,
+                    entry.AmountCents,
+                    entry.BalanceCents,
+                    entry.Reason
+                ))
+        );
         return new BlueList<WalletJournalEntry>(entries.OrderByDescending(entry => entry.Time).ToArray());
     }
 

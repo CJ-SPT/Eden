@@ -166,6 +166,7 @@ internal sealed class CorporationTestClient : IDisposable
     private readonly PilotCallRouter _router;
     private readonly CorporationHandler _handler;
     public PilotCallContext Context { get; }
+    public IServiceProvider Services => _scope.ServiceProvider;
 
     public CorporationTestClient(TestWorld world, long account)
     {
@@ -189,7 +190,17 @@ internal sealed class CorporationTestClient : IDisposable
     public void Advance() => _handler.Advance(Context);
 
     public PilotCallResult Call(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
-        _router.Call(Context, "corpRegistry", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+        CallService("corpRegistry", method, args, keywords);
+
+    public PilotCallResult CallService(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+        _router.Call(
+            Context,
+            service,
+            method,
+            BlueMarshal.Decode(BlueMarshal.Encode(args)),
+            _ => { },
+            keywords is null ? null : BlueRead.Fields(BlueMarshal.Decode(BlueMarshal.Encode(keywords)))
+        );
 
     public object? Reply(string method, object?[] args) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(Call(method, args)).Reply));

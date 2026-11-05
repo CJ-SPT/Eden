@@ -227,6 +227,10 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     internal static void Move(WorldDbContext world, Pilot pilot, int corporationId, long now)
     {
+        if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
+        {
+            world.Remove(selection);
+        }
         if (world.Set<SavedCorporationMemberAccess>().Find(pilot.Id) is { } access)
         {
             world.Remove(access);

@@ -78,6 +78,9 @@ public enum WalletEntryType
 {
     MarketTransaction = 2,
     GmCashTransfer = 3,
+    PlayerDonation = 10,
+    CorporationAccountWithdrawal = 37,
+    BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,
     RepairBill = 15,
     Insurance = 19,

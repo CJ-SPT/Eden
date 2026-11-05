@@ -43,9 +43,9 @@ public sealed class NpcCombatTests
         public long Module { get; }
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
 
-        public Fixture(bool liveWorld = false, bool simulationObjects = true)
+        public Fixture(bool liveWorld = false, bool simulationObjects = true, bool useTestClock = false)
         {
-            Db = new(liveWorld: liveWorld, simulationObjects: simulationObjects);
+            Db = new(liveWorld: liveWorld, simulationObjects: simulationObjects, clock: useTestClock ? Clock : null);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
@@ -578,7 +578,8 @@ public sealed class NpcCombatTests
         if (insured)
         {
             Assert.Equal(10700d, Assert.Single(context.Notifications.OfType<AccountBalanceChanged>()).Balance);
-            WalletHandler wallet = new(f.Db.Services.GetRequiredService<IPilotWalletReader>(), f.Clock);
+            using var walletScope = f.Db.Services.CreateScope();
+            WalletHandler wallet = ActivatorUtilities.CreateInstance<WalletHandler>(walletScope.ServiceProvider, f.Clock);
             var journal = Assert.IsType<BlueList<WalletJournalEntry>>(
                 Assert.IsType<PilotCallResult.Success>(wallet.Call(context, "account", "GetTransactions", [1000L, null, null, false])).Reply
             );
@@ -712,7 +713,7 @@ public sealed class NpcCombatTests
     [InlineData(true, true)]
     public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall, bool resident)
     {
-        using Fixture f = new(resident);
+        using Fixture f = new(resident, useTestClock: true);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -762,6 +763,7 @@ public sealed class NpcCombatTests
                 {
                     if (input.Count == 1)
                     {
+                        f.Clock.Seconds += 8;
                         using WorldDbContext world = new(f.Db.Path);
                         world.Add(new NpcAggression { NpcId = f.Npc.Id, TargetShipId = Fixture.ShipId });
                         world.Add(
@@ -771,7 +773,7 @@ public sealed class NpcCombatTests
                                 ShieldCharge = 0,
                                 ArmorDamage = 125,
                                 StructureDamage = 174,
-                                UpdatedAt = DateTime.UtcNow.ToFileTimeUtc(),
+                                UpdatedAt = f.Clock.Now,
                             }
                         );
                         world.SaveChanges();
@@ -825,7 +827,8 @@ public sealed class NpcCombatTests
             removal = index;
         }
         Assert.True(damage >= 0 && removal > damage && transition > removal);
-        Assert.EndsWith(rejectedCall ? ".ErrorResponse" : ".CallRsp", packets[^1].Name);
+        int reply = packets.FindLastIndex(p => p.Name.EndsWith(rejectedCall ? ".ErrorResponse" : ".CallRsp", StringComparison.Ordinal));
+        Assert.True(reply > transition, "The final call reply must follow the capsule transition.");
         Assert.Equal(FleetDefinitions.CapsuleType, f.Pilot.ShipTypeId);
     }
 }

@@ -22,6 +22,13 @@ internal sealed class WalletBalanceMonitor(IPilotWalletReader wallet, TimeProvid
 
     public void Reset() => _pilot = null;
 
+    public void Notify(PilotCallContext context)
+    {
+        Enter(context);
+        _balance = wallet.Balance(context.Pilot.PilotId);
+        context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, (double)_balance / MarketDefinitions.CentsPerIsk));
+    }
+
     public void Advance(PilotCallContext context)
     {
         if (!context.Selected)

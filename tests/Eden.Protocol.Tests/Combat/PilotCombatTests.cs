@@ -490,7 +490,7 @@ public sealed class PilotCombatTests
     [Fact]
     public async Task FatalShotSendsCombatTextBeforeRemovingTheTargetsClientRecord()
     {
-        using Fixture f = new();
+        using Fixture f = new(new Clock());
         f.AlmostDefeated();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
@@ -538,14 +538,14 @@ public sealed class PilotCombatTests
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
             session.RunAsync(
-                async () =>
+                () =>
                 {
-                    // The real session clock must complete the native NPC target lock.
+                    // Complete the native lock without making combat ordering depend on CPU load.
                     if (input.Count == 1)
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        f.Clock.Seconds += 5;
                     }
-                    return input.TryDequeue(out var request) ? request : throw new EndOfStreamException();
+                    return input.TryDequeue(out var request) ? Task.FromResult<object?>(request) : throw new EndOfStreamException();
                 },
                 packet =>
                 {
@@ -568,7 +568,11 @@ public sealed class PilotCombatTests
                 CancellationToken.None
             )
         );
-        int messageIndex = notifications.FindIndex(n => n.Name == "OnDamageMessage");
+        int messageIndex = notifications.FindIndex(n =>
+            n.Name == "OnDamageMessage"
+            && Assert.IsType<Dictionary<string, object?>>(Assert.Single(n.Args)).GetValueOrDefault("target") is long target
+            && target == f.Npc.Id
+        );
         Assert.True(messageIndex >= 0);
         int removalIndex = notifications.FindIndex(n =>
             n.Name == "DoDestinyUpdate"

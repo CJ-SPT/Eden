@@ -10,7 +10,8 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Login and corporation-window compatibility | Published |
 | Persistent settings, logos and division names | Published; 116 focused tests and required checks passed |
 | Delegated roles, titles and member administration | Published; 177 focused tests and required checks passed |
-| Shared wallets, journals and tax collection | Pending |
+| Shared ISK wallets, journals and bounty tax collection | Published; 309 focused tests and required checks passed |
+| Corporate LP/EverMark wallets | Pending |
 | Offices and corporation asset access | Pending |
 | Member communications and recruitment services | Pending |
 | Shares, voting and CEO succession/closure | Pending |

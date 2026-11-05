@@ -53,7 +53,8 @@ internal sealed class PilotUpdateCoordinator(
     BoosterHandler boosters,
     WalletBalanceMonitor walletBalance,
     ChatHandler chat,
-    CorporationHandler corporations
+    CorporationHandler corporations,
+    CorporationWalletHandler corporationWallet
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -77,6 +78,7 @@ internal sealed class PilotUpdateCoordinator(
     public void Enter(PilotCallContext context)
     {
         corporations.Enter(context);
+        corporationWallet.Enter(context);
         chat.Advance(context);
         guests.Advance(context);
         calendar.Enter(context);
@@ -99,6 +101,7 @@ internal sealed class PilotUpdateCoordinator(
     public void Leave(PilotCallContext context)
     {
         corporations.Reset();
+        corporationWallet.Reset();
         chat.Dispose();
         guests.Dispose();
         online.Reset();
@@ -174,6 +177,7 @@ internal sealed class PilotUpdateCoordinator(
         using (SessionPerformance.Phase("update.background"))
         {
             corporations.Advance(context);
+            corporationWallet.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
             online.Advance(context);

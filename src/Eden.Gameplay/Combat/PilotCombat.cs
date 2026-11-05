@@ -34,7 +34,8 @@ public sealed record CombatReward(
     int SystemId,
     long Time,
     long AmountCents,
-    long BalanceCents
+    long BalanceCents,
+    long TaxCents = 0
 );
 
 public sealed record CombatShot(

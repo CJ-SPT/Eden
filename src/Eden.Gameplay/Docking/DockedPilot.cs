@@ -35,7 +35,8 @@ public sealed record PilotIdentity(
     PilotProfile Profile,
     string CorporationTicker = "",
     long CorporationRoles = 0,
-    CorporationMemberAccess? CorporationAccess = null
+    CorporationMemberAccess? CorporationAccess = null,
+    int CorporationAccountKey = CorporationWalletRules.MasterKey
 );
 
 public sealed record PilotShip(

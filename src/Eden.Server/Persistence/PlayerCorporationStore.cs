@@ -99,7 +99,14 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         var access = CorporationRoleStore.Effective(world, pilotId, corporation);
         var ship = world.Ships.Include(s => s.Position).Single(s => s.Id == pilot.ActiveShipId);
         long currentRoles = access.Roles.At(ship.Position is null ? ship.StationId : null, corporation?.StationId ?? 0, access.BaseId);
-        return new(pilot.CorporationId, ticker, currentRoles, joined, access);
+        return new(
+            pilot.CorporationId,
+            ticker,
+            currentRoles,
+            joined,
+            access,
+            CorporationWalletStore.SelectedKey(world, pilotId, corporation)
+        );
     }
 
     public IReadOnlyList<CorporationEmployment> Employment(long pilotId)

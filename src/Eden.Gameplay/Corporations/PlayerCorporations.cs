@@ -44,7 +44,14 @@ public sealed record CorporationCreation(PlayerCorporation Corporation, long Bal
 
 public sealed record CorporationPayment(long Id, long PilotId, int CorporationId, long Time, long BalanceCents);
 
-public sealed record CorporationIdentity(int Id, string Ticker, long Roles, long JoinedAt, CorporationMemberAccess? Access = null);
+public sealed record CorporationIdentity(
+    int Id,
+    string Ticker,
+    long Roles,
+    long JoinedAt,
+    CorporationMemberAccess? Access = null,
+    int AccountKey = CorporationWalletRules.MasterKey
+);
 
 public interface IPlayerCorporations
 {

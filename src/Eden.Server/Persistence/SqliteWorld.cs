@@ -195,7 +195,8 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                     corporation?.StationId ?? 0,
                     corporationAccess.BaseId
                 ),
-                CorporationAccess: corporationAccess
+                CorporationAccess: corporationAccess,
+                CorporationAccountKey: CorporationWalletStore.SelectedKey(world, pilot.Id, corporation)
             ),
             new(
                 ship.Id,

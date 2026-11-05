@@ -6,6 +6,20 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model.Entity<SavedCorporationWallet>().ToTable("WorldCorporationWallet").HasKey(w => new { w.CorporationId, w.Key });
+        model.Entity<SavedCorporationWallet>().HasOne<SavedCorporation>().WithMany().HasForeignKey(w => w.CorporationId);
+        model.Entity<SavedCorporationWalletSelection>().ToTable("WorldCorporationWalletSelection").HasKey(w => w.PilotId);
+        model.Entity<SavedCorporationWalletSelection>().HasOne<Pilot>().WithMany().HasForeignKey(w => w.PilotId);
+        model.Entity<SavedWalletLedger>().ToTable("WorldWalletLedger").HasKey(e => e.Id);
+        model
+            .Entity<SavedWalletLedger>()
+            .HasIndex(e => new
+            {
+                e.OwnerId,
+                e.Key,
+                e.Id,
+            });
+        model.Entity<NpcBounty>().Property(b => b.TaxCents).HasDefaultValue(0);
         model.Entity<SavedCorporationApplication>().ToTable("WorldCorporationApplication").HasKey(a => a.Id);
         model.Entity<SavedCorporationMemberAccess>().ToTable("WorldCorporationMemberAccess").HasKey(m => m.PilotId);
         model.Entity<SavedCorporationMemberAccess>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId);
@@ -73,8 +87,23 @@ internal static class CorporationSchema
             CREATE TABLE IF NOT EXISTS WorldCorporationTitle(
                 CorporationId INTEGER NOT NULL REFERENCES WorldCorporation(Id) ON DELETE CASCADE,
                 TitleId INTEGER NOT NULL, DataJson TEXT NOT NULL, PRIMARY KEY(CorporationId,TitleId));
+            CREATE TABLE IF NOT EXISTS WorldCorporationWallet(
+                CorporationId INTEGER NOT NULL REFERENCES WorldCorporation(Id) ON DELETE CASCADE,
+                Key INTEGER NOT NULL, BalanceCents INTEGER NOT NULL CHECK(BalanceCents>=0), PRIMARY KEY(CorporationId,Key));
+            CREATE TABLE IF NOT EXISTS WorldCorporationWalletSelection(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                CorporationId INTEGER NOT NULL, Key INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldWalletLedger(
+                Id INTEGER PRIMARY KEY AUTOINCREMENT, OwnerId INTEGER NOT NULL, Key INTEGER NOT NULL, Time INTEGER NOT NULL,
+                CounterpartyId INTEGER NOT NULL, AmountCents INTEGER NOT NULL, BalanceCents INTEGER NOT NULL,
+                EntryType INTEGER NOT NULL, ReferenceId INTEGER NOT NULL, Reason TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS IX_WorldWalletLedger_OwnerId_Key_Id ON WorldWalletLedger(OwnerId,Key,Id);
             """
         );
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpcBounty')").Contains("TaxCents"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpcBounty ADD COLUMN TaxCents INTEGER NOT NULL DEFAULT 0");
+        }
         if (
             !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporationChange')")

@@ -99,6 +99,7 @@ internal sealed class PilotSessionCalls(
                 || previous.CorpId != context.Pilot.CorpId
                 || previous.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
                 || previous.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess
+                || previous.Identity.CorporationAccountKey != context.Pilot.Identity.CorporationAccountKey
             )
         )
         {

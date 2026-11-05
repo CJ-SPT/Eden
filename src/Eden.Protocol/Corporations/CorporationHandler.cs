@@ -27,6 +27,7 @@ internal sealed partial class CorporationHandler(
             context.Pilot.CorpId == identity.Id
             && context.Pilot.Identity.CorporationRoles == identity.Roles
             && context.Pilot.Identity.CorporationAccess == identity.Access
+            && context.Pilot.Identity.CorporationAccountKey == identity.AccountKey
         )
         {
             return;

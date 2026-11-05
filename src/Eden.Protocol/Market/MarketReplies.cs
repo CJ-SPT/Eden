@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
@@ -98,7 +100,8 @@ internal sealed record WalletJournalEntry(
     long OwnerId2,
     long ReferenceId,
     long AmountCents,
-    long BalanceCents
+    long BalanceCents,
+    string? Description = null
 ) : BlueModel
 {
     public override object ToBlue() =>
@@ -114,10 +117,16 @@ internal sealed record WalletJournalEntry(
                 ["referenceID"] = ReferenceId,
                 ["amount"] = (double)AmountCents / MarketDefinitions.CentsPerIsk,
                 ["balance"] = (double)BalanceCents / MarketDefinitions.CentsPerIsk,
-                ["description"] = null,
+                // Native transactionsUtil reads safe YAML metadata. JSON is a
+                // compatible subset; escaping DESC keeps player text inert.
+                ["description"] = string.IsNullOrEmpty(Description)
+                    ? null
+                    : new BlueUnicode(JsonSerializer.Serialize(new WalletDescription(Description))),
             }
         );
 }
+
+internal sealed record WalletDescription([property: JsonPropertyName("DESC")] string Reason);
 
 internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders) : PilotNotification("OnOwnOrdersChanged")
 {

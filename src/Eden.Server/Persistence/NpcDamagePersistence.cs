@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
@@ -93,6 +94,23 @@ internal static class NpcDamagePersistence
             {
                 var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
                 wallet.Cents = checked(wallet.Cents + cents);
+                long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);
+                wallet.Cents -= tax;
+                if (tax > 0)
+                {
+                    CorporationWalletStore.AddEntry(
+                        world,
+                        pilot.Id,
+                        CorporationWalletRules.MasterKey,
+                        now,
+                        pilot.CorporationId,
+                        -tax,
+                        wallet.Cents,
+                        CorporationWalletRules.BountyTaxEntry,
+                        npc.Id,
+                        ""
+                    );
+                }
                 reward = world
                     .Set<NpcBounty>()
                     .Add(
@@ -105,6 +123,7 @@ internal static class NpcDamagePersistence
                             Time = now,
                             AmountCents = cents,
                             BalanceCents = wallet.Cents,
+                            TaxCents = tax,
                         }
                     )
                     .Entity;
@@ -114,5 +133,15 @@ internal static class NpcDamagePersistence
     }
 
     internal static CombatReward Read(NpcBounty bounty) =>
-        new(bounty.Id, bounty.PilotId, bounty.NpcId, bounty.TypeId, bounty.SystemId, bounty.Time, bounty.AmountCents, bounty.BalanceCents);
+        new(
+            bounty.Id,
+            bounty.PilotId,
+            bounty.NpcId,
+            bounty.TypeId,
+            bounty.SystemId,
+            bounty.Time,
+            bounty.AmountCents,
+            bounty.BalanceCents,
+            bounty.TaxCents
+        );
 }

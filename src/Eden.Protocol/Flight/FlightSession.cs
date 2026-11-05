@@ -62,6 +62,7 @@ internal sealed class FlightSession(
                 CorporationTicker = identity.Ticker,
                 CorporationRoles = identity.Roles,
                 CorporationAccess = identity.Access,
+                CorporationAccountKey = identity.AccountKey,
             },
         };
         if (InBallpark && !_destroying)

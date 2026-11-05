@@ -20,7 +20,7 @@ internal static class PilotSessionWire
             ["rolesAtHQ"] = pilot.Identity.CorporationAccess?.Roles.RolesAtHQ ?? 0L,
             ["rolesAtBase"] = pilot.Identity.CorporationAccess?.Roles.RolesAtBase ?? 0L,
             ["rolesAtOther"] = pilot.Identity.CorporationAccess?.Roles.RolesAtOther ?? 0L,
-            ["corpAccountKey"] = (long)WalletAccountKey.Cash,
+            ["corpAccountKey"] = (long)pilot.Identity.CorporationAccountKey,
             ["shipid"] = pilot.ShipId,
             ["stationid"] = pilot.Position is null ? pilot.StationId : null,
             ["solarsystemid"] = pilot.Position is null ? null : pilot.SystemId,
