@@ -15,7 +15,7 @@ internal static class TurretChargeCatalog
         {
             return false;
         }
-        var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
             type?.Published != 1

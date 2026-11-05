@@ -18,7 +18,7 @@ internal static class PassiveCatalog
         {
             return false;
         }
-        var type = catalog.Set<SourceRecord>().Find("client/types", Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.FindSource("client/types", Key(typeId))?.Read<ClientTypes>();
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (type?.Published != 1 || type.MetaGroupID == AbyssalMetaGroup || InventoryDefinitions.RequiresSpecificShip(attributes))
         {
@@ -39,7 +39,7 @@ internal static class PassiveCatalog
     internal static IReadOnlyList<ClientDogmaeffects> Effects(CatalogDbContext catalog, int typeId) =>
         FittingCatalog
             .Effects(catalog, typeId)
-            .Select(id => catalog.Set<SourceRecord>().Find("client/dogmaeffects", Key((int)id))?.Read<ClientDogmaeffects>())
+            .Select(id => catalog.FindSource("client/dogmaeffects", Key((int)id))?.Read<ClientDogmaeffects>())
             .Where(e => e is not null)
             .Cast<ClientDogmaeffects>()
             .ToArray();

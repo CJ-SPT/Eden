@@ -138,7 +138,7 @@ public sealed class TypeAttribute
     public double Value { get; set; }
 }
 
-public sealed class CatalogDbContext(string path, bool writable = false) : DbContext
+public sealed partial class CatalogDbContext(string path, bool writable = false) : DbContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
         options

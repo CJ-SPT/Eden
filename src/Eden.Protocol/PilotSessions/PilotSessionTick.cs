@@ -9,7 +9,13 @@ using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
 
-internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinator updates, SkillHandler skills, IAsteroidField asteroids)
+internal sealed class PilotSessionTick(
+    TimeProvider clock,
+    PilotUpdateCoordinator updates,
+    SkillHandler skills,
+    IAsteroidField asteroids,
+    IPilotOperationScope? operations = null
+)
 {
     private const int SlowUpdateMilliseconds = 250;
 
@@ -21,6 +27,7 @@ internal sealed class PilotSessionTick(TimeProvider clock, PilotUpdateCoordinato
         long clientId
     )
     {
+        using var operation = operations?.Begin();
         using var performance = SessionPerformance.Begin("tick", report);
         long started = Stopwatch.GetTimestamp();
         if (!context.Selected)

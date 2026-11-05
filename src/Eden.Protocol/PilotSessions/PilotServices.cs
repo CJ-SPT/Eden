@@ -18,7 +18,8 @@ internal sealed class PilotServices(
     SkillHandler skills,
     IAsteroidField asteroids,
     ILoginIdentity identity,
-    StationGuestHandler guests
+    StationGuestHandler guests,
+    IPilotOperationScope? operations = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -46,8 +47,8 @@ internal sealed class PilotServices(
             Roles = identity.ReadRoles(accountId),
         };
         PilotSessionOutput output = new(context, accountId, clientId, write, report);
-        PilotSessionCalls calls = new(context, output, router, updates, skills, clock, report, accountId, clientId);
-        PilotSessionTick tick = new(clock, updates, skills, asteroids);
+        PilotSessionCalls calls = new(context, output, router, updates, skills, clock, report, accountId, clientId, operations);
+        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations);
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();

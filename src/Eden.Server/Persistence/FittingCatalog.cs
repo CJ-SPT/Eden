@@ -13,7 +13,7 @@ internal static class FittingCatalog
 {
     internal static ModuleFittingDefinition? Definition(CatalogDbContext catalog, int typeId)
     {
-        var type = catalog.Set<ItemType>().Find(typeId);
+        var type = catalog.FittingType(typeId);
         if (type is null)
         {
             return null;
@@ -101,8 +101,7 @@ internal static class FittingCatalog
 
     internal static HashSet<DogmaEffect> Effects(CatalogDbContext catalog, int typeId) =>
         catalog
-            .Set<SourceRecord>()
-            .Find("client/typedogma", typeId.ToString(CultureInfo.InvariantCulture))
+            .FindSource("client/typedogma", typeId.ToString(CultureInfo.InvariantCulture))
             ?.Read<ClientTypedogma>()
             .DogmaEffects?.Select(e => (DogmaEffect)checked((int)e.EffectID!.Value))
             .ToHashSet()
@@ -112,8 +111,7 @@ internal static class FittingCatalog
     {
         var effects =
             catalog
-                .Set<SourceRecord>()
-                .Find("client/typedogma", PassiveCatalog.Key(typeId))
+                .FindSource("client/typedogma", PassiveCatalog.Key(typeId))
                 ?.Read<ClientTypedogma>()
                 .DogmaEffects?.Where(e => e.IsDefault == 1)
                 .ToArray()

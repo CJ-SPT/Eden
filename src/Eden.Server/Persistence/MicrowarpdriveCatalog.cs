@@ -18,7 +18,7 @@ internal static class MicrowarpdriveCatalog
         {
             return false;
         }
-        var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         if (
             type is not { Published: 1 }
             || !PropulsionDefinitions.IsSupportedMicrowarpdrive(PilotFittingStore.ReadAttributes(catalog, typeId))

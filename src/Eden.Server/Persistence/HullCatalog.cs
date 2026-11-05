@@ -10,7 +10,7 @@ internal static class HullCatalog
 {
     internal static bool CanAssemble(CatalogDbContext catalog, ItemType type, int category)
     {
-        var definition = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(type.Id))?.Read<ClientTypes>();
+        var definition = catalog.FindSource("client/types", PassiveCatalog.Key(type.Id))?.Read<ClientTypes>();
         // Existing Venture saves and the historical fixtures precede techLevel metadata.
         int techLevel = checked((int)(definition?.TechLevel ?? (type.Id == (int)StarterShipType.Venture ? 1 : 0)));
         return TechOneHullRules.CanAssemble(
@@ -19,7 +19,7 @@ internal static class HullCatalog
     }
 
     internal static bool UsesCatalogBonuses(CatalogDbContext catalog, int typeId) =>
-        catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>().TechLevel == 1
+        catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>().TechLevel == 1
         && catalog.Set<ItemType>().Find(typeId) is { } type
         && catalog.Set<ItemGroup>().Find(type.GroupId) is { } group
         && CanAssemble(catalog, type, group.CategoryId);

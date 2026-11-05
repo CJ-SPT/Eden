@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
@@ -20,10 +21,47 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
 {
-    private const long Account = 1000001;
-    private const long PilotId = 90000001;
     private const long Module = 8000000000001;
     private const int Samples = 20;
+    private const int HeavyElectronBlasterTwoType = 3130;
+
+    [Fact]
+    public void MeasureSavedFitting()
+    {
+        string? source = Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_SOURCE");
+        if (source is null)
+        {
+            return;
+        }
+        long pilot = long.Parse(Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_PILOT") ?? "90000001");
+        using var services = ServerServices.Build(new(Path.Combine(source, "world.sqlite")));
+        var fitting = services.GetRequiredService<IPilotFitting>();
+        List<string> reports = [];
+        IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double>? previous = null;
+        for (int sample = 0; sample < 10; sample++)
+        {
+            using var metrics = SessionPerformance.Begin($"fitting {pilot} sample {sample}", reports.Add, force: true);
+            var attributes = fitting.ShipAttributes(pilot);
+            if (previous is not null)
+            {
+                Assert.Equal(previous.OrderBy(p => p.Key), attributes.OrderBy(p => p.Key));
+            }
+            previous = attributes;
+        }
+        if (Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_OUTPUT") is { } destination)
+        {
+            Directory.CreateDirectory(destination);
+            File.WriteAllLines(Path.Combine(destination, "fitting.log"), reports);
+            File.WriteAllLines(
+                Path.Combine(destination, "fitting-values.log"),
+                previous!.OrderBy(p => p.Key).Select(p => $"{p.Key}={p.Value:R}")
+            );
+        }
+        foreach (string report in reports)
+        {
+            output.WriteLine(report);
+        }
+    }
 
     [Theory]
     [InlineData("docked")]
@@ -37,6 +75,8 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
             output.WriteLine("Set EDEN_PERFORMANCE_SOURCE to an isolated snapshot directory containing world.sqlite and catalog.sqlite.");
             return;
         }
+        long pilotId = long.Parse(Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_PILOT") ?? "90000001");
+        long account;
         string directory = TestDirectory.Create("eden-performance-").FullName;
         try
         {
@@ -55,24 +95,26 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                 copy.Open();
                 original.BackupDatabase(copy);
             }
-            TestClock clock = new(new DateTimeOffset(2026, 11, 5, 5, 0, 0, TimeSpan.Zero));
+            TestClock clock = new(new DateTimeOffset(2026, 11, 6, 5, 0, 0, TimeSpan.Zero));
             using var services = ServerServices.Build(new(Path.Combine(directory, "world.sqlite")), clock);
             var store = services.GetRequiredService<SqliteWorld>();
             WorldNpc target;
             using (WorldDbContext world = new(Path.Combine(directory, "world.sqlite")))
             {
                 target = world.Set<WorldNpc>().First(n => n.Role == NpcRole.Pirate && n.DestroyedAt == null && n.RetiredAt == null);
-                var pilot = world.Pilots.Single(p => p.Id == PilotId);
+                var pilot = world.Pilots.Single(p => p.Id == pilotId);
+                account = pilot.AccountId;
+                var flags = world.Set<OwnedItem>().Where(i => i.LocationId == pilot.ActiveShipId).Select(i => i.FlagId).ToArray();
                 world
                     .Set<OwnedItem>()
                     .Add(
                         new OwnedItem
                         {
                             Id = Module,
-                            OwnerId = PilotId,
+                            OwnerId = pilotId,
                             TypeId = 3638,
                             LocationId = pilot.ActiveShipId,
-                            FlagId = 27,
+                            FlagId = Enumerable.Range(27, 8).First(flag => !flags.Contains(flag)),
                             Quantity = 1,
                             Singleton = true,
                             Online = true,
@@ -80,7 +122,7 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                     );
                 world.SaveChanges();
             }
-            var selected = store.FindPilot(Account)!;
+            var selected = store.FindPilot(account, pilotId)!;
             if (scenario == "combat")
             {
                 // Keep all measured samples in combat. The copied catalog only changes durability.
@@ -117,17 +159,17 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
             var pilots = provider.GetRequiredService<IPilotLookup>();
             List<string> reports = [];
             using PilotCallContext context = new(
-                Account,
-                pilots.ReadAccount(Account),
-                pilots.ListPilots(Account),
+                account,
+                pilots.ReadAccount(account),
+                pilots.ListPilots(account),
                 provider.GetRequiredService<FlightSessionFactory>().Create,
                 42,
                 SignedSettings.Empty
             );
-            context.Select(store.FindPilot(Account)!);
+            context.Select(store.FindPilot(account, pilotId)!);
             var updates = provider.GetRequiredService<PilotUpdateCoordinator>();
             var skills = provider.GetRequiredService<SkillHandler>();
-            PilotSessionOutput sessionOutput = new(context, Account, 42, _ => Task.CompletedTask, reports.Add);
+            PilotSessionOutput sessionOutput = new(context, account, 42, _ => Task.CompletedTask, reports.Add);
             PilotSessionCalls calls = new(
                 context,
                 sessionOutput,
@@ -136,10 +178,17 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                 skills,
                 clock,
                 reports.Add,
-                Account,
-                42
+                account,
+                42,
+                provider.GetRequiredService<IPilotOperationScope>()
             );
-            PilotSessionTick tick = new(clock, updates, skills, provider.GetRequiredService<IAsteroidField>());
+            PilotSessionTick tick = new(
+                clock,
+                updates,
+                skills,
+                provider.GetRequiredService<IAsteroidField>(),
+                provider.GetRequiredService<IPilotOperationScope>()
+            );
             using (SessionPerformance.Begin($"{scenario} cold", reports.Add, force: true))
             {
                 updates.Enter(context);
@@ -147,8 +196,9 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                 {
                     context.Flight.Snapshot();
                 }
-                await tick.AdvanceAsync(context, sessionOutput, reports.Add, Account, 42);
+                await tick.AdvanceAsync(context, sessionOutput, reports.Add, account, 42);
             }
+            long[] repeatedBlasters = [];
             clock.Seconds += 10;
             if (scenario == "combat")
             {
@@ -161,6 +211,23 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                 Assert.IsType<PilotCallResult.Success>(
                     router.Call(context, "dogmaIM", "Activate", new object?[] { Module, "targetAttack", target.Id, 100L }, reports.Add)
                 );
+                using WorldDbContext saved = new(Path.Combine(directory, "world.sqlite"));
+                repeatedBlasters = saved
+                    .Set<OwnedItem>()
+                    .Where(i => i.LocationId == selected.ShipId && i.Online && i.TypeId == HeavyElectronBlasterTwoType)
+                    .Select(i => i.Id)
+                    .ToArray();
+                foreach (long blaster in repeatedBlasters)
+                {
+                    var result = router.Call(
+                        context,
+                        "dogmaIM",
+                        "Activate",
+                        new object?[] { blaster, "projectileFired", target.Id, 100L },
+                        reports.Add
+                    );
+                    Assert.True(result is PilotCallResult.Success, result.ToString());
+                }
             }
             List<double> ticks = [];
             List<double> replies = [];
@@ -170,7 +237,7 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
                 long start = Stopwatch.GetTimestamp();
                 using (SessionPerformance.Begin($"{scenario} sample {sample}", reports.Add, force: true))
                 {
-                    await tick.AdvanceAsync(context, sessionOutput, reports.Add, Account, 42);
+                    await tick.AdvanceAsync(context, sessionOutput, reports.Add, account, 42);
                     ticks.Add(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
                     start = Stopwatch.GetTimestamp();
                     await calls.ProcessAsync(Request("config", "GetMultiLocationsEx", new List<object?> { target.Id }));
@@ -181,6 +248,10 @@ public sealed class ServerPerformanceReplayTests(ITestOutputHelper output)
             {
                 Assert.Equal(selected.ShipId, context.Pilot.ShipId);
                 Assert.NotNull(provider.GetRequiredService<CombatHandler>().ActiveEffect(context.Pilot, Module));
+                foreach (long blaster in repeatedBlasters)
+                {
+                    Assert.NotNull(provider.GetRequiredService<CombatHandler>().ActiveEffect(context.Pilot, blaster));
+                }
             }
             foreach (var (name, values) in new[] { ("ticks", ticks), ("replies", replies) })
             {

@@ -1,3 +1,38 @@
+## Fitted combat catalog reads (November 5, 2026)
+
+The maintainer supplied a screenshot of a **3,057 ms** pilot update during combat. The running default Debug server had been rebuilt after the prior milestones. A read-only save inspection found pilot **90000006**, account **1000003**, flying a **Brutix Navy Issue (33151)** with 17 online modules, six loaded Heavy Electron Blaster IIs and 90 trained skills. The previous solo replay used a lightly fitted Ibis and did not represent this fitting workload. The screenshot gives a total elapsed time; its individual phase costs were not captured.
+
+Fitting support/modifier checks repeatedly read the same source records and base type attributes. Read-only catalog contexts now reuse those inputs throughout one serialized request or tick through `IPilotOperationScope`. Source records, including missing entries, are keyed by dataset/key, hull/module identities and attributes by type, and catalogs by normalized absolute path. Frozen base attributes are copied before signature-default or gameplay modifications. The scope expires after that operation. Writable catalogs bypass these caches. Inventory, training, paid cycles, active effects, capacitor, damage and all other world inputs still use their owning transactions. Skill rows are loaded in a batch for each fitting calculation and its owning transaction, including tracked added/modified rows. Skill levels are reused within that calculation. There are no shared cached fitting results or wire-format changes.
+
+`EDEN_PERFORMANCE_PILOT` now chooses the saved pilot for the opt-in replay, deriving its account from the snapshot. The replay supplies a civilian gun in a free high slot and also activates all six saved type-3130 blasters when present. Its clock is November 6, after the snapshot's saved cooldowns; the earlier replay using November 5 midnight could not activate a copied live weapon and was excluded. The combat copy still raises shield durability to preserve sustained samples. Repeated weapon activity and original ship identity are asserted. `MeasureSavedFitting` measures ten direct fitting reads and records the resulting ordered attribute values for exact before/after comparison.
+
+**Automated validation.** The broad focused filter covering catalog reads, fitting, passives, support, hybrid weapons, hardeners, tackle, missiles, shield boosters, propulsion, NPC combat, typed sessions and hosting passed 242 cases in 60 seconds. After the final skill batching/eligibility and pending-entity corrections, `FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~HybridTierTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed 49 cases in 18 seconds. Four opt-in replay cases passed in 38 seconds on the final code, including a direct fitting check and the three saved-pilot session scenarios. Tool/solution restore, isolated build (zero warnings/errors), Python catalog/format suites (3 and 9 cases), formatting across 636 files and diff checks passed. No full .NET regression suite was requested or run.
+
+Direct fitting reads for the saved Brutix decreased from 475 to 163 database commands. Before/after ordered attribute files match exactly. The unchanged-parent replay uses `b744a40` with the same expanded replay copied into an isolated worktree, the same full-catalog snapshot, six saved blasters, durability settings and simulated clock. The final replay additionally asserts every saved blaster remains active after all 20 samples. Results follow.
+
+```text
+fitted-parent
+docked ticks median=16.80ms p95=19.48ms
+docked replies median=6.14ms p95=8.46ms
+space ticks median=92.22ms p95=111.59ms
+space replies median=13.40ms p95=15.66ms
+combat ticks median=1423.07ms p95=1953.21ms
+combat replies median=107.14ms p95=127.87ms
+fitted-verified
+docked ticks median=15.44ms p95=17.12ms
+docked replies median=5.13ms p95=5.90ms
+space ticks median=58.97ms p95=74.38ms
+space replies median=10.66ms p95=11.42ms
+combat ticks median=351.56ms p95=516.17ms
+combat replies median=40.50ms p95=56.39ms
+```
+
+Final combat tick median decreased from 1,423.07 to 351.56 ms, and p95 from 1,953.21 to 516.17 ms. Reply p95 decreased from 127.87 to 56.39 ms. The 250 ms tick target remains missed by 266.17 ms. Update processing remains the largest slow phase. An intermediate candidate measured 882.61 ms tick p95, indicating substantial run-to-run timing variability. These are isolated server-side measurements with immediate output, controlled shield durability and a simulated clock; they do not establish native end-to-end responsiveness or the exact cause of the maintainer's individual 3,057 ms observation. The default Debug build's generated informational version identified `b744a40`; development validation used separate artifact outputs.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the default server and repeat six-blaster combat with `EDEN_TRACE_PERFORMANCE=1` to capture real update phases and queue waits.
+
 ## Shared session performance diagnostics (November 5, 2026)
 
 Set `EDEN_TRACE_PERFORMANCE=1` before server startup for call/tick phase timings and EF command/connection-open counts. Reports cover dispatch, updates, contacts, motion and output. Queue time covers decoded packet delivery to session processing, including intervening ticks. Nested counts roll into their enclosing operation. Reports omit SQL values and packet payloads. Timing uses a monotonic clock and scopes follow asynchronous execution.

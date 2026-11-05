@@ -6,6 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Targeting;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,8 @@ internal sealed record FittingCalculation(
     long PilotId,
     IReadOnlyList<FittingLocation> Modules,
     IReadOnlyList<FittingSkillBonus> SkillBonuses,
-    IReadOnlyList<FittingLocation> Charges
+    IReadOnlyList<FittingLocation> Charges,
+    IReadOnlyDictionary<int, int> SkillLevels
 )
 {
     internal static FittingCalculation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
@@ -31,7 +33,7 @@ internal sealed record FittingCalculation(
             catalog.Database.OpenConnection();
         }
         ship ??= pilot.ActiveShip;
-        var hull = catalog.Set<ItemType>().Find(ship.TypeId)!;
+        var hull = catalog.FittingType(ship.TypeId)!;
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
         hullAttributes[DogmaAttributeId.Mass] = hull.Mass ?? 0;
         hullAttributes[DogmaAttributeId.CargoCapacity] = hull.Capacity ?? 0;
@@ -51,7 +53,7 @@ internal sealed record FittingCalculation(
         var modules = items
             .Select(i => new FittingLocation(
                 i,
-                catalog.Set<ItemType>().Find(i.TypeId)!.GroupId,
+                catalog.FittingType(i.TypeId)!.GroupId,
                 InventoryDefinitions
                     .RequiredSkills.Select(p => moduleAttributes[i.TypeId].GetValueOrDefault(p.Skill))
                     .Where(v => v > 0)
@@ -68,7 +70,7 @@ internal sealed record FittingCalculation(
         var charges = loaded
             .Select(i => new FittingLocation(
                 i,
-                catalog.Set<ItemType>().Find(i.TypeId)!.GroupId,
+                catalog.FittingType(i.TypeId)!.GroupId,
                 InventoryDefinitions
                     .RequiredSkills.Select(p => chargeAttributes[i.TypeId].GetValueOrDefault(p.Skill))
                     .Where(v => v > 0)
@@ -248,9 +250,17 @@ internal sealed record FittingCalculation(
             .Where(s => s.PilotId == pilot.Id && relevantSkills.Contains(s.TypeId))
             .Select(s => s.TypeId)
             .ToHashSet();
+        var skillIds = relevantSkills
+            .Where(skill => trained.Contains(skill) || hullSkills.Contains(skill))
+            .Concat(Enum.GetValues<FittingSkill>().Select(s => (int)s))
+            .Concat(Enum.GetValues<DefenseSkill>().Select(s => (int)s))
+            .Concat(Enum.GetValues<TargetingSkill>().Select(s => (int)s))
+            .Distinct()
+            .ToArray();
+        var levels = PilotSkillReader.Levels(world, catalog, pilot.Id, skillIds);
         foreach (int skill in relevantSkills.Where(skill => trained.Contains(skill) || hullSkills.Contains(skill)))
         {
-            int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
+            int level = levels.GetValueOrDefault(skill);
             if (level == 0 && !hullSkills.Contains(skill))
             {
                 continue;
@@ -314,7 +324,7 @@ internal sealed record FittingCalculation(
         var bonuses = skillModifiers
             .Select(s => new FittingSkillBonus(s.Skill, s.Modifier, graph.Read(s.Skill, s.Modifier.SourceAttribute)))
             .ToArray();
-        return new(graph, ship.Id, pilot.Id, modules, bonuses, charges);
+        return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels);
 
         void Add(long source, PassiveModifier modifier, bool exempt)
         {

@@ -31,7 +31,7 @@ internal static class WeaponCatalog
             return false;
         }
         var firingEffect = group == CombatDefinitions.EnergyWeaponGroup ? DogmaEffect.LaserFired : DogmaEffect.ProjectileFired;
-        var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup

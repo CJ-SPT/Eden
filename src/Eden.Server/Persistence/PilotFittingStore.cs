@@ -35,8 +35,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         if (
             !attributes.ContainsKey(DogmaAttributeId.SignatureRadius)
             && catalog
-                .Set<SourceRecord>()
-                .Find("client/dogmaattributes", ((int)DogmaAttributeId.SignatureRadius).ToString(CultureInfo.InvariantCulture))
+                .FindSource("client/dogmaattributes", ((int)DogmaAttributeId.SignatureRadius).ToString(CultureInfo.InvariantCulture))
                 ?.Read<ClientDogmaattributes>()
                 .DefaultValue
                 is double signature
@@ -48,7 +47,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     }
 
     private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
-        catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        catalog.FittingAttributes(typeId).ToDictionary();
 
     internal static Dictionary<DogmaAttributeId, double> ShipAttributes(WorldDbContext world, CatalogDbContext catalog, long pilotId) =>
         ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
@@ -71,12 +70,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity)
         );
         var fitted = calculation.Modules.Select(m => m.Item).ToArray();
-        var skills = Enum.GetValues<FittingSkill>()
-            .Select(s => (int)s)
-            .Concat(Enum.GetValues<DefenseSkill>().Select(s => (int)s))
-            .Concat(Enum.GetValues<TargetingSkill>().Select(s => (int)s))
-            .Distinct()
-            .ToDictionary(id => id, id => PilotSkillReader.Level(world, catalog, pilot.Id, id));
         var usage = fitted
             .Select(m => new FittedResourceUsage(
                 m.FlagId,
@@ -87,7 +80,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted)
             ))
             .ToArray();
-        return FittingRules.Apply(attributes, skills, usage);
+        return FittingRules.Apply(attributes, calculation.SkillLevels, usage);
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)

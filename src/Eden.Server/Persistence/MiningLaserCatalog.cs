@@ -13,7 +13,7 @@ internal static class MiningLaserCatalog
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
-        var type = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
             !InventoryDefinitions.IsOreMiningGroup(group)

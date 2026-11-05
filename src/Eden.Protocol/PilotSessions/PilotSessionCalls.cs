@@ -16,7 +16,8 @@ internal sealed class PilotSessionCalls(
     TimeProvider clock,
     Action<string> report,
     long accountId,
-    long clientId
+    long clientId,
+    IPilotOperationScope? operations = null
 )
 {
     private const int SlowCallMilliseconds = 250;
@@ -24,6 +25,7 @@ internal sealed class PilotSessionCalls(
 
     public async Task ProcessAsync(object? incoming)
     {
+        using var operation = operations?.Begin();
         var packet = IncomingMachoPacket.Read(incoming);
         if (packet.Name == PacketNamespace + "PingReq")
         {

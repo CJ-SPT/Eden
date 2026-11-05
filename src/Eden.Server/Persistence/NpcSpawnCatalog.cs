@@ -50,13 +50,9 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
             {
                 var group = groups[type.GroupId];
                 var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
-                var definition = catalog
-                    .Set<SourceRecord>()
-                    .Find("client/types", type.Id.ToString(CultureInfo.InvariantCulture))
-                    ?.Read<ClientTypes>();
+                var definition = catalog.FindSource("client/types", type.Id.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
                 var faction = catalog
-                    .Set<SourceRecord>()
-                    .Find("client/factions", ((int)group.Faction).ToString(CultureInfo.InvariantCulture))
+                    .FindSource("client/factions", ((int)group.Faction).ToString(CultureInfo.InvariantCulture))
                     ?.Read<ClientFactions>();
                 int corporation = checked((int)(faction?.CorporationID ?? 0));
                 int wreck = checked((int)(definition?.WreckTypeID ?? 0));
