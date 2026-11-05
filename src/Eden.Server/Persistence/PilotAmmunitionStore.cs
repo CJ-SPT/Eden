@@ -233,8 +233,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         var beforeSources = sources.ToDictionary(i => i.Id, i => PilotInventoryStore.Read(catalog, i));
         long nextId = InventoryPersistence.NextId(world);
         double duration = 0;
-        foreach (var module in modules)
+        var banks = PilotWeaponBankStore.Read(world, shipId);
+        for (int index = 0; index < modules.Length; index++)
         {
+            var module = modules[index];
             if (sources.All(s => s.Quantity == 0 || s.LocationId != sourceId))
             {
                 break;
@@ -276,6 +278,21 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             if (available <= 0)
             {
                 continue;
+            }
+            var bank = banks.FirstOrDefault(b => b.MasterId == module.Id || b.SlaveIds.Contains(module.Id));
+            if (bank is not null && !crystal && !script)
+            {
+                int remaining = modules
+                    .Skip(index)
+                    .Count(candidate =>
+                    {
+                        var contents = Contents(world, candidate.Id);
+                        return (candidate.Id == bank.MasterId || bank.SlaveIds.Contains(candidate.Id))
+                            && (contents?.TypeId != typeId || contents.Quantity < limit);
+                    });
+                long roundsLeft = sources.Where(s => s.LocationId == sourceId).Sum(s => (long)s.Quantity);
+                int share = checked((int)Math.Min(limit, (roundsLeft + remaining - 1) / remaining));
+                available = Math.Min(available, share);
             }
             var individual = crystal ? sources.FirstOrDefault(s => s.Singleton && s.LocationId == sourceId) : null;
             if (individual is not null)
@@ -340,9 +357,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             changes.Add(new(PilotInventoryStore.Read(catalog, source), beforeSources[source.Id]));
         }
         world.SaveChanges();
-        var grouped = PilotWeaponBankStore
-            .Read(world, shipId)
-            .Where(b => modules.Any(m => m.Id == b.MasterId || b.SlaveIds.Contains(m.Id)));
+        var grouped = banks.Where(b => modules.Any(m => m.Id == b.MasterId || b.SlaveIds.Contains(m.Id)));
         foreach (var bank in grouped)
         {
             if (new[] { bank.MasterId }.Concat(bank.SlaveIds).Any(id => Contents(world, id)?.TypeId != typeId))

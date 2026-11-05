@@ -46,6 +46,17 @@ public sealed class WeaponBankTests
         Assert.Empty(saved.Set<ModuleCooldown>());
     }
 
+    [Fact]
+    public void APartialAmmoStackIsSharedAcrossTheWholeBank()
+    {
+        using AmmunitionTests.Fixture f = new();
+        long second = SecondGun(f);
+        Link(f, second);
+        f.Load(quantity: 101);
+        Assert.Equal(new[] { 51, 50 }, f.Ammo.Read(f.Pilot.PilotId, f.Pilot.ShipId).Select(m => m.Quantity));
+        Assert.Equal(101, f.Total(222));
+    }
+
     [Theory]
     [InlineData(WeaponBankOperation.Link)]
     [InlineData(WeaponBankOperation.LinkAll)]
@@ -198,13 +209,16 @@ public sealed class WeaponBankTests
         Assert.Empty(Assert.Single(context.Notifications.OfType<WeaponBanksChanged>()).Banks);
     }
 
-    [Fact]
-    public void LegacyWorldGetsAnEmptyBankTableAndRetainsInventory()
+    [Theory]
+    [InlineData(68)]
+    [InlineData(69)]
+    public void LegacyWorldGetsAnEmptyBankTableAndRetainsInventory(int version)
     {
         using AmmunitionTests.Fixture f = new();
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Database.ExecuteSqlRaw("DROP TABLE WorldWeaponLink; PRAGMA user_version=68;");
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldWeaponLink");
+            world.Database.ExecuteSqlRaw(version == 68 ? "PRAGMA user_version=68" : "PRAGMA user_version=69");
         }
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Empty(Banks(f).Read(f.Pilot.PilotId, f.Pilot.ShipId));
