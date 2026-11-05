@@ -1,5 +1,7 @@
 # Windows client setup
 
+NPC follow-up: rebuild/restart the server to load the Clone Soldier exclusion and NPC corporation lookup correction. The agent did not restart the running host or alter the lost ship/save. If NPC overview entries/models remain absent after TR, optional maintainer evidence is a reproduction with `EDEN_TRACE_MOTION=1` and the matching client exception log; `MotionNpc` records identify the contacts actually sent. Automated destination-state and arrival-grace checks do not establish native visibility. See the [follow-up notes](protocol.md#npc-spawn-and-translocation-follow-up).
+
 Current NPC baseline: ordinary known-space belts now use persistent regional pirate groups, and the four main empires have locally defensive gate/station guards. Safest (displayed 0.9-1.0) systems no longer contain the old Perimeter Rookies. Historical Rookie procedures below describe prior acceptance fixtures; they are not current population guarantees. See [regional populations](protocol.md#regional-belt-pirate-populations) and [empire guards](protocol.md#local-empire-guard-populations) for policy and automated evidence. No new native acceptance was performed. Optional maintainer checks are to inspect representative belts, observe local guard retaliation, and inspect missile/patrol presentation plus restart continuity. Agents must not launch the client unless explicitly requested.
 
 ## Agent testing policy

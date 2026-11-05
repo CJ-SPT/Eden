@@ -102,4 +102,5 @@ public sealed record NpcCorporationInfo(
 public interface INpcCorporationDirectory
 {
     NpcCorporationInfo Read(int id);
+    IReadOnlyList<NpcCorporationInfo> Read(IReadOnlyList<int> ids);
 }

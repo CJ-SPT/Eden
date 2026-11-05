@@ -575,7 +575,14 @@ public sealed class PilotServicesTests
         Assert.Equal(new object?[] { previousShip, world.Store.FindPilot(1000001)!.ShipId }, delta["shipid"]);
         Assert.Equal(new object?[] { Persistence.HomeStationTestData.Other, Persistence.HomeStationTestData.Origin }, delta["stationid"]);
         int transitionIndex = packets.IndexOf(transitions[1]);
-        Assert.Equal(3, packets.Take(transitionIndex).Count(packet => packet.Name.EndsWith(".Notification", StringComparison.Ordinal)));
+        // Attribute refreshes can also precede this transition. Check the
+        // transfer's inventory/brain ordering rather than every notification.
+        var transferEvents = packets
+            .Take(transitionIndex)
+            .Where(packet => packet.Name.EndsWith(".Notification", StringComparison.Ordinal))
+            .Select(packet => BlueRead.Tuple(Assert.IsType<BlueInstance>(BlueRead.Tuple(packet.State, 14)[2]).State, 4)[1])
+            .Where(name => name is "OnItemChange" or "OnServerBrainUpdated");
+        Assert.Equal(new object?[] { "OnServerBrainUpdated", "OnItemChange", "OnItemChange", "OnServerBrainUpdated" }, transferEvents);
         Assert.EndsWith(".CallRsp", packets[transitionIndex + 1].Name);
         Assert.Null(Result(packets[transitionIndex + 1]));
         var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State);

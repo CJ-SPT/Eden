@@ -231,6 +231,24 @@ internal sealed class NpcCorporationDirectory(WorldDatabase database) : INpcCorp
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var corporation = catalog.Set<NpcCorporation>().Find(id) ?? throw new InvalidDataException("Unknown NPC corporation.");
+        return Read(catalog, corporation);
+    }
+
+    public IReadOnlyList<NpcCorporationInfo> Read(IReadOnlyList<int> ids)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return catalog
+            .Set<NpcCorporation>()
+            .Where(c => ids.Contains(c.Id))
+            .OrderBy(c => c.Id)
+            .ToArray()
+            .Select(c => Read(catalog, c))
+            .ToArray();
+    }
+
+    private static NpcCorporationInfo Read(CatalogDbContext catalog, NpcCorporation corporation)
+    {
+        int id = corporation.Id;
         var data =
             catalog
                 .Set<SourceRecord>()

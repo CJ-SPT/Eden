@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -10,6 +11,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
@@ -25,6 +27,72 @@ public sealed class TranslocationTests
     private const int OtherSystem = 30000144;
     private const int SourceMoon = 40009087;
     private const int OtherGate = 50002185;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TranslocationIncludesDestinationNpcsInFirstStateBeforeCombat(bool stationOrigin)
+    {
+        using Fixture f = new(inSpace: !stationOrigin);
+        NpcEncounterTests.Prepare(f.Db);
+        using (Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            foreach (int belt in new[] { 40009232, 40009245 })
+            {
+                catalog.Add(
+                    new Eden.Server.Catalog.SourceRecord
+                    {
+                        Dataset = "client/asteroidcountbytypeidbeltid",
+                        Key = belt.ToString(global::System.Globalization.CultureInfo.InvariantCulture),
+                        Data = "{}",
+                    }
+                );
+            }
+            catalog.SaveChanges();
+        }
+        f.Select();
+        if (!stationOrigin)
+        {
+            f.Context.Flight.Snapshot();
+        }
+        Assert.Equal(PilotCallResult.None, f.Call("/tr me 40009232"));
+        if (!f.Context.Flight.InBallpark)
+        {
+            f.Context.Flight.Snapshot();
+        }
+        List<object?> output = [];
+        await f.TickAsync(output);
+        f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
+        await f.TickAsync(output);
+        Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);
+        Assert.False(f.Context.Flight.InBallpark);
+        Assert.Empty(f.Context.Flight.VisibleNpcs);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Empty(world.Set<NpcAggression>());
+            Assert.Empty(world.Set<ShipLoss>());
+        }
+        f.Context.Flight.Snapshot();
+        var state = Assert.IsType<DestinyCommand.SetState>(f.Context.Flight.Updates[0].Command);
+        var npc = Assert.Single(f.Context.Flight.VisibleNpcs);
+        var slim = Assert.Single(state.Snapshot.Slims.OfType<NpcSlimItem>());
+        Assert.Equal(npc.Id, slim.Npc.Id);
+        Assert.Equal(npc.TypeId, slim.Npc.TypeId);
+        Assert.True(state.Snapshot.Damage.ContainsKey(npc.Id));
+        Assert.NotEmpty(BlueMarshal.Encode(state.Snapshot));
+        Assert.DoesNotContain(f.Context.Flight.Updates, u => u.Command is DestinyCommand.AddBalls);
+        f.Clock.Seconds += FlightSession.ArrivalDurationTicks - 1;
+        await f.TickAsync(output);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Empty(world.Set<NpcAggression>());
+        }
+        f.Clock.Seconds++;
+        await f.TickAsync(output);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Contains(saved.Set<NpcAggression>(), a => a.NpcId == npc.Id);
+        Assert.Empty(saved.Set<ShipLoss>());
+    }
 
     [Theory]
     [InlineData(OtherSystem, false)]

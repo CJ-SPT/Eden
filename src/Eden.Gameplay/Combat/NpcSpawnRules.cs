@@ -19,7 +19,7 @@ public enum NpcSecurityBand
 
 public static class NpcSpawnRules
 {
-    public const int PopulationVersion = 1;
+    public const int PopulationVersion = 2;
     public const double MemberSpacing = 1500;
     public const double BeltStandOff = 10000;
     private const double SafestSecurity = 0.9;

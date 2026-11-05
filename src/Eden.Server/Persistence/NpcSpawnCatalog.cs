@@ -41,6 +41,10 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
         List<NpcSpawnProfile> profiles = [];
         foreach (var type in types)
         {
+            if (NpcSpecialTypes.Excluded.Contains(type.Id))
+            {
+                continue;
+            }
             try
             {
                 var group = groups[type.GroupId];

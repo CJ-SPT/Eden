@@ -57,6 +57,12 @@ public sealed class RegionalNpcTests
         using TestWorld db = new(regionalNpcs: true);
         Prepare(db);
         var profiles = db.Services.GetRequiredService<NpcSpawnCatalog>();
+        Assert.Equal(20, NpcSpecialTypes.Excluded.Count);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath))
+        {
+            Assert.All(NpcSpecialTypes.Excluded, id => Assert.NotNull(catalog.Set<ItemType>().Find(id)));
+        }
+        Assert.DoesNotContain(profiles.Profiles, profile => NpcSpecialTypes.Excluded.Contains(profile.TypeId));
         Assert.True(profiles.Profiles.Count > 300, $"Only {profiles.Profiles.Count} ordinary NPC profiles admitted.");
         Assert.Contains(profiles.Profiles, profile => profile.TypeId == 25632);
         foreach (var group in NpcPirateGroups.All)
@@ -161,6 +167,83 @@ public sealed class RegionalNpcTests
         Assert.Equal(3, retired.ArmorDamage);
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<WorldWreck>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExistingCloneSoldiersRetireWithoutRewardsAndOnlyEmptyGroupsAreReplaced(bool survivor)
+    {
+        using TestWorld db = new(regionalNpcs: true);
+        Prepare(db, -0.5);
+        var encounters = db.Services.GetRequiredService<INpcEncounters>();
+        _ = encounters.List(System, Now);
+        long encounterId;
+        long cloneId;
+        long allyId;
+        int generation;
+        using (WorldDbContext world = new(db.Path))
+        {
+            var group = world.Set<WorldNpc>().AsEnumerable().GroupBy(n => n.EncounterId).First().ToArray();
+            encounterId = group[0].EncounterId;
+            cloneId = group[0].Id;
+            allyId = group[1].Id;
+            generation = world.Set<WorldNpcEncounter>().Find(encounterId)!.Generation;
+            group[0].TypeId = (int)NpcCloneSoldierType.BloodTransporter;
+            foreach (var npc in group.Skip(survivor ? 2 : 1))
+            {
+                npc.DestroyedAt = Now;
+            }
+            world.Add(NpcAggression.Start(cloneId, 1000000000001, 0, Now));
+            world.Add(NpcAggression.Start(allyId, 1000000000001, 0, Now));
+            foreach (
+                var source in new[]
+                {
+                    (ShipId: cloneId, Kind: MissileSourceKind.Npc),
+                    (ShipId: allyId, Kind: MissileSourceKind.Npc),
+                    (ShipId: cloneId, Kind: MissileSourceKind.Pilot),
+                }
+            )
+            {
+                world.Add(
+                    new WorldMissile
+                    {
+                        PilotId = 90000001,
+                        SourceShipId = source.ShipId,
+                        SourceKind = source.Kind,
+                        Status = MissileFlightStatus.Flying,
+                        Snapshot = "{}",
+                    }
+                );
+            }
+            world.SaveChanges();
+        }
+        long activation = Now + TimeSpan.TicksPerSecond;
+        var contacts = encounters.List(System, activation);
+        Assert.DoesNotContain(contacts, n => n.Id == cloneId || NpcSpecialTypes.Excluded.Contains(n.TypeId));
+        using (WorldDbContext saved = new(db.Path))
+        {
+            var clone = saved.Set<WorldNpc>().Find(cloneId)!;
+            Assert.Equal(activation, clone.RetiredAt);
+            Assert.Null(clone.DestroyedAt);
+            Assert.DoesNotContain(saved.Set<NpcAggression>(), a => a.NpcId == cloneId);
+            Assert.Contains(saved.Set<NpcAggression>(), a => a.NpcId == allyId);
+            var cancelled = saved.Set<WorldMissile>().Single(m => m.SourceShipId == cloneId && m.SourceKind == MissileSourceKind.Npc);
+            Assert.Equal(MissileFlightStatus.Expired, cancelled.Status);
+            Assert.Equal(activation, cancelled.EndedAt);
+            Assert.Equal(2, saved.Set<WorldMissile>().Count(m => m.Status == MissileFlightStatus.Flying));
+            var members = contacts.Where(n => saved.Set<WorldNpc>().Find(n.Id)!.EncounterId == encounterId).ToArray();
+            Assert.Equal(
+                survivor ? 1 : NpcSpawnRules.Composition(NpcSecurityBand.Null, NpcSpawnRules.Seed(System, encounterId)).Count,
+                members.Length
+            );
+            Assert.Equal(generation, saved.Set<WorldNpcEncounter>().Find(encounterId)!.Generation);
+            Assert.Empty(saved.Set<NpcBounty>());
+            Assert.Empty(saved.Set<WorldWreck>());
+            Assert.Empty(saved.Set<ShipLoss>());
+        }
+        _ = WorldInitialization.Open(db.Path);
+        Assert.Equal(contacts.Select(n => n.Id), encounters.List(System, activation + TimeSpan.TicksPerSecond).Select(n => n.Id));
     }
 
     [Fact]

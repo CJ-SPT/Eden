@@ -7,8 +7,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable]
-internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStationGuests guests, ICharacterDirectory directory)
-    : IPilotCallHandler
+internal sealed class AccountCompatibilityHandler(
+    TimeProvider clock,
+    SharedStationGuests guests,
+    ICharacterDirectory directory,
+    INpcCorporationDirectory corporations
+) : IPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -27,14 +31,7 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
             ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
                 PilotCallResult.None,
             ("config", "GetMultiOwnersEx") => OwnerRows(arguments),
-            ("config", "GetMultiCorpTickerNamesEx")
-                when arguments is object?[] { Length: 1 } corpArgs && corpArgs[0] is List<object?> ids => new CorporationTickerTable(
-                KnownPilots(context)
-                    .DistinctBy(pilot => pilot.CorpId)
-                    .Where(pilot => ids.Contains((long)pilot.CorpId))
-                    .Select(pilot => new CorporationTickerRow(pilot.CorpId, pilot.CorporationTicker))
-                    .ToArray()
-            ),
+            ("config", "GetMultiCorpTickerNamesEx") => CorporationRows(context, arguments),
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
             ("config", "GetAverageMarketPrices") => BlueEmpty.IndexedDictionary,
             ("air_npe", "is_air_npe_enabled") => false,
@@ -52,6 +49,29 @@ internal sealed class AccountCompatibilityHandler(TimeProvider clock, SharedStat
         context.ActiveFlight is { } flight
             ? flight.VisiblePilots().Concat(guests.List(flight.Pilot)).DistinctBy(pilot => pilot.PilotId)
             : context.Roster.Select(PilotContact.From);
+
+    private CorporationTickerTable CorporationRows(PilotCallContext context, object? arguments)
+    {
+        var values = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected corporation IDs.");
+        var ids = values.OfType<long>().Where(id => id is > 0 and <= int.MaxValue).Select(id => (int)id).Distinct().ToArray();
+        var known = KnownPilots(context)
+            .Where(p => ids.Contains(p.CorpId))
+            .DistinctBy(p => p.CorpId)
+            .Select(p => new CorporationTickerRow(p.CorpId, p.CorporationTicker))
+            .ToArray();
+        // Michelle primes every NPC corp before dispatching newly added balls.
+        // The lookup must also work before selection and without visible pilots.
+        return new(
+            known
+                .Concat(
+                    corporations
+                        .Read(ids.Except(known.Select(c => c.CorporationId)).ToArray())
+                        .Select(c => new CorporationTickerRow(c.Id, c.Ticker))
+                )
+                .OrderBy(c => c.CorporationId)
+                .ToArray()
+        );
+    }
 
     private OwnerTable OwnerRows(object? arguments)
     {

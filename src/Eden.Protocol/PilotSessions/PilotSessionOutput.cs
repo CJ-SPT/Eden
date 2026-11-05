@@ -53,6 +53,20 @@ internal sealed class PilotSessionOutput(
                 foreach (var update in flight.Updates)
                 {
                     report($"MotionUpdate viewer={flight.Pilot.ShipId} tick={update.Stamp} command={update.Command.GetType().Name}");
+                    var slims = update.Command switch
+                    {
+                        DestinyCommand.SetState state => state.Snapshot.Slims,
+                        DestinyCommand.AddBalls added => added.Addition.Slims,
+                        _ => [],
+                    };
+                    foreach (var slim in slims.OfType<NpcSlimItem>())
+                    {
+                        var npc = slim.Npc;
+                        report(
+                            $"MotionNpc viewer={flight.Pilot.ShipId} tick={update.Stamp} id={npc.Id} type={npc.TypeId} "
+                                + $"group={npc.GroupId} corp={npc.CorporationId} position={npc.Position}"
+                        );
+                    }
                 }
                 report($"MotionHull viewer={flight.Pilot.ShipId} hull={flight.Pilot.Flight}");
             }

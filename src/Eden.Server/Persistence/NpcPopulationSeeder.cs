@@ -43,6 +43,37 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
 
     public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
     {
+        var excluded = NpcSpecialTypes.Excluded.ToArray();
+        var retired = world
+            .Set<WorldNpc>()
+            .Where(n =>
+                n.SystemId == systemId
+                && n.Role == NpcRole.Pirate
+                && excluded.Contains(n.TypeId)
+                && n.DestroyedAt == null
+                && n.RetiredAt == null
+            )
+            .ToArray();
+        foreach (var npc in retired)
+        {
+            npc.RetiredAt = now;
+            world.Set<NpcAggression>().Where(a => a.NpcId == npc.Id).ExecuteDelete();
+            world
+                .Set<WorldMissile>()
+                .Where(m => m.SourceKind == MissileSourceKind.Npc && m.SourceShipId == npc.Id && m.Status == MissileFlightStatus.Flying)
+                .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
+        }
+        world.SaveChanges();
+        foreach (long encounterId in retired.Select(n => n.EncounterId).Distinct())
+        {
+            if (
+                !world.Set<WorldNpc>().Any(n => n.EncounterId == encounterId && n.DestroyedAt == null && n.RetiredAt == null)
+                && world.Set<WorldNpcEncounter>().Find(encounterId) is { } encounter
+            )
+            {
+                encounter.NextSpawnAt = now;
+            }
+        }
         // Production policy retires the old fixture on activation. Tests inject
         // their own seeder, keeping that fixture isolated from normal space.
         int rookie = NpcEncounterDefinitions.GuristasRookieType;
@@ -101,6 +132,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
                 };
                 world.Add(encounter);
             }
+            encounter.Version = NpcSpawnRules.PopulationVersion;
             if (!encounter.Occupied || encounter.NextSpawnAt is not long deadline || now < deadline)
             {
                 continue;

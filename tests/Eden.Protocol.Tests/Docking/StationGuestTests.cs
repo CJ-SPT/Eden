@@ -13,6 +13,32 @@ namespace Eden.Protocol.Tests.Docking;
 public sealed class StationGuestTests
 {
     [Fact]
+    public void TickerPrimingResolvesNpcCorporationsWithoutVisiblePilotsAndIgnoresUnknownIds()
+    {
+        using TestWorld world = new();
+        PassiveCatalogFixture.LoadNpcPopulation(new Eden.Server.Persistence.WorldDatabase(world.Path).CatalogPath);
+        using Client client = new(world, world.Store.FindPilot(1000001)!);
+        foreach (bool selected in new[] { true, false })
+        {
+            if (!selected)
+            {
+                client.Context.LogOff();
+            }
+            var reply = Assert.IsType<CorporationTickerTable>(
+                client
+                    .Call(
+                        "config",
+                        "GetMultiCorpTickerNamesEx",
+                        [new List<object?> { 1000134L, 1000035L, 1000127L, 1000134L, -1L, long.MaxValue, 999999L }]
+                    )
+                    .Reply
+            );
+            Assert.Equal(new CorporationTickerRow[] { new(1000035, "CN"), new(1000127, "G"), new(1000134, "TBR") }, reply.Corporations);
+            Assert.NotEmpty(BlueMarshal.Encode(reply));
+        }
+    }
+
+    [Fact]
     public void SnapshotIncludesOnlyConnectedPilotsInTheSameStationAndResolvesTheirNames()
     {
         using TestWorld world = new();

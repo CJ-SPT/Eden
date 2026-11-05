@@ -71,6 +71,7 @@ def export(catalog_path, output):
             records["client/factions", faction] = definition
             corporation = definition["corporationID"]
             records["sde/npcCorporations", corporation] = record("sde/npcCorporations", corporation)
+            records["client/npccorporations", corporation] = record("client/npccorporations", corporation)
         # ReadAttributes uses this pinned default when an NPC does not carry a
         # signature override. Keep the exact catalog rule in automated fixtures.
         records["client/dogmaattributes", 552] = record("client/dogmaattributes", 552)

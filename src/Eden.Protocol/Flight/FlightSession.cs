@@ -35,6 +35,7 @@ internal sealed class FlightSession(
     IPilotShipAppearance? appearance = null
 ) : IDisposable
 {
+    internal const int ArrivalDurationTicks = 8;
     private FlightEffects? _effects;
     private FlightEffects Effects => _effects ??= new(Update);
     private NavigationState _navigation = new();
@@ -654,7 +655,7 @@ internal sealed class FlightSession(
             (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
             _navigation.FollowTarget?.Id ?? 0,
             _jump?.SourceId,
-            Stamp - _arrivalStamp < 8,
+            Stamp - _arrivalStamp < ArrivalDurationTicks,
             modules,
             _mining,
             health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
