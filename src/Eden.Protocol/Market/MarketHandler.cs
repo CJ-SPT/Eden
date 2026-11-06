@@ -137,13 +137,26 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                             ),
                         }
                     );
-                case "PlaceMultiSellOrder" when args is [List<object?> entries, false, 0L, _]:
+                // The pinned corporation-wallet checkbox returns Python int 0/1;
+                // windows without that checkbox send a Python bool instead.
+                case "PlaceMultiSellOrder" when args is [List<object?> entries, false or 0L, 0L, _]:
                     var sales = entries.Select(MarketRequestWire.Sale).ToArray();
                     Changed(context, market.Sell(context.Pilot.PilotId, sales));
                     return true;
                 case "PlaceBuyOrder"
                     when args
-                        is [long station, long buyType, var price, long quantity, (long)MarketDefinitions.StationRange, 1L, 0L, false, _]:
+                        is [
+                            long station,
+                            long buyType,
+                            var price,
+                            long quantity,
+                            (long)MarketDefinitions.StationRange,
+                            1L,
+                            0L,
+                            false
+                            or 0L,
+                            _,
+                        ]:
                     Changed(
                         context,
                         market.Buy(
@@ -153,7 +166,7 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                         )
                     );
                     return PilotCallResult.None;
-                case "BuyMultipleItems" when args is [long destination, List<object?> entries, false]:
+                case "BuyMultipleItems" when args is [long destination, List<object?> entries, false or 0L]:
                     var purchases = entries.Select(MarketRequestWire.Purchase).ToArray();
                     return Changed(context, market.Buy(context.Pilot.PilotId, checked((int)destination), purchases));
                 case "CharGetTransactions" when args is [null or long]:

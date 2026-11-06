@@ -671,6 +671,131 @@ public sealed class MarketTests
     }
 
     [Theory]
+    [InlineData("PlaceBuyOrder", false)]
+    [InlineData("PlaceBuyOrder", 0L)]
+    [InlineData("BuyMultipleItems", false)]
+    [InlineData("BuyMultipleItems", 0L)]
+    [InlineData("PlaceMultiSellOrder", false)]
+    [InlineData("PlaceMultiSellOrder", 0L)]
+    public void PersonalTradesAcceptBooleanAndIntegerCheckboxValuesAndPersist(string method, object useCorp)
+    {
+        using Fixture f = new();
+        f.Sell(f.Sale(quantity: 1));
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var pilot = f.Pilot;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
+            1,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var args = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(TradeArguments(method, pilot, useCorp))));
+        var result = router.CallWire(context, "marketProxy", method, args, _ => { });
+        bool selling = method == "PlaceMultiSellOrder";
+        if (selling)
+        {
+            Assert.Equal(true, result);
+        }
+        else if (method == "PlaceBuyOrder")
+        {
+            Assert.Null(result);
+        }
+        else
+        {
+            Assert.Single(Assert.IsType<List<object?>>(result));
+        }
+        long balance = selling ? 1387 : 262;
+        Assert.Equal(balance, f.Store.Balance(pilot.PilotId));
+        var trade = f.Store.Transactions(pilot.PilotId).Single(t => t.IsBuy == !selling && t.Quantity == 2);
+        Assert.Equal(selling ? Scordite : Tritanium, trade.TypeId);
+        Assert.Equal(selling ? 500 : 100, trade.PriceCents);
+        Assert.Equal(selling ? 75 : 0, trade.TaxCents);
+        Assert.Equal(balance, trade.BalanceCents);
+        Assert.Equal(
+            new object?[] { "cash", pilot.PilotId, (double)balance / MarketDefinitions.CentsPerIsk },
+            Assert.Single(context.Notifications, n => n.Name == "OnAccountChange").Arguments
+        );
+        Assert.Single(context.Notifications, n => n.Name == "OnItemChange");
+        Assert.Single(context.Notifications, n => n.Name == "OnOwnOrdersChanged");
+        Assert.Equal(selling ? 0 : 1, context.Notifications.Count(n => n.Name == "OnMarketItemReceived"));
+        var inventory = f.Inventory.List(pilot.PilotId, pilot.StationId);
+        Assert.Equal(selling ? 130 : 132, inventory.Single(i => i.Id == OreId).Quantity);
+        Assert.Equal(1, inventory.Single(i => i.TypeId == InventoryDefinitions.CivilianMinerType).Quantity);
+        if (!selling)
+        {
+            Assert.Equal(2, inventory.Single(i => i.TypeId == Tritanium).Quantity);
+        }
+        _ = WorldInitialization.Open(f.Db.Path);
+        Assert.Equal(balance, f.Store.Balance(pilot.PilotId));
+        Assert.Equal(inventory, f.Inventory.List(pilot.PilotId, pilot.StationId));
+        Assert.Equal(2, f.Store.Transactions(pilot.PilotId).Count);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(1L)]
+    [InlineData(-1L)]
+    [InlineData(2L)]
+    [InlineData(null)]
+    [InlineData(0d)]
+    [InlineData("False")]
+    public void CorporationAndMalformedTradeFlagsLeavePersonalAssetsUnchanged(object? useCorp)
+    {
+        using Fixture f = new();
+        f.Sell(f.Sale(quantity: 1));
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var pilot = f.Pilot;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, TimeProvider.System, new(), f.Db.Objects),
+            1,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var inventory = f.Inventory.List(pilot.PilotId, pilot.StationId);
+        var orders = f.Store.Orders(pilot.PilotId);
+        var trades = f.Store.Transactions(pilot.PilotId);
+        foreach (string method in new[] { "PlaceBuyOrder", "BuyMultipleItems", "PlaceMultiSellOrder" })
+        {
+            var args = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(TradeArguments(method, pilot, useCorp))));
+            Assert.IsType<PilotCallResult.Failure>(router.CallWire(context, "marketProxy", method, args, _ => { }));
+            Assert.Equal(462, f.Store.Balance(pilot.PilotId));
+            Assert.Equal(inventory, f.Inventory.List(pilot.PilotId, pilot.StationId));
+            Assert.Equal(orders, f.Store.Orders(pilot.PilotId));
+            Assert.Equal(trades, f.Store.Transactions(pilot.PilotId));
+            Assert.Empty(context.Notifications);
+        }
+    }
+
+    private static object?[] TradeArguments(string method, DockedPilot pilot, object? useCorp)
+    {
+        if (method == "PlaceBuyOrder")
+        {
+            return [(long)pilot.StationId, (long)Tritanium, 1d, 2L, (long)MarketDefinitions.StationRange, 1L, 0L, useCorp, null];
+        }
+        bool selling = method == "PlaceMultiSellOrder";
+        var item = new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["itemID"] = OreId,
+                ["stationID"] = (long)pilot.StationId,
+                ["typeID"] = selling ? (long)Scordite : (long)Tritanium,
+                ["quantity"] = 2L,
+                ["price"] = selling ? 5d : 1d,
+            }
+        );
+        return selling ? [new List<object?> { item }, useCorp, 0L, null] : [(long)pilot.StationId, new List<object?> { item }, useCorp];
+    }
+
+    [Theory]
     [InlineData(double.NaN)]
     [InlineData(double.PositiveInfinity)]
     [InlineData(-1d)]

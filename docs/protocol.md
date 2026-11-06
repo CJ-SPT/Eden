@@ -158,6 +158,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- <a id="personal-market-corporation-wallet-checkbox-compatibility-november-6-2026"></a>[Personal market corporation-wallet checkbox compatibility (November 6, 2026)](protocol/industry.md#personal-market-corporation-wallet-checkbox-compatibility-november-6-2026)
+
 - <a id="currency-redemption-and-loyalty-wallets"></a>[Currency redemption and loyalty wallets](protocol/industry.md#currency-redemption-and-loyalty-wallets)
 - <a id="mining-laser-fitting-november-2-2026"></a>[Mining-laser fitting, November 2, 2026](protocol/industry.md#mining-laser-fitting-november-2-2026)
 - <a id="persistent-asteroid-fields-november-2-2026"></a>[Persistent asteroid fields, November 2, 2026](protocol/industry.md#persistent-asteroid-fields-november-2-2026)
