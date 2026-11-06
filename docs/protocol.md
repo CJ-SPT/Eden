@@ -174,6 +174,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [Renewable belts and economic service charges (November 6, 2026)](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026)
+
 - [Tech I starter production chain (November 6, 2026)](protocol/industry.md#tech-i-starter-production-chain-november-6-2026)
 
 - [Persistent personal market orders (November 6, 2026)](protocol/industry.md#persistent-personal-market-orders-november-6-2026)

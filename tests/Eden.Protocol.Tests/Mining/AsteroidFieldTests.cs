@@ -77,7 +77,7 @@ public sealed class AsteroidFieldTests
     }
 
     [Fact]
-    public void DepletedRowsNeverRegenerateAndOreUsesTheCatalogSignatureDefault()
+    public void DepletedRowsDoNotRegenerateBeforeScheduledRenewalAndOreUsesTheCatalogSignatureDefault()
     {
         using TestWorld db = new();
         Prepare(db);

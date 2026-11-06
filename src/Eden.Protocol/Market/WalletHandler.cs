@@ -2,6 +2,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -80,6 +81,21 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                     WalletEntryType.MarketTransaction,
                     trade.WalletAmountCents ?? (trade.IsBuy ? -gross : gross),
                     trade.BalanceCents + trade.TaxCents
+                )
+            );
+        }
+        foreach (var payment in journal.ServicePayments ?? [])
+        {
+            entries.Add(
+                new WalletJournalEntry(
+                    EconomicRules.FirstPaymentJournalId + payment.Id,
+                    payment.Time,
+                    payment.Kind,
+                    payment.PilotId,
+                    payment.CounterpartyId,
+                    payment.ContextId,
+                    payment.AmountCents,
+                    payment.BalanceCents
                 )
             );
         }

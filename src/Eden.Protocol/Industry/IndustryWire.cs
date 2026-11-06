@@ -17,16 +17,14 @@ internal static class IndustryWire
             ["ownerID"] = facility.OwnerId,
             ["solarSystemID"] = facility.SystemId,
             ["online"] = true,
-            // Adjusted industry prices are absent, matching the pinned client's
-            // zero-price fallback used by reprocessing. No hidden installation fee.
-            ["tax"] = 0d,
+            ["tax"] = facility.Tax,
             ["sccTaxModifier"] = 1d,
             ["serviceAccess"] = new Dictionary<long, object?>(),
             ["rigModifiers"] = new Dictionary<long, object?>(),
             ["globalModifiers"] = new Dictionary<string, object?>
             {
                 ["faction"] = 1d,
-                ["system"] = new Dictionary<long, object?> { [(long)IndustryActivity.Manufacturing] = 1d },
+                ["system"] = new Dictionary<long, object?> { [(long)IndustryActivity.Manufacturing] = facility.CostIndex },
             },
             ["activities"] = new Dictionary<long, object?>
             {
@@ -91,7 +89,7 @@ internal static class IndustryWire
                 ["runs"] = job.Runs,
                 ["licensedRuns"] = 0,
                 ["successfulRuns"] = job.Status == IndustryJobStatus.Delivered ? job.Runs : null,
-                ["cost"] = 0d,
+                ["cost"] = job.CostCents / 100d,
                 ["timeInSeconds"] = job.DurationSeconds,
                 ["probability"] = 1d,
                 ["productTypeID"] = job.ProductTypeId,

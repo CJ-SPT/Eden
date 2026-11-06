@@ -35,7 +35,6 @@ internal sealed class AccountCompatibilityHandler(
             ("config", "GetMultiOwnersEx") => OwnerRows(arguments),
             ("config", "GetMultiCorpTickerNamesEx") => CorporationRows(context, arguments),
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
-            ("config", "GetAverageMarketPrices") => BlueEmpty.IndexedDictionary,
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => (int)context.Account.CloneGrade,
             ("map", "GetSecurityModifiedSystems") => new CompatibilityRowset(["solarSystemID", "security", "modifiedSecurity"], []),

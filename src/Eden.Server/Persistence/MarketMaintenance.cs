@@ -1,10 +1,13 @@
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
 using Eden.Protocol;
 
 namespace Eden.Server.Persistence;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clock) : IDisposable, IAsyncDisposable
+internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clock, IResourceRenewal? resources = null)
+    : IDisposable,
+        IAsyncDisposable
 {
     internal static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
     private readonly object _gate = new();
@@ -12,6 +15,7 @@ internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clo
     private Task _pending = Task.CompletedTask;
     private bool _stopping;
     private Exception? _lastFailure;
+    private DateTimeOffset _nextResourceCheck;
     internal Exception? LastFailure => Volatile.Read(ref _lastFailure);
     internal Task Pending
     {
@@ -51,12 +55,19 @@ internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clo
                         {
                             market.Expire();
                         }
+                        if (resources is not null && clock.GetUtcNow() >= _nextResourceCheck)
+                        {
+                            if (resources.Renew() == 0)
+                            {
+                                _nextResourceCheck = clock.GetUtcNow().AddMinutes(1);
+                            }
+                        }
                         Volatile.Write(ref _lastFailure, null);
                     }
                     catch (Exception error)
                     {
                         Volatile.Write(ref _lastFailure, error);
-                        ServerLog.Console.Error($"Market expiry failed; retrying next interval: {error.Message}");
+                        ServerLog.Console.Error($"Economic maintenance failed; retrying next interval: {error.Message}");
                     }
                 });
             }

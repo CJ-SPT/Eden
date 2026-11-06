@@ -9,13 +9,14 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 88;
+    internal const int CurrentVersion = 89;
 
     public static void Open(
         WorldDbContext world,
         CatalogDbContext catalog,
         TimeProvider clock,
-        Eden.Gameplay.Market.WorldEconomySettings? economy = null
+        Eden.Gameplay.Market.WorldEconomySettings? economy = null,
+        Eden.Gameplay.Economy.EconomicConfiguration? economics = null
     )
     {
         CatalogSources.CheckBuild(catalog);
@@ -42,7 +43,7 @@ internal static class WorldMigration
                 Seed(world, 1000002, 90000002, 1000000000002, "Eden Wing", "Wing Ibis");
             }
         }
-        if (economy is not null && version != 0)
+        if ((economy is not null || economics is not null) && version != 0)
         {
             throw new InvalidDataException("Economic starting settings require a new world.");
         }
@@ -1077,7 +1078,15 @@ internal static class WorldMigration
         }
         PersonalMarketSchema.Upgrade(world);
         NpcSupplySchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=88");
+        EconomicSchema.Upgrade(world);
+        EconomicStore.Initialize(
+            world,
+            catalog,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            economy is { TestingMarket: false },
+            economics
+        );
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=89");
         history.Commit();
     }
 

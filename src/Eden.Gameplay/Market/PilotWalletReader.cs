@@ -2,6 +2,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Repair;
@@ -21,7 +22,8 @@ public sealed record WalletJournal(
     IReadOnlyList<ContractPayment> Contracts,
     IReadOnlyList<RedeemedCurrency>? RedeemedCurrencies = null,
     IReadOnlyList<CorporationPayment>? CorporationPayments = null,
-    IReadOnlyList<MarketPayment>? MarketPayments = null
+    IReadOnlyList<MarketPayment>? MarketPayments = null,
+    IReadOnlyList<ServicePayment>? ServicePayments = null
 );
 
 public interface IPilotWalletReader

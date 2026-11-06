@@ -11517,6 +11517,82 @@
       }
     },
     {
+      "dataset": "client/systems",
+      "key": 30000142,
+      "data": {
+        "wormholeClassID": 7,
+        "factionID": 500006,
+        "constellationID": 20000020,
+        "sunTypeID": 3796,
+        "regionID": 10000002,
+        "sunFlareGraphicID": 1241,
+        "planetItemIDs": [
+          40009077,
+          40009078,
+          40009080,
+          40009082,
+          40009098,
+          40009116,
+          40009119,
+          40009123
+        ],
+        "securityClass": "B",
+        "planetCountByType": {
+          "2016": 3,
+          "11": 1,
+          "12": 1,
+          "13": 2,
+          "2015": 1
+        },
+        "neighbours": [
+          {
+            "jumpType": 1,
+            "solarSystemID": 30000138,
+            "stargateID": 50013928
+          },
+          {
+            "jumpType": 0,
+            "solarSystemID": 30000140,
+            "stargateID": 50001248
+          },
+          {
+            "jumpType": 0,
+            "solarSystemID": 30000143,
+            "stargateID": 50013921
+          },
+          {
+            "jumpType": 0,
+            "solarSystemID": 30000144,
+            "stargateID": 50001249
+          },
+          {
+            "jumpType": 0,
+            "solarSystemID": 30000145,
+            "stargateID": 50001250
+          },
+          {
+            "jumpType": 2,
+            "solarSystemID": 30001363,
+            "stargateID": 50013876
+          },
+          {
+            "jumpType": 2,
+            "solarSystemID": 30002780,
+            "stargateID": 50013913
+          }
+        ],
+        "securityStatus": 0.9459131360054016,
+        "solarSystemID": 30000142,
+        "nameID": 269099,
+        "pseudoSecurity": 0.9459131360054016,
+        "center": {
+          "y": 6.075530691e+16,
+          "x": -1.29064861735e+17,
+          "z": 1.1746922706e+17
+        }
+      }
+    },
+    {
       "dataset": "client/typedogma",
       "key": 18,
       "data": {

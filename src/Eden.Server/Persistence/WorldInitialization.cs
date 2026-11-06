@@ -9,10 +9,15 @@ public static class WorldInitialization
     public static void Initialize(
         WorldDatabase database,
         TimeProvider? clock = null,
-        Eden.Gameplay.Market.WorldEconomySettings? economy = null
+        Eden.Gameplay.Market.WorldEconomySettings? economy = null,
+        Eden.Gameplay.Economy.EconomicConfiguration? economics = null
     )
     {
         Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(economy?.InstitutionalStock ?? Eden.Gameplay.Market.NpcSupplyRules.Stock);
+        if (economics is not null)
+        {
+            Eden.Gameplay.Economy.EconomicRules.Validate(economics);
+        }
         if (!File.Exists(database.CatalogPath))
         {
             throw new FileNotFoundException(
@@ -22,7 +27,15 @@ public static class WorldInitialization
         }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy);
+        if (economics is not null)
+        {
+            EconomicStore.CheckCatalog(catalog, economics);
+        }
+        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
+        {
+            // Reconcile overdue catalog belts before admitting connections.
+        }
         var market = new PilotMarketStore(database, clock ?? TimeProvider.System, new MarketChangeSignal());
         while (market.Expire() > 0)
         {

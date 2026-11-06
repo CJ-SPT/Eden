@@ -1,5 +1,8 @@
 using System.Globalization;
+using System.Text.Json;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Economy;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -48,12 +51,18 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
     public long Price(int typeId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Value(catalog, typeId);
+        using WorldDbContext world = new(database.Path);
+        return Value(world, catalog, typeId);
     }
 
     public IReadOnlyDictionary<int, long> Prices(IReadOnlyList<int> typeIds)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        using WorldDbContext world = new(database.Path);
+        if (EconomicStore.Enabled(world))
+        {
+            return typeIds.Distinct().ToDictionary(id => id, id => Value(world, catalog, id));
+        }
         var insurable = catalog
             .Set<ItemType>()
             .Where(type =>
@@ -75,12 +84,33 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         return typeIds.Distinct().ToDictionary(id => id, id => values.GetValueOrDefault(id));
     }
 
-    private static long Value(CatalogDbContext catalog, int typeId)
+    private static long Value(WorldDbContext world, CatalogDbContext catalog, int typeId)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == typeId);
         if (type?.Group.CategoryId != (int)InventoryCategory.Ship || type.GroupId == FleetDefinitions.CapsuleGroup)
         {
             return 0;
+        }
+        if (EconomicStore.Enabled(world))
+        {
+            if (type.GroupId == FleetDefinitions.CorvetteGroup)
+            {
+                // A freely recovered hull must not mint ISK through repeated losses.
+                return 0;
+            }
+            if (StarterProduction.BlueprintForHull(typeId) is { } blueprint)
+            {
+                var key = JsonSerializer.Serialize(((int)blueprint).ToString(CultureInfo.InvariantCulture));
+                var recipe = catalog.Set<SourceRecord>().Find("client/blueprints", key)?.Read<ClientBlueprints>().Activities?.Manufacturing;
+                if (recipe?.Materials is not { Length: > 0 })
+                {
+                    return 0;
+                }
+                var materials = recipe.Materials.ToDictionary(m => checked((int)m.TypeID!.Value), m => checked((int)m.Quantity!.Value));
+                return checked(
+                    (long)Math.Round(EconomicRules.Value(materials, EconomicStore.Prices(world)) * 100, 0, MidpointRounding.ToEven)
+                );
+            }
         }
         var source = catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture));
         return InsuranceRules.CatalogValue(source?.Read<ClientTypes>().BasePrice);
@@ -113,7 +143,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var ship = ShipAtStation(world, catalog, pilotId, stationId, shipId);
-        long value = Value(catalog, ship.TypeId);
+        long value = Value(world, catalog, ship.TypeId);
         var level = InsuranceRules.LevelForPremium(value, premiumCents);
         long now = Now;
         var previous = world
@@ -232,7 +262,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
             && policy.TypeId == ship.TypeId
             && policy.StartTime <= now
             && policy.EndTime > now;
-        long value = covered ? policy!.ValueCents : Value(catalog, ship.TypeId);
+        long value = covered ? policy!.ValueCents : Value(world, catalog, ship.TypeId);
         if (policy is not null)
         {
             policy.Status = covered ? InsurancePolicyStatus.Paid : InsurancePolicyStatus.Expired;

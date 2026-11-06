@@ -63,6 +63,23 @@ internal static class Program
             throw new InvalidDataException("--economy-world requires a new world path.");
         }
         int npcStock = Eden.Gameplay.Market.NpcSupplyRules.Stock;
+        Eden.Gameplay.Economy.EconomicConfiguration? economicConfiguration = null;
+        if (Value("--economy-config") is { } economicPath)
+        {
+            if (!economyWorld)
+            {
+                throw new InvalidDataException("--economy-config requires a new --economy-world.");
+            }
+            economicConfiguration =
+                System.Text.Json.JsonSerializer.Deserialize<Eden.Gameplay.Economy.EconomicConfiguration>(
+                    File.ReadAllText(economicPath),
+                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)
+                    {
+                        UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,
+                    }
+                ) ?? throw new InvalidDataException("Missing economy configuration.");
+            Eden.Gameplay.Economy.EconomicRules.Validate(economicConfiguration);
+        }
         if (Value("--npc-stock") is { } stockText)
         {
             if (!economyWorld || !int.TryParse(stockText, out npcStock))
@@ -100,7 +117,8 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
         WorldInitialization.Initialize(
             new WorldDatabase(worldPath),
-            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null
+            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
+            economics: economicConfiguration
         );
         var accounts = services.GetRequiredService<LauncherStore>();
         accounts.Initialize();

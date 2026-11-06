@@ -5,6 +5,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
@@ -72,9 +73,9 @@ public sealed class StarterProductionTests
         internal IPilotFitting Fitting => Db.Services.GetRequiredService<IPilotFitting>();
         internal IPilotFleet Fleet => Db.Services.GetRequiredService<IPilotFleet>();
 
-        internal Fixture(bool trained = true)
+        internal Fixture(bool trained = true, bool resident = false)
         {
-            Db = new(clock: Clock);
+            Db = new(clock: Clock, liveWorld: resident);
             PassiveCatalogFixture.LoadStarterProduction(CatalogPath);
             _fits = new(new(Db.Path));
             using (CatalogDbContext catalog = new(CatalogPath, writable: true))
@@ -159,6 +160,15 @@ public sealed class StarterProductionTests
 
         internal DockedPilot Pilot(long id = Producer) => Db.Store.FindPilot(id == Producer ? 1000001 : 1000002)!;
 
+        internal void EnableServiceCosts()
+        {
+            using WorldDbContext world = new(Db.Path);
+            using CatalogDbContext catalog = new(CatalogPath);
+            world.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts = true;
+            EconomicStore.SeedPrices(world, catalog, new EconomicConfiguration());
+            world.SaveChanges();
+        }
+
         internal void At(long pilotId, int station)
         {
             Db.Store.SetPosition(Pilot(pilotId).ShipId, null);
@@ -189,12 +199,13 @@ public sealed class StarterProductionTests
             return Stack(Producer, typeId).Id;
         }
 
-        internal void Mine(int oreType, int required)
+        internal void Mine(int oreType, int required, long? targetId = null)
         {
             var mining = Db.Services.GetRequiredService<IPilotMining>();
             long ship = Pilot().ShipId;
             long module = Inventory.List(Producer, ship).Single(i => i.TypeId == (int)MiningLaserType.Civilian).Id;
-            long rock = AsteroidDefinitions.FirstAsteroidId + oreType;
+            long rock = targetId ?? AsteroidDefinitions.FirstAsteroidId + oreType;
+            SpacePosition miningPosition;
             using (WorldDbContext world = new(Db.Path))
             {
                 if (world.Set<WorldAsteroid>().Find(rock) is null)
@@ -212,6 +223,8 @@ public sealed class StarterProductionTests
                     );
                     world.SaveChanges();
                 }
+                var deposit = world.Set<WorldAsteroid>().Find(rock)!;
+                miningPosition = new(deposit.X, deposit.Y, deposit.Z);
             }
             long mined = Quantity(Producer, oreType);
             bool inSpace = false;
@@ -220,7 +233,7 @@ public sealed class StarterProductionTests
             {
                 if (!inSpace)
                 {
-                    Db.Store.SetPosition(ship, SpacePosition.Zero, System);
+                    Db.Store.SetPosition(ship, miningPosition, System);
                     inSpace = true;
                 }
                 var start = mining.Begin(Producer, module, rock, Clock.Now);
@@ -367,6 +380,7 @@ public sealed class StarterProductionTests
     public void MinedInputsBuildTradeFitLoseAndReplaceEachStarterRoleWithoutDevelopmentPurchases(int hull)
     {
         using Fixture f = new();
+        f.EnableServiceCosts();
         var fit = f.Data.Fits[hull];
         var quantities = fit.Append(hull).GroupBy(t => t).ToDictionary(g => g.Key, g => g.Key == Charge ? RoundsPerFit * 2 : g.Count() * 2);
         var jobs = quantities

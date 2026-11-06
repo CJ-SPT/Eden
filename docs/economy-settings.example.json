@@ -1,0 +1,16 @@
+{
+  "chargeServiceCosts": true,
+  "renewBelts": true,
+  "renewalHourUtc": 11,
+  "defaultManufacturingIndex": 0.01,
+  "adjustedPrices": [
+    { "typeId": 34, "priceIsk": 2 },
+    { "typeId": 35, "priceIsk": 8 },
+    { "typeId": 36, "priceIsk": 32 },
+    { "typeId": 37, "priceIsk": 128 },
+    { "typeId": 38, "priceIsk": 512 },
+    { "typeId": 39, "priceIsk": 2048 },
+    { "typeId": 40, "priceIsk": 8192 }
+  ],
+  "manufacturingIndices": []
+}

@@ -1,6 +1,7 @@
 """Export the pinned starter-production recipes, fits, suppliers and ore-source evidence."""
 
 import argparse
+from collections import defaultdict, deque
 import json
 from pathlib import Path
 import sqlite3
@@ -17,6 +18,24 @@ ORES = [1230, 1228, 18, 20, 21, 1223, 22]
 
 def export(catalog_path, fixture_path, audit_path):
     with sqlite3.connect(catalog_path.resolve().as_uri() + "?mode=ro", uri=True) as db:
+        graph = defaultdict(set)
+        for origin, destination in db.execute(
+                "SELECT a.SolarSystemId,b.SolarSystemId FROM Stargate a JOIN Stargate b ON b.Id=a.DestinationId"):
+            graph[origin].add(destination)
+        routes = {30000142: [30000142]}
+        queue = deque(routes)
+        while queue:
+            origin = queue.popleft()
+            for destination in sorted(graph[origin]):
+                if destination not in routes:
+                    routes[destination] = routes[origin] + [destination]
+                    queue.append(destination)
+
+        def route(system):
+            if system not in routes:
+                raise ValueError(f"Required supplier or ore source in system {system} is unreachable from Jita by stargates")
+            return routes[system]
+
         def source(dataset, key):
             row = db.execute("SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?", (dataset, str(key))).fetchone()
             return json.loads(row[0]) if row else {}
@@ -24,6 +43,7 @@ def export(catalog_path, fixture_path, audit_path):
         products = set(HULLS).union(*(set(items) for items in FITS.values()))
         recipes = []
         records = {}
+        records["client/systems", 30000142] = source("client/systems", 30000142)
         pending = set(products) | set(ORES) | {601, 670, 3651, 3638, 3380, 3386, 3385}
         for key, data in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/blueprints' ORDER BY Key"):
             blueprint = json.loads(data)
@@ -102,7 +122,8 @@ def export(catalog_path, fixture_path, audit_path):
                         if 7 in source("client/stationoperations", row[2]).get("services", [])]
             if not stations:
                 raise ValueError(f"Supplier {corp} has no station")
-            suppliers.append({"corporationId": corp, "stationId": stations[0][0], "systemId": stations[0][1], "types": sorted(offered)})
+            suppliers.append({"corporationId": corp, "stationId": stations[0][0], "systemId": stations[0][1],
+                              "routeFromJita": route(stations[0][1]), "types": sorted(offered)})
             # The fixture carries only the relevant authenticated catalog offers.
             records["client/npccorporations", corp] = {
                 "factionID": data.get("factionID"),
@@ -121,7 +142,8 @@ def export(catalog_path, fixture_path, audit_path):
                     system_id, system_name = db.execute(
                         "SELECT s.Id,s.Name FROM Celestial b JOIN SolarSystem s ON s.Id=b.SolarSystemId WHERE b.Id=?", (int(key),)
                     ).fetchone()
-                    sources[ore] = {"systemId": system_id, "systemName": system_name, "oreTypeId": ore, "beltId": int(key), "count": count,
+                    sources[ore] = {"systemId": system_id, "systemName": system_name, "routeFromJita": route(system_id),
+                                    "oreTypeId": ore, "beltId": int(key), "count": count,
                                     "materials": materials["materials"]}
         if set(sources) != set(ORES):
             raise ValueError(f"Missing populated belt sources: {set(ORES) - set(sources)}")

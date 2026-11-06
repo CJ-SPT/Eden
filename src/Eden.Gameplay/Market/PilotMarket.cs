@@ -95,6 +95,8 @@ public enum WalletEntryType
     CorporationRegistration = 39,
     RepairBill = 15,
     Insurance = 19,
+    Manufacturing = 56,
+    ReprocessingTax = 127,
     CloneTransfer = 52,
     TransactionTax = 54,
     JumpCloneInstallation = 55,

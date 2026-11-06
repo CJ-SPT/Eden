@@ -12,6 +12,15 @@ public enum StarterProductionType
 
 public static class StarterProduction
 {
+    public static IndustryBlueprintType? BlueprintForHull(int typeId) =>
+        typeId switch
+        {
+            (int)StarterProductionType.Merlin => IndustryBlueprintType.Merlin,
+            (int)StarterProductionType.Venture => IndustryBlueprintType.Venture,
+            (int)StarterProductionType.Badger => IndustryBlueprintType.Badger,
+            _ => null,
+        };
+
     public static bool IsHull(int typeId) =>
         typeId is (int)StarterProductionType.Merlin or (int)StarterProductionType.Venture or (int)StarterProductionType.Badger;
 

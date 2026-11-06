@@ -766,6 +766,20 @@ For an isolated economy world, put a copy of the verified build-3662168 `catalog
 dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite' --economy-world
 ```
 
-The command rejects an existing world file. Subsequent launches use the same `--world` path without `--economy-world`; the saved settings continue to disable testing NPC supply and testing ISK grants. Existing saves are never converted or stripped of assets. Economy worlds now publish the station owner's catalog-offered original blueprints and skillbooks at pinned base prices. The saved institutional stock defaults to 1,000 replenishing units per order; add `--npc-stock 500` alongside `--economy-world` to choose a different initial stock (1 through 1,000,000). Subsequent launches retain that value. Finished goods and minerals come from player activity. Merlin, Venture and Badger production chains are supported; renewable resources and normal industry/reprocessing price inputs remain later work. See the [source audit](starter-production.json).
+The command rejects an existing world file. Subsequent launches use the same `--world` path without `--economy-world`; the saved settings continue to disable testing NPC supply and testing ISK grants. Existing saves are never converted or stripped of assets. Economy worlds now publish the station owner's catalog-offered original blueprints and skillbooks at pinned base prices. The saved institutional stock defaults to 1,000 replenishing units per order; add `--npc-stock 500` alongside `--economy-world` to choose a different initial stock (1 through 1,000,000). Subsequent launches retain that value. Finished goods and minerals come from player activity. Merlin, Venture and Badger production chains are supported. New economy worlds save material valuations and manufacturing indices and charge industry/reprocessing costs. Catalog belts renew daily at 11:00 UTC by default, with offline/restart catch-up. See the [source audit](starter-production.json).
 
 Personal orders require the owner to be docked at the order's NPC station, station range, minimum volume one, and a supported duration (1, 3, 7, 14, 30 or 90 days). Listed goods leave usable inventory; buy orders reserve their full purchase value. Cancelling or expiring returns only the unsold goods or unspent escrow. Broker fees are not refunded. Price modification requires five minutes, charges a relist fee and adjusts buy escrow. Native presentation remains unverified; see the [protocol record](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
+
+
+To override economic inputs at creation, edit a copy of [economy-settings.example.json](economy-settings.example.json), then add `--economy-config 'E:\EdenWorlds\economy-settings.json'` to the first-launch command above. This option requires a new `--economy-world`. Unknown fields, duplicate/nonpositive material prices, unknown types/systems, invalid rates and invalid UTC hours reject. Subsequent launches omit the creation options and use the saved values.
+
+| Setting | Meaning and default |
+| --- | --- |
+| `chargeServiceCosts` | Enable paid industry/reprocessing and the starter hulls' material-based insurance valuation; true in a new economy world. |
+| `renewBelts` | Enable scheduled catalog-belt replenishment; true. |
+| `renewalHourUtc` | Daily renewal boundary, integer 0-23; 11. |
+| `defaultManufacturingIndex` | Offline fallback system rate, 0-1; 0.01 means 1%. |
+| `adjustedPrices` | Optional `{typeId, priceIsk}` overrides. Otherwise positive catalog material base prices initialize a saved snapshot. These are local valuations, not fetched live prices. |
+| `manufacturingIndices` | Optional `{systemId, index}` overrides; unspecified systems use the saved fallback. |
+
+Existing saves preserve their previous service-cost policy and existing paid jobs/policies. They gain daily belt scheduling without replacing their assets, wallets or testing settings. Runtime price recalculation, resource redistribution, ice/gas/anomaly renewal and economic balancing remain separate work. See [implementation and validation](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).

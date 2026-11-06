@@ -33,7 +33,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         }
         if (operation is null)
         {
-            AsteroidFieldStore.Populate(world, catalog, systemId);
+            AsteroidFieldStore.Populate(world, catalog, systemId, now);
             world.SaveChanges();
             var rock = world.Set<WorldAsteroid>().Where(a => a.SystemId == systemId && a.Quantity > 0).OrderBy(a => a.Id).FirstOrDefault();
             if (rock is null)

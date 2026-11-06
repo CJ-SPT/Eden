@@ -1,3 +1,4 @@
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -105,8 +106,6 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             || values.GetValueOrDefault("account") is not object?[] { Length: 2 } account
             || !Equals(account[0], context.Pilot.PilotId)
             || !Equals(account[1], (long)WalletAccountKey.Cash)
-            || values.GetValueOrDefault("cost") is not (0L or 0d)
-            || values.GetValueOrDefault("tax") is not (0L or 0d)
         )
         {
             throw new InvalidDataException("Use personal manufacturing with the current installation quote.");
@@ -144,7 +143,8 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 Integer(values, "runs"),
                 product,
                 seconds,
-                materials
+                materials,
+                new ManufacturingCharge(QuotedCents(values, "cost"), QuotedCents(values, "tax"), 0)
             )
         );
         Notify(context, result);
@@ -153,6 +153,10 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
 
     private static void Notify(PilotCallContext context, IndustryResult result)
     {
+        if (result.BalanceCents is long balance)
+        {
+            context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, balance / 100d));
+        }
         foreach (var change in result.Changes)
         {
             InventoryChangesWire.NotifyItemChange(context, change);
@@ -160,6 +164,21 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         var job = result.Job;
         context.Notifications.Add(new IndustryJobChanged(job));
         InventoryChangesWire.NotifyBlueprintsUpdated(context, job.PilotId);
+    }
+
+    private static long QuotedCents(Dictionary<string, object?> values, string name)
+    {
+        double isk = values.GetValueOrDefault(name) switch
+        {
+            long number => number,
+            double number => number,
+            _ => throw new InvalidDataException("Missing manufacturing price quote."),
+        };
+        if (!double.IsFinite(isk) || isk < 0 || isk != Math.Truncate(isk))
+        {
+            throw new InvalidDataException("Invalid manufacturing price quote.");
+        }
+        return checked((long)((decimal)isk * 100));
     }
 
     public PilotCallResult Call(

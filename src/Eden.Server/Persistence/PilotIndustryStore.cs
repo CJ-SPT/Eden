@@ -4,8 +4,10 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
@@ -38,6 +40,7 @@ public sealed class IndustryJob
     public IndustryJobStatus Status { get; set; }
     public long? CompletedAt { get; set; }
     public string MaterialsJson { get; set; } = "{}";
+    public long CostCents { get; set; }
 }
 
 [Injectable]
@@ -50,6 +53,20 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
 
     private static IndustryFacility ReadFacility(Station station) =>
         new(station.Id, station.TypeId, station.OwnerId, station.SolarSystemId);
+
+    private IndustryFacility PricedFacility(Station station)
+    {
+        using WorldDbContext world = new(database.Path);
+        bool enabled = EconomicStore.Enabled(world);
+        return new(
+            station.Id,
+            station.TypeId,
+            station.OwnerId,
+            station.SolarSystemId,
+            enabled ? (double)EconomicStore.Index(world, station.SolarSystemId) : 1,
+            enabled ? (double)EconomicRules.NpcFacilityTax : 0
+        );
+    }
 
     private static bool HasService(CatalogDbContext catalog, Station station, StationService service = StationService.Manufacturing) =>
         StationCapabilities.Has(catalog, station.OperationId, service);
@@ -109,7 +126,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using WorldDbContext world = new(database.Path);
         _ = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ReadFacility(Station(catalog, stationId));
+        return PricedFacility(Station(catalog, stationId));
     }
 
     public IReadOnlyList<IndustryFacility> Facilities(long pilotId)
@@ -126,7 +143,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             .OrderBy(s => s.Id)
             .AsEnumerable()
             .Where(s => HasService(catalog, s))
-            .Select(ReadFacility)
+            .Select(PricedFacility)
             .ToArray();
     }
 
@@ -325,7 +342,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             job.EndTime,
             job.DurationSeconds,
             Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready : job.Status,
-            job.CompletedAt
+            job.CompletedAt,
+            job.CostCents
         );
 
     public IReadOnlyList<ManufacturingJob> Jobs(long pilotId, bool includeCompleted)
@@ -358,7 +376,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = CurrentStation(world, catalog, pilotId, request.FacilityId);
+        var station = CurrentStation(world, catalog, pilotId, request.FacilityId);
         var item =
             world.Set<OwnedItem>().SingleOrDefault(i => i.Id == request.BlueprintId && i.OwnerId == pilotId)
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");
@@ -499,10 +517,29 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 }
             )
             .Entity;
+        double? security = catalog
+            .FindSource("client/systems", station.SolarSystemId.ToString(CultureInfo.InvariantCulture))
+            ?.Read<ClientSystems>()
+            .SecurityStatus;
+        if (EconomicStore.Enabled(world) && security is null)
+        {
+            throw new InvalidDataException("Missing catalog industry security classification.");
+        }
+        var charge = EconomicStore.Manufacturing(world, pilotId, station.SolarSystemId, materials, security ?? 0);
+        if (request.QuotedCharge is { } quoted && (quoted.CostCents != charge.CostCents || quoted.TaxCents != charge.TaxCents))
+        {
+            throw new InvalidDataException("Manufacturing price changed; reopen the blueprint to refresh the quote.");
+        }
+        job.CostCents = charge.TotalCents;
+        world.SaveChanges();
+        long? balance =
+            charge.TotalCents > 0
+                ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now)
+                : null;
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.IndustryStarted);
         world.SaveChanges();
         transaction.Commit();
-        return new(ReadJob(catalog, job), changes);
+        return new(ReadJob(catalog, job), changes, balance);
     }
 
     public IndustryResult Deliver(long pilotId, long jobId, int systemId) => Finish(pilotId, jobId, systemId, cancel: false);

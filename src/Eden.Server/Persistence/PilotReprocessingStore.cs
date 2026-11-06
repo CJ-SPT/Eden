@@ -1,7 +1,9 @@
 using System.Globalization;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Skills;
 using Eden.Protocol;
@@ -91,7 +93,8 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         CatalogDbContext catalog,
         Pilot pilot,
         OwnedItem item,
-        double stationEfficiency
+        double stationEfficiency,
+        decimal tax
     )
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
@@ -114,7 +117,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             (int)ReprocessingSkill.ReprocessingEfficiency,
             checked((int)Attribute(catalog, item.TypeId, DogmaAttributeId.ReprocessingSkillType)),
         };
-        return ReprocessingRules.Quote(
+        var quote = ReprocessingRules.Quote(
             new(
                 item.Id,
                 item.TypeId,
@@ -125,6 +128,35 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 materials.Materials.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0)).ToArray()
             )
         );
+        if (!EconomicStore.Enabled(world))
+        {
+            return quote;
+        }
+        var prices = EconomicStore.Prices(world);
+        return quote with
+        {
+            Recoverables = quote
+                .Recoverables.Select(m =>
+                    m with
+                    {
+                        CostCents = EconomicRules.ReprocessingCharge(
+                            m.Quantity,
+                            prices.TryGetValue(m.TypeId, out decimal price) && price > 0
+                                ? price
+                                : throw new InvalidDataException($"Missing positive adjusted price for material {m.TypeId}."),
+                            tax
+                        ),
+                    }
+                )
+                .ToArray(),
+        };
+    }
+
+    private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int stationId, SdeNpcStations station)
+    {
+        long owner = catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId;
+        double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, owner)?.Value ?? 0;
+        return EconomicRules.ReprocessingTax((decimal)station.ReprocessingStationsTake!.Value, standing);
     }
 
     public ReprocessingQuotes Quote(long pilotId, int stationId, long activeShipId, IReadOnlyList<long> itemIds)
@@ -134,6 +166,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ReadPilot(world, pilotId);
         var station = Station(catalog, pilot, stationId);
+        decimal tax = Tax(world, catalog, pilot, stationId, station);
         if (pilot.ActiveShipId != activeShipId)
         {
             throw new InvalidDataException("The active ship has changed.");
@@ -142,9 +175,9 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             itemIds.Count == 0
                 ? []
                 : Items(world, pilot, itemIds)
-                    .Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value))
+                    .Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value, tax))
                     .ToArray();
-        return new(station.ReprocessingStationsTake!.Value, station.ReprocessingEfficiency!.Value, quotes);
+        return new((double)tax, station.ReprocessingEfficiency!.Value, quotes);
     }
 
     public ReprocessingResult Reprocess(
@@ -174,7 +207,8 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             throw new InvalidDataException("Reprocessing output must go to your current hangar or cargo.");
         }
         var items = Items(world, pilot, itemIds, sourceId);
-        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value)).ToArray();
+        decimal tax = Tax(world, catalog, pilot, stationId, station);
+        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value, tax)).ToArray();
         if (quotes.Any(q => q.Portions == 0 || q.Recoverables.Count == 0))
         {
             throw new InvalidDataException("Each ore stack must contain at least one complete reprocessing batch.");
@@ -202,6 +236,20 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 throw new CargoCapacityException(Math.Max(0, capacity - used + removed), added);
             }
         }
+        long cost = quotes.Sum(q => q.CostCents);
+        long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        long? balance =
+            cost > 0
+                ? EconomicStore.Pay(
+                    world,
+                    pilotId,
+                    catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId,
+                    stationId,
+                    WalletEntryType.ReprocessingTax,
+                    cost,
+                    now
+                )
+                : null;
         List<InventoryChange> changes = [];
         foreach (var (item, quote) in items.Zip(quotes))
         {
@@ -226,6 +274,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         );
         world.SaveChanges();
         transaction.Commit();
-        return new(items.Select(i => i.Id).ToArray(), output, changes);
+        return new(items.Select(i => i.Id).ToArray(), output, changes, balance);
     }
 }

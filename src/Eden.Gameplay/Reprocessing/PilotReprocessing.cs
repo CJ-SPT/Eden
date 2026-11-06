@@ -2,7 +2,7 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Reprocessing;
 
-public sealed record RecoveredMaterial(int TypeId, int Quantity, long Unrecoverable);
+public sealed record RecoveredMaterial(int TypeId, int Quantity, long Unrecoverable, long CostCents = 0);
 
 public sealed record ReprocessingQuote(
     long ItemId,
@@ -12,14 +12,18 @@ public sealed record ReprocessingQuote(
     int Portions,
     double Efficiency,
     IReadOnlyList<RecoveredMaterial> Recoverables
-);
+)
+{
+    public long CostCents => Recoverables.Sum(m => m.CostCents);
+}
 
 public sealed record ReprocessingQuotes(double StationTax, double StationEfficiency, IReadOnlyList<ReprocessingQuote> Items);
 
 public sealed record ReprocessingResult(
     IReadOnlyList<long> ProcessedIds,
     IReadOnlyDictionary<int, int> Output,
-    IReadOnlyList<InventoryChange> Changes
+    IReadOnlyList<InventoryChange> Changes,
+    long? BalanceCents = null
 );
 
 public interface IPilotReprocessing

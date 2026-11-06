@@ -121,7 +121,10 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         }
         // Retained solely for the injected Rookie encounter fixture. Normal
         // populations retire this type and never select it from asteroid pools.
-        if (npc.TypeId == NpcEncounterDefinitions.GuristasRookieType)
+        if (
+            npc.TypeId == NpcEncounterDefinitions.GuristasRookieType
+            && world.Set<SavedWorldEconomy>().Find(Eden.Gameplay.Market.WorldEconomySettings.SingletonId)!.TestingMarket
+        )
         {
             return [new(WreckDefinitions.StarterLootType, WreckDefinitions.StarterLootQuantity)];
         }

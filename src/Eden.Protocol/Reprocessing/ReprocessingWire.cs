@@ -29,8 +29,7 @@ internal sealed record ReprocessingItemReply(ReprocessingQuote Quote) : BlueMode
                 ["leftOvers"] = Quote.LeftOvers,
                 ["portions"] = Quote.Portions,
                 ["efficiency"] = Quote.Efficiency,
-                // Build 3662168's missing adjusted-price fallback is zero ISK cost.
-                ["totalISKCost"] = 0d,
+                ["totalISKCost"] = Quote.CostCents / 100d,
                 ["recoverables"] = new BlueList<RecoveredMaterialReply>(
                     Quote.Recoverables.Select(item => new RecoveredMaterialReply(item)).ToArray()
                 ),
@@ -48,7 +47,7 @@ internal sealed record RecoveredMaterialReply(RecoveredMaterial Material) : Blue
                 ["typeID"] = Material.TypeId,
                 ["client"] = Material.Quantity,
                 ["unrecoverable"] = Material.Unrecoverable,
-                ["iskCost"] = 0d,
+                ["iskCost"] = Material.CostCents / 100d,
             }
         );
 }

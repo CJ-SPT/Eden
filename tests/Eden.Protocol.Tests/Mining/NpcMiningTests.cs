@@ -143,7 +143,7 @@ public sealed partial class NpcMiningTests
         Assert.Equal(before - 480, Ore(db));
         Assert.Equal(after, Read(db, clock.Now));
         long nextDue = MiningDue(db);
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         Assert.Equal(after.Select(n => n.Id), Read(db, clock.Now).Select(n => n.Id));
         Assert.Equal(before - 480, Ore(db));
         Assert.Equal(nextDue, MiningDue(db));
@@ -212,7 +212,7 @@ public sealed partial class NpcMiningTests
             db.Store.Advance(SystemId, tick, clock.Now, [], []);
         }
         Assert.True(departing);
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         clock.AdvanceWallTime(TimeSpan.FromTicks(arrival - clock.Now));
         Assert.DoesNotContain(Read(db, clock.Now), n => n.Id == hauler.Id);
         using (WorldDbContext saved = new(db.Path))
@@ -385,7 +385,7 @@ public sealed partial class NpcMiningTests
             world.SaveChanges();
             transaction.Commit();
         }
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         using WorldDbContext saved = new(db.Path);
         var standing = Assert.Single(saved.Set<SavedNpcStanding>());
         Assert.Equal(miner.CorporationId, standing.SourceId);
@@ -475,8 +475,8 @@ public sealed partial class NpcMiningTests
             string schemaVersion = $"PRAGMA user_version={version}";
             world.Database.ExecuteSqlRaw(schemaVersion);
         }
-        _ = WorldInitialization.Open(db.Path);
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
+        WorldInitialization.Initialize(new(db.Path), clock);
         using (WorldDbContext saved = new(db.Path))
         {
             var upgraded = saved.Set<WorldNpcMiningOperation>().Single();
@@ -494,7 +494,7 @@ public sealed partial class NpcMiningTests
             upgraded.HaulGeneration = 7;
             saved.SaveChanges();
         }
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         using WorldDbContext reopened = new(db.Path);
         Assert.Equal(7, reopened.Set<WorldNpcMiningOperation>().Single().HaulGeneration);
         Assert.Equal(ore, Ore(db));
@@ -517,7 +517,7 @@ public sealed partial class NpcMiningTests
         clock.AdvanceWallTime(TimeSpan.FromTicks(MiningDue(db) - clock.Now));
         Read(db, clock.Now);
         Assert.Equal(0, Ore(db));
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         Read(db, clock.Now);
         Assert.Equal(0, Ore(db));
         using WorldDbContext saved = new(db.Path);
@@ -612,7 +612,7 @@ public sealed partial class NpcMiningTests
             Assert.Equal(NpcMiningStage.Cooldown, world.Set<WorldNpcMiningOperation>().Single().Stage);
             Assert.Empty(world.Set<NpcAggression>());
         }
-        _ = WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         clock.AdvanceWallTime(TimeSpan.FromSeconds(NpcMiningRules.CooldownSeconds));
         var replacement = Read(db, clock.Now);
         Assert.Equal(3, replacement.Length);

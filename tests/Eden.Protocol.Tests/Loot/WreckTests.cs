@@ -31,8 +31,14 @@ public sealed class WreckTests
         public WreckContact Wreck { get; }
         public long Item => Store.Read(Pilot.PilotId, Wreck.Id, Now).Items.Single().Id;
 
-        public Fixture()
+        public Fixture(bool development = true)
         {
+            if (!development)
+            {
+                using WorldDbContext settings = new(Db.Path);
+                settings.Set<SavedWorldEconomy>().Single().TestingMarket = false;
+                settings.SaveChanges();
+            }
             NpcEncounterTests.Prepare(Db);
             var npc = Db.Services.GetRequiredService<Eden.Gameplay.Combat.INpcEncounters>().List(30000144, Now)[0];
             Db.Store.SetPosition(Pilot.ShipId, npc.Position + new SpacePosition(1000, 0, 0), npc.SystemId);
@@ -53,6 +59,15 @@ public sealed class WreckTests
             Store.Take(Pilot.PilotId, Pilot.ShipId, Wreck.Id, [Item], quantity, Now);
 
         public void Dispose() => Db.Dispose();
+    }
+
+    [Fact]
+    public void EconomyRookieWreckDoesNotInjectTheDevelopmentMineralDrop()
+    {
+        using Fixture f = new(development: false);
+        Assert.Empty(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
+        WorldInitialization.Initialize(new(f.Db.Path));
+        Assert.Empty(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
     }
 
     [Fact]

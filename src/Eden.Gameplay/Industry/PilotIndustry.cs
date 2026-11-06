@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Industry;
@@ -28,6 +29,9 @@ public enum IndustrySkill
 // Original blueprint types in the pinned build's client/blueprints catalog.
 public enum IndustryBlueprintType
 {
+    Merlin = 950,
+    Venture = 32881,
+    Badger = 983,
     MinerI = 785,
     SmallShieldBoosterI = 1032,
     OneMnAfterburnerI = 1072,
@@ -36,7 +40,7 @@ public enum IndustryBlueprintType
     AntimatterChargeSmall = 1137,
 }
 
-public sealed record IndustryFacility(int Id, int TypeId, int OwnerId, int SystemId);
+public sealed record IndustryFacility(int Id, int TypeId, int OwnerId, int SystemId, double CostIndex = 1, double Tax = 0);
 
 public sealed record OwnedBlueprint(InventoryItem Item, IndustryFacility Facility, long? JobId);
 
@@ -49,7 +53,8 @@ public sealed record ManufacturingRequest(
     int Runs,
     int? ProductTypeId,
     double QuotedSeconds,
-    IReadOnlyDictionary<int, int> QuotedMaterials
+    IReadOnlyDictionary<int, int> QuotedMaterials,
+    ManufacturingCharge? QuotedCharge = null
 );
 
 public sealed record ManufacturingJob(
@@ -65,10 +70,11 @@ public sealed record ManufacturingJob(
     long EndTime,
     long DurationSeconds,
     IndustryJobStatus Status,
-    long? CompletedAt
+    long? CompletedAt,
+    long CostCents = 0
 );
 
-public sealed record IndustryResult(ManufacturingJob Job, IReadOnlyList<InventoryChange> Changes);
+public sealed record IndustryResult(ManufacturingJob Job, IReadOnlyList<InventoryChange> Changes, long? BalanceCents = null);
 
 public interface IPilotIndustrySkills
 {

@@ -1,6 +1,7 @@
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Reprocessing;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -67,6 +68,10 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
                 foreach (var change in result.Changes)
                 {
                     InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                if (result.BalanceCents is long balance)
+                {
+                    context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, balance / 100d));
                 }
                 // ItemReprocessor extends its result list with this pair, then the
                 // controller unpacks input IDs and actual output quantities.

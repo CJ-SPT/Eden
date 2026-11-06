@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidField
+internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? clock = null) : IAsteroidField
 {
     private readonly Lock _gate = new();
     private readonly HashSet<int> _initialized = [];
@@ -57,26 +57,39 @@ internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidFiel
             .ToArray();
     }
 
-    private static void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)
+    private void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)
     {
         using var transaction = world.Database.BeginTransaction();
-        Populate(world, catalog, systemId);
+        Populate(world, catalog, systemId, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.SaveChanges();
         transaction.Commit();
     }
 
-    internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId)
+    internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId, long now, int? renewBelt = null)
     {
         foreach (
             var belt in catalog
                 .Set<Celestial>()
-                .Where(b => b.SolarSystemId == systemId && b.GroupId == AsteroidDefinitions.BeltGroup)
+                .Where(b =>
+                    b.SolarSystemId == systemId && b.GroupId == AsteroidDefinitions.BeltGroup && (!renewBelt.HasValue || b.Id == renewBelt)
+                )
                 .OrderBy(b => b.Id)
                 .ToArray()
         )
         {
-            // Keep depleted rows as well: an empty belt must not regenerate on login.
-            if (world.Set<WorldAsteroid>().Any(a => a.BeltId == belt.Id))
+            if (world.Set<SavedBeltRenewal>().Find(belt.Id) is null)
+            {
+                world.Add(
+                    new SavedBeltRenewal
+                    {
+                        BeltId = belt.Id,
+                        SystemId = systemId,
+                        NextRenewal = ResourceRenewalRules.Next(now, EconomicStore.Policy(world).RenewalHourUtc),
+                    }
+                );
+            }
+            // Visiting/reconnecting never replenishes a saved deposit.
+            if (!renewBelt.HasValue && world.Set<WorldAsteroid>().Any(a => a.BeltId == belt.Id))
             {
                 continue;
             }
@@ -127,22 +140,27 @@ internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidFiel
                 double oreVolume =
                     AsteroidDefinitions.MinimumOreVolume
                     + random.NextDouble() * (AsteroidDefinitions.MaximumOreVolume - AsteroidDefinitions.MinimumOreVolume);
-                world
-                    .Set<WorldAsteroid>()
-                    .Add(
-                        new()
-                        {
-                            Id = checked(AsteroidDefinitions.FirstAsteroidId + (long)belt.Id * AsteroidDefinitions.IdsPerBelt + index),
-                            BeltId = belt.Id,
-                            SystemId = systemId,
-                            TypeId = types[index],
-                            Quantity = checked((long)Math.Floor(oreVolume / volumes[types[index]])),
-                            X = belt.X + Math.Cos(angle) * distance,
-                            Y = belt.Y + (random.NextDouble() - 0.5) * AsteroidDefinitions.FieldThickness,
-                            Z = belt.Z + Math.Sin(angle) * distance,
-                            Radius = (float)Math.Pow(oreVolume, AsteroidDefinitions.RadiusGrowthExponent),
-                        }
-                    );
+                var generated = new WorldAsteroid
+                {
+                    Id = checked(AsteroidDefinitions.FirstAsteroidId + (long)belt.Id * AsteroidDefinitions.IdsPerBelt + index),
+                    BeltId = belt.Id,
+                    SystemId = systemId,
+                    TypeId = types[index],
+                    Quantity = checked((long)Math.Floor(oreVolume / volumes[types[index]])),
+                    X = belt.X + Math.Cos(angle) * distance,
+                    Y = belt.Y + (random.NextDouble() - 0.5) * AsteroidDefinitions.FieldThickness,
+                    Z = belt.Z + Math.Sin(angle) * distance,
+                    Radius = (float)Math.Pow(oreVolume, AsteroidDefinitions.RadiusGrowthExponent),
+                };
+                var existing = renewBelt.HasValue ? world.Set<WorldAsteroid>().Find(generated.Id) : null;
+                if (existing is null)
+                {
+                    world.Add(generated);
+                }
+                else
+                {
+                    existing.Quantity = Math.Max(existing.Quantity, generated.Quantity);
+                }
             }
         }
     }
