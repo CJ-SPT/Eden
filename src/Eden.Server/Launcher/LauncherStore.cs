@@ -6,21 +6,22 @@ using Eden.Protocol.PilotSessions;
 using Eden.Server.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Options;
 
 namespace Eden.Server.Launcher;
 
 // Authentication tables extend the world without competing with gameplay's user_version migrations.
 [Injectable(InjectionType.Singleton)]
-internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
+internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock, ILauncherPasswords? passwords = null)
 {
     internal const int AccessSeconds = 15 * 60;
     internal const int RefreshSeconds = 30 * 24 * 60 * 60;
     internal const int TicketSeconds = 180;
     private const int MinimumPasswordLength = 6;
     private const int MaximumPasswordLength = 128;
-    private readonly PasswordHasher<string> _hasher = new(Options.Create(new PasswordHasherOptions { IterationCount = 210000 }));
-    private readonly string _dummy = new PasswordHasher<string>().HashPassword("", "invalid-user-dummy-password");
+    private readonly ILauncherPasswords _passwords = passwords ?? new LauncherPasswords();
+
+    private sealed record Credential(long Id, string Name, string Hash);
+
     private long Now => clock.GetUtcNow().ToUnixTimeSeconds();
 
     public void Initialize()
@@ -65,7 +66,7 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
             }
             roles = (long)PilotRole.Developer;
         }
-        string passwordHash = _hasher.HashPassword(name, request.Password);
+        string passwordHash = _passwords.Hash(name, request.Password);
         using var db = Open();
         using var tx = db.BeginTransaction(deferred: false);
         if (Scalar(db, tx, "SELECT Id FROM WorldAccount WHERE upper(UserName)=$name", ("$name", name.ToUpperInvariant())) is not null)
@@ -95,49 +96,53 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
         return new(id, name, request.Developer);
     }
 
-    public SessionReply SignIn(SignInRequest request)
+    private Credential? ReadCredential(string userName)
     {
         using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
         using var command = Command(
             db,
-            tx,
+            null,
             """
             SELECT a.Id,a.UserName,c.PasswordHash FROM WorldAccount a
             JOIN LauncherCredential c ON c.AccountId=a.Id WHERE c.NormalizedName=$name
             """,
-            ("$name", (request.UserName ?? "").Trim().ToUpperInvariant())
+            ("$name", (userName ?? "").Trim().ToUpperInvariant())
         );
-        long id = 0;
-        string name = "";
-        string hash = _dummy;
-        using (var reader = command.ExecuteReader())
-        {
-            if (reader.Read())
-            {
-                id = reader.GetInt64(0);
-                name = reader.GetString(1);
-                hash = reader.GetString(2);
-            }
-        }
+        using var reader = command.ExecuteReader();
+        return reader.Read() ? new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2)) : null;
+    }
+
+    public SessionReply SignIn(SignInRequest request)
+    {
+        // Expensive password work must never retain the resident world's connection lease.
+        var credential = ReadCredential(request.UserName);
         var verified = request.Password is { Length: <= MaximumPasswordLength }
-            ? _hasher.VerifyHashedPassword(name, hash, request.Password)
+            ? _passwords.Verify(credential?.Name ?? "", credential?.Hash, request.Password)
             : PasswordVerificationResult.Failed;
-        if (id == 0 || verified == PasswordVerificationResult.Failed)
+        if (credential is null || verified == PasswordVerificationResult.Failed)
         {
             throw new LauncherException("invalid_credentials", "Invalid account name or password.", 401);
         }
-        if (verified == PasswordVerificationResult.SuccessRehashNeeded)
+        string? replacement =
+            verified == PasswordVerificationResult.SuccessRehashNeeded ? _passwords.Hash(credential.Name, request.Password!) : null;
+        using var db = Open();
+        using var tx = db.BeginTransaction(deferred: false);
+        var current = Scalar(db, tx, "SELECT PasswordHash FROM LauncherCredential WHERE AccountId=$id", ("$id", credential.Id));
+        if (!string.Equals(current as string, credential.Hash, StringComparison.Ordinal))
+        {
+            throw new LauncherException("invalid_credentials", "Invalid account name or password.", 401);
+        }
+        if (replacement is not null)
         {
             Execute(
                 db,
                 tx,
                 "UPDATE LauncherCredential SET PasswordHash=$hash WHERE AccountId=$id",
-                ("$hash", _hasher.HashPassword(name, request.Password!)),
-                ("$id", id)
+                ("$hash", replacement),
+                ("$id", credential.Id)
             );
         }
-        var result = IssueSession(db, tx, id, name, request.RememberMe);
+        var result = IssueSession(db, tx, credential.Id, credential.Name, request.RememberMe);
         tx.Commit();
         return result;
     }
@@ -162,7 +167,8 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
         {
             Execute(db, tx, "INSERT INTO LauncherRefresh(Hash,SessionId) VALUES($h,$s)", ("$h", Hash(refresh)), ("$s", sessionId));
         }
-        return new(id, name, access, expires, refresh, ReadRoles(id) == (long)PilotRole.Developer);
+        long roles = Convert.ToInt64(Scalar(db, tx, "SELECT Roles FROM LauncherCredential WHERE AccountId=$id", ("$id", id)));
+        return new(id, name, access, expires, refresh, roles == (long)PilotRole.Developer);
     }
 
     public SessionReply Refresh(string token)
@@ -265,6 +271,7 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
     public void SetPassword(string userName, string password)
     {
         ValidatePassword(password);
+        string passwordHash = _passwords.Hash(userName, password);
         using var db = Open();
         using var tx = db.BeginTransaction(deferred: false);
         var id =
@@ -279,7 +286,7 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock)
             """,
             ("$id", id),
             ("$name", userName.Trim().ToUpperInvariant()),
-            ("$hash", _hasher.HashPassword(userName, password)),
+            ("$hash", passwordHash),
             ("$roles", (long)PilotRole.Player)
         );
         Execute(db, tx, "UPDATE LauncherSession SET Revoked=1 WHERE AccountId=$id", ("$id", id));

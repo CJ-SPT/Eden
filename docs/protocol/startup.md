@@ -192,3 +192,13 @@ Native frames receive a fixed thirty-second completion deadline after their firs
 Automated validation is recorded below. Live acceptance: Not performed; agent client testing is disabled. Optional maintainer check: reconnect after a network interruption; native presentation remains unverified.
 
 Automated validation: pinned tool/solution restore and build passed (zero warnings/errors; final build 7.77 seconds). Filter: FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Transport|FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~Eden.Protocol.Tests.Launcher. All 98 cases passed in 10 seconds, including deterministic deadlines and the sixteen-pending-connection socket regression. Both Python suites passed (3 catalog, 9 formatting); formatting and diff checks passed. No full .NET suite was requested or run.
+
+## Password verification outside world ownership (November 6, 2026)
+
+Sign-in now reads an immutable credential snapshot and closes its world connection before password verification or rehashing. A short transaction rechecks the stored hash before issuing a session, so a password changed during verification cannot create a session with obsolete credentials. Password changes also calculate their hash before opening the transaction. Real and unknown-account dummy hashes use the same 210,000-iteration policy through a narrow injectable server dependency. Existing password limits, token formats and durable authentication commits remain in effect.
+
+Live acceptance: Not performed; agent client testing is disabled. Optional maintainer checks: none; this milestone changes server-side synchronization only.
+
+The first focused run passed 56 cases and exposed a rehash-path SQLite table lock: session creation queried roles through a second connection after modifying credentials. Roles now use the existing transaction. The corrected run below covers that fix as well.
+
+Automated validation: pinned tool/solution restore and build passed (zero warnings/errors; corrected build 1.65 seconds). Filter: FullyQualifiedName~Eden.Protocol.Tests.Launcher|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests. All 57 cases passed in 11 seconds after the correction, including paused verification/password-change/rehash work, stale credential rejection and durable authentication. Both Python suites passed (3 catalog, 9 formatting), and formatting/diff checks passed. No full .NET suite was requested or run.

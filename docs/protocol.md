@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Password verification outside world ownership, November 6, 2026](protocol/startup.md#password-verification-outside-world-ownership-november-6-2026)
+
 - [Connection admission and stalled transport recovery, November 6, 2026](protocol/startup.md#connection-admission-and-stalled-transport-recovery-november-6-2026)
 
 - [Launch inventory and normal-undock synchronization, November 6, 2026](protocol/drones.md#launch-inventory-and-normal-undock-synchronization-november-6-2026)
