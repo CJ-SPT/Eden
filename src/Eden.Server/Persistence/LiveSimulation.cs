@@ -210,7 +210,7 @@ internal sealed partial class LiveCombatRuntime
             NpcWeaponContact? weapon =
                 active?.LastShotAt is long started && now >= started && now - started < duration * TimeSpan.TicksPerMillisecond
                     ? new(
-                        active.ShipId,
+                        active.LastTargetId ?? active.ShipId,
                         checked((int)npc.Attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)),
                         started,
                         duration

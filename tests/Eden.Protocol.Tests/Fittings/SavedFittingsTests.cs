@@ -290,7 +290,7 @@ public sealed class SavedFittingsTests
         Assert.Equal(pilot, db.Store.FindPilot(1000001));
         Assert.Equal(assets, Assets(db));
         using WorldDbContext final = new(db.Path);
-        Assert.Equal(84, final.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, final.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Theory]

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
@@ -10,7 +11,7 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
-internal static class Ballpark
+internal static partial class Ballpark
 {
     internal static BallparkSnapshot Snapshot(
         ShipContact own,
@@ -26,7 +27,8 @@ internal static class Ballpark
         ShipContact[] peers,
         IReadOnlyList<NpcContact> npcs,
         IReadOnlyList<WreckContact>? wrecks = null,
-        IReadOnlyList<MissileContact>? missiles = null
+        IReadOnlyList<MissileContact>? missiles = null,
+        IReadOnlyList<DroneContact>? drones = null
     )
     {
         var pilot = own.Pilot;
@@ -56,13 +58,25 @@ internal static class Ballpark
         {
             items.Add(WriteMissile(writer, missile));
         }
+        foreach (var drone in drones ?? [])
+        {
+            items.Add(WriteDrone(writer, drone));
+        }
         var damage = peers
             .Prepend(own)
             .Where(s => s.Health is not null)
             .Select(s => s.Health!)
             .Concat(npcs.Select(n => n.Health))
+            .Concat((drones ?? []).Select(d => d.Health))
             .ToDictionary(s => s.ShipId, s => s.DamageState());
-        return new(stream.ToArray(), pilot.ShipId, items, new SolarSystemSlim(pilot.SystemId), damage);
+        return new(
+            stream.ToArray(),
+            pilot.ShipId,
+            items,
+            new SolarSystemSlim(pilot.SystemId),
+            damage,
+            drones?.Select(d => new Eden.Protocol.Drones.DroneState(d)).ToArray()
+        );
     }
 
     private static SlimItem WriteObject(BinaryWriter writer, StaticSpaceObject body)

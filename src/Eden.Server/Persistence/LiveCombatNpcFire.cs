@@ -2,11 +2,28 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
 internal sealed partial class LiveCombatRuntime
 {
+    private HashSet<long>? _droneControllers;
+
+    private HashSet<long> DroneControllers() =>
+        _droneControllers ??= Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            return world
+                .Set<WorldDrone>()
+                .AsNoTracking()
+                .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
+                .Select(d => d.ControllerShipId)
+                .ToHashSet();
+        });
+
+    internal void WarmDrones() => _ = DroneControllers();
+
     internal bool FireNpc(
         long pilotId,
         long shipId,
@@ -22,6 +39,11 @@ internal sealed partial class LiveCombatRuntime
         shot = null;
         if (!CanRun)
         {
+            return false;
+        }
+        if (DroneControllers().Contains(shipId))
+        {
+            // Drone retaliation shares the SQL transaction with drone layer state and loss.
             return false;
         }
         Trim();
@@ -82,6 +104,7 @@ internal sealed partial class LiveCombatRuntime
         {
             ReadyAt = checked(now + (long)Math.Ceiling(paid.Shot.Weapon.Duration * TimeSpan.TicksPerMillisecond)),
             LastShotAt = now,
+            LastTargetId = shipId,
         };
         _dirtyAggressions.Add(npcId);
         owner.ObjectsChanged();

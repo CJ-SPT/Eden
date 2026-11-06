@@ -81,7 +81,7 @@ internal sealed partial class LiveCombatRuntime
                     weapon =
                         aggression.LastShotAt is { } started && now >= started && now - started < duration * TimeSpan.TicksPerMillisecond
                             ? new(
-                                aggression.ShipId,
+                                aggression.LastTargetId ?? aggression.ShipId,
                                 checked((int)source.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.EntityTurretType)),
                                 started,
                                 duration

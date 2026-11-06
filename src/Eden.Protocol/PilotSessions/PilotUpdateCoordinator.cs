@@ -7,6 +7,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Drones;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Mail;
 using Eden.Protocol.Market;
@@ -55,7 +56,8 @@ internal sealed class PilotUpdateCoordinator(
     ChatHandler chat,
     CorporationHandler corporations,
     CorporationWalletHandler corporationWallet,
-    NpcEwarHandler npcEwar
+    NpcEwarHandler npcEwar,
+    DroneHandler drones
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -153,6 +155,7 @@ internal sealed class PilotUpdateCoordinator(
             targeting.Advance(context);
         }
         capacitorBoosters.Advance(context);
+        drones.Advance(context);
         hardeners.Advance(context);
         support.Advance(context);
         using (SessionPerformance.Phase("update.tackle"))

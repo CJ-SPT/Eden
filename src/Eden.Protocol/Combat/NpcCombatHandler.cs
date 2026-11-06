@@ -159,6 +159,10 @@ internal sealed class NpcCombatHandler(
             context.Flight.NotifyNpcWeapon(shot.NpcId, shot.Weapon);
         }
         context.Flight.NotifyHealth(shot.Health);
+        if (shot.Health.ShipId != context.Pilot.ShipId)
+        {
+            context.Flight.RefreshDrones();
+        }
         context.Notifications.Add(
             new ModuleAttributesChanged([
                 Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),

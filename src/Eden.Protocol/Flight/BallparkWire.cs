@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Drones;
 using Eden.Protocol.Loot;
 using Eden.Protocol.Serialization;
 
@@ -14,7 +15,8 @@ internal sealed record BallparkSnapshot(
     long Ego,
     IReadOnlyList<SlimItem> Slims,
     SlimItem SolarSystem,
-    IReadOnlyDictionary<long, ShipDamageState> Damage
+    IReadOnlyDictionary<long, ShipDamageState> Damage,
+    IReadOnlyList<DroneState>? Drones = null
 ) : BlueModel
 {
     public override object ToBlue() =>
@@ -26,7 +28,7 @@ internal sealed record BallparkSnapshot(
                 ["ego"] = Ego,
                 ["slims"] = new BlueList<SlimItem>(Slims),
                 ["solItem"] = SolarSystem,
-                ["droneState"] = new List<object?>(),
+                ["droneState"] = Drones is null ? new List<object?>() : new BlueList<DroneState>(Drones),
                 ["damageState"] = new BlueMap<long, ShipDamageState>(Damage),
                 ["effectStates"] = new List<object?>(),
                 ["dbuffState"] = new Dictionary<long, object?>(),

@@ -3,6 +3,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
@@ -37,7 +38,8 @@ internal sealed class ShipDogmaBuilder(
     IEnumerable<IModuleEffectSource> moduleEffects,
     IPilotCharacterSheet sheet,
     IPilotJumpCloneSkills clones,
-    IPilotWeaponBanks banks
+    IPilotWeaponBanks banks,
+    IPilotDrones? droneStore = null
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -72,6 +74,7 @@ internal sealed class ShipDogmaBuilder(
     internal DogmaItemInfo<int> PrimePilot(DockedPilot pilot)
     {
         var cloneSkills = clones.ReadCloneSkills(pilot.PilotId);
+        var control = droneStore?.Control(pilot.PilotId);
         return new(
             new DogmaItemKey.Item(pilot.PilotId),
             Item(pilot, "pilot"),
@@ -83,6 +86,8 @@ internal sealed class ShipDogmaBuilder(
                     {
                         [DogmaAttributeId.MaxJumpClones] = cloneSkills.Capacity,
                         [DogmaAttributeId.CloneJumpCooldown] = cloneSkills.CooldownHours,
+                        [DogmaAttributeId.MaxActiveDrones] = control?.MaximumDrones ?? 0,
+                        [DogmaAttributeId.DroneControlDistance] = control?.Range ?? (int)DroneRules.BaseControlRange,
                     }
                 )
                 .ToDictionary(),
@@ -98,7 +103,7 @@ internal sealed class ShipDogmaBuilder(
         return PrimeShip(pilot, snapshot, now);
     }
 
-    private static DogmaItemInfo<double> PrimeShip(DockedPilot pilot, ShipResourceSnapshot snapshot, long now)
+    private DogmaItemInfo<double> PrimeShip(DockedPilot pilot, ShipResourceSnapshot snapshot, long now)
     {
         var attributes = snapshot.Attributes.ToDictionary(a => a.Key, a => a.Value);
         var current = snapshot.Health;
@@ -109,6 +114,12 @@ internal sealed class ShipDogmaBuilder(
         attributes[DogmaAttributeId.Mass] = pilot.Flight.Mass;
         attributes[DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
         attributes[DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
+        if (droneStore?.Control(pilot.PilotId) is { } control)
+        {
+            attributes[DogmaAttributeId.DroneBandwidthLoad] = control.UsedBandwidth;
+            attributes[DogmaAttributeId.DroneIsAggressive] = control.Settings.Aggressive ? 1 : 0;
+            attributes[DogmaAttributeId.DroneFocusFire] = control.Settings.FocusFire ? 1 : 0;
+        }
         return new(
             new DogmaItemKey.Item(pilot.ShipId),
             Item(pilot, "ship"),
@@ -135,6 +146,20 @@ internal sealed class ShipDogmaBuilder(
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         attributes[DogmaAttributeId.Damage] = module.CrystalDamage;
+        if (module.CategoryId == (int)InventoryCategory.Drone && droneStore?.Profile(pilot.PilotId, module.TypeId) is { } drone)
+        {
+            attributes[DogmaAttributeId.StructureHitPoints] = drone.Defense.Structure;
+            attributes[DogmaAttributeId.ArmorHitPoints] = drone.Defense.Armor;
+            attributes[DogmaAttributeId.ShieldCapacity] = drone.Defense.Shield;
+            attributes[DogmaAttributeId.MaxVelocity] = drone.MaximumSpeed;
+            attributes[DogmaAttributeId.MaxRange] = drone.Optimal;
+            double baseDamage =
+                attributes.GetValueOrDefault(DogmaAttributeId.EmDamage)
+                + attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)
+                + attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage)
+                + attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage);
+            attributes[DogmaAttributeId.DamageMultiplier] = drone.Damage.Total / baseDamage;
+        }
         if (AmmunitionDefinitions.IsCrystalGroup(module.GroupId))
         {
             attributes[DogmaAttributeId.Quantity] = module.Quantity;
@@ -167,12 +192,14 @@ internal sealed class ShipDogmaBuilder(
             return new PilotCallResult.Failure("Read damage only for drones in your active ship's drone bay.");
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var health = droneStore?.BayHealth(pilot.PilotId, pilot.ShipId, ids);
         return new BlueMap<long, StoredDroneDamage>(
             drones.ToDictionary(
                 item => item.Id,
                 item => new StoredDroneDamage(
                     ChargedResource.TimeConstant(fitting.Attributes(item.TypeId).GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)),
-                    now
+                    now,
+                    health?.GetValueOrDefault(item.Id)
                 )
             )
         );

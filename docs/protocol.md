@@ -21,12 +21,15 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
+| [Combat drones](protocol/drones.md) | Brutix light/medium drone launch, control, NPC combat, recall and saved state. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
 | [Architecture and typed boundaries](protocol/architecture.md) | Named models, Gameplay boundaries, orchestration, persistence and architecture audits. |
 | [Session performance and resident state](protocol/performance.md) | Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints. |
 | [Compatibility and route audits](protocol/compatibility.md) | RPC inventory, placeholder routes, localization settings and native rejection dialogs. |
 
 ## Record index
+
+- [Brutix light and medium combat drones, November 6, 2026](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026)
 
 The section anchors below preserve links to the former single-file notes. Follow a record link to its full text. Add future findings to the owning topic page and link them here.
 

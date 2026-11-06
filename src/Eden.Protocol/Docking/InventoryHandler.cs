@@ -136,7 +136,18 @@ internal sealed class InventoryHandler(
         {
             item = inventory.List(pilot.PilotId, pilot.StationId).FirstOrDefault(i => i.Id == id);
         }
-        if (item is null || (!InventoryDefinitions.IsFittedSlot(item.FlagId) && !AmmunitionDefinitions.IsCrystalGroup(item.GroupId)))
+        if (item is null && pilot.Position is not null && context.Flight.VisibleDrones.Any(d => d.Id == id && d.PilotId == pilot.PilotId))
+        {
+            item = inventory.List(pilot.PilotId, pilot.SystemId).FirstOrDefault(i => i.Id == id);
+        }
+        if (
+            item is null
+            || (
+                !InventoryDefinitions.IsFittedSlot(item.FlagId)
+                && !AmmunitionDefinitions.IsCrystalGroup(item.GroupId)
+                && item.CategoryId != (int)InventoryCategory.Drone
+            )
+        )
         {
             return PilotCallResult.Unsupported;
         }

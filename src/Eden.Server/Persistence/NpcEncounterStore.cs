@@ -119,7 +119,12 @@ internal sealed class NpcEncounterStore(
                 && active.LastShotAt is long started
                 && now >= started
                 && now - started < duration * TimeSpan.TicksPerMillisecond
-                ? new(active.TargetShipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), started, duration)
+                ? new(
+                    active.LastTargetId ?? active.TargetShipId,
+                    checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)),
+                    started,
+                    duration
+                )
                 : null;
         }
         var tackle = PilotTackleStore.NpcTackles(world, ids);

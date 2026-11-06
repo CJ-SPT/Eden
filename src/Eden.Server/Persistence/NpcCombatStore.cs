@@ -3,6 +3,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
@@ -261,6 +262,20 @@ internal sealed class NpcCombatStore(
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
         NpcMissileStore.Launch(world, catalog, npc, aggression, attributes, pilot, velocity, now, destinyStamp);
         if (
+            DroneNpcCombat.TryFire(world, catalog, npc, aggression, attributes, shipId, now, roll, out bool droneTargetAvailable) is
+            { } droneShot
+        )
+        {
+            world.SaveChanges();
+            transaction.Commit();
+            return droneShot;
+        }
+        if (droneTargetAvailable)
+        {
+            // Target choice and shot quality each need a uniform conditional draw.
+            roll = DroneRules.OwnerAccuracyRoll(roll);
+        }
+        if (
             !NpcPopulationRules.HasDirectWeapon(attributes)
             || range > attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange)
             || now < aggression.ReadyAt
@@ -296,6 +311,7 @@ internal sealed class NpcCombatStore(
         double quality = CombatDamage.ShotQuality(chance, roll);
         var result = PilotHealthStore.Apply(world, shipId, defense, damage.Scale(quality), now);
         aggression.LastShotAt = now;
+        aggression.LastTargetId = shipId;
         aggression.ReadyAt = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
         NpcWeaponContact weapon = new(shipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), now, duration);
         PilotInteractionHistoryStore.Damage(world, shipId, PilotInteractionHistoryStore.Npc(npc, weapon.TurretTypeId), result.Applied);

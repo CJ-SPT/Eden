@@ -142,7 +142,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     .ToArray()
                     .ToDictionary(
                         a => a.NpcId,
-                        a => new LiveAggression(a.NpcId, a.TargetShipId, a.ReadyAt, a.MissileReadyAt, a.LastShotAt)
+                        a => new LiveAggression(a.NpcId, a.TargetShipId, a.ReadyAt, a.MissileReadyAt, a.LastShotAt, a.LastTargetId)
                     );
             });
         }
@@ -372,10 +372,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 var aggression = _aggressions![id];
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldNpcAggression(NpcId,TargetShipId,ReadyAt,MissileReadyAt,LastShotAt)
-                    VALUES({id},{aggression.ShipId},{aggression.ReadyAt},{aggression.MissileReadyAt},{aggression.LastShotAt})
+                    INSERT INTO WorldNpcAggression(NpcId,TargetShipId,ReadyAt,MissileReadyAt,LastShotAt,LastTargetId)
+                    VALUES({id},{aggression.ShipId},{aggression.ReadyAt},{aggression.MissileReadyAt},
+                        {aggression.LastShotAt},{aggression.LastTargetId})
                     ON CONFLICT(NpcId) DO UPDATE SET TargetShipId=excluded.TargetShipId,ReadyAt=excluded.ReadyAt,
-                        MissileReadyAt=excluded.MissileReadyAt,LastShotAt=excluded.LastShotAt
+                        MissileReadyAt=excluded.MissileReadyAt,LastShotAt=excluded.LastShotAt,LastTargetId=excluded.LastTargetId
                     """
                 );
             }
@@ -413,7 +414,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             switch (change.Table)
             {
+                case "WorldDrone":
+                    _droneControllers = null;
+                    break;
                 case "schema":
+                    _droneControllers = null;
                     Clear();
                     break;
                 case "WorldFitRevision":

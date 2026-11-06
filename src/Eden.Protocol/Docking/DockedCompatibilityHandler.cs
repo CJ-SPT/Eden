@@ -98,7 +98,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
             ("fighterMgr", "GetFightersForShip") => new FighterState(),
-            ("dogmaIM", "ChangeDroneSettings") => ChangeDroneSettings(args),
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
@@ -133,26 +132,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
         safety.Set(pilotId, (ShipSafetyLevel)level);
         // The pinned client applies its selection and emits OnSafetyLevelChanged
         // after this RPC succeeds. A separate server event would duplicate it.
-        return PilotCallResult.None;
-    }
-
-    private static PilotCallResult ChangeDroneSettings(object?[] args)
-    {
-        // Build 3662168 initializes its drone panel by mirroring these client-owned
-        // preferences through godma.StateManager.ChangeDroneSettings. Accept only
-        // that initialization, including floating catalog defaults (1.0/0.0);
-        // drone launch and combat remain unavailable.
-        if (
-            args is not [Dictionary<long, object?> settings]
-            || settings.Count is < 1 or > 2
-            || settings.Any(setting =>
-                setting.Key is not ((long)DogmaAttributeId.DroneIsAggressive) and not ((long)DogmaAttributeId.DroneFocusFire)
-                || setting.Value is not bool and not (long and (0 or 1)) and not (double and (0d or 1d))
-            )
-        )
-        {
-            return new PilotCallResult.Failure("Choose valid drone aggression and focus-fire preferences.");
-        }
         return PilotCallResult.None;
     }
 }

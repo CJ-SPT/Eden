@@ -18,6 +18,11 @@ internal sealed record DestinyUpdatesNotification(IReadOnlyList<StampedDestinyUp
 
 internal abstract record DestinyCommand(string Name) : BlueModel
 {
+    internal sealed record DroneStateChanged(Eden.Protocol.Drones.DroneState State) : DestinyCommand("OnDroneStateChange")
+    {
+        protected override object?[] Arguments => State.Arguments;
+    }
+
     protected abstract object?[] Arguments { get; }
 
     public override object ToBlue() => new object?[] { Name, Arguments };

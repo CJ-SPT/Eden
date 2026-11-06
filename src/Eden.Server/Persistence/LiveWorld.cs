@@ -159,6 +159,7 @@ internal sealed class LiveWorld : IDisposable
             }
             Combat = combatObjects ? new(this, database, simulationObjects) : null;
             Reads = residentReads ? new(this, database) : null;
+            Combat?.WarmDrones();
             _timer = clock.CreateTimer(_ => QueueSave(), null, SaveInterval, SaveInterval);
         }
         catch

@@ -85,6 +85,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadCombatHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "CombatHullCatalog.json", types);
 
+    internal static void LoadCombatDrones(string path) => Load(path, "CombatDroneCatalog.json", null);
+
     internal static void LoadCombatHull(string path, int type) => Load(path, "CombatHullCatalog.json", null, hullType: type);
 
     internal static void LoadTiers(string path, IReadOnlySet<int>? types = null) => Load(path, "PassiveTierCatalog.json", types);

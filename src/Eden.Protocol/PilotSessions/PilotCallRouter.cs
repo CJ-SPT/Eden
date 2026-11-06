@@ -179,6 +179,7 @@ internal sealed class PilotCallRouter(
                 or "ship"
                 or "insuranceSvc"
                 or "beyonce"
+                or "entity"
                 or "corpStationMgr"
                 or "reprocessingSvc"
                 or "repairSvc"
@@ -264,7 +265,7 @@ internal sealed class PilotCallRouter(
                 {
                     return PilotCallResult.Unsupported;
                 }
-                if (service == "beyonce" && (context.Pilot.Position is null || !Equals(args[0], (long)context.Pilot.SystemId)))
+                if (service is "beyonce" or "entity" && (context.Pilot.Position is null || !Equals(args[0], (long)context.Pilot.SystemId)))
                 {
                     return PilotCallResult.Unsupported;
                 }

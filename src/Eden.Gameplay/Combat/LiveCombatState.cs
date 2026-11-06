@@ -135,7 +135,14 @@ public sealed record LiveCombatNpc(
     public NpcActivityContact? Activity { get; init; }
 }
 
-public sealed record LiveAggression(long NpcId, long ShipId, long ReadyAt, long MissileReadyAt, long? LastShotAt);
+public sealed record LiveAggression(
+    long NpcId,
+    long ShipId,
+    long ReadyAt,
+    long MissileReadyAt,
+    long? LastShotAt,
+    long? LastTargetId = null
+);
 
 public sealed record TurretDraw(double Accuracy, double Crystal);
 

@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -20,7 +21,7 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(
+internal sealed partial class FlightSession(
     IShipPositionStore world,
     DockedPilot pilot,
     TimeProvider clock,
@@ -33,7 +34,8 @@ internal sealed class FlightSession(
     IWrecks? wrecks = null,
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null,
-    IPilotShipAppearance? appearance = null
+    IPilotShipAppearance? appearance = null,
+    IPilotDrones? drones = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = 8;
@@ -168,6 +170,10 @@ internal sealed class FlightSession(
         if (_npcs.FirstOrDefault(n => n.Id == id) is { } npc)
         {
             return new(id, npc.TypeId, npc.Position, npc.Radius);
+        }
+        if (_drones.FirstOrDefault(d => d.Id == id) is { } drone)
+        {
+            return new(id, drone.Profile.TypeId, drone.Position, drone.Profile.Radius);
         }
         if (_wrecks.FirstOrDefault(w => w.Id == id) is { } wreck)
         {
@@ -484,6 +490,7 @@ internal sealed class FlightSession(
     public void BeginShipLoss()
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         _destroying = true;
         space.Leave(Pilot.ShipId);
@@ -923,6 +930,7 @@ internal sealed class FlightSession(
         lock (space.MotionLock)
         {
             RefreshPeersCore();
+            RefreshDrones();
         }
     }
 
@@ -1030,6 +1038,7 @@ internal sealed class FlightSession(
     private void LeaveSpace(bool keepBallpark = false)
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         if (tackle is not null && _incomingTackle.Length > 0)
         {
@@ -1253,8 +1262,11 @@ internal sealed class FlightSession(
         _npcs = ReadNpcs();
         _wrecks = ReadWrecks();
         _missiles = ReadMissiles();
+        _drones = ReadDrones();
         _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(own, stamp, visible, peers, _npcs, _wrecks, _missiles))));
+        Updates.Add(
+            new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(own, stamp, visible, peers, _npcs, _wrecks, _missiles, _drones)))
+        );
         foreach (var npc in _npcs.Where(n => n.Weapon is not null))
         {
             NpcWeaponEffect(npc.Id, npc.Weapon!, true);
@@ -1362,6 +1374,7 @@ internal sealed class FlightSession(
         _arrivalStamp = null;
         _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
@@ -1419,6 +1432,7 @@ internal sealed class FlightSession(
             return PilotCallResult.Unsupported;
         }
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         var contact = CreateContact();
         ApplyCourse(contact);
         // WarpLoop prepares the tunnel while aligning, then observes Destiny's positive

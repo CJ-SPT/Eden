@@ -369,6 +369,8 @@ public enum DogmaAttributeId
     RemoteResistanceId = 2138,
     ModuleReactivationDelay = 669,
     DroneBandwidth = 1271,
+    DroneBandwidthUsed = 1272,
+    DroneBandwidthLoad = 1273,
     DroneIsAggressive = 1275,
     DroneFocusFire = 1297,
 }

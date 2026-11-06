@@ -18,6 +18,17 @@ public static class WorldInitialization
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System);
+        // Drones remain where they were left; downtime releases control and never replays damage.
+        world
+            .Set<WorldDrone>()
+            .ExecuteUpdate(set =>
+                set.SetProperty(d => d.ControllerShipId, 0)
+                    .SetProperty(d => d.TargetId, 0)
+                    .SetProperty(d => d.Activity, Eden.Gameplay.Drones.DroneActivity.Idle)
+                    .SetProperty(d => d.VelocityX, 0)
+                    .SetProperty(d => d.VelocityY, 0)
+                    .SetProperty(d => d.VelocityZ, 0)
+            );
         // Live module bonuses belong to a connection. A restart retains paid
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
