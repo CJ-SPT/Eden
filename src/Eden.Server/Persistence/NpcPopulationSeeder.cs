@@ -26,7 +26,7 @@ public sealed class WorldNpcEncounter
 }
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards) : INpcPopulationSeeder
+internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards, NpcConvoySeeder convoys) : INpcPopulationSeeder
 {
     public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
@@ -107,6 +107,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         }
         var band = NpcSpawnRules.SecurityBand(security);
         guards.Seed(world, catalog, systemId, definition, band, now);
+        convoys.Seed(world, catalog, systemId, security, now);
         var belts = catalog
             .Set<Celestial>()
             .Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)
@@ -195,7 +196,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         var encounter = world.Set<WorldNpcEncounter>().Find(npc.EncounterId);
         if (
             encounter is null
-            || encounter.Role != NpcRole.Pirate
+            || encounter.Role is not (NpcRole.Pirate or NpcRole.Convoy)
             || world
                 .Set<WorldNpc>()
                 .Where(n => n.EncounterId == encounter.Id && n.Id != npc.Id && n.DestroyedAt == null && n.RetiredAt == null)
@@ -206,6 +207,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
             return;
         }
         encounter.Generation = checked(encounter.Generation + 1);
-        encounter.NextSpawnAt = checked(now + NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond);
+        int delay = encounter.Role == NpcRole.Convoy ? NpcConvoyRules.CooldownSeconds : NpcEncounterDefinitions.RespawnSeconds;
+        encounter.NextSpawnAt = checked(now + delay * TimeSpan.TicksPerSecond);
     }
 }

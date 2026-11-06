@@ -122,6 +122,14 @@ internal static class NpcMotion
     ) =>
         npc.Navigation switch
         {
+            NpcNavigationState.Travelling => new(
+                Velocity(npc),
+                NpcMotionRules.SpeedFraction(attributes),
+                0,
+                0,
+                home,
+                NpcNavigationState.Travelling
+            ),
             NpcNavigationState.Patrolling => new(
                 Velocity(npc),
                 NpcMotionRules.SpeedFraction(attributes),

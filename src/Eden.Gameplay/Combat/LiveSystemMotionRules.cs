@@ -118,7 +118,7 @@ public static class LiveSystemMotionRules
         NpcMotionState state = new(npc.Id, npc.Position, npc.Velocity, npc.Navigation);
         long at = npc.MotionAt;
         bool engaged = NpcMotionRules.Engaged(state);
-        bool pursue = !contactsOnly && target is not null && (engaged || now >= readyAt);
+        bool pursue = npc.Role != NpcRole.Convoy && !contactsOnly && target is not null && (engaged || now >= readyAt);
         if (contactsOnly && engaged && target is null)
         {
             state = state with { Navigation = NpcNavigationState.Returning };
@@ -130,7 +130,21 @@ public static class LiveSystemMotionRules
         long elapsed = now / TimeSpan.TicksPerSecond - at / TimeSpan.TicksPerSecond;
         double step = elapsed < 1 ? 0 : Math.Min(elapsed, NpcEncounterDefinitions.MaximumMovementStepSeconds);
         long nextAt = elapsed < 1 ? at : now;
-        if (pursue)
+        if (npc.Role == NpcRole.Convoy && !contactsOnly)
+        {
+            state = NpcMotionRules.Advance(
+                state with
+                {
+                    Navigation = NpcNavigationState.Travelling,
+                },
+                npc.Home,
+                npc.Mass,
+                npc.Radius,
+                attributes,
+                step
+            );
+        }
+        else if (pursue)
         {
             state = NpcMotionRules.Pursue(state, target!.Position, target.Radius, npc.Mass, npc.Radius, attributes, step, stamp);
         }
@@ -197,6 +211,14 @@ public static class LiveSystemMotionRules
     ) =>
         npc.Navigation switch
         {
+            NpcNavigationState.Travelling => new(
+                npc.Velocity,
+                NpcMotionRules.SpeedFraction(attributes),
+                0,
+                0,
+                npc.Home,
+                NpcNavigationState.Travelling
+            ),
             NpcNavigationState.Patrolling => new(
                 npc.Velocity,
                 NpcMotionRules.SpeedFraction(attributes),

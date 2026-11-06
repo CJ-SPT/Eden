@@ -83,7 +83,13 @@ internal sealed class NpcEncounterStore(
         catalog.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         long populationStamp = now / TimeSpan.TicksPerSecond;
-        if (population is not null && database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp)
+        if (
+            population is not null
+            && (
+                database.PopulationStamps.GetValueOrDefault(systemId, -1) != populationStamp
+                || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now
+            )
+        )
         {
             population.Seed(world, catalog, systemId, now);
         }
@@ -180,10 +186,14 @@ internal sealed class NpcEncounterStore(
                 );
             })
             .ToArray();
+        // A route deadline can fall between two reads in the same wall-clock
+        // second. Keep the exact due time in addition to the coarse seed stamp.
+        long nextPopulation = population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
         transaction.Commit();
         if (population is not null)
         {
             database.PopulationStamps[systemId] = populationStamp;
+            database.PopulationDeadlines[systemId] = nextPopulation;
         }
         return contacts;
     }

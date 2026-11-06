@@ -125,7 +125,12 @@ public sealed partial class SqliteWorld
             var effective = effectiveByNpc[npc.Id];
             var aggression = aggressionByNpc.GetValueOrDefault(npc.Id);
             var initialVelocity = velocities[npc.Id];
-            if (
+            if (npc.Role == NpcRole.Convoy)
+            {
+                npc.Navigation = NpcNavigationState.Travelling;
+                NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now);
+            }
+            else if (
                 aggression is not null
                 && targets.TryGetValue(aggression.TargetShipId, out var target)
                 && (NpcMotion.Engaged(npc) || now >= aggression.ReadyAt)

@@ -7,6 +7,7 @@ public enum NpcRole
     Pirate,
     Navy,
     Customs,
+    Convoy,
 }
 
 public enum NpcAnchorKind

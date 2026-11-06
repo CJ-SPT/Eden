@@ -170,6 +170,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Combat and NPC populations
 
+- <a id="passive-high-security-station-convoys-november-6-2026"></a>[Passive high-security station convoys (November 6, 2026)](protocol/combat.md#passive-high-security-station-convoys-november-6-2026)
 - <a id="empire-patrol-bracket-colors-november-6-2026"></a>[Empire patrol bracket colors (November 6, 2026)](protocol/combat.md#empire-patrol-bracket-colors-november-6-2026)
 - <a id="catalog-driven-npc-electronic-warfare-november-5-2026"></a>[Catalog-driven NPC electronic warfare (November 5, 2026)](protocol/combat.md#catalog-driven-npc-electronic-warfare-november-5-2026)
 - <a id="catalog-driven-npc-self-repair-november-5-2026"></a>[Catalog-driven NPC self-repair (November 5, 2026)](protocol/combat.md#catalog-driven-npc-self-repair-november-5-2026)

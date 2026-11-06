@@ -150,7 +150,10 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
     {
         var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId).ToDictionary(a => a.NpcId);
         var ids = aggression.Keys.ToArray();
-        var npcs = world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null).ToArray();
+        var npcs = world
+            .Set<WorldNpc>()
+            .Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null && n.Role != NpcRole.Convoy)
+            .ToArray();
         return npcs.Select(n =>
             {
                 var profile = profiles.Read(catalog, n.TypeId);

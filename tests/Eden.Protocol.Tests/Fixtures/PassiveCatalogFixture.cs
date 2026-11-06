@@ -123,6 +123,8 @@ internal static class PassiveCatalogFixture
         }
     }
 
+    internal static void LoadNpcConvoys(string path) => Load(path, "NpcConvoyCatalog.json", null);
+
     private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true, int? hullType = null)
     {
         var data = Fixtures.GetOrAdd(resource, name => new Lazy<Fixture>(() => ReadFixture(name))).Value;

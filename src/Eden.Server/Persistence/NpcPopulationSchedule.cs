@@ -17,7 +17,7 @@ internal static class NpcPopulationSchedule
         var tracked = encounters.Select(e => e.Id).ToHashSet();
         var rows = world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == system).ToArray();
         foreach (
-            var latest in rows.Where(n => n.Role != NpcRole.Pirate || !tracked.Contains(n.EncounterId))
+            var latest in rows.Where(n => n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId))
                 .GroupBy(n => (n.EncounterId, n.BeltId, n.SpawnSlot))
                 .Select(g => g.MaxBy(n => n.Id)!)
         )

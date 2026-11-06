@@ -36,6 +36,10 @@ internal sealed partial class LiveCombatRuntime
             return true;
         }
         var npc = Npc(npcId, now);
+        if (npc?.Role == NpcRole.Convoy)
+        {
+            return true;
+        }
         if (
             ship.ShipId != shipId
             || ship.Position is null

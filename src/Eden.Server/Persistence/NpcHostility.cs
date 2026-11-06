@@ -11,6 +11,10 @@ internal static class NpcHostility
     // costs. The caller's transaction includes group alerting and damage/launch.
     internal static void Record(WorldDbContext world, CatalogDbContext catalog, WorldNpc attacked, long shipId, long now)
     {
+        if (attacked.Role == NpcRole.Convoy)
+        {
+            return;
+        }
         var members =
             attacked.Role == NpcRole.Pirate || attacked.EncounterId == 0
                 ? [attacked]

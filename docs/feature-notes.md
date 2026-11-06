@@ -147,6 +147,8 @@ Eden's default testing market sells all **19,727 published market types** in the
 
 ## Combat and NPC populations
 
+High-security empire stations now host passive civilian convoys selected from all 24 catalog haulers. Two ships follow local arrival/departure routes, retain their station corporation identity and catalog physics, and are replaced after a saved cooldown. They can be attacked but do not retaliate or grant pirate rewards; commodity cargo, armed escorts and mining fleets remain pending. Native presentation is unverified; see the [station convoy notes](protocol/combat.md#passive-high-security-station-convoys-november-6-2026).
+
 NPC faction electronic warfare now follows each ship's declared catalog effects: Guristas ECM, Serpentis sensor dampening, Sansha tracking disruption, Angel target painting and Blood Raider capacitor neutralization, plus declared webs and warp disruption. Effects change actual targeting, fitting, capacitor and flight behavior, notify victims and observers, and clear with the encounter or restart. Guards use declared abilities only when retaliating. Native presentation remains unverified; see the [NPC EWAR notes](protocol/combat.md#catalog-driven-npc-electronic-warfare-november-5-2026).
 
 NPCs now repair their own shields and armor using each hull's catalog amounts, cycle durations and delay probabilities. Independent saved timers prevent duplicate repairs across viewers; restarts retain health and start fresh repair intervals. Shield boosts send explicit health updates to observers. World schema 81 adds repair state without replacing existing NPCs. Native presentation remains unverified; see the [NPC self-repair notes](protocol/combat.md#catalog-driven-npc-self-repair-november-5-2026).

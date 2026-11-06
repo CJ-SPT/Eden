@@ -220,6 +220,7 @@ internal sealed class NpcCombatStore(
             || npc is null
             || npc.DestroyedAt.HasValue
             || npc.RetiredAt.HasValue
+            || npc.Role == NpcRole.Convoy
             || npc.SystemId != system
         )
         {
