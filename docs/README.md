@@ -22,7 +22,7 @@
 
 | Reference | Use it for |
 | --- | --- |
-| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for a fresh EVE universe populated by simulated capsuleers, a developing economy, and eventual Blazor configuration. Core gameplay systems come first. |
+| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and eventual Blazor configuration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
 
 ## Features and implementation records
 
