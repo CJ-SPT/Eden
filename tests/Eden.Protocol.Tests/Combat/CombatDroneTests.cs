@@ -52,7 +52,7 @@ public sealed class CombatDroneTests
         }
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         internal BaseFixture Base { get; } = new();
         internal IPilotDrones Drones => Base.Db.Services.GetRequiredService<IPilotDrones>();

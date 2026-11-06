@@ -39,6 +39,11 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
 
     private static SpacePosition Position(FlightPosition position) => new(position.X, position.Y, position.Z);
 
+    // Ordinary undocks inherit the station's system; explicit IDs are saved by travel.
+    private static int CurrentSystem(CatalogDbContext catalog, Pilot pilot) =>
+        pilot.ActiveShip.Position?.SystemId
+        ?? catalog.Set<Station>().Single(station => station.Id == pilot.ActiveShip.StationId).SolarSystemId;
+
     private static DroneSettings Settings(WorldDbContext world, long pilotId) =>
         world.Set<WorldDroneSettings>().Find(pilotId) is { } settings ? new(settings.Aggressive, settings.FocusFire) : new();
 
@@ -132,7 +137,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         );
         List<InventoryChange> changes = [];
         List<DroneLaunch> launches = [];
-        int systemId = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == ship.StationId).SolarSystemId;
+        int systemId = CurrentSystem(catalog, pilot);
         foreach (var (stack, request, profile) in pending)
         {
             var previous = PilotInventoryStore.Read(catalog, stack);
@@ -141,13 +146,16 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
             {
                 OwnedItem item;
                 InventoryItem? old = null;
-                if (stack.Quantity == 1)
+                if (stack.Singleton)
                 {
                     item = stack;
                     old = PilotInventoryStore.Read(catalog, stack);
                 }
                 else
                 {
+                    // Keep the source stack unassembled. Turning its final unit
+                    // into a singleton produces an ixQuantity update that the
+                    // native inventory cache rejects for negative singleton rows.
                     stack.Quantity--;
                     item = world
                         .Set<OwnedItem>()
@@ -196,15 +204,14 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 changes.Add(new(PilotInventoryStore.Read(catalog, item), old));
                 ids.Add(item.Id);
             }
-            if (stack.LocationId == ship.Id)
+            if (stack.Quantity == 0)
+            {
+                world.Set<OwnedItem>().Remove(stack);
+                changes.Add(new(previous with { Quantity = 0 }, previous));
+            }
+            else if (stack.LocationId == ship.Id)
             {
                 changes.Add(new(PilotInventoryStore.Read(catalog, stack), previous));
-            }
-            else if (!previous.Singleton && previous.Quantity != 1)
-            {
-                // The last unit retains the old stack identity after earlier units split off.
-                int last = changes.FindLastIndex(c => c.Item.Id == stack.Id);
-                changes[last] = changes[last] with { Previous = previous };
             }
             launches.Add(new(stack.Id, ids));
         }
@@ -225,13 +232,14 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId);
         var position = pilot.ActiveShip.Position!;
+        int systemId = CurrentSystem(catalog, pilot);
         double range = DroneRules.ControlRange(DroneCatalog.Skills(world, catalog, pilotId));
         var selected = drones.Select(id => world.Set<WorldDrone>().Find(id)).ToArray();
         if (
             selected.Any(d =>
                 d is null
                 || d.PilotId != pilotId
-                || d.SystemId != position.SystemId
+                || d.SystemId != systemId
                 || (order == DroneOrder.Reconnect ? d.ControllerShipId != 0 : d.ControllerShipId != pilot.ActiveShipId)
                 || Position(position).DistanceTo(new(d.X, d.Y, d.Z)) > range
             )
@@ -248,7 +256,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 || npc.DestroyedAt.HasValue
                 || npc.RetiredAt.HasValue
                 || npc.Navigation == NpcNavigationState.Warping
-                || npc.SystemId != position.SystemId
+                || npc.SystemId != systemId
                 || Position(position).DistanceTo(NpcMotion.Position(npc)) > range
             )
             {
@@ -375,6 +383,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
             world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
             ?? throw new InvalidDataException("Choose an existing pilot.");
         var ship = pilot.ActiveShip;
+        int systemId = CurrentSystem(catalog, pilot);
         List<InventoryChange> changes = [];
         List<DroneHit> hits = [];
         var settings = Settings(world, pilotId);
@@ -396,7 +405,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 ship.Position is not { } source
                 || !DroneRules.SupportsHull(ship.TypeId)
                 || drone.ControllerShipId != ship.Id
-                || source.SystemId != drone.SystemId
+                || systemId != drone.SystemId
             )
             {
                 Release(drone);

@@ -29,6 +29,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Launch inventory and normal-undock synchronization, November 6, 2026](protocol/drones.md#launch-inventory-and-normal-undock-synchronization-november-6-2026)
 - [Brutix Navy Issue launch compatibility, November 6, 2026](protocol/drones.md#brutix-navy-issue-launch-compatibility-november-6-2026)
 - [Brutix light and medium combat drones, November 6, 2026](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026)
 
