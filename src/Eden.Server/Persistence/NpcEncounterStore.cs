@@ -100,6 +100,7 @@ internal sealed class NpcEncounterStore(
             .OrderBy(n => n.Id)
             .ToArray();
         var ids = npcs.Select(n => n.Id).ToArray();
+        var mining = world.Set<WorldNpcMiningMember>().Where(m => ids.Contains(m.NpcId)).ToDictionary(m => m.NpcId);
         var ewar = world
             .Set<WorldNpcEwar>()
             .Where(e => ids.Contains(e.NpcId) && e.AppliedJson != null)
@@ -182,7 +183,30 @@ internal sealed class NpcEncounterStore(
                     n.Role,
                     n.FactionId,
                     n.RepairRevision,
-                    ewar[n.Id].Any() ? ewar[n.Id].ToArray() : null
+                    ewar[n.Id].Any() ? ewar[n.Id].ToArray() : null,
+                    mining
+                        .GetValueOrDefault(n.Id)
+                        ?.Activity(
+                            n,
+                            attributes.GetValueOrDefault(DogmaAttributeId.BehaviorMiningDuration),
+                            now,
+                            checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType))
+                        ),
+                    mining
+                        .GetValueOrDefault(n.Id)
+                        ?.Transit(n)
+                        ?.Course(
+                            database.MotionStamps.GetValueOrDefault(systemId),
+                            now,
+                            new(
+                                0,
+                                (float)(type.Radius ?? 0),
+                                type.Mass ?? 0,
+                                NpcMotion.Agility(attributes),
+                                (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                                0
+                            )
+                        )
                 );
             })
             .ToArray();

@@ -11,6 +11,11 @@ internal static class NpcHostility
     // costs. The caller's transaction includes group alerting and damage/launch.
     internal static void Record(WorldDbContext world, CatalogDbContext catalog, WorldNpc attacked, long shipId, long now)
     {
+        if (NpcPopulationRules.IsMining(attacked.Role))
+        {
+            NpcMiningSeeder.Alert(world, attacked, shipId, now);
+            return;
+        }
         if (attacked.Role == NpcRole.Convoy)
         {
             return;

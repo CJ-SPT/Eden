@@ -125,7 +125,12 @@ public sealed partial class SqliteWorld
             var effective = effectiveByNpc[npc.Id];
             var aggression = aggressionByNpc.GetValueOrDefault(npc.Id);
             var initialVelocity = velocities[npc.Id];
-            if (npc.Role == NpcRole.Convoy)
+            if (npc.Navigation == NpcNavigationState.Warping)
+            {
+                // Operation transits use WarpCourse samples and are nonsolid.
+                npc.MotionAt = now;
+            }
+            else if (npc.Role == NpcRole.Convoy || npc.Navigation == NpcNavigationState.Travelling)
             {
                 npc.Navigation = NpcNavigationState.Travelling;
                 NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now);
@@ -143,7 +148,10 @@ public sealed partial class SqliteWorld
                 NpcMotion.Return(npc);
                 NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now, returning: true);
             }
-            else if (npc.Role != NpcRole.Pirate && npc.Navigation is NpcNavigationState.Idle or NpcNavigationState.Patrolling)
+            else if (
+                npc.Role is NpcRole.Navy or NpcRole.Customs
+                && npc.Navigation is NpcNavigationState.Idle or NpcNavigationState.Patrolling
+            )
             {
                 NpcMotion.Patrol(npc, catalog, type, effective, now);
             }
@@ -158,7 +166,17 @@ public sealed partial class SqliteWorld
                 (npc.VelocityX, npc.VelocityY, npc.VelocityZ) = (coast.Velocity.X, coast.Velocity.Y, coast.Velocity.Z);
                 npc.MotionAt = now;
             }
-            bodies.Add(new(npc.Id, hulls[npc.Id], starts[npc.Id], initialVelocity, NpcMotion.Position(npc), NpcMotion.Velocity(npc)));
+            bodies.Add(
+                new(
+                    npc.Id,
+                    hulls[npc.Id],
+                    starts[npc.Id],
+                    initialVelocity,
+                    NpcMotion.Position(npc),
+                    NpcMotion.Velocity(npc),
+                    npc.Navigation != NpcNavigationState.Warping
+                )
+            );
         }
         var resolved = ShipCollisions.Resolve(bodies).ToDictionary(b => b.Id);
         for (int index = 0; index < players.Count; index++)

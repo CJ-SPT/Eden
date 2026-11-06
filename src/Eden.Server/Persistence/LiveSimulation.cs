@@ -239,7 +239,20 @@ internal sealed partial class LiveCombatRuntime
                     npc.Role,
                     npc.FactionId,
                     npc.RepairState.Revision,
-                    EwarContacts(npc.Id)
+                    EwarContacts(npc.Id),
+                    npc.Activity,
+                    npc.Transit?.Course(
+                        stamp,
+                        now,
+                        new(
+                            0,
+                            (float)npc.Radius,
+                            npc.Mass,
+                            NpcMotionRules.Agility(npc.Attributes),
+                            (float)effective[npc.Id][DogmaAttributeId.MaxVelocity],
+                            0
+                        )
+                    )
                 )
             );
         }

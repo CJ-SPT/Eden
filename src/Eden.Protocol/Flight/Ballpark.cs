@@ -209,7 +209,8 @@ internal static class Ballpark
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;
         var mode =
-            course is null || course.State == NpcNavigationState.Idle ? NavigationMode.Stop
+            npc.Warp is not null ? NavigationMode.Warp
+            : course is null || course.State == NpcNavigationState.Idle ? NavigationMode.Stop
             : course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit
             : course.TargetId != 0 ? NavigationMode.Follow
             : NavigationMode.Goto;
@@ -219,7 +220,9 @@ internal static class Ballpark
             (byte)mode,
             npc.Radius,
             npc.Position,
-            (byte)(DestinyBallFlags.Free | DestinyBallFlags.Interactive | DestinyBallFlags.Massive)
+            (byte)(
+                DestinyBallFlags.Free | DestinyBallFlags.Interactive | (npc.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None)
+            )
         );
         writer.Write(npc.Mass);
         writer.Write((byte)0);
@@ -231,7 +234,15 @@ internal static class Ballpark
         writer.Write(npc.Agility);
         writer.Write((float)(course?.SpeedFraction ?? 0));
         writer.Write((sbyte)-1);
-        if (course?.TargetId is > 0)
+        if (npc.Warp is { } warp)
+        {
+            WritePosition(writer, warp.Destination);
+            writer.Write(warp.StartStamp);
+            writer.Write(warp.Distance);
+            writer.Write(0d);
+            writer.Write((long)warp.WireFactor);
+        }
+        else if (course?.TargetId is > 0)
         {
             writer.Write(course.TargetId);
             writer.Write((float)course.FollowRange);

@@ -75,7 +75,13 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             if (target.Kind == TackleTargetKind.Npc)
             {
                 npc = world.Set<WorldNpc>().Find(target.Id);
-                if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.SystemId != system)
+                if (
+                    npc is null
+                    || npc.DestroyedAt.HasValue
+                    || npc.RetiredAt.HasValue
+                    || npc.SystemId != system
+                    || npc.Navigation == NpcNavigationState.Warping
+                )
                 {
                     throw new InvalidDataException("The NPC is unavailable.");
                 }

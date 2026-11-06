@@ -325,6 +325,10 @@ internal sealed class FlightSession(
         var previousById = _npcs.ToDictionary(n => n.Id);
         foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
+            if (departed.Activity is { } activity)
+            {
+                Update(NpcActivityWire.Effect(activity, false));
+            }
             foreach (var effect in departed.ElectronicWarfare ?? [])
             {
                 Update(NpcEwarWire.Effect(effect, false));
@@ -343,6 +347,17 @@ internal sealed class FlightSession(
         foreach (var npc in current)
         {
             var previous = previousById.GetValueOrDefault(npc.Id);
+            if (previous?.Activity != npc.Activity)
+            {
+                if (previous?.Activity is { } stoppedActivity)
+                {
+                    Update(NpcActivityWire.Effect(stoppedActivity, false));
+                }
+                if (npc.Activity is { } startedActivity)
+                {
+                    Update(NpcActivityWire.Effect(startedActivity, true));
+                }
+            }
             foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(npc.ElectronicWarfare ?? []))
             {
                 Update(NpcEwarWire.Effect(effect, false));
@@ -400,7 +415,11 @@ internal sealed class FlightSession(
         int stamp = npc.Stamp == 0 ? _simulatedStamp : npc.Stamp;
         void Send(DestinyCommand command) => Updates.Add(new(stamp, command));
         var course = npc.Navigation;
-        if (course is null || course.State == NpcNavigationState.Idle)
+        if (npc.Warp is { } warp)
+        {
+            Send(new DestinyCommand.WarpTo(npc.Id, warp.Destination.X, warp.Destination.Y, warp.Destination.Z, 0, warp.WireFactor));
+        }
+        else if (course is null || course.State == NpcNavigationState.Idle)
         {
             Send(new DestinyCommand.Stop(npc.Id));
         }
@@ -1243,6 +1262,10 @@ internal sealed class FlightSession(
         foreach (var effect in _npcs.SelectMany(n => n.ElectronicWarfare ?? []))
         {
             Update(NpcEwarWire.Effect(effect, true));
+        }
+        foreach (var activity in _npcs.Select(n => n.Activity).OfType<Eden.Gameplay.Mining.NpcActivityContact>())
+        {
+            Update(NpcActivityWire.Effect(activity, true));
         }
         Effects.Replay(own, null);
         foreach (var peer in peers)

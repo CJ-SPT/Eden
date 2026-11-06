@@ -60,6 +60,13 @@ internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidFiel
     private static void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)
     {
         using var transaction = world.Database.BeginTransaction();
+        Populate(world, catalog, systemId);
+        world.SaveChanges();
+        transaction.Commit();
+    }
+
+    internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId)
+    {
         foreach (
             var belt in catalog
                 .Set<Celestial>()
@@ -138,7 +145,5 @@ internal sealed class AsteroidFieldStore(WorldDatabase database) : IAsteroidFiel
                     );
             }
         }
-        world.SaveChanges();
-        transaction.Commit();
     }
 }

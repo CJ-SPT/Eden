@@ -36,7 +36,7 @@ internal sealed partial class LiveCombatRuntime
             return true;
         }
         var npc = Npc(npcId, now);
-        if (npc?.Role == NpcRole.Convoy)
+        if (npc is not null && (NpcPopulationRules.IsCivilian(npc.Role) || npc.Transit is not null))
         {
             return true;
         }

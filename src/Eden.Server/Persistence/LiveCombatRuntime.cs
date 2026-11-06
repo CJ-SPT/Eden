@@ -64,6 +64,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             return null;
         }
+        // Mining alerts and cargo/operation state share the paid shot's SQL transaction.
+        if (NpcPopulationRules.IsMining(target.Role))
+        {
+            return null;
+        }
         int count = banked ? ship.Banks.Values.FirstOrDefault(b => b.Contains(moduleId))?.Count ?? 1 : 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
         var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation);
@@ -457,7 +462,13 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     }
                     break;
                 case "WorldNpcEncounter":
+                case "WorldNpcMiningOperation":
                     _populationDue.Clear();
+                    break;
+                case "WorldNpcMiningMember":
+                    _populationDue.Clear();
+                    _contactEpoch++;
+                    _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpc":
                     _systemNpcs.Clear();

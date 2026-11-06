@@ -34,7 +34,12 @@ internal sealed partial class LiveCombatRuntime
         foreach (var aggression in Aggression().Values.Where(a => a.ShipId == shipId))
         {
             var npc = Npc(aggression.NpcId, now);
-            if (npc is not { Available: true } || npc.Role == NpcRole.Convoy || npc.ElectronicWarfare.Count == 0)
+            if (
+                npc is not { Available: true }
+                || NpcPopulationRules.IsCivilian(npc.Role)
+                || npc.Transit is not null
+                || npc.ElectronicWarfare.Count == 0
+            )
             {
                 continue;
             }

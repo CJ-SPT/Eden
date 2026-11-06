@@ -26,7 +26,8 @@ public sealed class WorldNpcEncounter
 }
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards, NpcConvoySeeder convoys) : INpcPopulationSeeder
+internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards, NpcConvoySeeder convoys, NpcMiningSeeder mining)
+    : INpcPopulationSeeder
 {
     public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
@@ -108,6 +109,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         var band = NpcSpawnRules.SecurityBand(security);
         guards.Seed(world, catalog, systemId, definition, band, now);
         convoys.Seed(world, catalog, systemId, security, now);
+        mining.Seed(world, catalog, systemId, definition, security, now);
         var belts = catalog
             .Set<Celestial>()
             .Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)

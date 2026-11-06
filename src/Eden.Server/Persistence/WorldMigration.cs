@@ -961,6 +961,9 @@ internal static class WorldMigration
         {
             NpcEwarSchema.Upgrade(world);
         }
+        // Idempotent even when another feature upgraded a save to a newer
+        // version before the mining tables were introduced on its branch.
+        NpcMiningSchema.Upgrade(world);
         world.Database.ExecuteSqlRaw(
             """
             INSERT OR IGNORE INTO WorldHomeStation(PilotId,StationId)

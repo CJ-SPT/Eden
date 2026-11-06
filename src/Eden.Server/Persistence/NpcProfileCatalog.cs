@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.Server.Catalog;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,8 @@ public sealed class NpcProfileCatalog(bool cache = true)
     private static NpcHullProfile Load(CatalogDbContext catalog, int typeId)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
-        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId).ToFrozenDictionary();
+        var source = PilotFittingStore.ReadAttributes(catalog, typeId);
+        var attributes = (NpcMiningRules.Types.Contains(typeId) ? NpcMiningRules.CombatAttributes(source) : source).ToFrozenDictionary();
         return new(
             type,
             attributes,

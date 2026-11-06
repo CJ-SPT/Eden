@@ -8,6 +8,10 @@ public enum NpcRole
     Navy,
     Customs,
     Convoy,
+    MiningMiner,
+    MiningHauler,
+    MiningDefender,
+    MiningLogistics,
 }
 
 public enum NpcAnchorKind
@@ -34,6 +38,13 @@ public static class NpcPopulationRules
     public static bool DetectsPilots(NpcRole role) => role == NpcRole.Pirate;
 
     public static bool RewardsPirateKill(NpcRole role) => role == NpcRole.Pirate;
+
+    public static bool IsMining(NpcRole role) =>
+        role is NpcRole.MiningMiner or NpcRole.MiningHauler or NpcRole.MiningDefender or NpcRole.MiningLogistics;
+
+    public static bool IsCivilian(NpcRole role) => role is NpcRole.Convoy or NpcRole.MiningMiner or NpcRole.MiningHauler;
+
+    public static bool AwardsBounty(NpcRole role) => role is NpcRole.Pirate or NpcRole.MiningMiner or NpcRole.MiningHauler;
 
     public static double DetectionRange(IReadOnlyDictionary<DogmaAttributeId, double> attributes, double missileRange = 0) =>
         Math.Min(

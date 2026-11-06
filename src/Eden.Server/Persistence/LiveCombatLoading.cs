@@ -244,6 +244,7 @@ internal sealed partial class LiveCombatRuntime
             missileRange = NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
         }
         var contributions = Contributions(world, id);
+        var mining = world.Set<WorldNpcMiningMember>().Find(id);
         return new(
             npc.Id,
             npc.TypeId,
@@ -283,6 +284,13 @@ internal sealed partial class LiveCombatRuntime
             RepairProfile = NpcRepairRules.Profile(attributes),
             RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),
             ElectronicWarfare = profile.ElectronicWarfare,
+            Transit = mining?.Transit(npc),
+            Activity = mining?.Activity(
+                npc,
+                attributes.GetValueOrDefault(DogmaAttributeId.BehaviorMiningDuration),
+                now,
+                checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType))
+            ),
         };
     }
 

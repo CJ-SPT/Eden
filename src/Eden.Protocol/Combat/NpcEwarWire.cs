@@ -12,6 +12,7 @@ internal static class NpcEwarWire
             NpcEwarKind.Jamming => "electronic",
             NpcEwarKind.SensorDampening => "ewRemoteSensorDamp",
             NpcEwarKind.TrackingDisruption => "ewTrackingDisrupt",
+            NpcEwarKind.GuidanceDisruption => "ewGuidanceDisrupt",
             NpcEwarKind.TargetPainting => "ewTargetPaint",
             NpcEwarKind.EnergyNeutralization => "ewEnergyNeut",
             NpcEwarKind.Webifying => "webify",
@@ -22,7 +23,7 @@ internal static class NpcEwarWire
     internal static string Graphic(NpcEwarKind kind) =>
         kind switch
         {
-            NpcEwarKind.Jamming or NpcEwarKind.SensorDampening or NpcEwarKind.TrackingDisruption =>
+            NpcEwarKind.Jamming or NpcEwarKind.SensorDampening or NpcEwarKind.TrackingDisruption or NpcEwarKind.GuidanceDisruption =>
                 "effects.ElectronicAttributeModifyTarget",
             NpcEwarKind.TargetPainting => "effects.TargetPaint",
             NpcEwarKind.EnergyNeutralization => "effects.EnergyDestabilization",

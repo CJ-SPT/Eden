@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Protocol;
 using Eden.Server.Catalog;
@@ -156,8 +157,11 @@ internal sealed class PilotInteractionHistoryStore(WorldDatabase database) : IPi
         long now
     )
     {
-        double fraction = attributes.GetValueOrDefault(DogmaAttributeId.EntityFactionLoss);
-        int faction = npc.FactionId;
+        bool mining = NpcPopulationRules.IsMining(npc.Role);
+        double fraction = mining
+            ? Eden.Gameplay.Mining.NpcMiningRules.CorporationLossFraction
+            : attributes.GetValueOrDefault(DogmaAttributeId.EntityFactionLoss);
+        int faction = mining ? npc.CorporationId : npc.FactionId;
         if (faction == 0)
         {
             faction = checked(

@@ -89,6 +89,16 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    BehaviorArmorRepair = 6741,
+    BehaviorShieldRepair = 6742,
+    BehaviorWeb = 6743,
+    BehaviorDisrupt = 6744,
+    BehaviorScramble = 6745,
+    BehaviorGuidanceDisrupt = 6746,
+    BehaviorTrackingDisrupt = 6747,
+    BehaviorPaint = 6754,
+    BehaviorDamp = 6755,
+    BehaviorEcm = 6757,
     NpcEcm = 6695,
     NpcSensorDampening = 1878,
     NpcTrackingDisruption = 6846,

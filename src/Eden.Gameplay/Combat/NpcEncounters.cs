@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 
 namespace Eden.Gameplay.Combat;
 
@@ -24,7 +25,9 @@ public sealed record NpcContact(
     NpcRole Role = NpcRole.Pirate,
     int FactionId = 0,
     long RepairRevision = 0,
-    IReadOnlyList<NpcEwarContact>? ElectronicWarfare = null
+    IReadOnlyList<NpcEwarContact>? ElectronicWarfare = null,
+    NpcActivityContact? Activity = null,
+    WarpCourse? Warp = null
 );
 
 public enum NpcNavigationState
@@ -35,6 +38,7 @@ public enum NpcNavigationState
     Orbiting = 3,
     Patrolling = 4,
     Travelling = 5,
+    Warping = 6,
 }
 
 public sealed record NpcNavigationContact(

@@ -84,9 +84,7 @@ internal static class NpcDamagePersistence
                 loot
             );
             PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
-            double bounty = NpcPopulationRules.RewardsPirateKill(npc.Role)
-                ? attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty)
-                : 0;
+            double bounty = NpcPopulationRules.AwardsBounty(npc.Role) ? attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty) : 0;
             if (!double.IsFinite(bounty) || bounty < 0)
             {
                 throw new InvalidDataException("Invalid NPC bounty.");

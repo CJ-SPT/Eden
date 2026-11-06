@@ -3,6 +3,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 
@@ -130,6 +131,8 @@ public sealed record LiveCombatNpc(
     public NpcRepairProfile RepairProfile { get; init; } = new(null, null);
     public NpcRepairState RepairState { get; init; } = new();
     public IReadOnlyList<NpcEwarAbility> ElectronicWarfare { get; init; } = [];
+    public NpcWarpTransit? Transit { get; init; }
+    public NpcActivityContact? Activity { get; init; }
 }
 
 public sealed record LiveAggression(long NpcId, long ShipId, long ReadyAt, long MissileReadyAt, long? LastShotAt);

@@ -13,6 +13,7 @@ public enum NpcEwarKind
     EnergyNeutralization,
     Webifying,
     WarpDisruption,
+    GuidanceDisruption,
 }
 
 public sealed record NpcJammingStrength(double Radar, double Ladar, double Magnetometric, double Gravimetric);
@@ -27,7 +28,11 @@ public sealed record NpcEwarPower(
     double CapacitorDrain = 0,
     double WebPercent = 0,
     double WarpStrength = 0,
-    NpcJammingStrength? Jamming = null
+    NpcJammingStrength? Jamming = null,
+    double MissileSpeedPercent = 0,
+    double MissileLifetimePercent = 0,
+    double ExplosionRadiusPercent = 0,
+    double ExplosionVelocityPercent = 0
 );
 
 public sealed record NpcEwarAbility(
@@ -90,7 +95,7 @@ public static class NpcEwarRules
             NpcEwarKind kind,
             DogmaAttributeId duration,
             DogmaAttributeId range,
-            DogmaAttributeId chance,
+            DogmaAttributeId? chance,
             NpcEwarPower power,
             DogmaAttributeId? falloff = null,
             double defaultDuration = 30000,
@@ -107,7 +112,7 @@ public static class NpcEwarRules
                 Value(duration, defaultDuration),
                 Value(range, defaultRange),
                 falloff is { } id ? Value(id) : 0,
-                Value(chance),
+                chance is { } chanceAttribute ? Value(chanceAttribute) : 1,
                 power
             );
             if (
@@ -205,6 +210,82 @@ public static class NpcEwarRules
             new(WarpStrength: Value(DogmaAttributeId.WarpScrambleStrength)),
             defaultDuration: 8000
         );
+        Add(
+            DogmaEffect.BehaviorWeb,
+            NpcEwarKind.Webifying,
+            DogmaAttributeId.BehaviorWebDuration,
+            DogmaAttributeId.BehaviorWebRange,
+            null,
+            new(WebPercent: Value(DogmaAttributeId.SpeedFactor)),
+            DogmaAttributeId.BehaviorWebFalloff
+        );
+        Add(
+            DogmaEffect.BehaviorDisrupt,
+            NpcEwarKind.WarpDisruption,
+            DogmaAttributeId.BehaviorDisruptDuration,
+            DogmaAttributeId.BehaviorDisruptRange,
+            null,
+            new(WarpStrength: Value(DogmaAttributeId.BehaviorDisruptStrength))
+        );
+        Add(
+            DogmaEffect.BehaviorScramble,
+            NpcEwarKind.WarpDisruption,
+            DogmaAttributeId.BehaviorScrambleDuration,
+            DogmaAttributeId.BehaviorScrambleRange,
+            null,
+            new(WarpStrength: Value(DogmaAttributeId.BehaviorScrambleStrength))
+        );
+        Add(
+            DogmaEffect.BehaviorPaint,
+            NpcEwarKind.TargetPainting,
+            DogmaAttributeId.BehaviorPaintDuration,
+            DogmaAttributeId.BehaviorPaintRange,
+            null,
+            new(SignaturePercent: Value(DogmaAttributeId.SignatureRadiusBonus)),
+            DogmaAttributeId.BehaviorPaintFalloff
+        );
+        Add(
+            DogmaEffect.BehaviorDamp,
+            NpcEwarKind.SensorDampening,
+            DogmaAttributeId.BehaviorDampDuration,
+            DogmaAttributeId.BehaviorDampRange,
+            null,
+            new(
+                TargetRangeMultiplier: 1 + Value(DogmaAttributeId.TargetRangeBonus) / Percent,
+                ScanResolutionMultiplier: 1 + Value(DogmaAttributeId.ScanResolutionBonus) / Percent
+            ),
+            DogmaAttributeId.BehaviorDampFalloff
+        );
+        Add(
+            DogmaEffect.BehaviorEcm,
+            NpcEwarKind.Jamming,
+            DogmaAttributeId.BehaviorEcmDuration,
+            DogmaAttributeId.BehaviorEcmRange,
+            null,
+            new(
+                Jamming: new(
+                    Value(DogmaAttributeId.RadarJammingStrength),
+                    Value(DogmaAttributeId.LadarJammingStrength),
+                    Value(DogmaAttributeId.MagnetometricJammingStrength),
+                    Value(DogmaAttributeId.GravimetricJammingStrength)
+                )
+            ),
+            DogmaAttributeId.BehaviorEcmFalloff
+        );
+        Add(
+            DogmaEffect.BehaviorGuidanceDisrupt,
+            NpcEwarKind.GuidanceDisruption,
+            DogmaAttributeId.BehaviorGuidanceDuration,
+            DogmaAttributeId.BehaviorGuidanceRange,
+            null,
+            new(
+                MissileSpeedPercent: Value(DogmaAttributeId.MissileVelocityBonus),
+                MissileLifetimePercent: Value(DogmaAttributeId.MissileLifetimeBonus),
+                ExplosionRadiusPercent: Value(DogmaAttributeId.ExplosionRadiusBonus),
+                ExplosionVelocityPercent: Value(DogmaAttributeId.ExplosionVelocityBonus)
+            ),
+            DogmaAttributeId.BehaviorGuidanceFalloff
+        );
         return abilities;
     }
 
@@ -221,6 +302,10 @@ public static class NpcEwarRules
             power.CapacitorDrain,
             power.WebPercent,
             power.WarpStrength,
+            power.MissileSpeedPercent,
+            power.MissileLifetimePercent,
+            power.ExplosionRadiusPercent,
+            power.ExplosionVelocityPercent,
         ];
         if (
             values.Any(v => !double.IsFinite(v))
@@ -233,6 +318,10 @@ public static class NpcEwarRules
             || power.SignaturePercent < 0
             || power.CapacitorDrain < 0
             || power.WarpStrength < 0
+            || power.MissileSpeedPercent is <= -100 or > 0
+            || power.MissileLifetimePercent is <= -100 or > 0
+            || power.ExplosionRadiusPercent < 0
+            || power.ExplosionVelocityPercent is <= -100 or > 0
         )
         {
             throw new InvalidDataException("Invalid NPC electronic warfare strength.");
@@ -305,7 +394,12 @@ public static class NpcEwarRules
         !incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming)
         || incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming && e.SourceId == target);
 
-    public static IEnumerable<DogmaModifier> Modifiers(long ship, IReadOnlyList<long> turrets, IEnumerable<NpcEwarContact> incoming)
+    public static IEnumerable<DogmaModifier> Modifiers(
+        long ship,
+        IReadOnlyList<long> turrets,
+        IEnumerable<NpcEwarContact> incoming,
+        IReadOnlyList<long>? missileCharges = null
+    )
     {
         DogmaModifier PercentModifier(long item, DogmaAttributeId attribute, double percent, DogmaAttributeId resistance) =>
             new(
@@ -332,6 +426,35 @@ public static class NpcEwarRules
             var power = effect.Applied;
             switch (effect.Ability.Kind)
             {
+                case NpcEwarKind.GuidanceDisruption:
+                    foreach (long charge in missileCharges ?? [])
+                    {
+                        yield return PercentModifier(
+                            charge,
+                            DogmaAttributeId.MaxVelocity,
+                            power.MissileSpeedPercent,
+                            DogmaAttributeId.WeaponDisruptionResistance
+                        );
+                        yield return PercentModifier(
+                            charge,
+                            DogmaAttributeId.MissileFlightTime,
+                            power.MissileLifetimePercent,
+                            DogmaAttributeId.WeaponDisruptionResistance
+                        );
+                        yield return PercentModifier(
+                            charge,
+                            DogmaAttributeId.ExplosionRadius,
+                            power.ExplosionRadiusPercent,
+                            DogmaAttributeId.WeaponDisruptionResistance
+                        );
+                        yield return PercentModifier(
+                            charge,
+                            DogmaAttributeId.ExplosionVelocity,
+                            power.ExplosionVelocityPercent,
+                            DogmaAttributeId.WeaponDisruptionResistance
+                        );
+                    }
+                    break;
                 case NpcEwarKind.SensorDampening:
                     yield return Multiply(DogmaAttributeId.MaxTargetRange, power.TargetRangeMultiplier, DogmaOperation.PostMultiply);
                     yield return Multiply(DogmaAttributeId.ScanResolution, power.ScanResolutionMultiplier, DogmaOperation.PreMultiply);

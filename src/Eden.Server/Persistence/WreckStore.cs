@@ -74,7 +74,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 }
             )
             .Entity;
-        foreach (var drop in Drops(catalog, npc))
+        foreach (var drop in Drops(world, catalog, npc))
         {
             _ = catalog.Set<ItemType>().Single(t => t.Id == drop.TypeId);
             world
@@ -93,8 +93,28 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         }
     }
 
-    private static IReadOnlyList<NpcLootDrop> Drops(CatalogDbContext catalog, WorldNpc npc)
+    private static IReadOnlyList<NpcLootDrop> Drops(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc)
     {
+        if (NpcPopulationRules.IsMining(npc.Role))
+        {
+            var cargo = world.Set<WorldNpcMiningCargo>().Where(c => c.NpcId == npc.Id && c.Quantity > 0).ToArray();
+            var result = cargo.Select(c => new NpcLootDrop(c.TypeId, checked((int)c.Quantity))).ToList();
+            foreach (var stack in cargo)
+            {
+                stack.Quantity = 0;
+            }
+            // The guide permits empty haulers but supplies no drop probability.
+            // Eden uses a stable 50% identity roll; no reroll on retry/restart.
+            if (npc.Role == NpcRole.MiningHauler && NpcSpawnRules.Seed(npc.SystemId, npc.Id) % 2 == 0)
+            {
+                string name = catalog.Set<NpcCorporation>().Find(npc.CorporationId)!.Name + " Strong Box";
+                if (catalog.Set<ItemType>().SingleOrDefault(t => t.Name == name) is { } box)
+                {
+                    result.Add(new(box.Id, 1));
+                }
+            }
+            return result;
+        }
         if (npc.Role != NpcRole.Pirate)
         {
             return [];

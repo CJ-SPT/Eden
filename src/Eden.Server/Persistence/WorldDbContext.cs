@@ -152,6 +152,18 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldNpcEncounter>().ToTable("WorldNpcEncounter").HasKey(e => e.Id);
         model.Entity<WorldNpcEncounter>().Property(e => e.Id).ValueGeneratedNever();
         model.Entity<WorldNpcEncounter>().HasIndex(e => e.SystemId);
+        model.Entity<WorldNpcMiningOperation>().ToTable("WorldNpcMiningOperation").HasKey(o => o.EncounterId);
+        model.Entity<WorldNpcMiningOperation>().HasOne<WorldNpcEncounter>().WithMany().HasForeignKey(o => o.EncounterId);
+        model.Entity<WorldNpcMiningOperation>().HasIndex(o => o.SystemId);
+        model.Entity<WorldNpcMiningMember>().ToTable("WorldNpcMiningMember").HasKey(m => m.NpcId);
+        model.Entity<WorldNpcMiningMember>().HasOne<WorldNpc>().WithMany().HasForeignKey(m => m.NpcId);
+        model.Entity<WorldNpcMiningMember>().HasOne<WorldNpcMiningOperation>().WithMany().HasForeignKey(m => m.EncounterId);
+        model.Entity<WorldNpcMiningMember>().HasIndex(m => m.EncounterId);
+        model
+            .Entity<WorldNpcMiningCargo>()
+            .ToTable("WorldNpcMiningCargo", t => t.HasCheckConstraint("CK_NpcMiningCargo_Quantity", "Quantity>=0"))
+            .HasKey(c => new { c.NpcId, c.TypeId });
+        model.Entity<WorldNpcMiningCargo>().HasOne<WorldNpc>().WithMany().HasForeignKey(c => c.NpcId);
         model.Entity<SavedPilotNote>().ToTable("WorldPilotNote").HasKey(note => new { note.PilotId, note.TargetId });
         model.Entity<SavedPilotNote>().HasOne<Pilot>().WithMany().HasForeignKey(note => note.PilotId);
         model.Entity<SavedLoyaltyBalance>().ToTable("WorldLoyaltyWallet").HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);

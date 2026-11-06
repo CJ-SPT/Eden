@@ -166,7 +166,17 @@ internal sealed record FittingCalculation(
             )
             .Select(m => m.Item.Id)
             .ToArray();
-        modifiers.AddRange(NpcEwarRules.Modifiers(ship.Id, turrets, npcEwar));
+        modifiers.AddRange(
+            NpcEwarRules.Modifiers(
+                ship.Id,
+                turrets,
+                npcEwar,
+                charges
+                    .Where(c => chargeAttributes[c.Item.TypeId].ContainsKey(DogmaAttributeId.ExplosionRadius))
+                    .Select(c => c.Item.Id)
+                    .ToArray()
+            )
+        );
         foreach (var module in modules.Where(m => m.Item.Online && incoming.Any(t => t.MwdBlock > 0)))
         {
             if (FittingCatalog.Effects(catalog, module.Item.TypeId).Contains(DogmaEffect.Microwarpdrive))

@@ -144,7 +144,13 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             throw new InvalidDataException("Lock a nearby NPC before launching missiles.");
         }
         var npc = targetId is long id ? world.Set<WorldNpc>().Find(id) : null;
-        if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.SystemId != systemId)
+        if (
+            npc is null
+            || npc.DestroyedAt.HasValue
+            || npc.RetiredAt.HasValue
+            || npc.SystemId != systemId
+            || npc.Navigation == NpcNavigationState.Warping
+        )
         {
             throw new InvalidDataException(automatic ? "No attacking NPC is available for automatic missiles." : "The NPC is unavailable.");
         }
@@ -271,7 +277,11 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                 var payload = row.Payload();
                 var npc = world.Set<WorldNpc>().Find(row.TargetId);
                 MissileTarget? target = null;
-                if (npc is { DestroyedAt: null, RetiredAt: null } && npc.SystemId == systemId)
+                if (
+                    npc is { DestroyedAt: null, RetiredAt: null }
+                    && npc.SystemId == systemId
+                    && npc.Navigation != NpcNavigationState.Warping
+                )
                 {
                     double offset = npc.MotionAt == 0 ? 0 : (row.UpdatedAt - npc.MotionAt) / (double)TimeSpan.TicksPerSecond;
                     target = new(NpcMotion.Position(npc) + NpcMotion.Velocity(npc) * offset, NpcMotion.Velocity(npc), row.TargetRadius);
@@ -290,7 +300,11 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                 {
                     row.EndedAt = time;
                 }
-                if (row.Status == MissileFlightStatus.Impact && npc is { DestroyedAt: null, RetiredAt: null })
+                if (
+                    row.Status == MissileFlightStatus.Impact
+                    && npc is { DestroyedAt: null, RetiredAt: null }
+                    && npc.Navigation != NpcNavigationState.Warping
+                )
                 {
                     var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
                     double application = MissileRules.Application(

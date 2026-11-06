@@ -138,6 +138,11 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
             fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;
             fields["friendly_response_threshold"] = DefensivePatrolResponseThreshold;
         }
+        else if (NpcPopulationRules.IsMining(Npc.Role))
+        {
+            fields["hostile_response_threshold"] = Eden.Gameplay.Mining.NpcMiningRules.HostileStanding;
+            fields["friendly_response_threshold"] = Eden.Gameplay.Mining.NpcMiningRules.FriendlyStanding;
+        }
         return Wrap(fields);
     }
 }

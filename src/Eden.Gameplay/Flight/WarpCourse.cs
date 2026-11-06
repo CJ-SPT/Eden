@@ -34,6 +34,9 @@ public sealed class WarpCourse
     public int WireFactor { get; }
     public int StartStamp { get; }
 
+    public double DurationSeconds(double exitSpeed) =>
+        Math.Max(0, _accelerationTime + _cruiseTime + Math.Log(_peak / exitSpeed) / _braking);
+
     public (SpacePosition Position, SpacePosition Velocity, bool Exited) Sample(int stamp, double exitSpeed)
     {
         double time = stamp - StartStamp;

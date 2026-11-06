@@ -205,6 +205,10 @@ internal sealed class NpcCombatStore(
         }
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var npc = world.Set<WorldNpc>().Find(npcId);
+        if (npc?.Navigation == NpcNavigationState.Warping)
+        {
+            return null;
+        }
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
         var profile = npc is null ? null : hullProfiles?.Read(catalog, npc.TypeId);
         var source = npc is null ? null : profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
@@ -220,7 +224,7 @@ internal sealed class NpcCombatStore(
             || npc is null
             || npc.DestroyedAt.HasValue
             || npc.RetiredAt.HasValue
-            || npc.Role == NpcRole.Convoy
+            || NpcPopulationRules.IsCivilian(npc.Role)
             || npc.SystemId != system
         )
         {

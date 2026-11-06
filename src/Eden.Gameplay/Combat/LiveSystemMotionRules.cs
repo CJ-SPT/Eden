@@ -87,7 +87,17 @@ public static class LiveSystemMotionRules
                 && npc.MotionAt / TimeSpan.TicksPerSecond < now / TimeSpan.TicksPerSecond
                     ? NpcMotionRules.CoastVelocity(npc.Velocity)
                     : npc.Velocity;
-            bodies.Add(new(npc.Id, hulls[npc.Id], npc.Position, initial, next.Position, next.Velocity));
+            bodies.Add(
+                new(
+                    npc.Id,
+                    hulls[npc.Id],
+                    npc.Position,
+                    initial,
+                    next.Position,
+                    next.Velocity,
+                    npc.Navigation != NpcNavigationState.Warping
+                )
+            );
             moved.Add(next);
         }
         var resolved = ShipCollisions.Resolve(bodies).ToDictionary(b => b.Id);
@@ -115,10 +125,23 @@ public static class LiveSystemMotionRules
         bool contactsOnly = false
     )
     {
+        if (npc.Transit is { } warp)
+        {
+            FlightProperties hull = new(
+                0,
+                (float)npc.Radius,
+                npc.Mass,
+                NpcMotionRules.Agility(attributes),
+                (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                warp.Speed
+            );
+            var sample = warp.Course(stamp, now, hull).Sample(stamp, Math.Min(hull.MaxSpeed / 2, 100));
+            return npc with { Position = sample.Position, Velocity = sample.Velocity, MotionAt = now };
+        }
         NpcMotionState state = new(npc.Id, npc.Position, npc.Velocity, npc.Navigation);
         long at = npc.MotionAt;
         bool engaged = NpcMotionRules.Engaged(state);
-        bool pursue = npc.Role != NpcRole.Convoy && !contactsOnly && target is not null && (engaged || now >= readyAt);
+        bool pursue = !NpcPopulationRules.IsCivilian(npc.Role) && !contactsOnly && target is not null && (engaged || now >= readyAt);
         if (contactsOnly && engaged && target is null)
         {
             state = state with { Navigation = NpcNavigationState.Returning };
@@ -130,7 +153,7 @@ public static class LiveSystemMotionRules
         long elapsed = now / TimeSpan.TicksPerSecond - at / TimeSpan.TicksPerSecond;
         double step = elapsed < 1 ? 0 : Math.Min(elapsed, NpcEncounterDefinitions.MaximumMovementStepSeconds);
         long nextAt = elapsed < 1 ? at : now;
-        if (npc.Role == NpcRole.Convoy && !contactsOnly)
+        if ((npc.Role == NpcRole.Convoy || npc.Navigation == NpcNavigationState.Travelling) && !contactsOnly)
         {
             state = NpcMotionRules.Advance(
                 state with
@@ -167,7 +190,10 @@ public static class LiveSystemMotionRules
         {
             return npc with { Navigation = state.Navigation };
         }
-        else if (npc.Role != NpcRole.Pirate && state.Navigation is NpcNavigationState.Idle or NpcNavigationState.Patrolling)
+        else if (
+            npc.Role is NpcRole.Navy or NpcRole.Customs
+            && state.Navigation is NpcNavigationState.Idle or NpcNavigationState.Patrolling
+        )
         {
             state = NpcMotionRules.Advance(
                 state with
@@ -211,6 +237,7 @@ public static class LiveSystemMotionRules
     ) =>
         npc.Navigation switch
         {
+            NpcNavigationState.Warping => new(npc.Velocity, 1, 0, 0, npc.Home, NpcNavigationState.Warping),
             NpcNavigationState.Travelling => new(
                 npc.Velocity,
                 NpcMotionRules.SpeedFraction(attributes),

@@ -158,7 +158,19 @@ public sealed class NpcEwarTests
                 }
             );
         }
-        Assert.Equal(Enum.GetValues<NpcEwarKind>().Order(), kinds.Order());
+        Assert.Equal(
+            new[]
+            {
+                NpcEwarKind.Jamming,
+                NpcEwarKind.SensorDampening,
+                NpcEwarKind.TrackingDisruption,
+                NpcEwarKind.TargetPainting,
+                NpcEwarKind.EnergyNeutralization,
+                NpcEwarKind.Webifying,
+                NpcEwarKind.WarpDisruption,
+            }.Order(),
+            kinds.Order()
+        );
         Assert.Empty(NpcEwarRules.Profile(new HashSet<DogmaEffect>(), new Dictionary<DogmaAttributeId, double>()));
     }
 

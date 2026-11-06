@@ -125,6 +125,18 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadNpcConvoys(string path) => Load(path, "NpcConvoyCatalog.json", null);
 
+    internal static void LoadNpcMining(string path)
+    {
+        Load(path, "NpcMiningCatalog.json", null);
+        using CatalogDbContext catalog = new(path, writable: true);
+        foreach (var source in catalog.Set<SourceRecord>().Where(r => r.Dataset == "sde/npcCorporations").ToArray())
+        {
+            int id = int.Parse(source.Key, CultureInfo.InvariantCulture);
+            string name = source.Read<SdeNpcCorporations>().Name?.En ?? $"NPC {id}";
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO NpcCorporation VALUES ({id},{name})");
+        }
+    }
+
     private static void Load(string path, string resource, IReadOnlySet<int>? types, bool definitions = true, int? hullType = null)
     {
         var data = Fixtures.GetOrAdd(resource, name => new Lazy<Fixture>(() => ReadFixture(name))).Value;

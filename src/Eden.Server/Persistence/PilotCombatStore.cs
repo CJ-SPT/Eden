@@ -232,6 +232,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             || npc is null
             || npc.DestroyedAt.HasValue
             || npc.RetiredAt.HasValue
+            || npc.Navigation == NpcNavigationState.Warping
         )
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
