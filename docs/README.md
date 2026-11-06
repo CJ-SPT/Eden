@@ -18,6 +18,12 @@
 | [Formatting](../README.md#formatting) | Pinned formatters, coverage, width exceptions and editor integration. |
 | [Architecture and runtime](architecture.md) | Typed boundaries, initialization, dependency injection, diagnostics and resident checkpoints. |
 
+## Long-term design
+
+| Reference | Use it for |
+| --- | --- |
+| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for a fresh EVE universe populated by simulated capsuleers, a developing economy, and eventual Blazor configuration. Core gameplay systems come first. |
+
 ## Features and implementation records
 
 | Reference | Use it for |
