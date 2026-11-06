@@ -22,7 +22,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 | Ships and fitting | Persistent hulls, cargo and specialized holds, supported Tech I hull cohorts, catalog-backed weapons, repairs, propulsion, tackle and saved weapon groups. Market availability does not imply gameplay support. |
 | Combat and NPCs | Regional belt pirates, defensive empire guards, passive high-security station convoys, NPC turrets/missiles, declared electronic warfare and local repairs, bounties, security/standing history, ship losses and wrecks. |
 | Economy | Mining, reprocessing, supported manufacturing, the testing market, personal wallets, insurance and personal item-exchange/courier/auction contracts. |
-| Social features | TLS Local/corporation/private chat, personal mail and mailing lists, contacts, calendar, notifications, station guests and public pilot information. |
+| Social features | TLS Local/corporation/private chat retained through developer translocation, personal mail and mailing lists, contacts, calendar, notifications, station guests and public pilot information. |
 | Player corporations | Creation/membership, administration, roles/titles, shared wallets, bounty tax, LP/EverMarks and share transfers. Offices/asset access and governance remain pending; see the [corporation roadmap](docs/corporations.md). |
 
 See [feature implementation notes](docs/feature-notes.md) for catalog coverage, restrictions and examples, and [protocol records](docs/protocol.md) for milestone evidence. Agent validation is automated; native rendering, input and gameplay feel remain unverified unless a record explicitly documents live acceptance for that change. Historical observations do not establish acceptance of later changes.

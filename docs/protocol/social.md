@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Translocation chat continuity (November 6, 2026)](#translocation-chat-continuity-november-6-2026)
 - [Native chat ready-handshake correction (November 5, 2026)](#native-chat-ready-handshake-correction-november-5-2026)
 - [Chat startup, first send and initial roster correction (November 5, 2026)](#chat-startup-first-send-and-initial-roster-correction-november-5-2026)
 - [Chat certificate manifest correction (November 5, 2026)](#chat-certificate-manifest-correction-november-5-2026)
@@ -20,6 +21,22 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Translocation chat continuity (November 6, 2026)
+
+The user reported repeated **Connection to chat server lost / Reconnected to chat server** messages and identified **TR me here!** as the trigger. Saved client chat logs corroborated three disconnect/reconnect pairs at **05:14:40**, **05:20:08** and **05:24:51 UTC** on November 6; the host process had remained running. These are user/client-log observations, not agent gameplay acceptance.
+
+`TranslocationHandler` called `PilotUpdateCoordinator.Leave` to cancel old activities before moving the ship. That shared logoff path also disposed `ChatHandler`, removed the selected pilot from `ChatWorld` and queued `ChatEvent.Closed`, deliberately terminating the existing TLS stream. Re-entering the destination then required the client's automatic reconnect. Even a same-system move used this cleanup. The defect was in Eden's pilot lifecycle, rather than the native ready handshake or an idle timeout.
+
+Travel now uses `PrepareTranslocation`, which preserves the selected pilot's chat lease while retaining the existing activity cancellation, checkpoint and monitor-reset behavior. Actual character logoff still disposes chat before performing that cleanup. Existing `ChatHandler.Advance`/`ChatWorld.Update` changes authoritative Local access when the system changes; corporation, private and player memberships remain attached to the same connection. Same-system movement and docking retain Local membership too. No XMPP keepalive, TLS, token, certificate, client-file, database or wire-format change is included.
+
+The regression routes native `/tr me` commands through the real coordinator while a TLS client remains connected. Both docked and in-space origins make six repeated moves covering same-system celestials, docking, cross-system station targets and staged space transfers. Corporation messages are delivered before and after each transfer without reconnecting or rejoining; Local messages work at arrival, and sends to the old system are rejected. Actual logoff emits departures, closes that same connection and removes online chat presence. Existing tests retain multi-pilot roster, travel persistence, activity and logoff coverage. The pinned build-3662168 `XmppChatService.HandleXmppConnectionLost` displays the reported notices; its transport/native readiness contract remains as recorded below.
+
+**Automated validation:** On top of `0aa3cee`, tool/solution restore and build passed with zero warnings/errors. Filter `FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~TranslocationTests|FullyQualifiedName~CharacterLogoffTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TackleTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, run with `dotnet test --no-build`, passed **145 tests** with zero failed/skipped in **36 seconds**. Both Python policy suites (**3 catalog**, **9 formatting**), formatting verification (**757 files**), documentation anchor/link/whitespace checks and `git diff --check` passed. Required restore/build/test/policy/format checks took **59.5 seconds** combined. Before the correction, both new docked/in-space cases failed on the first TR with the chat transport closed (**4 seconds** combined). The passing focused correction run completed both cases in **5 seconds**. Intermediate test-harness corrections spaced messages with `TestClock` to respect the existing chat rate limit and drained the normal unavailable-presence notifications before asserting logoff closure. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After rebuilding/restarting the server and reconnecting once, use TR repeatedly within and between systems; confirm chat shows no reconnect notices, corporation chat continues and Local follows the destination. Native UI behavior remains unverified on this revision.
 
 ## Native chat ready-handshake correction (November 5, 2026)
 

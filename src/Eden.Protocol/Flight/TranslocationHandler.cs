@@ -64,7 +64,7 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
             }
             // Cancel old activities before committing the move. Their checkpoints must
             // never write a source-system position over the committed destination.
-            updates.Leave(context);
+            updates.PrepareTranslocation(context);
             if (context.Pilot.Position is null && context.Pilot.SystemId != target.System.Id && target.StationId is null)
             {
                 var undock = context.Flight.Execute(new FlightCommand.Undock(context.Pilot.ShipId));

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -11,10 +12,12 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Tests.Chat;
 using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.Server.Chat;
 using Eden.Server.Launcher;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +30,97 @@ public sealed class TranslocationTests
     private const int OtherSystem = 30000144;
     private const int SourceMoon = 40009087;
     private const int OtherGate = 50002185;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RepeatedNativeTranslocationsKeepChatConnectedUntilActualPilotLogoff(bool inSpace)
+    {
+        using Fixture f = new(inSpace: inSpace);
+        f.Select();
+        if (inSpace)
+        {
+            f.Context.Flight.Snapshot();
+        }
+        var runtime = f.Db.Services.GetRequiredService<ChatRuntime>();
+        var certificate = f.Db.Services.GetRequiredService<ChatCertificate>();
+        await using var server = f.Db.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        var token = Assert.IsType<PilotCallResult.Success>(
+            f.Router.Call(f.Context, "chatAuthenticationService", "GetAuthenticationToken", Array.Empty<object?>(), _ => { })
+        );
+        await using var client = await XmppChatTests.NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            f.Context.Pilot.PilotId,
+            BlueMarshal.Text(token.Reply.ToBlue())
+        );
+        string local = "local_" + f.Context.Pilot.SystemId;
+        string corporation = "corp_" + f.Context.Pilot.CorpId;
+        async Task JoinAsync(string room)
+        {
+            await client.JoinAsync(room, room);
+            await client.UntilAsync(e => e.Name.LocalName == "message" && e.Elements().Any(child => child.Name.LocalName == "subject"));
+        }
+        async Task MessageAsync(string room, string id)
+        {
+            f.Clock.Seconds++;
+            await client.MessageAsync(room, id, "Connection retained");
+            var message = (await client.UntilAsync(e => (string?)e.Attribute("id") == id))[^1];
+            Assert.True((string?)message.Attribute("type") == "groupchat", message.ToString());
+            Assert.Equal("Connection retained", Assert.Single(message.Elements()).Value);
+        }
+        await JoinAsync(local);
+        await JoinAsync(corporation);
+        int cycle = 0;
+        foreach (
+            int target in new[] { SourceMoon, HomeStationTestData.Origin, OtherSystem, HomeStationTestData.School, OtherGate, SourceMoon }
+        )
+        {
+            Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
+            await MessageAsync(corporation, "departure-" + cycle);
+            if (f.Context.Flight.Translocating)
+            {
+                if (!f.Context.Flight.InBallpark)
+                {
+                    f.Context.Flight.Snapshot();
+                }
+                f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
+                await f.TickAsync([]);
+                Assert.False(f.Context.Flight.Translocating);
+            }
+            string destination = "local_" + f.Context.Pilot.SystemId;
+            if (local != destination)
+            {
+                await client.MessageAsync(local, "old-local-" + cycle, "No longer authorized");
+                var rejected = (await client.UntilAsync(e => (string?)e.Attribute("id") == "old-local-" + cycle))[^1];
+                Assert.Equal("error", (string?)rejected.Attribute("type"));
+                local = destination;
+                await JoinAsync(local);
+            }
+            await MessageAsync(local, "local-" + cycle);
+            await MessageAsync(corporation, "arrival-" + cycle);
+            if (f.Context.Pilot.Position is not null && !f.Context.Flight.InBallpark)
+            {
+                f.Context.Flight.Snapshot();
+            }
+            cycle++;
+        }
+        var logoff = Assert.IsType<PilotCallResult.Success>(
+            f.Router.Call(f.Context, "userSvc", "UserLogOffCharacter", Array.Empty<object?>(), _ => { })
+        );
+        Assert.Equal(true, logoff.Reply.ToBlue());
+        await Assert.ThrowsAsync<IOException>(async () =>
+        {
+            while (true)
+            {
+                var departed = await client.ReadAsync();
+                Assert.Equal("presence", departed.Name.LocalName);
+                Assert.Equal("unavailable", (string?)departed.Attribute("type"));
+            }
+        });
+        Assert.Null(runtime.User(HomeStationTestData.PilotId));
+    }
 
     [Theory]
     [InlineData(false)]

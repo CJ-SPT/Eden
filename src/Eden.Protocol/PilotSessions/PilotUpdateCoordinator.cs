@@ -101,9 +101,16 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        chat.Dispose();
+        PrepareTranslocation(context);
+    }
+
+    // Travel cancels old activities, but the selected pilot remains online.
+    // Chat presence updates Local access after arrival without closing its transport.
+    public void PrepareTranslocation(PilotCallContext context)
+    {
         corporations.Reset();
         corporationWallet.Reset();
-        chat.Dispose();
         guests.Dispose();
         online.Reset();
         calendar.Reset();
