@@ -55,7 +55,7 @@ public interface IPilotMarket
     long Balance(long pilotId);
     IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null);
     IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope);
-    IReadOnlyList<MarketTrade> Transactions(long pilotId);
+    IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();
     IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds);
     MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items);

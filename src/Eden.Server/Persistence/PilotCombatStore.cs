@@ -443,12 +443,14 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         return Rewards(world, pilotId);
     }
 
-    internal static IReadOnlyList<CombatReward> Rewards(WorldDbContext world, long pilotId)
+    internal static IReadOnlyList<CombatReward> Rewards(WorldDbContext world, long pilotId, HistoryPeriod? period = null)
     {
+        long from = period?.From ?? 0;
+        long until = period?.Until ?? long.MaxValue;
         return world
             .Set<NpcBounty>()
             .AsNoTracking()
-            .Where(b => b.PilotId == pilotId)
+            .Where(b => b.PilotId == pilotId && b.Time >= from && b.Time < until)
             .OrderByDescending(b => b.Time)
             .ThenByDescending(b => b.Id)
             .AsEnumerable()

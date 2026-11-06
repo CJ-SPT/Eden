@@ -89,7 +89,7 @@ internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvide
         transaction.Commit();
     }
 
-    public IReadOnlyList<CorporationWalletEntry> Journal(long actorId, bool corporation, int key)
+    public IReadOnlyList<CorporationWalletEntry> Journal(long actorId, bool corporation, int key, HistoryPeriod? period = null)
     {
         CorporationWalletRules.CheckKey(key);
         using WorldDbContext world = new(database.Path);
@@ -99,9 +99,11 @@ internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("Personal wallets have one cash account.");
         }
+        long from = period?.From ?? 0;
+        long until = period?.Until ?? long.MaxValue;
         return world
             .Set<SavedWalletLedger>()
-            .Where(e => e.OwnerId == owner && e.Key == key)
+            .Where(e => e.OwnerId == owner && e.Key == key && e.Time >= from && e.Time < until)
             .OrderByDescending(e => e.Id)
             .Take(1000)
             .AsEnumerable()

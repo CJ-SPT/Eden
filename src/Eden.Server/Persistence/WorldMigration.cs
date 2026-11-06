@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 85;
+    internal const int CurrentVersion = 86;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -1046,7 +1046,13 @@ internal static class WorldMigration
         {
             InventoryOwnershipSchema.Upgrade(world);
         }
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=85");
+        using var history = world.Database.BeginTransaction();
+        if (version < 86)
+        {
+            HistorySchema.Upgrade(world);
+        }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=86");
+        history.Commit();
     }
 
     private static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog)

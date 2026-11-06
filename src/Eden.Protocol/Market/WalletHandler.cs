@@ -60,7 +60,7 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
             year is long yearNumber ? (int)yearNumber : null,
             month is long monthNumber ? (int)monthNumber : null
         );
-        var journal = wallet.Journal(context.Pilot.PilotId);
+        var journal = wallet.Journal(context.Pilot.PilotId, filter.Period(clock.GetUtcNow().UtcDateTime));
         List<WalletJournalEntry> entries = [];
         foreach (var trade in journal.Trades)
         {
@@ -255,7 +255,7 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
         }
         entries.AddRange(
             corporationWallet
-                .Journal(context.Pilot.PilotId, false, (int)WalletAccountKey.Cash)
+                .Journal(context.Pilot.PilotId, false, (int)WalletAccountKey.Cash, filter.Period(clock.GetUtcNow().UtcDateTime))
                 .Where(entry => filter.Includes(entry.Time, clock.GetUtcNow().UtcDateTime))
                 .Select(entry => new WalletJournalEntry(
                     CorporationWalletRules.FirstJournalId + entry.Id,
@@ -317,7 +317,7 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
             WalletJournalFilter filter = new(year is long yr ? (int)yr : null, month is long mo ? (int)mo : null);
             return new BlueList<WalletJournalEntry>(
                 corporationWallet
-                    .Journal(context.Pilot.PilotId, true, (int)account)
+                    .Journal(context.Pilot.PilotId, true, (int)account, filter.Period(clock.GetUtcNow().UtcDateTime))
                     .Where(e => filter.Includes(e.Time, clock.GetUtcNow().UtcDateTime))
                     .Select(e => new WalletJournalEntry(
                         CorporationWalletRules.FirstJournalId + e.Id,

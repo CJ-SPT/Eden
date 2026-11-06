@@ -172,9 +172,7 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                 case "CharGetTransactions" when args is [null or long]:
                     return new BlueList<MarketTransactionReply>(
                         market
-                            .Transactions(context.Pilot.PilotId)
-                            .Where(trade => args[0] is not long from || trade.Time < from)
-                            .Take(1000)
+                            .Transactions(context.Pilot.PilotId, new(args[0] as long?))
                             .Select(trade => new MarketTransactionReply(trade, context.Pilot.PilotId))
                             .ToArray()
                     );

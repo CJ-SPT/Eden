@@ -27,5 +27,5 @@ public interface IPilotWalletReader
 {
     long Balance(long pilotId);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();
-    WalletJournal Journal(long pilotId);
+    WalletJournal Journal(long pilotId, HistoryPeriod? period = null);
 }

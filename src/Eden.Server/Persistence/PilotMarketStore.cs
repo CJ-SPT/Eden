@@ -229,19 +229,31 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             trade.Time
         );
 
-    public IReadOnlyList<MarketTrade> Transactions(long pilotId)
+    public IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null)
     {
         using WorldDbContext world = new(database.Path);
-        return Transactions(world, pilotId);
+        if (query is { Limit: < 1 or > 1000 })
+        {
+            throw new InvalidDataException("Choose between one and 1000 market transactions.");
+        }
+        return Transactions(world, pilotId, new(0, query?.Before), query?.Limit);
     }
 
-    internal static IReadOnlyList<MarketTrade> Transactions(WorldDbContext world, long pilotId)
+    internal static IReadOnlyList<MarketTrade> Transactions(
+        WorldDbContext world,
+        long pilotId,
+        HistoryPeriod? period = null,
+        int? limit = null
+    )
     {
+        long from = period?.From ?? 0;
+        long until = period?.Until ?? long.MaxValue;
         return world
             .Set<MarketExecution>()
             .AsNoTracking()
-            .Where(t => t.PilotId == pilotId)
+            .Where(t => t.PilotId == pilotId && t.Time >= from && t.Time < until)
             .OrderByDescending(t => t.Id)
+            .Take(limit ?? int.MaxValue)
             .AsEnumerable()
             .Select(Read)
             .ToArray();

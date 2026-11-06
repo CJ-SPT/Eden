@@ -10,6 +10,16 @@ namespace Eden.Protocol.Market;
 
 internal sealed record WalletJournalFilter(int? Year, int? Month)
 {
+    public HistoryPeriod Period(DateTime utcNow)
+    {
+        if (Year is null || Month is null)
+        {
+            return new(utcNow.AddDays(-30).ToFileTimeUtc());
+        }
+        DateTime start = new(Year.Value, Month.Value, 1, 0, 0, 0, DateTimeKind.Utc);
+        return new(start.ToFileTimeUtc(), Year == 9999 && Month == 12 ? null : start.AddMonths(1).ToFileTimeUtc());
+    }
+
     public bool Includes(long time, DateTime utcNow)
     {
         var date = DateTime.FromFileTimeUtc(time);

@@ -212,12 +212,14 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         return Payments(world, pilotId);
     }
 
-    internal static IReadOnlyList<RepairPayment> Payments(WorldDbContext world, long pilotId)
+    internal static IReadOnlyList<RepairPayment> Payments(WorldDbContext world, long pilotId, HistoryPeriod? period = null)
     {
+        long from = period?.From ?? 0;
+        long until = period?.Until ?? long.MaxValue;
         return world
             .Set<StationRepairPayment>()
             .AsNoTracking()
-            .Where(p => p.PilotId == pilotId)
+            .Where(p => p.PilotId == pilotId && p.Time >= from && p.Time < until)
             .OrderByDescending(p => p.Time)
             .ThenByDescending(p => p.Id)
             .Select(p => new RepairPayment(p.Id, p.PilotId, p.StationId, p.StationOwnerId, p.AmountCents, p.BalanceCents, p.Time))

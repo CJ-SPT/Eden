@@ -139,6 +139,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         DroneSchema.Configure(model);
+        HistorySchema.Configure(model);
         ConfigureInteractionHistory(model);
         ConfigureCorporations(model);
         model.Entity<SavedFittingRecord>().ToTable("WorldSavedFitting").HasKey(f => f.Id);
