@@ -1,11 +1,12 @@
 using System.Text;
 using System.Xml.Linq;
 using Eden.Gameplay.Chat;
+using Eden.Protocol.Transport;
 
 namespace Eden.Protocol.Chat;
 
 [Injectable]
-public sealed class XmppSession(IXmppChat chat)
+public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
 {
     public async Task RunAsync(Stream stream, CancellationToken cancellation)
     {
@@ -21,11 +22,12 @@ public sealed class XmppSession(IXmppChat chat)
         bool ready = false;
         async Task WriteAsync(string xml)
         {
-            await output.WaitAsync(lifetime.Token);
+            using StreamDeadline deadline = new(lifetime.Token, clock);
+            await output.WaitAsync(deadline.Token);
             try
             {
-                await stream.WriteAsync(Encoding.UTF8.GetBytes(xml), lifetime.Token);
-                await stream.FlushAsync(lifetime.Token);
+                await stream.WriteAsync(Encoding.UTF8.GetBytes(xml), deadline.Token);
+                await stream.FlushAsync(deadline.Token);
             }
             finally
             {

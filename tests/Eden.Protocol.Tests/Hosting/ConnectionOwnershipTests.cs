@@ -9,6 +9,40 @@ namespace Eden.Protocol.Tests.Hosting;
 
 public sealed class ConnectionOwnershipTests
 {
+    [Fact]
+    public async Task EightUnfinishedLoginsDoNotBlockTheNinthGreetingAndOverflowIsClosed()
+    {
+        using TestWorld world = new();
+        using CancellationTokenSource stop = new(TimeSpan.FromSeconds(10));
+        using TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        var server = world.Services.GetRequiredService<LoopbackServer>();
+        var listening = server.ListenAsync(listener, stop.Token);
+        List<TcpClient> clients = [];
+        try
+        {
+            for (int index = 0; index < 16; index++)
+            {
+                TcpClient client = new();
+                clients.Add(client);
+                await client.ConnectAsync((IPEndPoint)listener.LocalEndpoint, stop.Token);
+                Assert.NotEmpty(await PacketStream.ReadAsync(client.GetStream(), stop.Token));
+            }
+            using TcpClient overflow = new();
+            await overflow.ConnectAsync((IPEndPoint)listener.LocalEndpoint, stop.Token);
+            Assert.Equal(0, await overflow.GetStream().ReadAsync(new byte[1], stop.Token));
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            foreach (var client in clients)
+            {
+                client.Dispose();
+            }
+            await listening;
+        }
+    }
+
     private sealed class Cleanup(Action dispose) : IDisposable
     {
         public void Dispose() => dispose();

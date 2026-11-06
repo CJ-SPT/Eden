@@ -11,10 +11,18 @@ public static class PacketStream
     // exceed 16 KiB; the high four header bits remain unsupported transport flags.
     internal const int MaxSessionBytes = 1024 * 1024;
 
-    public static async Task<byte[]> ReadAsync(Stream stream, CancellationToken cancellationToken, int maxPayloadBytes = MaxHandshakeBytes)
+    public static async Task<byte[]> ReadAsync(
+        Stream stream,
+        CancellationToken cancellationToken,
+        int maxPayloadBytes = MaxHandshakeBytes,
+        TimeProvider? clock = null
+    )
     {
         byte[] header = new byte[sizeof(uint)];
-        await stream.ReadExactlyAsync(header, cancellationToken);
+        // Idle sessions may remain quiet. Once a frame starts, trickled bytes cannot extend its deadline.
+        await stream.ReadExactlyAsync(header.AsMemory(0, 1), cancellationToken);
+        using StreamDeadline deadline = new(cancellationToken, clock);
+        await stream.ReadExactlyAsync(header.AsMemory(1), deadline.Token);
         uint length = BinaryPrimitives.ReadUInt32LittleEndian(header);
         if (length == 0 || length > maxPayloadBytes)
         {
@@ -22,7 +30,7 @@ public static class PacketStream
         }
 
         byte[] payload = new byte[length];
-        await stream.ReadExactlyAsync(payload, cancellationToken);
+        await stream.ReadExactlyAsync(payload, deadline.Token);
         return payload;
     }
 
@@ -30,7 +38,8 @@ public static class PacketStream
         Stream stream,
         ReadOnlyMemory<byte> payload,
         CancellationToken cancellationToken,
-        int maxPayloadBytes = MaxHandshakeBytes
+        int maxPayloadBytes = MaxHandshakeBytes,
+        TimeProvider? clock = null
     )
     {
         if (payload.Length == 0 || payload.Length > maxPayloadBytes)
@@ -40,7 +49,8 @@ public static class PacketStream
 
         byte[] header = new byte[sizeof(uint)];
         BinaryPrimitives.WriteUInt32LittleEndian(header, (uint)payload.Length);
-        await stream.WriteAsync(header, cancellationToken);
-        await stream.WriteAsync(payload, cancellationToken);
+        using StreamDeadline deadline = new(cancellationToken, clock);
+        await stream.WriteAsync(header, deadline.Token);
+        await stream.WriteAsync(payload, deadline.Token);
     }
 }

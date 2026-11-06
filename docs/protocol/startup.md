@@ -182,3 +182,13 @@ The account-phase compatibility handler now acknowledges the exact no-argument d
 **Live acceptance.** Not performed; agent client testing is disabled. The user's screenshot establishes the original failure, not acceptance of the fix.
 
 **Optional maintainer checks.** Rebuild/restart the server, then exit the client from character selection and from a selected pilot to check that the reported dialog no longer appears.
+
+## Connection admission and stalled transport recovery (November 6, 2026)
+
+Pending native logins now have separate global/per-address admission from authenticated accounts. Defaults are eight active sessions, sixteen pending logins, and four pending logins per remote IP; loopback can use all sixteen pending slots. IPv4-mapped addresses share the IPv4 allowance. Promotion and cleanup release pending capacity exactly once; account admission remains held until scoped cleanup finishes. Excess connections close promptly while the accept loop continues.
+
+Native frames receive a fixed thirty-second completion deadline after their first byte, and native/chat writes have a thirty-second deadline. Idle frame readers remain quiet until data or shutdown. These are host recovery limits: build 3662168 packet formats and payload bounds are preserved. Consulted Carbon IO `protocol.h` at `8d8f339fd19f2e8095fcd90ad5415cb4ca00c331` (https://github.com/carbonengine/io/blob/8d8f339fd19f2e8095fcd90ad5415cb4ca00c331/src/protocol.h).
+
+Automated validation is recorded below. Live acceptance: Not performed; agent client testing is disabled. Optional maintainer check: reconnect after a network interruption; native presentation remains unverified.
+
+Automated validation: pinned tool/solution restore and build passed (zero warnings/errors; final build 7.77 seconds). Filter: FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Transport|FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~Eden.Protocol.Tests.Launcher. All 98 cases passed in 10 seconds, including deterministic deadlines and the sixteen-pending-connection socket regression. Both Python suites passed (3 catalog, 9 formatting); formatting and diff checks passed. No full .NET suite was requested or run.

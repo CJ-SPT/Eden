@@ -16,6 +16,9 @@ public sealed record LauncherOptions
     public string GatewayAddress { get; init; } = "http://127.0.0.1:26001";
     public string? CertificatePath { get; init; }
     public bool DevelopmentLogin { get; init; }
+    public int MaximumActiveSessions { get; init; } = 8;
+    public int MaximumPendingLogins { get; init; } = 16;
+    public int MaximumPendingLoginsPerAddress { get; init; } = 4;
 
     public static LauncherOptions Load(string? path)
     {
@@ -26,6 +29,17 @@ public sealed record LauncherOptions
 
     public void Validate()
     {
+        if (
+            MaximumActiveSessions < 1
+            || MaximumPendingLogins < 1
+            || MaximumPendingLoginsPerAddress < 1
+            || MaximumPendingLoginsPerAddress > MaximumPendingLogins
+        )
+        {
+            throw new InvalidDataException(
+                "Specify positive session and login limits; the per-address limit cannot exceed the pending limit."
+            );
+        }
         var address = IPAddress.Parse(ListenAddress);
         bool local = IPAddress.IsLoopback(address);
         var gateway = new Uri(GatewayAddress);

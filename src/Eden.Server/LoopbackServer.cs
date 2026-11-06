@@ -38,21 +38,21 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var shutdown = lifetime.Token;
-        const int MaximumClients = 8;
+        PendingLogins pending = new(options ?? new());
         List<Task> clients = [];
         try
         {
             while (!shutdown.IsCancellationRequested)
             {
                 clients.RemoveAll(task => task.IsCompleted);
-                if (clients.Count >= MaximumClients)
-                {
-                    Task completed = await Task.WhenAny(clients);
-                    await completed;
-                    clients.Remove(completed);
-                }
                 TcpClient client = await listener.AcceptTcpClientAsync(shutdown);
-                clients.Add(ServeInScopeAsync(client, shutdown));
+                var login = pending.TryEnter(((IPEndPoint)client.Client.RemoteEndPoint!).Address);
+                if (login is null)
+                {
+                    client.Dispose();
+                    continue;
+                }
+                clients.Add(ServeInScopeAsync(client, login, shutdown));
             }
         }
         catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
@@ -66,14 +66,16 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
         }
     }
 
-    private async Task ServeInScopeAsync(TcpClient client, CancellationToken shutdown)
+    private async Task ServeInScopeAsync(TcpClient client, IDisposable login, CancellationToken shutdown)
     {
+        using (login)
         using (client)
         {
             try
             {
                 await connections.RunAsync(
-                    (services, admission) => services.GetRequiredService<ClientConnection>().ServeAsync(client, admission, shutdown)
+                    (services, admission) => services.GetRequiredService<ClientConnection>().ServeAsync(client, admission, shutdown),
+                    login.Dispose
                 );
             }
             catch (Exception exception)

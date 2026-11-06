@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
 
-internal sealed class ConnectionAdmission(PilotGate gate) : IDisposable
+internal sealed class ConnectionAdmission(PilotGate gate, Action? authenticated = null) : IDisposable
 {
     private long? _accountId;
 
@@ -11,9 +11,10 @@ internal sealed class ConnectionAdmission(PilotGate gate) : IDisposable
     {
         if (_accountId.HasValue || !gate.TryEnter(accountId))
         {
-            throw new InvalidDataException("This account is already connected.");
+            throw new InvalidDataException("This account is already connected or the server is full.");
         }
         _accountId = accountId;
+        authenticated?.Invoke();
     }
 
     public void Dispose()
@@ -29,9 +30,9 @@ internal sealed class ConnectionAdmission(PilotGate gate) : IDisposable
 [Injectable(InjectionType.Singleton)]
 internal sealed class ConnectionRunner(IServiceScopeFactory scopes, PilotGate gate)
 {
-    public async Task RunAsync(Func<IServiceProvider, ConnectionAdmission, Task> serve)
+    public async Task RunAsync(Func<IServiceProvider, ConnectionAdmission, Task> serve, Action? authenticated = null)
     {
-        using ConnectionAdmission admission = new(gate);
+        using ConnectionAdmission admission = new(gate, authenticated);
         // Dispose feature controllers before releasing the authenticated account.
         using var scope = scopes.CreateScope();
         await serve(scope.ServiceProvider, admission);

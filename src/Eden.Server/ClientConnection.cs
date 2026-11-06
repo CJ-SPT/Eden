@@ -44,7 +44,7 @@ internal sealed class ClientConnection(PilotLogin login)
             {
                 if (!shutdown.IsCancellationRequested)
                 {
-                    ServerLog.Console.Warning("Login timed out.");
+                    ServerLog.Console.Warning("Connection operation timed out.");
                 }
             }
             catch (Exception exception)
