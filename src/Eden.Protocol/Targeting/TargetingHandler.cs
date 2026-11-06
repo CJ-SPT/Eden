@@ -16,7 +16,10 @@ internal sealed class TargetingHandler(
     INpcElectronicWarfare? npcEwar = null
 ) : ISelectedPilotCallHandler, IDisposable
 {
-    private sealed record PendingLock(long Started, double Seconds);
+    private sealed record PendingLock(long Started, double Seconds)
+    {
+        internal TaskCompletionSource<PilotCallResult> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
 
     private readonly Dictionary<long, PendingLock> _pending = [];
     private readonly HashSet<long> _locked = [];
@@ -44,6 +47,7 @@ internal sealed class TargetingHandler(
                 Notify(context, TargetChange.OtherLost, id);
             }
             shared.RemoveShip(_shipId);
+            CancelPendingReplies();
             _pending.Clear();
             _locked.Clear();
             _targeters = [];
@@ -60,13 +64,14 @@ internal sealed class TargetingHandler(
         else if (_pending.Count + _locked.Count > 0)
         {
             double range = fitting.ShipAttributes(context.Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
+            var incoming = npcEwar?.Incoming(_shipId) ?? [];
             foreach (long id in _pending.Keys.Concat(_locked).ToArray())
             {
                 var target = context.Flight.FindTarget(id);
                 if (
                     target is null
                     || Distance(context, target) > range
-                    || !NpcEwarRules.CanTarget(npcEwar?.Incoming(_shipId) ?? [], id)
+                    || !NpcEwarRules.CanTarget(incoming, id)
                     || (_locked.Contains(id) && !shared.Contains(_shipId, id))
                 )
                 {
@@ -78,6 +83,7 @@ internal sealed class TargetingHandler(
                     _locked.Add(id);
                     shared.Add(_shipId, id);
                     Notify(context, TargetChange.Added, id);
+                    pending.Completion.TrySetResult(new PilotCallResult.Success(new TargetLockReply(true, _locked.Order().ToArray())));
                 }
             }
         }
@@ -101,7 +107,8 @@ internal sealed class TargetingHandler(
 
     private void Remove(PilotCallContext context, long target)
     {
-        bool pending = _pending.Remove(target);
+        bool pending = _pending.Remove(target, out var scan);
+        scan?.Completion.TrySetResult(CancelledLock());
         bool locked = _locked.Remove(target);
         shared.Remove(_shipId, target);
         if (pending || locked)
@@ -124,9 +131,9 @@ internal sealed class TargetingHandler(
         {
             return new TargetLockReply(false, _locked.Order().ToArray());
         }
-        if (_pending.ContainsKey(id))
+        if (_pending.TryGetValue(id, out var scanning))
         {
-            return new TargetLockReply(true, _locked.Order().ToArray());
+            return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = scanning.Completion.Task };
         }
         if (!NpcEwarRules.CanTarget(npcEwar?.Incoming(context.Pilot.ShipId) ?? [], id))
         {
@@ -150,9 +157,11 @@ internal sealed class TargetingHandler(
         {
             return new PilotCallResult.NamedFailure("TargetingSystemsNotInstalled", BlueEmpty.Dictionary);
         }
-        _pending.Add(id, new(clock.GetTimestamp(), seconds));
-        // targetMgr._LockTarget interprets true as pending; OnTarget("add") completes it.
-        return new TargetLockReply(true, _locked.Order().ToArray());
+        PendingLock pending = new(clock.GetTimestamp(), seconds);
+        _pending.Add(id, pending);
+        // OnTarget("add") supplies success. If this scan is interrupted, the
+        // outstanding RPC must fail so native FailLockTarget clears its animation.
+        return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = pending.Completion.Task };
     }
 
     public PilotCallResult Call(
@@ -200,6 +209,7 @@ internal sealed class TargetingHandler(
     public void Reset()
     {
         shared.RemoveShip(_shipId);
+        CancelPendingReplies();
         _pending.Clear();
         _locked.Clear();
         _targeters = [];
@@ -207,4 +217,14 @@ internal sealed class TargetingHandler(
     }
 
     public void Dispose() => Reset();
+
+    private static PilotCallResult.NamedFailure CancelledLock() => new("TargetingAttemptCancelled", BlueEmpty.Dictionary);
+
+    private void CancelPendingReplies()
+    {
+        foreach (var pending in _pending.Values)
+        {
+            pending.Completion.TrySetResult(CancelledLock());
+        }
+    }
 }

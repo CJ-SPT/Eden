@@ -19,7 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;
 
-public sealed class NpcEwarTests
+public sealed partial class NpcEwarTests
 {
     private sealed class Roll : INpcEwarRoll
     {

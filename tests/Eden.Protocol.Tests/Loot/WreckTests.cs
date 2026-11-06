@@ -280,8 +280,18 @@ public sealed class WreckTests
         clock.Seconds = WreckDefinitions.LifetimeSeconds;
         flight.RefreshWrecks();
         var removed = Assert.Single(flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!));
-        Assert.Equal("RemoveBall", removed[0]);
-        Assert.Equal(new object?[] { f.Wreck.Id, false }, removed[1]);
+        Assert.Equal("RemoveBalls", removed[0]);
+        Assert.Equal(
+            BlueMarshal.Encode(
+                new object?[]
+                {
+                    new List<object?> { f.Wreck.Id },
+                    null,
+                    false,
+                }
+            ),
+            BlueMarshal.Encode(removed[1])
+        );
         Assert.Empty(flight.VisibleWrecks);
     }
 

@@ -6,8 +6,11 @@ using Eden.Gameplay.Targeting;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server.Catalog;
 using Eden.Server.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +21,66 @@ namespace Eden.Protocol.Tests.Targeting;
 
 public sealed class TargetingTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeScanRequestWaitsForCompletionAndOtherCallsRemainAvailable(bool success)
+    {
+        using Fixture fixture = new();
+        var (context, targeting) = fixture.Client(1000001);
+        using var scope = fixture.Db.Services.CreateScope();
+        List<BlueInstance> packets = [];
+        PilotSessionOutput output = new(
+            context,
+            1000001,
+            42,
+            packet =>
+            {
+                packets.Add(Assert.IsType<BlueInstance>(packet));
+                return Task.CompletedTask;
+            },
+            _ => { }
+        );
+        PilotSessionCalls calls = new(
+            context,
+            output,
+            new PilotCallRouter([], [targeting]),
+            scope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>(),
+            scope.ServiceProvider.GetRequiredService<SkillHandler>(),
+            fixture.Clock,
+            _ => { },
+            1000001,
+            42
+        );
+        var request = PilotServicesTests.Request("dogmaIM", "AddTarget", [70000001L]);
+        await calls.ProcessAsync(request);
+        Assert.DoesNotContain(packets, p => p.Name.EndsWith(".CallRsp", StringComparison.Ordinal));
+        packets.Clear();
+        await calls.ProcessAsync(PilotServicesTests.Request("dogmaIM", "GetTargets", []));
+        Assert.Single(packets, p => p.Name.EndsWith(".CallRsp", StringComparison.Ordinal));
+        packets.Clear();
+        if (success)
+        {
+            fixture.Clock.Seconds = 10;
+            targeting.Advance(context);
+        }
+        else
+        {
+            targeting.Call(context, "dogmaIM", "CancelAddTarget", [70000001L]);
+        }
+        await output.FlushNotificationsAsync();
+        var reply = Assert.Single(packets, p => p.Name.EndsWith(success ? ".CallRsp" : ".ErrorResponse", StringComparison.Ordinal));
+        var incoming = IncomingMachoPacket.Read(request);
+        var expected = success
+            ? incoming.CallSucceeded(new TargetLockReply(true, [70000001]))
+            : incoming.UserError(new("TargetingAttemptCancelled", BlueEmpty.Dictionary));
+        Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(reply));
+        int count = packets.Count;
+        await output.FlushNotificationsAsync();
+        Assert.Equal(count, packets.Count);
+        Assert.Equal(success, targeting.IsLocked(70000001));
+    }
+
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new(liveWorld: true);

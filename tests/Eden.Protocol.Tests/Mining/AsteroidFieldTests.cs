@@ -117,8 +117,18 @@ public sealed class AsteroidFieldTests
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks.Where(r => r.Id != nearby[0].Id).ToArray());
         var removed = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.WireUpdates()))[1]);
-        Assert.Equal("RemoveBall", removed[0]);
-        Assert.Equal(new object?[] { nearby[0].Id, false }, Assert.IsType<object?[]>(removed[1]));
+        Assert.Equal("RemoveBalls", removed[0]);
+        Assert.Equal(
+            BlueMarshal.Encode(
+                new object?[]
+                {
+                    new List<object?> { nearby[0].Id },
+                    null,
+                    false,
+                }
+            ),
+            BlueMarshal.Encode(removed[1])
+        );
         flight.Updates.Clear();
         flight.RefreshAsteroids(rocks);
         var add = Assert.IsType<object?[]>(Assert.IsType<object?[]>(Assert.Single(flight.WireUpdates()))[1]);

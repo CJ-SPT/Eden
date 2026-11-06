@@ -108,8 +108,18 @@ public sealed class FlightSessionTests
         pilot.RefreshPeers();
         var removal = Assert.Single(pilot.Updates, u => u.Command is DestinyCommand.RemoveBall);
         var remove = (object?[])removal.Command.ToBlue();
-        Assert.Equal("RemoveBall", remove[0]);
-        Assert.Equal(new object?[] { wing.Pilot.ShipId, false }, (object?[])remove[1]!);
+        Assert.Equal("RemoveBalls", remove[0]);
+        Assert.Equal(
+            BlueMarshal.Encode(
+                new object?[]
+                {
+                    new List<object?> { wing.Pilot.ShipId },
+                    null,
+                    false,
+                }
+            ),
+            BlueMarshal.Encode(remove[1])
+        );
         pilot.Dispose();
         Assert.Empty(space.Peers(wing.Pilot));
         Assert.Equal(pilot.Pilot, db.Store.FindPilot(1000001));

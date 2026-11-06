@@ -27,9 +27,11 @@ internal abstract record DestinyCommand(string Name) : BlueModel
 
     public override object ToBlue() => new object?[] { Name, Arguments };
 
-    internal sealed record RemoveBall(long Id, bool Explode) : DestinyCommand("RemoveBall")
+    internal sealed record RemoveBall(long Id, bool Explode) : DestinyCommand(Explode ? "RemoveBall" : "RemoveBalls")
     {
-        protected override object?[] Arguments => [Id, Explode];
+        // Bulk removal notifies DoBallsRemove before deleting native balls,
+        // letting brackets close their labels and bindings while the ball is alive.
+        protected override object?[] Arguments => Explode ? [Id, true] : [new BlueList<long>([Id]), null, false];
     }
 
     internal sealed record AddBalls(BallparkAddition Addition) : DestinyCommand("AddBalls")

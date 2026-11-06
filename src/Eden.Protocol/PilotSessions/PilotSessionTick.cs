@@ -72,7 +72,6 @@ internal sealed class PilotSessionTick(
                 flight.RefreshMissiles();
                 flight.RefreshNpcs();
                 flight.RefreshPeers();
-                await output.FlushFlightUpdatesAsync();
             }
         }
 

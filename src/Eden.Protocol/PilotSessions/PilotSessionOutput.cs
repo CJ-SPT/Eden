@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Targeting;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
@@ -13,6 +14,13 @@ internal sealed class PilotSessionOutput(
     SessionDiagnostics? diagnostics = null
 )
 {
+    private sealed record PendingTargetReply(IncomingMachoPacket Request, Task<PilotCallResult> Completion);
+
+    private readonly List<PendingTargetReply> _targetReplies = [];
+
+    internal void DeferTargetLockReply(IncomingMachoPacket request, Task<PilotCallResult> completion) =>
+        _targetReplies.Add(new(request, completion));
+
     public Task WriteAsync(object? packet) => write(packet);
 
     public async Task AnnounceTransitionAsync(DockedPilot previous)
@@ -42,6 +50,18 @@ internal sealed class PilotSessionOutput(
 
     public async Task FlushFlightUpdatesAsync()
     {
+        // Cancelled scan RPCs invoke native FailLockTarget. Deliver that cleanup
+        // and lost-lock events while the departing ball and its bracket still exist.
+        await FlushTargetRepliesAsync();
+        var lostTargets = context
+            .Notifications.OfType<TargetChanged>()
+            .Where(n => n.Change is TargetChange.Lost or TargetChange.OtherLost)
+            .ToArray();
+        foreach (var notification in lostTargets)
+        {
+            await SendNotificationAsync(notification);
+            context.Notifications.Remove(notification);
+        }
         foreach (var notification in context.NotificationsBeforeFlight)
         {
             await SendNotificationAsync(notification);
@@ -85,6 +105,23 @@ internal sealed class PilotSessionOutput(
             await SendNotificationAsync(notification);
         }
         context.Notifications.Clear();
+        await FlushTargetRepliesAsync();
+    }
+
+    private async Task FlushTargetRepliesAsync()
+    {
+        foreach (var pending in _targetReplies.Where(p => p.Completion.IsCompleted).ToArray())
+        {
+            var result = await pending.Completion;
+            var packet = result switch
+            {
+                PilotCallResult.Success success => pending.Request.CallSucceeded(success.Reply),
+                PilotCallResult.NamedFailure failure => pending.Request.UserError(failure),
+                _ => throw new InvalidOperationException("Invalid target scan completion."),
+            };
+            await write(packet);
+            _targetReplies.Remove(pending);
+        }
     }
 
     private Task SendNotificationAsync(PilotNotification notification)

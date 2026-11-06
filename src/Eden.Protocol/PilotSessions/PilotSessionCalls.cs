@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Targeting;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
@@ -138,7 +139,15 @@ internal sealed class PilotSessionCalls(
             );
         }
 
-        await output.WriteAsync(packet.CallSucceeded(((PilotCallResult.Success)result).Reply));
+        var reply = ((PilotCallResult.Success)result).Reply;
+        if (reply is TargetLockReply { Completion: { } completion })
+        {
+            output.DeferTargetLockReply(packet, completion);
+        }
+        else
+        {
+            await output.WriteAsync(packet.CallSucceeded(reply));
+        }
         if (
             service == "beyonce"
             && method == "MachoBindObject"

@@ -30,5 +30,9 @@ internal sealed record TargetChanged(TargetChange Change, long TargetId) : Pilot
 
 internal sealed record TargetLockReply(bool Pending, IReadOnlyList<long> Targets) : BlueModel
 {
+    // The RPC stays open until the scan succeeds or is cancelled. Only the
+    // two native reply fields below are serialized; this task belongs to the session.
+    internal Task<PilotCallResult>? Completion { get; init; }
+
     public override object ToBlue() => new object?[] { Pending, new BlueList<long>(Targets) };
 }
