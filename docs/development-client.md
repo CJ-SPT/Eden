@@ -18,7 +18,7 @@ Prepare the pinned client, create local data and connect to Eden. Commands run f
 
 ## Agent testing policy
 
-The [Brutix light/medium combat-drone milestone](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026) has automated coverage only. Optional maintainer checks are to launch/attack/recall real light and medium drones on a qualified Brutix; compare owner/observer panel, motion and effects; and verify lost-drone reconnect and damaged-individual persistence. No client acceptance is claimed.
+The [Brutix light/medium combat-drone milestone](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026) and [Brutix Navy Issue compatibility correction](protocol/drones.md#brutix-navy-issue-launch-compatibility-november-6-2026) have automated coverage only. Optional maintainer checks are to launch/attack/recall real light and medium drones on a qualified Brutix or Brutix Navy Issue; compare owner/observer panel, motion and effects; and verify lost-drone reconnect and damaged-individual persistence. No client acceptance is claimed.
 
 Agents perform **automated testing only**, following the [contributor testing policy](../AGENTS.md#testing) and [README build order](../README.md#build-and-run). Use focused tests for affected behavior and immediate dependencies, followed by the required restore/build/policy/format checks. Run the full .NET suite only when the user explicitly requests a regression check. Documentation-only changes require relevant documentation checks rather than the gameplay suite. After corrections, rerun affected tests and required checks; milestone work, merges and publishing do not authorize a full suite.
 

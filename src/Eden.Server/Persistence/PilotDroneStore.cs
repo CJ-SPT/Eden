@@ -22,9 +22,9 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         var pilot =
             world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
             ?? throw new InvalidDataException("Choose an existing pilot.");
-        if (pilot.ActiveShip.Position is null || pilot.ActiveShip.TypeId != DroneRules.InitialHullType)
+        if (pilot.ActiveShip.Position is null || !DroneRules.SupportsHull(pilot.ActiveShip.TypeId))
         {
-            throw new InvalidDataException("Initial light and medium combat-drone support requires a Brutix in space.");
+            throw new InvalidDataException("Light and medium combat drones require a Brutix or Brutix Navy Issue in space.");
         }
         return pilot;
     }
@@ -394,7 +394,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         {
             if (
                 ship.Position is not { } source
-                || ship.TypeId != DroneRules.InitialHullType
+                || !DroneRules.SupportsHull(ship.TypeId)
                 || drone.ControllerShipId != ship.Id
                 || source.SystemId != drone.SystemId
             )

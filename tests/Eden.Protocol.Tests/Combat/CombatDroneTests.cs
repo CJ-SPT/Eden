@@ -23,6 +23,7 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class CombatDroneTests
 {
     private const int Brutix = 16229;
+    private const int BrutixNavyIssue = 33151;
     private const int WarriorTwo = 2488;
     private const int HammerheadTwo = 2185;
     private const int SystemId = 30000144;
@@ -45,7 +46,8 @@ public sealed class CombatDroneTests
                     )
             )
             {
-                yield return [type.GetProperty("id").GetInt32()];
+                yield return [Brutix, type.GetProperty("id").GetInt32()];
+                yield return [BrutixNavyIssue, type.GetProperty("id").GetInt32()];
             }
         }
     }
@@ -59,7 +61,7 @@ public sealed class CombatDroneTests
         internal long Now => Base.Clock.Now;
         internal NpcContact Npc { get; }
 
-        internal Fixture()
+        internal Fixture(int hullType = Brutix)
         {
             PassiveCatalogFixture.LoadCombatDrones(Base.CatalogPath);
             NpcEncounterTests.Prepare(Base.Db);
@@ -80,7 +82,7 @@ public sealed class CombatDroneTests
             }
             using (WorldDbContext world = new(Base.Db.Path))
             {
-                world.Ships.Find(Ship)!.TypeId = Brutix;
+                world.Ships.Find(Ship)!.TypeId = hullType;
                 world.SaveChanges();
             }
             Npc = Base.Db.Services.GetRequiredService<INpcEncounters>().List(SystemId, Now)[0];
@@ -138,9 +140,9 @@ public sealed class CombatDroneTests
 
     [Theory]
     [MemberData(nameof(TypeCases))]
-    public void EveryAdmittedDroneVariantLaunchesAndReturnsTheSameIndividual(int typeId)
+    public void EveryAdmittedDroneVariantLaunchesAndReturnsTheSameIndividual(int hullType, int typeId)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         long id = f.Launch(typeId, 1)[0];
         var contact = Assert.Single(f.Drones.List(SystemId, f.Now));
         Assert.Equal(typeId, contact.Profile.TypeId);
@@ -156,11 +158,19 @@ public sealed class CombatDroneTests
     }
 
     [Theory]
-    [InlineData(WarriorTwo, 25)]
-    [InlineData(HammerheadTwo, 50)]
-    public void BrutixLaunchesFiveIndividualOwnedDronesWithRealBandwidth(int type, double bandwidth)
+    [InlineData(Brutix, WarriorTwo, 25)]
+    [InlineData(Brutix, HammerheadTwo, 50)]
+    [InlineData(BrutixNavyIssue, WarriorTwo, 25)]
+    [InlineData(BrutixNavyIssue, HammerheadTwo, 50)]
+    public void BrutixVariantsLaunchFiveIndividualOwnedDronesWithRealBandwidth(int hullType, int type, double bandwidth)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
+        using (CatalogDbContext catalog = new(f.Base.CatalogPath))
+        {
+            var attributes = catalog.FittingAttributes(hullType);
+            Assert.Equal(50, attributes[DogmaAttributeId.DroneBandwidth]);
+            Assert.Equal(75, attributes[DogmaAttributeId.DroneCapacity]);
+        }
         var ids = f.Launch(type);
         Assert.Equal(5, ids.Distinct().Count());
         var contacts = f.Drones.List(SystemId, f.Now);
@@ -190,18 +200,27 @@ public sealed class CombatDroneTests
     }
 
     [Theory]
-    [InlineData("docked")]
-    [InlineData("skill")]
-    [InlineData("count")]
-    [InlineData("bandwidth")]
-    [InlineData("duplicate")]
-    [InlineData("foreign")]
-    [InlineData("wrong-hold")]
-    [InlineData("heavy")]
-    [InlineData("hull")]
-    public void RejectedLaunchLeavesInventoryAndControlUnchanged(string failure)
+    [InlineData(Brutix, "docked")]
+    [InlineData(Brutix, "skill")]
+    [InlineData(Brutix, "count")]
+    [InlineData(Brutix, "bandwidth")]
+    [InlineData(Brutix, "duplicate")]
+    [InlineData(Brutix, "foreign")]
+    [InlineData(Brutix, "wrong-hold")]
+    [InlineData(Brutix, "heavy")]
+    [InlineData(Brutix, "hull")]
+    [InlineData(BrutixNavyIssue, "docked")]
+    [InlineData(BrutixNavyIssue, "skill")]
+    [InlineData(BrutixNavyIssue, "count")]
+    [InlineData(BrutixNavyIssue, "bandwidth")]
+    [InlineData(BrutixNavyIssue, "duplicate")]
+    [InlineData(BrutixNavyIssue, "foreign")]
+    [InlineData(BrutixNavyIssue, "wrong-hold")]
+    [InlineData(BrutixNavyIssue, "heavy")]
+    [InlineData(BrutixNavyIssue, "hull")]
+    public void RejectedLaunchLeavesInventoryAndControlUnchanged(int hullType, string failure)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         long stack = f.Bay(
             failure == "heavy" ? 2476 : HammerheadTwo,
             failure == "heavy" ? 1
@@ -221,7 +240,7 @@ public sealed class CombatDroneTests
             using CatalogDbContext catalog = new(f.Base.CatalogPath, writable: true);
             catalog
                 .Set<TypeAttribute>()
-                .Where(a => a.ItemTypeId == Brutix && a.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
+                .Where(a => a.ItemTypeId == hullType && a.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
                 .ExecuteUpdate(set => set.SetProperty(a => a.Value, 40));
         }
         using (WorldDbContext world = new(f.Base.Db.Path))
@@ -360,11 +379,13 @@ public sealed class CombatDroneTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DroneFlightAndCombatAdvanceOncePerIntervalAndSettleOneKill(bool resident)
+    [InlineData(Brutix, false)]
+    [InlineData(Brutix, true)]
+    [InlineData(BrutixNavyIssue, false)]
+    [InlineData(BrutixNavyIssue, true)]
+    public void DroneFlightAndCombatAdvanceOncePerIntervalAndSettleOneKill(int hullType, bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         using LiveWorld? live = resident ? new(new(f.Base.Db.Path), f.Base.Clock, _ => { }) : null;
         var ids = f.Launch();
         f.Drones.Order(f.Pilot, ids, DroneOrder.Engage, f.Npc.Id, new HashSet<long> { f.Npc.Id }, f.Now);
@@ -409,10 +430,12 @@ public sealed class CombatDroneTests
         );
     }
 
-    [Fact]
-    public void ReleaseAndRestartLeaveDronesInSpaceAndReconnectPreservesIdentityAndCooldown()
+    [Theory]
+    [InlineData(Brutix)]
+    [InlineData(BrutixNavyIssue)]
+    public void ReleaseAndRestartLeaveDronesInSpaceAndReconnectPreservesIdentityAndCooldown(int hullType)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         var ids = f.Launch(quantity: 1);
         var before = f.Drones.List(SystemId, f.Now).Single();
         f.Drones.Release(f.Pilot, f.Ship);
@@ -513,11 +536,13 @@ public sealed class CombatDroneTests
     }
 
     [Theory]
-    [InlineData("skill")]
-    [InlineData("bandwidth")]
-    public void LosingControlCapacityReleasesExcessDronesWithoutMovingOrDeletingThem(string change)
+    [InlineData(Brutix, "skill")]
+    [InlineData(Brutix, "bandwidth")]
+    [InlineData(BrutixNavyIssue, "skill")]
+    [InlineData(BrutixNavyIssue, "bandwidth")]
+    public void LosingControlCapacityReleasesExcessDronesWithoutMovingOrDeletingThem(int hullType, string change)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         var ids = f.Launch(type: 2486);
         if (change == "skill")
         {
@@ -528,7 +553,7 @@ public sealed class CombatDroneTests
             using CatalogDbContext catalog = new(f.Base.CatalogPath, writable: true);
             catalog
                 .Set<TypeAttribute>()
-                .Where(a => a.ItemTypeId == Brutix && a.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
+                .Where(a => a.ItemTypeId == hullType && a.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
                 .ExecuteUpdate(set => set.SetProperty(a => a.Value, 10));
         }
         Assert.True(f.Tick().ControlChanged);
@@ -584,10 +609,12 @@ public sealed class CombatDroneTests
         Assert.Throws<InvalidDataException>(() => f.Drones.Order(f.Pilot, ids, DroneOrder.ReturnToBay, null, new HashSet<long>(), f.Now));
     }
 
-    [Fact]
-    public void DistantDronesTravelHomeBeforeRecallAndAFullBayDoesNotDuplicateOrLoseThem()
+    [Theory]
+    [InlineData(Brutix)]
+    [InlineData(BrutixNavyIssue)]
+    public void DistantDronesTravelHomeBeforeRecallAndAFullBayDoesNotDuplicateOrLoseThem(int hullType)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         var ids = f.Launch(quantity: 1);
         using (WorldDbContext world = new(f.Base.Db.Path))
         {
@@ -676,10 +703,12 @@ public sealed class CombatDroneTests
         Assert.Equal(5, f.Base.Inventory.List(f.Pilot, f.Ship).Single(i => i.Id == stack).Quantity);
     }
 
-    [Fact]
-    public void NativeLaunchBindingDroneStatesAndObserverSnapshotsCarryActualDrones()
+    [Theory]
+    [InlineData(Brutix)]
+    [InlineData(BrutixNavyIssue)]
+    public void NativeLaunchBindingDroneStatesAndObserverSnapshotsCarryActualDrones(int hullType)
     {
-        using Fixture f = new();
+        using Fixture f = new(hullType);
         long stack = f.Bay(WarriorTwo, 5);
         f.Space();
         using var scope = f.Base.Db.Services.CreateScope();

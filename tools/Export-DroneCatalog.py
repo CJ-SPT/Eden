@@ -14,7 +14,7 @@ def export(catalog_path, output):
 
         if record('sde/_sde', '"sde"').get('buildNumber') != 3662168:
             raise ValueError('Expected the pinned build-3662168 catalog')
-        pending = {16229, 2476, 3436, 3437, 3442, 12305, 12484, 12485, 12486, 12487,
+        pending = {16229, 33151, 2476, 3436, 3437, 3442, 12305, 12484, 12485, 12486, 12487,
                    23566, 23606, 23618, 24241, 33699}
         for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100'):
             attrs = dict(catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (type_id,)))

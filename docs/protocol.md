@@ -21,7 +21,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
-| [Combat drones](protocol/drones.md) | Brutix light/medium drone launch, control, NPC combat, recall and saved state. |
+| [Combat drones](protocol/drones.md) | Brutix and Brutix Navy Issue light/medium drone launch, control, NPC combat, recall and saved state. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
 | [Architecture and typed boundaries](protocol/architecture.md) | Named models, Gameplay boundaries, orchestration, persistence and architecture audits. |
 | [Session performance and resident state](protocol/performance.md) | Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints. |
@@ -29,6 +29,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Brutix Navy Issue launch compatibility, November 6, 2026](protocol/drones.md#brutix-navy-issue-launch-compatibility-november-6-2026)
 - [Brutix light and medium combat drones, November 6, 2026](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026)
 
 The section anchors below preserve links to the former single-file notes. Follow a record link to its full text. Add future findings to the owning topic page and link them here.
