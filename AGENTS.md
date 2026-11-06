@@ -6,6 +6,7 @@
 - Put wire formats and client protocol behavior in [Eden.Protocol](src/Eden.Protocol/). Put server hosting and SQLite world persistence in [Eden.Server](src/Eden.Server/).
 - Place automated tests in [Eden.Protocol.Tests](tests/Eden.Protocol.Tests/) and development scripts in [tools](tools/). Keep the EVE installation, resource cache, and runtime data such as the local world database outside version control.
 - Keep project status and build instructions in the [README](README.md), protocol findings and acceptance results in the [protocol notes](docs/protocol.md), and staging and launch instructions in the [Windows client guide](docs/development-client.md).
+- Use the [documentation index](docs/README.md) to find each guide. Add protocol records to the owning topic page under `docs/protocol/` and link them from the protocol index; preserve historical evidence and existing section anchors when moving records.
 
 ## Code style
 
@@ -29,7 +30,7 @@
 - Keep pure codecs and packet builders independent of the DI container. Protocol services depend on narrow persistence interfaces implemented by the server.
 - Use named immutable models for known requests, replies, events, and intermediate data in new or changed code. Use typed collections for homogeneous values and named properties instead of positional arrays or string-keyed dictionaries in gameplay logic. Reuse existing feature models where their meaning matches.
 - Keep flexible Python values (`object`, heterogeneous arrays, and dictionaries) inside explicit wire adapters and the low-level Blue codec, or at genuinely dynamic boundaries such as appearance data. Preserve tuple/list distinctions, None, field order, native class forms, and numeric wire representations with explicit conversion; do not use reflection-based serialization or hide untyped data inside a generic result wrapper.
-- Implement outbound model conversion through `BlueModel.ToBlue()` (`IBlueWritable`). Parse variable service arguments at the dispatch boundary before calling typed operations. Queue named `PilotNotification` and `DestinyCommand` records; preserve the before-flight notification queue. Use `BlueRead` for inert wire validation and `BlueRows` for shared native row descriptors. The [remaining-object audit](docs/protocol.md#named-protocol-models-final-audit) explains the intentional dynamic boundaries.
+- Implement outbound model conversion through `BlueModel.ToBlue()` (`IBlueWritable`). Parse variable service arguments at the dispatch boundary before calling typed operations. Queue named `PilotNotification` and `DestinyCommand` records; preserve the before-flight notification queue. Use `BlueRead` for inert wire validation and `BlueRows` for shared native row descriptors. The [remaining-object audit](docs/protocol/architecture.md#named-protocol-models-final-audit) explains the intentional dynamic boundaries.
 
 ## Testing
 

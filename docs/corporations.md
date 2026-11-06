@@ -1,5 +1,7 @@
 # Standalone corporation implementation
 
+[Documentation index](README.md) / [Corporation protocol records](protocol/corporations.md)
+
 The requested scope is standalone player corporations. Alliances and corporation wars are separate work.
 
 Each milestone includes typed rules, authenticated native calls, persistence, focused automated checks and a verified push before the next milestone starts. Native client acceptance is disabled for agents.
@@ -19,4 +21,4 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
 | Voting, share issuance/dividends and CEO succession/closure | Pending |
 
-See [protocol findings](protocol.md) for native call shapes and milestone validation evidence. This table records implemented scope, not live client acceptance.
+See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.

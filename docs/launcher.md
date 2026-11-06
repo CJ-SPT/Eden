@@ -1,6 +1,16 @@
 # Desktop launcher hosting
 
+[Documentation index](README.md) / [Windows client setup](development-client.md)
+
 The separate [Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher) uses API v1 to create accounts and launch build 3662168. The server runs separately. Defaults are game TCP 26000, public gateway HTTP/2 26001, and launcher HTTP API 26002, all bound to loopback.
+
+## Contents
+
+- [Existing accounts](#existing-accounts)
+- [Developer accounts](#developer-accounts)
+- [Remote hosting](#remote-hosting)
+- [Authentication](#authentication)
+- [Native chat trust](#native-chat-trust)
 
 ## Existing accounts
 
@@ -42,7 +52,6 @@ API v1 provides metadata, registration, sign-in, refresh, logout and launch tick
 The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 6–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New standard and developer accounts are Omega and have three empty character slots. The server assigns the clone grade during registration; existing launcher builds use this default without an update. Registration does not change existing accounts' clone grades.
 
 API responses disable caching. Registration and authentication are rate limited. Manifest signing validates the exact pinned prefix and permits only the explicit chat-bundle hash to vary; private keys remain in the server's Windows key store. Legacy development tickets require explicit `--development-login` on the host and provisioning command, with loopback-only hosting.
-
 
 ## Native chat trust
 
