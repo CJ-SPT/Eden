@@ -144303,6 +144303,312 @@
       }
     },
     {
+      "dataset": "client/dogmaattributes",
+      "key": 630,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Duration between armor repair actions for entities.",
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "attributeID": 630,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairDuration"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 631,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Amount of armor repaired per cycle for entities.",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 631,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairAmount"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 636,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "How long between repeats.",
+        "dataType": 4,
+        "defaultValue": 10000.0,
+        "attributeID": 636,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostDuration"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 637,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "How much the shield is boosted each duration.",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 637,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostAmount"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 638,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Chance that an entity will delay employing armor repair.",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 638,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairDelayChance"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 639,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "The chance an entity will delay repeating use of its shield boosting effect if it has one.",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 639,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostDelayChance"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1006,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1006,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostDelayChanceSmall"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1007,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1007,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostDelayChanceMedium"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1008,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1008,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 2,
+        "name": "entityShieldBoostDelayChanceLarge"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1009,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1009,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairDelayChanceSmall"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1010,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1010,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairDelayChanceMedium"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1011,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 1011,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 3,
+        "name": "entityArmorRepairDelayChanceLarge"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1015,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1015,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityShieldBoostDelayChanceSmallMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1016,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1016,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityShieldBoostDelayChanceMediumMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1017,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1017,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityShieldBoostDelayChanceLargeMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1018,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1018,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityArmorRepairDelayChanceSmallMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1019,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1019,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityArmorRepairDelayChanceMediumMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1020,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "attributeID": 1020,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "entityArmorRepairDelayChanceLargeMultiplier"
+      }
+    },
+    {
       "dataset": "client/factions",
       "key": 500001,
       "data": {

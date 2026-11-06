@@ -94,7 +94,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         }
         Hostility(target, ship.ShipId, now);
         _ships[pilotId] = plan.Ship;
-        _npcs[targetId] = plan.Target;
+        _npcs[targetId] = RepairNpc(plan.Target, now);
         _dirtyShips.Add(pilotId);
         _dirtyNpcs.Add(targetId);
         owner.ObjectsChanged();
@@ -264,7 +264,30 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             }
             _staleNpcs.Remove(id);
         }
-        return npc;
+        if (npc is not null)
+        {
+            var repaired = RepairNpc(npc, now);
+            if (repaired != npc)
+            {
+                _npcs[id] = repaired;
+                _dirtyNpcs.Add(id);
+                owner.ObjectsChanged();
+            }
+            return repaired;
+        }
+        return null;
+    }
+
+    private static LiveCombatNpc RepairNpc(LiveCombatNpc npc, long now)
+    {
+        var result = NpcRepairRules.Advance(npc.RepairProfile, npc.RepairState, npc.Health, npc.Available, now, Draw);
+        return result.Health == npc.Health && result.State == npc.RepairState
+            ? npc
+            : npc with
+            {
+                Health = result.Health,
+                RepairState = result.State,
+            };
     }
 
     private T Loading<T>(Func<T> load)

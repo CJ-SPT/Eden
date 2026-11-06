@@ -373,6 +373,7 @@ internal sealed class FlightSession(
                     npc.Health.Remaining.Armor != previous.Health.Remaining.Armor
                     || npc.Health.Remaining.Structure != previous.Health.Remaining.Structure
                     || npc.Health.Remaining.Shield < previous.Health.Remaining.Shield
+                    || npc.RepairRevision != previous.RepairRevision
                 )
             )
             {

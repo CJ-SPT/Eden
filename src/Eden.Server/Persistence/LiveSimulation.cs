@@ -237,7 +237,8 @@ internal sealed partial class LiveCombatRuntime
                     stamp,
                     database.CollisionStamps.GetValueOrDefault(npc.Id, -1) == stamp,
                     npc.Role,
-                    npc.FactionId
+                    npc.FactionId,
+                    npc.RepairState.Revision
                 )
             );
         }

@@ -35,6 +35,9 @@ public sealed class WorldNpc
     public double ArmorDamage { get; set; }
     public double StructureDamage { get; set; }
     public long UpdatedAt { get; set; }
+    public long ShieldRepairAt { get; set; }
+    public long ArmorRepairAt { get; set; }
+    public long RepairRevision { get; set; }
     public long? DestroyedAt { get; set; }
     public double VelocityX { get; set; }
     public double VelocityY { get; set; }
@@ -112,6 +115,7 @@ internal sealed class NpcEncounterStore(
         );
         foreach (var npc in npcs)
         {
+            NpcRepairPersistence.Advance(npc, profiles[npc.TypeId].Attributes, now);
             if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
             {
                 NpcMotion.Return(npc);
@@ -163,7 +167,8 @@ internal sealed class NpcEncounterStore(
                     database.MotionStamps.GetValueOrDefault(systemId),
                     database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
                     n.Role,
-                    n.FactionId
+                    n.FactionId,
+                    n.RepairRevision
                 );
             })
             .ToArray();

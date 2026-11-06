@@ -419,6 +419,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
                 t => t.HasCheckConstraint("CK_Npc_Health", "ShieldCharge >= 0 AND ArmorDamage >= 0 AND StructureDamage >= 0")
             );
         model.Entity<WorldNpc>().HasIndex(n => n.BeltId);
+        model.Entity<WorldNpc>().Property(n => n.ShieldRepairAt).HasDefaultValue(0L);
+        model.Entity<WorldNpc>().Property(n => n.ArmorRepairAt).HasDefaultValue(0L);
+        model.Entity<WorldNpc>().Property(n => n.RepairRevision).HasDefaultValue(0L);
         model.Entity<WorldNpc>().HasIndex(n => n.SystemId);
         model.Entity<WorldNpc>().HasIndex(n => n.EncounterId);
         model

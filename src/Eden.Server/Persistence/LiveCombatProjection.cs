@@ -84,12 +84,13 @@ internal sealed partial class LiveCombatRuntime
             || before.Velocity != after.Velocity
             || before.Navigation != after.Navigation
             || before.MotionAt != after.MotionAt
+            || before.RepairState != after.RepairState
         )
         {
             bool healthChanged = before.Health != after.Health;
             var health = after.Health;
-            double armor = health.Defense.Armor - health.Remaining.Armor;
-            double structure = health.Defense.Structure - health.Remaining.Structure;
+            double armor = health.ArmorDamage ?? health.Defense.Armor - health.Remaining.Armor;
+            double structure = health.StructureDamage ?? health.Defense.Structure - health.Remaining.Structure;
             world.Database.ExecuteSql(
                 $"""
                 UPDATE WorldNpc SET
@@ -99,7 +100,9 @@ internal sealed partial class LiveCombatRuntime
                     UpdatedAt=CASE WHEN {healthChanged} THEN {health.UpdatedAt} ELSE UpdatedAt END,
                     X={after.Position.X},Y={after.Position.Y},Z={after.Position.Z},
                     VelocityX={after.Velocity.X},VelocityY={after.Velocity.Y},VelocityZ={after.Velocity.Z},
-                    Navigation={(int)after.Navigation},MotionAt={after.MotionAt} WHERE Id={after.Id}
+                    Navigation={(int)after.Navigation},MotionAt={after.MotionAt},
+                    ShieldRepairAt={after.RepairState.ShieldReadyAt},ArmorRepairAt={after.RepairState.ArmorReadyAt},
+                    RepairRevision={after.RepairState.Revision} WHERE Id={after.Id}
                 """
             );
         }

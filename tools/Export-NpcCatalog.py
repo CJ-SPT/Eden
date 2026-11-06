@@ -75,6 +75,10 @@ def export(catalog_path, output):
         # ReadAttributes uses this pinned default when an NPC does not carry a
         # signature override. Keep the exact catalog rule in automated fixtures.
         records["client/dogmaattributes", 552] = record("client/dogmaattributes", 552)
+        # Preserve the pinned NPC repair defaults and size-specific chance fields.
+        repair_attributes = (630, 631, 636, 637, 638, 639, *range(1006, 1012), *range(1015, 1021))
+        for attribute in repair_attributes:
+            records["client/dogmaattributes", attribute] = record("client/dogmaattributes", attribute)
         data = {
             "build": 3662168,
             "types": [types[key] for key in sorted(types)],

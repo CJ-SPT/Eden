@@ -22,7 +22,8 @@ public sealed record NpcContact(
     int Stamp = 0,
     bool Bumped = false,
     NpcRole Role = NpcRole.Pirate,
-    int FactionId = 0
+    int FactionId = 0,
+    long RepairRevision = 0
 );
 
 public enum NpcNavigationState

@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 80;
+    internal const int CurrentVersion = 81;
 
     public static void Open(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
     {
@@ -951,6 +951,12 @@ internal static class WorldMigration
             NpcGuardSchema.Upgrade(world);
             world.Database.ExecuteSqlRaw("PRAGMA user_version=68");
         }
+        if (version < 81)
+        {
+            // Historical interaction backfills materialize WorldNpc with the
+            // current model, so its new columns must exist before those reads.
+            NpcRepairSchema.Upgrade(world);
+        }
         world.Database.ExecuteSqlRaw(
             """
             INSERT OR IGNORE INTO WorldHomeStation(PilotId,StationId)
@@ -1026,7 +1032,7 @@ internal static class WorldMigration
         {
             InventoryOwnershipSchema.Upgrade(world);
         }
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=80");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=81");
     }
 
     private static void GrantStartingSkills(WorldDbContext world, CatalogDbContext catalog)

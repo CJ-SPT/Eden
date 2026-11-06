@@ -24,6 +24,12 @@ public static class WorldInitialization
         world.Set<WorldTackle>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.
         world.Set<NpcAggression>().ExecuteDelete();
+        // Downtime never replays active NPC repair cycles. Saved health and the
+        // notification revision survive; damaged layers start a fresh interval.
+        world
+            .Set<WorldNpc>()
+            .Where(n => n.ShieldRepairAt != 0 || n.ArmorRepairAt != 0)
+            .ExecuteUpdate(set => set.SetProperty(n => n.ShieldRepairAt, 0).SetProperty(n => n.ArmorRepairAt, 0));
         // Downtime cancels live projectiles without refunding ammunition or
         // cooldowns. Saved impacts and rewards are never applied again.
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();

@@ -127,6 +127,8 @@ public sealed record LiveCombatNpc(
     public int GroupId { get; init; }
     public int CategoryId { get; init; }
     public string Name { get; init; } = string.Empty;
+    public NpcRepairProfile RepairProfile { get; init; } = new(null, null);
+    public NpcRepairState RepairState { get; init; } = new();
 }
 
 public sealed record LiveAggression(long NpcId, long ShipId, long ReadyAt, long MissileReadyAt, long? LastShotAt);
@@ -281,6 +283,8 @@ public static class LiveCombatRules
                 Remaining = damage.Remaining,
                 UpdatedAt = Math.Max(now, target.Health.UpdatedAt),
                 Revision = target.Health.Revision + 1,
+                ArmorDamage = target.Health.Defense.Armor - damage.Remaining.Armor,
+                StructureDamage = target.Health.Defense.Structure - damage.Remaining.Structure,
             },
             Contributions = contributors,
             Available = !damage.Remaining.Destroyed,

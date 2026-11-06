@@ -255,7 +255,9 @@ internal sealed partial class LiveCombatRuntime
             new(
                 defense,
                 new(npc.ShieldCharge, Math.Max(0, defense.Armor - npc.ArmorDamage), Math.Max(0, defense.Structure - npc.StructureDamage)),
-                npc.UpdatedAt
+                npc.UpdatedAt,
+                ArmorDamage: npc.ArmorDamage,
+                StructureDamage: npc.StructureDamage
             ),
             npc.DestroyedAt is null && npc.RetiredAt is null,
             contributions,
@@ -278,6 +280,8 @@ internal sealed partial class LiveCombatRuntime
             CategoryId = type.Group.CategoryId,
             Name = type.Name,
             MissileRange = missileRange,
+            RepairProfile = NpcRepairRules.Profile(attributes),
+            RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),
         };
     }
 

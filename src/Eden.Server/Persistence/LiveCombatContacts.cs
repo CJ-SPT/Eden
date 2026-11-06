@@ -50,6 +50,7 @@ internal sealed partial class LiveCombatRuntime
         return cached
             .Values.Select(contact =>
             {
+                var repaired = Npc(contact.Id, now);
                 var health =
                     _npcs.TryGetValue(contact.Id, out var npc) && !_staleNpcs.Contains(contact.Id)
                         ? new ShipHealth(contact.Id, npc.Health.Defense, npc.Health.At(now))
@@ -87,7 +88,12 @@ internal sealed partial class LiveCombatRuntime
                             )
                             : null;
                 }
-                return contact with { Health = health, Weapon = weapon };
+                return contact with
+                {
+                    Health = health,
+                    Weapon = weapon,
+                    RepairRevision = repaired?.RepairState.Revision ?? contact.RepairRevision,
+                };
             })
             .ToArray();
     }

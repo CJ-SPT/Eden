@@ -31,6 +31,7 @@ internal static class NpcDamagePersistence
         }
         NpcHostility.Record(world, catalog, npc, attackingShip, now);
         var defense = ShipHealth.DefenseFrom(attributes);
+        NpcRepairPersistence.Advance(npc, attributes, now);
         HullDamage health = new(
             ChargedResource.Recharged(
                 npc.ShieldCharge,
@@ -52,6 +53,7 @@ internal static class NpcDamagePersistence
         npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
         npc.StructureDamage = defense.Structure - result.Remaining.Structure;
         npc.UpdatedAt = Math.Max(now, npc.UpdatedAt);
+        NpcRepairPersistence.Advance(npc, attributes, now);
         NpcBounty? reward = null;
         var aggression = world.Set<NpcAggression>().Find(npc.Id);
         if (result.Remaining.Destroyed)
