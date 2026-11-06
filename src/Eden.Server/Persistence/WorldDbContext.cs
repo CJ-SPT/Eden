@@ -140,6 +140,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
     {
         ConfigureInteractionHistory(model);
         ConfigureCorporations(model);
+        model.Entity<SavedFittingRecord>().ToTable("WorldSavedFitting").HasKey(f => f.Id);
+        model.Entity<SavedFittingRecord>().HasOne<Pilot>().WithMany().HasForeignKey(f => f.OwnerId);
+        model.Entity<SavedFittingRecord>().HasIndex(f => f.OwnerId);
         model.Entity<InventoryOwner>().ToTable("WorldInventoryOwner").HasKey(o => o.Id);
         model.Entity<InventoryOwner>().Property(o => o.Id).ValueGeneratedNever();
         model.Entity<SavedWeaponLink>().ToTable("WorldWeaponLink").HasKey(l => l.SlaveId);

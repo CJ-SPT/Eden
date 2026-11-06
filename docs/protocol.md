@@ -198,6 +198,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- <a id="personal-saved-fitting-plans-november-6-2026"></a>[Personal saved fitting plans (November 6, 2026)](protocol/fitting.md#personal-saved-fitting-plans-november-6-2026)
 - <a id="persistent-weapon-grouping"></a>[Persistent weapon grouping](protocol/fitting.md#persistent-weapon-grouping)
 - <a id="shield-boosters-and-physical-skillbooks-november-2-2026"></a>[Shield boosters and physical skillbooks, November 2, 2026](protocol/fitting.md#shield-boosters-and-physical-skillbooks-november-2-2026)
 - <a id="fitting-defense-rate-selector-november-2-2026"></a>[Fitting defense-rate selector, November 2, 2026](protocol/fitting.md#fitting-defense-rate-selector-november-2-2026)
