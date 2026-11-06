@@ -313,6 +313,7 @@ internal sealed class NpcCombatStore(
         aggression.LastShotAt = now;
         aggression.LastTargetId = shipId;
         aggression.ReadyAt = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
+        CrimewatchPersistence.Npc(world, pilotId, system, aggression.ReadyAt);
         NpcWeaponContact weapon = new(shipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), now, duration);
         PilotInteractionHistoryStore.Damage(world, shipId, PilotInteractionHistoryStore.Npc(npc, weapon.TurretTypeId), result.Applied);
         InsurancePayout? insurance = null;

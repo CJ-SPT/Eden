@@ -139,6 +139,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         EconomicSchema.Configure(model);
+        CrimewatchSchema.Configure(model);
         DroneSchema.Configure(model);
         HistorySchema.Configure(model);
         ConfigureInteractionHistory(model);

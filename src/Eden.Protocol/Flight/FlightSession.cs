@@ -35,7 +35,8 @@ internal sealed partial class FlightSession(
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null,
     IPilotShipAppearance? appearance = null,
-    IPilotDrones? drones = null
+    IPilotDrones? drones = null,
+    IPilotCrimewatch? crimewatch = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = 8;
@@ -44,6 +45,7 @@ internal sealed partial class FlightSession(
     private NavigationState _navigation = new();
     private ShipContact[] _peers = [];
     private ShipDirtState? _dirt;
+    private bool _disconnecting;
 
     private long? DirtTimestamp()
     {
@@ -1071,7 +1073,14 @@ internal sealed partial class FlightSession(
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
-        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        if (_disconnecting)
+        {
+            tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
+        }
+        else
+        {
+            tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        }
         if (tackle is not null && _incomingTackle.Length > 0)
         {
             _baseFlight = _baseFlight with
@@ -1109,11 +1118,21 @@ internal sealed partial class FlightSession(
         try
         {
             Checkpoint();
+            PrepareDisconnect();
         }
         finally
         {
             _translocation = null;
             LeaveSpace();
+        }
+    }
+
+    public void PrepareDisconnect()
+    {
+        if (!_disconnecting && crimewatch is not null)
+        {
+            crimewatch.Disconnect(Pilot.PilotId, Pilot.ShipId);
+            _disconnecting = true;
         }
     }
 
@@ -1377,6 +1396,19 @@ internal sealed partial class FlightSession(
         space.RecordOrder(Pilot.ShipId, update);
     }
 
+    private PilotCallResult.Failure? TravelFailure(CrimewatchTravel action, int? destination = null)
+    {
+        try
+        {
+            crimewatch?.CheckTravel(Pilot.PilotId, action, destination);
+            return null;
+        }
+        catch (InvalidDataException error)
+        {
+            return new(error.Message);
+        }
+    }
+
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems)
     {
         long sourceId = request.SourceId;
@@ -1397,6 +1429,10 @@ internal sealed partial class FlightSession(
         )
         {
             return PilotCallResult.Unsupported;
+        }
+        if (TravelFailure(CrimewatchTravel.Jump, systemId) is { } blocked)
+        {
+            return blocked;
         }
         var destination = systems.Load(systemId);
         var exit = destination.FirstOrDefault(o =>
@@ -1446,6 +1482,10 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null)
     {
+        if (TravelFailure(CrimewatchTravel.Warp) is { } blocked)
+        {
+            return blocked;
+        }
         RefreshTackle(true);
         if (_warpBlocked)
         {
@@ -1598,6 +1638,10 @@ internal sealed partial class FlightSession(
                 when ship == Pilot.ShipId
                     && station is > 0 and <= int.MaxValue
                     && objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
+                if (TravelFailure(CrimewatchTravel.Dock) is { } denied)
+                {
+                    return denied;
+                }
                 position = Pilot.Position!;
                 if (
                     position.DistanceTo(destination.Position)

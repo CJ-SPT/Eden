@@ -50,6 +50,7 @@ public interface IPilotTackle
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
     void Stop(long pilotId, long shipId, long moduleId);
     void Cancel(long pilotId, long shipId);
+    void Disconnect(long pilotId, long shipId);
 }
 
 public static class TackleDefinitions

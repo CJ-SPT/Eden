@@ -57,6 +57,8 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
         }
         int system = System(catalog, pilot.ActiveShip);
         WorldNpc? npc = null;
+        AggressionDecision? aggression = null;
+        long victimId = 0;
         if (core)
         {
             if (target is not null && (target.Kind != TackleTargetKind.Ship || target.Id != pilot.ActiveShipId))
@@ -98,12 +100,15 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
                     victim?.ActiveShip.Position is not { } saved
                     || System(catalog, victim.ActiveShip) != system
                     || world.Set<ShipLoss>().Any(l => l.ShipId == victim.ActiveShipId)
+                    || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
                 )
                 {
                     throw new InvalidDataException("The target ship is unavailable.");
                 }
                 targetPosition = new(saved.X, saved.Y, saved.Z);
                 targetType = victim.ActiveShip.TypeId;
+                aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
+                victimId = victim.Id;
             }
             double sourceRadius = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!.Radius ?? 0;
             double targetRadius = catalog.Set<ItemType>().Find(targetType)!.Radius ?? 0;
@@ -122,6 +127,14 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
         long expires = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        if (aggression is not null)
+        {
+            CrimewatchPersistence.Player(world, pilotId, victimId, system, aggression, now, expires);
+        }
+        else if (npc is not null)
+        {
+            CrimewatchPersistence.Npc(world, pilotId, system, expires);
+        }
         if (core)
         {
             if (world.Set<ActiveFittedModule>().Find(moduleId) is null)
@@ -227,6 +240,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
                     target?.ActiveShip.Position is not null
                     && System(catalog, target.ActiveShip) == row.SystemId
                     && !world.Set<ShipLoss>().Any(l => l.ShipId == row.TargetId);
+                valid = valid && !world.Set<SavedLogoff>().Any(l => l.ShipId == row.TargetId && l.ExpiresAt <= now);
             }
             if (!valid)
             {
@@ -314,6 +328,12 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             .Set<WorldTackle>()
             .Where(t => t.PilotId == pilotId && t.SourceShipId == shipId || t.TargetKind == TackleTargetKind.Ship && t.TargetId == shipId)
             .ExecuteDelete();
+    }
+
+    public void Disconnect(long pilotId, long shipId)
+    {
+        using WorldDbContext world = new(database.Path);
+        world.Set<WorldTackle>().Where(t => t.PilotId == pilotId && t.SourceShipId == shipId).ExecuteDelete();
     }
 
     internal static ILookup<long, WorldTackle> NpcTackles(WorldDbContext world, long[] ids) =>

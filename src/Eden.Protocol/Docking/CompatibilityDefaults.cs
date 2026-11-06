@@ -1,4 +1,3 @@
-using Eden.Gameplay.Combat;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
@@ -28,18 +27,6 @@ internal sealed record LocalSystemState(int SystemId) : BlueModel
 internal sealed record DynamicBountyState() : BlueModel
 {
     public override object ToBlue() => new object?[] { 1d, false };
-}
-
-internal sealed record CrimewatchClientState(ShipSafetyLevel Safety) : BlueModel
-{
-    public override object ToBlue() =>
-        new object?[]
-        {
-            Enumerable.Range(0, 5).Select(_ => (object?)new object?[] { null, null }).ToArray(),
-            new Dictionary<string, object?>(),
-            new object?[] { new List<object?>(), new List<object?>() },
-            (int)Safety,
-        };
 }
 
 internal sealed record JumpTimerState() : BlueModel

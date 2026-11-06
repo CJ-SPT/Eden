@@ -30,6 +30,7 @@ internal static class NpcDamagePersistence
             throw new InvalidDataException("The NPC is no longer available.");
         }
         NpcHostility.Record(world, catalog, npc, attackingShip, now);
+        CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, now);
         var defense = ShipHealth.DefenseFrom(attributes);
         NpcRepairPersistence.Advance(npc, attributes, now);
         HullDamage health = new(

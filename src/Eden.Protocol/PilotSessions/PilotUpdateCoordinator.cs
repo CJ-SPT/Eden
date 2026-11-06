@@ -58,7 +58,8 @@ internal sealed class PilotUpdateCoordinator(
     CorporationWalletHandler corporationWallet,
     NpcEwarHandler npcEwar,
     DroneHandler drones,
-    PersonalMarketMonitor personalMarket
+    PersonalMarketMonitor personalMarket,
+    CrimewatchHandler crimewatch
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -77,10 +78,12 @@ internal sealed class PilotUpdateCoordinator(
         || extraction.IsMonitoring
         || loyalty.IsMonitoring
         || implants.IsMonitoring
-        || boosters.IsMonitoring;
+        || boosters.IsMonitoring
+        || crimewatch.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
+        crimewatch.Enter(context);
         corporations.Enter(context);
         corporationWallet.Enter(context);
         chat.Advance(context);
@@ -105,6 +108,8 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        context.ActiveFlight?.Checkpoint();
+        context.ActiveFlight?.PrepareDisconnect();
         chat.Dispose();
         PrepareTranslocation(context);
     }
@@ -113,6 +118,7 @@ internal sealed class PilotUpdateCoordinator(
     // Chat presence updates Local access after arrival without closing its transport.
     public void PrepareTranslocation(PilotCallContext context)
     {
+        crimewatch.Reset();
         corporations.Reset();
         corporationWallet.Reset();
         guests.Dispose();
@@ -151,6 +157,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public DockedPilot? Advance(PilotCallContext context)
     {
+        crimewatch.Advance(context);
         npcEwar.Advance(context);
         redemption.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))

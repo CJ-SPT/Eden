@@ -8,7 +8,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety safety) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
@@ -92,8 +92,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("warRegistry", "GetWars") => BlueEmpty.Dictionary,
-            ("crimewatch", "GetClientStates") when args.Length == 0 => new CrimewatchClientState(safety.Read(pilot.PilotId)),
-            ("crimewatch", "SetSafetyLevel") => SetSafety(pilot.PilotId, args),
             ("jumpTimers", "GetTimers") => new JumpTimerState(),
             ("air_npe", "get_air_npe_state") => 0,
             ("fighterMgr", "GetFightersForShip") => new FighterState(),
@@ -120,17 +118,5 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
             or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };
-    }
-
-    private PilotCallResult SetSafety(long pilotId, object?[] args)
-    {
-        if (args is not [long level] || level is < (long)ShipSafetyLevel.Disabled or > (long)ShipSafetyLevel.Full)
-        {
-            return new PilotCallResult.Failure("Choose full, partial or disabled ship safety.");
-        }
-        safety.Set(pilotId, (ShipSafetyLevel)level);
-        // The pinned client applies its selection and emits OnSafetyLevelChanged
-        // after this RPC succeeds. A separate server event would duplicate it.
-        return PilotCallResult.None;
     }
 }

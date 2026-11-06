@@ -545,6 +545,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
             );
             var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, ship.Id, attributes, damage, now, profile.TypeId);
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
+            CrimewatchPersistence.Npc(world, pilot.Id, systemId, drone.ReadyAt);
             drone.ShotAt = now;
             drone.ShotTargetId = npc.Id;
             hits.Add(new(drone.ItemId, profile.TypeId, npc.Id, result.Applied, damage, result.Health, damage.Total / profile.Damage.Total));

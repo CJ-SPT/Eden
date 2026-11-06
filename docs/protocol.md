@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Enforced safety and persistent aggression, November 6, 2026](protocol/combat.md#enforced-safety-and-persistent-aggression-november-6-2026)
+
 - [Bounded authentication retention, November 6, 2026](protocol/startup.md#bounded-authentication-retention-november-6-2026)
 
 - [Wallet history filtering and indexes, November 6, 2026](protocol/industry.md#wallet-history-filtering-and-indexes-november-6-2026)

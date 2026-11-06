@@ -206,6 +206,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
         // Retaliation begins on the offensive launch, not after flight time.
         NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
+        CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
         world.SaveChanges();
         return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);
     }

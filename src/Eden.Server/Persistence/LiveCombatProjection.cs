@@ -8,6 +8,10 @@ internal sealed partial class LiveCombatRuntime
 {
     internal static void ProjectShip(WorldDbContext world, LiveCombatShip before, LiveCombatShip after)
     {
+        if (before.NpcAggression != after.NpcAggression && after.NpcAggression is { } npcTimer)
+        {
+            CrimewatchPersistence.Npc(world, after.PilotId, after.SystemId, npcTimer.ActiveUntil);
+        }
         if (
             before.Capacitor != after.Capacitor
             || before.CapacitorAt != after.CapacitorAt

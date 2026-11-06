@@ -34,6 +34,12 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal LiveCombatShip CurrentShip(long pilotId) => _ships[pilotId];
 
+    internal CombatTimer? NpcTimer(long pilotId)
+    {
+        using var ownership = owner.Enter();
+        return _ships.GetValueOrDefault(pilotId)?.NpcAggression;
+    }
+
     internal CombatVolley? Fire(
         long pilotId,
         long moduleId,
@@ -72,6 +78,14 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         int count = banked ? ship.Banks.Values.FirstOrDefault(b => b.Contains(moduleId))?.Count ?? 1 : 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
         var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation);
+        long cycleEnd = checked(now + (long)Math.Ceiling(plan.Volley.Shot.Weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
+        plan = plan with
+        {
+            Ship = plan.Ship with
+            {
+                NpcAggression = CrimewatchRules.Extend(plan.Ship.NpcAggression ?? new(), cycleEnd, CrimewatchRules.NpcDuration),
+            },
+        };
         if (plan.Volley.Shot.Destroyed)
         {
             Flush();
@@ -380,6 +394,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     """
                 );
             }
+            world.SaveChanges();
             transaction.Commit();
             foreach (long id in _dirtyShips)
             {

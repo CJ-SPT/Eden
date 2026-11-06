@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -61,7 +62,8 @@ public sealed class ShipSafetyTests
         using var context = Client(db);
         var store = db.Services.GetRequiredService<IPilotSafety>();
         store.Set(context.Pilot.PilotId, ShipSafetyLevel.Partial);
-        var handler = db.Services.GetRequiredService<DockedCompatibilityHandler>();
+        using var scope = db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<CrimewatchHandler>();
         Assert.IsType<PilotCallResult.Failure>(handler.Call(context, "crimewatch", "SetSafetyLevel", [level]));
         Assert.Equal(ShipSafetyLevel.Partial, store.Read(context.Pilot.PilotId));
         Assert.Throws<InvalidDataException>(() => store.Set(context.Pilot.PilotId, (ShipSafetyLevel)99));

@@ -68,6 +68,7 @@ public static class WorldInitialization
         // Downtime cancels live projectiles without refunding ammunition or
         // cooldowns. Saved impacts and rewards are never applied again.
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        PilotCrimewatchStore.Reconcile(world, catalog, now);
         world
             .Set<WorldMissile>()
             .Where(m => m.Status == MissileFlightStatus.Flying)

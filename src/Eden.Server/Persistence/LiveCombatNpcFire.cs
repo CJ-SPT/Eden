@@ -114,7 +114,14 @@ internal sealed partial class LiveCombatRuntime
             // Capsule, insurance, inventory and report settlement retain one SQL transaction.
             return false;
         }
-        _ships[pilotId] = paid.Ship;
+        _ships[pilotId] = paid.Ship with
+        {
+            NpcAggression = CrimewatchRules.Extend(
+                paid.Ship.NpcAggression ?? new(),
+                checked(now + (long)Math.Ceiling(paid.Shot.Weapon.Duration * TimeSpan.TicksPerMillisecond)),
+                CrimewatchRules.NpcDuration
+            ),
+        };
         _dirtyShips.Add(pilotId);
         _aggressions![npcId] = aggression with
         {

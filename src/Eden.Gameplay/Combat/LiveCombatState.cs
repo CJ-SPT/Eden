@@ -63,7 +63,8 @@ public sealed record LiveCombatShip(
     IReadOnlyDictionary<long, IReadOnlyList<long>> Banks,
     int GroupId,
     double SignatureRadius,
-    IReadOnlyDictionary<long, CombatParty> Contributions
+    IReadOnlyDictionary<long, CombatParty> Contributions,
+    CombatTimer? NpcAggression = null
 )
 {
     public LiveCombatShip SettleRepairs(long now)

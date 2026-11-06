@@ -1,5 +1,8 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Protocol;
+using Eden.Server.Catalog;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
@@ -19,7 +22,17 @@ internal sealed class PilotSafetyStore(WorldDatabase database) : IPilotSafety
             throw new InvalidDataException("Choose full, partial or disabled ship safety.");
         }
         using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        if (
+            level != ShipSafetyLevel.Full
+            && world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha
+            && CrimewatchPersistence.Security(catalog, CrimewatchPersistence.System(catalog, pilot.ActiveShip), false)
+                >= CrimewatchRules.HighSecurity
+        )
+        {
+            throw new InvalidDataException("Alpha pilots use full safety in high-security space.");
+        }
         pilot.SafetyLevel = level;
         world.SaveChanges();
     }

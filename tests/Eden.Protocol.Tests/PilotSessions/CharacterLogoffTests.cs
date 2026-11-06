@@ -15,7 +15,7 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class CharacterLogoffTests
 {
     [Fact]
-    public void LogoffRemovesShipLocksBindingsAndPendingMessagesWhileTrainingContinues()
+    public void LogoffRetainsShipForOneMinuteWhileClearingLocksBindingsAndMessagesAndContinuingTraining()
     {
         TestClock clock = new();
         using TestWorld db = new(clock: clock);
@@ -72,7 +72,7 @@ public sealed class CharacterLogoffTests
         Assert.Empty(context.Notifications);
         Assert.False(targeting.IsLocked(wing.ShipId));
         Assert.False(locks.Contains(pilot.ShipId, wing.ShipId));
-        Assert.DoesNotContain(space.Peers(wing), ship => ship.Pilot.ShipId == pilot.ShipId);
+        Assert.Contains(space.Peers(wing), ship => ship.Pilot.ShipId == pilot.ShipId);
         Assert.Null(context.ResolveReference(skills.Id));
         Assert.Null(context.ResolveReference(hangar.Id));
         Assert.Equal("@account", context.ResolveReference(account.Id));
@@ -80,6 +80,7 @@ public sealed class CharacterLogoffTests
         Assert.Equal(pilot.Position, saved.Position);
         Assert.Equal(pilot.ShipId, saved.ShipId);
         clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+        Assert.DoesNotContain(space.Peers(wing), ship => ship.Pilot.ShipId == pilot.ShipId);
         Assert.Equal(queue, training.Advance(pilot.PilotId).Queue);
         Assert.True(queue[0].PointsAt(clock.Now) > queue[0].StartPoints);
         context.Select(Assert.Single(context.Roster));

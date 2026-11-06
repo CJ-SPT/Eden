@@ -100,6 +100,10 @@ public sealed class TackleTests
         Fixture f = new();
         PassiveCatalogFixture.LoadTackleTiers(f.CatalogPath, types.Concat(new[] { 601, 3435, 3455, 3449 }).ToHashSet());
         using CatalogDbContext catalog = new(f.CatalogPath, writable: true);
+        // Physics/tier cases use null security; legality is covered separately.
+        catalog.Database.ExecuteSqlRaw(
+            "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":0}}')"
+        );
         foreach (
             var attribute in new[]
             {

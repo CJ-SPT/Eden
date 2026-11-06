@@ -243,6 +243,12 @@ public sealed partial class NpcEwarTests
             .Single(i => i.Id == f.Combat.Module);
         var weaponBefore = f.Combat.Weapons.ModuleAttributes(NpcCombatTests.Fixture.PilotId, gun);
         var effect = Assert.Single(f.Advance(), e => e.Ability.Kind == kind);
+        var timers = f
+            .Combat.Db.Services.GetRequiredService<IPilotCrimewatch>()
+            .Read(NpcCombatTests.Fixture.PilotId, f.Combat.Pilot.SystemId)
+            .Timers;
+        Assert.True(timers.Npc.Active(f.Now));
+        Assert.True(timers.Npc.ExpiresAt >= effect.ReadyAt + CrimewatchRules.NpcDuration.Ticks);
         var after = f.Fitting.ShipAttributes(NpcCombatTests.Fixture.PilotId);
         switch (kind)
         {

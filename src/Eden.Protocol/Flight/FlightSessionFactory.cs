@@ -24,11 +24,14 @@ internal sealed class FlightSessionFactory(
     IPilotShipAppearance appearance,
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null,
-    IPilotDrones? drones = null
+    IPilotDrones? drones = null,
+    IPilotCrimewatch? crimewatch = null
 )
 {
-    public FlightSession Create(DockedPilot pilot) =>
-        new FlightSession(
+    public FlightSession Create(DockedPilot pilot)
+    {
+        crimewatch?.Connect(pilot.PilotId);
+        return new FlightSession(
             positions,
             pilot,
             clock,
@@ -46,6 +49,8 @@ internal sealed class FlightSessionFactory(
             missiles,
             tackle,
             appearance,
-            drones
+            drones,
+            crimewatch
         );
+    }
 }

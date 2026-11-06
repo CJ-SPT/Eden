@@ -160,7 +160,8 @@ internal sealed partial class LiveCombatRuntime
             banks,
             hull.GroupId,
             attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-            Contributions(world, pilot.ActiveShipId)
+            Contributions(world, pilot.ActiveShipId),
+            world.Set<SavedCrimewatch>().Find(pilotId)?.Timers().Npc ?? new CombatTimer()
         );
         _shipPilots[pilot.ActiveShipId] = pilotId;
         transaction.Commit();
@@ -218,6 +219,7 @@ internal sealed partial class LiveCombatRuntime
             Repairs = repairs.Select(r => new LiveRepair(r.ModuleId, r.CompletesAt, r.Amount, r.Layer)).ToArray(),
             Turrets = turrets,
             Contributions = contributions,
+            NpcAggression = world.Set<SavedCrimewatch>().Find(ship.PilotId)?.Timers().Npc ?? ship.NpcAggression,
         };
     }
 

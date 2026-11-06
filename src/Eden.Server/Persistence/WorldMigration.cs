@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 89;
+    internal const int CurrentVersion = 90;
 
     public static void Open(
         WorldDbContext world,
@@ -1086,7 +1086,8 @@ internal static class WorldMigration
             economy is { TestingMarket: false },
             economics
         );
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=89");
+        CrimewatchSchema.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=90");
         history.Commit();
     }
 

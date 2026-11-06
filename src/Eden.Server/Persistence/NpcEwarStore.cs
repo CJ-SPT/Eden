@@ -137,6 +137,10 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
                     row.AppliedJson = applied is null ? null : JsonSerializer.Serialize(applied);
                     row.StartedAt = now;
                     row.ReadyAt = checked(now + (long)Math.Ceiling(ability.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+                    if (applied is not null)
+                    {
+                        CrimewatchPersistence.Npc(world, pilotId, system, row.ReadyAt);
+                    }
                 }
             }
         }

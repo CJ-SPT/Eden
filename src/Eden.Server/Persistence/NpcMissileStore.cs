@@ -64,6 +64,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             charge.GetValueOrDefault(DogmaAttributeId.AimedMissileLaunch) != 0
         );
         long boundary = now - now % TimeSpan.TicksPerSecond;
+        CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond)));
         world.Add(
             new WorldMissile
             {

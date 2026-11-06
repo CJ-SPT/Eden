@@ -44,6 +44,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         var saved = world.Positions.Find(shipId);
         using CatalogDbContext catalog = new(_database.CatalogPath);
         var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
+        if (
+            position is not null
+            && systemId is int currentSystem
+            && pilot is not null
+            && world.Set<SavedCrimewatch>().Find(pilot.Id) is { } crimewatch
+        )
+        {
+            crimewatch.SystemId = currentSystem;
+        }
         if (pilot is not null && position is not null)
         {
             long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -99,6 +108,13 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             throw new InvalidDataException("Dock your active ship at an available station.");
         }
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        CrimewatchPersistence.CheckTravel(
+            world,
+            catalog,
+            pilot,
+            Eden.Gameplay.Combat.CrimewatchTravel.Dock,
+            _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
         double shipRadius = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Radius ?? 0;
         if (
             destination.SolarSystemId != system

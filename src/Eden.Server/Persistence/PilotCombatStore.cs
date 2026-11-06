@@ -145,6 +145,12 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             throw new InvalidDataException("Load the same ammunition in every grouped weapon.");
         }
         var npc = world.Set<WorldNpc>().Find(targetId)!;
+        CrimewatchPersistence.Npc(
+            world,
+            pilotId,
+            npc.SystemId,
+            checked(now + (long)Math.Ceiling(paid.Max(p => p.Weapon.CycleMilliseconds) * TimeSpan.TicksPerMillisecond))
+        );
         var damage = paid.Select(p => p.Weapon.Damage.Scale(p.Quality)).ToArray();
         DamageVector combined = new(
             damage.Sum(d => d.Em),

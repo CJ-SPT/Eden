@@ -165,6 +165,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Observe(changes);
         _asteroids.Observe(changes);
         _wrecks.Observe(changes);
+        _crimewatch.Observe(changes);
+        _loggedOff.Observe(changes);
         ObserveSpace(changes);
     }
 
@@ -180,6 +182,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Clear();
         _asteroids.Clear();
         _wrecks.Clear();
+        _crimewatch.Clear();
+        _loggedOff.Clear();
         ClearSpace();
     }
 }
