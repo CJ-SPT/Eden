@@ -161,6 +161,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Inventory and ship ownership
 
+- [Production stack consolidation and repackaging (November 6, 2026)](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)
+
 - <a id="personal-ship-insurance"></a>[Personal ship insurance](protocol/inventory.md#personal-ship-insurance)
 - <a id="native-inventory-stack-division"></a>[Native inventory stack division](protocol/inventory.md#native-inventory-stack-division)
 - <a id="persistent-ship-dirt-and-native-cleaning"></a>[Persistent ship dirt and native cleaning](protocol/inventory.md#persistent-ship-dirt-and-native-cleaning)
@@ -171,6 +173,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="inventory-refresh-during-capsule-adoption-november-2-2026"></a>[Inventory refresh during capsule adoption, November 2, 2026](protocol/inventory.md#inventory-refresh-during-capsule-adoption-november-2-2026)
 
 ### Mining, industry and markets
+
+- [Tech I starter production chain (November 6, 2026)](protocol/industry.md#tech-i-starter-production-chain-november-6-2026)
 
 - [Persistent personal market orders (November 6, 2026)](protocol/industry.md#persistent-personal-market-orders-november-6-2026)
 

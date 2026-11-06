@@ -44,6 +44,8 @@ internal static class PassiveCatalogFixture
     // inventory, account, market or resource-cache data is embedded.
     internal static void Load(string path) => Load(path, "PassiveCatalog.json", null);
 
+    internal static void LoadStarterProduction(string path) => Load(path, "StarterProductionCatalog.json", null);
+
     internal static void LoadFrigateHulls(string path) => Load(path, "FrigateHullCatalog.json", null);
 
     internal static void LoadSmallHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "SmallHullCatalog.json", types);
@@ -176,6 +178,10 @@ internal static class PassiveCatalogFixture
                 continue;
             }
             string key = record.Key.ToString(CultureInfo.InvariantCulture);
+            if (record.Dataset == "client/blueprints")
+            {
+                key = JsonSerializer.Serialize(key);
+            }
             string json = record.Data.GetRawText();
             catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ({record.Dataset},{key},{json})");
         }

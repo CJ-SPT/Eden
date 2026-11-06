@@ -495,9 +495,11 @@ public sealed partial class WorldDbContext(string path) : DbContext
                 o.StationId,
                 o.TypeId,
                 o.Bid,
+                o.Kind,
             })
             .IsUnique();
         model.Entity<NpcMarketOrder>().HasIndex(o => o.RegionId);
+        model.Entity<NpcMarketOrder>().Property(o => o.Kind).HasDefaultValue(Eden.Gameplay.Market.NpcMarketKind.Development);
         model
             .Entity<NpcMarketOrder>()
             .HasIndex(o => new

@@ -47,7 +47,11 @@ public enum MarketOrderChangeKind
 
 public sealed record PersonalMarketChange(long Id, MarketOrder Order, MarketOrderChangeKind Kind, IReadOnlyList<InventoryChange> Inventory);
 
-public sealed record WorldEconomySettings(bool TestingMarket = true, bool TestingGrants = true)
+public sealed record WorldEconomySettings(
+    bool TestingMarket = true,
+    bool TestingGrants = true,
+    int InstitutionalStock = NpcSupplyRules.Stock
+)
 {
     public const int SingletonId = 1;
 }

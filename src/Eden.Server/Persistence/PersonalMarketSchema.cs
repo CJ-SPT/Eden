@@ -52,6 +52,7 @@ public sealed class SavedWorldEconomy
     public int Id { get; set; }
     public bool TestingMarket { get; set; } = true;
     public bool TestingGrants { get; set; } = true;
+    public int InstitutionalStock { get; set; } = NpcSupplyRules.Stock;
 }
 
 internal static class PersonalMarketSchema
@@ -59,6 +60,7 @@ internal static class PersonalMarketSchema
     internal static void Configure(ModelBuilder model)
     {
         model.Entity<SavedWorldEconomy>().ToTable("WorldEconomy");
+        model.Entity<SavedWorldEconomy>().Property(e => e.InstitutionalStock).HasDefaultValue(NpcSupplyRules.Stock);
         model.Entity<SavedMarketChange>().ToTable("WorldMarketChange");
         model.Entity<SavedMarketChange>().HasIndex(c => new { c.PilotId, c.Id });
         model.Entity<SavedMarketPayment>().ToTable("WorldMarketPayment");
@@ -124,6 +126,15 @@ internal static class PersonalMarketSchema
             CREATE INDEX IF NOT EXISTS IX_WorldMarketPayment_PilotId_Time ON WorldMarketPayment(PilotId,Time);
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldEconomy')")
+                .AsEnumerable()
+                .Contains("InstitutionalStock")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldEconomy ADD COLUMN InstitutionalStock INTEGER NOT NULL DEFAULT 1000");
+        }
         if (
             world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master WHERE name='WorldMarketTrade'").AsEnumerable().Any()
             && !world

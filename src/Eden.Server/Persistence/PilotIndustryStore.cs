@@ -135,6 +135,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
 
     private static bool SupportedProduct(CatalogDbContext catalog, ItemType type)
     {
+        if (StarterProduction.IsHull(type.Id))
+        {
+            return HullCatalog.CanAssemble(catalog, type, (int)InventoryCategory.Ship);
+        }
         var attributes = Attributes(catalog, type.Id);
         if (attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) != AmmunitionDefinitions.TechOne)
         {
@@ -148,7 +152,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             return false;
         }
-        return type.GroupId == AmmunitionDefinitions.HybridChargeGroup
+        return StarterProduction.IsUtility(type.Id) && FittingCatalog.Definition(catalog, type.Id) is not null
+            || type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
             || (
                 (
@@ -169,7 +174,12 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         return catalog
             .Set<ItemType>()
             .Where(t =>
-                t.GroupId == AmmunitionDefinitions.HybridChargeGroup
+                t.Id == (int)StarterProductionType.Merlin
+                || t.Id == (int)StarterProductionType.Venture
+                || t.Id == (int)StarterProductionType.Badger
+                || t.Id == (int)StarterProductionType.ExpandedCargohold
+                || t.Id == (int)StarterProductionType.DamageControl
+                || t.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 || t.GroupId == CombatDefinitions.HybridWeaponGroup
                 || t.GroupId == InventoryDefinitions.MiningLaserGroup
                 || t.GroupId == ShieldBoostDefinitions.Group
@@ -379,9 +389,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             || !SupportedProduct(catalog, catalog.Set<ItemType>().Single(t => t.Id == (int)product.TypeID.Value))
         )
         {
-            throw new InvalidDataException(
-                "Manufacturing supports small Tech I hybrid ammunition and turrets, mining lasers, shield boosters and afterburners."
-            );
+            throw new InvalidDataException("This blueprint product is outside the supported starter production and module cohorts.");
         }
         foreach (var skill in recipe.Skills ?? [])
         {

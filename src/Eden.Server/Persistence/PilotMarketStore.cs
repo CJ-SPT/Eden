@@ -61,6 +61,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
     {
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
         {
+            SeedInstitutional(world, catalog, station);
             return;
         }
         var marker = world.Set<MarketStation>().Find(station.Id);
@@ -70,7 +71,10 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
             return;
         }
         marker ??= world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now }).Entity;
-        var existing = world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id).ToDictionary(o => (o.TypeId, o.Bid));
+        var existing = world
+            .Set<NpcMarketOrder>()
+            .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Development)
+            .ToDictionary(o => (o.TypeId, o.Bid));
         var knownTypes = catalog.Set<ItemType>().Select(t => t.Id).ToHashSet();
         var types = catalog.Set<SourceRecord>().Where(r => r.Dataset == "client/types").AsEnumerable();
         foreach (var record in types)
@@ -131,6 +135,19 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
     {
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
         {
+            int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
+            NpcSupplyRules.ValidateStock(stock);
+            long institutionalCutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
+            long issued = Now;
+            orders
+                .Where(o => o.Kind == NpcMarketKind.Institutional && !o.Bid)
+                .Where(o => o.Remaining != stock || o.Entered != stock || o.Issued <= institutionalCutoff)
+                .ExecuteUpdate(setters =>
+                    setters
+                        .SetProperty(o => o.Remaining, stock)
+                        .SetProperty(o => o.Entered, stock)
+                        .SetProperty(o => o.Issued, o => o.Issued <= institutionalCutoff ? issued : o.Issued)
+                );
             return;
         }
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
@@ -138,7 +155,9 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
         // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
         orders
             .Where(o =>
-                !o.Bid && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
+                o.Kind == NpcMarketKind.Development
+                && !o.Bid
+                && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
             )
             .Where(o => o.Remaining != TestingMarketRules.Stock || o.PriceCents != TestingMarketRules.PriceCents || o.Issued <= cutoff)
             .ExecuteUpdate(setters =>
@@ -179,10 +198,10 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
         var query = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
-        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
-        {
-            query = query.Where(o => false);
-        }
+        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
+            ? NpcMarketKind.Institutional
+            : NpcMarketKind.Development;
+        query = query.Where(o => o.Kind == kind);
         if (typeId.HasValue)
         {
             query = query.Where(o => o.TypeId == typeId.Value);

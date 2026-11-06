@@ -286,3 +286,49 @@ Coverage includes real manufacturing/listing/offline purchase/reopen, resident c
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** On a copied world after a normal rebuild/restart, inspect native My Orders/escrow/history and a two-pilot partial fill; inspect modify/cancel and the recipient's Item Hangar refresh. Native rendering and input remain unverified.
+
+## Tech I starter production chain (November 6, 2026)
+
+Manufacturing now admits three supported Tech I hulls (Merlin **603**, Venture **32880**, Badger **648**) and the starter fits' Damage Control I **2046** and Expanded Cargohold I **1317**. Existing supported ammunition, turret, mining-laser, shield-booster and afterburner cohorts are retained. Hull admission still requires the catalog's supported assembly policy; utilities require supported fitting definitions. Other ship blueprints remain rejected. Existing skill, ownership, quoted-time/material, slot, transaction, cancellation and exactly-once delivery behavior applies to hull jobs. Outputs are ordinary packaged inventory, using the same assembly, market and fitting operations as purchased stock.
+
+The read-only build **3662168** catalog audit is [starter-production.json](../starter-production.json). Regenerate its exact recipes and the portable test definitions with:
+
+```powershell
+python tools/Export-StarterProduction.py --catalog "$env:LOCALAPPDATA\Eden\catalog.sqlite"
+```
+
+| Hull | Blueprint | Base manufacturing seconds | Materials per ME-zero run |
+| --- | --- | --- | --- |
+| Merlin | 950 | 6,000 | 32,000 Tritanium; 6,000 Pyerite; 2,500 Mexallon; 500 Isogen |
+| Venture | 32881 | 6,000 | 22,400 Tritanium; 4,200 Pyerite; 1,750 Mexallon |
+| Badger | 983 | 12,000 | 80,000 Tritanium; 15,000 Pyerite; 3,750 Mexallon; 2,000 Isogen; 750 Nocxium; 125 Zydrine; 70 Megacyte |
+
+The selected fits use three 75mm Gatling Rail I / Iron Charge S, Small Shield Booster I, 1MN Afterburner I and Damage Control I for Merlin; two Miner I plus the small booster/afterburner and damage control for Venture; and Medium Shield Booster I, 10MN Afterburner I and two Expanded Cargohold I for Badger. This mining fit does not depend on combat drones. Exact recipes and recursive required skills are exported, rather than introducing substitute materials or shortening production times. This follows [CCP's manufacturing model](https://support.eveonline.com/hc/en-us/articles/203210292-Manufacturing).
+
+Every required mineral has a fixed, supported ore recipe in a populated belt: Veldspar/Scordite in Tanoo, Plagioclase in Itamo, Kernite in Asabona, Hedbergite in Otosela, Bistot in G96R-F and Arkonor in PQRE-W. The audit preserves the exact belt/system IDs, positive catalog counts and material yields. It checks that no recipe material is unobtainable through those ores and rejects randomized material sources. This does not replenish depleted belts or prove a safe hauling route.
+
+World schema **88** adds an NPC-order kind and saved institutional stock. Existing orders become development orders without changing IDs, prices, executions, money or grants. NPC institutional orders are separate from development orders. In economy worlds, the server reads the NPC station owner's positive `client/npccorporations.corporationTrades` offers and admits only published blueprint/skill types with positive `client/types.basePrice`. It never seeds finished ships/modules, ammunition or minerals. Corp/type membership and base prices come from the pinned catalog; dynamic live NPC price adjustments and quantities are not exported. Eden explicitly uses catalog base prices and configurable replenishing institutional stock (default 1,000, creation range 1–1,000,000 via `--npc-stock` with `--economy-world`). The value persists across reopen. Stock is created lazily at a visited market station and can be purchased through the existing station-local market operations. Ordinary development worlds retain their existing supply policy.
+
+Catalog-defined suppliers for every selected blueprint and required skill are exported with market-capable station IDs. Skillbooks can be bought and injected through the normal skill-book operation. New NPC orders use the existing named market rows/notifications; no new wire format or Blue codec is introduced. Carbon reference reviewed: [Blue Marshal.cpp af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp). Portable fixtures contain only the relevant game definitions/offers, not a saved world or client installation.
+
+The acceptance simulation starts with established trained pilots, existing capital and the ordinary corvette recovery kit. It mines real ore through paid cycles with catalog yields and cargo limits, consolidates/unloads it, reprocesses complete portions, buys original blueprints from institutionally supplied NPC counters, manufactures two complete fits/hulls, trades between pilots without a selected producer connection, fits the recipient's ship, settles a fatal loss and fits its replacement. Lifecycle reopen checks and expected output/ledger assertions cover the transitions. Controlled fixture movement and deposit positions isolate this workflow from travel; native hauling, combat feel and new-pilot time-to-capital are not established. Skill training, earned income balancing, resource renewal and adjusted installation/reprocessing prices remain their existing separate mechanics/work.
+
+**Automated validation:** Tool restore, solution restore and the final isolated-output build passed with zero warnings/errors (14.35 seconds). The affected filter passed **392 tests in 11 minutes 51 seconds**:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Industry|FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Reprocessing|FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~FleetTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~InsuranceTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~DockedServicesTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~CharacterCreationTests
+```
+
+That run covers all three complete production/replacement replays. A subsequent correction keeps NPC entered/remaining quantities consistent when saved institutional stock changes; stack grouping also received a named identity record. After those changes, the final build and this focused filter passed **89 tests in 24 seconds**:
+
+```text
+(FullyQualifiedName~StarterProductionTests&FullyQualifiedName!~MinedInputs)|FullyQualifiedName~ProductionInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Market
+```
+
+Earlier development runs exposed fixture assumptions about the corvette recovery kit, market service/publication metadata, nullable test data and probabilistic sub-unit mining yields. Those fixtures were corrected. One initial long replay was stopped after 2 minutes 4 seconds (one test passed; the run was aborted) while the fixture was changed to batch cargo trips and enable the existing production fit cache. A later 12-pass/one-failure replay established the Merlin/Venture chains before the high-volume-ore fixture correction; the final 392-test run supersedes it. No production mining yields or material/time recipes were altered for these tests. Results are under ignored `artifacts/starter-production/results/`.
+
+Catalog setup policy (3 tests), formatting policy (9 tests), formatting verification (817 files), UTF-8/whitespace checks, local documentation targets (443 links) and diff checks passed. The catalog exporter reproduced both checked-in JSON artifacts byte-for-byte. No full .NET suite was requested or run. Native rendering/input, actual travel and new-pilot capital acquisition remain outside automated acceptance.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect the three hull blueprint quotes/delivery and assembled fits; inspect institutional NPC book/blueprint offers in a copied economy world; verify native Stack All/repackaging presentation as described in the [inventory record](inventory.md#production-stack-consolidation-and-repackaging-november-6-2026).

@@ -9,7 +9,7 @@ namespace Eden.Server.Persistence;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 87;
+    internal const int CurrentVersion = 88;
 
     public static void Open(
         WorldDbContext world,
@@ -56,6 +56,7 @@ internal static class WorldMigration
                     Id = Eden.Gameplay.Market.WorldEconomySettings.SingletonId,
                     TestingMarket = economy?.TestingMarket ?? true,
                     TestingGrants = economy?.TestingGrants ?? true,
+                    InstitutionalStock = economy?.InstitutionalStock ?? Eden.Gameplay.Market.NpcSupplyRules.Stock,
                 }
             );
             world.SaveChanges();
@@ -1075,7 +1076,8 @@ internal static class WorldMigration
             HistorySchema.Upgrade(world);
         }
         PersonalMarketSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=87");
+        NpcSupplySchema.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=88");
         history.Commit();
     }
 

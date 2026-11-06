@@ -4,6 +4,9 @@ public sealed record InventoryStackSplit(int Remainder, int Quantity);
 
 public static class InventoryStackRules
 {
+    public static int CombinedQuantity(IEnumerable<int> quantities) =>
+        quantities.Aggregate(0, (total, quantity) => checked(total + quantity));
+
     public static InventoryStackSplit Split(InventoryItem item, int quantity)
     {
         if (item.Singleton || item.Online || quantity <= 0 || quantity >= item.Quantity)

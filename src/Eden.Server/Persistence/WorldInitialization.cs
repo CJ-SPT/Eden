@@ -12,6 +12,7 @@ public static class WorldInitialization
         Eden.Gameplay.Market.WorldEconomySettings? economy = null
     )
     {
+        Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(economy?.InstitutionalStock ?? Eden.Gameplay.Market.NpcSupplyRules.Stock);
         if (!File.Exists(database.CatalogPath))
         {
             throw new FileNotFoundException(

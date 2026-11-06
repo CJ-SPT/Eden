@@ -31,7 +31,8 @@ internal sealed class InventoryHandler(
     InventoryTransfers transfers,
     FittingOperations fittingOperations,
     DeferredRefitPrimes refits,
-    IPilotContracts contracts
+    IPilotContracts contracts,
+    IPilotInventoryStacks stacks
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
@@ -205,6 +206,39 @@ internal sealed class InventoryHandler(
     {
         var pilot = context.Pilot;
         long container = ShipContainer(service, pilot);
+        if (method == "StackAll" && (service == "@hangar" || container != 0))
+        {
+            try
+            {
+                if (
+                    args.Length > 1
+                    || args.Length == 1 && args[0] is not long
+                    || keywords is { Count: > 0 } && keywords.Keys.Any(key => key != "flag")
+                    || args.Length == 1 && keywords?.ContainsKey("flag") == true
+                )
+                {
+                    throw new InvalidDataException("Choose one inventory flag to stack.");
+                }
+                object? flagValue = args.Length == 1 ? args[0] : keywords?.GetValueOrDefault("flag");
+                int flag =
+                    flagValue is null ? (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo)
+                    : flagValue is long value && value is >= 0 and <= int.MaxValue ? (int)value
+                    : throw new InvalidDataException("Invalid inventory flag.");
+                foreach (var change in stacks.StackAll(pilot.PilotId, service == "@hangar" ? pilot.StationId : container, flag))
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                return PilotCallResult.None;
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+            catch (OverflowException)
+            {
+                return new PilotCallResult.Failure("The combined stack exceeds the supported quantity.");
+            }
+        }
         if (container != 0)
         {
             if (context.DestroyedShip is { } lost && lost.ShipId == container)

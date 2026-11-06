@@ -26,6 +26,7 @@ public sealed class NpcMarketOrder
     public int Remaining { get; set; }
     public int Entered { get; set; }
     public long Issued { get; set; }
+    public Eden.Gameplay.Market.NpcMarketKind Kind { get; set; }
 }
 
 public sealed class MarketExecution

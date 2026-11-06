@@ -54,7 +54,7 @@ internal sealed partial class PilotMarketStore
     {
         using WorldDbContext world = new(database.Path);
         var settings = world.Set<SavedWorldEconomy>().Single();
-        return new(settings.TestingMarket, settings.TestingGrants);
+        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
     }
 
     public long Observe(long pilotId)
@@ -255,12 +255,19 @@ internal sealed partial class PilotMarketStore
             .Where(o => o.Remaining > 0)
             .Select(o => new Candidate(o, null));
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        var npcs = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
-            ? []
-            : world
-                .Set<NpcMarketOrder>()
-                .Where(o => o.StationId == incoming.StationId && o.TypeId == incoming.TypeId && o.Bid != incoming.Bid && o.Issued > cutoff)
-                .ToArray();
+        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
+            ? NpcMarketKind.Institutional
+            : NpcMarketKind.Development;
+        var npcs = world
+            .Set<NpcMarketOrder>()
+            .Where(o =>
+                o.StationId == incoming.StationId
+                && o.TypeId == incoming.TypeId
+                && o.Bid != incoming.Bid
+                && o.Issued > cutoff
+                && o.Kind == kind
+            )
+            .ToArray();
         var candidates = personal
             .Concat(npcs.Where(o => o.Remaining > 0).Select(o => new Candidate(null, o)))
             .Where(o => PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, o.Price))
@@ -379,7 +386,11 @@ internal sealed partial class PilotMarketStore
             }
             else if (candidate.Npc is { } npc)
             {
-                npc.Remaining = npc.Bid ? npc.Remaining - quantity : TestingMarketRules.Stock;
+                npc.Remaining =
+                    npc.Bid ? npc.Remaining - quantity
+                    : npc.Kind == NpcMarketKind.Institutional
+                        ? world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock
+                    : TestingMarketRules.Stock;
             }
         }
         if (incoming.Remaining == 0)

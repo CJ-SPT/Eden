@@ -1,0 +1,605 @@
+{
+  "build": 3662168,
+  "hulls": [
+    603,
+    32880,
+    648
+  ],
+  "fits": {
+    "603": [
+      561,
+      561,
+      561,
+      399,
+      439,
+      2046,
+      215
+    ],
+    "32880": [
+      483,
+      483,
+      399,
+      439,
+      2046
+    ],
+    "648": [
+      10836,
+      12056,
+      1317,
+      1317
+    ]
+  },
+  "recipes": [
+    {
+      "blueprintId": 785,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 1324
+        },
+        {
+          "typeID": 35,
+          "quantity": 481
+        },
+        {
+          "typeID": 36,
+          "quantity": 119
+        }
+      ],
+      "products": [
+        {
+          "typeID": 483,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 950,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 32000
+        },
+        {
+          "typeID": 35,
+          "quantity": 6000
+        },
+        {
+          "typeID": 36,
+          "quantity": 2500
+        },
+        {
+          "typeID": 37,
+          "quantity": 500
+        }
+      ],
+      "products": [
+        {
+          "typeID": 603,
+          "quantity": 1
+        }
+      ],
+      "time": 6000
+    },
+    {
+      "blueprintId": 983,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 80000
+        },
+        {
+          "typeID": 35,
+          "quantity": 15000
+        },
+        {
+          "typeID": 36,
+          "quantity": 3750
+        },
+        {
+          "typeID": 37,
+          "quantity": 2000
+        },
+        {
+          "typeID": 38,
+          "quantity": 750
+        },
+        {
+          "typeID": 39,
+          "quantity": 125
+        },
+        {
+          "typeID": 40,
+          "quantity": 70
+        }
+      ],
+      "products": [
+        {
+          "typeID": 648,
+          "quantity": 1
+        }
+      ],
+      "time": 12000
+    },
+    {
+      "blueprintId": 1032,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 1327
+        },
+        {
+          "typeID": 35,
+          "quantity": 481
+        },
+        {
+          "typeID": 36,
+          "quantity": 113
+        }
+      ],
+      "products": [
+        {
+          "typeID": 399,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 1072,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 708
+        },
+        {
+          "typeID": 35,
+          "quantity": 643
+        },
+        {
+          "typeID": 36,
+          "quantity": 1
+        },
+        {
+          "typeID": 38,
+          "quantity": 1
+        }
+      ],
+      "products": [
+        {
+          "typeID": 439,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 1112,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 231
+        },
+        {
+          "typeID": 35,
+          "quantity": 220
+        }
+      ],
+      "products": [
+        {
+          "typeID": 561,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 1130,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 27
+        },
+        {
+          "typeID": 35,
+          "quantity": 21
+        }
+      ],
+      "products": [
+        {
+          "typeID": 215,
+          "quantity": 100
+        }
+      ],
+      "time": 300
+    },
+    {
+      "blueprintId": 1318,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 37,
+          "quantity": 10
+        },
+        {
+          "typeID": 38,
+          "quantity": 1
+        }
+      ],
+      "products": [
+        {
+          "typeID": 1317,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 2047,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 1062
+        },
+        {
+          "typeID": 35,
+          "quantity": 2
+        },
+        {
+          "typeID": 36,
+          "quantity": 53
+        }
+      ],
+      "products": [
+        {
+          "typeID": 2046,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 10837,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 35,
+          "quantity": 1327
+        },
+        {
+          "typeID": 36,
+          "quantity": 481
+        },
+        {
+          "typeID": 37,
+          "quantity": 113
+        }
+      ],
+      "products": [
+        {
+          "typeID": 10836,
+          "quantity": 1
+        }
+      ],
+      "time": 900
+    },
+    {
+      "blueprintId": 12057,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 34,
+          "quantity": 3818
+        },
+        {
+          "typeID": 35,
+          "quantity": 3477
+        },
+        {
+          "typeID": 36,
+          "quantity": 3
+        },
+        {
+          "typeID": 37,
+          "quantity": 2
+        }
+      ],
+      "products": [
+        {
+          "typeID": 12056,
+          "quantity": 1
+        }
+      ],
+      "time": 1800
+    },
+    {
+      "blueprintId": 32881,
+      "skills": [
+        {
+          "typeID": 3380,
+          "level": 1
+        }
+      ],
+      "materials": [
+        {
+          "typeID": 36,
+          "quantity": 1750
+        },
+        {
+          "typeID": 35,
+          "quantity": 4200
+        },
+        {
+          "typeID": 34,
+          "quantity": 22400
+        }
+      ],
+      "products": [
+        {
+          "typeID": 32880,
+          "quantity": 1
+        }
+      ],
+      "time": 6000
+    }
+  ],
+  "suppliers": [
+    {
+      "corporationId": 1000165,
+      "stationId": 60014599,
+      "systemId": 30005042,
+      "types": [
+        1032,
+        2047,
+        3300,
+        3301,
+        3319,
+        3327,
+        3330,
+        3342,
+        3380,
+        3385,
+        3386,
+        3392,
+        3394,
+        3413,
+        3416,
+        3426,
+        3436,
+        3449,
+        3450,
+        21603,
+        32918
+      ]
+    },
+    {
+      "corporationId": 1000035,
+      "stationId": 60003754,
+      "systemId": 30000144,
+      "types": [
+        950,
+        983,
+        1112,
+        1130,
+        10837
+      ]
+    },
+    {
+      "corporationId": 1000056,
+      "stationId": 60005413,
+      "systemId": 30003415,
+      "types": [
+        1072,
+        1318,
+        2047,
+        12057
+      ]
+    },
+    {
+      "corporationId": 1000129,
+      "stationId": 60012583,
+      "systemId": 30004504,
+      "types": [
+        785,
+        32881
+      ]
+    },
+    {
+      "corporationId": 1000124,
+      "stationId": 60012184,
+      "systemId": 30001006,
+      "types": [
+        25544
+      ]
+    }
+  ],
+  "oreSources": [
+    {
+      "systemId": 30000001,
+      "systemName": "Tanoo",
+      "oreTypeId": 1230,
+      "beltId": 40000003,
+      "count": 30,
+      "materials": [
+        {
+          "materialTypeID": 34,
+          "quantity": 400
+        }
+      ]
+    },
+    {
+      "systemId": 30000001,
+      "systemName": "Tanoo",
+      "oreTypeId": 1228,
+      "beltId": 40000003,
+      "count": 32,
+      "materials": [
+        {
+          "materialTypeID": 34,
+          "quantity": 150
+        },
+        {
+          "materialTypeID": 35,
+          "quantity": 110
+        }
+      ]
+    },
+    {
+      "systemId": 30000119,
+      "systemName": "Itamo",
+      "oreTypeId": 18,
+      "beltId": 40007770,
+      "count": 11,
+      "materials": [
+        {
+          "materialTypeID": 34,
+          "quantity": 175
+        },
+        {
+          "materialTypeID": 36,
+          "quantity": 70
+        }
+      ]
+    },
+    {
+      "systemId": 30000012,
+      "systemName": "Asabona",
+      "oreTypeId": 20,
+      "beltId": 40000664,
+      "count": 3,
+      "materials": [
+        {
+          "materialTypeID": 36,
+          "quantity": 60
+        },
+        {
+          "materialTypeID": 37,
+          "quantity": 120
+        }
+      ]
+    },
+    {
+      "systemId": 30000196,
+      "systemName": "Otosela",
+      "oreTypeId": 21,
+      "beltId": 40012512,
+      "count": 8,
+      "materials": [
+        {
+          "materialTypeID": 35,
+          "quantity": 450
+        },
+        {
+          "materialTypeID": 38,
+          "quantity": 120
+        }
+      ]
+    },
+    {
+      "systemId": 30000305,
+      "systemName": "G96R-F",
+      "oreTypeId": 1223,
+      "beltId": 40019185,
+      "count": 1,
+      "materials": [
+        {
+          "materialTypeID": 35,
+          "quantity": 3200
+        },
+        {
+          "materialTypeID": 36,
+          "quantity": 1200
+        },
+        {
+          "materialTypeID": 39,
+          "quantity": 160
+        }
+      ]
+    },
+    {
+      "systemId": 30000438,
+      "systemName": "PQRE-W",
+      "oreTypeId": 22,
+      "beltId": 40027231,
+      "count": 4,
+      "materials": [
+        {
+          "materialTypeID": 35,
+          "quantity": 3200
+        },
+        {
+          "materialTypeID": 36,
+          "quantity": 1200
+        },
+        {
+          "materialTypeID": 40,
+          "quantity": 120
+        }
+      ]
+    }
+  ]
+}

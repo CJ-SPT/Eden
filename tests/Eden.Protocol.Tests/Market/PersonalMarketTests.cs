@@ -313,7 +313,7 @@ public sealed class PersonalMarketTests
             Assert.Throws<InvalidDataException>(() => WorldInitialization.Initialize(database, economy: new()));
             using WorldDbContext world = new(database.Path);
             Assert.Empty(world.Set<TestingWalletGrant>());
-            Assert.Equal(87, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         }
         finally
         {

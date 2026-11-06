@@ -33,6 +33,7 @@
 | [Corporation roadmap](corporations.md) | Published standalone corporation milestones and remaining scope. |
 | [Corporation inventory ownership](inventory-ownership.md) | Storage ownership, migration guarantees and the office/asset boundary. |
 | [Client RPC route inventory](client-routes/README.md) | Generated handler candidates, compatibility routes, call sites and repeatable auditing. |
+| [Starter production audit](starter-production.json) | Pinned Merlin/Venture/Badger recipes, starter fits, NPC suppliers and populated ore sources; reproduce with `tools/Export-StarterProduction.py`. |
 | [Tech I hull inventory](tech-one-hulls.json) | Machine-readable hull cohorts and deferred roles. |
 | [Carbon licensing notes](carbon-license.md) | Reference-source licensing and attribution. |
 

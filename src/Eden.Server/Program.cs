@@ -62,6 +62,15 @@ internal static class Program
         {
             throw new InvalidDataException("--economy-world requires a new world path.");
         }
+        int npcStock = Eden.Gameplay.Market.NpcSupplyRules.Stock;
+        if (Value("--npc-stock") is { } stockText)
+        {
+            if (!economyWorld || !int.TryParse(stockText, out npcStock))
+            {
+                throw new InvalidDataException("--npc-stock requires a new --economy-world and a whole-number stock quantity.");
+            }
+            Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(npcStock);
+        }
         var options = LauncherOptions.Load(Value("--config"));
         if (args.Contains("--development-login"))
         {
@@ -91,7 +100,7 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
         WorldInitialization.Initialize(
             new WorldDatabase(worldPath),
-            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false) : null
+            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null
         );
         var accounts = services.GetRequiredService<LauncherStore>();
         accounts.Initialize();
