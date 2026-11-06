@@ -49,6 +49,7 @@ public static class WorldInitialization
             .Set<WorldMissile>()
             .Where(m => m.Status == MissileFlightStatus.Flying)
             .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
+        LiveCombatRuntime.Find(database.Path)?.WarmDrones();
     }
 
     // Explicit development/test open: validate and migrate before creating a reader.

@@ -447,6 +447,61 @@ public sealed class NpcMiningTests
         Assert.Equal(2, saved.Pilots.Count());
     }
 
+    [Theory]
+    [InlineData(83)]
+    [InlineData(84)]
+    [InlineData(WorldMigration.CurrentVersion)]
+    public void ExistingMiningTableWithoutHaulGenerationUpgradesWithoutLosingProgress(int version)
+    {
+        var clock = Clock();
+        using TestWorld db = new(clock: clock, regionalNpcs: true);
+        Prepare(db);
+        var contacts = Read(db, clock.Now);
+        long due = MiningDue(db);
+        clock.AdvanceWallTime(TimeSpan.FromTicks(due - clock.Now));
+        Read(db, clock.Now);
+        long ore = Ore(db);
+        WorldNpcMiningOperation operation;
+        WorldNpcMiningMember[] members;
+        WorldNpcMiningCargo[] cargo;
+        using (WorldDbContext world = new(db.Path))
+        {
+            operation = world.Set<WorldNpcMiningOperation>().AsNoTracking().Single();
+            members = world.Set<WorldNpcMiningMember>().AsNoTracking().OrderBy(m => m.NpcId).ToArray();
+            cargo = world.Set<WorldNpcMiningCargo>().AsNoTracking().OrderBy(c => c.NpcId).ThenBy(c => c.TypeId).ToArray();
+            Assert.NotEmpty(cargo);
+            Assert.All(cargo, c => Assert.True(c.Quantity > 0));
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpcMiningOperation DROP COLUMN HaulGeneration");
+            string schemaVersion = $"PRAGMA user_version={version}";
+            world.Database.ExecuteSqlRaw(schemaVersion);
+        }
+        _ = WorldInitialization.Open(db.Path);
+        _ = WorldInitialization.Open(db.Path);
+        using (WorldDbContext saved = new(db.Path))
+        {
+            var upgraded = saved.Set<WorldNpcMiningOperation>().Single();
+            Assert.Equal(0, upgraded.HaulGeneration);
+            Assert.Equal(JsonSerializer.Serialize(operation), JsonSerializer.Serialize(upgraded));
+            Assert.Equal(
+                JsonSerializer.Serialize(members),
+                JsonSerializer.Serialize(saved.Set<WorldNpcMiningMember>().OrderBy(m => m.NpcId).ToArray())
+            );
+            Assert.Equal(
+                JsonSerializer.Serialize(cargo),
+                JsonSerializer.Serialize(saved.Set<WorldNpcMiningCargo>().OrderBy(c => c.NpcId).ThenBy(c => c.TypeId).ToArray())
+            );
+            Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+            upgraded.HaulGeneration = 7;
+            saved.SaveChanges();
+        }
+        _ = WorldInitialization.Open(db.Path);
+        using WorldDbContext reopened = new(db.Path);
+        Assert.Equal(7, reopened.Set<WorldNpcMiningOperation>().Single().HaulGeneration);
+        Assert.Equal(ore, Ore(db));
+        Assert.Equal(contacts.Select(n => n.Id), Read(db, clock.Now).Select(n => n.Id));
+        Assert.Equal(2, reopened.Pilots.Count());
+    }
+
     [Fact]
     public void DepletedOreCannotBecomeNegativeOrRegenerateOnReopen()
     {

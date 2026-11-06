@@ -1037,10 +1037,9 @@ internal static class WorldMigration
         {
             SavedFittingSchema.Create(world);
         }
-        if (version < 85)
-        {
-            DroneSchema.Upgrade(world);
-        }
+        // A current-version save may predate the tables on another branch.
+        // Reconcile the idempotent drone schema before startup reads it.
+        DroneSchema.Upgrade(world);
         transaction.Commit();
         transaction.Dispose();
         if (version < 78)

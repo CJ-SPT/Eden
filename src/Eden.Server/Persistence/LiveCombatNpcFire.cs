@@ -22,7 +22,23 @@ internal sealed partial class LiveCombatRuntime
                 .ToHashSet();
         });
 
-    internal void WarmDrones() => _ = DroneControllers();
+    internal void WarmDrones()
+    {
+        using var ownership = owner.Enter();
+        bool available = Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            return world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master WHERE type='table' AND name='WorldDrone'")
+                .Any();
+        });
+        // The resident owner opens before startup migrations. Defer hydration
+        // until initialization has supplied the drone schema and reset control.
+        if (available)
+        {
+            _ = DroneControllers();
+        }
+    }
 
     internal bool FireNpc(
         long pilotId,
