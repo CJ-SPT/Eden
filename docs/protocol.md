@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Bounded authentication retention, November 6, 2026](protocol/startup.md#bounded-authentication-retention-november-6-2026)
+
 - [Wallet history filtering and indexes, November 6, 2026](protocol/industry.md#wallet-history-filtering-and-indexes-november-6-2026)
 
 - [Password verification outside world ownership, November 6, 2026](protocol/startup.md#password-verification-outside-world-ownership-november-6-2026)

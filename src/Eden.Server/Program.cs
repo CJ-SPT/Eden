@@ -109,6 +109,7 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        services.GetRequiredService<LauncherMaintenance>().Start();
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
         await using var api = LauncherApi.Create(
             options,

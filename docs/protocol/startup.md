@@ -202,3 +202,15 @@ Live acceptance: Not performed; agent client testing is disabled. Optional maint
 The first focused run passed 56 cases and exposed a rehash-path SQLite table lock: session creation queried roles through a second connection after modifying credentials. Roles now use the existing transaction. The corrected run below covers that fix as well.
 
 Automated validation: pinned tool/solution restore and build passed (zero warnings/errors; corrected build 1.65 seconds). Filter: FullyQualifiedName~Eden.Protocol.Tests.Launcher|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests. All 57 cases passed in 11 seconds after the correction, including paused verification/password-change/rehash work, stale credential rejection and durable authentication. Both Python suites passed (3 catalog, 9 formatting), and formatting/diff checks passed. No full .NET suite was requested or run.
+
+## Bounded authentication retention (November 6, 2026)
+
+Authentication initialization and a clock-driven fifteen-minute host worker now retire expired tickets and expired/revoked session families. Each transaction examines at most 256 candidate families and deletes at most 256 rows per deletion phase; each maintenance run performs at most eight transactions and releases world ownership between them. Parent sessions are removed only after their ticket and refresh children are gone. Active families retain used refresh-token hashes, so replay still revokes the entire family. Indexes cover family expiry/revocation, child session references and ticket expiry, through the existing additive launcher initializer.
+
+Cleanup commits remain durable before returning. Background failures are logged and retried on the next interval; resident pending changes retain the checkpoint retry behavior. Host shutdown stops scheduling and awaits any admitted cleanup before resident-world disposal. Large backlogs drain over multiple intervals rather than taking an unbounded startup or world transaction.
+
+Automated validation: pinned tool/solution restore and build passed (zero warnings/errors; final build 2.58 seconds). Filter: FullyQualifiedName~Eden.Protocol.Tests.Launcher|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests. All 67 cases passed in 10 seconds, including active refresh replay, child deletion bounds, expired/active reopen behavior, simulated periodic scheduling/shutdown and failed-checkpoint recovery. Python policy and formatting checks are recorded below. No full .NET suite was requested or run.
+
+Live acceptance: Not performed; agent client testing is disabled. Optional maintainer checks: none; this milestone changes server-side retention only.
+
+Both Python policy suites passed (3 catalog cases in 0.23 seconds, 9 formatting cases in 0.02 seconds). Formatting verification checked 798 files; line-width and diff checks passed.

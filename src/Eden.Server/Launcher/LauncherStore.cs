@@ -11,7 +11,7 @@ namespace Eden.Server.Launcher;
 
 // Authentication tables extend the world without competing with gameplay's user_version migrations.
 [Injectable(InjectionType.Singleton)]
-internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock, ILauncherPasswords? passwords = null)
+internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider clock, ILauncherPasswords? passwords = null)
 {
     internal const int AccessSeconds = 15 * 60;
     internal const int RefreshSeconds = 30 * 24 * 60 * 60;
@@ -26,23 +26,30 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock, 
 
     public void Initialize()
     {
-        using var db = Open();
-        Execute(
-            db,
-            null,
-            """
-            CREATE TABLE IF NOT EXISTS LauncherCredential(
-                AccountId INTEGER PRIMARY KEY REFERENCES WorldAccount(Id), NormalizedName TEXT NOT NULL UNIQUE,
-                PasswordHash TEXT NOT NULL, Roles INTEGER NOT NULL);
-            CREATE TABLE IF NOT EXISTS LauncherSession(
-                Id TEXT PRIMARY KEY, AccountId INTEGER NOT NULL REFERENCES WorldAccount(Id), AccessHash TEXT NOT NULL UNIQUE,
-                AccessExpires INTEGER NOT NULL, Expires INTEGER NOT NULL, Revoked INTEGER NOT NULL DEFAULT 0);
-            CREATE TABLE IF NOT EXISTS LauncherRefresh(
-                Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Used INTEGER NOT NULL DEFAULT 0);
-            CREATE TABLE IF NOT EXISTS LauncherTicket(
-                Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Expires INTEGER NOT NULL);
-            """
-        );
+        using (var db = Open())
+        {
+            Execute(
+                db,
+                null,
+                """
+                CREATE TABLE IF NOT EXISTS LauncherCredential(
+                    AccountId INTEGER PRIMARY KEY REFERENCES WorldAccount(Id), NormalizedName TEXT NOT NULL UNIQUE,
+                    PasswordHash TEXT NOT NULL, Roles INTEGER NOT NULL);
+                CREATE TABLE IF NOT EXISTS LauncherSession(
+                    Id TEXT PRIMARY KEY, AccountId INTEGER NOT NULL REFERENCES WorldAccount(Id), AccessHash TEXT NOT NULL UNIQUE,
+                    AccessExpires INTEGER NOT NULL, Expires INTEGER NOT NULL, Revoked INTEGER NOT NULL DEFAULT 0);
+                CREATE TABLE IF NOT EXISTS LauncherRefresh(
+                    Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Used INTEGER NOT NULL DEFAULT 0);
+                CREATE TABLE IF NOT EXISTS LauncherTicket(
+                    Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Expires INTEGER NOT NULL);
+                CREATE INDEX IF NOT EXISTS IX_LauncherSession_Revoked_Expires ON LauncherSession(Revoked,Expires);
+                CREATE INDEX IF NOT EXISTS IX_LauncherRefresh_SessionId ON LauncherRefresh(SessionId);
+                CREATE INDEX IF NOT EXISTS IX_LauncherTicket_SessionId ON LauncherTicket(SessionId);
+                CREATE INDEX IF NOT EXISTS IX_LauncherTicket_Expires ON LauncherTicket(Expires);
+                """
+            );
+        }
+        Maintain();
     }
 
     public AccountReply Register(AccountRequest request)
@@ -362,12 +369,14 @@ internal sealed class LauncherStore(WorldDatabase database, TimeProvider clock, 
         return value is DBNull ? null : value;
     }
 
-    private static void Execute(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
+    private static int Execute(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
     {
         using var command = Command(db, tx, sql, values);
-        if (command.ExecuteNonQuery() != 0 || sql.TrimStart().StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
+        int changed = command.ExecuteNonQuery();
+        if (changed != 0 || sql.TrimStart().StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
         {
             WorldConnections.RequireDurableClose(db);
         }
+        return changed;
     }
 }
