@@ -1,3 +1,26 @@
+## Client RPC backlog inventory (November 5, 2026)
+
+The [client route inventory](client-routes/README.md) compares pinned build **3662168** with Eden production source **01dea7b6a045afed1727a6eec842929ffbee044a**. Inert inspection decoded **12,789 modules** and visited **171,678 code objects**, finding **1,204 unique service/method pairs**: **835 no-handler-found**, **45 compatibility-review**, and **324 handler-candidate**. **39 dynamic selectors** remain unresolved; decoding and analysis reported **zero failures**. The CSV is sortable, the JSON retains all detected client module/function/bytecode-offset evidence and server source candidates, and the separate unresolved CSV identifies dynamic selectors.
+
+These are source candidates, not an exhaustive implementation checklist. The scanner follows literal remote/proxy selectors, moniker factories, aliases, self fields, local-service GUIDs, bounded remote-return summaries, CSPA string dispatch and remote method references passed to callbacks. Explicit bridges cover Michelle's remote ballpark and invCache's dynamic container wrappers; local inventory cache methods are excluded from automatic forwarding. Server matching conservatively combines dispatch-file literals and prefers exact tuple matches in its evidence. A handler candidate does not establish argument, role, location, persistence or gameplay support. Compatibility replies need semantic review: some intentionally represent valid empty state. Developer-only, deprecated, feature-flagged and unreachable client references remain in the backlog; dynamic dispatch, unknown wrappers, native binaries and HTTP/gateway APIs can escape it.
+
+Useful player-feature entries include drone commands (`entity.CmdEngage`, `CmdReturnBay`), overheating (`dogmaIM.Overload`, `StopOverload`), fleet creation (`fleetObjectHandler.CreateFleet`), scan-result bookmarking (`beyonce.BookmarkScanResult`), planetary interaction, alliance operations and corporation voting. These are examples from the candidate backlog, not newly implemented features or priority commitments.
+
+The tool refuses a client archive whose SHA-256 differs from **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. It uses **xdis 6.3.0** to decode Python 2 bytecode as data; no client module is imported or executed. No game, client UI or normal runtime save is used. The existing [Carbon Blue reference at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) was consulted; this audit changes no Blue codec or Destiny behavior.
+
+To refresh the snapshot from the repository root, supply an existing xdis installation with `--python-libs`, or install an isolated copy first:
+
+```powershell
+python -m pip install --target artifacts/client-route-libs xdis==6.3.0
+python tools/Audit-ClientRoutes.py --archive 'E:\EdenDev\3662168\tq\code.ccp' --python-libs artifacts/client-route-libs --output docs/client-routes
+```
+
+**Automated validation.** The complete static scan passed in **49.92 seconds** with zero decode/analysis failures. Eleven focused Python audit regressions passed (**0.005 seconds**), including direct and callback RPCs, dynamic-name retention, local-service exclusion, bound references, cross-module wrapper summaries, inventory cache forwarding, private/data attributes, CSPA string dispatch and server guard matching. Tool/solution restores and an isolated solution build passed (**5.76 seconds**, zero warnings/errors); focused .NET filter `FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **9 tests** (**3 seconds**). Catalog policy passed **3 tests** (**0.233 seconds**) and formatting policy passed **9 tests** (**0.017 seconds**); formatting and snapshot integrity checks passed. The initial regular build was stopped after the running server locked its outputs; isolated outputs under `artifacts/client-route-validation` then passed without stopping that server. The earlier build preceded the concurrent corporation-share milestone; the final build and hosting results cover production revision `01dea7b`. No full .NET suite was requested or run. Static reachability and full feature semantics remain unverified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None; this milestone delivers an offline audit and backlog.
+
 ## Localization QA wrap compatibility (November 5, 2026)
 
 The reported **Invalid Packet Destination** dialog identified the missing `localizationServer.UpdateLocalizationQAWrap` route. The account-phase localization handler now accepts exactly one native boolean before or after pilot selection, records it on the connection context and returns Python **None**. Repeated updates replace the flag; other connections and saved pilot settings are unaffected. Character logoff retains the connection flag, and a new connection defaults to false. Invalid argument types/counts and unexpected service keywords fail without changing the flag; the router still removes transport-owned `machoVersion`. Unknown localization methods remain unsupported.
