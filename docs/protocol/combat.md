@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Empire patrol bracket colors (November 6, 2026)](#empire-patrol-bracket-colors-november-6-2026)
 - [Catalog-driven NPC electronic warfare (November 5, 2026)](#catalog-driven-npc-electronic-warfare-november-5-2026)
 - [Catalog-driven NPC self-repair (November 5, 2026)](#catalog-driven-npc-self-repair-november-5-2026)
 - [Development NPCs excluded from regional belts](#development-npcs-excluded-from-regional-belts)
@@ -28,6 +29,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Retaliatory NPC pursuit and return, November 2, 2026](#retaliatory-npc-pursuit-and-return-november-2-2026)
 - [Automatic belt NPC aggression](#automatic-belt-npc-aggression)
 - [NPC combat orbiting](#npc-combat-orbiting)
+
+## Empire patrol bracket colors (November 6, 2026)
+
+The reported client screenshot shows a red Caldari Navy Moa bracket alongside differently colored empire patrol contacts. The build-3662168 `client/spacecomponentsbytype` records explain the hull-dependent defaults: the four patrol frigates have entity-standing response thresholds **-5 / 5**, the four mission cruiser types (including Moa **15320**) have **11 / 11**, and the four customs types have **-11 / -11**. Missing slim thresholds therefore make the mission cruisers hostile at every normal standing, even though Eden uses them as defensive patrols.
+
+`NpcSlimItem` now sends floating-point `hostile_response_threshold` and `friendly_response_threshold`, both **-11**, for the `Navy` and `Customs` roles. This follows the catalog's customs presentation policy for Eden's defensive guards: blue while idle, with the native client's `threatAttackingMe` override still able to turn an attacking guard red. Pirate slims retain their type defaults. Ship type, group, category, corporation, physical Destiny state and server retaliation rules are unchanged. Initial `SetState` snapshots and incremental `AddBalls` use the same adapter; existing saved guards need no database migration. A server rebuild/restart and fresh ballpark load are needed to receive the corrected slims.
+
+The primary evidence is inert disassembly of build **3662168** `code.ccp` (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`): `bracketVarious.GetIconColor`, `spacecomponents.client.components.entitystandings._get_icon_color_and_hint_from_entity_standing_response`, and `SlimItem.__getattr__`. The slim class returns `None` for missing ordinary attributes; the entity-standing helper then falls back to the catalog thresholds. Explicit thresholds bypass that fallback without changing its final attacking-state override. Carbon's [Blue marshaller at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) was consulted for the existing named-object/state representation; the codec is unchanged.
+
+Automated validation: tool restore and isolated solution restore/build passed (final build 2.26 s, zero warnings/errors). The final focused filter `FullyQualifiedName~NpcGuardTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~NpcCombatTests` passed **82/82** tests in **24 s**, including all twelve patrol types across all four empires in encoded/decoded snapshots and additions, native identity preservation, and pirate omission of the override. Both Python policy suites passed (**3 + 9** tests). The first two focused runs had four failures each in the new test fixture (a docked pilot position, then incorrect CLR integer-type expectations after Blue decoding); these were corrected, the four-case regression passed separately, and the final 82-test run covers the corrected tests. Full .NET regression and native rendering were not exercised. Formatting verification passed for **753** files with the 140-character limit; local documentation links/anchors, UTF-8/newlines/whitespace and `git diff --check` passed.
+
+Live acceptance: Not performed; agent client testing is disabled. The supplied screenshot is the reported pre-fix observation, not acceptance of this change.
+
+Optional maintainer checks: after restarting the rebuilt server, reload a gate or station ballpark and confirm the navy cruiser, frigate and customs brackets are blue while idle; verify a retaliating guard turns red for the attacked pilot.
 
 ## Catalog-driven NPC electronic warfare (November 5, 2026)
 

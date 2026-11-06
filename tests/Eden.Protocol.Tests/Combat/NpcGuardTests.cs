@@ -6,6 +6,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Propulsion;
 using Eden.Server;
 using Eden.Server.Catalog;
@@ -71,6 +72,42 @@ public sealed class NpcGuardTests
         Assert.Empty(combat.Aggressors(ShipId));
         _ = WorldInitialization.Open(db.Path);
         Assert.Equal(guards, db.Services.GetRequiredService<INpcEncounters>().List(SystemId, Now + TimeSpan.TicksPerSecond));
+    }
+
+    [Theory]
+    [InlineData(NpcEmpireFaction.Amarr)]
+    [InlineData(NpcEmpireFaction.Caldari)]
+    [InlineData(NpcEmpireFaction.Gallente)]
+    [InlineData(NpcEmpireFaction.Minmatar)]
+    public void AllEmpirePatrolHullsSendFriendlyThresholdsInSnapshotsAndAdditions(NpcEmpireFaction empire)
+    {
+        using TestWorld db = new(regionalNpcs: true);
+        Prepare(db, empire);
+        var guards = db.Services.GetRequiredService<INpcEncounters>().List(SystemId, Now);
+        Assert.Equal(3, guards.Select(n => n.TypeId).Distinct().Count());
+        db.Store.SetPosition(ShipId, SpacePosition.Zero, SystemId);
+        ShipContact own = new(PilotContact.From(db.Store.FindPilot(1000001)!), SpacePosition.Zero, null, 0, null);
+        var snapshot = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.Snapshot(own, 1, [], [], guards))));
+        var snapshotSlims = Assert.IsType<List<object?>>(BlueRead.Fields(snapshot.State)["slims"]);
+        var addition = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.AddNpcs(guards, 2))), 3);
+        var addedSlims = Assert.IsType<List<object?>>(addition[1]);
+        foreach (var slims in new[] { snapshotSlims.Skip(1).ToArray(), addedSlims.ToArray() })
+        {
+            Assert.Equal(guards.Count, slims.Length);
+            foreach (var item in slims)
+            {
+                var slim = Assert.IsType<BlueInstance>(item);
+                var fields = BlueRead.Fields(slim.State);
+                var guard = guards.Single(n => n.Id == Assert.IsType<long>(fields["itemID"]));
+                Assert.Equal("eve.common.script.util.slimItem.SlimItem", slim.Name);
+                Assert.Equal(guard.TypeId, Assert.IsType<long>(fields["typeID"]));
+                Assert.Equal(guard.GroupId, Assert.IsType<long>(fields["groupID"]));
+                Assert.Equal(guard.CategoryId, Assert.IsType<long>(fields["categoryID"]));
+                Assert.Equal(guard.CorporationId, Assert.IsType<long>(fields["ownerID"]));
+                Assert.Equal(-11d, Assert.IsType<double>(fields["hostile_response_threshold"]));
+                Assert.Equal(-11d, Assert.IsType<double>(fields["friendly_response_threshold"]));
+            }
+        }
     }
 
     [Theory]

@@ -121,6 +121,11 @@ internal sealed record WreckSlimItem(WreckContact Wreck) : SlimItem
 
 internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
 {
+    // Build 3662168 compares standings in [-10, 10] with these thresholds.
+    // Match the catalog's customs policy: blue until threatAttackingMe turns red,
+    // instead of inheriting hostile mission thresholds from a navy hull's type.
+    private const double DefensivePatrolResponseThreshold = -11;
+
     public override object ToBlue()
     {
         var fields = Fields(Npc.Id, Npc.TypeId, Npc.CorporationId, Npc.GroupId, Npc.CategoryId);
@@ -128,6 +133,11 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         fields["corpID"] = Npc.CorporationId;
         fields["charID"] = null;
         fields["modules"] = new List<object?>();
+        if (Npc.Role is NpcRole.Navy or NpcRole.Customs)
+        {
+            fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;
+            fields["friendly_response_threshold"] = DefensivePatrolResponseThreshold;
+        }
         return Wrap(fields);
     }
 }

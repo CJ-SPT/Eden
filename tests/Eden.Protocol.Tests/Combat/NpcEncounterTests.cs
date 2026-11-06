@@ -89,6 +89,25 @@ public sealed class NpcEncounterTests
     }
 
     [Fact]
+    public void PirateSlimsRetainTheirCatalogStandingThresholds()
+    {
+        using TestWorld db = new();
+        Prepare(db);
+        var pirates = db.Services.GetRequiredService<INpcEncounters>().List(30000144, s_now);
+        Assert.NotEmpty(pirates);
+        var addition = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.AddNpcs(pirates, 1))), 3);
+        Assert.All(
+            Assert.IsType<List<object?>>(addition[1]),
+            item =>
+            {
+                var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(item).State);
+                Assert.DoesNotContain("hostile_response_threshold", fields.Keys);
+                Assert.DoesNotContain("friendly_response_threshold", fields.Keys);
+            }
+        );
+    }
+
+    [Fact]
     public void ReconnectDoesNotHealArmorAndDefeatedRowsDoNotRespawnFromARead()
     {
         using TestWorld db = new();
