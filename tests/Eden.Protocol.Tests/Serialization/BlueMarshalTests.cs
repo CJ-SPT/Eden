@@ -6,6 +6,25 @@ namespace Eden.Protocol.Tests.Serialization;
 
 public sealed class BlueMarshalTests
 {
+    [Fact]
+    public void BillingDictionaryPreservesNumericAndTextKeysAlongsideNone()
+    {
+        // Carbon TY_DICT is a Python dictionary: numeric billing IDs and the
+        // divisionID string may coexist without converting their key types.
+        var request = new BlueDictionary([(2L, true), ("divisionID", 1006L), (null, false)]);
+        var decoded = Assert.IsType<BlueDictionary>(BlueMarshal.Decode(BlueMarshal.Encode(request)));
+        Assert.Equal(3, decoded.Entries.Count);
+        Assert.Equal(true, decoded.Entries.Single(e => Equals(e.Key, 2L)).Value);
+        Assert.Equal(1006L, decoded.Entries.Single(e => Equals(e.Key, "divisionID")).Value);
+        Assert.Equal(false, decoded.Entries.Single(e => e.Key is null).Value);
+        var noDefault = new BlueDictionary([(2L, false), ("divisionID", 1000L)]);
+        var mixed = Assert.IsType<BlueDictionary>(BlueMarshal.Decode(BlueMarshal.Encode(noDefault)));
+        Assert.Equal(2, mixed.Entries.Count);
+        Assert.DoesNotContain(mixed.Entries, e => e.Key is null);
+        Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(new Dictionary<long, object?> { [2] = true })));
+        Assert.IsType<Dictionary<string, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(new Dictionary<string, object?> { ["a"] = 1 })));
+    }
+
     [Theory]
     [InlineData("7E0000000028", "")]
     [InlineData("7E00000000294100", "A")]

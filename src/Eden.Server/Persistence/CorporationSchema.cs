@@ -6,6 +6,8 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model.Entity<SavedCorporationBillPaymentSettings>().ToTable("WorldCorporationBillPaymentSettings").HasKey(s => s.CorporationId);
+        model.Entity<SavedCorporationBillPaymentSettings>().HasOne<SavedCorporation>().WithMany().HasForeignKey(s => s.CorporationId);
         model
             .Entity<SavedCorporationLoyaltyBalance>()
             .ToTable("WorldCorporationLoyaltyWallet")
@@ -112,6 +114,8 @@ internal static class CorporationSchema
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, SourceOwnerId INTEGER NOT NULL, RecipientCorporationId INTEGER NOT NULL,
                 IssuerCorporationId INTEGER NOT NULL, Points INTEGER NOT NULL, SourceBefore INTEGER NOT NULL,
                 SourceAfter INTEGER NOT NULL, RecipientBefore INTEGER NOT NULL, RecipientAfter INTEGER NOT NULL, Time INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldCorporationBillPaymentSettings(
+                CorporationId INTEGER PRIMARY KEY REFERENCES WorldCorporation(Id) ON DELETE CASCADE, DataJson TEXT NOT NULL);
             """
         );
         InventoryOwnershipSchema.Register(world);

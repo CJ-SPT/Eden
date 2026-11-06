@@ -32,6 +32,22 @@ public sealed class SavedWalletLedger
 [Injectable]
 internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationWallet
 {
+    public void CheckMarketHistoryAccess(long actorId, int? key)
+    {
+        if (key is { } division)
+        {
+            CorporationWalletRules.CheckKey(division);
+        }
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
+        if (!roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant | CorporationRole.Trader))
+        {
+            throw new InvalidDataException("Corporation financial or trader access is required for market history.");
+        }
+    }
+
     public IReadOnlyList<CorporationWalletDivision> Divisions(long actorId)
     {
         using WorldDbContext world = new(database.Path);

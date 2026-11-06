@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Repair;
@@ -11,7 +12,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICorporationWallet corporationWallet)
+    : ISelectedPilotCallHandler
 {
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
@@ -163,6 +165,21 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock) : I
                             .Select(trade => new MarketTransactionReply(trade, context.Pilot.PilotId))
                             .ToArray()
                     );
+                case "CorpGetTransactions":
+                    if (
+                        args is not [null or long, null or long]
+                        || keywords is { Count: > 0 }
+                        || args[0] is long date && date < 0
+                        || args[1] is long divisionKey
+                            && divisionKey is < CorporationWalletRules.MasterKey or > CorporationWalletRules.LastKey
+                    )
+                    {
+                        throw new InvalidDataException("Choose a valid corporate market date and wallet division.");
+                    }
+                    corporationWallet.CheckMarketHistoryAccess(context.Pilot.PilotId, args[1] is long selected ? (int)selected : null);
+                    // All existing Eden executions are explicitly personal. Never expose
+                    // a member's personal trade history as corporation transactions.
+                    return BlueEmpty.List;
                 case "PlaceMultiSellOrder":
                 case "PlaceBuyOrder":
                 case "BuyMultipleItems":

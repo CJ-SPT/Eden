@@ -144,13 +144,15 @@ internal static class BlueMarshal
                 }
             }
 
-            if (indexed.Count > 0 && values.Count > 0)
+            if (hasDefault || indexed.Count > 0 && values.Count > 0)
             {
-                throw new InvalidDataException("Mixed dictionary keys.");
-            }
-            if (hasDefault)
-            {
-                List<(object? Key, object? Value)> entries = [(null, defaultValue)];
+                // Native billing settings mix integer bill-type keys with divisionID.
+                // Retain that inert shape explicitly instead of forcing a typed map.
+                List<(object? Key, object? Value)> entries = [];
+                if (hasDefault)
+                {
+                    entries.Add((null, defaultValue));
+                }
                 entries.AddRange(indexed.Select(pair => ((object?)pair.Key, pair.Value)));
                 entries.AddRange(values.Select(pair => ((object?)pair.Key, pair.Value)));
                 return new BlueDictionary(entries);

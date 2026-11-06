@@ -26,6 +26,7 @@ public interface ICorporationWallet
     void SelectDivision(long actorId, int key);
     void Transfer(long actorId, WalletTransferRequest request);
     IReadOnlyList<CorporationWalletEntry> Journal(long actorId, bool corporation, int key);
+    void CheckMarketHistoryAccess(long actorId, int? key);
 }
 
 public static class CorporationWalletRules
