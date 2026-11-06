@@ -172,6 +172,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [Persistent personal market orders (November 6, 2026)](protocol/industry.md#persistent-personal-market-orders-november-6-2026)
+
 - <a id="personal-market-corporation-wallet-checkbox-compatibility-november-6-2026"></a>[Personal market corporation-wallet checkbox compatibility (November 6, 2026)](protocol/industry.md#personal-market-corporation-wallet-checkbox-compatibility-november-6-2026)
 
 - <a id="currency-redemption-and-loyalty-wallets"></a>[Currency redemption and loyalty wallets](protocol/industry.md#currency-redemption-and-loyalty-wallets)

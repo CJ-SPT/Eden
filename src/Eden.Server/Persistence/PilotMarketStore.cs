@@ -15,7 +15,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider clock) : IPilotMarket
+internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvider clock, MarketChangeSignal signal)
+    : IPilotMarket,
+        IPersonalMarket
 {
     private sealed record StarterOffer(int TypeId, string Name, long? BuyPriceCents, int Demand);
 
@@ -57,6 +59,10 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
 
     private void Seed(WorldDbContext world, CatalogDbContext catalog, Station station)
     {
+        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
+        {
+            return;
+        }
         var marker = world.Set<MarketStation>().Find(station.Id);
         if (marker?.SeedVersion == TestingMarketRules.SeedVersion)
         {
@@ -123,6 +129,10 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
 
     private void Refresh(WorldDbContext world, IQueryable<NpcMarketOrder> orders)
     {
+        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
+        {
+            return;
+        }
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
         long now = Now;
         // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
@@ -169,6 +179,10 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
         var query = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
+        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
+        {
+            query = query.Where(o => false);
+        }
         if (typeId.HasValue)
         {
             query = query.Where(o => o.TypeId == typeId.Value);
@@ -189,7 +203,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             var candidates = query;
             query = query.Where(o =>
                 !candidates.Any(other =>
-                    other.TypeId == o.TypeId && (other.PriceCents < o.PriceCents || (other.PriceCents == o.PriceCents && other.Id < o.Id))
+                    other.TypeId == o.TypeId && (other.PriceCents < o.PriceCents || other.PriceCents == o.PriceCents && other.Id < o.Id)
                 )
             );
         }
@@ -209,8 +223,29 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
                 o.Issued
             ))
             .ToArray();
+        var personal = world
+            .Set<SavedPersonalOrder>()
+            .AsNoTracking()
+            .Where(o => o.RegionId == region && o.Status == PersonalOrderStatus.Open && o.Expires > Now);
+        if (typeId.HasValue)
+        {
+            personal = personal.Where(o => o.TypeId == typeId.Value);
+        }
+        personal = scope switch
+        {
+            MarketScope.Station => personal.Where(o => o.StationId == station.Id && !o.Bid),
+            MarketScope.System => personal.Where(o => o.SystemId == system && !o.Bid),
+            MarketScope.Region => personal.Where(o => !o.Bid),
+            _ => personal,
+        };
+        IEnumerable<MarketOrder> combined = result.Concat(personal.AsEnumerable().Select(o => o.Snapshot()));
+        if (scope.HasValue)
+        {
+            combined = combined.GroupBy(o => o.TypeId).Select(g => g.OrderBy(o => o.PriceCents).ThenBy(o => o.Id).First());
+        }
+        var book = combined.OrderBy(o => o.Id).ToArray();
         transaction.Commit();
-        return result;
+        return book;
     }
 
     private static MarketTrade Read(MarketExecution trade) =>
@@ -226,7 +261,8 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             trade.PriceCents,
             trade.TaxCents,
             trade.BalanceCents,
-            trade.Time
+            trade.Time,
+            trade.WalletAmountCents
         );
 
     public IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null)
@@ -276,8 +312,23 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
             join order in world.Set<NpcMarketOrder>() on trade.OrderId equals order.Id
             where order.RegionId == region && typeIds.Contains(trade.TypeId) && trade.Time >= start && trade.Time <= end
             select trade;
+        // Personal fills have two wallet entries, but only the seller contributes
+        // regional price/volume. NPC executions already contain just one side.
+        var stations = catalog.Set<Station>().Where(s => s.SolarSystem.Constellation.RegionId == region).Select(s => s.Id).ToArray();
+        var personalFills = world
+            .Set<MarketExecution>()
+            .AsNoTracking()
+            .Where(t =>
+                t.OrderId > PersonalMarketRules.FirstOrderId
+                && !t.IsBuy
+                && stations.Contains(t.StationId)
+                && typeIds.Contains(t.TypeId)
+                && t.Time >= start
+                && t.Time <= end
+            );
         return executions
             .AsEnumerable()
+            .Concat(personalFills.AsEnumerable())
             .GroupBy(t => (t.TypeId, Date: DateTime.FromFileTimeUtc(t.Time).Date))
             .OrderBy(g => g.Key.TypeId)
             .ThenBy(g => g.Key.Date)
@@ -308,154 +359,7 @@ internal sealed class PilotMarketStore(WorldDatabase database, TimeProvider cloc
         return MarketRules.SalesTax(level);
     }
 
-    private NpcMarketOrder Match(WorldDbContext world, int stationId, int typeId, bool bid, long limit)
-    {
-        long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        var order = world.Set<NpcMarketOrder>().SingleOrDefault(o => o.StationId == stationId && o.TypeId == typeId && o.Bid == bid);
-        if (
-            order is null
-            || order.Remaining == 0
-            || order.Issued <= cutoff
-            || limit <= 0
-            || (bid ? order.PriceCents < limit : order.PriceCents > limit)
-        )
-        {
-            throw new InvalidDataException("No matching station order remains at that price. Refresh the market quote.");
-        }
-        return order;
-    }
+    public MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items) => ExecuteSell(pilotId, items, 0);
 
-    public MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId);
-        var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
-        if (
-            items.Count == 0
-            || items.Select(i => i.ItemId).Distinct().Count() != items.Count
-            || items.Any(i => i.Quantity <= 0 || i.StationId != station.Id)
-        )
-        {
-            throw new InvalidDataException("Select distinct owned stacks and positive quantities at your current station.");
-        }
-        Seed(world, catalog, station);
-        var wallet = Wallet(world, pilotId);
-        decimal rate = TaxRate(world, catalog, pilotId);
-        List<InventoryChange> changes = [];
-        List<MarketExecution> trades = [];
-        foreach (var request in items)
-        {
-            var item = InventoryPersistence.OwnedStack(world, pilotId, request.ItemId);
-            if (
-                item is null
-                || item.OwnerId != pilotId
-                || item.TypeId != request.TypeId
-                || item.Singleton
-                || request.Quantity > item.Quantity
-                || PilotIndustryStore.IsInstalled(world, item.Id)
-                || !(
-                    (item.LocationId == station.Id && item.FlagId == (int)InventoryFlag.Hangar)
-                    || (
-                        item.LocationId == pilot.ActiveShipId
-                        && (item.FlagId == (int)InventoryFlag.Cargo || item.FlagId == (int)InventoryFlag.GeneralMiningHold)
-                    )
-                )
-            )
-            {
-                throw new InvalidDataException("The selected stack or quantity is unavailable in your hangar or cargo.");
-            }
-            var order = Match(world, station.Id, item.TypeId, true, request.LimitPriceCents);
-            var (quantity, gross, tax) = MarketRules.Fill(request.Quantity, order.Remaining, order.PriceCents, rate);
-            wallet.Cents = checked(wallet.Cents + gross - tax);
-            var before = PilotInventoryStore.Read(catalog, item);
-            item.Quantity -= quantity;
-            order.Remaining -= quantity;
-            changes.Add(new(before with { Quantity = item.Quantity }, before));
-            if (item.Quantity == 0)
-            {
-                world.Remove(item);
-            }
-            trades.Add(
-                world
-                    .Add(
-                        new MarketExecution
-                        {
-                            PilotId = pilotId,
-                            OrderId = order.Id,
-                            StationId = station.Id,
-                            CounterpartyId = order.OwnerId,
-                            TypeId = item.TypeId,
-                            Quantity = quantity,
-                            PriceCents = order.PriceCents,
-                            TaxCents = tax,
-                            BalanceCents = wallet.Cents,
-                            Time = Now,
-                        }
-                    )
-                    .Entity
-            );
-        }
-        PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Sold, trades.Count);
-        world.SaveChanges();
-        transaction.Commit();
-        return new(wallet.Cents, trades.Select(Read).ToArray(), changes);
-    }
-
-    public MarketResult Buy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId);
-        var station = TradeStation(catalog, pilot, stationId);
-        if (items.Count == 0 || items.Select(i => i.TypeId).Distinct().Count() != items.Count || items.Any(i => i.Quantity <= 0))
-        {
-            throw new InvalidDataException("Select distinct item types and positive quantities to buy.");
-        }
-        Seed(world, catalog, station);
-        var wallet = Wallet(world, pilotId);
-        List<InventoryChange> changes = [];
-        List<MarketExecution> trades = [];
-        foreach (var request in items)
-        {
-            var order = Match(world, station.Id, request.TypeId, false, request.LimitPriceCents);
-            var fill = MarketRules.Fill(request.Quantity, order.Remaining, order.PriceCents);
-            int quantity = fill.Quantity;
-            long cost = fill.GrossCents;
-            if (wallet.Cents < cost)
-            {
-                throw new InvalidDataException("You do not have enough ISK for this purchase.");
-            }
-            wallet.Cents -= cost;
-            order.Remaining = TestingMarketRules.Stock;
-            changes.Add(
-                InventoryPersistence.MergeOutput(world, catalog, pilotId, stationId, (int)InventoryFlag.Hangar, request.TypeId, quantity)
-            );
-            trades.Add(
-                world
-                    .Add(
-                        new MarketExecution
-                        {
-                            PilotId = pilotId,
-                            OrderId = order.Id,
-                            StationId = stationId,
-                            CounterpartyId = order.OwnerId,
-                            TypeId = request.TypeId,
-                            Quantity = quantity,
-                            PriceCents = order.PriceCents,
-                            IsBuy = true,
-                            BalanceCents = wallet.Cents,
-                            Time = Now,
-                        }
-                    )
-                    .Entity
-            );
-        }
-        PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Bought, trades.Count);
-        world.SaveChanges();
-        transaction.Commit();
-        return new(wallet.Cents, trades.Select(Read).ToArray(), changes);
-    }
+    public MarketResult Buy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items) => ExecuteBuy(pilotId, stationId, items, 0);
 }

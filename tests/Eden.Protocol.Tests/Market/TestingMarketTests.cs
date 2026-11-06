@@ -59,7 +59,8 @@ public sealed class TestingMarketTests
             SignedSettings.Empty
         );
         context.Select(pilot);
-        var handler = db.Services.GetRequiredService<MarketHandler>();
+        using var scope = db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<MarketHandler>();
         var quote = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "marketProxy", "GetPlexOrders", []));
         var cached = Assert.IsType<CachedMarketOrders>(quote.Reply);
         var book = Assert.IsType<MarketOrderBook>(cached.Result);

@@ -6,7 +6,7 @@
 
 Agreed design direction, November 6, 2026. Continue implementing core gameplay before starting this roadmap. The stages below describe the long-term destination and its dependencies; implementation details and tuning should be revisited against the available mechanics when this work begins.
 
-The [core gameplay audit and implementation priorities](#6-core-gameplay-audit-and-implementation-priorities) identify the missing foundations and the recommended next work. The immediate recommendation is persistent personal market orders, followed by complete Tech I production chains and sustainable resource supply.
+The [core gameplay audit and implementation priorities](#6-core-gameplay-audit-and-implementation-priorities) identify the missing foundations and the recommended next work. Persistent station-local personal orders and saved economic starting settings are implemented. The next recommendation is complete Tech I production chains, followed by sustainable resource supply. See the [personal market milestone](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
 
 ## 1. The experience we are building
 
@@ -158,7 +158,7 @@ Some historical compatibility records and generated capability lists lag newer i
 
 Implement these as human-playable gameplay milestones first. Each step adds useful play now and provides operations that future bots can reuse.
 
-1. **Persistent personal market orders: the next milestone.** Begin with station-local personal sell listings and escrow-backed buy orders, including partial fills, modify/cancel/expire behavior, fees, and native order/history notifications. Extract the current development seeding and grant choices into explicit saved economic settings so an isolated fresh-world fixture can run without them. Preserve existing development saves. Prove that one pilot can list manufactured ammunition, disconnect, and receive another pilot's payment with exactly-once goods and money settlement. Add remote/ranged and corporation orders in later market milestones.
+1. **Persistent personal market orders: implemented for personal station-local trading.** Begin with station-local personal sell listings and escrow-backed buy orders, including partial fills, modify/cancel/expire behavior, fees, and native order/history notifications. Extract the current development seeding and grant choices into explicit saved economic settings so an isolated fresh-world fixture can run without them. Preserve existing development saves. Prove that one pilot can list manufactured ammunition, disconnect, and receive another pilot's payment with exactly-once goods and money settlement. Add remote/ranged and corporation orders in later market milestones.
 
 2. **A complete Tech I replacement chain.** Expand manufacturing to a small supported cohort of combat frigates, the Venture, and a basic hauler, plus their usable fittings and ammunition. Audit the exact pinned recipes and available ore/mineral sources before choosing the cohort. Include necessary early drone-hull support where a selected fit depends on it, and ordinary repackaging for eligible used equipment/ships. Prove that two pilots can mine, refine, manufacture, list, buy, fit, lose, and replace a ship without development purchases or item grants. Complete one cohort before expanding all races and hull classes.
 

@@ -8,6 +8,10 @@ internal static class TestingWalletFunding
     // primary key makes funding durable and unique for the lifetime of a pilot.
     internal static void Grant(WorldDbContext world, long pilotId, long time)
     {
+        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingGrants: false })
+        {
+            return;
+        }
         if (world.Set<TestingWalletGrant>().Find(pilotId) is not null)
         {
             return;

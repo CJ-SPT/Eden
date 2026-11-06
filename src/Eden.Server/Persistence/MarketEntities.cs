@@ -42,6 +42,7 @@ public sealed class MarketExecution
     public long TaxCents { get; set; }
     public long BalanceCents { get; set; }
     public long Time { get; set; }
+    public long? WalletAmountCents { get; set; }
 }
 
 public sealed class TestingWalletGrant

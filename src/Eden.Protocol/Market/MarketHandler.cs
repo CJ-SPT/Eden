@@ -12,12 +12,17 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICorporationWallet corporationWallet)
-    : ISelectedPilotCallHandler
+internal sealed class MarketHandler(
+    IPilotMarket market,
+    TimeProvider clock,
+    ICorporationWallet corporationWallet,
+    IPersonalMarket personal,
+    PersonalMarketMonitor monitor
+) : ISelectedPilotCallHandler
 {
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
-    private static MarketOrderRow Row(MarketOrder order, int duration = MarketDefinitions.NpcOrderDays) => new(order, duration);
+    private static MarketOrderRow Row(MarketOrder order, int? duration = null) => new(order, duration);
 
     private static MarketOrderRows Rows(IEnumerable<MarketOrder> orders) => new(orders.ToArray());
 
@@ -84,6 +89,11 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
         }
         try
         {
+            if (keywords is { Count: > 0 })
+            {
+                throw new InvalidDataException("Unsupported market keyword arguments.");
+            }
+            monitor.Enter(context);
             if (check)
             {
                 market.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
@@ -117,10 +127,47 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                     return new BlueMap<long, MarketOrderRow>(
                         market.BestAsks(context.Pilot.PilotId, scope).ToDictionary(o => (long)o.TypeId, o => Row(o))
                     );
-                case "GetCharOrders":
+                case "GetCharOrders" when args.Length == 0:
+                    return Rows(personal.PersonalOrders(context.Pilot.PilotId));
+                case "GetMarketOrderHistory" when args.Length == 0:
+                    return Rows(personal.PersonalOrders(context.Pilot.PilotId, history: true));
+                case "GetCharEscrow" when args.Length == 0:
+                    var escrow = personal.Escrow(context.Pilot.PilotId);
+                    return new EscrowInfo(Isk(escrow.IskCents), Isk(escrow.ItemsValueCents));
                 case "GetCorporationOrders":
-                case "GetMarketOrderHistory":
                     return Rows([]);
+                case "CancelCharOrder" when args is [long cancelId, long cancelRegion]:
+                    personal.Cancel(context.Pilot.PilotId, cancelId, checked((int)cancelRegion));
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
+                case "ModifyCharOrder"
+                    when args
+                        is [
+                            long modifyId,
+                            var newPrice,
+                            bool bid,
+                            long modifyStation,
+                            long modifySystem,
+                            var oldPrice,
+                            (long)MarketDefinitions.StationRange,
+                            long remaining,
+                            long issued,
+                        ]:
+                    personal.Modify(
+                        context.Pilot.PilotId,
+                        new(
+                            modifyId,
+                            MarketRequestWire.Price(newPrice),
+                            bid,
+                            checked((int)modifyStation),
+                            checked((int)modifySystem),
+                            MarketRequestWire.Price(oldPrice),
+                            checked((int)remaining),
+                            issued
+                        )
+                    );
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
                 case "GetOldPriceHistory" or "GetNewPriceHistory" when args is [long type] && type is > 0 and <= int.MaxValue:
                     return HistoryPair(market.History(context.Pilot.PilotId, [(int)type])).For(method == "GetNewPriceHistory");
                 case "GetHistoryForManyTypeIDs" when args is [HashSet<long> types] && types.All(t => t is > 0 and <= int.MaxValue):
@@ -139,6 +186,37 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                     );
                 // The pinned corporation-wallet checkbox returns Python int 0/1;
                 // windows without that checkbox send a Python bool instead.
+                case "PlaceMultiSellOrder" when args is [List<object?> listedItems, false or 0L, long sellDays, _] && sellDays > 0:
+                    personal.PlaceSell(context.Pilot.PilotId, listedItems.Select(MarketRequestWire.Sale).ToArray(), checked((int)sellDays));
+                    monitor.Advance(context);
+                    return true;
+                case "PlaceBuyOrder"
+                    when args
+                        is [
+                            long listedStation,
+                            long listedType,
+                            var listedPrice,
+                            long listedQuantity,
+                            (long)MarketDefinitions.StationRange,
+                            1L,
+                            long buyDays,
+                            false
+                            or 0L,
+                            _,
+                        ]
+                        && buyDays > 0:
+                    personal.PlaceBuy(
+                        context.Pilot.PilotId,
+                        new(
+                            checked((int)listedStation),
+                            checked((int)listedType),
+                            MarketRequestWire.Price(listedPrice),
+                            checked((int)listedQuantity),
+                            checked((int)buyDays)
+                        )
+                    );
+                    monitor.Advance(context);
+                    return PilotCallResult.None;
                 case "PlaceMultiSellOrder" when args is [List<object?> entries, false or 0L, 0L, _]:
                     var sales = entries.Select(MarketRequestWire.Sale).ToArray();
                     Changed(context, market.Sell(context.Pilot.PilotId, sales));
@@ -194,7 +272,9 @@ internal sealed class MarketHandler(IPilotMarket market, TimeProvider clock, ICo
                 case "PlaceMultiSellOrder":
                 case "PlaceBuyOrder":
                 case "BuyMultipleItems":
-                    return new PilotCallResult.Failure("Eden currently supports immediate personal trades at your docked station.");
+                case "ModifyCharOrder":
+                case "CancelCharOrder":
+                    return new PilotCallResult.Failure("Choose personal station orders, station range and a minimum volume of one.");
                 default:
                     return PilotCallResult.Unsupported;
             }

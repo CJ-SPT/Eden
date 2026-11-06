@@ -24,7 +24,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, IPilotSafety
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            ("marketProxy", "GetCharEscrow") => new EscrowInfo(),
             ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("scanMgr", "SignalTrackerRegister") => PilotCallResult.None,
             ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),

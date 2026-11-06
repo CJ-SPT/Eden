@@ -241,6 +241,43 @@ public sealed class IndustryTests
     }
 
     [Fact]
+    public void ManufacturedAmmunitionCanBeListedByAnOfflinePilotAndPurchasedAfterReopen()
+    {
+        using Fixture f = new();
+        var job = f.Store.Install(f.Pilot.PilotId, f.Request());
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(288));
+        var delivered = f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId);
+        var ammunition = Assert.Single(delivered.Changes).Item;
+        var wing = f.Db.Store.FindPilot(1000002)!;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedWorldEconomy>().Single().TestingMarket = false;
+            world.Set<SavedWorldEconomy>().Single().TestingGrants = false;
+            world.Ships.Single(s => s.Id == wing.ShipId).StationId = f.Pilot.StationId;
+            world.Add(new PilotWallet { PilotId = f.Pilot.PilotId, Cents = 1_000_000 });
+            world.Add(new PilotWallet { PilotId = wing.PilotId, Cents = 1_000_000 });
+            world.SaveChanges();
+        }
+        var personal = f.Db.Services.GetRequiredService<Eden.Gameplay.Market.IPersonalMarket>();
+        var market = f.Db.Services.GetRequiredService<Eden.Gameplay.Market.IPilotMarket>();
+        personal.PlaceSell(f.Pilot.PilotId, [new(ammunition.Id, f.Pilot.StationId, 215, 1000, 100)], 1);
+        Assert.Equal(0, f.Quantity(215));
+        // No client/session is constructed for the seller. Reopen retains its listing.
+        WorldInitialization.Initialize(new(f.Db.Path));
+        market.Buy(wing.PilotId, f.Pilot.StationId, [new(215, 1000, 40)]);
+        WorldInitialization.Initialize(new(f.Db.Path));
+        Assert.Equal(60, Assert.Single(personal.PersonalOrders(f.Pilot.PilotId)).Remaining);
+        Assert.Equal(1_027_000, market.Balance(f.Pilot.PilotId));
+        Assert.Equal(960_000, market.Balance(wing.PilotId));
+        Assert.Equal(40, Assert.Single(market.History(wing.PilotId, [215])).Volume);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(40, saved.Set<OwnedItem>().Single(i => i.OwnerId == wing.PilotId && i.TypeId == 215).Quantity);
+        Assert.Single(saved.Set<IndustryJob>());
+        Assert.Equal(IndustryJobStatus.Delivered, saved.Set<IndustryJob>().Single().Status);
+        Assert.Empty(f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId).Changes);
+    }
+
+    [Fact]
     public void MaterialsBecomeAReadyJobThenDeliverRealAmmunitionExactlyOnceAcrossRestart()
     {
         using Fixture f = new();

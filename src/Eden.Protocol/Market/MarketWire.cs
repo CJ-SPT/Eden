@@ -28,7 +28,7 @@ internal static class MarketWire
 
     private static double Isk(long cents) => (double)cents / MarketDefinitions.CentsPerIsk;
 
-    internal static BlueConstructor Row(MarketOrder order, int duration = MarketDefinitions.NpcOrderDays) =>
+    internal static BlueConstructor Row(MarketOrder order, int? duration = null) =>
         new(
             "blue.DBRow",
             [
@@ -48,9 +48,9 @@ internal static class MarketWire
                     order.Remaining,
                     1,
                     order.Issued,
-                    duration,
+                    duration ?? order.DurationDays,
                     0,
-                    0d,
+                    Isk(order.EscrowCents),
                     false,
                 },
             ]

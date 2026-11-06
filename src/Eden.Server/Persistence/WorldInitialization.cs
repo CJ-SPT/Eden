@@ -6,7 +6,11 @@ namespace Eden.Server.Persistence;
 
 public static class WorldInitialization
 {
-    public static void Initialize(WorldDatabase database, TimeProvider? clock = null)
+    public static void Initialize(
+        WorldDatabase database,
+        TimeProvider? clock = null,
+        Eden.Gameplay.Market.WorldEconomySettings? economy = null
+    )
     {
         if (!File.Exists(database.CatalogPath))
         {
@@ -17,7 +21,12 @@ public static class WorldInitialization
         }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System);
+        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy);
+        var market = new PilotMarketStore(database, clock ?? TimeProvider.System, new MarketChangeSignal());
+        while (market.Expire() > 0)
+        {
+            // Reconcile all overdue escrow once before admitting connections.
+        }
         // Drones remain where they were left; downtime releases control and never replays damage.
         world
             .Set<WorldDrone>()

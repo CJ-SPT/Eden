@@ -78,8 +78,23 @@ internal sealed class WalletHandler(IPilotWalletReader wallet, TimeProvider cloc
                     trade.Id * 2,
                     trade,
                     WalletEntryType.MarketTransaction,
-                    trade.IsBuy ? -gross : gross,
+                    trade.WalletAmountCents ?? (trade.IsBuy ? -gross : gross),
                     trade.BalanceCents + trade.TaxCents
+                )
+            );
+        }
+        foreach (var payment in journal.MarketPayments ?? [])
+        {
+            entries.Add(
+                new WalletJournalEntry(
+                    PersonalMarketRules.FirstPaymentJournalId + payment.Id,
+                    payment.Time,
+                    payment.Kind,
+                    payment.AmountCents < 0 ? payment.PilotId : payment.CounterpartyId,
+                    payment.AmountCents < 0 ? payment.CounterpartyId : payment.PilotId,
+                    payment.OrderId,
+                    payment.AmountCents,
+                    payment.BalanceCents
                 )
             );
         }

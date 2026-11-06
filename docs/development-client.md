@@ -755,3 +755,17 @@ For assembled storage, test Nestor's 5,000 m³ maintenance bay with a Leopard, B
 The native run flew Hoarder, Orca, Covetor, Retriever, Charon, Squall and Victorieux Luxury Yacht. Inventory verified the specialized cargo examples above, plus Metamorphosis's Mobile Depot Hold. Covetor and Retriever collected catalog-adjusted ore; Squall fired its reduced-cost launcher and retained its magazine after docking. Orca hauled Quafe and an assembled fitted Rifter to another station, unloaded both, and recovered an assembled shuttle from an explicitly seeded owned NPC wreck. Host/client restarts retained the Orca's stored ship and holds and, separately, Covetor's miners and ore. Actual player carrier loss and expiry cleanup have automated coverage only. The normal world was unchanged.
 
 Undock clearance includes the station and hull radii. A course pointing through a station can still be blocked: stop and manually orbit clear before warping. The milestone does not add automatic obstacle avoidance. Fleet/corporation access, combat drones/fighters, automatic frigate escape, industrial cores and cloaking remain traced as deferred roles in the per-hull audit. Stop after milestone 4; do not begin capital acceptance.
+
+## Creating an economy world without testing supply
+
+Personal station-local market orders work in existing development worlds. Their saved economic settings retain replenishing 1 ISK stock and one-time pilot grants.
+
+For an isolated economy world, put a copy of the verified build-3662168 `catalog.sqlite` beside a new world path and add `--economy-world` on its first server launch:
+
+```powershell
+dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite' --economy-world
+```
+
+The command rejects an existing world file. Subsequent launches use the same `--world` path without `--economy-world`; the saved settings continue to disable testing NPC supply and testing ISK grants. Existing saves are never converted or stripped of assets. These settings provide an isolated economy foundation; ordinary NPC blueprint/skillbook supply, complete ship production and renewable resources remain later work.
+
+Personal orders require the owner to be docked at the order's NPC station, station range, minimum volume one, and a supported duration (1, 3, 7, 14, 30 or 90 days). Listed goods leave usable inventory; buy orders reserve their full purchase value. Cancelling or expiring returns only the unsold goods or unspent escrow. Broker fees are not refunded. Price modification requires five minutes, charges a relist fee and adjusts buy escrow. Native presentation remains unverified; see the [protocol record](protocol/industry.md#persistent-personal-market-orders-november-6-2026).

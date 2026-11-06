@@ -666,7 +666,7 @@ public sealed class MarketTests
         Assert.All(empty, rows => Assert.Empty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(rows).Arguments[1])));
         Assert.IsType<Dictionary<long, object?>>(Call("marketProxy", "GetPlexHistory"));
         Assert.IsType<PilotCallResult.Failure>(
-            Call("marketProxy", "PlaceBuyOrder", (long)pilot.StationId, 3651L, 100d, 1L, -1L, 1L, 1L, false, null)
+            Call("marketProxy", "PlaceBuyOrder", (long)pilot.StationId, 3651L, 100d, 1L, -1L, 1L, 2L, false, null)
         );
     }
 

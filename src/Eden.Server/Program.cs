@@ -57,6 +57,11 @@ internal static class Program
         }
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
         string worldPath = Path.GetFullPath(Value("--world") ?? Path.Combine(directory, "world.sqlite"));
+        bool economyWorld = args.Contains("--economy-world");
+        if (economyWorld && File.Exists(worldPath))
+        {
+            throw new InvalidDataException("--economy-world requires a new world path.");
+        }
         var options = LauncherOptions.Load(Value("--config"));
         if (args.Contains("--development-login"))
         {
@@ -84,7 +89,10 @@ internal static class Program
             return;
         }
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
-        WorldInitialization.Initialize(new WorldDatabase(worldPath));
+        WorldInitialization.Initialize(
+            new WorldDatabase(worldPath),
+            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false) : null
+        );
         var accounts = services.GetRequiredService<LauncherStore>();
         accounts.Initialize();
         if (Value("--grant-redeem") is { } redeemPath)
@@ -110,6 +118,7 @@ internal static class Program
             return;
         }
         services.GetRequiredService<LauncherMaintenance>().Start();
+        services.GetRequiredService<MarketMaintenance>().Start();
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
         await using var api = LauncherApi.Create(
             options,

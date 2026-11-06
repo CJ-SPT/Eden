@@ -13,7 +13,9 @@ public sealed record MarketOrder(
     long PriceCents,
     int Remaining,
     int Entered,
-    long Issued
+    long Issued,
+    int DurationDays = MarketDefinitions.NpcOrderDays,
+    long EscrowCents = 0
 );
 
 public sealed record MarketSale(long ItemId, int StationId, int TypeId, long LimitPriceCents, int Quantity);
@@ -32,7 +34,8 @@ public sealed record MarketTrade(
     long PriceCents,
     long TaxCents,
     long BalanceCents,
-    long Time
+    long Time,
+    long? WalletAmountCents = null
 );
 
 public sealed record MarketResult(long BalanceCents, IReadOnlyList<MarketTrade> Trades, IReadOnlyList<InventoryChange> Changes);
@@ -72,11 +75,19 @@ public enum MarketScope
 public enum MarketSkill
 {
     Accounting = 16622,
+    Trade = 3443,
+    Retail = 3444,
+    Wholesale = 16596,
+    Tycoon = 18580,
+    BrokerRelations = 3446,
+    AdvancedBrokerRelations = 16597,
 }
 
 public enum WalletEntryType
 {
     MarketTransaction = 2,
+    MarketEscrow = 42,
+    BrokersFee = 46,
     GmCashTransfer = 3,
     PlayerDonation = 10,
     CorporationAccountWithdrawal = 37,

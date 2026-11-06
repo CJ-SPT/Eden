@@ -57,7 +57,8 @@ internal sealed class PilotUpdateCoordinator(
     CorporationHandler corporations,
     CorporationWalletHandler corporationWallet,
     NpcEwarHandler npcEwar,
-    DroneHandler drones
+    DroneHandler drones,
+    PersonalMarketMonitor personalMarket
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -97,6 +98,7 @@ internal sealed class PilotUpdateCoordinator(
         implants.Enter(context);
         boosters.Enter(context);
         walletBalance.Enter(context);
+        personalMarket.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
     }
@@ -128,6 +130,7 @@ internal sealed class PilotUpdateCoordinator(
         implants.Reset();
         boosters.Reset();
         walletBalance.Reset();
+        personalMarket.Reset();
         context.Flight.Checkpoint();
         mining.Cancel(context);
         combat.Cancel(context);
@@ -206,6 +209,7 @@ internal sealed class PilotUpdateCoordinator(
             loyalty.Advance(context);
             implants.Advance(context);
             boosters.Advance(context);
+            personalMarket.Advance(context);
             walletBalance.Advance(context);
         }
         return beforeAttack;

@@ -20,7 +20,8 @@ public sealed record WalletJournal(
     IReadOnlyList<JumpClonePayment> JumpClonePayments,
     IReadOnlyList<ContractPayment> Contracts,
     IReadOnlyList<RedeemedCurrency>? RedeemedCurrencies = null,
-    IReadOnlyList<CorporationPayment>? CorporationPayments = null
+    IReadOnlyList<CorporationPayment>? CorporationPayments = null,
+    IReadOnlyList<MarketPayment>? MarketPayments = null
 );
 
 public interface IPilotWalletReader

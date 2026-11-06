@@ -27,7 +27,7 @@ internal sealed record WalletJournalFilter(int? Year, int? Month)
     }
 }
 
-internal sealed record MarketOrderRow(MarketOrder Order, int Duration = MarketDefinitions.NpcOrderDays) : BlueModel
+internal sealed record MarketOrderRow(MarketOrder Order, int? Duration = null) : BlueModel
 {
     public override object ToBlue() => MarketWire.Row(Order, Duration);
 }
@@ -138,9 +138,10 @@ internal sealed record WalletJournalEntry(
 
 internal sealed record WalletDescription([property: JsonPropertyName("DESC")] string Reason);
 
-internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders) : PilotNotification("OnOwnOrdersChanged")
+internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders, string Reason = "Expiry")
+    : PilotNotification("OnOwnOrdersChanged")
 {
-    public override object?[] Arguments => [Orders.Select(order => (object?)order.ToBlue()).ToList(), "Expiry", false];
+    public override object?[] Arguments => [Orders.Select(order => (object?)order.ToBlue()).ToList(), Reason, false];
 }
 
 internal sealed record MarketItemReceived(InventoryItem Item) : PilotNotification("OnMarketItemReceived")
