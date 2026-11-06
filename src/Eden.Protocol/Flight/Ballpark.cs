@@ -48,7 +48,7 @@ internal static partial class Ballpark
         }
         foreach (var npc in npcs)
         {
-            items.Add(WriteNpc(writer, npc));
+            items.Add(WriteNpc(writer, npc, stamp));
         }
         foreach (var wreck in wrecks ?? [])
         {
@@ -123,7 +123,7 @@ internal static partial class Ballpark
         writer.Write((byte)0);
         writer.Write(stamp);
         var contacts = npcs.ToArray();
-        var slims = contacts.Select(n => WriteNpc(writer, n)).ToList();
+        var slims = contacts.Select(n => WriteNpc(writer, n, stamp)).ToList();
         return new(stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => n.Health.DamageState()));
     }
 
@@ -217,7 +217,7 @@ internal static partial class Ballpark
 
     internal static WreckSlimItem WreckSlim(WreckContact wreck) => new(wreck);
 
-    private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc)
+    private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc, int stamp)
     {
         // Entity ships share the free-ball movement layout with player ships.
         // EntityShip fits its graphics turret from the type catalog.
@@ -251,7 +251,9 @@ internal static partial class Ballpark
         if (npc.Warp is { } warp)
         {
             WritePosition(writer, warp.Destination);
-            writer.Write(warp.StartStamp);
+            // Without shared motion, the contact's warp age is relative to tick zero.
+            // A negative native effect stamp means alignment, not an active warp.
+            writer.Write(npc.Stamp == 0 ? stamp + warp.StartStamp : warp.StartStamp);
             writer.Write(warp.Distance);
             writer.Write(0d);
             writer.Write((long)warp.WireFactor);

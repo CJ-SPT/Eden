@@ -19,7 +19,7 @@ using CombatFixture = Eden.Protocol.Tests.Combat.NpcCombatTests.Fixture;
 
 namespace Eden.Protocol.Tests.Mining;
 
-public sealed class NpcMiningTests
+public sealed partial class NpcMiningTests
 {
     private const int SystemId = 30000142;
     private const long PilotId = 90000001;
@@ -740,14 +740,22 @@ public sealed class NpcMiningTests
         flight.Updates.Clear();
         clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
         flight.RefreshNpcs();
-        Assert.Equal(3, flight.Updates.Select(u => u.Command).OfType<DestinyCommand.WarpTo>().Count());
+        var states = flight.Updates.Select(u => u.Command).OfType<DestinyCommand.AddBalls>().ToArray();
+        Assert.Equal(3, states.Length);
+        Assert.All(states.SelectMany(s => s.Addition.Slims).OfType<NpcSlimItem>(), n => Assert.NotNull(n.Npc.Warp));
         foreach (var miner in miners)
         {
             int stop = flight.Updates.FindIndex(u =>
                 u.Command is DestinyCommand.TimedSpecialEffect e && e.Id == miner.Id && e.Graphic == "effects.Laser" && !e.Start
             );
-            int warp = flight.Updates.FindIndex(u => u.Command is DestinyCommand.WarpTo w && w.Id == miner.Id);
+            int warp = flight.Updates.FindIndex(u =>
+                u.Command is DestinyCommand.AddBalls a && a.Addition.Slims.OfType<NpcSlimItem>().Any(n => n.Npc.Id == miner.Id)
+            );
             Assert.True(stop >= 0 && stop < warp);
+            Assert.Contains(
+                flight.Updates,
+                u => u.Command is DestinyCommand.SpecialEffect e && e.Id == miner.Id && e.Graphic == "effects.Warping" && e.Start
+            );
         }
     }
 }

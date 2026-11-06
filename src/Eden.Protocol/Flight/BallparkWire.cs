@@ -131,7 +131,8 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Npc.Id, Npc.TypeId, Npc.CorporationId, Npc.GroupId, Npc.CategoryId);
-        fields["name"] = Npc.Name;
+        // Native UI labels need Python unicode; UTF-8 bytes corrupt the diamond fleet marker.
+        fields["name"] = new BlueUnicode(Npc.Name);
         fields["corpID"] = Npc.CorporationId;
         fields["charID"] = null;
         fields["modules"] = new List<object?>();

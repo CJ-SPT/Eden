@@ -162,7 +162,7 @@ public sealed class NpcEncounterTests
         var slim = Assert.IsType<Dictionary<string, object?>>(
             Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(chunk[1]))).State
         );
-        Assert.Equal("Guristas Rookie", slim["name"]);
+        Assert.Equal("Guristas Rookie", Assert.IsType<BlueUnicode>(slim["name"]).Value);
         Assert.Equal(11, slim["categoryID"]);
         Assert.Null(slim["charID"]);
         Assert.Single(Assert.IsType<Dictionary<long, object?>>(chunk[2]));

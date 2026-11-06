@@ -105,6 +105,7 @@ internal sealed partial class FlightSession(
     private PropulsionContact? _propulsion;
     private FlightProperties _baseFlight = pilot.Flight;
     private NpcContact[] _npcs = [];
+    private HashSet<long> _transitingNpcs = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
     private bool _destroying;
@@ -167,7 +168,7 @@ internal sealed partial class FlightSession(
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
-        if (_npcs.FirstOrDefault(n => n.Id == id) is { } npc)
+        if (_npcs.FirstOrDefault(n => n.Id == id && n.Warp is null) is { } npc)
         {
             return new(id, npc.TypeId, npc.Position, npc.Radius);
         }
@@ -193,6 +194,9 @@ internal sealed partial class FlightSession(
             .ToArray();
 
     public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
+
+    internal bool NpcInWarp(long id) => _transitingNpcs.Contains(id);
+
     public IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
     public IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
 
@@ -313,12 +317,14 @@ internal sealed partial class FlightSession(
         _wrecks = current;
     }
 
-    private NpcContact[] ReadNpcs() =>
-        Pilot.Position is not { } position
-            ? []
-            : (encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-                .Where(n => n.SystemId == Pilot.SystemId && position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange)
-                .ToArray();
+    private NpcContact[] ReadNpcs()
+    {
+        var contacts = Pilot.Position is null ? [] : encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [];
+        _transitingNpcs = contacts.Where(n => n.SystemId == Pilot.SystemId && n.Warp is not null).Select(n => n.Id).ToHashSet();
+        return contacts
+            .Where(n => n.SystemId == Pilot.SystemId && Pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange)
+            .ToArray();
+    }
 
     public void RefreshNpcs()
     {
@@ -343,6 +349,10 @@ internal sealed partial class FlightSession(
             {
                 NpcWeaponEffect(departed.Id, weapon, false);
             }
+            if (departed.Warp is not null)
+            {
+                WarpEffect(departed.Id, false);
+            }
             Update(new DestinyCommand.RemoveBall(departed.Id, encounters?.WasDestroyed(departed.Id) == true));
         }
         var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
@@ -353,6 +363,7 @@ internal sealed partial class FlightSession(
         foreach (var npc in current)
         {
             var previous = previousById.GetValueOrDefault(npc.Id);
+            bool warpChanged = previous is not null && NpcWarpChanged(previous, npc);
             if (previous?.Activity != npc.Activity)
             {
                 if (previous?.Activity is { } stoppedActivity)
@@ -376,7 +387,7 @@ internal sealed partial class FlightSession(
             {
                 Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));
             }
-            if (previous is not null && npc.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks)
+            if (!warpChanged && previous is not null && npc.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks)
             {
                 CorrectPosition(
                     npc.Id,
@@ -385,9 +396,24 @@ internal sealed partial class FlightSession(
                     npc.Stamp == 0 ? _simulatedStamp : npc.Stamp
                 );
             }
-            if (previous is not null && NpcCourseChanged(previous.Navigation, npc.Navigation))
+            if (!warpChanged && previous is not null && NpcCourseChanged(previous.Navigation, npc.Navigation))
             {
                 ApplyNpcCourse(npc);
+            }
+            if (warpChanged)
+            {
+                // Native AddBalls reads partial full state even for existing IDs.
+                // Replay the timed warp directly: WarpTo would start alignment again.
+                // Landing restores position, velocity and solidity in the same update.
+                Update(new DestinyCommand.AddBalls(Ballpark.AddNpcs([npc], Stamp)));
+            }
+            if (previous?.Warp is not null && npc.Warp is null)
+            {
+                WarpEffect(npc.Id, false);
+            }
+            if ((warpChanged || previous is null) && npc.Warp is not null)
+            {
+                WarpEffect(npc.Id, true);
             }
             if (previous?.Weapon != npc.Weapon)
             {
@@ -446,6 +472,12 @@ internal sealed partial class FlightSession(
         }
         Send(new DestinyCommand.SetSpeedFraction(npc.Id, course?.SpeedFraction ?? 0));
     }
+
+    private static bool NpcWarpChanged(NpcContact previous, NpcContact current) =>
+        (previous.Warp is null) != (current.Warp is null)
+        || previous.Warp?.Destination != current.Warp?.Destination
+        || previous.Warp?.Distance != current.Warp?.Distance
+        || previous.Warp?.WireFactor != current.Warp?.WireFactor;
 
     private static bool NpcCourseChanged(NpcNavigationContact? previous, NpcNavigationContact? current) =>
         previous?.State != current?.State
@@ -1278,6 +1310,10 @@ internal sealed partial class FlightSession(
         foreach (var activity in _npcs.Select(n => n.Activity).OfType<Eden.Gameplay.Mining.NpcActivityContact>())
         {
             Update(NpcActivityWire.Effect(activity, true));
+        }
+        foreach (var npc in _npcs.Where(n => n.Warp is not null))
+        {
+            WarpEffect(npc.Id, true);
         }
         Effects.Replay(own, null);
         foreach (var peer in peers)

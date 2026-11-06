@@ -95,7 +95,16 @@ internal sealed class NpcCombatHandler(
         {
             if (!context.Flight.VisibleNpcs.Any(n => n.Id == npc))
             {
-                combat.Disengage(_shipId, npc);
+                // A dispatched response keeps its target while travelling from
+                // an off-grid origin. Visibility alone must not cancel its alarm.
+                if (!context.Flight.NpcInWarp(npc))
+                {
+                    combat.Disengage(_shipId, npc);
+                }
+                continue;
+            }
+            if (context.Flight.NpcInWarp(npc))
+            {
                 continue;
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -135,7 +144,8 @@ internal sealed class NpcCombatHandler(
             }
             context.Flight.RefreshMissiles();
         }
-        var current = combat.Aggressors(_shipId).ToArray();
+        var visible = context.Flight.VisibleNpcs.Where(n => n.Warp is null).Select(n => n.Id).ToHashSet();
+        var current = combat.Aggressors(_shipId).Where(visible.Contains).ToArray();
         foreach (long npc in _aggressors.Except(current))
         {
             locks.Remove(npc, _shipId);

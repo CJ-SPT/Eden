@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [High-security NPC mining operations (November 6, 2026)](#high-security-npc-mining-operations-november-6-2026)
+- [Mining fleet warp, response and name corrections (November 6, 2026)](#mining-fleet-warp-response-and-name-corrections-november-6-2026)
 - [Passive high-security station convoys (November 6, 2026)](#passive-high-security-station-convoys-november-6-2026)
 - [Empire patrol bracket colors (November 6, 2026)](#empire-patrol-bracket-colors-november-6-2026)
 - [Catalog-driven NPC electronic warfare (November 5, 2026)](#catalog-driven-npc-electronic-warfare-november-5-2026)
@@ -79,6 +80,22 @@ Automated validation: pinned tool/solution restores and the isolated solution bu
 Live acceptance: Not performed; agent client testing is disabled.
 
 Optional maintainer check: rebuild/restart the host and select the affected pilot; confirm startup and the flight snapshot load using the existing save.
+
+### Mining fleet warp, response and name corrections (November 6, 2026)
+
+Maintainer reports and screenshots showed civilian miners disappearing during escape, an arriving Caldari response retaining no aggression, the diamond prefix rendered as garbled characters, and a nearby Kestrel rejected as too distant to target. These are evidence of the original failures; native acceptance of this correction remains unperformed.
+
+The escape simulation had already started a timed warp while `WarpTo` asked the client to begin alignment. NPC entry, landing and immediate hauler turnaround now publish the affected ball's complete native state through `AddBalls`: mode 3 carries its existing start stamp, distance and warp factor; landing carries authoritative position, velocity and restored collision flags. The existing ball ID and scene are retained. Explicit `effects.Warping` start/stop events accompany departure, arrival and visibility removal; late snapshots replay the active effect. Contacts without shared motion use a relative warp age, which is rebased to the outgoing Destiny stamp instead of sending a negative alignment stamp. A ship in transit cannot be locked; landing refreshes the same target contact used by range checks.
+
+The session combat loop had discarded aggression whenever the response was outside the visible grid, including its inbound transit from a station. A system-wide transit-ID set now preserves that saved threat while the fleet is warping, without firing weapons or publishing target locks in transit. Arrived defenders use the existing combat paths and publish locks normally. Ordinary off-grid disengagement and pilot departure still clear combat. NPC slim names now explicitly serialize as Python Unicode, preserving the catalog's **U+2666** diamond marker across all **27** mining, hauling and response hulls.
+
+Reference evidence: Carbon [Destiny `Thunkers.cpp` at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp), particularly `ReadFullStateFromStream` / `ReadBallFromStream`, and [`Ballpark.cpp` at the same revision](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp), `EvolveWarp`, `WarpTo` and existing-ball initialization. Inert inspection of build **3662168** `michelle.pyj` confirms `AddBalls` (line **1645**) reads partial full state before skipping existing slim IDs, while `SetState` (line **1224**) clears the park. `OnSpecialFX` (line **2087**) forwards the effect event. The inspected `code.ccp` SHA-256 is **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**. Carbon [Blue `Marshal.cpp` at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) was consulted alongside the existing explicit Unicode adapter. Client code objects were parsed and disassembled as data, never executed.
+
+Automated validation: pinned tool/solution restores and the isolated solution build passed with zero warnings/errors (**2.93 seconds**). The final affected run passed **584/584 tests in 2 minutes 56 seconds** with two workers, including **50 mining cases**. The seven new regression cases first failed against unmodified production code at `30a72ec`: both SQL and resident response sessions lost all seven aggression rows, escape/turnaround state updates were absent, and names decoded as bytes. An initial broader run on the correction was interrupted after an older ordinary-NPC test expected a CLR string in the pre-serialization slim; that assertion now explicitly checks the Unicode adapter. The final 584-case run includes that correction. Both Python policy suites passed (**3 catalog and 9 formatting-policy tests**). Formatting and 140-character width verification, **353** local documentation links/anchors, UTF-8/newline/whitespace and diff checks passed. The filter was `FullyQualifiedName~Npc|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~Targeting|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~LiveCombatObjectTests`. Full .NET regression was not requested or run. Tests cover Unicode for every admitted hull, ordered laser stops before native warp state, warp effects, unchanged reads, relative stamps, inbound target retention without premature locks/shots, post-arrival missile targeting and player lock acceptance, authoritative landing, direct hauler turnaround and normal disengagement. Build outputs and TRX evidence are isolated under ignored `artifacts/mining-fleet-fixes`.
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer check: rebuild/restart the server, provoke a mining fleet, and inspect diamond names, visible escape/arrival, response aggression and locking a nearby arrived defender.
 
 ## Passive high-security station convoys (November 6, 2026)
 

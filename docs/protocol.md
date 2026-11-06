@@ -19,7 +19,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Personal contracts](protocol/contracts.md) | Wizard compatibility, item exchange, courier contracts, auctions and bulk offers. |
 | [Inventory and ship ownership](protocol/inventory.md) | Stacks, personal holds, assembled ships, insurance, dirt and recovery hulls. |
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
-| [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs. |
+| [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
 | [Combat drones](protocol/drones.md) | Brutix light/medium drone launch, control, NPC combat, recall and saved state. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
