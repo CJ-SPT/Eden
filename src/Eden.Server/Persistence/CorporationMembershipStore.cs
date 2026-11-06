@@ -29,6 +29,7 @@ public sealed class SavedCorporationChange
     public string? AdministrationJson { get; set; }
     public string? RoleJson { get; set; }
     public string? TitleJson { get; set; }
+    public string? ShareJson { get; set; }
 
     public CorporationChange Snapshot() =>
         new(
@@ -37,7 +38,8 @@ public sealed class SavedCorporationChange
             MembershipJson is null ? null : JsonSerializer.Deserialize<CorporationMemberChange>(MembershipJson),
             AdministrationJson is null ? null : JsonSerializer.Deserialize<CorporationAdministrationChange>(AdministrationJson),
             RoleJson is null ? null : JsonSerializer.Deserialize<CorporationRoleChange>(RoleJson),
-            TitleJson is null ? null : JsonSerializer.Deserialize<CorporationTitleChange>(TitleJson)
+            TitleJson is null ? null : JsonSerializer.Deserialize<CorporationTitleChange>(TitleJson),
+            ShareJson is null ? null : JsonSerializer.Deserialize<CorporationShareChange>(ShareJson)
         );
 }
 

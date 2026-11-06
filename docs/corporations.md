@@ -16,6 +16,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Corporation inventory ownership storage | Published; 176 focused tests and required checks passed |
 | Offices and corporation asset access | Pending |
 | Member communications and recruitment services | Pending |
-| Shares, voting and CEO succession/closure | Pending |
+| Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
+| Voting, share issuance/dividends and CEO succession/closure | Pending |
 
 See [protocol findings](protocol.md) for native call shapes and milestone validation evidence. This table records implemented scope, not live client acceptance.

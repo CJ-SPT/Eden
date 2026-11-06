@@ -6,6 +6,21 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model.Entity<SavedCorporationShareIssue>().ToTable("WorldCorporationShareIssue").HasKey(i => i.CorporationId);
+        model.Entity<SavedCorporationShareIssue>().HasOne<SavedCorporation>().WithMany().HasForeignKey(i => i.CorporationId);
+        model
+            .Entity<SavedCorporationShareHolding>()
+            .ToTable("WorldCorporationShareHolding")
+            .HasKey(h => new { h.CorporationId, h.ShareholderId });
+        model.Entity<SavedCorporationShareHolding>().HasOne<SavedCorporationShareIssue>().WithMany().HasForeignKey(h => h.CorporationId);
+        model
+            .Entity<SavedCorporationShareHolding>()
+            .HasOne<InventoryOwner>()
+            .WithMany()
+            .HasForeignKey(h => h.ShareholderId)
+            .OnDelete(DeleteBehavior.Restrict);
+        model.Entity<SavedCorporationShareTransfer>().ToTable("WorldCorporationShareTransfer").HasKey(t => t.Id);
+        model.Entity<SavedCorporationShareTransfer>().HasOne<SavedCorporationShareIssue>().WithMany().HasForeignKey(t => t.CorporationId);
         model.Entity<SavedCorporationBillPaymentSettings>().ToTable("WorldCorporationBillPaymentSettings").HasKey(s => s.CorporationId);
         model.Entity<SavedCorporationBillPaymentSettings>().HasOne<SavedCorporation>().WithMany().HasForeignKey(s => s.CorporationId);
         model
@@ -119,6 +134,7 @@ internal static class CorporationSchema
             """
         );
         InventoryOwnershipSchema.Register(world);
+        CorporationShareSchema.Upgrade(world);
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpcBounty')").Contains("TaxCents"))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldNpcBounty ADD COLUMN TaxCents INTEGER NOT NULL DEFAULT 0");
@@ -131,7 +147,7 @@ internal static class CorporationSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCorporationChange ADD COLUMN AdministrationJson TEXT");
         }
-        foreach (string column in new[] { "RoleJson", "TitleJson" })
+        foreach (string column in new[] { "RoleJson", "TitleJson", "ShareJson" })
         {
             if (
                 !world
@@ -140,9 +156,12 @@ internal static class CorporationSchema
             )
             {
                 world.Database.ExecuteSqlRaw(
-                    column == "RoleJson"
-                        ? "ALTER TABLE WorldCorporationChange ADD COLUMN RoleJson TEXT"
-                        : "ALTER TABLE WorldCorporationChange ADD COLUMN TitleJson TEXT"
+                    column switch
+                    {
+                        "RoleJson" => "ALTER TABLE WorldCorporationChange ADD COLUMN RoleJson TEXT",
+                        "TitleJson" => "ALTER TABLE WorldCorporationChange ADD COLUMN TitleJson TEXT",
+                        _ => "ALTER TABLE WorldCorporationChange ADD COLUMN ShareJson TEXT",
+                    }
                 );
             }
         }

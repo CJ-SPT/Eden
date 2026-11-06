@@ -50,7 +50,8 @@ public sealed record CorporationChange(
     CorporationMemberChange? Membership,
     CorporationAdministrationChange? Administration = null,
     CorporationRoleChange? Roles = null,
-    CorporationTitleChange? Title = null
+    CorporationTitleChange? Title = null,
+    CorporationShareChange? Shares = null
 );
 
 public sealed record CorporationLeavePermission(bool Allowed, string Reason, string ErrorName = "CustomInfo");

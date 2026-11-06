@@ -211,6 +211,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
             )
             .Entity;
         CorporationMembershipStore.Move(world, pilot, id, now);
+        CorporationShareStore.Issue(world, id);
         CorporationMembershipStore.WithdrawOtherApplications(world, pilotId, null, now);
         wallet!.Cents = balance;
         world.Add(

@@ -12,7 +12,8 @@ internal sealed partial class CorporationHandler(
     IPlayerCorporations corporations,
     ICorporationMembership membership,
     ICorporationAdministration administration,
-    ICorporationRoles roles
+    ICorporationRoles roles,
+    ICorporationShares shares
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
@@ -48,6 +49,11 @@ internal sealed partial class CorporationHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
+        var shareResult = CallShares(context, service, method, args, keywords);
+        if (shareResult is not PilotCallResult.UnsupportedCall)
+        {
+            return shareResult;
+        }
         var adminResult = CallAdministration(context, service, method, args, keywords);
         if (adminResult is not PilotCallResult.UnsupportedCall)
         {

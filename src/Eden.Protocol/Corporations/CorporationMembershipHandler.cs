@@ -34,6 +34,10 @@ internal sealed partial class CorporationHandler
         }
         foreach (var change in membership.Changes(context.Pilot.PilotId, _cursor))
         {
+            if (change.Shares is { } shareChange && shares.CanObserve(context.Pilot.PilotId, shareChange.ShareholderId))
+            {
+                context.Notifications.Add(new CorporationShareCacheInvalidated(shareChange));
+            }
             if (change.Administration is { } administrationChange)
             {
                 context.Notifications.Add(new CorporationDetailsChanged(administrationChange));
