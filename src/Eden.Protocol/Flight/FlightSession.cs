@@ -325,6 +325,10 @@ internal sealed class FlightSession(
         var previousById = _npcs.ToDictionary(n => n.Id);
         foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
+            foreach (var effect in departed.ElectronicWarfare ?? [])
+            {
+                Update(NpcEwarWire.Effect(effect, false));
+            }
             if (departed.Weapon is { } weapon)
             {
                 NpcWeaponEffect(departed.Id, weapon, false);
@@ -339,6 +343,14 @@ internal sealed class FlightSession(
         foreach (var npc in current)
         {
             var previous = previousById.GetValueOrDefault(npc.Id);
+            foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(npc.ElectronicWarfare ?? []))
+            {
+                Update(NpcEwarWire.Effect(effect, false));
+            }
+            foreach (var effect in (npc.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
+            {
+                Update(NpcEwarWire.Effect(effect, true));
+            }
             if (previous is not null && previous.MaxSpeed != npc.MaxSpeed)
             {
                 Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));
@@ -1227,6 +1239,10 @@ internal sealed class FlightSession(
         foreach (var npc in _npcs.Where(n => n.Weapon is not null))
         {
             NpcWeaponEffect(npc.Id, npc.Weapon!, true);
+        }
+        foreach (var effect in _npcs.SelectMany(n => n.ElectronicWarfare ?? []))
+        {
+            Update(NpcEwarWire.Effect(effect, true));
         }
         Effects.Replay(own, null);
         foreach (var peer in peers)

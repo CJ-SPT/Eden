@@ -59,6 +59,11 @@ def export(catalog_path, output):
                 ("id", "name", "groupId", "groupName", "categoryId", "mass", "radius", "capacity"), row
             ), attributes=attributes)
             definition = record("client/types", type_id)
+            dogma = record("client/typedogma", type_id)
+            if dogma is not None:
+                # Attributes already have normalized rows above; retain exact
+                # declared effects without duplicating the attribute payload.
+                records["client/typedogma", type_id] = {"dogmaEffects": dogma.get("dogmaEffects", [])}
             if definition is not None:
                 records["client/types", type_id] = definition
                 if definition.get("wreckTypeID"):
@@ -79,6 +84,24 @@ def export(catalog_path, output):
         repair_attributes = (630, 631, 636, 637, 638, 639, *range(1006, 1012), *range(1015, 1021))
         for attribute in repair_attributes:
             records["client/dogmaattributes", attribute] = record("client/dogmaattributes", attribute)
+        ewar_attributes = (
+            20, 37, 54, 76, 97, 98, 103, 104, 105, 158, 160, 192, 208, 209, 210, 211,
+            237, 238, 239, 240, 241, 504, 505, 512, 513, 514, 552, 554, 564, 565,
+            929, 930, 931, 932, 933, 935, 936, 938, 941, 942, 943, 945, 950, 953, 954,
+            2045, 2112, 2113, 2114, 2115, 2253, 2452, 2515, 2516, 2517, 349, 351, 767,
+        )
+        for attribute in ewar_attributes:
+            records["client/dogmaattributes", attribute] = record("client/dogmaattributes", attribute)
+        for effect in (563, 575, 1878, 1879, 6691, 6695, 6846):
+            records["client/dogmaeffects", effect] = record("client/dogmaeffects", effect)
+        definitions = [key for dataset, key in records if dataset == "client/dogmaattributes"]
+        while definitions:
+            definition = records["client/dogmaattributes", definitions.pop()]
+            for field in ("minAttributeID", "maxAttributeID"):
+                dependency = definition.get(field)
+                if dependency and ("client/dogmaattributes", dependency) not in records:
+                    records["client/dogmaattributes", dependency] = record("client/dogmaattributes", dependency)
+                    definitions.append(dependency)
         data = {
             "build": 3662168,
             "types": [types[key] for key in sorted(types)],

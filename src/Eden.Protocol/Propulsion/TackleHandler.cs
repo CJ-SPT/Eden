@@ -156,7 +156,7 @@ internal sealed class TackleHandler(
             }
             Stop(context, cycle);
         }
-        var incoming = context.Flight.CanUseSelfModules ? tackle.Incoming(context.Pilot.ShipId).ToArray() : [];
+        var incoming = context.Flight.CanUseSelfModules ? tackle.Incoming(context.Pilot.ShipId).Where(e => e.PilotId != 0).ToArray() : [];
         var ended = _received.Where(e => !incoming.Any(n => n.Module.ItemId == e.Module.ItemId)).ToArray();
         var started = incoming.Where(n => !_received.Any(e => e.Module.ItemId == n.Module.ItemId)).ToArray();
         foreach (var effect in ended)

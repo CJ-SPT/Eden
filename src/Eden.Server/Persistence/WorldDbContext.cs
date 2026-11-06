@@ -384,6 +384,10 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<NpcAggression>().HasOne<WorldNpc>().WithMany().HasForeignKey(a => a.NpcId);
         model.Entity<NpcAggression>().HasOne<Ship>().WithMany().HasForeignKey(a => a.TargetShipId);
         model.Entity<NpcAggression>().HasIndex(a => a.TargetShipId);
+        model.Entity<WorldNpcEwar>().ToTable("WorldNpcEwar").HasKey(e => new { e.NpcId, e.Kind });
+        model.Entity<WorldNpcEwar>().HasOne<NpcAggression>().WithMany().HasForeignKey(e => e.NpcId).OnDelete(DeleteBehavior.Cascade);
+        model.Entity<WorldNpcEwar>().HasOne<Ship>().WithMany().HasForeignKey(e => e.TargetShipId).OnDelete(DeleteBehavior.Cascade);
+        model.Entity<WorldNpcEwar>().HasIndex(e => e.TargetShipId);
         model.Entity<ShipLoss>().ToTable("WorldShipLoss").HasKey(l => l.ShipId);
         model.Entity<ShipLoss>().Property(l => l.ShipId).ValueGeneratedNever();
         model.Entity<ShipLoss>().Property(l => l.StoredShipsJson).HasDefaultValue("[]");

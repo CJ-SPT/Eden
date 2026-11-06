@@ -23,7 +23,8 @@ internal sealed class NpcCombatHandler(
     ShipLossCoordinator shipLoss,
     SharedSpace space,
     INpcMissiles? missiles = null,
-    CharacterInteractionHistoryHandler? history = null
+    CharacterInteractionHistoryHandler? history = null,
+    NpcEwarHandler? ewar = null
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -89,6 +90,7 @@ internal sealed class NpcCombatHandler(
             _acquireSystem = context.Pilot.SystemId;
             _candidates = candidates;
         }
+        ewar?.Advance(context);
         foreach (long npc in combat.Aggressors(_shipId))
         {
             if (!context.Flight.VisibleNpcs.Any(n => n.Id == npc))

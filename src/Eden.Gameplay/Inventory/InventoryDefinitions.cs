@@ -82,6 +82,13 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    NpcEcm = 6695,
+    NpcSensorDampening = 1878,
+    NpcTrackingDisruption = 6846,
+    NpcTargetPainting = 1879,
+    NpcEnergyNeutralization = 6691,
+    NpcWebifier = 575,
+    NpcWarpDisruption = 563,
     ShieldBoosting = 4,
     MissileLaunching = 9,
     LaserFired = 10,

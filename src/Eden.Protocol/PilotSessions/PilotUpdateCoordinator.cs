@@ -54,7 +54,8 @@ internal sealed class PilotUpdateCoordinator(
     WalletBalanceMonitor walletBalance,
     ChatHandler chat,
     CorporationHandler corporations,
-    CorporationWalletHandler corporationWallet
+    CorporationWalletHandler corporationWallet,
+    NpcEwarHandler npcEwar
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -128,6 +129,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorBoosters.Cancel(context);
         support.Cancel(context);
         tackle.Leave(context);
+        npcEwar.Leave(context);
         propulsion.Cancel(context);
         targeting.Reset();
         npcCombat.Leave();
@@ -137,6 +139,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public DockedPilot? Advance(PilotCallContext context)
     {
+        npcEwar.Advance(context);
         redemption.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))
         {

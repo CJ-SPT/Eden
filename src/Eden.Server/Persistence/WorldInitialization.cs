@@ -23,6 +23,7 @@ public static class WorldInitialization
         world.Set<ActiveFittedModule>().ExecuteDelete();
         world.Set<WorldTackle>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.
+        world.Set<WorldNpcEwar>().ExecuteDelete();
         world.Set<NpcAggression>().ExecuteDelete();
         // Downtime never replays active NPC repair cycles. Saved health and the
         // notification revision survive; damaged layers start a fresh interval.

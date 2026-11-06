@@ -31,6 +31,35 @@ internal sealed partial class LiveReadModels
         "WorldMissile"
     );
     private readonly ResidentSnapshot<int, IReadOnlyList<TackleEffect>> _tackle = new("resident.tackle", "WorldTackle");
+
+    private sealed record NpcEwarWork(long TargetShipId, NpcEwarContact? Contact);
+
+    private readonly ResidentSnapshot<int, IReadOnlyList<NpcEwarWork>> _npcEwar = new("resident.npcEwar", "WorldNpcEwar");
+
+    private IReadOnlyList<NpcEwarWork> NpcEwar() =>
+        Read(
+            _npcEwar,
+            0,
+            () =>
+            {
+                using WorldDbContext world = new(database.Path);
+                return world
+                    .Set<WorldNpcEwar>()
+                    .AsNoTracking()
+                    .AsEnumerable()
+                    .Select(e => new NpcEwarWork(e.TargetShipId, e.Contact()))
+                    .ToArray();
+            }
+        );
+
+    internal bool HasNpcEwar(long ship) => NpcEwar().Any(e => e.TargetShipId == ship);
+
+    internal IReadOnlyList<NpcEwarContact> NpcEwarIncoming(long ship) =>
+        NpcEwar().Where(e => e.TargetShipId == ship).Select(e => e.Contact).OfType<NpcEwarContact>().ToArray();
+
+    internal IReadOnlyList<NpcEwarContact> NpcEwarSource(long source) =>
+        NpcEwar().Select(e => e.Contact).OfType<NpcEwarContact>().Where(e => e.SourceId == source).ToArray();
+
     private readonly ResidentSnapshot<int, bool> _activeModules = new("resident.activeModules", "WorldActiveModule");
 
     private MissileIndex Missiles() =>
@@ -124,6 +153,7 @@ internal sealed partial class LiveReadModels
         _missileContacts.Observe(changes);
         _tackle.Observe(changes);
         _activeModules.Observe(changes);
+        _npcEwar.Observe(changes);
     }
 
     private void ClearSpace()
@@ -132,5 +162,6 @@ internal sealed partial class LiveReadModels
         _missileContacts.Clear();
         _tackle.Clear();
         _activeModules.Clear();
+        _npcEwar.Clear();
     }
 }

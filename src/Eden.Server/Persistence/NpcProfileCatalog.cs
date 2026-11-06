@@ -8,7 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
-internal sealed record NpcHullProfile(ItemType Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense);
+internal sealed record NpcHullProfile(
+    ItemType Type,
+    IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
+    HullDefense Defense,
+    IReadOnlyList<NpcEwarAbility> ElectronicWarfare
+);
 
 public sealed class NpcProfileCatalog(bool cache = true)
 {
@@ -21,6 +26,11 @@ public sealed class NpcProfileCatalog(bool cache = true)
     {
         var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId).ToFrozenDictionary();
-        return new(type, attributes, ShipHealth.DefenseFrom(attributes));
+        return new(
+            type,
+            attributes,
+            ShipHealth.DefenseFrom(attributes),
+            NpcEwarRules.Profile(FittingCatalog.Effects(catalog, typeId), attributes)
+        );
     }
 }

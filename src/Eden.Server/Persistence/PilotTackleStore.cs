@@ -233,6 +233,41 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
 
     public IReadOnlyList<TackleEffect> Incoming(long shipId)
     {
+        return PlayerIncoming(shipId)
+            .Concat(
+                (LiveReadModels.Find(database.Path)?.NpcEwarIncoming(shipId) ?? ReadNpcEwar(shipId))
+                    .Where(e => e.Ability.Kind is NpcEwarKind.Webifying or NpcEwarKind.WarpDisruption)
+                    .Select(e => new TackleEffect(
+                        0,
+                        e.SourceId,
+                        new(
+                            e.SourceId,
+                            e.SourceTypeId,
+                            e.Ability.Kind == NpcEwarKind.Webifying ? DogmaEffect.StasisWebifier : DogmaEffect.WarpDisruptor,
+                            e.Ability.DurationMilliseconds,
+                            0,
+                            e.Ability.Optimal,
+                            e.Applied.WarpStrength,
+                            e.Applied.WebPercent,
+                            0,
+                            0
+                        ),
+                        new(shipId, TackleTargetKind.Ship),
+                        e.StartedAt,
+                        e.ReadyAt
+                    ))
+            )
+            .ToArray();
+    }
+
+    private IReadOnlyList<NpcEwarContact> ReadNpcEwar(long shipId)
+    {
+        using WorldDbContext world = new(database.Path);
+        return NpcEwarStore.Active(world, shipId);
+    }
+
+    private IReadOnlyList<TackleEffect> PlayerIncoming(long shipId)
+    {
         if (LiveReadModels.Find(database.Path) is { } resident)
         {
             return resident.Incoming(shipId);

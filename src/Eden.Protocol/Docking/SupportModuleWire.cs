@@ -24,6 +24,9 @@ internal sealed class SupportModuleWire(
         DogmaAttributeId.LadarStrength,
         DogmaAttributeId.MagnetometricStrength,
         DogmaAttributeId.RadarStrength,
+        DogmaAttributeId.MaxVelocity,
+        DogmaAttributeId.SignatureRadius,
+        DogmaAttributeId.WarpScrambleStatus,
     ];
     private static readonly DogmaAttributeId[] WeaponAttributes =
     [

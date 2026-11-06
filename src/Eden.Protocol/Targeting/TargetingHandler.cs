@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Targeting;
@@ -8,9 +9,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Targeting;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting, SharedTargetLocks shared)
-    : ISelectedPilotCallHandler,
-        IDisposable
+internal sealed class TargetingHandler(
+    TimeProvider clock,
+    IPilotFitting fitting,
+    SharedTargetLocks shared,
+    INpcElectronicWarfare? npcEwar = null
+) : ISelectedPilotCallHandler, IDisposable
 {
     private sealed record PendingLock(long Started, double Seconds);
 
@@ -59,7 +63,12 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
             foreach (long id in _pending.Keys.Concat(_locked).ToArray())
             {
                 var target = context.Flight.FindTarget(id);
-                if (target is null || Distance(context, target) > range || (_locked.Contains(id) && !shared.Contains(_shipId, id)))
+                if (
+                    target is null
+                    || Distance(context, target) > range
+                    || !NpcEwarRules.CanTarget(npcEwar?.Incoming(_shipId) ?? [], id)
+                    || (_locked.Contains(id) && !shared.Contains(_shipId, id))
+                )
                 {
                     Remove(context, id);
                 }
@@ -118,6 +127,10 @@ internal sealed class TargetingHandler(TimeProvider clock, IPilotFitting fitting
         if (_pending.ContainsKey(id))
         {
             return new TargetLockReply(true, _locked.Order().ToArray());
+        }
+        if (!NpcEwarRules.CanTarget(npcEwar?.Incoming(context.Pilot.ShipId) ?? [], id))
+        {
+            return new PilotCallResult.Failure("Electronic countermeasures prevent locking this target.");
         }
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets));

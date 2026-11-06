@@ -23,7 +23,8 @@ public sealed record NpcContact(
     bool Bumped = false,
     NpcRole Role = NpcRole.Pirate,
     int FactionId = 0,
-    long RepairRevision = 0
+    long RepairRevision = 0,
+    IReadOnlyList<NpcEwarContact>? ElectronicWarfare = null
 );
 
 public enum NpcNavigationState

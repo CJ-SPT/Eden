@@ -469,6 +469,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     _contactEpoch++;
                     _aggressions = null;
                     break;
+                case "WorldNpcEwar":
+                    _contactEpoch++;
+                    break;
                 case "WorldTackle":
                     _effectiveNpcs.Clear();
                     _contactEpoch++;

@@ -31,11 +31,14 @@ public abstract record DogmaValue
 
     public sealed record Product(DogmaValue Left, DogmaValue Right) : DogmaValue;
 
+    public sealed record Sum(DogmaValue Left, DogmaValue Right) : DogmaValue;
+
     public static IEnumerable<Attribute> References(DogmaValue value) =>
         value switch
         {
             Attribute attribute => [attribute],
             Product product => References(product.Left).Concat(References(product.Right)),
+            Sum sum => References(sum.Left).Concat(References(sum.Right)),
             _ => [],
         };
 }
@@ -90,6 +93,7 @@ public sealed class DogmaGraph
             DogmaValue.Constant constant => constant.Value,
             DogmaValue.Attribute attribute => Read(attribute.ItemId, attribute.AttributeId),
             DogmaValue.Product product => Read(product.Left) * Read(product.Right),
+            DogmaValue.Sum sum => Read(sum.Left) + Read(sum.Right),
             _ => throw new InvalidDataException("Unsupported dogma value."),
         };
 

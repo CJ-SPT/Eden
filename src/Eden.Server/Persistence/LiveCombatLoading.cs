@@ -282,6 +282,7 @@ internal sealed partial class LiveCombatRuntime
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),
             RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),
+            ElectronicWarfare = profile.ElectronicWarfare,
         };
     }
 

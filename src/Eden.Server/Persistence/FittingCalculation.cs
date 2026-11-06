@@ -155,6 +155,18 @@ internal sealed record FittingCalculation(
             .Select(t => t.Module())
             .ToArray();
         modifiers.AddRange(TackleDefinitions.Modifiers(ship.Id, incoming));
+        var npcEwar = NpcEwarStore.Active(world, ship.Id);
+        var turrets = modules
+            .Where(m =>
+                m.GroupId
+                    is CombatDefinitions.EnergyWeaponGroup
+                        or CombatDefinitions.HybridWeaponGroup
+                        or CombatDefinitions.ProjectileWeaponGroup
+                || m.Item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun
+            )
+            .Select(m => m.Item.Id)
+            .ToArray();
+        modifiers.AddRange(NpcEwarRules.Modifiers(ship.Id, turrets, npcEwar));
         foreach (var module in modules.Where(m => m.Item.Online && incoming.Any(t => t.MwdBlock > 0)))
         {
             if (FittingCatalog.Effects(catalog, module.Item.TypeId).Contains(DogmaEffect.Microwarpdrive))

@@ -94,6 +94,13 @@ internal sealed class NpcEncounterStore(
             .OrderBy(n => n.Id)
             .ToArray();
         var ids = npcs.Select(n => n.Id).ToArray();
+        var ewar = world
+            .Set<WorldNpcEwar>()
+            .Where(e => ids.Contains(e.NpcId) && e.AppliedJson != null)
+            .AsNoTracking()
+            .AsEnumerable()
+            .Select(e => e.Contact()!)
+            .ToLookup(e => e.SourceId);
         var aggression = world.Set<NpcAggression>().AsNoTracking().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
         var profiles = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => ReadProfile(catalog, id));
         NpcWeaponContact? Weapon(WorldNpc npc)
@@ -168,7 +175,8 @@ internal sealed class NpcEncounterStore(
                     database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
                     n.Role,
                     n.FactionId,
-                    n.RepairRevision
+                    n.RepairRevision,
+                    ewar[n.Id].Any() ? ewar[n.Id].ToArray() : null
                 );
             })
             .ToArray();

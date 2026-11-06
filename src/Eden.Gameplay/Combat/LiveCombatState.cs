@@ -129,6 +129,7 @@ public sealed record LiveCombatNpc(
     public string Name { get; init; } = string.Empty;
     public NpcRepairProfile RepairProfile { get; init; } = new(null, null);
     public NpcRepairState RepairState { get; init; } = new();
+    public IReadOnlyList<NpcEwarAbility> ElectronicWarfare { get; init; } = [];
 }
 
 public sealed record LiveAggression(long NpcId, long ShipId, long ReadyAt, long MissileReadyAt, long? LastShotAt);
