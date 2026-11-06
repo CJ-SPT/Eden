@@ -11,6 +11,77 @@ public sealed class ChatWorldTests
     private static readonly ChatPilot First = new(90000001, "First pilot", 1000044, 30000142, 0);
     private static readonly ChatPilot Second = new(90000002, "Second pilot", 1000044, 30000142, 0);
 
+    [Fact]
+    public void LocalTransferReusesItsRoomSlotAndPreservesOtherMemberships()
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        world.Update(session, First);
+        world.Connect(session, connection);
+        world.Join(connection, Local, "local");
+        List<ChatRoom> retained = [];
+        for (int index = 1; index < ChatRules.MaximumJoinedRooms; index++)
+        {
+            var room = world.CreatePublic(session, "Retained " + index);
+            retained.Add(room);
+            world.Join(connection, room, "public");
+        }
+        ChatPilot moved = First with { SystemId = 30000144 };
+        world.Update(session, moved);
+        Assert.Equal(moved, Assert.Single(world.Members(connection, new(ChatRoomKind.Local, moved.SystemId))));
+        Assert.All(retained, room => Assert.Equal(moved, Assert.Single(world.Members(connection, room))));
+        Assert.Empty(world.Update(session, moved with { Name = "Renamed pilot" }));
+        Assert.Equal("Renamed pilot", Assert.Single(world.Members(connection, new(ChatRoomKind.Local, moved.SystemId))).Name);
+    }
+
+    [Theory]
+    [InlineData(ChatRoomKind.Local)]
+    [InlineData(ChatRoomKind.Wormhole)]
+    [InlineData(ChatRoomKind.Triglavian)]
+    public void SystemChangesTransferLocalMembershipAndRosterWithoutAClientJoin(ChatRoomKind destinationKind)
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            observerSession = Guid.NewGuid(),
+            connection = Guid.NewGuid(),
+            observer = Guid.NewGuid();
+        ChatPilot destinationPilot = Second with { SystemId = 30000144, LocalKind = destinationKind };
+        ChatRoom destination = new(destinationKind, destinationPilot.SystemId);
+        ChatRoom corporation = new(ChatRoomKind.Corporation, First.CorporationId);
+        world.Update(session, First);
+        world.Update(observerSession, destinationPilot);
+        world.Connect(session, connection);
+        world.Connect(observerSession, observer);
+        world.Join(connection, Local, "source");
+        world.Join(connection, corporation, "corporation");
+        world.Join(observer, destination, "observer");
+        ChatPilot moved = First with { SystemId = destinationPilot.SystemId, LocalKind = destinationKind };
+
+        var arrival = world.Update(session, moved);
+
+        Assert.Equal(new ChatEvent.Presence(Local, First, false), arrival[0].Event);
+        Assert.Equal(new ChatEvent.Presence(destination, moved, true), arrival[1].Event);
+        var roster = Assert.IsType<ChatEvent.Roster>(arrival[2].Event);
+        Assert.Equal(connection, arrival[2].Recipient);
+        Assert.Equal(destination, roster.Room);
+        Assert.Equal(destinationKind == ChatRoomKind.Local ? new[] { First.Id, Second.Id } : [], roster.Pilots.Select(p => p.Id));
+        Assert.Equal(moved, world.ConnectedPilot(connection));
+        Assert.Empty(world.Update(session, moved));
+        Assert.Empty(world.Leave(connection, Local));
+        Assert.Throws<InvalidDataException>(() => world.Join(connection, Local, "stale"));
+        Assert.Throws<InvalidDataException>(() => world.Send(connection, Local, "stale", "stale", 0));
+        Assert.Equal(2, world.Send(connection, destination, "arrived", "arrival", 0).Count(e => e.Event is ChatEvent.Message));
+        Assert.Single(world.Send(connection, corporation, "retained", "corp", TimeSpan.TicksPerSecond));
+        Assert.DoesNotContain(world.Join(connection, destination, "retry"), e => e.Recipient == observer);
+
+        var returned = world.Update(session, First);
+        Assert.Contains(returned, e => e.Recipient == connection && e.Event is ChatEvent.Roster { Room: var room } && room == Local);
+        Assert.Single(world.Members(connection, Local));
+        Assert.Single(world.Members(observer, destination));
+        Assert.Empty(world.Update(session, First));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -146,8 +217,9 @@ public sealed class ChatWorldTests
         ChatRoom room = new(kind, First.SystemId);
         world.Join(first, room, "a");
         var joined = world.Join(second, room, "b");
-        Assert.Single(joined);
+        Assert.Equal(2, joined.Count);
         Assert.Equal(second, joined[0].Recipient);
+        Assert.Empty(Assert.IsType<ChatEvent.Roster>(joined[1].Event).Pilots);
         Assert.Single(world.Members(first, room));
         var spoken = world.Send(second, room, "revealed by speaking", "msg", 0);
         Assert.Equal(2, spoken.Count(e => e.Event is ChatEvent.Presence { Available: true }));

@@ -102,6 +102,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Chat, mail and contacts
 
+- <a id="translocation-destination-local-handoff-november-6-2026"></a>[Translocation destination Local handoff (November 6, 2026)](protocol/social.md#translocation-destination-local-handoff-november-6-2026)
 - <a id="translocation-chat-continuity-november-6-2026"></a>[Translocation chat continuity (November 6, 2026)](protocol/social.md#translocation-chat-continuity-november-6-2026)
 - <a id="native-chat-ready-handshake-correction-november-5-2026"></a>[Native chat ready-handshake correction (November 5, 2026)](protocol/social.md#native-chat-ready-handshake-correction-november-5-2026)
 - <a id="chat-startup-first-send-and-initial-roster-correction-november-5-2026"></a>[Chat startup, first send and initial roster correction (November 5, 2026)](protocol/social.md#chat-startup-first-send-and-initial-roster-correction-november-5-2026)

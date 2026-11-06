@@ -25,6 +25,7 @@ public sealed class ChatWorld(long roomSeed = 0)
     public IReadOnlyList<ChatDelivery> Update(Guid session, ChatPilot? pilot)
     {
         List<ChatDelivery> events = [];
+        List<Guid> localTransfers = [];
         if (_sessions.GetValueOrDefault(session) == pilot)
         {
             return events;
@@ -43,6 +44,10 @@ public sealed class ChatWorld(long roomSeed = 0)
             }
             foreach (var room in _members.Where(m => m.Value.Contains(connection) && !Eligible(pilot, m.Key)).Select(m => m.Key).ToArray())
             {
+                if (room.Kind is ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian)
+                {
+                    localTransfers.Add(connection);
+                }
                 events.AddRange(Leave(connection, room));
             }
         }
@@ -53,6 +58,13 @@ public sealed class ChatWorld(long roomSeed = 0)
         else
         {
             _sessions[session] = pilot;
+            // The native session-change callback leaves old Local, but does not
+            // join its replacement. Transfer the existing membership after the
+            // authoritative pilot update so presence and roster use the destination.
+            foreach (var connection in localTransfers)
+            {
+                events.AddRange(Join(connection, new(pilot.LocalKind, pilot.SystemId), null));
+            }
         }
         return events;
     }
@@ -185,8 +197,10 @@ public sealed class ChatWorld(long roomSeed = 0)
             .Select(member => ConnectedPilot(member)!)
             .OrderBy(member => member.Id)
             .ToArray();
-        if (room.Kind == ChatRoomKind.Local)
+        if (room.Kind is ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian)
         {
+            // Delayed Local ignores self-presence. Even an empty roster switches
+            // its window to the destination without revealing silent pilots.
             events.Add(new(connection, new ChatEvent.Roster(room, visible)));
         }
         else

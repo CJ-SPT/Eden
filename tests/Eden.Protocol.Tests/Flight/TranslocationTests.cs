@@ -77,10 +77,11 @@ public sealed class TranslocationTests
             int target in new[] { SourceMoon, HomeStationTestData.Origin, OtherSystem, HomeStationTestData.School, OtherGate, SourceMoon }
         )
         {
-            Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
             await MessageAsync(corporation, "departure-" + cycle);
+            Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
             if (f.Context.Flight.Translocating)
             {
+                await MessageAsync(corporation, "transit-" + cycle);
                 if (!f.Context.Flight.InBallpark)
                 {
                     f.Context.Flight.Snapshot();
@@ -92,11 +93,19 @@ public sealed class TranslocationTests
             string destination = "local_" + f.Context.Pilot.SystemId;
             if (local != destination)
             {
+                var roster = (await client.UntilAsync(e => (string?)e.Attribute("from") == destination + "@conference.eden.chat/viking"))[
+                    ^1
+                ];
+                Assert.Single(roster.Elements());
+                // Match native OnSessionChanged: it leaves old Local without
+                // requesting a join to the destination.
+                await client.SendAsync(
+                    "<presence type='unavailable' to='" + local + "@conference.eden.chat/" + f.Context.Pilot.PilotId + "'/>"
+                );
                 await client.MessageAsync(local, "old-local-" + cycle, "No longer authorized");
                 var rejected = (await client.UntilAsync(e => (string?)e.Attribute("id") == "old-local-" + cycle))[^1];
                 Assert.Equal("error", (string?)rejected.Attribute("type"));
                 local = destination;
-                await JoinAsync(local);
             }
             await MessageAsync(local, "local-" + cycle);
             await MessageAsync(corporation, "arrival-" + cycle);

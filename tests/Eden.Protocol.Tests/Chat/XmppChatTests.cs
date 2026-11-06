@@ -125,9 +125,14 @@ public sealed class XmppChatTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SystemTransitionRevokesOldLocalWhileKeepingCorporationChatAndJoiningTheDestination(bool liveWorld)
+    [InlineData(false, ChatRoomKind.Local)]
+    [InlineData(true, ChatRoomKind.Local)]
+    [InlineData(false, ChatRoomKind.Wormhole)]
+    [InlineData(true, ChatRoomKind.Triglavian)]
+    public async Task SystemTransitionRevokesOldLocalWhileKeepingCorporationChatAndJoiningTheDestination(
+        bool liveWorld,
+        ChatRoomKind destinationKind
+    )
     {
         using TestWorld world = new(liveWorld: liveWorld);
         var runtime = world.Services.GetRequiredService<ChatRuntime>();
@@ -139,7 +144,8 @@ public sealed class XmppChatTests
             c = Guid.NewGuid();
         ChatPilot pilotA = new(90000001, "First", 1000044, 30000142, 0);
         ChatPilot pilotB = new(90000002, "Second", 1000044, 30000142, 0);
-        ChatPilot pilotC = new(90000003, "Destination", 1000044, 30000144, 0);
+        ChatPilot pilotC = new(90000003, "Destination", 1000044, 30000144, 0, LocalKind: destinationKind);
+        string destination = XmppWire.Channel(new(destinationKind, pilotC.SystemId));
         runtime.Update(a, pilotA);
         runtime.Update(b, pilotB);
         runtime.Update(c, pilotC);
@@ -166,20 +172,24 @@ public sealed class XmppChatTests
         await second.JoinAsync("local_30000142", "b-local");
         await second.UntilAsync(e => (string?)e.Attribute("id") == "b-local");
         await first.UntilAsync(e => IsControl(e, "join", pilotB.Id));
-        await third.JoinAsync("local_30000144", "c-local");
+        await third.JoinAsync(destination, "c-local");
         await third.UntilAsync(e => (string?)e.Attribute("id") == "c-local");
         await first.JoinAsync("corp_1000044", "a-corp");
         await first.UntilAsync(e => (string?)e.Attribute("id") == "a-corp");
         await second.JoinAsync("corp_1000044", "b-corp");
         await second.UntilAsync(e => (string?)e.Attribute("id") == "b-corp");
-        runtime.Update(b, pilotB with { SystemId = 30000144 });
+        runtime.Update(b, pilotB with { SystemId = pilotC.SystemId, LocalKind = destinationKind });
         await first.UntilAsync(e => IsControl(e, "leave", pilotB.Id));
+        var roster = (await second.UntilAsync(e => (string?)e.Attribute("from") == destination + "@conference.eden.chat/viking"))[^1];
+        Assert.Equal(destinationKind == ChatRoomKind.Local ? new[] { pilotB.Id, pilotC.Id } : [], RosterIds(roster));
+        await second.SendAsync("<presence type='unavailable' to='local_30000142@conference.eden.chat/90000002'/>");
         await second.MessageAsync("local_30000142", "forbidden", "old Local injection");
         Assert.Equal("error", (string?)(await second.UntilAsync(e => (string?)e.Attribute("id") == "forbidden"))[^1].Attribute("type"));
-        await second.JoinAsync("local_30000144", "b-destination");
-        await second.UntilAsync(e => (string?)e.Attribute("id") == "b-destination");
-        await third.UntilAsync(e => IsControl(e, "join", pilotB.Id));
-        await second.MessageAsync("local_30000144", "destination-message", "new Local");
+        if (destinationKind == ChatRoomKind.Local)
+        {
+            await third.UntilAsync(e => IsControl(e, "join", pilotB.Id));
+        }
+        await second.MessageAsync(destination, "destination-message", "new Local");
         await third.UntilAsync(e => (string?)e.Attribute("id") == "destination-message");
         await second.MessageAsync("corp_1000044", "corporation-message", "corp still works across systems");
         await first.UntilAsync(e => (string?)e.Attribute("id") == "corporation-message");

@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Translocation destination Local handoff (November 6, 2026)](#translocation-destination-local-handoff-november-6-2026)
 - [Translocation chat continuity (November 6, 2026)](#translocation-chat-continuity-november-6-2026)
 - [Native chat ready-handshake correction (November 5, 2026)](#native-chat-ready-handshake-correction-november-5-2026)
 - [Chat startup, first send and initial roster correction (November 5, 2026)](#chat-startup-first-send-and-initial-roster-correction-november-5-2026)
@@ -21,6 +22,22 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Translocation destination Local handoff (November 6, 2026)
+
+After the connection-continuity correction, the user reported that **TR me here** still did not update Local correctly. `ChatWorld.Update` revoked the source Local membership but never joined the replacement. The prior transport and repeated-translocation tests explicitly joined destination Local themselves, masking the missing server operation.
+
+In pinned build **3662168**, `XmppChatService.OnSessionChanged` schedules leaving the old session channels; ordinary Local is not joined there. `_JoinSystemChannels` is part of the login callback, which no longer runs during TR because chat correctly stays connected. The server now transfers an existing Local membership after updating the pilot's authoritative system/category, sending the destination self-presence and `/viking` roster and notifying destination observers. Old-system sends/joins remain rejected. Same-system TR retains its membership, while corporation, private and player channels retain their existing connections and memberships. No save schema, token, certificate or transport format changes are required.
+
+Wormhole and Triglavian joins now receive the same roster envelope, filtered by their existing delayed-presence rules. An empty roster switches the native Local window without disclosing silent pilots. This is necessary because `_HandleXmppPresence` ignores self-presence in delayed Local. `_UnpackVikingPresence` calls `GetOrCreateGroupChatWindow`; native `XmppChatWindow.SetChannel` adopts the destination and clears the old members. A late source-room leave is harmless after the transfer, and a repeated destination join acknowledges/resends the roster without duplicating arrival events to observers. The existing room slot is reused even at the joined-room limit.
+
+Sources: inert inspection of the staged archive at `E:\EdenDev\3662168\tq\code.ccp`, whose SHA-256 was reverified as **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. An automated audit executed the actual pinned `OnSessionChanged`, `_HandleLocalSuppressedSessionChange`, `GetOrCreateGroupChatWindow`, `_UnpackVikingPresence` and `XmppChatWindow.SetChannel` code objects with UI/service dependencies stubbed. Ordinary Local replaced a stale member with the two supplied destination pilots; empty wormhole and Triglavian rosters switched the window and cleared the stale member without revealing another pilot. The first inspection used the separate `E:\Eve` archive; the final contract inspection and audit use the verified staged archive. Consulted [Carbon Blue Marshal.cpp at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp); the existing Blue/notification and Destiny adapters remain unchanged.
+
+**Automated validation:** On top of `4d3561a`, tool/solution restore and build passed with zero warnings/errors (**5.38 seconds** combined). Filter `FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~TranslocationTests|FullyQualifiedName~CharacterLogoffTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, run with `dotnet test --no-build` and `xUnit.MaxParallelThreads=4`, passed **111 tests**, zero failed/skipped, in **24.27 seconds** command time (**22 seconds** reported test duration). Both Python policy suites passed (**3 catalog**, **9 formatting**, **0.55 seconds** combined), and `Format.ps1 -Check` passed across **783 files** in **12.14 seconds**. Required restore/build/test/policy/format checks took **42.35 seconds** combined. Documentation link/anchor/whitespace checks and `git diff --check` passed. Four new gameplay cases cover ordinary/delayed Local, return travel, room-capacity reuse, unchanged-system updates, stale access rejection and retry idempotence. Existing TLS tests now cover ordinary and both delayed categories without a destination join request, and repeated native TR coverage retains docked/space origins and real logoff cleanup. The three initial handoff regressions failed before the gameplay correction. A subsequent development run was interrupted after both TR cases timed out because its corporation-message helper had already consumed the newly automatic roster; moving that helper before immediate travel corrected the harness. The corrected seven-case development selection passed before the final expanded validation. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Rebuild/restart the server and reconnect both pilots, then TR between systems; confirm the Local destination/member list and both observers' arrival/departure lists update without a chat reconnect.
 
 ## Translocation chat continuity (November 6, 2026)
 
