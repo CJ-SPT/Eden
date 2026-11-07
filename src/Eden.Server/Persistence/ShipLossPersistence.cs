@@ -10,18 +10,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Server.Persistence;
 
-internal static class NpcShipLossPersistence
+internal static class ShipLossPersistence
 {
     internal static InsurancePayout? Apply(
         WorldDbContext world,
         CatalogDbContext catalog,
         Pilot pilot,
-        long npcId,
+        long? npcId,
         long shipId,
         int system,
         FlightPosition position,
         long now,
-        IShipLootRoll lootRoll
+        IShipLootRoll lootRoll,
+        CombatParty? playerAttacker = null
     )
     {
         long pilotId = pilot.Id;
@@ -74,6 +75,7 @@ internal static class NpcShipLossPersistence
                     ShipId = shipId,
                     PilotId = pilotId,
                     NpcId = npcId,
+                    AttackerPilotId = playerAttacker?.CharacterId,
                     CapsuleId = capsule.Id,
                     TypeId = old.TypeId,
                     SystemId = system,
@@ -97,8 +99,9 @@ internal static class NpcShipLossPersistence
             now,
             system,
             PilotInteractionHistoryStore.Player(world, pilot, shipId),
-            PilotInteractionHistoryStore.Npc(world.Set<WorldNpc>().Find(npcId)!),
-            reportItems
+            playerAttacker ?? PilotInteractionHistoryStore.Npc(world.Set<WorldNpc>().Find(npcId)!),
+            reportItems,
+            shareWithAttackers: true
         );
         var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
         foreach (var stored in storedShips)
@@ -117,6 +120,10 @@ internal static class NpcShipLossPersistence
         var insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
         pilot.ActiveShip = capsule;
         pilot.ActiveShipId = capsule.Id;
+        if (world.Set<SavedLogoff>().Find(pilotId) is { } logoff)
+        {
+            logoff.ShipId = capsule.Id;
+        }
         // Satisfy the active-ship FK before deleting the old hull. Both saves
         // belong to this transaction: a failed capsule/loss cannot consume it.
         world.SaveChanges();

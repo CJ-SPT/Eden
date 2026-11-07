@@ -72,3 +72,26 @@ internal sealed record DamageMessageNotification(CombatMessage Message) : PilotN
 {
     public override object?[] Arguments => [Message.ToBlue()];
 }
+
+internal sealed record PilotIncomingCombatMessage(PilotDamage Hit)
+    : CombatMessage(
+        Hit.Shot.Applied,
+        CombatMessages.HitQuality(Hit.Shot.Quality),
+        Hit.Shot.Weapon.TypeId,
+        Hit.Shot.Weapon.Damage.Scale(Hit.Shot.Quality)
+    )
+{
+    public override Dictionary<string, object?> ToBlue() =>
+        new()
+        {
+            ["damage"] = Damage,
+            ["hitQuality"] = (int)HitQuality,
+            ["isBanked"] = Hit.Banked,
+            ["attackType"] = "otherPlayer",
+            ["source"] = Hit.AttackerShipId,
+            ["attackerID"] = Hit.AttackerShipId,
+            ["owner"] = new object?[] { (int)MessageArgumentType.OwnerId, Hit.AttackerId },
+            ["weapon"] = Weapon,
+            ["damageAttributes"] = AttributeFields(),
+        };
+}

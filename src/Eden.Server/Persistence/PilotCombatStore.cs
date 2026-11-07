@@ -1,7 +1,9 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
@@ -16,7 +18,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSignal security) : IPilotCombat
+internal sealed class PilotCombatStore(
+    WorldDatabase database,
+    SecurityStatusSignal security,
+    SqliteWorld lookup,
+    IShipLootRoll lootRoll,
+    IPilotDamageEvents damageEvents
+) : IPilotCombat
 {
     private const int CrystalProbabilityResolution = 1_000_000;
 
@@ -91,6 +99,24 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         WeaponActivation? activation = null
     ) => FireVolley(pilotId, moduleId, targetId, velocity, now, roll, activation, null, true);
 
+    public CombatVolley FirePlayerBank(
+        long pilotId,
+        long moduleId,
+        PilotWeaponTarget target,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null
+    ) => FireVolley(pilotId, moduleId, target.ShipId, velocity, now, roll, activation, null, true, target);
+
+    private sealed record TurretTarget(
+        int SystemId,
+        int TypeId,
+        SpacePosition Position,
+        SpacePosition Velocity,
+        IReadOnlyDictionary<DogmaAttributeId, double> Attributes
+    );
+
     private CombatVolley FireVolley(
         long pilotId,
         long moduleId,
@@ -100,12 +126,14 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         double roll,
         WeaponActivation? activation,
         double? crystalRoll,
-        bool banked
+        bool banked,
+        PilotWeaponTarget? playerTarget = null
     )
     {
         using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("bank.volley");
         if (
-            LiveCombatRuntime
+            playerTarget is null
+            && LiveCombatRuntime
                 .Find(database.Path)
                 ?.Fire(
                     pilotId,
@@ -118,8 +146,8 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
                     crystalRoll,
                     banked,
                     plan => SettleLiveFatal(plan, now)
-                ) is
-            { } resident
+                )
+                is { } resident
         )
         {
             return resident;
@@ -129,6 +157,46 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         using CatalogDbContext catalog = new(database.CatalogPath);
         catalog.Database.OpenConnection();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var npc = playerTarget is null ? world.Set<WorldNpc>().Find(targetId) : null;
+        Pilot? victim = null;
+        AggressionDecision? aggression = null;
+        TurretTarget target;
+        if (playerTarget is not null)
+        {
+            victim = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == targetId);
+            if (
+                victim?.ActiveShip.Position is not { } saved
+                || victim.Id == pilotId
+                || catalog.Set<ItemType>().Single(t => t.Id == victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
+                || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
+                || !double.IsFinite(playerTarget.Velocity.DistanceTo(SpacePosition.Zero))
+            )
+            {
+                throw new InvalidDataException("The target ship is unavailable; capsule destruction is not supported.");
+            }
+            int system = CrimewatchPersistence.System(catalog, victim.ActiveShip);
+            aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
+            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim.Id);
+            if (PilotHealthStore.Read(world, targetId, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed)
+            {
+                throw new InvalidDataException("The target ship is destroyed.");
+            }
+            target = new(system, victim.ActiveShip.TypeId, new(saved.X, saved.Y, saved.Z), playerTarget.Velocity, attributes);
+        }
+        else
+        {
+            if (npc is null || npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue || npc.Navigation == NpcNavigationState.Warping)
+            {
+                throw new InvalidDataException("The target NPC is unavailable.");
+            }
+            target = new(
+                npc.SystemId,
+                npc.TypeId,
+                NpcMotion.Position(npc),
+                NpcMotion.Velocity(npc),
+                PilotFittingStore.ReadAttributes(catalog, npc.TypeId)
+            );
+        }
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
         List<PaidShot> paid = [];
         foreach (long member in members)
@@ -138,19 +206,21 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
                     ? roll
                     : System.Security.Cryptography.RandomNumberGenerator.GetInt32(CrystalProbabilityResolution)
                         / (double)CrystalProbabilityResolution;
-            paid.Add(Prepare(world, catalog, pilot, pilotId, member, targetId, velocity, now, accuracy, activation, crystalRoll));
+            paid.Add(Prepare(world, catalog, pilot, pilotId, member, target, velocity, now, accuracy, activation, crystalRoll));
         }
         if (paid.Select(p => p.Weapon.ChargeTypeId).Distinct().Count() > 1)
         {
             throw new InvalidDataException("Load the same ammunition in every grouped weapon.");
         }
-        var npc = world.Set<WorldNpc>().Find(targetId)!;
-        CrimewatchPersistence.Npc(
-            world,
-            pilotId,
-            npc.SystemId,
-            checked(now + (long)Math.Ceiling(paid.Max(p => p.Weapon.CycleMilliseconds) * TimeSpan.TicksPerMillisecond))
-        );
+        long cycleEnd = checked(now + (long)Math.Ceiling(paid.Max(p => p.Weapon.CycleMilliseconds) * TimeSpan.TicksPerMillisecond));
+        if (victim is not null)
+        {
+            CrimewatchPersistence.Player(world, pilotId, victim.Id, target.SystemId, aggression!, now, cycleEnd);
+        }
+        else
+        {
+            CrimewatchPersistence.Npc(world, pilotId, target.SystemId, cycleEnd);
+        }
         var damage = paid.Select(p => p.Weapon.Damage.Scale(p.Quality)).ToArray();
         DamageVector combined = new(
             damage.Sum(d => d.Em),
@@ -158,20 +228,48 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             damage.Sum(d => d.Kinetic),
             damage.Sum(d => d.Thermal)
         );
-        var settlement = NpcDamagePersistence.Apply(
-            world,
-            catalog,
-            npc,
-            pilot,
-            pilot.ActiveShipId,
-            paid[0].TargetAttributes,
-            combined,
-            now,
-            paid[0].Weapon.TypeId
-        );
+        CombatDamageSettlement settlement;
+        InsurancePayout? insurance = null;
+        if (victim is not null)
+        {
+            var defense = ShipHealth.DefenseFrom(target.Attributes);
+            var applied = PilotHealthStore.Apply(world, targetId, defense, combined, now);
+            var attacker = PilotInteractionHistoryStore.Player(world, pilot, pilot.ActiveShipId, paid[0].Weapon.TypeId);
+            PilotInteractionHistoryStore.Damage(world, targetId, attacker, applied.Applied);
+            if (applied.Remaining.Destroyed)
+            {
+                insurance = ShipLossPersistence.Apply(
+                    world,
+                    catalog,
+                    victim,
+                    null,
+                    targetId,
+                    target.SystemId,
+                    victim.ActiveShip.Position!,
+                    now,
+                    lootRoll,
+                    attacker
+                );
+            }
+            settlement = new(new(targetId, defense, applied.Remaining), applied.Applied, applied.Remaining.Destroyed, null);
+        }
+        else
+        {
+            settlement = NpcDamagePersistence.Apply(
+                world,
+                catalog,
+                npc!,
+                pilot,
+                pilot.ActiveShipId,
+                paid[0].TargetAttributes,
+                combined,
+                now,
+                paid[0].Weapon.TypeId
+            );
+        }
         world.SaveChanges();
         transaction.Commit();
-        if (settlement.Destroyed)
+        if (settlement.Destroyed && victim is null)
         {
             security.Publish();
         }
@@ -196,6 +294,20 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             settlement.Reward is null ? null : Read(settlement.Reward),
             first.Magazine
         );
+        if (victim is not null)
+        {
+            damageEvents.Publish(
+                new(
+                    victim.Id,
+                    pilotId,
+                    pilot.ActiveShipId,
+                    shot,
+                    paid.Count > 1,
+                    settlement.Destroyed ? lookup.FindPilot(victim.AccountId, victim.Id)! : null,
+                    insurance
+                )
+            );
+        }
         return new(shot, paid.Select(p => p.Weapon).ToArray(), paid.Where(p => p.Magazine is not null).Select(p => p.Magazine!).ToArray());
     }
 
@@ -205,7 +317,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         Pilot pilot,
         long pilotId,
         long moduleId,
-        long targetId,
+        TurretTarget target,
         SpacePosition velocity,
         long now,
         double roll,
@@ -218,7 +330,6 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             throw new InvalidDataException("Invalid weapon accuracy draw.");
         }
         var module = world.Set<OwnedItem>().Find(moduleId);
-        var npc = world.Set<WorldNpc>().Find(targetId);
         bool ammoFed =
             module is not null
             && CombatDefinitions.IsSupportedAmmoTurret(
@@ -235,13 +346,9 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             || !module.Online
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
             || FittingCatalog.Definition(catalog, module.TypeId) is null
-            || npc is null
-            || npc.DestroyedAt.HasValue
-            || npc.RetiredAt.HasValue
-            || npc.Navigation == NpcNavigationState.Warping
         )
         {
-            throw new InvalidDataException("Use an online fitted supported turret on a locked NPC while in space.");
+            throw new InvalidDataException("Use an online fitted supported turret on a locked ship while in space.");
         }
         bool energy = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;
         if (activation is not null && activation != (ammoFed && !energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser))
@@ -250,18 +357,18 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
-        var npcType = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+        var targetType = catalog.Set<ItemType>().Single(t => t.Id == target.TypeId);
         var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        var separation = new SpacePosition(npc.X - position.X, npc.Y - position.Y, npc.Z - position.Z);
-        double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (npcType.Radius ?? 0));
+        var separation = target.Position - new SpacePosition(position.X, position.Y, position.Z);
+        double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (targetType.Radius ?? 0));
         string? revision = world.FitRevision(pilotId);
         var cachedShip = world.CachedFit(new(pilotId, pilot.ActiveShipId, 0), revision);
         var cachedWeapon = world.CachedFit(new(pilotId, pilot.ActiveShipId, moduleId), revision);
         var calculation = cachedShip is not null && cachedWeapon is not null ? null : FittingCalculation.Read(world, catalog, pilot);
         var ship = cachedShip ?? PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
-        if (npc.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
+        if (target.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
-            throw new InvalidDataException("The NPC is outside targeting range.");
+            throw new InvalidDataException("The target is outside targeting range.");
         }
         var attributes = cachedWeapon ?? ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module), calculation);
         if (cachedWeapon is null)
@@ -348,11 +455,10 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
             (int)(ammoFed && !energy ? DogmaEffect.ProjectileFired : DogmaEffect.LaserFired)
         );
-        var target = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         double chance = CombatDamage.HitChance(
             distance,
-            CombatDamage.AngularVelocity(separation, velocity - NpcMotion.Velocity(npc)),
-            target.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+            CombatDamage.AngularVelocity(separation, velocity - target.Velocity),
+            target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
             weapon.Optimal,
             weapon.Falloff,
             weapon.Tracking,
@@ -400,7 +506,7 @@ internal sealed class PilotCombatStore(WorldDatabase database, SecurityStatusSig
             }
         }
         world.SaveChanges();
-        return new(weapon, quality, capacitor, magazine, target);
+        return new(weapon, quality, capacitor, magazine, target.Attributes);
     }
 
     private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);

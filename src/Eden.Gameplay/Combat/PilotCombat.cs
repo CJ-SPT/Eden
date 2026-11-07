@@ -53,6 +53,16 @@ public sealed record CombatVolley(CombatShot Shot, IReadOnlyList<CombatWeapon> W
 
 public interface IPilotCombat
 {
+    CombatVolley FirePlayerBank(
+        long pilotId,
+        long moduleId,
+        PilotWeaponTarget target,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null
+    ) => throw new InvalidDataException("Pilot turret combat is unavailable.");
+
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
     CombatShot Fire(
         long pilotId,

@@ -344,7 +344,7 @@ public sealed class StarterProductionTests
             Assert.True(
                 PilotHealthStore.Apply(world, shipId, defense, new DamageVector(1_000_000, 0, 0, 0), Clock.Now).Remaining.Destroyed
             );
-            NpcShipLossPersistence.Apply(
+            ShipLossPersistence.Apply(
                 world,
                 catalog,
                 pilot,

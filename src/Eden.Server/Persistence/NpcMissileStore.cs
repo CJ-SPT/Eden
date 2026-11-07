@@ -208,17 +208,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                         result.Applied
                     );
                     var insurance = result.Remaining.Destroyed
-                        ? NpcShipLossPersistence.Apply(
-                            world,
-                            catalog,
-                            pilot,
-                            npc.Id,
-                            shipId,
-                            row.SystemId,
-                            position,
-                            row.UpdatedAt,
-                            lootRoll
-                        )
+                        ? ShipLossPersistence.Apply(world, catalog, pilot, npc.Id, shipId, row.SystemId, position, row.UpdatedAt, lootRoll)
                         : null;
                     shots.Add(
                         new(

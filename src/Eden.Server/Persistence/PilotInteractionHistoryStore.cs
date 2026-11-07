@@ -100,7 +100,8 @@ internal sealed class PilotInteractionHistoryStore(WorldDatabase database) : IPi
         int systemId,
         CombatParty victim,
         CombatParty final,
-        IReadOnlyList<CombatLostItem> items
+        IReadOnlyList<CombatLostItem> items,
+        bool shareWithAttackers = false
     )
     {
         // Include tracked entries for a fatal first shot before SaveChanges.
@@ -134,6 +135,32 @@ internal sealed class PilotInteractionHistoryStore(WorldDatabase database) : IPi
             )
         );
         world.RemoveRange(rows);
+        if (shareWithAttackers)
+        {
+            foreach (long participant in attackers.Select(a => a.CharacterId).Append(final.CharacterId).OfType<long>().Distinct())
+            {
+                if (participant != pilotId)
+                {
+                    Save(
+                        world,
+                        $"{sourceKey}:pilot:{participant}",
+                        new(
+                            0,
+                            participant,
+                            now,
+                            systemId,
+                            victim with
+                            {
+                                Damage = attackers.Sum(a => a.Damage),
+                            },
+                            final,
+                            attackers.Where(a => a.EntityId != final.EntityId).ToArray(),
+                            items
+                        )
+                    );
+                }
+            }
+        }
     }
 
     internal static void Save(WorldDbContext world, string sourceKey, ShipCombatReport report) =>

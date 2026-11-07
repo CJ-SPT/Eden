@@ -187,6 +187,13 @@ internal sealed partial class FlightSession(
             : null;
     }
 
+    internal PilotWeaponTarget? FindPilotWeaponTarget(long id) =>
+        CanTarget
+        && space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
+            is { } ship
+            ? new(id, ship.Velocity)
+            : null;
+
     private StaticSpaceObject[] VisibleObjects() =>
         objects
             .Where(o =>

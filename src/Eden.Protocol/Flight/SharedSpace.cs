@@ -299,6 +299,21 @@ internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null)
         }
     }
 
+    internal void ApplyDamage(ShipHealth health)
+    {
+        lock (MotionLock)
+        {
+            if (health.Remaining.Destroyed)
+            {
+                Leave(health.ShipId);
+            }
+            else if (_ships.TryGetValue(health.ShipId, out var ship))
+            {
+                _ships[health.ShipId] = ship with { Health = health };
+            }
+        }
+    }
+
     public NpcTargetCandidate[] NpcTargets(int systemId) =>
         _ships
             .Values.Where(ship =>

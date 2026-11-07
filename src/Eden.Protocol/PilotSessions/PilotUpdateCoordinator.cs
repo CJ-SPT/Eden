@@ -59,7 +59,8 @@ internal sealed class PilotUpdateCoordinator(
     NpcEwarHandler npcEwar,
     DroneHandler drones,
     PersonalMarketMonitor personalMarket,
-    CrimewatchHandler crimewatch
+    CrimewatchHandler crimewatch,
+    PilotDamageMonitor playerDamage
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -83,6 +84,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Enter(PilotCallContext context)
     {
+        playerDamage.Enter(context);
         crimewatch.Enter(context);
         corporations.Enter(context);
         corporationWallet.Enter(context);
@@ -108,6 +110,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        ApplyPlayerDamage(context);
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
         chat.Dispose();
@@ -118,6 +121,7 @@ internal sealed class PilotUpdateCoordinator(
     // Chat presence updates Local access after arrival without closing its transport.
     public void PrepareTranslocation(PilotCallContext context)
     {
+        playerDamage.Dispose();
         crimewatch.Reset();
         corporations.Reset();
         corporationWallet.Reset();
@@ -157,6 +161,8 @@ internal sealed class PilotUpdateCoordinator(
 
     public DockedPilot? Advance(PilotCallContext context)
     {
+        DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
+        ApplyPlayerDamage(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);
         redemption.Advance(context);
@@ -188,7 +194,6 @@ internal sealed class PilotUpdateCoordinator(
         }
         propulsion.Advance(context);
         industry.Advance(context);
-        DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         using (SessionPerformance.Phase("update.npcCombat"))
         {
             npcCombat.Advance(context);
@@ -220,5 +225,17 @@ internal sealed class PilotUpdateCoordinator(
             walletBalance.Advance(context);
         }
         return beforeAttack;
+    }
+
+    public void ApplyPlayerDamage(PilotCallContext context)
+    {
+        long previous = context.ActiveFlight?.Pilot.ShipId ?? 0;
+        playerDamage.Advance(context);
+        if (context.Selected && context.Pilot.ShipId != previous)
+        {
+            // Clear both lock directions before the early capsule session delta
+            // flushes the destroyed hull's removal.
+            targeting.Advance(context);
+        }
     }
 }

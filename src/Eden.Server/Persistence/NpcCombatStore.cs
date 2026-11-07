@@ -319,7 +319,7 @@ internal sealed class NpcCombatStore(
         InsurancePayout? insurance = null;
         if (result.Remaining.Destroyed)
         {
-            insurance = NpcShipLossPersistence.Apply(world, catalog, pilot, npcId, shipId, system, position, now, lootRoll);
+            insurance = ShipLossPersistence.Apply(world, catalog, pilot, npcId, shipId, system, position, now, lootRoll);
         }
         world.SaveChanges();
         transaction.Commit();

@@ -8,11 +8,11 @@ using Eden.Server.Catalog;
 
 namespace Eden.Server.Persistence;
 
-internal sealed record NpcDamageSettlement(ShipHealth Health, double Applied, bool Destroyed, NpcBounty? Reward);
+internal sealed record CombatDamageSettlement(ShipHealth Health, double Applied, bool Destroyed, NpcBounty? Reward);
 
 internal static class NpcDamagePersistence
 {
-    internal static NpcDamageSettlement Apply(
+    internal static CombatDamageSettlement Apply(
         WorldDbContext world,
         CatalogDbContext catalog,
         WorldNpc npc,

@@ -57,7 +57,8 @@ public sealed class ShipLoss
 {
     public long ShipId { get; set; }
     public long PilotId { get; set; }
-    public long NpcId { get; set; }
+    public long? NpcId { get; set; }
+    public long? AttackerPilotId { get; set; }
     public long CapsuleId { get; set; }
     public int TypeId { get; set; }
     public int SystemId { get; set; }

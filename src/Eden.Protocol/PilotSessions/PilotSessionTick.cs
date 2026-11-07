@@ -38,6 +38,12 @@ internal sealed class PilotSessionTick(
             return;
         }
         var flight = context.Flight;
+        var beforePlayerDamage = flight.Pilot;
+        updates.ApplyPlayerDamage(context);
+        if (beforePlayerDamage.ShipId != context.Pilot.ShipId)
+        {
+            await output.AnnounceTransitionAsync(beforePlayerDamage);
+        }
         if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
         {
             skills.Advance(context);

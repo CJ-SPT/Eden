@@ -113,17 +113,15 @@ internal sealed class CombatHandler(
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var volley = combat.FireBank(
-            context.Pilot.PilotId,
-            module,
-            target,
-            context.Flight.Velocity,
-            now,
-            RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
-            effectName is null ? null
-                : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
-                : WeaponActivation.Laser
-        );
+        var activation =
+            effectName is null ? (WeaponActivation?)null
+            : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
+            : WeaponActivation.Laser;
+        double roll = RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution;
+        var playerTarget = context.Flight.FindPilotWeaponTarget(target);
+        var volley = playerTarget is not null
+            ? combat.FirePlayerBank(context.Pilot.PilotId, module, playerTarget, context.Flight.Velocity, now, roll, activation)
+            : combat.FireBank(context.Pilot.PilotId, module, target, context.Flight.Velocity, now, roll, activation);
         var result = volley.Shot;
         if (result.Destroyed)
         {
@@ -262,9 +260,13 @@ internal sealed class CombatHandler(
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
-                if (!context.Flight.CanTarget || !targeting.IsLocked(target) || !context.Flight.VisibleNpcs.Any(n => n.Id == target))
+                if (
+                    !context.Flight.CanTarget
+                    || !targeting.IsLocked(target)
+                    || !context.Flight.VisibleNpcs.Any(n => n.Id == target) && context.Flight.FindPilotWeaponTarget(target) is null
+                )
                 {
-                    return new PilotCallResult.Failure("Lock a nearby NPC before activating the weapon.");
+                    return new PilotCallResult.Failure("Lock a nearby ship before activating the weapon.");
                 }
                 if (_cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } current)
                 {

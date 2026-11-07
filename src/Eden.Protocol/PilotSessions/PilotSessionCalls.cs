@@ -60,6 +60,7 @@ internal sealed class PilotSessionCalls(
         long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
+        updates.ApplyPlayerDamage(context);
         PilotCallResult result;
         using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
         {

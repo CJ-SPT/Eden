@@ -41,8 +41,12 @@ internal static class InteractionHistorySchema
         var npcs = world.Set<WorldNpc>().ToDictionary(n => n.Id);
         foreach (var loss in world.Set<ShipLoss>().AsNoTracking())
         {
+            if (loss.NpcId is not long npcId)
+            {
+                continue;
+            }
             var pilot = pilots[loss.PilotId];
-            var npc = npcs[loss.NpcId];
+            var npc = npcs[npcId];
             var items = JsonSerializer.Deserialize<OwnedItem[]>(loss.ItemsJson) ?? [];
             var survivors = JsonSerializer.Deserialize<long[]>(loss.DroppedItemIdsJson) ?? [];
             var stored = JsonSerializer.Deserialize<StoredShipManifest[]>(loss.StoredShipsJson) ?? [];

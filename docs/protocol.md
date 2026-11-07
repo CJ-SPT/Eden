@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Pilot turret combat and loss settlement, November 6, 2026](protocol/combat.md#pilot-turret-combat-and-loss-settlement-november-6-2026)
+
 - [Enforced safety and persistent aggression, November 6, 2026](protocol/combat.md#enforced-safety-and-persistent-aggression-november-6-2026)
 
 - [Bounded authentication retention, November 6, 2026](protocol/startup.md#bounded-authentication-retention-november-6-2026)
