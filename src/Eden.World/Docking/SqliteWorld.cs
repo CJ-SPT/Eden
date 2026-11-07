@@ -146,6 +146,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
     public DockedPilot? FindPilot(long accountId, long? pilotId = null)
     {
         using WorldDbContext world = new(_database.Path);
+        using var transaction = world.Database.BeginTransaction();
         var pilot = world
             .Pilots.AsNoTracking()
             .Include(p => p.Account)
@@ -203,7 +204,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         );
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         var corporationAccess = CorporationRoleStore.Effective(world, pilot.Id, corporation);
-        return new(
+        DockedPilot result = new(
             new(
                 pilot.Id,
                 pilot.Name,
@@ -255,5 +256,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                     .TickerName
                 ?? "",
         };
+        transaction.Commit();
+        return result;
     }
 }

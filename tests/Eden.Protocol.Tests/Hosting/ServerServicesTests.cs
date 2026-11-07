@@ -51,9 +51,10 @@ public sealed class ServerServicesTests
         var session = first.ServiceProvider.GetRequiredService<IPilotSession>();
         Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
         Assert.Contains(
-            first.ServiceProvider.GetRequiredService<CatalogFittingReadScope>(),
+            first.ServiceProvider.GetRequiredService<CatalogReadScope>(),
             first.ServiceProvider.GetServices<IPilotOperationScope>()
         );
+        Assert.Single(first.ServiceProvider.GetServices<IPilotOperationScope>());
         Assert.Contains(
             first.ServiceProvider.GetRequiredService<MiningHandler>(),
             first.ServiceProvider.GetServices<IModuleEffectSource>()

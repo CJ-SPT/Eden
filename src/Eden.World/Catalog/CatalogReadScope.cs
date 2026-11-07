@@ -23,6 +23,10 @@ internal sealed class CatalogReadScope : IPilotOperationScope
     private sealed class Operation : IDisposable
     {
         private readonly Operation? _previous = s_current.Value;
+
+        // The host resolves one operation scope. Keep catalog generations and
+        // fitting inputs in that same lifetime instead of competing registrations.
+        private readonly IDisposable _fitting = new CatalogFittingReadScope().Begin();
         internal ConcurrentDictionary<string, CatalogProvider> Catalogs { get; }
 
         internal Operation()
@@ -31,6 +35,10 @@ internal sealed class CatalogReadScope : IPilotOperationScope
             s_current.Value = this;
         }
 
-        public void Dispose() => s_current.Value = _previous;
+        public void Dispose()
+        {
+            _fitting.Dispose();
+            s_current.Value = _previous;
+        }
     }
 }

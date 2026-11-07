@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -14,6 +15,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         if (writable)
         {
             CatalogProvider.Invalidate(path);
+            ResidentFitCache.CatalogChanged(path);
             LiveWorld.CatalogChanged(path);
         }
     }
@@ -24,22 +26,33 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         if (writable)
         {
             CatalogProvider.Invalidate(path);
+            ResidentFitCache.CatalogChanged(path);
             LiveWorld.CatalogChanged(path);
         }
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
-        options
-            .TracePerformance()
-            .UseSqlite(
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.TracePerformance();
+        if (!writable && _fittingInputs.IsScoped)
+        {
+            // Service operations share one immutable catalog connection. Contexts
+            // do not own it; the outer operation releases it after all readers.
+            options.UseSqlite(_fittingInputs.Connection(path), contextOwnsConnection: false);
+        }
+        else
+        {
+            options.UseSqlite(
                 new SqliteConnectionStringBuilder
                 {
                     DataSource = path,
                     Mode = writable ? SqliteOpenMode.ReadWriteCreate : SqliteOpenMode.ReadOnly,
                     Pooling = false,
                 }.ToString()
-            )
-            .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            );
+        }
+        options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    }
 
     protected override void OnModelCreating(ModelBuilder model)
     {

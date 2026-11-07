@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Bound dogma and ship-call latency, November 7, 2026](protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026)
+
 - [Shared catalog provider, November 7, 2026](protocol/catalog.md#shared-catalog-provider-november-7-2026)
 
 - [Immutable catalog collections and world namespaces, November 7, 2026](protocol/catalog.md#immutable-catalog-collections-and-world-namespaces-november-7-2026)

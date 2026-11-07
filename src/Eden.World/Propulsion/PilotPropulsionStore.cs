@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropulsion
+internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting) : IPilotPropulsion
 {
     private static double Bonus(
         WorldDbContext world,
@@ -33,12 +33,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
     internal static double NavigationSpeed(WorldDbContext world, CatalogDbContext catalog, long pilotId, double speed) =>
         PropulsionRules.NavigationSpeed(speed, Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus));
 
-    public double MaxSpeed(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity);
-    }
+    public double MaxSpeed(long pilotId) => fitting.ShipAttributes(pilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity);
 
     public IReadOnlyList<NavigationBonus> NavigationBonuses(long pilotId)
     {
@@ -96,7 +91,9 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ModuleAttributes(world, catalog, pilotId, module);
+        var result = ModuleAttributes(world, catalog, pilotId, module);
+        transaction.Commit();
+        return result;
     }
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
@@ -196,12 +193,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database) : IPilotPropu
         return new(burner, capacitor, signature);
     }
 
-    public double SignatureRadius(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
-    }
+    public double SignatureRadius(long pilotId) => fitting.ShipAttributes(pilotId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
 
     public double Stop(long pilotId, long shipId, long moduleId)
     {

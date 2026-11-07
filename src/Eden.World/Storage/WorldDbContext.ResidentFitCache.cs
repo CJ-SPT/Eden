@@ -10,6 +10,7 @@ namespace Eden.World.Storage;
 public sealed partial class WorldDbContext
 {
     private readonly Dictionary<FitCacheKey, FitCacheEntry> _pendingFits = [];
+    private readonly Dictionary<(long Pilot, long Ship), FittingSnapshotEntry> _pendingSnapshots = [];
     private Guid _fitTransaction;
     private readonly ResidentFitCache? _residentFits = string.IsNullOrEmpty(path) ? null : ResidentFitCache.Find(path);
 
@@ -22,6 +23,7 @@ public sealed partial class WorldDbContext
         if (_fitTransaction != Database.CurrentTransaction.TransactionId)
         {
             _pendingFits.Clear();
+            _pendingSnapshots.Clear();
             _fitTransaction = Database.CurrentTransaction.TransactionId;
         }
         return Database.SqlQuery<string>($"SELECT Stamp AS Value FROM WorldFitRevision WHERE PilotId={pilotId}").FirstOrDefault()
@@ -49,6 +51,25 @@ public sealed partial class WorldDbContext
         }
     }
 
+    internal FittingSnapshot? CachedFittingSnapshot(long pilot, long ship, string? revision)
+    {
+        if (revision is null)
+        {
+            return null;
+        }
+        return _pendingSnapshots.TryGetValue((pilot, ship), out var pending) && pending.Revision == revision
+            ? pending.Snapshot
+            : _residentFits?.ReadSnapshot(pilot, ship, revision);
+    }
+
+    internal void StageFittingSnapshot(long pilot, long ship, string? revision, FittingSnapshot snapshot)
+    {
+        if (revision is not null)
+        {
+            _pendingSnapshots[(pilot, ship)] = new(revision, snapshot);
+        }
+    }
+
     private sealed class FitTransactions(WorldDbContext world) : DbTransactionInterceptor
     {
         public override void TransactionCommitted(DbTransaction transaction, TransactionEndEventData eventData)
@@ -56,11 +77,16 @@ public sealed partial class WorldDbContext
             if (eventData.TransactionId == world._fitTransaction)
             {
                 world._residentFits?.Publish(world._pendingFits);
+                world._residentFits?.PublishSnapshots(world._pendingSnapshots);
             }
             world._pendingFits.Clear();
+            world._pendingSnapshots.Clear();
         }
 
-        public override void TransactionRolledBack(DbTransaction transaction, TransactionEndEventData eventData) =>
+        public override void TransactionRolledBack(DbTransaction transaction, TransactionEndEventData eventData)
+        {
             world._pendingFits.Clear();
+            world._pendingSnapshots.Clear();
+        }
     }
 }

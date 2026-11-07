@@ -44,7 +44,9 @@ internal sealed class PilotCombatStore(
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         catalog.Database.OpenConnection();
-        return ModuleAttributes(world, catalog, pilotId, module);
+        var result = ModuleAttributes(world, catalog, pilotId, module);
+        transaction.Commit();
+        return result;
     }
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
