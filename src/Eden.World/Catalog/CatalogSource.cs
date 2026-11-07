@@ -12,6 +12,7 @@ public interface ICatalogSource
     CatalogDatasetDescriptor Descriptor { get; }
     internal void Configure(ModelBuilder model);
     internal long Verify(CatalogDbContext db);
+    internal CatalogBrowsePage Browse(CatalogProvider catalog, string? after, int limit, string? search, string? key);
 }
 
 /// <summary>A build-specific SQLite view with a typed payload and an indexed source key.</summary>
@@ -30,6 +31,11 @@ public abstract class CatalogSource<T>(string name) : ICatalogSource
     }
 
     protected abstract void ValidateKey(string encoded);
+
+    internal abstract CatalogBrowsePage Browse(CatalogProvider catalog, string? after, int limit, string? search, string? key);
+
+    CatalogBrowsePage ICatalogSource.Browse(CatalogProvider catalog, string? after, int limit, string? search, string? key) =>
+        Browse(catalog, after, limit, search, key);
 
     void ICatalogSource.Configure(ModelBuilder model)
     {
@@ -62,7 +68,11 @@ public abstract class CatalogSource<T>(string name) : ICatalogSource
 }
 
 public sealed class CatalogSource<TKey, TValue>(string name) : CatalogSource<TValue>(name)
+    where TKey : notnull
 {
+    internal override CatalogBrowsePage Browse(CatalogProvider catalog, string? after, int limit, string? search, string? key) =>
+        catalog.Browse(this, after, limit, search, key);
+
     public override Type KeyType => typeof(TKey);
 
     public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, JsonSerializer.Serialize(key));

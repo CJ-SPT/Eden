@@ -8,6 +8,19 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 
 
+
+## Local Blazor catalog and configuration editor, November 7, 2026
+
+Eden.Server now includes a separate loopback-only Blazor administration listener. A local command provisions its administrator independently of game accounts. Cookie authentication, administrator authorization, antiforgery checks, credential-stamp revalidation and local Host/Origin checks protect HTTP and interactive operations. Password rotation revokes both kinds of access. Inherited web-host endpoints cannot add administration listeners. Blazor framework assets are served through the standard static asset pipeline.
+
+The editor offers typed settings forms, economic override forms, original/active/pending comparisons, validation messages, reset, immutable revision history, comparison, restore and import/export. Saved changes remain pending restart and use the existing durable revision operations. Catalog pages cover all 442 generated datasets, typed keys/fields, original presence and exact numeric spelling, searchable bounded pages, paged nested values and declared relationship links. Native fields remain read-only. The installed catalog and gameplay rules have no editor write operations. See [local setup and administration](../world-configuration.md#local-graphical-editor) and the revised [sandbox sequencing decision](../sandbox-vision.md#4-configuration-persistence-and-hosting).
+
+**Automated validation:** exact authentication and all-dataset browser checks passed during development. Final tool/solution restore, warning-free build (4.27 seconds), eight focused tests (4.71 seconds wall time), six catalog Python tests (0.265 seconds), nine formatting Python tests (0.015 seconds) and formatting verification passed. The filter was `FullyQualifiedName~Eden.Protocol.Tests.Administration|FullyQualifiedName~Eden.Protocol.Tests.Hosting.DataModelOwnershipTests`. Checks include real HTTP login/authorization, missing antiforgery, local host/origin enforcement, framework script delivery, typed browsing through every adapter, missing/null/wide-integer component rendering, exact money inputs, validation, pending presentation, stale saves, comparison, restore/export, rejection of unknown fields and password-rotation revocation. Earlier development checks caught and corrected a login route collision and missing framework asset delivery. No optional benchmarks or full .NET suite were run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. The final architectural access guard and content-decision disposition remain the last adoption slice.
+
 ## Versioned world configuration, November 7, 2026
 
 World schema 99 captures existing policies and economic projections in an immutable baseline revision. Typed groups cover economy, development supply, resources, NPC population, progression and simulation. Staged revisions retain active behavior until startup validates and activates them before gameplay reconciliation and resident service construction. The startup ownership lease excludes an existing server during this phase. Invalid pending revisions retain the previous active configuration and record a readable failure; history remains immutable and restorable.

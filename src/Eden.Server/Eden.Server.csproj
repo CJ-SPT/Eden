@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
@@ -9,7 +9,6 @@
     <ProjectReference Include="../Eden.World/Eden.World.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.85.0" />
     <PackageReference Include="Grpc.Tools" Version="2.85.0" PrivateAssets="all" />
     <Protobuf Include="../Eden.Protocol/Gateway/services.proto" ProtoRoot="../Eden.Protocol/Gateway" GrpcServices="Server" />

@@ -7,7 +7,7 @@
 | Guide | Use it for |
 | --- | --- |
 | [Windows client setup](development-client.md) | Stage build 3662168, prepare the catalog, manage saves, launch locally and use developer travel. Optional gameplay procedures are labeled separately. |
-| [Saved world configuration](world-configuration.md) | Stage settings and economic overrides for restart, inspect history, and import/export or restore revisions. |
+| [Saved world configuration](world-configuration.md) | Use the local Blazor editor or commands to browse catalogs, stage settings, compare history and restore revisions. |
 | [Desktop launcher hosting](launcher.md) | Register accounts, configure developer access, host remotely and provision native chat trust. |
 
 ## Development
@@ -25,7 +25,7 @@
 
 | Reference | Use it for |
 | --- | --- |
-| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and eventual Blazor configuration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
+| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and local administration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
 
 ## Features and implementation records
 

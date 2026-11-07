@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Local Blazor catalog and configuration editor, November 7, 2026](protocol/catalog.md#local-blazor-catalog-and-configuration-editor-november-7-2026)
+
 - [Versioned world configuration, November 7, 2026](protocol/catalog.md#versioned-world-configuration-november-7-2026)
 
 - [Shared location and directory consumers, November 7, 2026](protocol/catalog.md#shared-location-and-directory-consumers-november-7-2026)

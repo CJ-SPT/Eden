@@ -1,0 +1,53 @@
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+<section class="card">
+    <h2>Economic overrides</h2>
+    <p class="muted">Change server-supplied prices and indices for existing items and systems. Draft edits are included when you save a pending revision above.</p>
+    @if (Error is not null)
+    {
+        <p class="error" role="alert">@Error</p>
+    }
+    <div class="grid">
+        <div>
+            <h3>Adjusted item price</h3>
+            <label>Existing type ID<input type="number" min="1" @bind="TypeId" /></label>
+            <label>Adjusted price (ISK)<input type="number" min="0.000001" step="any" @bind="Price" /></label>
+            <div class="toolbar"><button type="button" @onclick="SetPrice">Set draft price</button>
+                <button type="button" class="secondary" @onclick="ResetPrice">Reset to original source price</button></div>
+        </div>
+        <div>
+            <h3>Manufacturing index</h3>
+            <label>Existing system ID<input type="number" min="1" @bind="SystemId" /></label>
+            <label>Index (0 to 1)<input type="number" min="0" max="1" step="any" @bind="Index" /></label>
+            <div class="toolbar"><button type="button" @onclick="SetIndex">Set draft index</button>
+                <button type="button" class="secondary" @onclick="ResetIndex">Reset to original world index</button></div>
+        </div>
+    </div>
+    <h3>Adjusted prices · @Draft.AdjustedPrices.Length</h3>
+    <div class="scroll"><table><thead><tr><th>Item</th><th>Original source</th><th>Active</th><th>Pending restart</th><th>Draft</th></tr></thead>
+        <tbody>@foreach (var price in Draft.AdjustedPrices.OrderBy(price => price.TypeId).Skip(PricePage * PageSize).Take(PageSize))
+        {
+            <tr><td><a href="@ItemLink(price.TypeId)">@price.TypeId</a> <button class="secondary" type="button" @onclick="() => Edit(price)">Edit</button></td>
+                <td>@Amount(SourcePrices.GetValueOrDefault(price.TypeId))</td>
+                <td>@Amount(Active.AdjustedPrices.FirstOrDefault(value => value.TypeId == price.TypeId)?.PriceIsk)</td>
+                <td>@Amount(Pending?.AdjustedPrices.FirstOrDefault(value => value.TypeId == price.TypeId)?.PriceIsk)</td>
+                <td>@Amount(price.PriceIsk)</td></tr>
+        }</tbody>
+    </table></div>
+    <div class="toolbar"><button type="button" class="secondary" disabled="@(PricePage == 0)" @onclick="PreviousPrices">Previous</button>
+        <button type="button" class="secondary" disabled="@((PricePage + 1) * PageSize >= Draft.AdjustedPrices.Length)" @onclick="NextPrices">Next</button></div>
+    <h3>Manufacturing indices · @Draft.ManufacturingIndices.Length</h3>
+    <div class="scroll"><table><thead><tr><th>System</th><th>Original</th><th>Active</th><th>Pending restart</th><th>Draft</th></tr></thead>
+        <tbody>@foreach (var index in Draft.ManufacturingIndices.OrderBy(value => value.SystemId).Skip(IndexPage * PageSize).Take(PageSize))
+        {
+            <tr><td>@index.SystemId <button type="button" class="secondary" @onclick="() => Edit(index)">Edit</button></td>
+                <td>@OriginalIndex(index.SystemId)</td>
+                <td>@(Active.ManufacturingIndices.FirstOrDefault(value => value.SystemId == index.SystemId)?.Index ?? Active.Settings.Economy.DefaultManufacturingIndex)</td>
+                <td>@(Pending is null ? "—" : (Pending.ManufacturingIndices.FirstOrDefault(value => value.SystemId == index.SystemId)?.Index ?? Pending.Settings.Economy.DefaultManufacturingIndex).ToString())</td>
+                <td>@index.Index</td></tr>
+        }</tbody>
+    </table></div>
+    <div class="toolbar"><button type="button" class="secondary" disabled="@(IndexPage == 0)" @onclick="PreviousIndices">Previous</button>
+        <button type="button" class="secondary" disabled="@((IndexPage + 1) * PageSize >= Draft.ManufacturingIndices.Length)" @onclick="NextIndices">Next</button></div>
+    <p class="muted">Editable server projections · Source: installed catalog base prices and saved world indices · IDs and client fields remain read only.</p>
+</section>

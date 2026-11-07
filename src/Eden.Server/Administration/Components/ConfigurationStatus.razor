@@ -1,0 +1,14 @@
+@if (State is not null)
+{
+    <div class="toolbar">
+        <span>Active revision @State.Active.Id</span>
+        @if (State.Pending is { } pending)
+        {
+            <span class="badge">Revision @pending.Id · pending restart</span>
+        }
+    </div>
+    @if (State.ActivationFailure is { } failure)
+    {
+        <p class="error" role="alert">@failure</p>
+    }
+}

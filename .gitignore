@@ -13,5 +13,7 @@ artifacts/
 *.sqlite.previous
 *.sqlite.save-*
 chat-tls.pfx
+*.administrators.json
+*.admin-keys/
 eve-online-static-data-*-jsonl.zip
 __pycache__/

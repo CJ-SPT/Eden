@@ -1,0 +1,61 @@
+@page "/catalog"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+<PageTitle>Catalog · Eden</PageTitle>
+<h1>Catalog</h1>
+<p class="muted">Browse the installed definitions and their relationships. Native client fields are read only.</p>
+@if (Error is not null)
+{
+    <p class="error" role="alert">@Error</p>
+}
+<div class="card">
+    <div class="toolbar">
+        <input aria-label="Filter datasets" placeholder="Find a dataset" @bind="DatasetSearch" @bind:event="oninput" />
+        <select aria-label="Dataset" value="@Dataset" @onchange="SelectDataset">
+            @foreach (var dataset in Datasets.Where(dataset => dataset.Name.Contains(DatasetSearch, StringComparison.OrdinalIgnoreCase)))
+            {
+                <option value="@dataset.Name">@dataset.Name</option>
+            }
+        </select>
+        <input aria-label="Search records" placeholder="Search keys or values" @bind="Search" />
+        <button @onclick="SearchRecords">Search</button>
+    </div>
+    @if (Description is not null)
+    {
+        <p class="muted">@Description.Records.ToString("N0") pinned records · Key: @Description.KeyType · Value: @Description.ValueType</p>
+        <details><summary>Source and compatibility</summary><code>@Description.Source<br />SHA-256: @Description.Sha256</code>
+            <p class="muted">Installed source values apply to original, active and pending native fields. Economic projections are edited in Settings.</p>
+        </details>
+    }
+</div>
+@if (Page is not null)
+{
+    @foreach (var record in Page.Rows)
+    {
+        <section class="card" @key="record.Key">
+            <h2>Record <code>@record.Key</code></h2>
+            <span class="muted">Source: installed catalog · Native client field compatibility: read only</span>
+            <CatalogValue Value="record.Payload" Schema="Description?.ValueSchema" />
+            @if (Links.GetValueOrDefault(record.Key) is { Count: > 0 } links)
+            {
+                <details><summary>Related records (@links.Count)</summary>
+                    @foreach (var link in links)
+                    {
+                        <p><a href="@Reference(link)">@link.Path → @link.Dataset / @link.Key</a></p>
+                    }
+                </details>
+            }
+        </section>
+    }
+    @if (Page.Rows.Length == 0)
+    {
+        <p class="card muted">No matching records.</p>
+    }
+    <div class="toolbar">
+        <button class="secondary" @onclick="SearchRecords">First page</button>
+        <button disabled="@(Page.NextCursor is null)" @onclick="NextPage">Next page</button>
+        <small class="muted">Up to 25 records per page</small>
+    </div>
+}

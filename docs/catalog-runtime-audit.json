@@ -2,8 +2,8 @@
   "build": 3662168,
   "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
   "counts": {
-    "catalog-read": 127,
-    "catalog-context": 460,
+    "catalog-read": 128,
+    "catalog-context": 461,
     "content-identifier": 134,
     "type-selection": 8
   },
@@ -724,7 +724,7 @@
     },
     {
       "path": "src/Eden.Server/Program.cs",
-      "line": 30,
+      "line": 31,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(candidate, writable: true);"
     },
@@ -814,79 +814,91 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 333,
+      "line": 342,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 401,
+      "line": 410,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 426,
+      "line": 435,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 428,
+      "line": 437,
       "kind": "catalog-read",
       "text": "var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 452,
+      "line": 461,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 466,
+      "line": 475,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 512,
+      "line": 521,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 601,
+      "line": 610,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 603,
+      "line": 612,
       "kind": "catalog-read",
       "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 642,
+      "line": 651,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 670,
+      "line": 679,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 671,
+      "line": 680,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 696,
+      "line": 709,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 710,
+      "kind": "catalog-read",
+      "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 751,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
@@ -952,25 +964,25 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
-      "line": 25,
+      "line": 26,
       "kind": "catalog-context",
       "text": "public IQueryable<CatalogEntry<T>> Query(CatalogDbContext db) => db.Set<CatalogEntry<T>>(Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
-      "line": 27,
+      "line": 28,
       "kind": "catalog-context",
       "text": "protected T GetEncoded(CatalogDbContext db, string encoded)"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
-      "line": 47,
+      "line": 53,
       "kind": "catalog-context",
       "text": "long ICatalogSource.Verify(CatalogDbContext db)"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
-      "line": 68,
+      "line": 78,
       "kind": "catalog-context",
       "text": "public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, JsonSerializer.Serialize(key));"
     },

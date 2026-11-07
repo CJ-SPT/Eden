@@ -319,6 +319,15 @@ public sealed partial class CatalogProvider
     public IReadOnlyDictionary<TKey, TValue> FindMany<TKey, TValue>(CatalogSource<TKey, TValue> source, IEnumerable<TKey> keys)
         where TKey : notnull => Table(source).Lookups(keys);
 
+    internal CatalogBrowsePage Browse<TKey, TValue>(
+        CatalogSource<TKey, TValue> source,
+        string? after,
+        int limit,
+        string? search,
+        string? key
+    )
+        where TKey : notnull => Table(source).Browse(after, limit, search, key);
+
     public ImmutableArray<int> TypesInGroup(int groupId) => _groups.Value.GetValueOrDefault(groupId, []);
 
     public ImmutableArray<int> BlueprintsForProduct(int productId) => _blueprints.Value.GetValueOrDefault(productId, []);
@@ -685,6 +694,52 @@ public sealed partial class CatalogProvider
                 {
                     var key = JsonSerializer.Deserialize<TKey>(record.Key)!;
                     return new CatalogRow<TKey, TValue>(key, _memo.Read(key, () => Decode(record)).Value);
+                })
+                .ToImmutableArray();
+            return new(rows, records.Length > limit ? records[limit - 1].Key : null);
+        }
+
+        internal CatalogBrowsePage Browse(string? after, int limit, string? search, string? key)
+        {
+            if (limit is < 1 or > CatalogCacheOptions.MaximumPageSize || search?.Length > 100 || key?.Length > 4096)
+            {
+                throw new InvalidDataException("Invalid catalog page, key or search length.");
+            }
+            _owner.RequireCurrent();
+            using CatalogDbContext catalog = new(_owner.Identity.Path);
+            var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);
+            if (key is not null)
+            {
+                var parsed = JsonSerializer.Deserialize<TKey>(key) ?? throw new InvalidDataException("Missing record key.");
+                string encoded = JsonSerializer.Serialize(parsed);
+                query = query.Where(record => record.Key == encoded);
+            }
+            else
+            {
+                if (after is not null)
+                {
+                    _ = JsonSerializer.Deserialize<TKey>(after);
+                    query = query.Where(record => record.Key.CompareTo(after) > 0);
+                }
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    string pattern = "%" + search.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+                    query = query.Where(record =>
+                        EF.Functions.Like(record.Key, pattern, "\\") || EF.Functions.Like(record.Data, pattern, "\\")
+                    );
+                }
+            }
+            Interlocked.Increment(ref _owner._loads);
+            var records = query.OrderBy(record => record.Key).Take(limit + 1).ToArray();
+            var rows = records
+                .Take(limit)
+                .Select(record =>
+                {
+                    var parsedKey = JsonSerializer.Deserialize<TKey>(record.Key)!;
+                    _ = _memo.Read(parsedKey, () => Decode(record));
+                    // Display original presence and spelling after typed validation, without changing source data.
+                    using var document = JsonDocument.Parse(record.Data);
+                    return new CatalogStoredRecord(record.Key, document.RootElement.Clone());
                 })
                 .ToImmutableArray();
             return new(rows, records.Length > limit ? records[limit - 1].Key : null);

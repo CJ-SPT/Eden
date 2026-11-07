@@ -24,7 +24,7 @@ The agreed direction is:
 - Normal EVE losses and recovery through ordinary mechanics.
 - A shared, configurable training multiplier for humans and bots.
 - Limited offline progression.
-- An eventual Blazor editor for configuring the sandbox.
+- A local Blazor editor for validated settings and catalog browsing.
 
 ## 2. How the universe develops and creates a good flow
 
@@ -96,7 +96,7 @@ Use detailed simulation where players are present and less frequent scheduling f
 
 ## 4. Configuration, persistence, and hosting
 
-Build typed, versioned world configuration before building the editor. The later **Blazor configuration editor** reads and updates those settings through an authenticated administration interface.
+**Revised administration decision, November 7, 2026:** the approved catalog/configuration plan brought the local Blazor editor forward. Typed versioned settings and the authenticated loopback editor are implemented; see [local administration](world-configuration.md). This changes the earlier sequencing without enabling additional gameplay or capsuleer bots. The editor stages changes for restart and does not own gameplay rules.
 
 Configuration should cover:
 
@@ -120,7 +120,7 @@ Persist world settings, bot plans, economic state, and progression timestamps to
 | **2. First working community** | A small population in a selected highsec area with persistent miners, ratters, manufacturers, and traders | Bots create real supply and demand, retain identities, and recover from ordinary losses |
 | **3. Travel and danger** | Inter-system hauling, lowsec activity, hunting, escape decisions, and the required aggression/security mechanics | Cargo moves physically; bots and humans can intercept one another; losses affect subsequent behavior |
 | **4. Social organization** | Bot corporation membership, recruitment, shared resources, fleets, and coordinated activity | You and friends can join or build an organization that functions through normal EVE systems |
-| **5. Regional growth and administration** | Multiple economic communities, broader supported careers, larger populations, and the Blazor editor | Distinct regional markets develop, performance remains practical, and settings can be inspected and changed safely |
+| **5. Regional growth and administration** | Multiple economic communities, broader supported careers, larger populations, and broader administration tools | Distinct regional markets develop, performance remains practical, and settings can be inspected and changed safely |
 
 Start the prototype locally while keeping the rest of the map accessible. Expand after the small community can sustain itself.
 
@@ -179,9 +179,9 @@ The existing faction NPC miners, convoys, and pirates are useful encounter behav
 - **Shared gameplay operations:** extend the existing typed Gameplay contracts and Server transactions; keep native client adaptation in Protocol. Add market-order lifecycle and pilot-target combat contracts through their owning features. A bot must invoke the same validated operations without needing a fabricated client connection.
 - **World-owned actor execution:** current player activity still advances through connection-scoped coordination. Separate actor presence and scheduled actions from client presence while retaining one authoritative world. Verify two observers do not advance one bot twice and that background travel/mining cannot create or lose assets during visibility changes. See [current update coordination](../src/Eden.Protocol/PilotSessions/PilotUpdateCoordinator.cs).
 - **Explicit clock policy:** training and industry currently use UTC-based deadlines. Introduce the agreed shared training-rate and empty-world progression policy with persisted timestamps, restart behavior, and correct native deadline presentation. Preserve durations and already-paid work; do not let starting the host or reconnecting replay rewards or manufacture extra time.
-- **Saved configuration and diagnostics:** establish versioned settings for world creation and bot behavior, deterministic seeds for tests, and economic/performance measurements. The Blazor administration interface remains deferred; it will edit validated settings rather than become the owner of gameplay rules.
+- **Saved configuration and diagnostics:** establish versioned settings for world creation and bot behavior, deterministic seeds for tests, and economic/performance measurements. The local Blazor editor now handles supported validated policies. Bot-specific configuration remains deferred until its mechanics exist.
 
-**Readiness gates:** an initial peaceful community needs steps 1-3 plus the actor/configuration prerequisites, and only uses its completed careers. Hunting capsuleers additionally need step 4 and directional scanning. Recruitable organized groups need step 5. Broader mission/exploration bots wait for their own step-6 gameplay. Do not start the large bot population or the Blazor editor as the next implementation task.
+**Readiness gates:** an initial peaceful community needs steps 1-3 plus the actor/configuration prerequisites, and only uses its completed careers. Hunting capsuleers additionally need step 4 and directional scanning. Recruitable organized groups need step 5. Broader mission/exploration bots wait for their own step-6 gameplay. Do not start the large bot population before its gameplay prerequisites. The local editor was brought forward under the revised decision above.
 
 ### Validation and source discipline
 

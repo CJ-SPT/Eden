@@ -25,9 +25,27 @@ These overrides are economic projections belonging to the saved world. They do n
 
 Each document carries format version 1 and the installed catalog source fingerprint. Unknown properties, incompatible catalogs and invalid settings are rejected. Decimal economic inputs retain their precision in saved documents and existing SQLite projections. Original catalog files are never written.
 
+## Local graphical editor
+
+Provision a separate administrator from a local terminal. This command prompts for a password and confirmation; it does not change game accounts or activate pending configuration:
+
+```powershell
+dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --set-admin-password Corey
+```
+
+Start the server normally, then open **http://127.0.0.1:26003**. The listener starts only after an administrator has been provisioned. Use `--admin-port <port>` for a different dedicated port or `--disable-admin` to disable it. It always binds IPv4 loopback, independently of game listeners and inherited web-host configuration. Nonlocal Host/Origin values are rejected. Game accounts receive no administration access.
+
+Settings contains typed forms for all six policy groups and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save pending revision** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
+
+Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
+
+Authentication uses a separate ASP.NET Core cookie scheme and administrator role. HTTP and interactive operations enforce authorization and the current credential stamp. Forms and writes require antiforgery validation. Password rotation revokes existing HTTP sessions and interactive operation access. Passwords are hashed in a separate `<world>.administrators.json` credential file. Authentication keys live in `<world>.admin-keys` and use the current Windows user's key protection on Windows. These runtime files are excluded from version control. The local password command can rotate credentials while the server runs.
+
+The editor uses Blazor server interaction, following [ASP.NET Core Blazor security](https://learn.microsoft.com/en-us/aspnet/core/blazor/security/?view=aspnetcore-10.0) and [cookie authentication](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0). It delegates to the same configuration validation and persistence operations as local commands. Installed catalog files and gameplay rules remain outside its ownership.
+
 ## Local commands
 
-Stop the server before these commands. They acquire the saved world's ownership file; a running server must be edited through the forthcoming authenticated local editor. Commands can upgrade an older world but do not activate pending revisions. Run from the repository root, supplying the saved world explicitly:
+Stop the server before these commands. They acquire the saved world's ownership file; a running server uses the authenticated local editor. Commands can upgrade an older world but do not activate pending revisions. Run from the repository root, supplying the saved world explicitly:
 
 ```powershell
 dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --configuration-history

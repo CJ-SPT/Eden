@@ -1,0 +1,55 @@
+@page "/revisions"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+<PageTitle>Revisions · Eden</PageTitle>
+<h1>Configuration revisions</h1>
+<p class="muted">Compare saved values, export a document or restore a revision as a new pending change.</p>
+@if (Error is not null)
+{
+    <p class="error" role="alert">@Error</p>
+}
+@if (State is not null)
+{
+    <ConfigurationStatus State="State" />
+    @if (Message is not null)
+    {
+        <p class="notice" role="status">@Message</p>
+    }
+    <section class="card"><h2>Compare revisions</h2>
+        <div class="toolbar">
+            <select aria-label="Original revision" @bind="Left" @bind:after="Compare">
+                @foreach (var revision in Revisions) { <option value="@revision.Id">Revision @revision.Id</option> }
+            </select>
+            <select aria-label="Comparison revision" @bind="Right" @bind:after="Compare">
+                @foreach (var revision in Revisions) { <option value="@revision.Id">Revision @revision.Id</option> }
+            </select>
+            <button @onclick="Restore">Restore selected comparison revision</button>
+            <a href="@($"/api/admin/export/{Right}")" data-enhance-nav="false">Export selected revision</a>
+        </div>
+        <div class="scroll"><table><thead><tr><th>Value</th><th>Revision @Left</th><th>Revision @Right</th></tr></thead>
+            <tbody>@foreach (var difference in Differences.Skip(DifferencePage * 50).Take(50))
+            {
+                <tr><td>@difference.Field</td><td>@difference.Before</td><td>@difference.After</td></tr>
+            }</tbody>
+        </table></div>
+        @if (Differences.Count == 0) { <p class="muted">These revisions have the same settings and overrides.</p> }
+        <div class="toolbar"><button class="secondary" disabled="@(DifferencePage == 0)" @onclick="() => DifferencePage--">Previous differences</button>
+            <button class="secondary" disabled="@((DifferencePage + 1) * 50 >= Differences.Count)" @onclick="() => DifferencePage++">Next differences</button></div>
+    </section>
+    <section class="card"><h2>Import a revision</h2>
+        <p class="muted">Import validates the document and saves it as pending restart.</p>
+        <div class="toolbar"><InputFile OnChange="SelectImport" accept=".json,application/json" />
+            <button disabled="@(ImportDocument is null)" @onclick="Import">Import as pending revision</button></div>
+    </section>
+    <section class="card"><h2>Revision history</h2>
+        <div class="scroll"><table><thead><tr><th>Revision</th><th>Based on</th><th>Saved by</th><th>Time (UTC)</th></tr></thead>
+            <tbody>@foreach (var revision in Revisions)
+            {
+                <tr><td>@revision.Id</td><td>@revision.ParentId</td><td>@revision.Author</td><td>@DateTime.FromFileTimeUtc(revision.CreatedAt).ToString("u")</td></tr>
+            }</tbody>
+        </table></div>
+        <div class="toolbar"><button class="secondary" disabled="@(HistoryPage == 0)" @onclick="PreviousHistory">Newer</button>
+            <button class="secondary" disabled="@(Revisions.Count < 50)" @onclick="NextHistory">Older</button></div>
+    </section>
+}

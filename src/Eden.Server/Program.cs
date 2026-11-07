@@ -4,6 +4,7 @@ using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
+using Eden.Server.Administration;
 using Eden.Server.Authentication;
 using Eden.Server.Chat;
 using Eden.Server.Configuration;
@@ -60,6 +61,26 @@ internal static class Program
         }
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
         string worldPath = Path.GetFullPath(Value("--world") ?? Path.Combine(directory, "world.sqlite"));
+        foreach (string option in new[] { "--set-admin-password", "--admin-port" })
+        {
+            if (args.Contains(option) && (Value(option) is not { } value || value.StartsWith("--", StringComparison.Ordinal)))
+            {
+                throw new InvalidDataException($"{option} requires a value.");
+            }
+        }
+        if (Value("--set-admin-password") is { } administrator)
+        {
+            Console.Write("Administrator password: ");
+            string password = ReadPassword();
+            Console.Write("Confirm password: ");
+            if (password != ReadPassword())
+            {
+                throw new InvalidDataException("Passwords do not match.");
+            }
+            new AdministratorAccounts(worldPath).SetPassword(administrator, password);
+            Console.WriteLine("Local administrator provisioned. Previous administrator sessions have been revoked.");
+            return;
+        }
         if (ConfigurationCommands.TryRun(args, worldPath))
         {
             return;
@@ -162,6 +183,20 @@ internal static class Program
             return;
         }
         services.GetRequiredService<CatalogProvider>().PreloadCore();
+        int administrationPort = Value("--admin-port") is { } adminPort
+            ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
+                ? parsedPort
+                : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
+            : AdministrationHost.DefaultPort;
+        bool administrationEnabled = !args.Contains("--disable-admin") && new AdministratorAccounts(worldPath).Provisioned;
+        if (
+            administrationEnabled
+            && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(administrationPort)
+        )
+        {
+            throw new InvalidDataException("Administration requires a separate local port.");
+        }
+        await using var administration = administrationEnabled ? AdministrationHost.Create(services, worldPath, administrationPort) : null;
         services.GetRequiredService<LauncherMaintenance>().Start();
         services.GetRequiredService<MarketMaintenance>().Start();
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
@@ -176,6 +211,11 @@ internal static class Program
         await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
         await gateway.StartAsync();
         await api.StartAsync();
+        if (administration is not null)
+        {
+            await administration.StartAsync();
+            ServerLog.Console.Information($"Local administration listening on http://127.0.0.1:{administrationPort}.");
+        }
         ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
         ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");
         ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
@@ -185,6 +225,10 @@ internal static class Program
         }
         finally
         {
+            if (administration is not null)
+            {
+                await administration.StopAsync();
+            }
             await api.StopAsync();
             await gateway.StopAsync();
         }

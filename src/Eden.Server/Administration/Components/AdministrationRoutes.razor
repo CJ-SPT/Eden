@@ -1,0 +1,9 @@
+<Router AppAssembly="typeof(AdministrationApp).Assembly">
+    <Found Context="route">
+        <AuthorizeRouteView RouteData="route" DefaultLayout="typeof(AdministrationLayout)">
+            <NotAuthorized><p><a href="/login">Sign in to local administration</a></p></NotAuthorized>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="route" Selector="h1" />
+    </Found>
+    <NotFound><LayoutView Layout="typeof(AdministrationLayout)"><h1>Page not found</h1></LayoutView></NotFound>
+</Router>

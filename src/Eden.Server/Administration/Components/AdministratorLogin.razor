@@ -1,0 +1,17 @@
+@page "/login"
+@attribute [AllowAnonymous]
+<PageTitle>Sign in · Eden</PageTitle>
+<div class="card login">
+    <h1>Administrator sign in</h1>
+    <p class="muted">Use the local administrator account provisioned for this world.</p>
+    @if (Failed)
+    {
+        <p class="error" role="alert">The administrator name or password was not accepted.</p>
+    }
+    <form method="post" action="/session/login">
+        <AntiforgeryToken />
+        <label>Administrator name<input name="name" autocomplete="username" required maxlength="64" /></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="128" /></label>
+        <button type="submit">Sign in</button>
+    </form>
+</div>

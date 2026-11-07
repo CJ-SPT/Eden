@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+<header>
+    <div><strong>EDEN</strong><br /><small>Local administration</small></div>
+    <AuthorizeView>
+        <Authorized>
+            <nav>
+                <NavLink href="/" Match="NavLinkMatch.All">Settings</NavLink>
+                <NavLink href="/catalog">Catalog</NavLink>
+                <NavLink href="/revisions">Revisions</NavLink>
+                <form method="post" action="/logout"><AntiforgeryToken /><button class="secondary">Sign out</button></form>
+            </nav>
+        </Authorized>
+    </AuthorizeView>
+</header>
+<main>@Body</main>

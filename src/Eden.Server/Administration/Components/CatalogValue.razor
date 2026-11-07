@@ -1,0 +1,50 @@
+@if (Value.ValueKind == JsonValueKind.Object)
+{
+    <div class="tree">
+        @foreach (string name in (Shape?.Fields?.Keys ?? []).Concat(Value.EnumerateObject().Select(property => property.Name)).Distinct())
+        {
+            bool present = Value.TryGetProperty(name, out var child);
+            var childSchema = Shape?.Fields?.GetValueOrDefault(name) ?? Shape?.Element;
+            <details>
+                <summary>@name <small class="muted">@(childSchema?.Kind ?? "variant") · read only</small></summary>
+                @if (present)
+                {
+                    <CatalogValue Value="child" Schema="childSchema" Depth="@(Depth + 1)" />
+                }
+                else
+                {
+                    <span class="muted">Missing in original source, active and pending values</span>
+                }
+            </details>
+        }
+    </div>
+}
+else if (Value.ValueKind == JsonValueKind.Array)
+{
+    <div class="tree">
+        @foreach (var entry in Value.EnumerateArray().Select((value, index) => (value, index)).Skip(Page * PageSize).Take(PageSize))
+        {
+            <details>
+                <summary>Item @entry.index</summary>
+                <CatalogValue Value="entry.value" Schema="Shape?.Element" Depth="@(Depth + 1)" />
+            </details>
+        }
+        @if (Value.GetArrayLength() > PageSize)
+        {
+            <div class="toolbar">
+                <button type="button" class="secondary" disabled="@(Page == 0)" @onclick="() => Page--">Previous values</button>
+                <button type="button" class="secondary" disabled="@((Page + 1) * PageSize >= Value.GetArrayLength())"
+                        @onclick="() => Page++">Next values</button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="scroll">
+        <table>
+            <thead><tr><th>Original source</th><th>Active</th><th>Pending restart</th></tr></thead>
+            <tbody><tr><td><code>@Text</code></td><td><code>@Text</code></td><td><code>@Text</code></td></tr></tbody>
+        </table>
+    </div>
+}
