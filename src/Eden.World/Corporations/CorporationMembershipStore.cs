@@ -153,7 +153,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
             .OrderBy(e => e.Id)
             .Select(e => e.CorporationId)
             .ToArray();
-        int destination = history.FirstOrDefault(id => catalog.Set<NpcCorporation>().Any(c => c.Id == id));
+        int destination = history.FirstOrDefault(id => catalog.NpcCorporationName(id) is not null);
         if (destination == 0)
         {
             throw new InvalidDataException("No original NPC corporation is recorded for this pilot.");

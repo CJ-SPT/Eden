@@ -34,12 +34,9 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
     // bounty debit rolls back the wreck and its contents along with the kill.
     internal static void Create(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
     {
-        var definition = catalog
-            .Set<SourceRecord>()
-            .Find("client/types", npc.TypeId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientTypes>();
+        var definition = catalog.Read(CatalogData.Client.Types, (long)npc.TypeId);
         var type = definition?.WreckTypeID is long wreckType
-            ? catalog.Set<ItemType>().SingleOrDefault(t => t.Id == wreckType && t.GroupId == WreckDefinitions.Group)
+            ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : null;
         if (type is null && npc.Role != NpcRole.Pirate && definition is { WreckTypeID: null })
         {
@@ -62,7 +59,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                     CorporationId = pilot.CorporationId,
                     TypeId = type.Id,
                     SystemId = npc.SystemId,
-                    Name = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId).Name + " " + type.Name,
+                    Name = catalog.RequireItem(npc.TypeId).Name + " " + type.Name,
                     X = npc.X,
                     Y = npc.Y,
                     Z = npc.Z,
@@ -73,7 +70,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Entity;
         foreach (var drop in Drops(world, catalog, npc))
         {
-            _ = catalog.Set<ItemType>().Single(t => t.Id == drop.TypeId);
+            _ = catalog.RequireItem(drop.TypeId);
             world
                 .Set<OwnedItem>()
                 .Add(
@@ -104,8 +101,8 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             // Eden uses a stable 50% identity roll; no reroll on retry/restart.
             if (npc.Role == NpcRole.MiningHauler && NpcSpawnRules.Seed(npc.SystemId, npc.Id) % 2 == 0)
             {
-                string name = catalog.Set<NpcCorporation>().Find(npc.CorporationId)!.Name + " Strong Box";
-                if (catalog.Set<ItemType>().SingleOrDefault(t => t.Name == name) is { } box)
+                string name = catalog.NpcCorporationName(npc.CorporationId)! + " Strong Box";
+                if (catalog.Definitions.Items.Values.SingleOrDefault(type => type.Name == name) is { } box)
                 {
                     result.Add(new(box.Id, 1));
                 }
@@ -125,7 +122,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         {
             return [new(WreckDefinitions.StarterLootType, WreckDefinitions.StarterLootQuantity)];
         }
-        int groupId = catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId).GroupId;
+        int groupId = catalog.RequireItem(npc.TypeId).GroupId;
         var group = NpcPirateGroups.All.SingleOrDefault(g => g.GroupId == groupId);
         return group is null
             ? []
@@ -149,12 +146,9 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         IReadOnlySet<long> survivors
     )
     {
-        var definition = catalog
-            .Set<SourceRecord>()
-            .Find("client/types", ship.TypeId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientTypes>();
+        var definition = catalog.Read(CatalogData.Client.Types, (long)ship.TypeId);
         var type = definition?.WreckTypeID is long wreckType
-            ? catalog.Set<ItemType>().SingleOrDefault(t => t.Id == wreckType && t.GroupId == WreckDefinitions.Group)
+            ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : null;
         if (type is null)
         {
@@ -242,7 +236,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         return wrecks
             .Select(w =>
             {
-                var type = catalog.Set<ItemType>().Single(t => t.Id == w.TypeId);
+                var type = catalog.RequireItem(w.TypeId);
                 return new WreckContact(
                     w.Id,
                     w.NpcId ?? w.ShipId!.Value,
@@ -280,8 +274,8 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         {
             throw new InvalidDataException("The wreck is unavailable or you do not have its loot rights.");
         }
-        var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        var type = catalog.Set<ItemType>().Single(t => t.Id == wreck.TypeId);
+        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
+        var type = catalog.RequireItem(wreck.TypeId);
         if (
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(wreck.X, wreck.Y, wreck.Z))
                 - (hull.Radius ?? 0)

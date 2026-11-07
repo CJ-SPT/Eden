@@ -112,7 +112,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             Eden.Gameplay.Combat.CrimewatchTravel.Dock,
             _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
-        double shipRadius = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId).Radius ?? 0;
+        double shipRadius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
         if (
             destination.SolarSystemId != system
             || new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(destination.X, destination.Y, destination.Z))
@@ -147,6 +147,20 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
     {
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
+        var result = FindPilot(world, accountId, pilotId);
+        if (result is not null)
+        {
+            transaction.Commit();
+        }
+        return result;
+    }
+
+    internal DockedPilot? FindPilot(WorldDbContext world, long accountId, long? pilotId = null)
+    {
+        if (world.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException("Pilot snapshots require their owning world transaction.");
+        }
         var pilot = world
             .Pilots.AsNoTracking()
             .Include(p => p.Account)
@@ -165,7 +179,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         }
         var ship = pilot.ActiveShip;
         using CatalogDbContext catalog = new(_database.CatalogPath);
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Include(t => t.Attributes).Single(t => t.Id == ship.TypeId);
+        var type = catalog.RequireItem(ship.TypeId);
         var station = catalog
             .Set<Station>()
             .Include(s => s.Type)
@@ -176,9 +190,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             .Single(s => s.Id == ship.StationId);
         var system = station.SolarSystem;
         // Hulls with no weapon fittings can omit the zero-valued hardpoint attribute.
-        int turretSlots = checked(
-            (int)(type.Attributes.SingleOrDefault(a => a.AttributeId == (int)DogmaAttributeId.TurretSlotsLeft)?.Value ?? 0)
-        );
+        int turretSlots = checked((int)catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft));
         var fitted = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var flight = new FlightProperties(
             (float)station.Type.Radius!.Value,
@@ -223,7 +235,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 ship.Id,
                 ship.TypeId,
                 type.GroupId,
-                type.Group.CategoryId,
+                type.CategoryId,
                 ship.Name,
                 fitted.GetValueOrDefault(DogmaAttributeId.CargoCapacity),
                 turretSlots,
@@ -248,15 +260,8 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         )
         {
             CorporationTicker =
-                corporation?.Ticker
-                ?? catalog
-                    .Set<SourceRecord>()
-                    .Find("client/npccorporations", pilot.CorporationId.ToString(CultureInfo.InvariantCulture))
-                    ?.Read<ClientNpccorporations>()
-                    .TickerName
-                ?? "",
+                corporation?.Ticker ?? catalog.Read(CatalogData.Client.Npccorporations, (long)pilot.CorporationId)?.TickerName ?? "",
         };
-        transaction.Commit();
         return result;
     }
 }

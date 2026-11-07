@@ -15,9 +15,7 @@ internal sealed partial class PilotMarketStore
     {
         int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
         NpcSupplyRules.ValidateStock(stock);
-        var corporation = catalog
-            .FindSource("client/npccorporations", station.OwnerId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientNpccorporations>();
+        var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
         if (corporation?.CorporationTrades is not { } trades)
         {
             return;
@@ -29,20 +27,13 @@ internal sealed partial class PilotMarketStore
             .Select(o => o.TypeId)
             .ToHashSet();
         int[] offered = trades.Where(t => t.Value > 0).Select(t => int.Parse(t.Key, CultureInfo.InvariantCulture)).ToArray();
-        var types = catalog
-            .Set<ItemType>()
-            .Include(t => t.Group)
-            .Where(t =>
-                offered.Contains(t.Id)
-                && (t.Group.CategoryId == (int)InventoryCategory.Blueprint || t.Group.CategoryId == (int)InventoryCategory.Skill)
-            )
+        var types = offered
+            .Select(catalog.FittingType)
+            .OfType<CatalogItemDefinition>()
+            .Where(type => type.CategoryId is (int)InventoryCategory.Blueprint or (int)InventoryCategory.Skill)
+            .OrderBy(type => type.Id)
             .ToArray();
-        var keys = types.Select(t => t.Id.ToString(CultureInfo.InvariantCulture)).ToArray();
-        var definitions = catalog
-            .Set<SourceRecord>()
-            .Where(r => r.Dataset == "client/types" && keys.Contains(r.Key))
-            .AsEnumerable()
-            .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Read<ClientTypes>());
+        var definitions = types.ToDictionary(type => type.Id, type => catalog.Read(CatalogData.Client.Types, (long)type.Id));
         foreach (var type in types)
         {
             int typeId = type.Id;
@@ -56,7 +47,7 @@ internal sealed partial class PilotMarketStore
                 continue;
             }
             long? price = NpcSupplyRules.Price(
-                new(typeId, (InventoryCategory)type.Group.CategoryId, definition.Published == 1, (decimal)definition.BasePrice.Value, true)
+                new(typeId, (InventoryCategory)type.CategoryId, definition.Published == 1, (decimal)definition.BasePrice.Value, true)
             );
             if (price is null || existing.Contains(typeId))
             {

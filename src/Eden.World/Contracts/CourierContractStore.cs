@@ -24,8 +24,8 @@ internal sealed partial class PilotContractStore
         long now
     )
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == CourierRules.PackageType);
-        if (type?.GroupId != CourierRules.PackageGroup || type.Group.CategoryId != CourierRules.PackageCategory)
+        var type = catalog.FittingType(CourierRules.PackageType);
+        if (type?.GroupId != CourierRules.PackageGroup || type.CategoryId != CourierRules.PackageCategory)
         {
             throw new InvalidDataException("The pinned catalog has no supported courier package.");
         }

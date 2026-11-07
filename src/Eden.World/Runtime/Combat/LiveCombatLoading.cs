@@ -42,7 +42,7 @@ internal sealed partial class LiveCombatRuntime
         using CatalogDbContext catalog = new(database.CatalogPath);
         catalog.Database.OpenConnection();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
+        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(attributes), now);
@@ -57,7 +57,7 @@ internal sealed partial class LiveCombatRuntime
             {
                 continue;
             }
-            var type = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId);
+            var type = catalog.RequireItem(module.TypeId);
             var baseAttributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId);
             bool ammoFed = CombatDefinitions.IsSupportedAmmoTurret(type.GroupId, baseAttributes);
             if (!ammoFed && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
@@ -87,7 +87,7 @@ internal sealed partial class LiveCombatRuntime
                 PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
                 if (charge is not null)
                 {
-                    int group = catalog.Set<ItemType>().Single(t => t.Id == charge.TypeId).GroupId;
+                    int group = catalog.RequireItem(charge.TypeId).GroupId;
                     if (
                         !AmmunitionDefinitions.CompatibleTurretCharge(values, group, damage)
                         || !TurretChargeCatalog.Supported(catalog, charge.TypeId, group)

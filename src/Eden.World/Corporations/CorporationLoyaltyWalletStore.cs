@@ -50,7 +50,7 @@ internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, Time
         var recipient =
             world.Set<SavedCorporation>().Find(recipientId)
             ?? throw new InvalidDataException("Choose a player corporation as the LP recipient.");
-        if (!catalog.Set<NpcCorporation>().Any(c => c.Id == issuerId))
+        if (catalog.NpcCorporationName(issuerId) is null)
         {
             throw new InvalidDataException("Choose a known loyalty point issuer.");
         }

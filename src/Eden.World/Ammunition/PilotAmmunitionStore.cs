@@ -81,7 +81,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         {
             throw new InvalidDataException("The loaded ammunition is unavailable.");
         }
-        int group = catalog.Set<ItemType>().Single(t => t.Id == charge.TypeId).GroupId;
+        int group = catalog.RequireItem(charge.TypeId).GroupId;
         return MissileDefinitions.ChargeGroups.Contains(group)
             ? FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(charge.Id)
             : Attributes(catalog, charge.TypeId);
@@ -131,7 +131,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         foreach (var module in modules)
         {
             var attributes = Attributes(catalog, module.TypeId);
-            int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
+            int group = catalog.RequireItem(module.TypeId).GroupId;
             if (
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -167,8 +167,8 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         return modules;
     }
 
-    private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
-        catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+    private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
+        catalog.FittingAttributes(typeId);
 
     private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
@@ -214,7 +214,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             throw new InvalidDataException("Choose available stacks of one ammunition type.");
         }
         int typeId = sources[0].TypeId;
-        var chargeType = catalog.Set<ItemType>().Single(t => t.Id == typeId);
+        var chargeType = catalog.RequireItem(typeId);
         var chargeAttributes = Attributes(catalog, typeId);
         if (
             !(
@@ -256,7 +256,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 break;
             }
             var attributes = Attributes(catalog, module.TypeId);
-            int moduleGroup = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
+            int moduleGroup = catalog.RequireItem(module.TypeId).GroupId;
             bool compatible =
                 script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
@@ -268,7 +268,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             {
                 throw new InvalidDataException("The ammunition group or size does not match the weapon.");
             }
-            double capacity = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).Capacity ?? 0;
+            double capacity = catalog.RequireItem(module.TypeId).Capacity ?? 0;
             int limit = checked((int)Math.Floor(capacity / volume + InventoryDefinitions.ResourceTolerance));
             if (crystal || script)
             {

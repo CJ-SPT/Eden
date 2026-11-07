@@ -124,13 +124,7 @@ internal sealed partial class PilotContractStore
         }
         if (search.SecurityClasses is { } security)
         {
-            double value =
-                catalog
-                    .Set<SourceRecord>()
-                    .Find("client/systems", details.Contract.SystemId.ToString(CultureInfo.InvariantCulture))
-                    ?.Read<ClientSystems>()
-                    .SecurityStatus
-                ?? 0;
+            double value = catalog.Read(CatalogData.Client.Systems, (long)details.Contract.SystemId)?.SecurityStatus ?? 0;
             if (!security.Contains((int)ContractSearchRules.SecurityClass(value)))
             {
                 return false;
@@ -155,7 +149,7 @@ internal sealed partial class PilotContractStore
                 && (search.Hint == 0 || i.CategoryId == (int)Eden.Gameplay.Inventory.InventoryCategory.Blueprint)
                 && (
                     search.ItemTypeName is not { Length: > 0 } name
-                    || catalog.Set<ItemType>().Find(i.TypeId)!.Name.Contains(name, StringComparison.OrdinalIgnoreCase)
+                    || catalog.FittingType(i.TypeId)!.Name.Contains(name, StringComparison.OrdinalIgnoreCase)
                 )
             );
     }

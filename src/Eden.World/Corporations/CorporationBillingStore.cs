@@ -54,14 +54,7 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
     private int[] BillTypes()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog
-            .Set<SourceRecord>()
-            .Where(r => r.Dataset == "client/billtypes")
-            .Select(r => r.Key)
-            .AsEnumerable()
-            .Select(key => int.Parse(key, CultureInfo.InvariantCulture))
-            .Order()
-            .ToArray();
+        return catalog.Records(CatalogData.Client.Billtypes).Keys.Select(id => checked((int)id)).Order().ToArray();
     }
 
     private static SavedCorporation Authorize(WorldDbContext world, long actorId, bool write)

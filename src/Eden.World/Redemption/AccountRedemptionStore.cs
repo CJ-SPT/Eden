@@ -292,12 +292,12 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
 
     private static void CheckType(CatalogDbContext catalog, int id)
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == id);
+        var type = catalog.FittingType(id);
         if (type is not null && (SkillPointRewards.Amount(id) > 0 || CurrencyRewardRules.Kind(id).HasValue))
         {
             return;
         }
-        if (type is null || !RedemptionRules.Deliverable((InventoryCategory)type.Group.CategoryId))
+        if (type is null || !RedemptionRules.Deliverable((InventoryCategory)type.CategoryId))
         {
             throw new InvalidDataException("This reward requires a redemption mechanic that is not implemented yet.");
         }

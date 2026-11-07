@@ -17,6 +17,30 @@ public sealed partial class CatalogDbContext
     internal string? NpcCorporationName(int corporationId) =>
         writable ? Set<NpcCorporation>().Find(corporationId)?.Name : Definitions.NpcCorporations.GetValueOrDefault(corporationId);
 
+    internal bool NpcCorporationNameExists(string name) =>
+        (writable ? Set<NpcCorporation>().Select(corporation => corporation.Name).AsEnumerable() : Definitions.NpcCorporations.Values).Any(
+            candidate => EqualAsciiNoCase(candidate, name)
+        );
+
+    private static bool EqualAsciiNoCase(string left, string right)
+    {
+        // Preserve SQLite's built-in NOCASE behavior for catalog-name uniqueness.
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+        for (int index = 0; index < left.Length; index++)
+        {
+            char first = left[index] is >= 'A' and <= 'Z' ? (char)(left[index] + ('a' - 'A')) : left[index];
+            char second = right[index] is >= 'A' and <= 'Z' ? (char)(right[index] + ('a' - 'A')) : right[index];
+            if (first != second)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     internal CatalogItemDefinition? FittingType(int typeId)
     {
         if (writable)

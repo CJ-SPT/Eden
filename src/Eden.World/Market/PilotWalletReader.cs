@@ -44,18 +44,11 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return catalog
-            .Set<SourceRecord>()
-            .Where(r => r.Dataset == "client/accountingentrytypes")
-            .AsEnumerable()
+            .Records(CatalogData.Client.Accountingentrytypes)
             .Select(r =>
             {
-                var type = r.Read<ClientAccountingentrytypes>();
-                return new WalletEntryDefinition(
-                    int.Parse(r.Key, CultureInfo.InvariantCulture),
-                    type.EntryTypeNameID ?? 0,
-                    type.Name ?? "",
-                    type.Description ?? ""
-                );
+                var type = r.Value;
+                return new WalletEntryDefinition(checked((int)r.Key), type.EntryTypeNameID ?? 0, type.Name ?? "", type.Description ?? "");
             })
             .OrderBy(t => t.Id)
             .ToArray();

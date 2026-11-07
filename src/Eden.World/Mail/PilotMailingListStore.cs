@@ -278,10 +278,7 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
             {
                 throw new InvalidDataException("The list owner cannot be blocked.");
             }
-            if (
-                !world.Pilots.Any(p => p.Id == entity)
-                && catalog.Set<SourceRecord>().Find("client/npccorporations", entity.ToString(CultureInfo.InvariantCulture)) is null
-            )
+            if (!world.Pilots.Any(p => p.Id == entity) && catalog.Read(CatalogData.Client.Npccorporations, (long)entity) is null)
             {
                 throw new InvalidDataException("Choose a local character or a catalog corporation.");
             }

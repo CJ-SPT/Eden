@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Shared item facts in reference services, November 7, 2026](#shared-item-facts-in-reference-services-november-7-2026)
 - [Typed geography access, November 7, 2026](#typed-geography-access-november-7-2026)
 - [Combat and simulation catalog adoption, November 7, 2026](#combat-and-simulation-catalog-adoption-november-7-2026)
 - [Fitting, inventory and skill catalog adoption, November 7, 2026](#fitting-inventory-and-skill-catalog-adoption-november-7-2026)
@@ -16,6 +17,18 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Shared item facts in reference services, November 7, 2026
+
+Ammunition magazines, fleet assembly/recovery, market supply, contracts, loot, redemption, corporation identity/membership, wallet/billing definitions and resident loading now reuse shared item/attribute inputs and generated typed source records. Repeated source JSON decoding and full item-table membership reads are removed from these paths. NPC corporation name comparisons retain ASCII NOCASE semantics. Catalog source-key ordering remains inside the access adapter so development-market seed identities retain their legacy allocation order; institutional offers remain ordered by type ID.
+
+Repeated corvette recovery exposed an existing nested pilot-snapshot transaction. `SqliteWorld` now offers an internal snapshot reader requiring the caller's existing transaction; the repeated recovery return uses it. Ordinary snapshot calls still own their transaction, including rollback for a missing pilot. A loot fixture had the same setup error and now captures the pilot ID before its write transaction; existing assertions are unchanged. Neither correction changes asset, money or settlement rules.
+
+**Automated validation:** the exact corvette-recovery regression passed after the snapshot correction. The exact loot-persistence and institutional-supply methods also passed. Final tool/solution restore, warning-free build (5.43 seconds), eight targeted tests (5.43 seconds including runner overhead), both Python policy suites and formatting verification passed. The final filter was `FullyQualifiedName=Eden.Protocol.Tests.Persistence.CorvetteRecoveryTests.RecoveryAtZeroIskBoardsAnEquippedCorvetteAndPreservesThePreviousShip|FullyQualifiedName=Eden.Protocol.Tests.Ammunition.AmmunitionTests.MarketMagazineReloadAndUnloadingPreserveRealRoundsAndRestartDeadlines|FullyQualifiedName=Eden.Protocol.Tests.Industry.StarterProductionTests.InstitutionalSupplySellsOnlyCatalogBlueprintsAndSkillbooksAndSkillsCanBeInjected|FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PlayerCorporationTests.DuplicateNamesTickersAndRepeatedCreationCannotChargeOrMoveEitherPilot|FullyQualifiedName=Eden.Protocol.Tests.Persistence.ContractTests.BuyingRequestedItemsConsumesMultipleStacksAndPaysOnlyTheReservedReward|FullyQualifiedName=Eden.Protocol.Tests.Persistence.ContractTests.FailedCreationAndAcceptanceRollBackEveryAssetWalletLedgerAndFeedChange|FullyQualifiedName=Eden.Protocol.Tests.Loot.WreckTests.CatalogWreckAndItsSingleLootStackSurviveRestartAndKeepTheKillersRights|FullyQualifiedName=Eden.Protocol.Tests.Loot.WreckTests.CapacityFailurePreservesContentsAndAnExactFittingPartialQuantitySucceeds`. The earlier eight-case attempt was stopped on the loot fixture's inherited nested read and is not counted as completed validation. Optional benchmarks, broad cohort sweeps and the full .NET suite were not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for these catalog-access and transaction-read corrections. Remaining geographic/reference queries, configuration revisions and local administration are still pending.
 
 ## Typed geography access, November 7, 2026
 

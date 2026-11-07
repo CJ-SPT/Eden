@@ -27,6 +27,9 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
     internal T Definition<T>(CatalogDefinition<T> definition, int typeId) =>
         writable ? definition.Load(this, typeId) : Definitions.Definition(definition, typeId);
 
+    internal IEnumerable<KeyValuePair<TKey, TValue>> RecordsInSourceOrder<TKey, TValue>(CatalogSource<TKey, TValue> source)
+        where TKey : notnull => Records(source).OrderBy(record => JsonSerializer.Serialize(record.Key), StringComparer.Ordinal);
+
     internal IReadOnlyDictionary<TKey, TValue> Records<TKey, TValue>(CatalogSource<TKey, TValue> source)
         where TKey : notnull =>
         writable

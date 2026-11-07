@@ -61,8 +61,8 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         bool trained = world.Set<PilotSkill>().Any(s => s.PilotId == pilot.Id && ids.Contains(s.TypeId) && s.Points > 0);
         var alpha =
             trained && pilot.Account.CloneGrade == AccountCloneGrade.Alpha
-                ? CatalogData
-                    .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
+                ? catalog
+                    .Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
                     .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         int Level(ContractSkill skill)
@@ -231,9 +231,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         }
         foreach (var request in draft.RequestedItems)
         {
-            var type =
-                catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == request.TypeId)
-                ?? throw new InvalidDataException("Unknown requested item type.");
+            var type = catalog.FittingType(request.TypeId) ?? throw new InvalidDataException("Unknown requested item type.");
             if (Enum.IsDefined((ContractRequestGroup)type.GroupId))
             {
                 throw new InvalidDataException("This type cannot be requested on a contract.");
@@ -245,7 +243,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     TypeId = type.Id,
                     Quantity = request.Quantity,
                     GroupId = type.GroupId,
-                    CategoryId = type.Group.CategoryId,
+                    CategoryId = type.CategoryId,
                     FlagId = (int)InventoryFlag.Hangar,
                 }
             );
@@ -793,16 +791,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     .Set<SavedContractItem>()
                     .Where(i => i.Offered && held.Any(e => e.ItemId == i.ItemId && e.ContractId == i.ContractId))
                     .AsEnumerable()
-                    .Sum(i =>
-                        (
-                            catalog
-                                .Set<SourceRecord>()
-                                .Find("client/types", i.TypeId.ToString(CultureInfo.InvariantCulture))
-                                ?.Read<ClientTypes>()
-                                .BasePrice
-                            ?? 0
-                        ) * i.Quantity
-                    );
+                    .Sum(i => (catalog.Read(CatalogData.Client.Types, (long)i.TypeId)?.BasePrice ?? 0) * i.Quantity);
                 return new(isk, value);
             }
         );

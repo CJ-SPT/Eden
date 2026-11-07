@@ -49,13 +49,14 @@ public sealed class WreckTests
             NpcEncounterTests.Prepare(Db);
             var npc = Db.Services.GetRequiredService<Eden.Gameplay.Combat.INpcEncounters>().List(30000144, Now)[0];
             Db.Store.SetPosition(Pilot.ShipId, npc.Position + new SpacePosition(1000, 0, 0), npc.SystemId);
+            long pilotId = Pilot.PilotId;
             using (WorldDbContext world = new(Db.Path))
             using (var transaction = world.Database.BeginTransaction())
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath))
             {
                 var source = world.Set<WorldNpc>().Find(npc.Id)!;
                 source.DestroyedAt = Now;
-                WreckStore.Create(world, catalog, source, world.Pilots.Single(p => p.Id == Pilot.PilotId), Now);
+                WreckStore.Create(world, catalog, source, world.Pilots.Single(p => p.Id == pilotId), Now);
                 world.SaveChanges();
                 transaction.Commit();
             }

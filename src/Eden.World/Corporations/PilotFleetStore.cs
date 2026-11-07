@@ -31,7 +31,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
 
     internal static InventoryItem Read(CatalogDbContext catalog, Ship ship)
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == ship.TypeId);
+        var type = catalog.RequireItem(ship.TypeId);
         var location = ShipStoragePersistence.Location(ship);
         return new(
             ship.Id,
@@ -41,7 +41,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             location.FlagId,
             1,
             type.GroupId,
-            type.Group.CategoryId,
+            type.CategoryId,
             PilotInventoryStore.Volume(catalog, ship.TypeId, singleton: true),
             true
         );
@@ -122,8 +122,8 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             {
                 throw new InvalidDataException("The packaged ship is unavailable in your current hangar.");
             }
-            var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
-            if (!HullCatalog.CanAssemble(catalog, type, type.Group.CategoryId))
+            var type = catalog.RequireItem(item.TypeId);
+            if (!HullCatalog.CanAssemble(catalog, type, type.CategoryId))
             {
                 throw new InvalidDataException("This hull is not supported for assembly yet.");
             }
@@ -170,14 +170,17 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             || old.OwnerId != pilotId
             || old.Position is not null
             || old.StoredInId is not null
-            || catalog.Set<ItemType>().Find(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup
+            || catalog.FittingType(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup
         )
         {
             throw new InvalidDataException("Leave the ship you are currently piloting while docked in a station.");
         }
         var type =
-            catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
-            ?? throw new InvalidDataException("The catalog has no capsule.");
+            (
+                catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } capsuleDefinition
+                    ? capsuleDefinition
+                    : null
+            ) ?? throw new InvalidDataException("The catalog has no capsule.");
         var capsule = world
             .Ships.Where(s =>
                 s.OwnerId == pilotId && s.TypeId == type.Id && s.StationId == old.StationId && s.Position == null && s.StoredInId == null
@@ -251,7 +254,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         {
             throw new InvalidDataException("Board your recovery corvette while docked at your current station.");
         }
-        int activeGroup = catalog.Set<ItemType>().Single(t => t.Id == active.TypeId).GroupId;
+        int activeGroup = catalog.RequireItem(active.TypeId).GroupId;
         if (pilot.ActiveShipId != previousShipId)
         {
             // A repeated request cannot create another kit, even after its old capsule was removed.
@@ -269,7 +272,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                 )
             )
             {
-                return new(lookup.FindPilot(pilot.AccountId, pilotId)!, []);
+                return new(lookup.FindPilot(world, pilot.AccountId, pilotId)!, []);
             }
             throw new InvalidDataException("The active ship changed before recovery.");
         }
@@ -279,11 +282,15 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         }
         int typeId = checked(
             (int)(
-                CatalogData.Client.Races.Get(catalog, pilot.RaceId).ShipTypeID
+                catalog.Require(CatalogData.Client.Races, (long)pilot.RaceId).ShipTypeID
                 ?? throw new InvalidDataException("The pilot's race has no starter corvette.")
             )
         );
-        var type = catalog.Set<ItemType>().Single(t => t.Id == typeId && t.GroupId == FleetDefinitions.CorvetteGroup);
+        var type = catalog.RequireItem(typeId);
+        if (type.GroupId != FleetDefinitions.CorvetteGroup)
+        {
+            throw new InvalidDataException("The recovery hull is not a corvette.");
+        }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
         foreach (var equipment in s_recoveryEquipment)
         {
@@ -317,18 +324,9 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         List<InventoryChange> changes = [];
         if (recovered is null)
         {
-            var attributes = catalog
-                .Set<TypeAttribute>()
-                .Where(a => a.ItemTypeId == typeId)
-                .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+            var attributes = catalog.FittingAttributes(typeId);
             double Load(DogmaAttributeId attribute) =>
-                s_recoveryEquipment.Sum(e =>
-                    catalog
-                        .Set<TypeAttribute>()
-                        .Where(a => a.ItemTypeId == e.TypeId && a.AttributeId == (int)attribute)
-                        .Select(a => a.Value)
-                        .SingleOrDefault()
-                );
+                s_recoveryEquipment.Sum(e => catalog.FittingAttributes(e.TypeId).GetValueOrDefault(attribute));
             if (
                 attributes.GetValueOrDefault(DogmaAttributeId.HighSlots) < s_recoveryEquipment.Length
                 || attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) < s_recoveryEquipment.Length
@@ -392,7 +390,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         pilot.ActiveShipId = ship.Id;
         // Save the active-ship FK before removing the capsule, within the caller's transaction.
         world.SaveChanges();
-        if (old.Id != ship.Id && catalog.Set<ItemType>().Find(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup)
+        if (old.Id != ship.Id && catalog.FittingType(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup)
         {
             var previous = Read(catalog, old);
             ShipStoragePersistence.Destroy(world, old);

@@ -49,13 +49,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         else
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
-            ticker =
-                catalog
-                    .Set<SourceRecord>()
-                    .Find("client/npccorporations", pilot.CorporationId.ToString(CultureInfo.InvariantCulture))
-                    ?.Read<ClientNpccorporations>()
-                    .TickerName
-                ?? "";
+            ticker = catalog.Read(CatalogData.Client.Npccorporations, (long)pilot.CorporationId)?.TickerName ?? "";
         }
         long joined =
             world
@@ -127,13 +121,11 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         var pilot =
             world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
             ?? throw new InvalidDataException("Unknown pilot.");
-        double rank =
-            catalog
-                .Set<TypeAttribute>()
-                .Where(a => a.ItemTypeId == CorporationRules.ManagementSkill && a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant)
-                .Select(a => (double?)a.Value)
-                .SingleOrDefault()
-            ?? throw new InvalidDataException("Missing Corporation Management catalog data.");
+        double rank = catalog
+            .FittingAttributes(CorporationRules.ManagementSkill)
+            .TryGetValue(DogmaAttributeId.SkillTimeConstant, out double value)
+            ? value
+            : throw new InvalidDataException("Missing Corporation Management catalog data.");
         long points = world.Set<PilotSkill>().Find(pilotId, CorporationRules.ManagementSkill)?.Points ?? 0;
         int level = new TrainedSkill(CorporationRules.ManagementSkill, points, rank).Level;
         var wallet = world.Set<PilotWallet>().Find(pilotId);
@@ -149,12 +141,10 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                 .Any(c =>
                     EF.Functions.Collate(c.Name, "NOCASE") == details.Name || EF.Functions.Collate(c.Ticker, "NOCASE") == details.Ticker
                 )
-            || catalog.Set<NpcCorporation>().Any(c => EF.Functions.Collate(c.Name, "NOCASE") == details.Name)
+            || catalog.NpcCorporationNameExists(details.Name)
             || catalog
-                .Set<SourceRecord>()
-                .Where(r => r.Dataset == "client/npccorporations")
-                .AsEnumerable()
-                .Any(r => string.Equals(r.Read<ClientNpccorporations>().TickerName, details.Ticker, StringComparison.OrdinalIgnoreCase))
+                .Records(CatalogData.Client.Npccorporations)
+                .Values.Any(corporation => string.Equals(corporation.TickerName, details.Ticker, StringComparison.OrdinalIgnoreCase))
         )
         {
             throw new InvalidDataException("That corporation name or ticker is already taken.");
@@ -210,13 +200,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
             .Set<SavedCorporation>()
             .Select(c => c.Ticker)
             .AsEnumerable()
-            .Concat(
-                catalog
-                    .Set<SourceRecord>()
-                    .Where(r => r.Dataset == "client/npccorporations")
-                    .AsEnumerable()
-                    .Select(r => r.Read<ClientNpccorporations>().TickerName ?? "")
-            )
+            .Concat(catalog.Records(CatalogData.Client.Npccorporations).Values.Select(corporation => corporation.TickerName ?? ""))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return used.Contains(letters) ? [] : [letters];
     }

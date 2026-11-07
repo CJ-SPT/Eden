@@ -76,12 +76,12 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
             .Set<NpcMarketOrder>()
             .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Development)
             .ToDictionary(o => (o.TypeId, o.Bid));
-        var knownTypes = catalog.Set<ItemType>().Select(t => t.Id).ToHashSet();
-        var types = catalog.Set<SourceRecord>().Where(r => r.Dataset == "client/types").AsEnumerable();
+        var knownTypes = catalog.Definitions.Items.Keys.ToHashSet();
+        var types = catalog.RecordsInSourceOrder(CatalogData.Client.Types);
         foreach (var record in types)
         {
-            int id = int.Parse(record.Key, CultureInfo.InvariantCulture);
-            var type = record.Read<ClientTypes>();
+            int id = checked((int)record.Key);
+            var type = record.Value;
             int? group = type.MarketGroupID is > 0 and <= int.MaxValue ? (int)type.MarketGroupID : null;
             if (!knownTypes.Contains(id) || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group)))
             {

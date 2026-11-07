@@ -148,13 +148,7 @@ internal sealed partial class PilotMarketStore
 
     private static decimal BrokerRate(WorldDbContext world, CatalogDbContext catalog, long pilotId, Station station)
     {
-        long faction =
-            catalog
-                .Set<SourceRecord>()
-                .Find("client/npccorporations", station.OwnerId.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientNpccorporations>()
-                .FactionID
-            ?? 0;
+        long faction = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId)?.FactionID ?? 0;
         decimal Standing(long owner) => (decimal)(world.Set<SavedNpcStanding>().Find(pilotId, owner)?.Value ?? 0);
         return PersonalMarketRules.BrokerRate(
             PilotSkillReader.Level(world, catalog, pilotId, (int)MarketSkill.BrokerRelations),
@@ -176,8 +170,8 @@ internal sealed partial class PilotMarketStore
     )
     {
         PersonalMarketRules.Validate(quantity, price, days);
-        var type = catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
-        if (type is not { Published: 1, MarketGroupID: > 0 } || !catalog.Set<ItemType>().Any(t => t.Id == typeId))
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
+        if (type is not { Published: 1, MarketGroupID: > 0 } || catalog.FittingType(typeId) is null)
         {
             throw new InvalidDataException("This item is not eligible for the market.");
         }
