@@ -1,3 +1,4 @@
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;

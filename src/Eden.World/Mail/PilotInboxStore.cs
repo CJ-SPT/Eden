@@ -1,3 +1,5 @@
+using Eden.Data.Characters;
+using Eden.Data.Mail;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
@@ -5,21 +7,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
-
-public sealed class SavedInboxNotification
-{
-    public long Id { get; set; }
-    public InboxNotificationType Type { get; set; }
-    public long SenderId { get; set; }
-    public long ReceiverId { get; set; }
-    public bool Processed { get; set; }
-    public bool Deleted { get; set; }
-    public long Created { get; set; }
-    public double ContactLevel { get; set; }
-    public string Message { get; set; } = "";
-
-    public InboxNotification Snapshot() => new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message));
-}
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class InboxChangeSignal

@@ -1,3 +1,4 @@
+using Eden.Data.Characters;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
@@ -5,13 +6,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedPilotNote
-{
-    public long PilotId { get; set; }
-    public long TargetId { get; set; }
-    public string Text { get; set; } = "";
-}
 
 [Injectable]
 internal sealed class PilotNotesStore(WorldDatabase database, INpcDirectory npcs) : IPilotNotes

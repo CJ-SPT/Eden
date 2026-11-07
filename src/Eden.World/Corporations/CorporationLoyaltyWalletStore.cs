@@ -1,3 +1,6 @@
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
+using Eden.Data.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
@@ -8,41 +11,6 @@ using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationLoyaltyBalance
-{
-    public int CorporationId { get; set; }
-    public int IssuerCorporationId { get; set; }
-    public long Points { get; set; }
-}
-
-public sealed class SavedCorporationLoyaltyTransfer
-{
-    public long Id { get; set; }
-    public long SourceOwnerId { get; set; }
-    public int RecipientCorporationId { get; set; }
-    public int IssuerCorporationId { get; set; }
-    public long Points { get; set; }
-    public long SourceBefore { get; set; }
-    public long SourceAfter { get; set; }
-    public long RecipientBefore { get; set; }
-    public long RecipientAfter { get; set; }
-    public long Time { get; set; }
-
-    public CorporationLoyaltyTransfer Snapshot() =>
-        new(
-            Id,
-            SourceOwnerId,
-            RecipientCorporationId,
-            IssuerCorporationId,
-            Points,
-            SourceBefore,
-            SourceAfter,
-            RecipientBefore,
-            RecipientAfter,
-            Time
-        );
-}
 
 [Injectable]
 internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationLoyaltyWallet

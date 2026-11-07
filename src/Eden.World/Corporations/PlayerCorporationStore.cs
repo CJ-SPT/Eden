@@ -1,5 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
+using Eden.Data.Market;
+using Eden.Data.Skills;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
@@ -12,53 +16,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporation
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public string Ticker { get; set; } = "";
-    public string DetailsJson { get; set; } = "";
-    public long CeoId { get; set; }
-    public long CreatorId { get; set; }
-    public int StationId { get; set; }
-    public int SystemId { get; set; }
-    public long CreatedAt { get; set; }
-    public int MemberLimit { get; set; }
-    public long BalanceCents { get; set; }
-
-    public PlayerCorporation Snapshot(int members) =>
-        new(
-            Id,
-            JsonSerializer.Deserialize<CorporationDetails>(DetailsJson)!,
-            CeoId,
-            CreatorId,
-            StationId,
-            SystemId,
-            CreatedAt,
-            MemberLimit,
-            members
-        );
-}
-
-public sealed class SavedCorporationEmployment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int CorporationId { get; set; }
-    public long StartedAt { get; set; }
-}
-
-public sealed class SavedCorporationPayment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int CorporationId { get; set; }
-    public long Time { get; set; }
-    public long BalanceCents { get; set; }
-
-    public CorporationPayment Snapshot() => new(Id, PilotId, CorporationId, Time, BalanceCents);
-}
 
 [Injectable]
 internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvider clock) : IPlayerCorporations

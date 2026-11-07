@@ -1,3 +1,7 @@
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Corporations;
+using Eden.Data.Inventory;
 using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Corporations;

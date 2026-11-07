@@ -1,4 +1,8 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -11,40 +15,6 @@ using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.World.Combat;
-
-public sealed class SavedSecurityStatus
-{
-    public long PilotId { get; set; }
-    public double Value { get; set; }
-}
-
-public sealed class PendingSecurityReward
-{
-    public long PilotId { get; set; }
-    public long Due { get; set; }
-    public long NpcId { get; set; }
-    public int TypeId { get; set; }
-    public int SystemId { get; set; }
-    public int CorporationId { get; set; }
-    public double Fraction { get; set; }
-    public double Maximum { get; set; }
-}
-
-public sealed class SavedSecurityTransaction
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long Time { get; set; }
-    public long NpcId { get; set; }
-    public int TypeId { get; set; }
-    public int SystemId { get; set; }
-    public int CorporationId { get; set; }
-    public double Modification { get; set; }
-    public double NewValue { get; set; }
-
-    public SecurityStatusTransaction Snapshot() =>
-        new(Id, Time, SecurityEvent.PirateNpcKilled, CorporationId, SystemId, Modification, NewValue, NpcId, TypeId);
-}
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class SecurityStatusSignal

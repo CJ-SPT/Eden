@@ -1,4 +1,7 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Mail;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -8,47 +11,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
-
-public sealed class SavedMailingList
-{
-    public long Id { get; set; }
-    public long OwnerId { get; set; }
-    public string Key { get; set; } = "";
-    public string Name { get; set; } = "";
-    public MailingListAccess DefaultAccess { get; set; }
-    public MailingListRole DefaultRole { get; set; }
-    public bool Deleted { get; set; }
-    public string? WelcomeTitle { get; set; }
-    public string? WelcomeBody { get; set; }
-
-    public MailingListInfo Info(MailingListRole role) => new(Id, new(Key, Name), role);
-}
-
-[PrimaryKey(nameof(ListId), nameof(PilotId))]
-public sealed class SavedMailingListMember
-{
-    public long ListId { get; set; }
-    public long PilotId { get; set; }
-    public MailingListRole Role { get; set; }
-}
-
-[PrimaryKey(nameof(ListId), nameof(EntityId))]
-public sealed class SavedMailingListAccess
-{
-    public long ListId { get; set; }
-    public long EntityId { get; set; }
-    public MailingListAccess Access { get; set; }
-}
-
-public sealed class SavedMailingListChange
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long ListId { get; set; }
-    public Guid Origin { get; set; }
-    public MailingListChangeKind Kind { get; set; }
-    public MailingListRole Role { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider clock) : IPilotMailingLists

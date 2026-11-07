@@ -1,45 +1,8 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
-
-public sealed class SourceDataset
-{
-    public string Name { get; set; } = "";
-    public string Source { get; set; } = "";
-    public string Sha256 { get; set; } = "";
-    public long Rows { get; set; }
-}
-
-[PrimaryKey(nameof(Dataset), nameof(Key))]
-public sealed class SourceRecord
-{
-    public string Dataset { get; set; } = "";
-    public string Key { get; set; } = "";
-    public string Data { get; set; } = "";
-
-    public T Read<T>() =>
-        JsonSerializer.Deserialize<T>(Data, JsonSerializerOptions.Web)
-        ?? throw new InvalidDataException($"Missing {Dataset} record {Key}.");
-}
-
-[PrimaryKey(nameof(Export), nameof(Client))]
-public sealed class SourceOverlap
-{
-    public string Export { get; set; } = "";
-    public string Client { get; set; } = "";
-    public long SharedKeys { get; set; }
-    public long DifferentRows { get; set; }
-}
-
-[PrimaryKey(nameof(Export), nameof(Client), nameof(Key))]
-public sealed class SourceDifference
-{
-    public string Export { get; set; } = "";
-    public string Client { get; set; } = "";
-    public string Key { get; set; } = "";
-    public string Fields { get; set; } = "";
-}
 
 internal static class CatalogSources
 {

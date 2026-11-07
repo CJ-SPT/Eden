@@ -86,6 +86,7 @@ For format-on-save in Visual Studio, VS Code or Rider, install the CSharpier edi
 | Project | Responsibility |
 | --- | --- |
 | [Eden.Gameplay](src/Eden.Gameplay) | Typed gameplay rules, state, commands and persistence interfaces. |
+| [Eden.Data](src/Eden.Data) | Generated catalog models and saved database entities; contexts and operations remain in World. |
 | [Eden.Protocol](src/Eden.Protocol) | Native wire formats, service dispatch, replies and notifications. |
 | [Eden.Server](src/Eden.Server) | Hosting, catalog access and SQLite world persistence. |
 | [Eden.Protocol.Tests](tests/Eden.Protocol.Tests) | Automated protocol, gameplay and persistence coverage. |

@@ -1,4 +1,10 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Economy;
+using Eden.Data.Insurance;
+using Eden.Data.Inventory;
+using Eden.Data.Market;
+using Eden.Data.Mining;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Insurance;

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Eden.Data.Launcher;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -19,8 +20,6 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
     private const int MinimumPasswordLength = 6;
     private const int MaximumPasswordLength = 128;
     private readonly ILauncherPasswords _passwords = passwords ?? new LauncherPasswords();
-
-    private sealed record Credential(long Id, string Name, string Hash);
 
     private long Now => clock.GetUtcNow().ToUnixTimeSeconds();
 
@@ -103,7 +102,7 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         return new(id, name, request.Developer);
     }
 
-    private Credential? ReadCredential(string userName)
+    private LauncherCredential? ReadCredential(string userName)
     {
         using var db = Open();
         using var command = Command(

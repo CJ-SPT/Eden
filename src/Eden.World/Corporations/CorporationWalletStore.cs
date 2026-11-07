@@ -1,3 +1,6 @@
+using Eden.Data.Characters;
+using Eden.Data.Corporations;
+using Eden.Data.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
@@ -6,30 +9,6 @@ using Eden.World.Market;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationWallet
-{
-    public int CorporationId { get; set; }
-    public int Key { get; set; }
-    public long BalanceCents { get; set; }
-}
-
-public sealed class SavedWalletLedger
-{
-    public long Id { get; set; }
-    public long OwnerId { get; set; }
-    public int Key { get; set; }
-    public long Time { get; set; }
-    public long CounterpartyId { get; set; }
-    public long AmountCents { get; set; }
-    public long BalanceCents { get; set; }
-    public WalletEntryType EntryType { get; set; }
-    public long ReferenceId { get; set; }
-    public string Reason { get; set; } = "";
-
-    public CorporationWalletEntry Snapshot() =>
-        new(Id, OwnerId, Key, Time, CounterpartyId, AmountCents, BalanceCents, EntryType, ReferenceId, Reason);
-}
 
 [Injectable]
 internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationWallet
@@ -305,11 +284,4 @@ internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvide
                 Reason = reason,
             }
         );
-}
-
-public sealed class SavedCorporationWalletSelection
-{
-    public long PilotId { get; set; }
-    public int CorporationId { get; set; }
-    public int Key { get; set; } = CorporationWalletRules.MasterKey;
 }

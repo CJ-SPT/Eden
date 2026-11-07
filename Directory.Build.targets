@@ -9,10 +9,11 @@
         >true</_EdenRuntimeOnly>
     </PropertyGroup>
     <ItemGroup>
-      <_AllowedEdenReference Include="Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.World'" />
+      <_AllowedEdenReference Include="Eden.Gameplay" Condition="'$(MSBuildProjectName)' == 'Eden.Data'" />
+      <_AllowedEdenReference Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.World'" />
       <_AllowedEdenReference Include="Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.Protocol'" />
       <_AllowedEdenReference
-        Include="Eden.Gameplay;Eden.Infrastructure;Eden.Protocol;Eden.World"
+        Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure;Eden.Protocol;Eden.World"
         Condition="'$(MSBuildProjectName)' == 'Eden.Server'"
       />
       <_ForbiddenEdenReference Include="@(ProjectReference->'%(Filename)')" />

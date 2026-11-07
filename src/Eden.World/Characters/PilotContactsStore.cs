@@ -1,3 +1,4 @@
+using Eden.Data.Characters;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
@@ -7,35 +8,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedContact
-{
-    public long PilotId { get; set; }
-    public long ContactId { get; set; }
-    public double Standing { get; set; }
-    public bool InWatchlist { get; set; }
-    public long LabelMask { get; set; }
-}
-
-public sealed class SavedAgentContact
-{
-    public long PilotId { get; set; }
-    public long AgentId { get; set; }
-}
-
-public sealed class SavedBlockedContact
-{
-    public long PilotId { get; set; }
-    public long ContactId { get; set; }
-}
-
-public sealed class SavedContactLabel
-{
-    public long PilotId { get; set; }
-    public long Id { get; set; }
-    public string Name { get; set; } = "";
-    public int? Color { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory npcs, InboxChangeSignal inbox, TimeProvider? clock = null)

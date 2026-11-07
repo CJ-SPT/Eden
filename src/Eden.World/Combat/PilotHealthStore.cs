@@ -1,3 +1,5 @@
+using Eden.Data.Combat;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
@@ -9,15 +11,6 @@ using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 
 namespace Eden.World.Combat;
-
-public sealed class ShipHealthState
-{
-    public long ShipId { get; set; }
-    public double ShieldCharge { get; set; }
-    public double ArmorDamage { get; set; }
-    public double StructureDamage { get; set; }
-    public long UpdatedAt { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth

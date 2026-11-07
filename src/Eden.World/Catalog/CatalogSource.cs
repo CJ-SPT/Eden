@@ -1,13 +1,8 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
-
-public sealed class CatalogEntry<T>
-{
-    public string Key { get; set; } = "";
-    public T Value { get; set; } = default!;
-}
 
 public interface ICatalogSource
 {

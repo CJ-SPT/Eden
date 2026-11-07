@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -243,7 +246,7 @@ public sealed class TranslocationTests
             foreach (int belt in new[] { 40009232, 40009245 })
             {
                 catalog.Add(
-                    new Eden.World.Catalog.SourceRecord
+                    new Eden.Data.Catalog.SourceRecord
                     {
                         Dataset = "client/asteroidcountbytypeidbeltid",
                         Key = belt.ToString(global::System.Globalization.CultureInfo.InvariantCulture),

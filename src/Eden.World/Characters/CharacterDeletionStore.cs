@@ -1,3 +1,9 @@
+using Eden.Data.Characters;
+using Eden.Data.Contracts;
+using Eden.Data.Corporations;
+using Eden.Data.Industry;
+using Eden.Data.Market;
+using Eden.Data.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
@@ -12,13 +18,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedCharacterDeletion
-{
-    public long PilotId { get; set; }
-    public long ReadyAt { get; set; }
-    public long? DeletedAt { get; set; }
-}
 
 [Injectable]
 internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvider clock) : ICharacterDeletion

@@ -1,3 +1,6 @@
+using Eden.Data.Catalog;
+using Eden.Data.Contracts;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Contracts;

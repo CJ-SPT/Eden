@@ -1,61 +1,11 @@
+using Eden.Data.Characters;
+using Eden.Data.Market;
 using Eden.Gameplay.Market;
 using Eden.World.Characters;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Market;
-
-public sealed class SavedPersonalOrder
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int StationId { get; set; }
-    public int SystemId { get; set; }
-    public int RegionId { get; set; }
-    public int TypeId { get; set; }
-    public bool Bid { get; set; }
-    public long PriceCents { get; set; }
-    public int Remaining { get; set; }
-    public int Entered { get; set; }
-    public long Issued { get; set; }
-    public long Expires { get; set; }
-    public long Modified { get; set; }
-    public int DurationDays { get; set; }
-    public long EscrowCents { get; set; }
-    public PersonalOrderStatus Status { get; set; }
-
-    public MarketOrder Snapshot() =>
-        new(Id, StationId, SystemId, RegionId, PilotId, TypeId, Bid, PriceCents, Remaining, Entered, Issued, DurationDays, EscrowCents);
-}
-
-public sealed class SavedMarketChange
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public string Payload { get; set; } = "";
-}
-
-public sealed class SavedMarketPayment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long CounterpartyId { get; set; }
-    public long OrderId { get; set; }
-    public WalletEntryType Kind { get; set; }
-    public long AmountCents { get; set; }
-    public long BalanceCents { get; set; }
-    public long Time { get; set; }
-
-    public MarketPayment Snapshot() => new(Id, PilotId, CounterpartyId, OrderId, Kind, AmountCents, BalanceCents, Time);
-}
-
-public sealed class SavedWorldEconomy
-{
-    public int Id { get; set; }
-    public bool TestingMarket { get; set; } = true;
-    public bool TestingGrants { get; set; } = true;
-    public int InstitutionalStock { get; set; } = NpcSupplyRules.Stock;
-}
 
 internal static class PersonalMarketSchema
 {

@@ -1,3 +1,7 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Inventory;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
@@ -11,16 +15,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
-
-public sealed class PendingLocalRepair
-{
-    public RepairLayer Layer { get; set; }
-    public long ModuleId { get; set; }
-    public long ShipId { get; set; }
-    public long StartedAt { get; set; }
-    public long CompletesAt { get; set; }
-    public double Amount { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLocalRepairing

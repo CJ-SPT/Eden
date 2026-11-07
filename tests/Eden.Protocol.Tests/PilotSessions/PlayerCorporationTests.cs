@@ -1,3 +1,7 @@
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
+using Eden.Data.Market;
+using Eden.Data.Skills;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Characters;

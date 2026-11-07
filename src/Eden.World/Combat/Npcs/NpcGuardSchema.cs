@@ -1,3 +1,4 @@
+using Eden.Data.Combat.Npcs;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 

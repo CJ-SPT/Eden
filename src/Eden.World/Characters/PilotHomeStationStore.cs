@@ -1,4 +1,8 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Inventory;
+using Eden.Data.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
@@ -12,36 +16,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedHomeStation
-{
-    public long PilotId { get; set; }
-    public int StationId { get; set; }
-}
-
-public sealed class SavedHomeStationPayment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int StationId { get; set; }
-    public long OperatorId { get; set; }
-    public long AmountCents { get; set; }
-    public long BalanceCents { get; set; }
-    public long Time { get; set; }
-
-    public HomeStationPayment Snapshot() => new(Id, PilotId, StationId, OperatorId, AmountCents, BalanceCents, Time);
-}
-
-public sealed class SavedHomeCloneTransfer
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long OldShipId { get; set; }
-    public long NewShipId { get; set; }
-    public int SourceStationId { get; set; }
-    public int DestinationStationId { get; set; }
-    public long Time { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)

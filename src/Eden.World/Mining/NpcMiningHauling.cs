@@ -1,3 +1,8 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Mining;
+using Eden.Data.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;

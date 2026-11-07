@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Fittings;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -7,20 +9,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
-
-public sealed class SavedFittingRecord
-{
-    public long Id { get; set; }
-    public long OwnerId { get; set; }
-    public int ShipTypeId { get; set; }
-    public string Name { get; set; } = "";
-    public string Description { get; set; } = "";
-    public string ItemsJson { get; set; } = "[]";
-    public long SavedAt { get; set; }
-
-    public SavedFitting Snapshot() =>
-        new(Id, OwnerId, new(Name, Description, ShipTypeId, JsonSerializer.Deserialize<SavedFittingItem[]>(ItemsJson)!), SavedAt);
-}
 
 [Injectable]
 internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvider clock) : IPilotSavedFittings

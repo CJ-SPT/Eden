@@ -1,3 +1,5 @@
+using Eden.Data.Inventory;
+using Eden.Data.Skills;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
 using Eden.World.Inventory;

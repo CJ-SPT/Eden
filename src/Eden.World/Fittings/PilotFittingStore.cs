@@ -1,4 +1,8 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;

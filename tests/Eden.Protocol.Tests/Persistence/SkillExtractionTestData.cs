@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Skills;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
 using Eden.World.Skills;

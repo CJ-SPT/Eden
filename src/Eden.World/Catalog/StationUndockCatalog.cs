@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Data.Catalog;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 

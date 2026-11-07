@@ -1,4 +1,9 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Market;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -16,18 +21,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
-
-public sealed class StationRepairPayment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int StationId { get; set; }
-    public long StationOwnerId { get; set; }
-    public long AmountCents { get; set; }
-    public long BalanceCents { get; set; }
-    public long Time { get; set; }
-    public required string RepairsJson { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair

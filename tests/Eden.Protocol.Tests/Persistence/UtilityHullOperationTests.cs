@@ -1,3 +1,4 @@
+using Eden.Data.Mining;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

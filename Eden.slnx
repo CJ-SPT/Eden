@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Eden.Data/Eden.Data.csproj" />
     <Project Path="src/Eden.Gameplay/Eden.Gameplay.csproj" />
     <Project Path="src/Eden.Infrastructure/Eden.Infrastructure.csproj" />
     <Project Path="src/Eden.Protocol/Eden.Protocol.csproj" />

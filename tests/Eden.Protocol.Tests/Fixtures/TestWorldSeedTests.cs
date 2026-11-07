@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;

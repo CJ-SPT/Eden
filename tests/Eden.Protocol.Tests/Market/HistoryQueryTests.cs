@@ -1,3 +1,5 @@
+using Eden.Data.Corporations;
+using Eden.Data.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Market;

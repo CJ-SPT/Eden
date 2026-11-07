@@ -1,4 +1,11 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Contracts;
+using Eden.Data.Corporations;
+using Eden.Data.Economy;
+using Eden.Data.Insurance;
+using Eden.Data.Market;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;

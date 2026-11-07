@@ -1,3 +1,5 @@
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Mining;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Contracts;

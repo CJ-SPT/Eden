@@ -1,4 +1,6 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -12,26 +14,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedBooster
-{
-    public long ItemId { get; set; }
-    public long PilotId { get; set; }
-    public int TypeId { get; set; }
-    public int Slot { get; set; }
-    public int Bonus { get; set; }
-    public int RemainingInjectionUses { get; set; }
-    public long StartedAt { get; set; }
-    public long ExpiresAt { get; set; }
-
-    public ActiveBooster Snapshot() => new(ItemId, TypeId, Slot, Bonus, StartedAt, ExpiresAt);
-}
-
-public sealed class SavedBoosterState
-{
-    public long PilotId { get; set; }
-    public long Revision { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock) : IPilotBoosters

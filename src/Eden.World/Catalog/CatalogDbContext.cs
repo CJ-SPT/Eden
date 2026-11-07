@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;

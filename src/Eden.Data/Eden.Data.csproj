@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.0" />
+    <InternalsVisibleTo Include="Eden.World" />
+    <InternalsVisibleTo Include="Eden.Server" />
+    <InternalsVisibleTo Include="Eden.Protocol.Tests" />
+  </ItemGroup>
+</Project>

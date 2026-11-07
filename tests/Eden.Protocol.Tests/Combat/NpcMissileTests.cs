@@ -1,3 +1,7 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Loot;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;

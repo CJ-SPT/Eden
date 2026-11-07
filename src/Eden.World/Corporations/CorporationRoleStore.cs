@@ -1,26 +1,12 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationMemberAccess
-{
-    public long PilotId { get; set; }
-    public int CorporationId { get; set; }
-    public string DataJson { get; set; } = "";
-}
-
-public sealed class SavedCorporationTitle
-{
-    public int CorporationId { get; set; }
-    public long TitleId { get; set; }
-    public string DataJson { get; set; } = "";
-
-    public CorporationTitle Snapshot() => JsonSerializer.Deserialize<CorporationTitle>(DataJson)!;
-}
 
 [Injectable]
 internal sealed class CorporationRoleStore(WorldDatabase database, TimeProvider clock) : ICorporationRoles

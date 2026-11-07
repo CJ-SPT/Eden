@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Contracts;
 using Eden.Gameplay.Contracts;
 using Eden.World.Catalog;
 

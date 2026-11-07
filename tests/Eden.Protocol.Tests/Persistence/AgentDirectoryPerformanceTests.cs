@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
+using Eden.Data.Catalog;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Serialization;

@@ -1,4 +1,7 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
@@ -10,23 +13,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat.Npcs;
-
-public sealed class WorldNpcEncounter
-{
-    public long Id { get; set; }
-    public int SystemId { get; set; }
-    public int AnchorId { get; set; }
-    public NpcAnchorKind AnchorKind { get; set; }
-    public NpcRole Role { get; set; }
-    public int FactionId { get; set; }
-    public double HomeX { get; set; }
-    public double HomeY { get; set; }
-    public double HomeZ { get; set; }
-    public bool Occupied { get; set; }
-    public int Generation { get; set; }
-    public int Version { get; set; }
-    public long? NextSpawnAt { get; set; }
-}
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards, NpcConvoySeeder convoys, NpcMiningSeeder mining)

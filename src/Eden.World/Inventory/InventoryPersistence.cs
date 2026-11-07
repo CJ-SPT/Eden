@@ -1,3 +1,5 @@
+using Eden.Data.Characters;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Characters;

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.Characters;
+using Eden.Data.Mail;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
@@ -7,57 +9,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
-
-public sealed class SavedMail
-{
-    public long Id { get; set; }
-
-    // Historical headers may outlive their sender; mailbox ownership has its own FK.
-    public long SenderId { get; set; }
-    public long SentAt { get; set; }
-    public long? ListId { get; set; }
-    public string Subject { get; set; } = "";
-    public string Body { get; set; } = "";
-    public string RecipientsJson { get; set; } = "[]";
-
-    public MailHeader Header() =>
-        new(Id, SenderId, SentAt, JsonSerializer.Deserialize<long[]>(RecipientsJson)!, Subject) { ListId = ListId };
-}
-
-[PrimaryKey(nameof(PilotId), nameof(MessageId))]
-public sealed class SavedMailEntry
-{
-    public long PilotId { get; set; }
-    public long MessageId { get; set; }
-    public MailStatus Status { get; set; }
-    public long Labels { get; set; }
-    public bool Deleted { get; set; }
-
-    public MailEntryState Snapshot() => new(MessageId, Status, Labels);
-}
-
-[PrimaryKey(nameof(PilotId), nameof(Id))]
-public sealed class SavedMailLabel
-{
-    public long PilotId { get; set; }
-    public long Id { get; set; }
-    public string Name { get; set; } = "";
-    public int? Color { get; set; }
-
-    public MailLabel Snapshot() => new(Id, Name, Color);
-}
-
-public sealed class SavedMailChange
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long MessageId { get; set; }
-    public Guid Origin { get; set; }
-    public MailChangeKind Kind { get; set; }
-    public MailStatus Status { get; set; }
-    public long Labels { get; set; }
-    public long LabelId { get; set; }
-}
 
 internal sealed record MailDeliveryPlan(
     long SenderId,

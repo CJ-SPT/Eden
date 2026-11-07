@@ -1,3 +1,6 @@
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Loot;
 using Eden.Gameplay.Combat;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;

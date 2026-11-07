@@ -1,17 +1,13 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationBillPaymentSettings
-{
-    public int CorporationId { get; set; }
-    public string DataJson { get; set; } = "";
-}
 
 [Injectable]
 internal sealed class CorporationBillingStore(WorldDatabase database) : ICorporationBilling

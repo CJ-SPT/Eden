@@ -1,4 +1,6 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -6,20 +8,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedTaskCounter
-{
-    public long PilotId { get; set; }
-    public string Name { get; set; } = "";
-    public long Count { get; set; }
-}
-
-public sealed class SavedCompletedTask
-{
-    public long PilotId { get; set; }
-    public long Id { get; set; }
-    public long Time { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotTaskTrackingStore(WorldDatabase database, TimeProvider clock) : IPilotTaskTracking

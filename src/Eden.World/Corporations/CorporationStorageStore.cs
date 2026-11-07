@@ -1,4 +1,7 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Corporations;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
@@ -12,25 +15,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationOffice
-{
-    public long Id { get; set; }
-    public int CorporationId { get; set; }
-    public int StationId { get; set; }
-    public int SystemId { get; set; }
-    public long RentedAt { get; set; }
-    public long FeeCents { get; set; }
-
-    public CorporationOffice Snapshot() => new(Id, CorporationId, StationId, SystemId, RentedAt, FeeCents);
-}
-
-public sealed class SavedCorporationOfficeSettings
-{
-    public int Id { get; set; }
-    public long RentalFeeCents { get; set; }
-    public int OfficeSlots { get; set; }
-}
 
 [Injectable]
 internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvider clock) : ICorporationStorage

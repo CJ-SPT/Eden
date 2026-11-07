@@ -1,3 +1,5 @@
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;

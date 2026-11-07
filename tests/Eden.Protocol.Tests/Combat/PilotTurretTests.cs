@@ -1,3 +1,12 @@
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Docking;
+using Eden.Data.Fittings;
+using Eden.Data.Insurance;
+using Eden.Data.Inventory;
+using Eden.Data.Loot;
+using Eden.Data.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;

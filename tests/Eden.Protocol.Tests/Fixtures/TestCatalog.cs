@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
 using Eden.World.Catalog;
 using Microsoft.EntityFrameworkCore;
 

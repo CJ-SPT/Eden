@@ -1,15 +1,9 @@
+using Eden.Data.Skills;
 using Eden.Gameplay.Skills;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Skills;
-
-public sealed class SavedFreeSkillPoints
-{
-    public long PilotId { get; set; }
-    public long Points { get; set; }
-    public long Revision { get; set; }
-}
 
 internal sealed partial class PilotTrainingStore
 {

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="../Eden.Data/Eden.Data.csproj" />
     <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
     <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />

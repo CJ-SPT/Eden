@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 
 namespace Eden.World.Catalog;

@@ -1,3 +1,4 @@
+using Eden.Data.Calendar;
 using Eden.Gameplay.Calendar;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.PilotSessions;

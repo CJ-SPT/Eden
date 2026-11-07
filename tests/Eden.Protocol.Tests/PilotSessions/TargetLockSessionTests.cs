@@ -1,3 +1,5 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat.Npcs;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Flight;

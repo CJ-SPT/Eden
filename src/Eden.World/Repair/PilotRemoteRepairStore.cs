@@ -1,4 +1,8 @@
 using System.Text.Json;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Inventory;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;

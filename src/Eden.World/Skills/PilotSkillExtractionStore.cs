@@ -1,5 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
@@ -13,15 +16,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
-
-public sealed class SavedSkillExtraction
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long ItemId { get; set; }
-    public long Time { get; set; }
-    public string AllocationsJson { get; set; } = "[]";
-}
 
 internal sealed record SkillExtractionResult(TrainingState Training, IReadOnlyList<SkillPointAllocation> Allocations);
 

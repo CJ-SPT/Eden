@@ -1,3 +1,4 @@
+using Eden.Data.Propulsion;
 using Eden.World.Propulsion;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;

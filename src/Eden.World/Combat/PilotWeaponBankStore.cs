@@ -1,3 +1,6 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -8,13 +11,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
-
-public sealed class SavedWeaponLink
-{
-    public long SlaveId { get; set; }
-    public long MasterId { get; set; }
-    public long ShipId { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotWeaponBankStore(WorldDatabase database, TimeProvider clock) : IPilotWeaponBanks

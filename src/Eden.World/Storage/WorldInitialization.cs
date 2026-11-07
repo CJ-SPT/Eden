@@ -1,3 +1,9 @@
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Drones;
+using Eden.Data.Fittings;
+using Eden.Data.Propulsion;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.World.Catalog;
 using Eden.World.Combat;

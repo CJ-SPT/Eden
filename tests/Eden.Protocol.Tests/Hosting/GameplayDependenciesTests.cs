@@ -26,16 +26,17 @@ public sealed class GameplayDependenciesTests
     [Fact]
     public void WorldAndProtocolReferenceOnlyTheirSharedBoundaries()
     {
-        AssertAdapter(typeof(WorldDatabase).Assembly);
+        AssertAdapter(typeof(WorldDatabase).Assembly, "Eden.Data", "Eden.Gameplay", "Eden.Infrastructure");
         AssertAdapter(typeof(BlueModel).Assembly);
     }
 
     [Theory]
     [InlineData("Eden.Gameplay", "")]
     [InlineData("Eden.Infrastructure", "")]
-    [InlineData("Eden.World", "Eden.Gameplay,Eden.Infrastructure")]
+    [InlineData("Eden.Data", "Eden.Gameplay")]
+    [InlineData("Eden.World", "Eden.Data,Eden.Gameplay,Eden.Infrastructure")]
     [InlineData("Eden.Protocol", "Eden.Gameplay,Eden.Infrastructure")]
-    [InlineData("Eden.Server", "Eden.Gameplay,Eden.Infrastructure,Eden.Protocol,Eden.World")]
+    [InlineData("Eden.Server", "Eden.Data,Eden.Gameplay,Eden.Infrastructure,Eden.Protocol,Eden.World")]
     public void ProjectReferencesFollowTheDependencyGraphEvenWhenUnused(string project, string allowed)
     {
         DirectoryInfo? root = new(AppContext.BaseDirectory);
@@ -57,7 +58,7 @@ public sealed class GameplayDependenciesTests
         }
     }
 
-    private static void AssertAdapter(Assembly assembly)
+    private static void AssertAdapter(Assembly assembly, params string[] allowed)
     {
         var references = assembly
             .GetReferencedAssemblies()
@@ -65,6 +66,6 @@ public sealed class GameplayDependenciesTests
             .Where(name => name.StartsWith("Eden.", StringComparison.Ordinal))
             .Order()
             .ToArray();
-        Assert.Equal(["Eden.Gameplay", "Eden.Infrastructure"], references);
+        Assert.Equal(allowed.Length == 0 ? ["Eden.Gameplay", "Eden.Infrastructure"] : allowed, references);
     }
 }

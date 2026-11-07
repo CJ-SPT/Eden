@@ -3,11 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Inventory;
 
-public sealed class InventoryOwner
-{
-    public long Id { get; set; }
-}
-
 internal static class InventoryOwnershipSchema
 {
     internal static void Register(WorldDbContext world)

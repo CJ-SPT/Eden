@@ -1,4 +1,9 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Economy;
+using Eden.Data.Market;
+using Eden.Data.Mining;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Inventory;

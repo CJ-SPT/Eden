@@ -1,3 +1,4 @@
+using Eden.Data.Mining;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 

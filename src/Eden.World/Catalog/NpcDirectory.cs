@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Data.Catalog;
 using Eden.Gameplay.Agents;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;

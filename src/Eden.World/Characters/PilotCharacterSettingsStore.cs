@@ -1,17 +1,10 @@
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedCharacterSetting
-{
-    public long PilotId { get; set; }
-    public string Key { get; set; } = "";
-    public string? Text { get; set; }
-    public byte[]? Binary { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPilotCharacterSettings

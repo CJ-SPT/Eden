@@ -1,4 +1,6 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Market;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;

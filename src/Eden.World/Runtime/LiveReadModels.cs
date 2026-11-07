@@ -1,4 +1,8 @@
 using System.Collections.Frozen;
+using Eden.Data.Characters;
+using Eden.Data.Loot;
+using Eden.Data.Mail;
+using Eden.Data.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;

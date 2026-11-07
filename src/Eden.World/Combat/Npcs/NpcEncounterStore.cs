@@ -1,3 +1,7 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Propulsion;
@@ -11,40 +15,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat.Npcs;
-
-public sealed class WorldNpc
-{
-    public long Id { get; set; }
-    public int BeltId { get; set; }
-    public int SystemId { get; set; }
-    public int TypeId { get; set; }
-    public int CorporationId { get; set; } = NpcEncounterDefinitions.GuristasCorporation;
-    public int FactionId { get; set; }
-    public NpcRole Role { get; set; }
-    public NpcAnchorKind AnchorKind { get; set; }
-    public long EncounterId { get; set; }
-    public int SpawnSlot { get; set; }
-    public double? HomeX { get; set; }
-    public double? HomeY { get; set; }
-    public double? HomeZ { get; set; }
-    public long? RetiredAt { get; set; }
-    public double X { get; set; }
-    public double Y { get; set; }
-    public double Z { get; set; }
-    public double ShieldCharge { get; set; }
-    public double ArmorDamage { get; set; }
-    public double StructureDamage { get; set; }
-    public long UpdatedAt { get; set; }
-    public long ShieldRepairAt { get; set; }
-    public long ArmorRepairAt { get; set; }
-    public long RepairRevision { get; set; }
-    public long? DestroyedAt { get; set; }
-    public double VelocityX { get; set; }
-    public double VelocityY { get; set; }
-    public double VelocityZ { get; set; }
-    public long MotionAt { get; set; }
-    public NpcNavigationState Navigation { get; set; }
-}
 
 [Injectable]
 internal sealed class NpcEncounterStore(

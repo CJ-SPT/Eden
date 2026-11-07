@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.Fittings;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Fittings;

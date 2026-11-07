@@ -1,3 +1,7 @@
+using Eden.Data.Combat;
+using Eden.Data.Fittings;
+using Eden.Data.Inventory;
+using Eden.Data.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
@@ -129,9 +133,9 @@ public sealed partial class RemoteRepairTests
             await live.FlushAsync();
         }
         using WorldDbContext reopened = new(f.Db.Path);
-        Assert.Equal(paid, reopened.Set<Eden.World.Fittings.ShipEnergy>().Find(f.ShipId)!.Charge, 6);
-        Assert.Equal(remaining, reopened.Set<Eden.World.Combat.ShipHealthState>().Find(Target(f))!.ShieldCharge, 6);
-        Assert.Equal(100, reopened.Set<Eden.World.Combat.ShipHealthState>().Find(Target(f))!.ArmorDamage);
+        Assert.Equal(paid, reopened.Set<Eden.Data.Fittings.ShipEnergy>().Find(f.ShipId)!.Charge, 6);
+        Assert.Equal(remaining, reopened.Set<Eden.Data.Combat.ShipHealthState>().Find(Target(f))!.ShieldCharge, 6);
+        Assert.Equal(100, reopened.Set<Eden.Data.Combat.ShipHealthState>().Find(Target(f))!.ArmorDamage);
     }
 
     [Fact]
@@ -149,7 +153,7 @@ public sealed partial class RemoteRepairTests
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         using WorldDbContext reopened = new(f.Db.Path);
-        Assert.Equal(f.PilotId, reopened.Set<Eden.World.Inventory.OwnedItem>().Find(module)!.OwnerId);
+        Assert.Equal(f.PilotId, reopened.Set<Eden.Data.Inventory.OwnedItem>().Find(module)!.OwnerId);
         Assert.Empty(reopened.Set<WorldRemoteRepair>());
     }
 }

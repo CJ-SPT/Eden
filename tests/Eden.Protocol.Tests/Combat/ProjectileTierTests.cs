@@ -1,4 +1,8 @@
 using System.Text.Json.Nodes;
+using Eden.Data.Catalog;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Fittings;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;

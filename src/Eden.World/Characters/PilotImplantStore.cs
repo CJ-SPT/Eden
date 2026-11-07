@@ -1,4 +1,6 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -13,24 +15,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedPilotImplant
-{
-    public long ItemId { get; set; }
-    public long CloneId { get; set; }
-    public int TypeId { get; set; }
-    public int Slot { get; set; }
-    public DogmaAttributeId Attribute { get; set; }
-    public int Bonus { get; set; }
-
-    public InstalledImplant Snapshot() => new(ItemId, CloneId, new(TypeId, Slot, Attribute, Bonus));
-}
-
-public sealed class SavedImplantState
-{
-    public long PilotId { get; set; }
-    public long Revision { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingStore training) : IPilotImplants

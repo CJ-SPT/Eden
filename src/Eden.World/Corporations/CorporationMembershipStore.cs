@@ -1,4 +1,7 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -7,45 +10,6 @@ using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationApplication
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int CorporationId { get; set; }
-    public string Text { get; set; } = "";
-    public CorporationApplicationStatus Status { get; set; }
-    public long AppliedAt { get; set; }
-    public long UpdatedAt { get; set; }
-    public string Response { get; set; } = "";
-
-    public CorporationApplication Snapshot() => new(Id, PilotId, CorporationId, Text, Status, AppliedAt, UpdatedAt, Response);
-}
-
-public sealed class SavedCorporationChange
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public string? ApplicationJson { get; set; }
-    public string? MembershipJson { get; set; }
-    public string? AdministrationJson { get; set; }
-    public string? RoleJson { get; set; }
-    public string? TitleJson { get; set; }
-    public string? ShareJson { get; set; }
-    public string? StorageJson { get; set; }
-
-    public CorporationChange Snapshot() =>
-        new(
-            Id,
-            ApplicationJson is null ? null : JsonSerializer.Deserialize<CorporationApplication>(ApplicationJson),
-            MembershipJson is null ? null : JsonSerializer.Deserialize<CorporationMemberChange>(MembershipJson),
-            AdministrationJson is null ? null : JsonSerializer.Deserialize<CorporationAdministrationChange>(AdministrationJson),
-            RoleJson is null ? null : JsonSerializer.Deserialize<CorporationRoleChange>(RoleJson),
-            TitleJson is null ? null : JsonSerializer.Deserialize<CorporationTitleChange>(TitleJson),
-            ShareJson is null ? null : JsonSerializer.Deserialize<CorporationShareChange>(ShareJson),
-            StorageJson is null ? null : JsonSerializer.Deserialize<CorporationStorageChange>(StorageJson)
-        );
-}
 
 [Injectable]
 internal sealed class CorporationMembershipStore(WorldDatabase database, TimeProvider clock) : ICorporationMembership

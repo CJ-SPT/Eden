@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;

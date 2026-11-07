@@ -1,3 +1,5 @@
+using Eden.Data.Industry;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;

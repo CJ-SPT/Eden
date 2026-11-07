@@ -1,3 +1,4 @@
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Skills;
@@ -5,32 +6,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedCharacterSheet
-{
-    public long PilotId { get; set; }
-    public string Biography { get; set; } = "";
-    public int Intelligence { get; set; } = CharacterAttributes.Default.Intelligence;
-    public int Memory { get; set; } = CharacterAttributes.Default.Memory;
-    public int Charisma { get; set; } = CharacterAttributes.Default.Charisma;
-    public int Perception { get; set; } = CharacterAttributes.Default.Perception;
-    public int Willpower { get; set; } = CharacterAttributes.Default.Willpower;
-    public int BonusRemaps { get; set; } = CharacterSheetRules.StartingBonusRemaps;
-    public long? NextTimedRemap { get; set; }
-
-    public NeuralRemapState Snapshot() => new(new(Intelligence, Memory, Charisma, Perception, Willpower), BonusRemaps, NextTimedRemap);
-
-    public void Apply(NeuralRemapState state)
-    {
-        Intelligence = state.Attributes.Intelligence;
-        Memory = state.Attributes.Memory;
-        Charisma = state.Attributes.Charisma;
-        Perception = state.Attributes.Perception;
-        Willpower = state.Attributes.Willpower;
-        BonusRemaps = state.BonusRemaps;
-        NextTimedRemap = state.NextTimedRemap;
-    }
-}
 
 [Injectable]
 internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)

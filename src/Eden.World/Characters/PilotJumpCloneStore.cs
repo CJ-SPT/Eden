@@ -1,4 +1,9 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Inventory;
+using Eden.Data.Market;
+using Eden.Data.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
@@ -13,41 +18,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedJumpClone
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public bool Active { get; set; }
-    public int? StationId { get; set; }
-    public string Name { get; set; } = "";
-}
-
-public sealed class SavedJumpCloneTimer
-{
-    public long PilotId { get; set; }
-    public long Time { get; set; }
-}
-
-public sealed class SavedJumpClonePayment
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public int StationId { get; set; }
-    public long OperatorId { get; set; }
-    public JumpClonePaymentKind Kind { get; set; }
-    public long AmountCents { get; set; }
-    public long BalanceCents { get; set; }
-    public long Time { get; set; }
-
-    // Audit identities deliberately survive body/capsule deletion.
-    public long CloneId { get; set; }
-    public int? DestinationStationId { get; set; }
-    public long? OldShipId { get; set; }
-    public long? NewShipId { get; set; }
-
-    public JumpClonePayment Snapshot() => new(Id, PilotId, StationId, OperatorId, Kind, AmountCents, BalanceCents, Time);
-}
 
 [Injectable]
 internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)

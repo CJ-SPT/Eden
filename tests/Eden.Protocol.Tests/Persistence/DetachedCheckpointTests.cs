@@ -1,3 +1,5 @@
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;

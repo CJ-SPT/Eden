@@ -1,67 +1,9 @@
+using Eden.Data.Combat;
 using Eden.Gameplay.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
-
-public sealed class SavedCrimewatch
-{
-    public long PilotId { get; set; }
-    public int SystemId { get; set; }
-    public long WeaponsActive { get; set; }
-    public long WeaponsUntil { get; set; }
-    public long PvpActive { get; set; }
-    public long PvpUntil { get; set; }
-    public long NpcActive { get; set; }
-    public long NpcUntil { get; set; }
-    public long SuspectActive { get; set; }
-    public long SuspectUntil { get; set; }
-    public long CriminalActive { get; set; }
-    public long CriminalUntil { get; set; }
-
-    public CrimewatchTimers Timers() =>
-        new(
-            new(WeaponsActive, WeaponsUntil),
-            new(PvpActive, PvpUntil),
-            new(NpcActive, NpcUntil),
-            new(SuspectActive, SuspectUntil),
-            new(CriminalActive, CriminalUntil)
-        );
-
-    internal void Apply(CrimewatchTimers timers)
-    {
-        (WeaponsActive, WeaponsUntil) = (timers.Weapons.ActiveUntil, timers.Weapons.ExpiresAt);
-        (PvpActive, PvpUntil) = (timers.Pvp.ActiveUntil, timers.Pvp.ExpiresAt);
-        (NpcActive, NpcUntil) = (timers.Npc.ActiveUntil, timers.Npc.ExpiresAt);
-        (SuspectActive, SuspectUntil) = (timers.Suspect.ActiveUntil, timers.Suspect.ExpiresAt);
-        (CriminalActive, CriminalUntil) = (timers.Criminal.ActiveUntil, timers.Criminal.ExpiresAt);
-    }
-}
-
-[PrimaryKey(nameof(LowerPilotId), nameof(HigherPilotId))]
-public sealed class SavedEngagement
-{
-    public long LowerPilotId { get; set; }
-    public long HigherPilotId { get; set; }
-    public long ActiveUntil { get; set; }
-    public long ExpiresAt { get; set; }
-}
-
-public sealed class SavedLogoff
-{
-    public long PilotId { get; set; }
-    public long ShipId { get; set; }
-    public int SystemId { get; set; }
-    public long ExpiresAt { get; set; }
-}
-
-[PrimaryKey(nameof(SourceShipId), nameof(TargetShipId))]
-public sealed class SavedPilotHostility
-{
-    public long SourceShipId { get; set; }
-    public long TargetShipId { get; set; }
-    public long ExpiresAt { get; set; }
-}
 
 internal static class CrimewatchSchema
 {

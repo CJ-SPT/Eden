@@ -8,6 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools/catalog"))
 from build import publish
+from generate_models import generate
 
 
 class CatalogPublicationTests(unittest.TestCase):
@@ -54,6 +55,29 @@ class CatalogPublicationTests(unittest.TestCase):
             publish(self.catalog, lambda candidate, work: candidate.write_bytes(b"invalid candidate"), self.verify)
         self.assertEqual(self.original_catalog, self.catalog.read_bytes())
         self.assertEqual(self.original_world, self.world.read_bytes())
+
+
+class CatalogModelGenerationTests(unittest.TestCase):
+    def test_payload_models_are_generated_into_data_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            database = root / "catalog.sqlite"
+            registry = root / "registry.g.cs"
+            models = root / "models.g.cs"
+            with closing(sqlite3.connect(database)) as db, db:
+                db.execute("CREATE TABLE SourceDataset(Name TEXT PRIMARY KEY)")
+                db.execute("CREATE TABLE SourceRecord(Dataset TEXT,Key TEXT,Data TEXT)")
+                db.execute("INSERT INTO SourceDataset VALUES ('client/sample')")
+                db.execute("INSERT INTO SourceRecord VALUES ('client/sample','1','{\"quantity\":7}')")
+            generate(database, registry, models)
+            self.assertIn("namespace Eden.World.Catalog;", registry.read_text())
+            self.assertIn("using Eden.Data.Catalog;", registry.read_text())
+            self.assertNotIn("public sealed class", registry.read_text())
+            self.assertIn("namespace Eden.Data.Catalog;", models.read_text())
+            self.assertIn("public sealed class ClientSample", models.read_text())
+            first = (registry.read_bytes(), models.read_bytes())
+            generate(database, registry, models)
+            self.assertEqual(first, (registry.read_bytes(), models.read_bytes()))
 
 
 if __name__ == "__main__":

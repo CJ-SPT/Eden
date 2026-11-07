@@ -1,3 +1,5 @@
+using Eden.Data.Market;
+using Eden.Data.Redemption;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
@@ -7,27 +9,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Market;
-
-[PrimaryKey(nameof(PilotId), nameof(IssuerCorporationId))]
-public sealed class SavedLoyaltyBalance
-{
-    public long PilotId { get; set; }
-    public int IssuerCorporationId { get; set; }
-    public long Points { get; set; }
-}
-
-public sealed class SavedRedeemedCurrency
-{
-    public long TokenId { get; set; }
-    public long PilotId { get; set; }
-    public RedeemCurrencyKind Kind { get; set; }
-    public long Amount { get; set; }
-    public long Before { get; set; }
-    public long After { get; set; }
-    public long Time { get; set; }
-
-    public RedeemedCurrency Snapshot() => new(TokenId, PilotId, Kind, Amount, Before, After, Time);
-}
 
 [Injectable]
 internal sealed class PilotLoyaltyWalletStore(WorldDatabase database) : IPilotLoyaltyWallet

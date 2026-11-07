@@ -1,3 +1,7 @@
+using Eden.Data.Combat;
+using Eden.Data.Contracts;
+using Eden.Data.Insurance;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;

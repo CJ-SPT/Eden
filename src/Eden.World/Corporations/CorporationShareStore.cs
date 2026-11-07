@@ -1,33 +1,10 @@
 using System.Text.Json;
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
-
-public sealed class SavedCorporationShareIssue
-{
-    public int CorporationId { get; set; }
-    public long Shares { get; set; }
-}
-
-public sealed class SavedCorporationShareHolding
-{
-    public int CorporationId { get; set; }
-    public long ShareholderId { get; set; }
-    public long Shares { get; set; }
-}
-
-public sealed class SavedCorporationShareTransfer
-{
-    public long Id { get; set; }
-    public int CorporationId { get; set; }
-    public long ActorId { get; set; }
-    public long FromOwnerId { get; set; }
-    public long ToOwnerId { get; set; }
-    public long Shares { get; set; }
-    public long Time { get; set; }
-}
 
 [Injectable]
 internal sealed class CorporationShareStore(WorldDatabase database, TimeProvider clock) : ICorporationShares

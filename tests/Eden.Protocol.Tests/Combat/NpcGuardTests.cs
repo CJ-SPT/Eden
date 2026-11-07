@@ -1,4 +1,10 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Inventory;
+using Eden.Data.Loot;
+using Eden.Data.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

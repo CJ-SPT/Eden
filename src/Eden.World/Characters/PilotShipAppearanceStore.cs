@@ -1,3 +1,4 @@
+using Eden.Data.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -6,12 +7,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
-
-public sealed class SavedShipDirt
-{
-    public long ShipId { get; set; }
-    public long Timestamp { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotShipAppearanceStore(WorldDatabase database, TimeProvider clock) : IPilotShipAppearance

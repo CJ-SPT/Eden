@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Flight;

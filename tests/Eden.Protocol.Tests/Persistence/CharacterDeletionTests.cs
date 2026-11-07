@@ -1,3 +1,9 @@
+using Eden.Data.Characters;
+using Eden.Data.Contracts;
+using Eden.Data.Corporations;
+using Eden.Data.Industry;
+using Eden.Data.Market;
+using Eden.Data.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Flight;

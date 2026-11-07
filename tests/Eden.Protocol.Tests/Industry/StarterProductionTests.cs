@@ -1,6 +1,13 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Economy;
+using Eden.Data.Market;
+using Eden.Data.Mining;
+using Eden.Data.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;

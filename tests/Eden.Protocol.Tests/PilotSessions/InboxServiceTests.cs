@@ -1,3 +1,4 @@
+using Eden.Data.Mail;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Notifications;
 using Eden.Protocol.Notifications;

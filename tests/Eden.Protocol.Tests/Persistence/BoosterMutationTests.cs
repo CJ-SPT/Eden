@@ -1,3 +1,7 @@
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Inventory;
+using Eden.Data.Skills;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

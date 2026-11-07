@@ -1,4 +1,8 @@
 using System.Text.Json;
+using Eden.Data.Characters;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;

@@ -1,3 +1,5 @@
+using Eden.Data.Catalog;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;

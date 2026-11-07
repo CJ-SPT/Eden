@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;

@@ -1,3 +1,10 @@
+using Eden.Data.Catalog;
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Fittings;
+using Eden.Data.Inventory;
+using Eden.Data.Loot;
+using Eden.Data.Market;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;

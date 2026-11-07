@@ -1,3 +1,4 @@
+using Eden.Data.Economy;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

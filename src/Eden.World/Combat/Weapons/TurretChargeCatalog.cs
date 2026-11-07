@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;

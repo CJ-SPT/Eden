@@ -1,4 +1,8 @@
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Inventory;
+using Eden.Data.Skills;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
@@ -11,27 +15,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
-
-public sealed class SavedSkillInjectorState
-{
-    public long PilotId { get; set; }
-    public long NextAlphaInjection { get; set; }
-    public long Revision { get; set; }
-}
-
-public sealed class SavedSkillInjection
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long ItemId { get; set; }
-    public int TypeId { get; set; }
-    public int Quantity { get; set; }
-    public long Points { get; set; }
-    public long TotalBefore { get; set; }
-    public long TotalAfter { get; set; }
-    public int UsesSpent { get; set; }
-    public long Time { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)

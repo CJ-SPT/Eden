@@ -1,3 +1,4 @@
+using Eden.Data.Market;
 using Eden.Gameplay.Market;
 using Eden.World.Storage;
 

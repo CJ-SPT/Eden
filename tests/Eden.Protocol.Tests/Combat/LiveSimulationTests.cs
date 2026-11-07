@@ -1,3 +1,6 @@
+using Eden.Data.Combat;
+using Eden.Data.Combat.Npcs;
+using Eden.Data.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

@@ -1,5 +1,11 @@
 using System.Data;
 using System.Globalization;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Fittings;
+using Eden.Data.Inventory;
+using Eden.Data.Propulsion;
+using Eden.Data.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;

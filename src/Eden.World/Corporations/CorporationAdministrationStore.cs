@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;

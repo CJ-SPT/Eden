@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Eden.Data/Eden.Data.csproj" />
     <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
     <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />
     <ProjectReference Include="../Eden.World/Eden.World.csproj" />

@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Protocol.PilotSessions;

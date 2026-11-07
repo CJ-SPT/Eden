@@ -1,3 +1,6 @@
+using Eden.Data.Combat;
+using Eden.Data.Drones;
+using Eden.Data.Mining;
 using Eden.Server;
 using Eden.World.Combat;
 using Eden.World.Docking;

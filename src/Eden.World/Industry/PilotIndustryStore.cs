@@ -1,5 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
+using Eden.Data.Catalog;
+using Eden.Data.Characters;
+using Eden.Data.Industry;
+using Eden.Data.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -22,25 +26,6 @@ using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Industry;
-
-public sealed class IndustryJob
-{
-    public long Id { get; set; }
-    public long PilotId { get; set; }
-    public long BlueprintId { get; set; }
-    public int BlueprintTypeId { get; set; }
-    public int StationId { get; set; }
-    public int ProductTypeId { get; set; }
-    public int Runs { get; set; }
-    public int OutputQuantity { get; set; }
-    public long StartTime { get; set; }
-    public long EndTime { get; set; }
-    public long DurationSeconds { get; set; }
-    public IndustryJobStatus Status { get; set; }
-    public long? CompletedAt { get; set; }
-    public string MaterialsJson { get; set; } = "{}";
-    public long CostCents { get; set; }
-}
 
 [Injectable]
 internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider clock) : IPilotIndustry
