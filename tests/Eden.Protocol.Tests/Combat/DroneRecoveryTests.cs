@@ -25,6 +25,150 @@ public sealed class DroneRecoveryTests(ITestOutputHelper output)
     private const int Brutix = 16229;
     private const int SystemId = 30000144;
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OverviewTupleAndPanelListScoopTheSameIndividual(bool tuple)
+    {
+        using Fixture f = new();
+        long id = f.Launch(quantity: 1)[0];
+        f.Drones.Release(f.Pilot, f.Ship);
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var owner = Context(f, scope.ServiceProvider, 1000001);
+        owner.Flight.Snapshot();
+        object selection = tuple ? new object?[] { id } : new List<object?> { id };
+        var decoded = BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { selection }));
+        var args = Assert.IsType<object?[]>(decoded);
+        Assert.IsType<DroneCommandReply>(Reply(Bound(scope.ServiceProvider, owner, "ship", "ScoopDrone", args)));
+        Assert.Empty(owner.Flight.VisibleDrones);
+        using WorldDbContext reopened = new(f.Base.Db.Path);
+        var item = reopened.Set<OwnedItem>().Find(id)!;
+        Assert.Equal(f.Ship, item.LocationId);
+        Assert.Equal(f.Pilot, item.OwnerId);
+        Assert.Equal((int)InventoryFlag.DroneBay, item.FlagId);
+        Assert.Equal(1, item.Quantity);
+        Assert.Null(reopened.Set<WorldDrone>().Find(id)!.SystemId);
+    }
+
+    [Theory]
+    [InlineData("duplicate")]
+    [InlineData("empty")]
+    [InlineData("text")]
+    [InlineData("negative")]
+    public void InvalidOverviewTupleCannotMoveAnyDrones(string invalid)
+    {
+        using Fixture f = new();
+        long id = f.Launch(quantity: 1)[0];
+        f.Drones.Release(f.Pilot, f.Ship);
+        var before = f.Drones.List(SystemId, f.Now);
+        object?[] selection = invalid switch
+        {
+            "duplicate" => [id, id],
+            "empty" => [],
+            "text" => [id, "invalid"],
+            _ => [id, -1L],
+        };
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var owner = Context(f, scope.ServiceProvider, 1000001);
+        owner.Flight.Snapshot();
+        var args = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { selection })));
+        Assert.IsType<PilotCallResult.Failure>(Bound(scope.ServiceProvider, owner, "ship", "ScoopDrone", args));
+        Assert.Equal(before, f.Drones.List(SystemId, f.Now));
+        Assert.Empty(owner.Notifications.OfType<ItemChanged>());
+        using WorldDbContext reopened = new(f.Base.Db.Path);
+        Assert.Equal(SystemId, reopened.Set<OwnedItem>().Find(id)!.LocationId);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void BoundApproachAndOrbitAcceptControlledAndLostDroneContacts(bool controlled, bool orbit)
+    {
+        using Fixture f = new();
+        long id = f.Launch(quantity: 1)[0];
+        if (!controlled)
+        {
+            f.Drones.Release(f.Pilot, f.Ship);
+        }
+        var origin = f.Base.Db.Store.FindPilot(1000001)!.Position!;
+        using (WorldDbContext world = new(f.Base.Db.Path))
+        {
+            var drone = world.Set<WorldDrone>().Find(id)!;
+            (drone.X, drone.Y, drone.Z) = (origin.X + 10_000, origin.Y, origin.Z);
+            world.SaveChanges();
+        }
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var owner = Context(f, scope.ServiceProvider, 1000001);
+        owner.Flight.Snapshot();
+        string method = orbit ? "CmdOrbit" : "CmdFollowBall";
+        Reply(Bound(scope.ServiceProvider, owner, "beyonce", method, id, orbit ? 1000L : 0L));
+        Assert.Contains(
+            owner.Flight.Updates,
+            u =>
+                u.Command is DestinyCommand.Follow follow
+                && follow.Id == f.Ship
+                && follow.TargetId == id
+                && follow.Mode == (orbit ? NavigationMode.Orbit : NavigationMode.Follow)
+        );
+        for (int cycle = 0; cycle < 5; cycle++)
+        {
+            f.Base.Clock.Seconds++;
+            owner.Flight.Checkpoint();
+        }
+        Assert.True(owner.Pilot.Position!.DistanceTo(origin + new SpacePosition(10_000, 0, 0)) < 10_000);
+        owner.Flight.Updates.Clear();
+        Assert.IsType<PilotCallResult.UnsupportedCall>(Bound(scope.ServiceProvider, owner, "beyonce", method, long.MaxValue, 0L));
+        Assert.DoesNotContain(owner.Flight.Updates, u => u.Command is DestinyCommand.Follow);
+        // Removing the real drone must terminate the course on the next flight tick.
+        f.Drones.Release(f.Pilot, f.Ship);
+        using (WorldDbContext world = new(f.Base.Db.Path))
+        {
+            world.Set<WorldDrone>().Find(id)!.SystemId = null;
+            world.SaveChanges();
+        }
+        owner.Flight.RefreshDrones();
+        owner.Flight.Updates.Clear();
+        f.Base.Clock.Seconds++;
+        owner.Flight.Checkpoint();
+        Assert.Contains(owner.Flight.Updates, u => u.Command is DestinyCommand.Stop or DestinyCommand.GotoDirection);
+    }
+
+    [Fact]
+    public void BoundApproachReachesAForeignLostDroneAndAllowsScoopingIt()
+    {
+        using Fixture f = new();
+        long id = f.Launch(quantity: 1)[0];
+        f.Drones.Release(f.Pilot, f.Ship);
+        var drone = Assert.Single(f.Drones.List(SystemId, f.Now));
+        var wing = f.Base.Db.Store.FindPilot(1000002)!;
+        f.Base.Db.Store.SetPosition(wing.ShipId, drone.Position + new SpacePosition(5000, 0, 0), SystemId);
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var collector = Context(f, scope.ServiceProvider, 1000002);
+        collector.Flight.Snapshot();
+        Reply(Bound(scope.ServiceProvider, collector, "beyonce", "CmdFollowBall", id, 0L));
+        for (
+            int cycle = 0;
+            cycle < 200
+                && collector.Pilot.Position!.DistanceTo(drone.Position) - collector.Pilot.Flight.ShipRadius - drone.Profile.Radius
+                    > DroneRules.RecallRange;
+            cycle++
+        )
+        {
+            f.Base.Clock.Seconds++;
+            collector.Flight.Checkpoint();
+        }
+        Reply(Bound(scope.ServiceProvider, collector, "ship", "Scoop", id));
+        Assert.Empty(collector.Flight.VisibleDrones);
+        using WorldDbContext reopened = new(f.Base.Db.Path);
+        var item = reopened.Set<OwnedItem>().Find(id)!;
+        Assert.Equal(wing.PilotId, item.OwnerId);
+        Assert.Equal(wing.ShipId, item.LocationId);
+        Assert.Equal((int)InventoryFlag.Cargo, item.FlagId);
+        Assert.Equal(1, item.Quantity);
+    }
+
     [Fact]
     public void DockBoardAndUndockLeavesOldDronesVisibleAndOnlyExplicitReconnectRestoresTheirPanelEntries()
     {

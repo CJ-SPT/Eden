@@ -148,6 +148,8 @@ internal sealed class DroneHandler(
     private static IReadOnlyList<long> ReadIds(object? value) =>
         value switch
         {
+            // The overview passes a Python tuple. The drone panel passes a list.
+            object?[] items when items.All(item => item is long) => items.Cast<long>().ToArray(),
             List<object?> items when items.All(item => item is long) => items.Cast<long>().ToArray(),
             HashSet<long> items => items.ToArray(),
             _ => throw new InvalidDataException("Choose a list of drone identities."),

@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Targeting;
@@ -178,6 +179,16 @@ internal sealed class FlightScene(
             ?? (
                 Npcs.Contacts.FirstOrDefault(n => n.Id == id) is { } npc
                     ? new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius)
+                : Drones.Contacts.FirstOrDefault(d => d.Id == id) is { } drone
+                    ? new(
+                        drone.Id,
+                        drone.Profile.TypeId,
+                        DroneRules.CombatDroneGroup,
+                        (int)InventoryCategory.Drone,
+                        checked((int)drone.PilotId),
+                        drone.Position,
+                        drone.Profile.Radius
+                    )
                 : _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck
                     ? new(
                         wreck.Id,
