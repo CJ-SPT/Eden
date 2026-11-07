@@ -20,6 +20,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [NPC capacitor pools and drains, November 7, 2026](#npc-capacitor-pools-and-drains-november-7-2026)
 
+- [Remote-assistance calculation foundation, November 7, 2026](#remote-assistance-calculation-foundation-november-7-2026)
+
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
@@ -865,6 +867,35 @@ The final affected filter was:
 **Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
 
 **Optional maintainer checks:** On copied saves, observe NOS gain against a locked NPC; compare manual stop with lock loss or NPC warp; confirm targeted energy graphics disappear after cancellation.
+
+## Remote-assistance calculation foundation, November 7, 2026
+
+Milestone 4's next foundation covers the calculations for all **eight static remote tracking computers** (group **209**) and **eight remote sensor boosters** (**290**) in build 3662168. `RemoteAssistanceRules` defines their typed cycle/range/bonus profiles, continuous falloff and recipient modifiers. These modules remain unadmitted until their authoritative World operation, saved effect lifecycle and native controller are connected and validated. No production coverage or hull/module admission changes; no schema migration occurs in this foundation.
+
+Tracking effect **6428**, `shipModuleRemoteTrackingComputer`, projects optimal, falloff and tracking percentages onto the recipient's location modules requiring Gunnery. It does not boost the recipient hull or missile ammunition. Sensor effect **6427**, `remoteSensorBoostFalloff`, projects targeting range, scan resolution and all four sensor strengths onto the recipient ship. Recipient remote electronic assistance impedance **2135** scales both families. Range uses the existing continuous `0.5 ^ (((edgeDistance - optimal) / falloff) ^ 2)` strength convention outside optimal, with exact optimal and zero-falloff boundaries. These are positive percentage modifiers in the recipient's ordinary dogma graph, sharing stacking order with comparable local bonuses rather than receiving an independent exemption.
+
+Scripts use existing tracking **907** and sensor **910** charge families. The fixture includes Optimal Range **28999**, Tracking Speed **29001**, Targeting Range **29009**, Scan Resolution **29011** and ECCM **41155**. Their real catalog modifiers concentrate bonuses on the source module before projection. They remain nonconsumable script definitions; this foundation does not enable loading them into these still-unadmitted remote modules. Invalid/nonfinite cycle, range, cost, bonus and application inputs fail explicitly.
+
+Sources: inert inspection of the pinned `remoteTrackingComputer.pyj.BaseRemoteTrackingComputer` confirms three post-percent Gunnery location selectors; `sensorFalloff.pyj.BaseSensorFalloffEffect` confirms the six ship attributes. The archive was hash-verified again as **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Catalog fingerprint remains **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**; target attribute metadata establishes shared stacking, and the tracking effect plus sensor module `remoteResistanceID` field identify impedance 2135. CCP's [March 2016 patch notes](https://www.eveonline.com/de/news/view/patch-notes-for-march-2016-release) establish continuous strength reduction in falloff rather than random electronic-warfare success. Its [Trinity script record](https://www.eveonline.com/news/view/eve-trinity-features-improvements-and-balance-changes-1) establishes shared nonconsumable scripts for local and remote support. No Carbon-owned codec, transport or Destiny simulation changes occur here.
+
+`tools/Export-RemoteAssistanceCatalog.py` reads the installed catalog in read-only mode and rejects an output path that would overwrite its input. It exports the **16 modules**, **five scripts**, prerequisite closure and relevant hull/attribute/effect definitions into the **39-type** `RemoteAssistanceCatalog.json` fixture. Regenerate with:
+
+```powershell
+$catalog = Join-Path $env:LOCALAPPDATA 'Eden\catalog.sqlite'
+python tools/Export-RemoteAssistanceCatalog.py --catalog $catalog
+```
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. The final **92-case affected selection passed** in **20.64 seconds** for the test command; restore/build/tests, both Python policy suites and formatting verification together took **39.92 seconds**. The selection covers all **38** new profile/calculation/script cases plus existing support-module, dogma-graph and production-coverage dependencies. Both Python suites passed (**8 catalog**, **9 formatting** cases); formatting verification passed **1,053 files**, including the 140-column check. Fixture export reproduced byte-for-byte, catalog bytes remained unchanged, and input-overwrite rejection passed in **4.84 seconds**. Fixture SHA-256: **8AB1794D0DDCED35D227DBD1085A853E29D85508A57E97C14E13C52C8F6FA968**. Documentation checks verified **467 local links and anchors**.
+
+Development started with the exact `RemoteAssistanceRuleTests.TrackingChangesOnlySelectedGunneryModulesAndUsesRecipientImpedance` filter. An initial build used the wrong test catalog accessor; the fixture now resolves its catalog through `WorldDatabase`. Operational persistence, payment, safety inheritance, live lifecycle and native remote-assistance behavior are outside this foundation and remain unfinished. No full .NET suite was requested or run. Final affected filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteAssistanceRuleTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DogmaGraphTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this calculation foundation; these modules are not enabled yet.
 
 ## Ship content coverage milestone 1, November 7, 2026
 

@@ -112,6 +112,8 @@ public enum DogmaEffect
     NpcWebifier = 575,
     NpcWarpDisruption = 563,
     RemoteCapacitorTransfer = 6184,
+    RemoteSensorBooster = 6427,
+    RemoteTrackingComputer = 6428,
     RemoteHullRepair = 6185,
     RemoteShieldBoost = 6186,
     RemoteArmorRepair = 6188,

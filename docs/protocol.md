@@ -73,6 +73,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [NPC capacitor pools and drains, November 7, 2026](protocol/fitting.md#npc-capacitor-pools-and-drains-november-7-2026)
 
+- [Remote-assistance calculation foundation, November 7, 2026](protocol/fitting.md#remote-assistance-calculation-foundation-november-7-2026)
+
 - [Cooperative fleet foundation, November 7, 2026](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026)
 
 - [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)
