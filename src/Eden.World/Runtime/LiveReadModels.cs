@@ -193,6 +193,9 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _wrecks.Observe(changes);
         _drones.Observe(changes);
         _droneControllers.Observe(changes);
+        _corporationLoyalty.Observe(changes);
+        _corporations.Observe(changes);
+        _corporationIdentities.Observe(changes);
         _crimewatch.Observe(changes);
         _loggedOff.Observe(changes);
         ObserveSpace(changes);
@@ -212,6 +215,9 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _wrecks.Clear();
         _drones.Clear();
         _droneControllers.Clear();
+        _corporationLoyalty.Clear();
+        _corporations.Clear();
+        _corporationIdentities.Clear();
         _crimewatch.Clear();
         _loggedOff.Clear();
         ClearSpace();

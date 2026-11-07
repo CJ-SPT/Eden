@@ -6,6 +6,46 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Resident combat monitoring and damage history, November 6, 2026
+
+Normal-session tracing found three read transactions forcing dirty combat projection on every tick: corporation identity, corporation lookup (including absent NPC corporations), and corporation loyalty balances. Bounded resident snapshots now retain these results against membership, role/title, wallet-selection and balance dependencies. Coordinate-only updates do not invalidate docking-dependent roles; position insertion, deletion and primary-key changes do. Nullable corporation results are cached explicitly. Rollback and schema changes invalidate conservatively without publishing transaction-local data.
+
+Crimewatch reads use the resident world owner for a coherent snapshot. File-backed reads keep their transaction. The global transaction bridge and all mutation/kill settlement boundaries remain intact. Cold snapshots may still project state; unchanged warmed monitoring does not. Complete capacity replays now reject a `combat.project` phase inside measured session ticks. Checkpoint projection remains separately recorded, and frame latency can include waiting for its owner lock.
+
+Player, NPC and drone damage histories use immutable dictionary updates. Each hit preserves earlier snapshots and replaces only the attacker's metadata and cumulative applied damage. Resident loading produces the same immutable representation; persistence and fatal settlement retain existing transactions and save format. A 2,000-attacker allocation regression bounds two complete volleys without timing-based assertions. Tests cover cached absent results, dirty combat across repeated reads and checkpoint, coordinate/docking changes, role/title/balance/membership changes, rollback, and contribution snapshot isolation.
+
+Matched thirty-frame Release replays use baseline `43f34cd`, the same machine and workload described below, and disabled tiered compilation. Results include the collision milestone above. Full-frame metadata polling remains; isolated warmed combat and observer operations have zero SQL commands, connection opens and fitting calculations.
+
+| Fighting NPCs / one player | Baseline median / p95 ms | Optimized median / p95 ms | Baseline / optimized mean SQL commands | Baseline / optimized MiB/frame |
+| --- | --- | --- | --- | --- |
+| 1,000 | 118.43 / 144.84 | 33.23 / 80.35 | 3003.97 / 1.40 | 257.0 / 47.3 |
+| 4,000 | 1302.22 / 1461.55 | 279.50 / 461.92 | 11841.77 / 1.40 | 3355.7 / 374.0 |
+
+Both cases average 1.40 full-frame EF connection opens and zero fit recalculations. Routine combat has moved off SQL, while periodic checkpoint capture still projects the dirty state. For 1,000 NPCs, the last three checkpoint captures take 47.29–49.08 ms under the owner, issue 3,006 commands through one EF connection, then write in 11.67–13.07 ms outside the owner. At 4,000 NPCs those figures are 185.07–195.23 ms, 12,006 commands / one connection and 17.65–20.68 ms writing. Raw SQLite backup connections are represented by capture/write time and bytes beyond EF counters.
+
+The 4,000-NPC case now meets the 1,000 ms p95 cadence budget but exceeds the 250 ms headroom budget. Per-shot scene scans and array rebuilding remain visible in `update.npcCombat` (204.54 ms median at 4,000 NPCs), and many connected observers still require personal output. Active-object retention limits remain unchanged. These are synthetic measurements, not a production capacity guarantee; the original workload exclusions below still apply. Ignored reports are in `artifacts/npc-optimization/resident-final`.
+
+The six capacity cases each retained thirty measured frames and passed the no-projection assertion. The additional ladder at this milestone is below; it has no matched `43f34cd` baseline for the new population rows. All fit counts were zero.
+
+| Connected players / fighting NPCs | Median / p95 ms | Mean SQL commands / opens | MiB/frame |
+| --- | --- | --- | --- |
+| 100 / 1 | 106.91 / 280.27 | 140.07 / 140.07 | 98.7 |
+| 10 / 1 | 6.20 / 24.98 | 14.07 / 14.07 | 3.6 |
+| 1 / 1,000 | 33.23 / 80.35 | 1.40 / 1.40 | 47.3 |
+| 1 / 1 | 0.55 / 5.54 | 1.40 / 1.40 | 0.3 |
+| 1 / 4,000 | 279.50 / 461.92 | 1.40 / 1.40 | 374.0 |
+| 1 / 8,000 | 854.69 / 1249.43 | 1.40 / 1.40 | 1236.5 |
+
+The combined replay test duration was 308.16 seconds, including setup and component probes. At this milestone 8,000 NPCs exceed the one-second p95 cadence budget.
+
+**Automated validation.** Tool/solution restores and the solution build passed with zero warnings/errors. The affected filter passed 332 tests in 76 seconds with two workers. Both Python policy suites passed (3 catalog, 9 formatting cases); formatting checked 908 files, the 140-column limit and diff whitespace. Five new exact regressions passed during development. No full .NET suite was requested or run.
+
+The affected filter was `FullyQualifiedName~ResidentCombatMonitoringTests|FullyQualifiedName~CombatContributionTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~LiveDroneRulesTests|FullyQualifiedName~CrimewatchTests|FullyQualifiedName~InteractionHistoryPersistenceTests|FullyQualifiedName~CharacterInteractionHistoryTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~PlayerEwarNpcTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this performance milestone.
+
 ## Swept collision candidate index, November 6, 2026
 
 `ShipCollisions.Resolve` builds a per-operation bounding hierarchy from solid bodies' complete start/end sweeps. Queries prune non-overlapping boxes, then restore each candidate's original input index before the existing pair response runs. Equal-time tie ordering, recursive overlap response, fixed bodies and output order retain the legacy algorithm. Static obstacle evaluation also uses the allocation-free scalar contact-time calculation.

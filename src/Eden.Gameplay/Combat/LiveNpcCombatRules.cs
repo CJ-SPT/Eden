@@ -38,21 +38,11 @@ public static class LiveNpcCombatRules
         double quality = CombatDamage.ShotQuality(chance, roll);
         var applied = CombatDamage.Apply(ship.Health.At(now), ship.Health.Defense, damage.Scale(quality));
         int turret = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType));
-        var contributors = ship.Contributions.ToDictionary();
-        if (applied.Applied > 0)
-        {
-            CombatParty party = new(
-                npc.Id,
-                null,
-                npc.CorporationId,
-                npc.FactionId == 0 ? null : npc.FactionId,
-                npc.TypeId,
-                turret,
-                null,
-                (contributors.GetValueOrDefault(npc.Id)?.Damage ?? 0) + applied.Applied
-            );
-            contributors[npc.Id] = party;
-        }
+        var contributors = InteractionHistoryRules.AddDamage(
+            ship.Contributions,
+            new(npc.Id, null, npc.CorporationId, npc.FactionId == 0 ? null : npc.FactionId, npc.TypeId, turret, null, 0),
+            applied.Applied
+        );
         var next = ship with
         {
             Health = ship.Health with

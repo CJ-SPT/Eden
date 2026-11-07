@@ -275,20 +275,11 @@ public static class LiveCombatRules
                     Damage = average > 0 ? combined.Scale(1 / average) : combined,
                     CycleMilliseconds = weapons.Max(w => w.CycleMilliseconds),
                 };
-        var contributors = target.Contributions.ToDictionary();
-        if (damage.Applied > 0)
-        {
-            contributors[ship.ShipId] = new CombatParty(
-                ship.ShipId,
-                ship.PilotId,
-                ship.CorporationId,
-                null,
-                ship.TypeId,
-                first.TypeId,
-                null,
-                contributors.GetValueOrDefault(ship.ShipId)?.Damage + damage.Applied ?? damage.Applied
-            );
-        }
+        var contributors = InteractionHistoryRules.AddDamage(
+            target.Contributions,
+            new(ship.ShipId, ship.PilotId, ship.CorporationId, null, ship.TypeId, first.TypeId, null, 0),
+            damage.Applied
+        );
         var nextShip = ship with { Turrets = turrets, Capacitor = capacitor, CapacitorAt = Math.Max(now, ship.CapacitorAt) };
         var nextTarget = target with
         {

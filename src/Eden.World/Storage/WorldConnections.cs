@@ -43,6 +43,7 @@ internal static class WorldConnections
         private IDisposable? _lease;
         private readonly HashSet<CombatRowChange> _changes = [];
         private bool _itemMembershipWrite;
+        private bool _positionMembershipWrite;
         private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
 
@@ -80,6 +81,15 @@ internal static class WorldConnections
                             {
                                 _changes.Add(new(table, id));
                                 if (
+                                    string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
+                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _positionMembershipWrite)
+                                )
+                                {
+                                    // Corporation location roles depend on docking membership,
+                                    // while ordinary coordinates stay in resident motion state.
+                                    _changes.Add(new("WorldPositionMembership", 0));
+                                }
+                                if (
                                     string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
                                 )
@@ -116,6 +126,14 @@ internal static class WorldConnections
                                 )
                                 {
                                     _itemMembershipWrite = true;
+                                }
+                                if (
+                                    action == SQLitePCL.raw.SQLITE_UPDATE
+                                    && string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
+                                    && string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase)
+                                )
+                                {
+                                    _positionMembershipWrite = true;
                                 }
                                 // Row callbacks must also cover unqualified bulk DELETE operations.
                                 // Schema writes must retain SQLite's normal DROP/ALTER behavior.
@@ -163,6 +181,7 @@ internal static class WorldConnections
                         world.SqlClosed(_changes);
                         _changes.Clear();
                         _itemMembershipWrite = false;
+                        _positionMembershipWrite = false;
                         _schemaWrite = false;
                     }
                     finally

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Eden.Gameplay.Characters;
 
 public sealed record CombatParty(
@@ -80,4 +82,24 @@ public static class StandingRules
 public static class InteractionHistoryRules
 {
     public const int MaximumCombatPageSize = 1000;
+
+    public static IReadOnlyDictionary<long, CombatParty> AddDamage(
+        IReadOnlyDictionary<long, CombatParty> previous,
+        CombatParty attacker,
+        double damage
+    )
+    {
+        if (!(damage > 0))
+        {
+            return previous;
+        }
+        var contributions = previous.ToImmutableDictionary();
+        return contributions.SetItem(
+            attacker.EntityId,
+            attacker with
+            {
+                Damage = (previous.GetValueOrDefault(attacker.EntityId)?.Damage ?? 0) + damage,
+            }
+        );
+    }
 }

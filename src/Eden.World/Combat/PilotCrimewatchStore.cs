@@ -71,7 +71,10 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
     private CrimewatchSnapshot ReadSql(long pilotId, int systemId)
     {
         using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        // The resident owner serializes this complete read snapshot. File-backed
+        // worlds retain their SQL transaction; mutations use the normal bridge.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        using var transaction = ownership is null ? world.Database.BeginTransaction() : null;
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var timers = world.Set<SavedCrimewatch>().Find(pilotId)?.Timers() ?? CrimewatchTimers.Empty;
         var engagements = world

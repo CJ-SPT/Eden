@@ -104,20 +104,11 @@ public static class LiveDroneRules
     public static LiveDroneImpact Hit(LiveCombatNpc npc, LiveCombatShip ship, DroneContact drone, DamageVector damage, long now)
     {
         var result = CombatDamage.Apply(npc.Health.At(now), npc.Health.Defense, damage);
-        var contributions = npc.Contributions.ToDictionary();
-        if (result.Applied > 0)
-        {
-            contributions[ship.ShipId] = new CombatParty(
-                ship.ShipId,
-                ship.PilotId,
-                ship.CorporationId,
-                null,
-                ship.TypeId,
-                drone.Profile.TypeId,
-                null,
-                (contributions.GetValueOrDefault(ship.ShipId)?.Damage ?? 0) + result.Applied
-            );
-        }
+        var contributions = InteractionHistoryRules.AddDamage(
+            npc.Contributions,
+            new(ship.ShipId, ship.PilotId, ship.CorporationId, null, ship.TypeId, drone.Profile.TypeId, null, 0),
+            result.Applied
+        );
         return new(
             npc with
             {

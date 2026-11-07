@@ -169,6 +169,7 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
                 watch.Stop();
                 if (frame >= 0)
                 {
+                    Assert.DoesNotContain("combat.project", PhaseTimes(reports).Keys);
                     samples.Add(
                         new(
                             watch.Elapsed.TotalMilliseconds,

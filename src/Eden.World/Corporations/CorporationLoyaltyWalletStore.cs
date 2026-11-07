@@ -4,6 +4,7 @@ using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -46,7 +47,10 @@ public sealed class SavedCorporationLoyaltyTransfer
 [Injectable]
 internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationLoyaltyWallet
 {
-    public IReadOnlyList<LoyaltyBalance> Read(long actorId)
+    public IReadOnlyList<LoyaltyBalance> Read(long actorId) =>
+        LiveReadModels.Find(database.Path)?.CorporationLoyalty(actorId, () => ReadSql(actorId)) ?? ReadSql(actorId);
+
+    private IReadOnlyList<LoyaltyBalance> ReadSql(long actorId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

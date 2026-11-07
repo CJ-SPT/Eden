@@ -312,6 +312,10 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Resident combat monitoring and damage history, November 6, 2026](protocol/performance.md#resident-combat-monitoring-and-damage-history-november-6-2026)
+- [Swept collision candidate index, November 6, 2026](protocol/performance.md#swept-collision-candidate-index-november-6-2026)
+- [NPC and player capacity, November 6, 2026](protocol/performance.md#npc-and-player-capacity-november-6-2026)
+- [Resident drone flight and combat, November 6, 2026](protocol/performance.md#resident-drone-flight-and-combat-november-6-2026)
 - <a id="resident-system-motion-and-npc-acquisition-november-5-2026"></a>[Resident system motion and NPC acquisition (November 5, 2026)](protocol/performance.md#resident-system-motion-and-npc-acquisition-november-5-2026)
 - <a id="ten-brutix-comparison"></a>[Ten-Brutix comparison](protocol/performance.md#ten-brutix-comparison)
 - <a id="resident-monitoring-and-scene-views-november-5-2026"></a>[Resident monitoring and scene views (November 5, 2026)](protocol/performance.md#resident-monitoring-and-scene-views-november-5-2026)

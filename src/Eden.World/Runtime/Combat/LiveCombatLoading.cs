@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
@@ -315,7 +316,7 @@ internal sealed partial class LiveCombatRuntime
             .Where(d => d.VictimId == id)
             .AsNoTracking()
             .ToArray()
-            .ToDictionary(
+            .ToImmutableDictionary(
                 d => d.AttackerId,
                 d =>
                     (JsonSerializer.Deserialize<CombatParty>(d.PartyJson) ?? throw new InvalidDataException("Invalid saved attacker.")) with

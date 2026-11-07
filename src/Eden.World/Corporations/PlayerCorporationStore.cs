@@ -6,6 +6,7 @@ using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -62,14 +63,22 @@ public sealed class SavedCorporationPayment
 [Injectable]
 internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvider clock) : IPlayerCorporations
 {
-    public PlayerCorporation? Read(int corporationId)
+    public PlayerCorporation? Read(int corporationId) =>
+        LiveReadModels.Find(database.Path) is { } resident
+            ? resident.Corporation(corporationId, () => ReadCorporation(corporationId))
+            : ReadCorporation(corporationId);
+
+    private PlayerCorporation? ReadCorporation(int corporationId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         return world.Set<SavedCorporation>().Find(corporationId)?.Snapshot(world.Pilots.Count(p => p.CorporationId == corporationId));
     }
 
-    public CorporationIdentity Identity(long pilotId)
+    public CorporationIdentity Identity(long pilotId) =>
+        LiveReadModels.Find(database.Path)?.CorporationIdentity(pilotId, () => ReadIdentity(pilotId)) ?? ReadIdentity(pilotId);
+
+    private CorporationIdentity ReadIdentity(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
