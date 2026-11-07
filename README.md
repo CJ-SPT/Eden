@@ -101,6 +101,8 @@ Gameplay builds independently of Protocol, Server, EF Core and the host containe
 
 Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
 
+The live host loads the immutable NPC/agent directory before admitting clients. Its name lookup uses one collection parameter so catalog initialization does not bind thousands of individual SQLite parameters; see the [agent directory latency record](docs/protocol/performance.md#agent-directory-first-request-latency-november-6-2026).
+
 ### Resident world and background saves
 
 The server runs an authoritative world in memory and checkpoints committed state to disk every 15 seconds. Graceful shutdown flushes pending changes. Stop the host before editing, backing up or restoring its save; a crash can lose progress since the last completed checkpoint. See [resident state and checkpoint behavior](docs/architecture.md#resident-world-and-background-saves).

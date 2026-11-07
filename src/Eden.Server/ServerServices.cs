@@ -1,4 +1,5 @@
 using System.Reflection;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -92,6 +93,12 @@ internal static class ServerServices
         var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         _ = provider.GetService<LiveWorld>();
         _ = provider.GetService<ResidentFitCache>();
+        if (liveWorld)
+        {
+            // Build the immutable directory before admitting clients, so their first
+            // GetAgents/owner lookup never pays the catalog materialization cost.
+            _ = provider.GetRequiredService<INpcDirectory>().Agents();
+        }
         return provider;
     }
 }

@@ -1,13 +1,16 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;
@@ -104,6 +107,108 @@ internal static class AgentTestData
 
 public sealed class AgentDirectoryTests
 {
+    [Fact]
+    public void LiveHostBuildWarmsDirectoryBeforePilotRequests()
+    {
+        using TestWorld db = new();
+        AgentTestData.Prepare(db);
+        using NameQueryObserver observer = new(new WorldDatabase(db.Path).CatalogPath);
+        using var services = ServerServices.Build(new(db.Path), liveWorld: true);
+        Assert.Single(observer.ParameterCounts);
+        using var metrics = SessionPerformance.Begin("first live directory request", _ => { }, force: true)!;
+        var directory = services.GetRequiredService<INpcDirectory>();
+        Assert.Equal(2, directory.Agents().Count);
+        Assert.Equal("Agent Étoile", directory.Character(AgentTestData.AgentId)!.Identity.Name);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Single(observer.ParameterCounts);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1200)]
+    public void ColdDirectoryBindsNameCollectionsOnceRegardlessOfNpcCount(int count)
+    {
+        using TestWorld db = new();
+        string catalogPath = new WorldDatabase(db.Path).CatalogPath;
+        using (CatalogDbContext catalog = new(catalogPath, writable: true))
+        {
+            for (int index = 0; index < count; index++)
+            {
+                AgentTestData.Add(catalog, AgentTestData.AgentId + index, AgentType.Basic, $"Agent {index}");
+            }
+            // The directory must only deserialize requested names, even with an empty collection.
+            catalog.Add(
+                new SourceRecord
+                {
+                    Dataset = "client/localization_fsd_en-us",
+                    Key = "unrelated",
+                    Data = "invalid",
+                }
+            );
+            catalog.SaveChanges();
+        }
+        using NameQueryObserver observer = new(catalogPath);
+        var directory = db.Services.GetRequiredService<INpcDirectory>();
+        var agents = directory.Agents();
+        Assert.Equal(count, agents.Count);
+        for (int index = 0; index < count; index++)
+        {
+            Assert.Equal($"Agent {index}", directory.Character(AgentTestData.AgentId + index)!.Identity.Name);
+        }
+        Assert.Equal(1, Assert.Single(observer.ParameterCounts));
+        Assert.Same(agents, directory.Agents());
+        Assert.Single(observer.ParameterCounts);
+    }
+
+    private sealed class NameQueryObserver : IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>, IDisposable
+    {
+        private readonly string _path;
+        private readonly List<IDisposable> _subscriptions = [];
+        private readonly IDisposable _listeners;
+        internal List<int> ParameterCounts { get; } = [];
+
+        internal NameQueryObserver(string path)
+        {
+            _path = path;
+            _listeners = DiagnosticListener.AllListeners.Subscribe(this);
+        }
+
+        public void OnNext(DiagnosticListener listener)
+        {
+            if (listener.Name == "Microsoft.EntityFrameworkCore")
+            {
+                _subscriptions.Add(listener.Subscribe(this));
+            }
+        }
+
+        public void OnNext(KeyValuePair<string, object?> value)
+        {
+            if (
+                value.Key == RelationalEventId.CommandExecuting.Name
+                && value.Value is CommandEventData data
+                && data.Command.Connection?.DataSource == _path
+                && data.Command.CommandText.Contains("client/localization_fsd_en-us", StringComparison.Ordinal)
+            )
+            {
+                ParameterCounts.Add(data.Command.Parameters.Count);
+            }
+        }
+
+        public void OnCompleted() { }
+
+        public void OnError(Exception error) { }
+
+        public void Dispose()
+        {
+            _listeners.Dispose();
+            foreach (var subscription in _subscriptions)
+            {
+                subscription.Dispose();
+            }
+        }
+    }
+
     [Theory]
     [InlineData(AgentType.Basic)]
     [InlineData(AgentType.Tutorial)]

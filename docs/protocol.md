@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Agent directory first-request latency, November 6, 2026](protocol/performance.md#agent-directory-first-request-latency-november-6-2026)
+
 - [Flight coordination extraction, November 6, 2026](protocol/architecture.md#flight-coordination-extraction-november-6-2026)
 
 - [Readable migration steps, November 6, 2026](protocol/architecture.md#readable-migration-steps-november-6-2026)
