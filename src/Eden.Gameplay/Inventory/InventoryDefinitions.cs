@@ -121,6 +121,7 @@ public enum DogmaEffect
     TrackingComputer = 4559,
     SensorBooster = 2670,
     MissileGuidanceComputer = 6135,
+    OmnidirectionalTrackingLink = 6557,
     StasisWebifier = 6426,
     WarpDisruptor = 39,
     WarpScrambler = 5934,

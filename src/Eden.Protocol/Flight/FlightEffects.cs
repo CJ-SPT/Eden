@@ -249,7 +249,12 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
     }
 
-    internal void SupportEffect(long shipId, SupportContact effect, bool active) =>
+    internal void SupportEffect(long shipId, SupportContact effect, bool active)
+    {
+        if (SupportModuleWire.Graphic(effect.Module.Effect) is not { } graphic)
+        {
+            return;
+        }
         emit(
             new DestinyCommand.TimedSpecialEffect(
                 shipId,
@@ -257,7 +262,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.Module.TypeId,
                 shipId,
                 null,
-                SupportModuleWire.Graphic(effect.Module.Effect),
+                graphic,
                 false,
                 active,
                 active,
@@ -265,6 +270,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.StartedAt
             )
         );
+    }
 
     private void RefreshSupport(ShipContact ship, ShipContact? previous)
     {

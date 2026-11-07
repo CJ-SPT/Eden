@@ -5,7 +5,7 @@ import pathlib
 import sqlite3
 
 
-def export(catalog_path, output, hulls_only=False):
+def export(catalog_path, output, hulls_only=False, equipment_only=False):
     with sqlite3.connect(catalog_path.resolve().as_uri() + '?mode=ro', uri=True) as catalog:
         def record(dataset, key):
             row = catalog.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?',
@@ -19,7 +19,12 @@ def export(catalog_path, output, hulls_only=False):
         if hulls_only:
             policy = pathlib.Path(__file__).resolve().parents[1] / 'src/Eden.Gameplay/Content/content-support-3662168.json'
             pending = set(json.loads(policy.read_text(encoding='utf-8'))['droneHullTypes'])
-        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100') if not hulls_only else []:
+        elif equipment_only:
+            pending = {28999, 29001, 47447, 47448, 93998, 94020, 94058, 94060}
+            for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId IN (644,645,646,647,778,1292)'):
+                if record('client/types', type_id).get('published') == 1:
+                    pending.add(type_id)
+        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100') if not (hulls_only or equipment_only) else []:
             attrs = dict(catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (type_id,)))
             source = record('client/types', type_id)
             if source.get('published') == 1 and source.get('metaGroupID') != 15 and attrs.get(1272, 0) > 0:
@@ -59,9 +64,11 @@ def export(catalog_path, output, hulls_only=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog', required=True, type=pathlib.Path)
-    parser.add_argument('--hulls-only', action='store_true', help='Export admitted combat-drone hulls and their prerequisites')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--hulls-only', action='store_true', help='Export admitted combat-drone hulls and their prerequisites')
+    selection.add_argument('--equipment-only', action='store_true', help='Export drone equipment, rigs, scripts and prerequisites')
     parser.add_argument('--output', type=pathlib.Path)
     args = parser.parse_args()
-    output = args.output or pathlib.Path('tests/Eden.Protocol.Tests/Fixtures/'
-                                        + ('DroneHullCatalog.json' if args.hulls_only else 'CombatDroneCatalog.json'))
-    export(args.catalog, output, args.hulls_only)
+    name = 'DroneHullCatalog.json' if args.hulls_only else 'DroneEquipmentCatalog.json' if args.equipment_only else 'CombatDroneCatalog.json'
+    output = args.output or pathlib.Path('tests/Eden.Protocol.Tests/Fixtures/' + name)
+    export(args.catalog, output, args.hulls_only, args.equipment_only)

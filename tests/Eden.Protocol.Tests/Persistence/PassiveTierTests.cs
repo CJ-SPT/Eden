@@ -31,7 +31,7 @@ public sealed class PassiveTierTests
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(type => PassiveModules.Groups.Contains(type.GroupId)).ToArray();
         var supported = types.Where(type => PassiveCatalog.Supported(catalog, type.Id, type.GroupId)).ToArray();
-        Assert.Equal(856, supported.Length);
+        Assert.Equal(862, supported.Length);
         Assert.Equal(31, supported.Select(type => type.GroupId).Distinct().Count());
         Assert.All(supported, type => Assert.NotNull(FittingCatalog.Definition(catalog, type.Id)));
         Assert.All(types.Except(supported), type => Assert.Null(FittingCatalog.Definition(catalog, type.Id)));

@@ -26,17 +26,17 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 1423
+      "count": 1464
     },
     {
       "category": "Module",
       "state": "Partial",
-      "count": 1721
+      "count": 1732
     },
     {
       "category": "Module",
       "state": "Planned",
-      "count": 730
+      "count": 678
     },
     {
       "category": "Module",
@@ -21687,8 +21687,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -21697,9 +21697,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -21872,8 +21893,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -21882,9 +21903,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -121369,8 +121411,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -121379,9 +121421,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -121395,8 +121451,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -121406,9 +121462,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -124120,8 +124204,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -124130,9 +124214,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -124146,8 +124251,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -124156,9 +124261,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -124172,8 +124298,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -124182,9 +124308,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -124198,8 +124338,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -124209,9 +124349,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -126724,7 +126892,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -126773,7 +126941,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -126796,9 +126964,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -126839,8 +127007,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -126855,7 +127023,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -126878,9 +127046,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -126895,7 +127063,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -126918,9 +127086,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -126935,7 +127103,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -126960,9 +127128,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -127002,8 +127170,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -127018,7 +127186,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -127041,9 +127209,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -127082,8 +127250,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -127156,7 +127324,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -127196,7 +127364,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -127267,7 +127435,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -128920,7 +129088,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -129332,7 +129500,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -129645,7 +129813,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -129668,9 +129836,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -129685,7 +129853,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -129710,9 +129878,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -129752,8 +129920,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -129794,8 +129962,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -129810,7 +129978,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -129833,9 +130001,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -129850,7 +130018,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -129873,9 +130041,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -129890,7 +130058,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -129913,9 +130081,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -129954,8 +130122,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -129995,7 +130163,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -130068,7 +130236,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -130139,7 +130307,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -130351,7 +130519,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141380,7 +141548,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141420,7 +141588,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141460,7 +141628,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141500,7 +141668,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141540,7 +141708,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -141580,7 +141748,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143210,7 +143378,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143250,7 +143418,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143290,7 +143458,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143330,7 +143498,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143370,7 +143538,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143410,7 +143578,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143449,7 +143617,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143488,7 +143656,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143527,7 +143695,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143566,7 +143734,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143605,7 +143773,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143644,7 +143812,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143876,7 +144044,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143916,7 +144084,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143956,7 +144124,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -143996,7 +144164,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -144036,7 +144204,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -144076,7 +144244,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145136,7 +145304,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145176,7 +145344,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145216,7 +145384,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145256,7 +145424,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145296,7 +145464,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -145336,7 +145504,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -154582,8 +154750,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -154593,9 +154761,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -154889,7 +155085,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -154912,9 +155108,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -154929,7 +155125,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -154952,9 +155148,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -154969,7 +155165,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -154992,9 +155188,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155009,7 +155205,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -155032,9 +155228,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155049,7 +155245,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -155074,9 +155270,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155091,7 +155287,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -155116,9 +155312,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155133,7 +155329,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -155158,9 +155354,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155175,7 +155371,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2015,
         2016,
@@ -155200,9 +155396,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155242,8 +155438,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155283,8 +155479,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155324,8 +155520,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155365,8 +155561,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155407,8 +155603,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155449,8 +155645,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155491,8 +155687,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155533,8 +155729,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -155549,7 +155745,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -155572,9 +155768,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155589,7 +155785,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -155612,9 +155808,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155629,7 +155825,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -155652,9 +155848,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155669,7 +155865,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2013,
         2663,
@@ -155692,9 +155888,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155709,7 +155905,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -155732,9 +155928,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155749,7 +155945,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -155772,9 +155968,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155789,7 +155985,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -155812,9 +156008,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155829,7 +156025,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2014,
         2663,
@@ -155852,9 +156048,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155869,7 +156065,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -155892,9 +156088,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155909,7 +156105,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -155932,9 +156128,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155949,7 +156145,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -155972,9 +156168,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -155989,7 +156185,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -156012,9 +156208,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -156053,8 +156249,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -156093,8 +156289,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -156133,8 +156329,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -156173,8 +156369,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -156360,8 +156556,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -156370,9 +156566,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -157656,7 +157866,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -157695,7 +157905,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
           "role": null
         }
       ],
@@ -157963,8 +158173,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -157973,9 +158183,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -157989,8 +158220,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -157999,9 +158230,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158015,8 +158267,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -158025,9 +158277,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158041,8 +158314,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -158051,9 +158324,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158067,8 +158361,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -158077,9 +158371,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -158093,8 +158401,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -158103,9 +158411,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -158119,8 +158441,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -158129,9 +158451,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -158145,8 +158481,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -158155,9 +158491,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -158171,8 +158521,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158182,9 +158532,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158198,8 +158576,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158209,9 +158587,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158225,8 +158631,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158236,9 +158642,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158252,8 +158686,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158263,9 +158697,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158279,8 +158741,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158289,9 +158751,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158305,8 +158788,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158315,9 +158798,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158331,8 +158835,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158341,9 +158845,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -158357,8 +158882,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -158367,9 +158892,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159272,7 +159818,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -159295,9 +159841,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -159312,7 +159858,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         504,
         2663,
@@ -159335,9 +159881,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -159374,9 +159920,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159413,9 +159966,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159455,8 +160015,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159496,8 +160056,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159538,8 +160098,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159580,8 +160140,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159618,9 +160178,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159657,9 +160224,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159696,9 +160270,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159735,9 +160316,16 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159851,7 +160439,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -159874,9 +160462,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -159891,7 +160479,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2713,
@@ -159914,9 +160502,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
           "role": null
         }
       ],
@@ -159955,8 +160543,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -159995,8 +160583,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "CombatDrones",
-          "evidence": "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "UtilityDrones",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162210,8 +162798,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162220,9 +162808,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162236,8 +162845,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162246,9 +162855,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162262,8 +162892,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -162273,9 +162903,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162289,8 +162947,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162299,9 +162957,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162315,8 +162994,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162325,9 +163004,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162341,8 +163041,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162351,9 +163051,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162367,8 +163088,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162377,9 +163098,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162393,8 +163135,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162403,9 +163145,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162419,8 +163182,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162429,9 +163192,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162445,8 +163229,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162455,9 +163239,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162471,8 +163276,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162481,9 +163286,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162497,8 +163323,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162507,9 +163333,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162523,8 +163370,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162533,9 +163380,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162549,8 +163417,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -162559,9 +163427,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162575,8 +163464,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -162585,9 +163474,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -162601,8 +163511,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -162611,9 +163521,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -173429,8 +174360,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -173440,9 +174371,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -173456,8 +174415,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -173467,9 +174426,37 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -173483,8 +174470,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -173493,9 +174480,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -173509,8 +174517,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -173519,9 +174527,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -191221,8 +192250,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -191233,9 +192262,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -191249,8 +192299,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -191261,9 +192311,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -213192,8 +214263,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -213204,9 +214275,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -213324,8 +214416,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -213336,9 +214428,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -213352,8 +214465,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -213364,9 +214477,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],
@@ -213380,8 +214514,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -213392,9 +214526,30 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "StaticCatalogClosure",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "StaticCatalogClosure",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": true,
+          "milestone": "CombatDrones",
+          "evidence": "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Fighters",
+          "evidence": "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone.",
           "role": null
         }
       ],

@@ -39,6 +39,7 @@ internal static class SupportModuleCatalog
         int modifierCount =
             group == SupportModuleDefinitions.SensorBoosterGroup ? 6
             : group == SupportModuleDefinitions.TrackingComputerGroup ? 3
+            : group == SupportModuleDefinitions.OmnidirectionalTrackingLinkGroup ? 13
             : 4;
         return effects.Count == ExpectedEffectCount
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count

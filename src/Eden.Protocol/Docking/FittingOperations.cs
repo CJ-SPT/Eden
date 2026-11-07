@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Combat;
+using Eden.Protocol.Drones;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;
@@ -15,7 +16,8 @@ internal sealed class FittingOperations(
     IPilotInventory inventory,
     IPilotShipResources resources,
     ShipDogmaBuilder dogma,
-    IPilotWeaponBanks banks
+    IPilotWeaponBanks banks,
+    DroneAttributeUpdates droneUpdates
 )
 {
     internal IReadOnlyList<WeaponBank> ReadBanks(PilotCallContext context) => banks.Read(context.Pilot.PilotId, context.Pilot.ShipId);
@@ -53,6 +55,7 @@ internal sealed class FittingOperations(
             var info = dogma.PrimeModule(context.Pilot, module);
             changes.AddRange(info.Attributes.Select(a => new ModuleAttributeChange(context.Pilot.PilotId, info.Key, a.Key, now, a.Value)));
         }
+        changes.AddRange(droneUpdates.Read(context, includeControl: true, modules));
         context.Notifications.Add(new ModuleAttributesChanged(changes));
         context.Flight.NotifyHealth(snapshot.Health);
     }

@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Drones;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;
@@ -14,7 +15,8 @@ internal sealed class SupportModuleWire(
     IPilotFitting fitting,
     IPilotInventory inventory,
     IPilotCombat combat,
-    IPilotAmmunition ammunition
+    IPilotAmmunition ammunition,
+    DroneAttributeUpdates droneUpdates
 )
 {
     private static readonly DogmaAttributeId[] ShipAttributes =
@@ -49,13 +51,18 @@ internal sealed class SupportModuleWire(
             "gunneryMaxRangeFalloffTrackingSpeedBonus" => DogmaEffect.TrackingComputer,
             "sensorBoosterActivePercentage" => DogmaEffect.SensorBooster,
             "missileGuidanceComputerBonus4" => DogmaEffect.MissileGuidanceComputer,
+            "moduleBonusOmnidirectionalTrackingLink" => DogmaEffect.OmnidirectionalTrackingLink,
             _ => null,
         };
 
-    internal static string Graphic(DogmaEffect effect) =>
-        effect == DogmaEffect.SensorBooster
-            ? "effects.ElectronicAttributeModifyActivate"
-            : "effects.TurretWeaponRangeTrackingSpeedMultiplyActivate";
+    internal static string? Graphic(DogmaEffect effect) =>
+        effect switch
+        {
+            // Pinned effect 6557 declares no world graphic; the HUD cycle still uses ShipEffectChanged.
+            DogmaEffect.OmnidirectionalTrackingLink => null,
+            DogmaEffect.SensorBooster => "effects.ElectronicAttributeModifyActivate",
+            _ => "effects.TurretWeaponRangeTrackingSpeedMultiplyActivate",
+        };
 
     internal void Refresh(PilotCallContext context, double? capacitor = null)
     {
@@ -68,7 +75,8 @@ internal sealed class SupportModuleWire(
         {
             changes.Add(new(pilot, new DogmaItemKey.Item(ship), DogmaAttributeId.CapacitorCharge, now, charge));
         }
-        foreach (var module in inventory.List(pilot, ship).Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)))
+        var items = inventory.List(pilot, ship);
+        foreach (var module in items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)))
         {
             bool turret =
                 module.GroupId
@@ -93,6 +101,7 @@ internal sealed class SupportModuleWire(
             var values = ammunition.ChargeAttributes(pilot, ship, magazine.ModuleId);
             Add(MagazineWire.Key(magazine), values, ChargeAttributes);
         }
+        changes.AddRange(droneUpdates.Read(context, includeControl: false, items));
         if (changes.Count > 0)
         {
             context.Notifications.Add(new ModuleAttributesChanged(changes));

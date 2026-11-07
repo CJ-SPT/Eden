@@ -11,6 +11,7 @@ using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Drones;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
@@ -143,19 +144,10 @@ internal sealed class ShipDogmaBuilder(
         attributes[DogmaAttributeId.Damage] = module.CrystalDamage;
         if (module.CategoryId == (int)InventoryCategory.Drone && droneStore?.Profile(pilot.PilotId, module.TypeId) is { } drone)
         {
-            attributes[DogmaAttributeId.StructureHitPoints] = drone.Defense.Structure;
-            attributes[DogmaAttributeId.ArmorHitPoints] = drone.Defense.Armor;
-            attributes[DogmaAttributeId.ShieldCapacity] = drone.Defense.Shield;
-            attributes[DogmaAttributeId.MaxVelocity] = drone.MaximumSpeed;
-            attributes[DogmaAttributeId.MaxRange] = drone.Optimal;
-            attributes[DogmaAttributeId.AccuracyFalloff] = drone.Falloff;
-            attributes[DogmaAttributeId.TrackingSpeed] = drone.Tracking;
-            double baseDamage =
-                attributes.GetValueOrDefault(DogmaAttributeId.EmDamage)
-                + attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)
-                + attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage)
-                + attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage);
-            attributes[DogmaAttributeId.DamageMultiplier] = drone.Damage.Total / baseDamage;
+            foreach (var (attribute, value) in DroneWire.Attributes(drone, attributes))
+            {
+                attributes[attribute] = value;
+            }
         }
         if (AmmunitionDefinitions.IsCrystalGroup(module.GroupId))
         {

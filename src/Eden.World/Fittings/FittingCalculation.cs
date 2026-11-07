@@ -133,14 +133,17 @@ internal sealed record FittingCalculation(
         ];
         nodes.AddRange(loaded.Select(i => new DogmaNode(i.Id, chargeAttributes[i.TypeId])));
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
-        FittingLocation[] ownerTargets = locations;
+        // Pinned IsOwnerModifiable excludes fitted modules. Pilot-owner modifiers
+        // select loaded ammunition and explicit deployed-drone/fighter profiles.
+        // Including modules lets mixed weapon/drone upgrades modify their own source bonuses.
+        FittingLocation[] ownerTargets = charges;
         if (ownerTypeId is int ownerType)
         {
             var ownerAttributes = PilotFittingStore.ReadAttributes(catalog, ownerType);
             nodes.Add(new(OwnerTargetId, ownerAttributes));
             ownerTargets =
             [
-                .. locations,
+                .. charges,
                 new(
                     new OwnedItem { Id = OwnerTargetId, TypeId = ownerType },
                     catalog.FittingType(ownerType)!.GroupId,

@@ -10,48 +10,70 @@ namespace Eden.Protocol.Drones;
 
 internal static class DroneWire
 {
-    internal static void NotifyControl(PilotCallContext context, DroneControl control, long now)
-    {
-        context.Notifications.Add(
-            new ModuleAttributesChanged([
-                new(
-                    context.Pilot.PilotId,
-                    new DogmaItemKey.Item(context.Pilot.PilotId),
-                    DogmaAttributeId.MaxActiveDrones,
-                    now,
-                    control.MaximumDrones
+    internal static void NotifyControl(PilotCallContext context, DroneControl control, long now) =>
+        context.Notifications.Add(new ModuleAttributesChanged(ControlChanges(context, control, now)));
+
+    internal static IReadOnlyList<ModuleAttributeChange> ControlChanges(PilotCallContext context, DroneControl control, long now) =>
+        [
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.PilotId),
+                DogmaAttributeId.MaxActiveDrones,
+                now,
+                control.MaximumDrones
+            ),
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.PilotId),
+                DogmaAttributeId.DroneControlDistance,
+                now,
+                control.Range
+            ),
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.ShipId),
+                DogmaAttributeId.DroneBandwidthLoad,
+                now,
+                control.UsedBandwidth
+            ),
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.ShipId),
+                DogmaAttributeId.DroneIsAggressive,
+                now,
+                control.Settings.Aggressive ? 1 : 0
+            ),
+            new(
+                context.Pilot.PilotId,
+                new DogmaItemKey.Item(context.Pilot.ShipId),
+                DogmaAttributeId.DroneFocusFire,
+                now,
+                control.Settings.FocusFire ? 1 : 0
+            ),
+        ];
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(
+        DroneProfile profile,
+        IReadOnlyDictionary<DogmaAttributeId, double> basis
+    ) =>
+        new Dictionary<DogmaAttributeId, double>
+        {
+            [DogmaAttributeId.StructureHitPoints] = profile.Defense.Structure,
+            [DogmaAttributeId.ArmorHitPoints] = profile.Defense.Armor,
+            [DogmaAttributeId.ShieldCapacity] = profile.Defense.Shield,
+            [DogmaAttributeId.MaxVelocity] = profile.MaximumSpeed,
+            [DogmaAttributeId.MaxRange] = profile.Optimal,
+            [DogmaAttributeId.AccuracyFalloff] = profile.Falloff,
+            [DogmaAttributeId.TrackingSpeed] = profile.Tracking,
+            [DogmaAttributeId.DamageMultiplier] =
+                profile.Damage.Total
+                / (
+                    basis.GetValueOrDefault(DogmaAttributeId.EmDamage)
+                    + basis.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)
+                    + basis.GetValueOrDefault(DogmaAttributeId.KineticDamage)
+                    + basis.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
                 ),
-                new(
-                    context.Pilot.PilotId,
-                    new DogmaItemKey.Item(context.Pilot.PilotId),
-                    DogmaAttributeId.DroneControlDistance,
-                    now,
-                    control.Range
-                ),
-                new(
-                    context.Pilot.PilotId,
-                    new DogmaItemKey.Item(context.Pilot.ShipId),
-                    DogmaAttributeId.DroneBandwidthLoad,
-                    now,
-                    control.UsedBandwidth
-                ),
-                new(
-                    context.Pilot.PilotId,
-                    new DogmaItemKey.Item(context.Pilot.ShipId),
-                    DogmaAttributeId.DroneIsAggressive,
-                    now,
-                    control.Settings.Aggressive ? 1 : 0
-                ),
-                new(
-                    context.Pilot.PilotId,
-                    new DogmaItemKey.Item(context.Pilot.ShipId),
-                    DogmaAttributeId.DroneFocusFire,
-                    now,
-                    control.Settings.FocusFire ? 1 : 0
-                ),
-            ])
-        );
-    }
+        };
 }
 
 internal sealed record DroneLaunchReply(IReadOnlyList<DroneLaunch> Launches) : BlueModel

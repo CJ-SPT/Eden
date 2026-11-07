@@ -280,24 +280,76 @@ internal static class ShipContentAudit
         {
             checks.Add(new(ContentOperation.Overheating, false, ShipContentMilestone.Overheating, "Native overload routes have no owner."));
         }
-        if (
-            rig
-            && milestone
-                is ShipContentMilestone.CombatDrones
-                    or ShipContentMilestone.Exploration
-                    or ShipContentMilestone.InformationAndSalvage
-        )
+        AddDroneConsumers(effects, checks);
+        if (rig && milestone is ShipContentMilestone.Exploration or ShipContentMilestone.InformationAndSalvage)
         {
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
                     false,
                     milestone,
-                    "Rig fitting/modifiers work; complete drone, scanning, hacking or salvage consumers remain unfinished."
+                    "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished."
                 )
             );
         }
         return true;
+    }
+
+    private static void AddDroneConsumers(IReadOnlyList<ClientDogmaeffects> effects, List<ContentCapabilityCheck> checks)
+    {
+        HashSet<ShipContentMilestone> consumers = [];
+        foreach (var source in effects.SelectMany(effect => effect.ModifierInfo ?? []))
+        {
+            if (source.Domain != "charID" || source.ModifiedAttributeID is not long attribute)
+            {
+                continue;
+            }
+            var selector = source.Func switch
+            {
+                "OwnerRequiredSkillModifier" => ModifierSelector.OwnerRequiredSkill,
+                "ItemModifier" => ModifierSelector.Item,
+                _ => (ModifierSelector?)null,
+            };
+            if (selector is null)
+            {
+                continue;
+            }
+            var capability = HullBonusRules.Capability(
+                new(ModifierDomain.Character, selector.Value, (int?)source.SkillTypeID, (DogmaAttributeId)attribute)
+            );
+            ShipContentMilestone? consumer =
+                source.SkillTypeID == DroneEquipmentRules.FighterOperationSkill
+                    ? ShipContentMilestone.Fighters
+                    : capability switch
+                    {
+                        HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,
+                        HullCapability.MiningDrones => ShipContentMilestone.Mining,
+                        HullCapability.UtilityDrones => ShipContentMilestone.UtilityDrones,
+                        _ => null,
+                    };
+            // The stasis rig selects utility drones through Drone Navigation.
+            if (source.SkillTypeID == (int)DroneSkill.DroneNavigation && attribute == (int)DogmaAttributeId.SpeedFactor)
+            {
+                consumer = ShipContentMilestone.UtilityDrones;
+            }
+            if (consumer is { } stage)
+            {
+                consumers.Add(stage);
+            }
+        }
+        foreach (var stage in consumers.Order())
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    stage == ShipContentMilestone.CombatDrones,
+                    stage,
+                    stage == ShipContentMilestone.CombatDrones
+                        ? "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects."
+                        : "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone."
+                )
+            );
+        }
     }
 
     private static bool Charge(CatalogDbContext catalog, ItemType type, ShipContentMilestone milestone, List<ContentCapabilityCheck> checks)

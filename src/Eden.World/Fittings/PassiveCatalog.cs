@@ -116,7 +116,12 @@ internal static class PassiveCatalog
             && (
                 domain != ModifierDomain.Character
                 || selection is not int ownerSkill
-                || (!rig && !MissileDefinitions.SupportsOwnerSkill(ownerSkill) && !(hull && DroneRules.SupportsOwnerSkill(ownerSkill)))
+                || (
+                    !rig
+                    && !MissileDefinitions.SupportsOwnerSkill(ownerSkill)
+                    && !(hull && DroneRules.SupportsOwnerSkill(ownerSkill))
+                    && !DroneEquipmentRules.SupportsOwnerModifier(ownerSkill, (DogmaAttributeId)modifier.ModifiedAttributeID.Value)
+                )
             )
         )
         {

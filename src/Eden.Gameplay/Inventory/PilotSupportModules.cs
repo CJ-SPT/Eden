@@ -20,6 +20,7 @@ public static class SupportModuleDefinitions
     public const int TrackingComputerGroup = 213;
     public const int SensorBoosterGroup = 212;
     public const int GuidanceComputerGroup = 1396;
+    public const int OmnidirectionalTrackingLinkGroup = 646;
     public const int TrackingScriptGroup = 907;
     public const int SensorScriptGroup = 910;
     public const int GuidanceScriptGroup = 1400;
@@ -31,6 +32,7 @@ public static class SupportModuleDefinitions
             TrackingComputerGroup => DogmaEffect.TrackingComputer,
             SensorBoosterGroup => DogmaEffect.SensorBooster,
             GuidanceComputerGroup => DogmaEffect.MissileGuidanceComputer,
+            OmnidirectionalTrackingLinkGroup => DogmaEffect.OmnidirectionalTrackingLink,
             _ => null,
         };
 
@@ -38,6 +40,7 @@ public static class SupportModuleDefinitions
         group switch
         {
             TrackingComputerGroup => TrackingScriptGroup,
+            OmnidirectionalTrackingLinkGroup => TrackingScriptGroup,
             SensorBoosterGroup => SensorScriptGroup,
             GuidanceComputerGroup => GuidanceScriptGroup,
             PlayerEwarRules.SensorDampenerGroup => PlayerEwarRules.DampeningScriptGroup,
@@ -69,6 +72,8 @@ public static class SupportModuleDefinitions
         && module.GetValueOrDefault(DogmaAttributeId.ChargeSize) == script.GetValueOrDefault(DogmaAttributeId.ChargeSize)
         && (
             script.GetValueOrDefault(DogmaAttributeId.LauncherGroup) == group
+            || script.GetValueOrDefault(DogmaAttributeId.LauncherGroup2) == group
+            || script.GetValueOrDefault(DogmaAttributeId.LauncherGroup3) == group
             || group == PlayerEwarRules.WeaponDisruptorGroup
                 && chargeGroup == PlayerEwarRules.GuidanceDisruptionScriptGroup
                 && script.GetValueOrDefault(DogmaAttributeId.LauncherGroup) == GuidanceComputerGroup
