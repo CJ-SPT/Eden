@@ -2,11 +2,11 @@
 
 [Documentation index](README.md)
 
-**Status: Early design; implementation deferred until the required core gameplay systems are ready.**
+**Current priority, November 7, 2026. Build one persistent capsuleer who can mine while a human pilot is online.**
 
-Agreed design direction, November 6, 2026. Continue implementing core gameplay before starting this roadmap. The stages below describe the long-term destination and its dependencies; implementation details and tuning should be revisited against the available mechanics when this work begins.
+Station-local personal orders, escrow, institutional blueprint and skillbook supply, the Merlin/Venture/Badger production cohort, belt renewal and economic charges are implemented. Earlier production replays use established skills, starting capital and controlled travel. The next proof starts with new pilots and follows their first earned ISK, transported inputs and real demand. See the [starter production evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026) and [economic lifecycle evidence](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).
 
-The [core gameplay audit and implementation priorities](#6-core-gameplay-audit-and-implementation-priorities) identify the missing foundations and the recommended next work. Persistent station-local personal orders and saved economic starting settings are implemented. The initial Merlin/Venture/Badger production cohort, supporting utility modules, institutional blueprint/skillbook supply, stack consolidation and ordinary repackaging are implemented. Daily belt renewal and saved economic valuations/industry/reprocessing charges are implemented for new economy worlds. Enforced player-tackle safety and persistent aggression/logoff timers establish the initial security foundation. Pilot turret/missile damage and shared loss settlement are implemented; drone pilot targets, capsule destruction and security enforcement remain next combat work; actor execution and clock-policy prerequisites still precede an autonomous community. See the [personal market milestone](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
+The [community milestones](#5-build-toward-the-vision-in-playable-stages) are the current implementation order. The [November 6 audit](#6-core-gameplay-audit-and-implementation-priorities) preserves the earlier assessment. Since that audit, Eden has also implemented [cooperative fleets](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026) and [corporation offices and shared hangars](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026).
 
 ## 1. The experience we are building
 
@@ -108,29 +108,31 @@ Configuration should cover:
 
 Keep authentic EVE values as the baseline and make overrides explicit. Separate new-universe settings from changes that can safely affect an existing save. Editing population settings must not silently replace established pilots or reset their possessions.
 
-For the initial offline policy, only queued skill training and already installed industry jobs advance while no humans are playing. Bots do not start new activities, trade, travel, or fight during that interval. When a friend is online, the shared universe advances normally.
+While any human pilot is playing, the shared universe advances, including activity in unobserved systems. After the last human leaves, pause bot decisions, movement, mining and fighting. Queued training, installed industry jobs, existing order expiry and scheduled belt renewal keep their calendar deadlines. Resume saved activity when a human returns. Apply the same configurable training multiplier to all capsuleers.
 
 Persist world settings, bot plans, economic state, and progression timestamps together so restarts cannot duplicate actions or rewards.
 
 ## 5. Build toward the vision in playable stages
 
-| Stage | Deliverable | Completion evidence |
-| --- | --- | --- |
-| **1. Economic foundations** | Separate fresh-world configuration; normal market listings; complete production chains for an initial set of Tech I ships, fittings, and ammunition; usable income sources | Fresh pilots can obtain inputs, produce equipment, sell it, and purchase replacements without the testing market |
-| **2. First working community** | A small population in a selected highsec area with persistent miners, ratters, manufacturers, and traders | Bots create real supply and demand, retain identities, and recover from ordinary losses |
-| **3. Travel and danger** | Inter-system hauling, lowsec activity, hunting, escape decisions, and the required aggression/security mechanics | Cargo moves physically; bots and humans can intercept one another; losses affect subsequent behavior |
-| **4. Social organization** | Bot corporation membership, recruitment, shared resources, fleets, and coordinated activity | You and friends can join or build an organization that functions through normal EVE systems |
-| **5. Regional growth and administration** | Multiple economic communities, broader supported careers, larger populations, and the Blazor editor | Distinct regional markets develop, performance remains practical, and settings can be inspected and changed safely |
+Create the population only in an explicitly enabled economy world. Save its seed, starting area and initial career preferences once. Established pilots retain their identities and property through settings changes and restarts.
 
-Start the prototype locally while keeping the rest of the map accessible. Expand after the small community can sustain itself.
+| Milestone | Completion evidence |
+| --- | --- |
+| **1. One visible, persistent miner** | A named new pilot fits civilian equipment, undocks, warps to a populated belt, locks an asteroid, pays mining cycles, docks and unloads. Two human observers see the same pilot in Local and the same ship and effects on grid. Reconnect and restart preserve cargo and paid work. |
+| **2. First earned ISK and first trade** | A pirate hunter earns bounties with starter equipment. Pilots choose work from observed opportunities, funds, cargo, skills and risk. Account for the earnings that fund the first order, blueprint and fees. |
+| **3. A supply chain you can follow** | Audit a connected highsec school start, belts, pirates, suppliers and stations. A hauler buys cargo and flies it through a gate. A producer refines inputs and manufactures a 75mm Gatling Rail I and Iron Charge S. A hunter buys the gun, consumes ammunition and orders more. Humans can compete for the same stock. |
+| **4. Recovery after disruption** | Deplete a belt, let another buyer take stock, and lose a working ship to pirates. Pilots wait, reroute, switch jobs or recover in a corvette. Produce and sell a Venture replacement from earned funds and transported inputs. Audit its fit independently. Expand to the Badger when its complete supply route works. |
+| **5. Regional expansion** | Measure humans together, apart and arriving in an unobserved system. Add a second community and prove a price difference supports physical hauling. Set population limits from this workload, measuring frames and checkpoints separately. |
 
-Automated validation should cover resource and money accounting, skill and ownership restrictions, bot-to-bot interactions, loss and replacement, save/reopen behavior, offline progression, and simultaneous players in different systems. Use seeded simulations to measure time to first trade, first manufactured replacement, shortages, insolvency, and population concentration.
+Gameplay owns typed actions and observations, World owns pilot presence, intentions, due work and settlement, Server schedules activity, and Protocol presents committed movement, effects, Local and overview contacts. Reuse the same flight, skill, fitting, mining, market and combat rules as connected pilots. More distant activity may be scheduled less frequently while preserving travel, cargo and encounter exposure.
 
-Follow Eden's [focused-test and milestone publishing policy](../AGENTS.md#testing). Native presentation and gameplay feel remain separate acceptance work.
+Measure time to first bounty, trade, manufactured ammunition consumed and replacement hull in seeded fresh worlds. Reconcile assets, fees, escrow and losses. Record why pilots wait. Exercise two observers, the last human leaving, restart during travel or settlement, and a competing buyer. Follow the [milestone testing policy](../AGENTS.md#testing).
 
-**The first convincing demonstration:** you buy a ship that a simulated capsuleer manufactured from materials other pilots gathered and transported, then encounter those same pilots while flying it.
+Player piracy requires the remaining aggression, enforcement, loot and information mechanics. Recruitable groups build on the existing fleets and corporation assets. Mission and exploration careers need their own playable mechanics. Broader lowsec activity and the Blazor editor follow the local economic demonstration.
 
 ## 6. Core gameplay audit and implementation priorities
+
+The following dated audit and its proposed ordering are retained as historical evidence. Current status and priorities appear above.
 
 ### Audit baseline
 
