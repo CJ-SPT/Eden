@@ -99,7 +99,7 @@ Gameplay builds independently of Protocol, Server, EF Core and the host containe
 
 ### Session performance diagnostics
 
-Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.ps1`; see the [capacity measurements and optimization candidates](docs/protocol/performance.md#npc-and-player-capacity-november-6-2026).
+Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.ps1`; see the [capacity measurements](docs/protocol/performance.md#npc-and-player-capacity-november-6-2026) and [implemented NPC optimizations](docs/protocol/performance.md#indexed-npc-scene-updates-november-6-2026).
 
 Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
 

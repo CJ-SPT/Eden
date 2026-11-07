@@ -89,9 +89,10 @@ internal sealed class NpcCombatHandler(
             _candidates = candidates;
         }
         ewar?.Advance(context);
+        var visibleIds = context.Flight.VisibleNpcs.Select(n => n.Id).ToHashSet();
         foreach (long npc in combat.Aggressors(_shipId))
         {
-            if (!context.Flight.VisibleNpcs.Any(n => n.Id == npc))
+            if (!visibleIds.Contains(npc))
             {
                 // A dispatched response keeps its target while travelling from
                 // an off-grid origin. Visibility alone must not cancel its alarm.

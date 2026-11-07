@@ -6,6 +6,66 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Indexed NPC scene updates, November 6, 2026
+
+After collision pruning and resident monitoring, the 4,000-NPC replay still spent 204.54 ms median in `update.npcCombat`. The protocol shot path scanned visible NPCs for each aggressor, searched again for its prior weapon, and copied the complete NPC contact array for every weapon and health notification. Incoming damage to the player copied that NPC array even though no NPC health changed.
+
+`NpcCombatHandler` now builds one visibility identity set per pass, after electronic warfare has advanced. `FlightNpcScene` maintains an identity-to-index map and an immutable list. Weapon and NPC-health notifications replace one contact through a persistent update; player/drone health notifications retain the NPC list. Earlier observer snapshots remain immutable. Scene capture/refresh rebuilds the index in the existing input order. Stops, starts, per-shot damage notifications, unknown weapon events, destruction and warp handling retain their established ordering and adapters.
+
+A focused scene regression checks exact stop/start order, same-tick health, earlier snapshot isolation, reordered and removed IDs, clearing and capture, and unknown/player health notifications. A separate 2,000-NPC volley bounds allocations below 8 KiB per NPC while updating every weapon and health contact. Contributor rules now explicitly forbid rebuilding a complete observer scene per shot.
+
+Matched thirty-frame Release comparisons against `43f34cd` include all three optimization milestones. Both populations survive and keep firing throughout the sample. Baseline and final runs use the same machine, workload, runtime and disabled tiered compilation.
+
+| Fighting NPCs / one player | Baseline median / p95 ms | Final median / p95 ms | Baseline / final mean SQL commands | Baseline / final MiB allocated per frame |
+| --- | --- | --- | --- | --- |
+| 1,000 | 118.43 / 144.84 | 20.94 / 70.41 | 3003.97 / 1.40 | 257.0 / 32.2 |
+| 4,000 | 1302.22 / 1461.55 | 104.54 / 293.60 | 11841.77 / 1.40 | 3355.7 / 130.8 |
+
+At 4,000 NPCs, the NPC-combat phase itself falls from 204.54 ms median on the preceding milestone to 31.65 ms. Total allocations now scale approximately linearly over the measured single-player ladder. The complete frame, including output and checkpoint contention, determines the capacity below.
+
+| Connected players / fighting NPCs | Median / p95 ms | Mean SQL commands / EF opens | MiB allocated per frame |
+| --- | --- | --- | --- |
+| 1 / 100 | 2.78 / 9.70 | 1.40 / 1.40 | 3.5 |
+| 1 / 1,000 | 20.94 / 70.41 | 1.40 / 1.40 | 32.2 |
+| 1 / 2,000 | 47.57 / 138.48 | 1.40 / 1.40 | 65.0 |
+| 1 / 4,000 | 104.54 / 293.60 | 1.40 / 1.40 | 130.8 |
+| 1 / 8,000 | 231.74 / 566.03 | 1.40 / 1.40 | 262.2 |
+| 10 / 1,000 | 106.73 / 168.80 | 14.07 / 14.07 | 135.4 |
+| 10 / 4,000 | 532.44 / 693.13 | 14.07 / 14.07 | 524.7 |
+| 100 / 1 | 110.62 / 283.10 | 140.07 / 140.07 | 98.8 |
+
+All eight cases retained thirty measured frames and passed the assertion that measured session ticks do not project combat state. Combined replay test duration was 422.72 seconds, including setup and component probes. Every case recorded zero fitting recalculations. The isolated warmed simulation and observer probes used zero SQL commands and connections. Full-frame SQL remains small and independent of NPC population in this workload.
+
+**Measured headroom:** one player with 2,000 NPCs and ten players with 1,000 NPCs meet the 250 ms p95 budget. One player with 4,000 NPCs exceeds it. **Measured cadence:** one player with 8,000 NPCs and ten players with 4,000 NPCs stay below the one-second p95 budget. These are the largest tested populations for their session counts, not universal capacity limits. The current 8,192-NPC / 512-ship active-cache retention thresholds remain unchanged; do not extrapolate beyond them.
+
+The matched 101-ship comparison makes the session cost clear: 100 NPCs plus one player take 2.78 ms median, while 100 connected players plus one NPC take 110.62 ms. Connected pilots require personal monitoring, observer views and output. An unoccupied NPC in the saved world is not equivalent to an active combatant on this grid.
+
+Checkpoint capture/project/copy still holds the world owner. The table shows the last three captures, excluding the early startup capture; file writing follows outside the owner. Frame p95 can include waiting for capture. Raw SQLite backup connections are represented by capture/write time and bytes beyond EF counters.
+
+| Players / NPCs | Capture range ms | File-write range ms | EF commands per checkpoint | EF opens |
+| --- | --- | --- | --- | --- |
+| 1 / 1,000 | 44.85–49.75 | 12.74–14.09 | 3006 | 1 |
+| 1 / 4,000 | 178.13–190.21 | 17.34–21.28 | 12006 | 1 |
+| 1 / 8,000 | 359.75–384.54 | 23.25–23.74 | 24006 | 1 |
+| 10 / 4,000 | 179.44–185.16 | 17.57–18.83 | 12052 / 12055 / 12059 | 1 |
+
+The remaining costs are periodic checkpoint projection and per-session scene/output work. These fixture measurements exclude actual socket encryption/backpressure, competing requests, live-client processing, missiles, active EWAR, drones, loss/respawn settlement and production catalog diversity. The simulated clock advances without real-time idle gaps; background-save overlap can differ in a running host. Reports are in ignored `artifacts/npc-optimization/scene-final`; the preceding milestone reports are in `resident-final`.
+
+Reproduce the final ladder with:
+
+```powershell
+.\tools\Measure-NpcCapacity.ps1 -NpcCounts @(100,1000,2000,4000,8000) -PlayerCounts @(100) -Modes combat -Output artifacts/npc-optimization/scene-final
+.\tools\Measure-NpcCapacity.ps1 -NpcPlayers 10 -NpcCounts @(1000,4000) -PlayerCounts @() -Modes combat -NoBuild -Output artifacts/npc-optimization/scene-final
+```
+
+**Automated validation.** Tool/solution restores, Debug solution build and Release benchmark build passed with zero warnings/errors. The affected run passed 379 tests in 109 seconds with two workers; both new exact scene regressions also passed separately. Both Python policy suites passed (3 catalog, 9 formatting cases). Formatting checked 909 files and the 140-column limit. No full .NET suite was requested or run.
+
+The affected filter was `FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~NpcGuardTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~NpcRepairTests|FullyQualifiedName~NpcOrbitTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcJammingTargetTests|FullyQualifiedName~NpcConvoyTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~NpcMiningSessionTests|FullyQualifiedName~PlayerEwarNpcTests|FullyQualifiedName~MotionSynchronizationTests|FullyQualifiedName~NpcWarpTests|FullyQualifiedName~PilotCombatTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this performance milestone.
+
 ## Resident combat monitoring and damage history, November 6, 2026
 
 Normal-session tracing found three read transactions forcing dirty combat projection on every tick: corporation identity, corporation lookup (including absent NPC corporations), and corporation loyalty balances. Bounded resident snapshots now retain these results against membership, role/title, wallet-selection and balance dependencies. Coordinate-only updates do not invalidate docking-dependent roles; position insertion, deletion and primary-key changes do. Nullable corporation results are cached explicitly. Rollback and schema changes invalidate conservatively without publishing transaction-local data.

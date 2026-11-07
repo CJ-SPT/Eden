@@ -312,6 +312,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Indexed NPC scene updates, November 6, 2026](protocol/performance.md#indexed-npc-scene-updates-november-6-2026)
 - [Resident combat monitoring and damage history, November 6, 2026](protocol/performance.md#resident-combat-monitoring-and-damage-history-november-6-2026)
 - [Swept collision candidate index, November 6, 2026](protocol/performance.md#swept-collision-candidate-index-november-6-2026)
 - [NPC and player capacity, November 6, 2026](protocol/performance.md#npc-and-player-capacity-november-6-2026)

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -16,13 +17,33 @@ internal sealed class FlightNpcScene(
 {
     private HashSet<long> _transitingNpcs = [];
 
-    internal NpcContact[] Contacts { get; private set; } = [];
+    // A shot changes one contact. Preserve prior snapshots without cloning
+    // the complete observer scene for each weapon or health notification.
+    private ImmutableList<NpcContact> _contacts = [];
+    private readonly Dictionary<long, int> _contactIndices = [];
+
+    internal IReadOnlyList<NpcContact> Contacts => _contacts;
 
     internal bool InWarp(long id) => _transitingNpcs.Contains(id);
 
-    internal void Clear() => Contacts = [];
+    internal void Clear()
+    {
+        _contacts = [];
+        _contactIndices.Clear();
+        _transitingNpcs.Clear();
+    }
 
-    internal void Capture(FlightSceneContext context) => Contacts = ReadNpcs(context);
+    internal void Capture(FlightSceneContext context) => ReplaceContacts(ReadNpcs(context));
+
+    private void ReplaceContacts(NpcContact[] contacts)
+    {
+        _contacts = contacts.ToImmutableList();
+        _contactIndices.Clear();
+        for (int index = 0; index < contacts.Length; index++)
+        {
+            _contactIndices.Add(contacts[index].Id, index);
+        }
+    }
 
     private NpcContact[] ReadNpcs(FlightSceneContext context)
     {
@@ -152,7 +173,7 @@ internal sealed class FlightNpcScene(
                 NotifyHealth(npc.Health);
             }
         }
-        Contacts = current;
+        ReplaceContacts(current);
     }
 
     private void ApplyNpcCourse(FlightSceneContext context, NpcContact npc)
@@ -224,17 +245,26 @@ internal sealed class FlightNpcScene(
 
     internal void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
     {
-        if (Contacts.FirstOrDefault(n => n.Id == npcId)?.Weapon is { } previous)
+        if (_contactIndices.TryGetValue(npcId, out int index))
         {
-            NpcWeaponEffect(npcId, previous, false);
+            var npc = _contacts[index];
+            if (npc.Weapon is { } previous)
+            {
+                NpcWeaponEffect(npcId, previous, false);
+            }
+            NpcWeaponEffect(npcId, weapon, true);
+            _contacts = _contacts.SetItem(index, npc with { Weapon = weapon });
+            return;
         }
         NpcWeaponEffect(npcId, weapon, true);
-        Contacts = Contacts.Select(n => n.Id == npcId ? n with { Weapon = weapon } : n).ToArray();
     }
 
     internal void NotifyHealth(ShipHealth current)
     {
-        Contacts = Contacts.Select(n => n.Id == current.ShipId ? n with { Health = current } : n).ToArray();
+        if (_contactIndices.TryGetValue(current.ShipId, out int index))
+        {
+            _contacts = _contacts.SetItem(index, _contacts[index] with { Health = current });
+        }
         update(new DestinyCommand.OnDamageStateChange(current.ShipId, current.DamageState()));
     }
 
@@ -244,7 +274,7 @@ internal sealed class FlightNpcScene(
         {
             NpcWeaponEffect(npc.Id, npc.Weapon!, false);
         }
-        Contacts = Contacts.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToArray();
+        _contacts = _contacts.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToImmutableList();
     }
 
     internal void Replay()
