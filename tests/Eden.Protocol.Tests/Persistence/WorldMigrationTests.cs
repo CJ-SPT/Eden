@@ -12,7 +12,7 @@ public sealed class WorldMigrationTests
     [InlineData(WorldMigration.CurrentVersion + 1)]
     public void UnsupportedVersionLeavesTheSaveUnchanged(int version)
     {
-        using TestWorld fixture = new();
+        using TestWorld fixture = new(freshInitialization: true);
         using (var connection = new SqliteConnection($"Data Source={fixture.Path};Pooling=false"))
         {
             connection.Open();
@@ -63,7 +63,7 @@ public sealed class WorldMigrationTests
     [InlineData(7)]
     public void AddsProfilesToExistingWorld(int version)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(freshInitialization: true);
         var position = new SpacePosition(45, 67, 89);
         db.Store.SetPosition(1000000000001, position);
         using var connection = new SqliteConnection($"Data Source={db.Path};Pooling=false");
@@ -117,7 +117,7 @@ public sealed class WorldMigrationTests
     [Fact]
     public void VersionElevenPreservesBothPilotsAndTheirProgressWhenOpeningExtraSlots()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(freshInitialization: true);
         db.Store.SetPosition(1000000000001, new(5, 6, 7));
         var pilot = db.Store.FindPilot(1000001);
         var wing = db.Store.FindPilot(1000002);
@@ -179,7 +179,7 @@ public sealed class WorldMigrationTests
     [Fact]
     public async Task TwoPilotsCanSaveTheirPositionsConcurrently()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(freshInitialization: true);
         await Task.WhenAll(
             Enumerable
                 .Range(1, 2)

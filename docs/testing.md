@@ -24,13 +24,25 @@ Record the filter and results. Add focused bug regressions when practical; cover
 
 Run the full .NET suite (`dotnet test --no-build` without a filter) **only when the user explicitly requests a regression check**. Normal milestone work, merges, commits, pushes, and shared serialization, initialization or fixture changes use focused validation and do not authorize a full run. When requested, run the regression check once; do not repeat a successful full suite for unchanged code or reporting. After a correction, rerun affected tests and required build/format checks. Investigate failures instead of retrying blindly, and identify the revision or subsequent corrections covered by each result. Interrupted or incomplete runs are not passes. Documentation-only changes require relevant documentation checks rather than gameplay tests.
 
-## Continuous integration
+## Local validation
 
-GitHub validation runs hosting/fixture smoke tests, build, policy and formatting checks on pushes and pull requests. Its full .NET suite is opt-in through the manual workflow's `regression_check` input; normal pushes do not start it. Contributors still run the relevant feature filters locally.
+Run milestone validation locally using the README build order and the affected feature filters. The GitHub Actions validation workflow was removed to avoid consuming hosted runner minutes.
 
 ## Test infrastructure
 
-The tests use fixtures and loopback sockets. The test runner allows twelve concurrent collections with the conservative scheduler; see [xUnit runner configuration](https://xunit.net/docs/config-xunit-runner-json). This limit was selected for the development machine's 14 cores / 20 hardware threads. Scratch databases default to the ignored `artifacts/test-data` directory on the repository drive; set `EDEN_TEST_TEMP_DIRECTORY` to select another location. Tests copy an immutable base catalog into independent writable files and reuse parsed catalog fixture definitions. Fitting helpers read identity fields directly instead of rebuilding pilot and fitting projections for each lookup. World initialization, migrations and gameplay assertions still exercise the real implementation. The previous four-worker full suite took approximately 36 minutes; this is historical context, not a runtime guarantee.
+The tests use fixtures and loopback sockets. The test runner allows twelve concurrent collections with the conservative scheduler; see [xUnit runner configuration](https://xunit.net/docs/config-xunit-runner-json). This limit was selected for the development machine's 14 cores / 20 hardware threads. Scratch databases default to the ignored `artifacts/test-data` directory on the repository drive; set `EDEN_TEST_TEMP_DIRECTORY` to select another location. Ordinary feature tests copy immutable prepared catalog and world snapshots into private writable files. The on-disk seed cache lives under `artifacts/test-data/seeds` (or `EDEN_TEST_TEMP_DIRECTORY/seeds`) and is fingerprinted from all Eden assemblies, embedded test data and the test dependency manifest. SQLite backup produces standalone snapshots, a process lock serializes publication, and checksums detect damaged or incomplete seeds. A missing or damaged seed is rebuilt with the real initializer. Each process retains immutable seed bytes after loading. Deleting the seed directory while tests are stopped forces rebuilding. Tests also reuse parsed catalog fixture definitions. Fitting helpers read identity fields directly instead of rebuilding pilot and fitting projections for each lookup. Fixtures with explicit clocks or starting funds use fresh initialization. Pass `freshInitialization: true` when a test specifically covers creation or migration. Migration fixtures use this path, and restart assertions explicitly reopen the modified private database through the real initializer. Gameplay assertions exercise the real implementation. The previous four-worker full suite took approximately 36 minutes; this is historical context, not a runtime guarantee.
+
+## Measured feature-loop timings
+
+The seed-cache comparison used the preserved pre-change binaries from `fc33779` and the cache implementation, with three fresh test processes per filter on the development machine. These are wall-clock medians for `dotnet test --no-build`, excluding builds. Each run selected the same assertions and test count.
+
+| Filter suffix | Cases | Before | Prepared seed |
+| --- | --- | --- | --- |
+| `Flight.ShipCollisionTests.FixedBodyReflectsRadialVelocityUsingCarbonsDampedImpulse` | 1 | 1.26 s | 1.28 s |
+| `Fixtures.TestCatalogTests` | 1 | 4.15 s | 3.63 s |
+| `Flight.ShipCollisionTests` | 15 | 9.25 s | 8.29 s |
+
+A separate first run against an empty cache took 3.96 seconds for `Fixtures.TestCatalogTests`. The comparison table uses the prepared cache. Changes to Eden binaries or dependency versions invalidate the seed, so the next feature run rebuilds it. EF model/query initialization and test-process startup still contribute to every fresh process. Two simultaneous processes also passed the isolation filter against one empty shared cache.
 
 ## Reporting and publishing
 

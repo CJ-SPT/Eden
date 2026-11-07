@@ -52,12 +52,20 @@ internal sealed class TestWorld : IDisposable
         TimeProvider? clock = null,
         bool regionalNpcs = false,
         bool liveWorld = false,
-        bool simulationObjects = true
+        bool simulationObjects = true,
+        bool freshInitialization = false
     )
     {
-        TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
-        WorldInitialization.Initialize(new WorldDatabase(Path));
-        if (emptyWallets)
+        if (emptyWallets && clock is null && !freshInitialization)
+        {
+            TestWorldSeed.CopyTo(new WorldDatabase(Path));
+        }
+        else
+        {
+            TestCatalog.Create(new WorldDatabase(Path).CatalogPath);
+            WorldInitialization.Initialize(new WorldDatabase(Path));
+        }
+        if (emptyWallets && (clock is not null || freshInitialization))
         {
             // Feature tests supply their own budgets. Funding/migration tests use
             // emptyWallets: false to retain the real starting grant and journal.

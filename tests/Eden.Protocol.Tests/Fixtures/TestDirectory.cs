@@ -2,7 +2,7 @@ namespace Eden.Protocol.Tests.Fixtures;
 
 internal static class TestDirectory
 {
-    private static readonly string Root = FindRoot();
+    internal static readonly string Root = FindRoot();
 
     public static DirectoryInfo Create(string prefix)
     {
