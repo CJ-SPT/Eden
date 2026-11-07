@@ -15,6 +15,29 @@ public sealed class NpcSceneUpdateTests
     }
 
     [Fact]
+    public void UnchangedObserverScenesRetainTheirSnapshotWithBoundedAllocations()
+    {
+        using NpcCombatTests.Fixture f = new();
+        const int count = 2000;
+        Encounters encounters = new(Enumerable.Range(0, count).Select(index => f.Npc with { Id = f.Npc.Id + index }).ToArray());
+        List<DestinyCommand> commands = [];
+        FlightNpcScene scene = new(new(), f.Clock, encounters, new(commands.Add), commands.Add, _ => { });
+        FlightSceneContext context = new(f.Pilot, true, true, 1);
+        scene.Capture(context);
+        var original = scene.Contacts;
+        scene.RefreshNpcs(context);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        const int repeats = 20;
+        for (int index = 0; index < repeats; index++)
+        {
+            scene.RefreshNpcs(context);
+        }
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, repeats * count * 128L);
+        Assert.Same(original, scene.Contacts);
+        Assert.Empty(commands);
+    }
+
+    [Fact]
     public void ShotUpdatesPreserveSnapshotsEffectsAndIdentityAcrossSceneReplacement()
     {
         using NpcCombatTests.Fixture f = new();

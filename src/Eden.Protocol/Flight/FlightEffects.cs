@@ -9,6 +9,9 @@ namespace Eden.Protocol.Flight;
 
 internal sealed class FlightEffects(Action<DestinyCommand> emit)
 {
+    private static bool Changed<T>(T[]? current, T[]? previous) =>
+        !ReferenceEquals(current, previous) && ((current?.Length ?? 0) != 0 || (previous?.Length ?? 0) != 0);
+
     internal void Replay(ShipContact ship, ShipContact? previous)
     {
         RefreshMining(ship, previous);
@@ -17,21 +20,27 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
         RefreshSupport(ship, previous);
-        foreach (var effect in (previous?.Tackle ?? []).Except(ship.Tackle ?? []))
+        if (Changed(ship.Tackle, previous?.Tackle))
         {
-            TackleEffect(ship.Pilot.ShipId, effect, false);
+            foreach (var effect in (previous?.Tackle ?? []).Except(ship.Tackle ?? []))
+            {
+                TackleEffect(ship.Pilot.ShipId, effect, false);
+            }
+            foreach (var effect in (ship.Tackle ?? []).Except(previous?.Tackle ?? []))
+            {
+                TackleEffect(ship.Pilot.ShipId, effect, true);
+            }
         }
-        foreach (var effect in (ship.Tackle ?? []).Except(previous?.Tackle ?? []))
+        if (Changed(ship.ElectronicWarfare, previous?.ElectronicWarfare))
         {
-            TackleEffect(ship.Pilot.ShipId, effect, true);
-        }
-        foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(ship.ElectronicWarfare ?? []))
-        {
-            ElectronicWarfareEffect(ship.Pilot.ShipId, effect, false);
-        }
-        foreach (var effect in (ship.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
-        {
-            ElectronicWarfareEffect(ship.Pilot.ShipId, effect, true);
+            foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(ship.ElectronicWarfare ?? []))
+            {
+                ElectronicWarfareEffect(ship.Pilot.ShipId, effect, false);
+            }
+            foreach (var effect in (ship.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
+            {
+                ElectronicWarfareEffect(ship.Pilot.ShipId, effect, true);
+            }
         }
         RefreshPropulsion(ship, previous);
     }
@@ -114,6 +123,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     internal void RefreshMining(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.Mining, previous?.Mining))
+        {
+            return;
+        }
         foreach (var effect in (previous?.Mining ?? []).Except(ship.Mining ?? []))
         {
             MiningEffect(ship.Pilot.ShipId, effect, false);
@@ -143,6 +156,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     internal void RefreshWeapons(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.Weapons, previous?.Weapons))
+        {
+            return;
+        }
         foreach (var effect in (previous?.Weapons ?? []).Except(ship.Weapons ?? []))
         {
             WeaponEffect(ship.Pilot.ShipId, effect, false);
@@ -189,6 +206,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     private void RefreshHardeners(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.Hardeners, previous?.Hardeners))
+        {
+            return;
+        }
         foreach (var effect in (previous?.Hardeners ?? []).Except(ship.Hardeners ?? []))
         {
             HardenerEffect(ship.Pilot.ShipId, effect, false);
@@ -218,6 +239,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     private void RefreshSupport(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.Support, previous?.Support))
+        {
+            return;
+        }
         foreach (var effect in (previous?.Support ?? []).Except(ship.Support ?? []))
         {
             SupportEffect(ship.Pilot.ShipId, effect, false);
@@ -230,6 +255,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     private void RefreshLocalRepairs(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.LocalRepairs, previous?.LocalRepairs))
+        {
+            return;
+        }
         foreach (var effect in (previous?.LocalRepairs ?? []).Except(ship.LocalRepairs ?? []))
         {
             LocalRepairEffect(ship.Pilot.ShipId, effect, false);
@@ -259,6 +288,10 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     internal void RefreshShieldBoosts(ShipContact ship, ShipContact? previous)
     {
+        if (!Changed(ship.ShieldBoosts, previous?.ShieldBoosts))
+        {
+            return;
+        }
         foreach (var effect in (previous?.ShieldBoosts ?? []).Except(ship.ShieldBoosts ?? []))
         {
             ShieldBoostEffect(ship.Pilot.ShipId, effect, false);

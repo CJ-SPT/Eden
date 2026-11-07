@@ -317,6 +317,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Shared work across player frames, November 7, 2026](protocol/performance.md#shared-work-across-player-frames-november-7-2026)
 - [Detached checkpoint projection, November 7, 2026](protocol/performance.md#detached-checkpoint-projection-november-7-2026)
 - [Indexed NPC scene updates, November 6, 2026](protocol/performance.md#indexed-npc-scene-updates-november-6-2026)
 - [Resident combat monitoring and damage history, November 6, 2026](protocol/performance.md#resident-combat-monitoring-and-damage-history-november-6-2026)

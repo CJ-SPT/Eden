@@ -339,13 +339,13 @@ internal sealed class FlightScene(
     internal void RefreshPeers(FlightSceneContext context, ShipContact contact)
     {
         var current = space.Peers(context.Pilot);
+        var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         if (
             current.Any(ship =>
                 ship.Warp is not null
-                && Array.Exists(
-                    _peers,
-                    old => old.Pilot.ShipId == ship.Pilot.ShipId && old.Warp != ship.Warp && old.AlignTo != ship.Warp.Destination
-                )
+                && previousById.TryGetValue(ship.Pilot.ShipId, out var old)
+                && old.Warp != ship.Warp
+                && old.AlignTo != ship.Warp.Destination
             )
         )
         {
@@ -361,7 +361,7 @@ internal sealed class FlightScene(
         // Absolute position setters collapse its interpolation interval and are reserved for recovery.
         foreach (var ship in current)
         {
-            var previous = Array.Find(_peers, peer => peer.Pilot.ShipId == ship.Pilot.ShipId);
+            var previous = previousById.GetValueOrDefault(ship.Pilot.ShipId);
             if (previous is null)
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.

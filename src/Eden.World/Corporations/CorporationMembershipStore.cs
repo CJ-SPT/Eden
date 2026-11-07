@@ -3,6 +3,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -326,6 +327,10 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     public IReadOnlyList<CorporationChange> Changes(long pilotId, long after)
     {
+        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasCorporationChanges(pilotId, after))
+        {
+            return [];
+        }
         using WorldDbContext world = new(database.Path);
         return world
             .Set<SavedCorporationChange>()

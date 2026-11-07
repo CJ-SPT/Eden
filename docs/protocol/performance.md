@@ -6,6 +6,54 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Shared work across player frames, November 7, 2026
+
+Corporation-change polling now caches the highest saved event ID for each pilot. Acknowledged or empty streams return without SQL until the change table is modified. Existing page size, event ordering and payload conversion remain unchanged. Transaction-local reads bypass publication and rollback invalidates conservatively. The existing `(PilotId, Id)` index serves cold head queries.
+
+Normal stamped simulation shares immutable NPC contacts across observers when their source state, aggression, motion stamp, collision flag and committed-change epoch match. Full shields are time independent; damaged/recharging shields, patrols, warp, mining activity and incoming EWAR retain fresh construction. Nonempty outgoing EWAR also bypasses sharing. Shared weapon views expire at their exact start/end boundaries and reject backward clock reuse. No clock quantization is introduced. Storage is bounded by the existing NPC retention limit and cleared with simulation state. Effective-attribute lookups reuse their resident index under the owner rather than cloning it for each view.
+
+NPC scenes skip unchanged snapshots and unchanged shared records. Peer scenes index prior ships by identity instead of searching the old array for every peer. Empty or shared module-effect arrays skip redundant set comparisons; changed effects keep their original stop/start order. Each pilot still receives an individual, range-filtered scene and its own protocol output. Damage, health changes and native movement/effect commands retain their established adapters and ordering.
+
+New regressions check event-stream pagination, empty/acknowledged reads with zero SQL, committed inserts and rollback, stable cross-observer records, immediate damage, subsecond recharge, exact weapon expiry, clock rewind and effect ordering. Two-thousand-NPC unchanged-scene reads and empty peer-effect passes have allocation budgets. The normal-session capacity replay now requires zero SQL commands, connection opens and fitting recalculations in every warmed measured frame as well as its existing no-projection assertion.
+
+Six final Release cases each retained thirty measured frames. All passed the zero-SQL, zero-connection, zero-fitting and no-projection frame assertions; isolated warmed operations and observer probes were also zero. Setup and checkpoint timings remain separate from frame distributions. Reports are in ignored `artifacts/player-frame-optimization/final`.
+
+| Players / NPCs | Mode | Median / p95 frame ms | MiB allocated per frame | MiB encoded per frame |
+| --- | --- | --- | --- | --- |
+| 1 / 0 | idle | 0.16 / 2.63 | 0.1 | 0.000 |
+| 1 / 4,000 | combat | 185.04 / 223.91 | 119.8 | 4.499 |
+| 1 / 8,000 | combat | 270.98 / 466.52 | 240.3 | 8.994 |
+| 10 / 1,000 | combat | 89.33 / 147.33 | 75.6 | 2.703 |
+| 10 / 4,000 | combat | 253.12 / 276.22 | 289.3 | 10.720 |
+| 100 / 1 | combat | 74.61 / 113.70 | 66.8 | 1.859 |
+
+Total final replay test duration was 516.77 seconds including fixture setup and component probes. One player with 8,000 NPCs remains below the one-second p95 cadence budget; it exceeds the 250 ms headroom budget. Ten players with 1,000 NPCs and 100 players with one NPC pass the headroom budget. Ten players with 4,000 NPCs narrowly exceed it at 276.22 ms p95. The existing 8,192-NPC / 512-ship retention limits are unchanged.
+
+Compared with the earlier checkpoint-only measurements, ten players / 4,000 NPCs reduce frame allocations from 523.2 to 289.3 MiB. Their inclusive NPC-contact phase drops from 483.23 to 89.97 ms median. At 100 players / one NPC, allocations fall from 97.0 to 66.8 MiB, the background-monitoring phase falls from 58.15 to 4.18 ms and peer refresh from 36.13 to 12.75 ms. Encoded payload volumes remain approximately 10.720 and 1.859 MiB respectively. The reduction comes from server work rather than removing individual player views or changing the output format.
+
+Single-player performance is mixed: at 4,000 NPCs the checkpoint-only frame median/p95 was 146.69/329.14 ms versus 185.04/223.91 ms here. Median regressed while p95 improved. Other desktop workloads remained active, so end-to-end comparisons are sensitive to scheduling and CPU contention. The repeated-work, allocation and SQL budgets provide additional evidence beyond wall time.
+
+The original checkpoint-only runs preceded the optimized ladder. Because desktop load varied, two fresh checkpoint-only controls were also run afterward, serially and without concurrent builds/tests. Both controls use clean `def8fc2` in an isolated checkout; feature changes remain on `main`. The table retains both controls rather than selecting one result. Cells show median / p95 frame milliseconds.
+
+| Players / NPCs | Checkpoint-only before | Checkpoint-only after | Shared player work | After-control / optimized mean SQL commands |
+| --- | --- | --- | --- | --- |
+| 10 / 4,000 | 685.68 / 1140.54 | 528.71 / 575.65 | 253.12 / 276.22 | 10 / 0 |
+| 100 / 1 | 166.24 / 233.99 | 115.47 / 127.89 | 74.61 / 113.70 | 100 / 0 |
+
+The two fresh control cases passed in 116.50 seconds including setup and probes, retaining thirty measured frames each. Ten players / 4,000 NPCs improve by approximately 52% in both median and p95 versus the fresh control. The hundred-player median improves by approximately 35%, with a smaller p95 improvement of approximately 11%. SQL and EF opens fall from 10/100 per frame respectively to zero; fits stay zero. Controls are in ignored `artifacts/player-frame-optimization/control-after`.
+
+Remaining work includes individual output encoding, range filtering and whole-image RAM checkpoint copying. No network payload is shared across accounts. The fixture excludes encryption/network backpressure, concurrent request arrival, native clients, active missiles/EWAR/drones, losses/respawns and production catalog diversity. These are capacity observations on this machine, not a production NPC limit.
+
+**Automated validation.** Tool/solution restores, Debug build and Release replay build passed with zero warnings/errors. The affected filter passed 442 tests in 167 seconds with two workers; five exact new regressions passed separately. The default two-player/eight-NPC idle session replay passed its zero-SQL frame budget in 8 seconds. Both Python policy suites passed (3 catalog, 9 formatting cases), and formatting checked 920 files and the 140-column limit. No full .NET suite was requested or run.
+
+The affected filter was `FullyQualifiedName~PlayerFrameWorkTests|FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~NpcWarpTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcConvoyTests|FullyQualifiedName~NpcMiningSessionTests|FullyQualifiedName~NpcRepairTests|FullyQualifiedName~PlayerEwarNpcTests|FullyQualifiedName~TackleTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~Eden.Protocol.Tests.Flight`.
+
+**Main integration.** Remote `main` advanced with cooperative-fleet merge `c51e3f7` before this milestone could push. The player-frame commit was rebased onto it without conflicts. Tool/solution restores, the integrated build (zero warnings/errors), both Python suites and formatting across 927 files passed. Filter `FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~FleetRulesTests|FullyQualifiedName~PlayerFrameWorkTests|FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~NpcCapacityBenchmarkTests.MeasureNpcAndPlayerCapacityThroughNormalSessions` passed 187 tests in 54 seconds, including the default zero-SQL session replay. The large timing runs above were collected before fleet integration; they establish the isolated performance comparison against `def8fc2`, not a timed result for the subsequent fleet merge. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this performance milestone.
+
 ## Detached checkpoint projection, November 7, 2026
 
 Checkpoints now capture the resident relational image and immutable combat records from the same generation under the world owner. NPC/ship health, ammunition, capacitor, damage attribution, movement, drones and weapon deadlines are then projected into that detached image outside the owner. SQLite constraints, triggers and related projection writes remain in one transaction. Durable file writing and atomic replacement retain the existing path and previous-save behavior. The saved schema and 15-second schedule are unchanged.

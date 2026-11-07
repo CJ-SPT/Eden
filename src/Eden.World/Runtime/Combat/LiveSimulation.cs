@@ -64,7 +64,9 @@ internal sealed partial class LiveCombatRuntime
                 return true;
             });
         }
-        return npcs.ToDictionary(n => n.Id, n => _effectiveNpcs[n.Id]);
+        // Consumers index the current NPC IDs synchronously under the owner.
+        // Reuse the resident index instead of cloning it for each observer.
+        return _effectiveNpcs;
     }
 
     internal IReadOnlyList<ShipMotionResult>? Advance(
@@ -189,6 +191,7 @@ internal sealed partial class LiveCombatRuntime
         var aggression = Aggression();
         List<NpcContact> contacts = [];
         List<LiveCombatNpc> updated = [];
+        bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
         foreach (var source in npcs)
         {
             var active = aggression.GetValueOrDefault(source.Id);
@@ -210,6 +213,12 @@ internal sealed partial class LiveCombatRuntime
                 npc = npc with { Navigation = NpcNavigationState.Returning };
             }
             updated.Add(npc);
+            bool bumped = database.CollisionStamps.GetValueOrDefault(npc.Id, -1) == stamp;
+            if (motionStamped && TrySharedNpcContact(npc, active, stamp, bumped, now, out var shared))
+            {
+                contacts.Add(shared);
+                continue;
+            }
             double duration = npc.Attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
             NpcWeaponContact? weapon =
                 active?.LastShotAt is long started && now >= started && now - started < duration * TimeSpan.TicksPerMillisecond
@@ -220,45 +229,47 @@ internal sealed partial class LiveCombatRuntime
                         duration
                     )
                     : null;
-            int stamp = database.MotionStamps.GetValueOrDefault(system);
-            contacts.Add(
-                new(
-                    npc.Id,
-                    npc.TypeId,
-                    npc.GroupId,
-                    npc.CategoryId,
-                    npc.CorporationId,
-                    npc.Name,
-                    system,
-                    npc.Position,
-                    npc.Mass,
-                    (float)npc.Radius,
-                    (float)effective[npc.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-                    NpcMotionRules.Agility(npc.Attributes),
-                    new(npc.Id, npc.Health.Defense, npc.Health.At(now)),
-                    weapon,
-                    LiveSystemMotionRules.Contact(npc, effective[npc.Id], active?.ShipId ?? 0, now),
+            NpcContact contact = new(
+                npc.Id,
+                npc.TypeId,
+                npc.GroupId,
+                npc.CategoryId,
+                npc.CorporationId,
+                npc.Name,
+                system,
+                npc.Position,
+                npc.Mass,
+                (float)npc.Radius,
+                (float)effective[npc.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                NpcMotionRules.Agility(npc.Attributes),
+                new(npc.Id, npc.Health.Defense, npc.Health.At(now)),
+                weapon,
+                LiveSystemMotionRules.Contact(npc, effective[npc.Id], active?.ShipId ?? 0, now),
+                stamp,
+                bumped,
+                npc.Role,
+                npc.FactionId,
+                npc.RepairState.Revision,
+                EwarContacts(npc.Id),
+                npc.Activity,
+                npc.Transit?.Course(
                     stamp,
-                    database.CollisionStamps.GetValueOrDefault(npc.Id, -1) == stamp,
-                    npc.Role,
-                    npc.FactionId,
-                    npc.RepairState.Revision,
-                    EwarContacts(npc.Id),
-                    npc.Activity,
-                    npc.Transit?.Course(
-                        stamp,
-                        now,
-                        new(
-                            0,
-                            (float)npc.Radius,
-                            npc.Mass,
-                            NpcMotionRules.Agility(npc.Attributes),
-                            (float)effective[npc.Id][DogmaAttributeId.MaxVelocity],
-                            0
-                        )
+                    now,
+                    new(
+                        0,
+                        (float)npc.Radius,
+                        npc.Mass,
+                        NpcMotionRules.Agility(npc.Attributes),
+                        (float)effective[npc.Id][DogmaAttributeId.MaxVelocity],
+                        0
                     )
                 )
             );
+            contacts.Add(contact);
+            if (motionStamped)
+            {
+                ShareNpcContact(npc, active, stamp, bumped, now, contact);
+            }
         }
         foreach (var npc in updated)
         {
@@ -356,6 +367,7 @@ internal sealed partial class LiveCombatRuntime
         _positions.Clear();
         _savedPositions.Clear();
         _dirtyPositions.Clear();
+        _sharedNpcContacts.Clear();
         _simulationProfiles = new();
     }
 }

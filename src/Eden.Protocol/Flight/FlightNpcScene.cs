@@ -67,6 +67,10 @@ internal sealed class FlightNpcScene(
             return;
         }
         var current = ReadNpcs(context);
+        if (Contacts.Count == current.Length && Contacts.SequenceEqual(current, ReferenceEqualityComparer.Instance))
+        {
+            return;
+        }
         var previousById = Contacts.ToDictionary(n => n.Id);
         foreach (var departed in Contacts.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {
@@ -96,6 +100,10 @@ internal sealed class FlightNpcScene(
         foreach (var npc in current)
         {
             var previous = previousById.GetValueOrDefault(npc.Id);
+            if (ReferenceEquals(previous, npc))
+            {
+                continue;
+            }
             bool warpChanged = previous is not null && NpcWarpChanged(previous, npc);
             if (previous?.Activity != npc.Activity)
             {

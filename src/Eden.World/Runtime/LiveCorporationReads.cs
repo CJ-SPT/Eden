@@ -1,10 +1,27 @@
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
+using Eden.World.Corporations;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime;
 
 internal sealed partial class LiveReadModels
 {
+    private readonly ResidentSnapshot<long, long> _corporationChangeHeads = new("resident.corporationChangeHead", "WorldCorporationChange");
+
+    internal bool HasCorporationChanges(long pilotId, long cursor) =>
+        cursor
+        < Read(
+            _corporationChangeHeads,
+            pilotId,
+            () =>
+            {
+                using WorldDbContext world = new(database.Path);
+                return world.Set<SavedCorporationChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
+            }
+        );
+
     private readonly ResidentSnapshot<long, IReadOnlyList<LoyaltyBalance>> _corporationLoyalty = new(
         "resident.corporationLoyalty",
         "WorldPilot",
