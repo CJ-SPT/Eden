@@ -266,6 +266,7 @@ internal sealed partial class PilotMissileStore(
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
         // Retaliation begins on the offensive launch, not after flight time.
+        Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId!.Value, victim is not null, now);
         if (victim is not null)
         {
             CrimewatchPersistence.Player(world, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);

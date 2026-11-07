@@ -23,7 +23,8 @@ internal sealed record CombatCheckpoint(
     IReadOnlyList<LiveAggression> Aggressions,
     IReadOnlyList<DronePilotTimers> DroneTimers,
     IReadOnlyList<DronePilotEngagement> DroneEngagements,
-    IReadOnlyList<DronePilotHostility> DroneHostilities
+    IReadOnlyList<DronePilotHostility> DroneHostilities,
+    IReadOnlyList<DroneCombatTriggers> DroneTriggers
 )
 {
     internal void Apply(WorldDbContext world)
@@ -41,6 +42,7 @@ internal sealed record CombatCheckpoint(
             );
         }
         LiveCombatRuntime.ProjectDrones(world, Drones);
+        LiveCombatRuntime.ProjectDroneTriggers(world, DroneTriggers);
         LiveCombatRuntime.ProjectDronePlayers(world, DroneTimers, DroneEngagements, DroneHostilities);
         foreach (var ship in Ships)
         {
@@ -78,6 +80,7 @@ internal sealed partial class LiveCombatRuntime
             _dirtyAggressions.Select(id => _aggressions![id]).ToArray(),
             _droneTimers.Values.ToArray(),
             _droneEngagements.Values.ToArray(),
-            _droneHostilities.Values.ToArray()
+            _droneHostilities.Values.ToArray(),
+            _dirtyDroneCombatTriggers.Select(id => _droneCombatTriggers[id]).ToArray()
         );
 }

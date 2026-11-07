@@ -148,6 +148,10 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
                     }
                     double distance = Math.Max(0, target.DistanceTo(source.Position) - (type.Radius ?? 0) - source.Radius);
                     var applied = NpcEwarRules.Attempt(ability, distance, attributes, rolls.Next());
+                    if (distance <= NpcEncounterDefinitions.VisibilityRange && NpcEwarRules.RangeFactor(ability, distance) > 0)
+                    {
+                        Eden.World.Drones.DroneCombatPersistence.Incoming(world, shipId, source.Id, now);
+                    }
                     if (applied?.CapacitorDrain is > 0)
                     {
                         double charge = ShipResources.Capacitor(world, shipId, attributes, now);

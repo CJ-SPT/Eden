@@ -174,6 +174,8 @@ public sealed class PilotMissileTests
             Assert.Empty(world.Set<ShipHealthState>());
         }
         Assert.Throws<InvalidDataException>(() => Launch(f, launcher));
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, VictimShip, f.Clock.Now);
+        var firedAt = f.Clock.Now;
         Advance(f);
         var outcome = Assert.Single(Store(f).TakeImpacts(f.PilotId));
         var hit = Assert.Single(hits);
@@ -186,6 +188,7 @@ public sealed class PilotMissileTests
         Advance(f);
         Assert.Empty(Store(f).TakeImpacts(f.PilotId));
         Assert.Single(hits);
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, VictimShip, firedAt);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<SavedSecurityStatus>());

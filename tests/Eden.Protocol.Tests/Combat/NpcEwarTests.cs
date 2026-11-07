@@ -1,6 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -386,19 +387,23 @@ public sealed partial class NpcEwarTests
         using (WorldDbContext copy = new(checkpoint))
         {
             Assert.Single(copy.Set<WorldNpcEwar>());
+            Assert.Equal(1, Assert.Single(copy.Set<WorldDroneCombatTriggers>()).IncomingRevision);
             Assert.Equal(950, copy.Set<ShipEnergy>().Find(NpcCombatTests.Fixture.ShipId)!.Charge, 8);
         }
         WorldInitialization.Initialize(new(checkpoint), f.Combat.Clock);
         using (WorldDbContext reopened = new(checkpoint))
         {
             Assert.Empty(reopened.Set<WorldNpcEwar>());
+            Assert.Empty(reopened.Set<WorldDroneCombatTriggers>());
             Assert.Equal(950, reopened.Set<ShipEnergy>().Find(NpcCombatTests.Fixture.ShipId)!.Charge, 8);
         }
+        LiveWorld.Find(f.Combat.Db.Path)?.Dispose();
         f.Combat.Clock.Seconds = 1000;
         WorldInitialization.Initialize(new(f.Combat.Db.Path), f.Combat.Clock);
         Assert.Empty(f.Advance());
         using WorldDbContext saved = new(f.Combat.Db.Path);
         Assert.Empty(saved.Set<WorldNpcEwar>());
+        Assert.Empty(saved.Set<WorldDroneCombatTriggers>());
         Assert.Equal(950, saved.Set<ShipEnergy>().Find(NpcCombatTests.Fixture.ShipId)!.Charge, 8);
     }
 

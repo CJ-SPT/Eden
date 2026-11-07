@@ -82,6 +82,9 @@ public sealed class NpcMissileTests
         long ship = f.Pilot.ShipId;
         var before = f.Health.Read(f.Pilot.PilotId, f.Clock.Now);
         Assert.Null(Fire(f));
+        var triggers = DroneCombatTriggerTests.Read(f.Db.Path, ship);
+        Assert.Equal(new(1, f.Npc.Id, f.Clock.Now), triggers.Incoming);
+        Assert.Equal(0, triggers.Offensive.Revision);
         var outbound = f.Db.Services.GetRequiredService<IPilotMissiles>();
         var contact = Assert.Single(outbound.List(f.Npc.SystemId));
         Assert.Equal(f.Npc.Id, contact.SourceShipId);

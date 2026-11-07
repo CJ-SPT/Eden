@@ -341,6 +341,7 @@ internal sealed partial class LiveCombatRuntime
         foreach (var shot in pilotShots)
         {
             RecordDroneAttack(shot.Source, shot.Victim, ship.SystemId, shot.Decision, now, shot.End);
+            RecordDroneIncoming(shot.Victim.ShipId, ship.ShipId, now);
         }
         foreach (var drone in staged)
         {

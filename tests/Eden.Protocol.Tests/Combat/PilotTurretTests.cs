@@ -96,6 +96,7 @@ public sealed class PilotTurretTests
         Assert.False(victim.Weapons.Running(f.Clock.Now));
         Assert.False(victim.Npc.Running(f.Clock.Now));
         Assert.Throws<InvalidDataException>(() => Fire(f));
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, Fixture.ShipId, VictimShip, f.Clock.Now);
         Assert.Equal(shot.Health.Remaining.Shield, f.Health.Read(Victim, f.Clock.Now).Remaining.Shield, 8);
     }
 

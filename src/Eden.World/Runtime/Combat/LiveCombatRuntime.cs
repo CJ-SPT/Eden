@@ -117,6 +117,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             }
         }
         Hostility(target, ship.ShipId, now);
+        RecordDroneModule(ship.ShipId, target.Id, now);
         _ships[pilotId] = plan.Ship;
         _npcs[targetId] = RepairNpc(plan.Target, now);
         _dirtyShips.Add(pilotId);
@@ -145,6 +146,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             || _dronePilots.Count >= RetainedShips
             || _dronePlayers.Count >= RetainedShips
             || _droneHostilities.Count >= RetainedShips
+            || _droneCombatTriggers.Count >= RetainedShips
             || _liveDrones.Count >= RetainedItems
             || _itemPilots.Count >= RetainedItems
         )
@@ -345,6 +347,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 + _dirtyAggressions.Count
                 + _dirtyPositions.Count
                 + _dirtyDrones.Count
+                + _dirtyDroneCombatTriggers.Count
                 + _droneTimers.Count
                 == 0
         )
@@ -386,6 +389,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 + _dirtyAggressions.Count
                 + _dirtyPositions.Count
                 + _dirtyDrones.Count
+                + _dirtyDroneCombatTriggers.Count
                 + _droneTimers.Count
                 == 0
         )
@@ -410,6 +414,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 _savedPositions[id] = _positions[id];
             }
             _dirtyDrones.Clear();
+            _dirtyDroneCombatTriggers.Clear();
             _dirtyPositions.Clear();
             _dirtyShips.Clear();
             _dirtyNpcs.Clear();
@@ -458,6 +463,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             switch (change.Table)
             {
+                case "WorldDroneCombatTriggers":
+                    _droneCombatTriggers.Remove(change.Id);
+                    break;
                 case "WorldDrone":
                     _droneControllers = null;
                     break;
@@ -556,6 +564,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         Flush();
         ClearDrones();
         ClearDronePlayers();
+        _droneCombatTriggers.Clear();
         _ships.Clear();
         _savedShips.Clear();
         _npcs.Clear();

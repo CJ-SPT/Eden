@@ -137,6 +137,7 @@ public sealed class MissileCombatTests
             Assert.Equal(f.Clock.Now + 14400 * TimeSpan.TicksPerMillisecond, world.Set<ModuleCooldown>().Find(launcher)!.ReadyAt);
         }
         Assert.Throws<InvalidDataException>(() => Launch(f, launcher, npc.Id));
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, npc.Id, f.Clock.Now, player: false);
         f.Clock.Milliseconds += 1000;
         Missiles(f).Advance(npc.SystemId, f.Clock.Now);
         Assert.Empty(Missiles(f).TakeImpacts(f.PilotId));

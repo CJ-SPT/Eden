@@ -13,6 +13,8 @@ internal static class DroneSchema
 {
     internal static void Configure(ModelBuilder model)
     {
+        model.Entity<WorldDroneCombatTriggers>().ToTable("WorldDroneCombatTriggers").HasKey(d => d.ShipId);
+        model.Entity<WorldDroneCombatTriggers>().HasOne<Ship>().WithMany().HasForeignKey(d => d.ShipId);
         model.Entity<WorldDroneSettings>().ToTable("WorldDroneSettings").HasKey(d => d.PilotId);
         model.Entity<WorldDrone>().ToTable("WorldDrone").HasKey(d => d.ItemId);
         model.Entity<WorldDrone>().HasOne<OwnedItem>().WithMany().HasForeignKey(d => d.ItemId).OnDelete(DeleteBehavior.Cascade);

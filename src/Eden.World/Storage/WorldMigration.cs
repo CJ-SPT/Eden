@@ -2,6 +2,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Configuration;
 using Eden.World.Corporations;
+using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Repair;
@@ -12,7 +13,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 100;
+    internal const int CurrentVersion = 101;
 
     public static void Open(
         WorldDbContext world,
@@ -81,7 +82,8 @@ internal static class WorldMigration
             // Existing hostility retains its expiry without inventing a recent attack.
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN LastAttackAt INTEGER NOT NULL DEFAULT 0");
         }
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=100");
+        DroneCombatPersistence.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=101");
         history.Commit();
     }
 }

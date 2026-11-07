@@ -180,6 +180,7 @@ public sealed partial class PlayerEwarTests
         Assert.Equal(contact.ExpiresAt, world.Set<ModuleCooldown>().Find(module)!.ReadyAt);
         Assert.Equal(activation.Capacitor, world.Set<ShipEnergy>().Find(f.ShipId)!.Charge, 6);
         Assert.Throws<InvalidDataException>(() => Activate(f, module, effect));
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, Wing(f), f.Clock.Now);
     }
 
     [Fact]
@@ -216,6 +217,7 @@ public sealed partial class PlayerEwarTests
         using WorldDbContext world = new(f.Db.Path);
         Assert.True(world.Set<ShipEnergy>().Any(e => e.ShipId == f.ShipId));
         Assert.True(world.Set<SavedPilotHostility>().Any(e => e.SourceShipId == f.ShipId && e.TargetShipId == Wing(f)));
+        DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, Wing(f), f.Clock.Now);
     }
 
     [Theory]

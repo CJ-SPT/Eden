@@ -121,6 +121,7 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         world.Set<WorldPlayerEwar>().Where(e => e.ModuleId == moduleId).ExecuteDelete();
         var applied = PlayerEwarRules.Attempt(module, Distance(victim), victim.Attributes, rolls.Next());
         ElectronicWarfareContact contact = new(pilotId, pilot.ActiveShipId, module, victim.Identity, applied, now, expires);
+        Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, victim.Identity.Id, victim.Pilot is not null, now);
         world.Add(
             new WorldPlayerEwar
             {

@@ -158,6 +158,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
         else
         {
             var row = world.Set<WorldTackle>().Find(moduleId) ?? world.Set<WorldTackle>().Add(new() { ModuleId = moduleId }).Entity;
+            Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, target!.Id, aggression is not null, now);
             row.PilotId = pilotId;
             row.SourceShipId = pilot.ActiveShipId;
             row.TypeId = item.TypeId;

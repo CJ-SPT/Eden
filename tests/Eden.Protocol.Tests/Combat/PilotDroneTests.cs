@@ -154,6 +154,10 @@ public sealed class PilotDroneTests
         Assert.Equal(expected.Remaining, hit.Health.Remaining);
         Assert.Empty(f.Drones.Advance(f.Pilot, f.Now, 1).Hits);
         Assert.Equal(5, messages.Count);
+        var triggers = DroneCombatTriggerTests.Read(f.Base.Db.Path, VictimShip);
+        Assert.Equal(new(5, f.Ship, f.Now), triggers.Incoming);
+        Assert.Equal(0, triggers.Offensive.Revision);
+        Assert.Equal(0, DroneCombatTriggerTests.Read(f.Base.Db.Path, f.Ship).Offensive.Revision);
         var crimewatch = f.Base.Db.Services.GetRequiredService<IPilotCrimewatch>();
         Assert.True(crimewatch.Read(f.Pilot, SystemId).Timers.Weapons.Running(f.Now));
         Assert.True(crimewatch.Read(Victim, SystemId).Timers.Pvp.Running(f.Now));
@@ -496,7 +500,7 @@ public sealed class PilotDroneTests
         var hostility = Assert.Single(saved.Set<SavedPilotHostility>());
         Assert.Equal(f.Now, hostility.ExpiresAt);
         Assert.Equal(0, hostility.LastAttackAt);
-        Assert.Equal(100, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Empty(saved.Set<SavedCrimewatch>());
         Assert.Empty(saved.Set<ShipLoss>());
     }

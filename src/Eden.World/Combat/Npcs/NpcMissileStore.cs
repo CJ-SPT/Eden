@@ -100,6 +100,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             }
         );
         aggression.MissileReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
+        Eden.World.Drones.DroneCombatPersistence.Incoming(world, pilot.ActiveShipId, npc.Id, now);
         return true;
     }
 

@@ -71,6 +71,7 @@ public static class WorldInitialization
             // Reconcile all overdue escrow once before admitting connections.
         }
         // Drones remain where they were left; downtime releases control and never replays damage.
+        world.Set<WorldDroneCombatTriggers>().ExecuteDelete();
         world
             .Set<WorldDrone>()
             .ExecuteUpdate(set =>

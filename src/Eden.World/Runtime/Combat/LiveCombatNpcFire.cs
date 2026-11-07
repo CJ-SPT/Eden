@@ -152,6 +152,7 @@ internal sealed partial class LiveCombatRuntime
             LastTargetId = shipId,
         };
         _dirtyAggressions.Add(npcId);
+        RecordDroneIncoming(shipId, npcId, now);
         owner.ObjectsChanged();
         shot = paid.Shot;
         return true;

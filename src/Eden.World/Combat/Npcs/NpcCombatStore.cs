@@ -338,6 +338,7 @@ internal sealed class NpcCombatStore(
         var result = PilotHealthStore.Apply(world, shipId, defense, damage.Scale(quality), now);
         aggression.LastShotAt = now;
         aggression.LastTargetId = shipId;
+        Eden.World.Drones.DroneCombatPersistence.Incoming(world, shipId, npcId, now);
         aggression.ReadyAt = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
         CrimewatchPersistence.Npc(world, pilotId, system, aggression.ReadyAt);
         NpcWeaponContact weapon = new(shipId, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType)), now, duration);

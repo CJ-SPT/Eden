@@ -222,6 +222,7 @@ internal sealed class PilotCombatStore(
             throw new InvalidDataException("Load the same ammunition in every grouped weapon.");
         }
         long cycleEnd = checked(now + (long)Math.Ceiling(paid.Max(p => p.Weapon.CycleMilliseconds) * TimeSpan.TicksPerMillisecond));
+        Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId, victim is not null, now);
         if (victim is not null)
         {
             CrimewatchPersistence.Player(world, pilotId, victim.Id, target.SystemId, aggression!, now, cycleEnd);

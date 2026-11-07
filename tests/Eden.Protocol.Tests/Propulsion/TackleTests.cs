@@ -198,6 +198,7 @@ public sealed class TackleTests
         Assert.Equal(baseline * (1 + percent / 100), f.Db.Store.FindPilot(1000002)!.Flight.MaxSpeed, 4);
         Assert.Single(Store(f).Incoming(wing));
         Assert.Throws<InvalidDataException>(() => Activate(f, module, DogmaEffect.StasisWebifier, wing));
+        Eden.Protocol.Tests.Combat.DroneCombatTriggerTests.AssertModule(f.Db.Path, f.ShipId, wing, f.Clock.Now);
         f.Clock.Milliseconds += 5000;
         Store(f).Stop(f.PilotId, f.ShipId, module);
         Store(f).Sweep(f.Clock.Now);

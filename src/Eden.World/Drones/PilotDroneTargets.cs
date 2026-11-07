@@ -102,6 +102,7 @@ internal sealed partial class PilotDroneStore
         long shipId = victim.ActiveShipId;
         var defense = ShipHealth.DefenseFrom(attributes);
         var result = PilotHealthStore.Apply(world, shipId, defense, damage, now);
+        DroneCombatPersistence.Incoming(world, shipId, source.ActiveShipId, now);
         var party = PilotInteractionHistoryStore.Player(world, source, source.ActiveShipId, profile.TypeId);
         PilotInteractionHistoryStore.Damage(world, shipId, party, result.Applied);
         var loss = result.Remaining.Destroyed

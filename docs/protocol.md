@@ -36,6 +36,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Capsule destruction and home-station respawn, November 7, 2026](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026)
 
+- [Drone delegation combat triggers, November 7, 2026](protocol/drones.md#drone-delegation-combat-triggers-november-7-2026)
 - [Drone equipment, scripts and combat-rig consumers, November 7, 2026](protocol/drones.md#drone-equipment-scripts-and-combat-rig-consumers-november-7-2026)
 - [Combat-drone hull bonuses and control limits, November 7, 2026](protocol/drones.md#combat-drone-hull-bonuses-and-control-limits-november-7-2026)
 - [Heavy and sentry combat drones, November 7, 2026](protocol/drones.md#heavy-and-sentry-combat-drones-november-7-2026)
