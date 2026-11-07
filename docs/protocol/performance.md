@@ -6,6 +6,31 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Swept collision candidate index, November 6, 2026
+
+`ShipCollisions.Resolve` builds a per-operation bounding hierarchy from solid bodies' complete start/end sweeps. Queries prune non-overlapping boxes, then restore each candidate's original input index before the existing pair response runs. Equal-time tie ordering, recursive overlap response, fixed bodies and output order retain the legacy algorithm. Static obstacle evaluation also uses the allocation-free scalar contact-time calculation.
+
+Bounds expand the float radius by one float ULP and round each double box endpoint outward. This includes contacts produced by the legacy float addition of two radii. A focused regression reproduced a missed near-boundary overlap before this inflation. Negative, non-finite or unrepresentable bounds and radii whose pair sums can overflow retain all-pairs evaluation. The index uses linear working storage, including in dense scenes.
+
+Reference source is Carbon Destiny revision `27ee40b38a563d29054b32f64c3ebc87fabaec1f`. `Gradient` and `CalculateCollisionResponse` request spatial collision candidates before evaluating pairs. Eden retains its established response calculation and introduces candidate pruning around it. [Carbon collision candidates](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp#L2519-L2548)
+
+The frozen `43f34cd` all-pairs test reference verifies exact results for 120 seeded randomized fleets with fractional radii, mixed solid/fixed bodies, varied inertia, arbitrary input orders and coordinates up to 1e15. Additional cases cover fast crossings, tangent contacts, overlaps, reversed order, empty/non-solid populations and unrepresentable coordinates. A sparse 4,000-body allocation regression requires less than 1 KiB of working allocation per body.
+
+The same thirty-frame, one-player combat replays were refreshed on the integrated electronic-warfare base `43f34cd`. Both modes use Release with tiered compilation disabled. Rows show median / p95 milliseconds and average full-frame allocations. The separate collision component uses current NPC positions with zero velocities. SQL projection and contributor-map copying are still present at this milestone.
+
+| Fighting NPCs | Baseline full frame ms | Indexed full frame ms | Baseline / indexed allocations MiB/frame | Baseline / indexed collision median ms |
+| --- | --- | --- | --- | --- |
+| 1,000 | 118.43 / 144.84 | 91.21 / 95.40 | 257.0 / 104.6 | 30.00 / 1.36 |
+| 4,000 | 1302.22 / 1461.55 | 766.50 / 922.89 | 3355.7 / 914.7 | 420.16 / 8.35 |
+
+Reports are in ignored `artifacts/npc-optimization/{baseline,collision}`. The two baseline cases passed in 171 seconds combined reported duration and the indexed cases in 109 seconds. These timings include fixture setup and component probes; the table uses measured frames only.
+
+**Automated validation.** Tool/solution restore and solution build passed with zero warnings/errors. The final focused flight/NPC filter passed 176 tests in 59 seconds, followed by the strengthened randomized large-coordinate check. The filter was `FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcWarpTests|FullyQualifiedName~PlayerEwarNpcTests`. Both Python policy suites passed (3 catalog, 9 formatting cases); formatting checked 905 files and the 140-column limit. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this calculation and simulation milestone.
+
 ## NPC and player capacity, November 6, 2026
 
 `NpcCapacityBenchmarkTests.MeasureNpcAndPlayerCapacityThroughNormalSessions` compares NPC population and connected-player population through normal session ticks on isolated fixture databases. The reproducible runner is `tools/Measure-NpcCapacity.ps1`. This benchmark owns its exact population and disables the fixture's two-belt population seeder through changes to the temporary catalog.
@@ -152,6 +177,8 @@ The focused filter `FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~Com
 **Optional maintainer checks:** None.
 
 ## Contents
+
+- [Swept collision candidate index (November 6, 2026)](#swept-collision-candidate-index-november-6-2026)
 
 - [NPC and player capacity (November 6, 2026)](#npc-and-player-capacity-november-6-2026)
 

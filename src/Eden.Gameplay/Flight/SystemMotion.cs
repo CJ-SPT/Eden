@@ -50,9 +50,17 @@ public static class ShipCollisions
     public static IReadOnlyList<CollisionResult> Resolve(IReadOnlyList<CollisionMotion> ships)
     {
         List<CollisionResult> results = [];
+        var index = CollisionIndex.Create(ships);
+        List<int> candidates = [];
         foreach (var ship in ships)
         {
-            results.Add(ResolveOne(ship, ships));
+            IEnumerable<CollisionMotion> others = ships;
+            if (index is not null)
+            {
+                index.Find(ship, candidates);
+                others = candidates.Select(candidate => ships[candidate]);
+            }
+            results.Add(ResolveOne(ship, others));
         }
         return results;
     }
@@ -111,7 +119,7 @@ public static class ShipCollisions
     private static Impact? Potential(CollisionMotion ship, CollisionMotion other, int depth)
     {
         double radius = ship.Hull.ShipRadius + other.Hull.ShipRadius;
-        double time = ContactTime(ship.Start - other.Start, (ship.Position - ship.Start) - (other.Position - other.Start), radius);
+        double time = ContactTime(ship, other, radius);
         if (time < 0)
         {
             return null;
@@ -195,15 +203,21 @@ public static class ShipCollisions
         );
     }
 
-    private static double ContactTime(SpacePosition radial, SpacePosition delta, double radius)
+    private static double ContactTime(CollisionMotion ship, CollisionMotion other, double radius)
     {
-        double clearance = radial.Dot(radial) - radius * radius;
+        double radialX = ship.Start.X - other.Start.X;
+        double radialY = ship.Start.Y - other.Start.Y;
+        double radialZ = ship.Start.Z - other.Start.Z;
+        double deltaX = (ship.Position.X - ship.Start.X) - (other.Position.X - other.Start.X);
+        double deltaY = (ship.Position.Y - ship.Start.Y) - (other.Position.Y - other.Start.Y);
+        double deltaZ = (ship.Position.Z - ship.Start.Z) - (other.Position.Z - other.Start.Z);
+        double clearance = radialX * radialX + radialY * radialY + radialZ * radialZ - radius * radius;
         if (clearance <= 0)
         {
             return 0;
         }
-        double speedSquared = delta.Dot(delta);
-        double along = radial.Dot(delta);
+        double speedSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
+        double along = radialX * deltaX + radialY * deltaY + radialZ * deltaZ;
         double discriminant = along * along - speedSquared * clearance;
         if (speedSquared == 0 || along >= 0 || discriminant < 0)
         {
