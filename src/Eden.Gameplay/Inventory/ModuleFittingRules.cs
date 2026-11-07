@@ -49,7 +49,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            RemoteRepairRules.Effect(groupId) is { } remote
+            CapacitorWarfareRules.Effect(groupId) is { } capacitor
+                && effects.Contains(capacitor)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+            || RemoteRepairRules.Effect(groupId) is { } remote
                 && effects.Contains(remote)
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
             || PlayerEwarRules.Groups.Contains(groupId)

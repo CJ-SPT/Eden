@@ -384,7 +384,8 @@ internal sealed class FlightSession(
             _simulatedStamp,
             DirtTime: DirtTimestamp(),
             ElectronicWarfare: ModuleEffects.ElectronicWarfare,
-            RemoteRepairs: ModuleEffects.RemoteRepairs
+            RemoteRepairs: ModuleEffects.RemoteRepairs,
+            CapacitorEffects: ModuleEffects.CapacitorEffects
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -470,6 +471,12 @@ internal sealed class FlightSession(
     public void SetRemoteRepairEffect(RemoteRepairCycle repair, bool active)
     {
         ModuleEffects.SetRemoteRepairEffect(Pilot.ShipId, repair, active);
+        PublishContact();
+    }
+
+    public void SetCapacitorEffect(CapacitorCycle effect, bool active)
+    {
+        ModuleEffects.SetCapacitorEffect(effect, active);
         PublishContact();
     }
 

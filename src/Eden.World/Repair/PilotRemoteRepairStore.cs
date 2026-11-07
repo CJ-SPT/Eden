@@ -92,7 +92,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             throw new InvalidDataException("The remote repairer is still cycling.");
         }
         long end = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
-        Assist(world, catalog, pilot, target.Pilot, now, end);
+        AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, end);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
         RemoteRepairCycle cycle = new(module, pilot.ActiveShipId, targetId, now, end);
         world.Add(
@@ -153,7 +153,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             }
             _ = Health(world, pilot, PilotFittingStore.ShipAttributes(world, catalog, pilot), now);
             var target = Target(world, catalog, pilot, row.TargetId, now);
-            Assist(world, catalog, pilot, target.Pilot, now, now);
+            AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, now);
             applied = Apply(world, target, cycle.Module, Distance(catalog, pilot, target.Pilot), now);
         }
         world.Remove(row);
@@ -244,29 +244,5 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         }
         saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
         return new(target.Pilot.Id, health);
-    }
-
-    private static void Assist(WorldDbContext world, CatalogDbContext catalog, Pilot source, Pilot target, long now, long end)
-    {
-        var timers = world.Set<SavedCrimewatch>().Find(target.Id)?.Timers() ?? CrimewatchTimers.Empty;
-        int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
-        var flag = AssistanceRules.Decide(
-            new(
-                CrimewatchPersistence.Security(catalog, system),
-                source.SafetyLevel,
-                world.Set<Account>().Find(source.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
-                timers.Flag(now),
-                (world.Set<SavedSecurityStatus>().Find(target.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                world.Set<SavedEngagement>().Any(e => (e.LowerPilotId == target.Id || e.HigherPilotId == target.Id) && e.ExpiresAt > now),
-                timers.Pvp.Running(now)
-            )
-        );
-        var state = CrimewatchPersistence.State(world, source.Id);
-        state.SystemId = system;
-        state.Apply(AssistanceRules.Apply(state.Timers(), timers, flag, now, end));
-        if (world.Set<SavedLogoff>().Find(source.Id) is { } logoff)
-        {
-            logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, Math.Max(state.PvpUntil, state.NpcUntil));
-        }
     }
 }

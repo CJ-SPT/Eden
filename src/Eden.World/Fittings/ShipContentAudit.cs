@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -281,6 +282,17 @@ internal static class ShipContentAudit
             checks.Add(new(ContentOperation.Overheating, false, ShipContentMilestone.Overheating, "Native overload routes have no owner."));
         }
         AddDroneConsumers(effects, checks);
+        if (type.GroupId is CapacitorWarfareRules.NosferatuGroup or CapacitorWarfareRules.NeutralizerGroup)
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.EnergyAndRemoteSupport,
+                    "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished."
+                )
+            );
+        }
         if (rig && milestone is ShipContentMilestone.Exploration or ShipContentMilestone.InformationAndSalvage)
         {
             checks.Add(

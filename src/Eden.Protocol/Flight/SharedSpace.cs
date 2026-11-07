@@ -110,7 +110,8 @@ internal sealed record ShipContact(
     bool Bumped = false,
     long? DirtTime = null,
     ElectronicWarfareSpaceContact[]? ElectronicWarfare = null,
-    RemoteRepairCycle[]? RemoteRepairs = null
+    RemoteRepairCycle[]? RemoteRepairs = null,
+    CapacitorCycle[]? CapacitorEffects = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

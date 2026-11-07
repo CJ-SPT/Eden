@@ -334,6 +334,7 @@ public static class HullBonusRules
                     or HullCapability.Propulsion
                     or HullCapability.Tackle
                     or HullCapability.ElectronicWarfare
+                    or HullCapability.EnergyWarfare
                     or HullCapability.ArmorPlates
                     or HullCapability.ShieldExtenders
                     or HullCapability.ReinforcedBulkheads

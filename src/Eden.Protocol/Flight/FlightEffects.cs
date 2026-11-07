@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
@@ -55,7 +56,20 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
             }
         }
         RefreshPropulsion(ship, previous);
+        if (Changed(ship.CapacitorEffects, previous?.CapacitorEffects))
+        {
+            foreach (var effect in (previous?.CapacitorEffects ?? []).Except(ship.CapacitorEffects ?? []))
+            {
+                CapacitorEffect(effect, false);
+            }
+            foreach (var effect in (ship.CapacitorEffects ?? []).Except(previous?.CapacitorEffects ?? []))
+            {
+                CapacitorEffect(effect, true);
+            }
+        }
     }
+
+    internal void CapacitorEffect(CapacitorCycle effect, bool active) => emit(CapacitorWire.Graphic(effect, active));
 
     internal void ElectronicWarfareEffect(long shipId, ElectronicWarfareSpaceContact effect, bool active) =>
         emit(PlayerEwarWire.Graphic(shipId, effect, active));

@@ -200,6 +200,15 @@ internal sealed partial class LiveReadModels
     internal bool RemoteRepairModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
         Read(_remoteRepairOnline, new(pilot, ship, module), () => load(pilot, ship, module));
 
+    private readonly ResidentSnapshot<EwarModuleKey, bool> _capacitorOnline = new(
+        "resident.capacitorOnline",
+        "WorldItem",
+        "WorldContractEscrow"
+    );
+
+    internal bool CapacitorModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
+        Read(_capacitorOnline, new(pilot, ship, module), () => load(pilot, ship, module));
+
     internal IReadOnlyList<ElectronicWarfareContact> PlayerEwarIncoming(long targetId) =>
         Array.AsReadOnly(PlayerEwar().Where(e => e.Target.Id == targetId).ToArray());
 

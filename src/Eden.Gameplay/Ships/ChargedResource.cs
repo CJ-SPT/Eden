@@ -18,6 +18,12 @@ public static class ChargedResource
         {
             return capacity;
         }
+        if (elapsedMilliseconds <= 0)
+        {
+            // Re-evaluating the exponential at zero introduces rounding drift.
+            // Preserve exact same-tick balances, including nosferatu's GJ comparison.
+            return Math.Clamp(charge, 0, capacity);
+        }
         double fraction = Math.Clamp(charge / capacity, 0, 1);
         double root = 1 + (Math.Sqrt(fraction) - 1) * Math.Exp(-Math.Max(0, elapsedMilliseconds) / TimeConstant(rechargeMilliseconds));
         return capacity * root * root;

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -16,6 +17,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
     internal WeaponContact[] Weapons { get; private set; } = [];
     internal ShieldBoostContact[] ShieldBoosts { get; private set; } = [];
     internal RemoteRepairCycle[] RemoteRepairs { get; private set; } = [];
+    internal CapacitorCycle[] CapacitorEffects { get; private set; } = [];
     internal LocalRepairContact[] LocalRepairs { get; private set; } = [];
     internal HardenerContact[] Hardeners { get; private set; } = [];
     internal SupportContact[] Support { get; private set; } = [];
@@ -68,6 +70,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
         ShieldBoosts = [];
         LocalRepairs = [];
         RemoteRepairs = [];
+        CapacitorEffects = [];
         Hardeners = [];
         Support = [];
         TackleEffects = [];
@@ -132,6 +135,15 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
             .Concat(active ? [repair] : Array.Empty<RemoteRepairCycle>())
             .ToArray();
         effects.RemoteRepairEffect(shipId, repair, active);
+    }
+
+    internal void SetCapacitorEffect(CapacitorCycle effect, bool active)
+    {
+        CapacitorEffects = CapacitorEffects
+            .Where(c => c.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<CapacitorCycle>())
+            .ToArray();
+        effects.CapacitorEffect(effect, active);
     }
 
     internal void SetLocalRepairEffect(long shipId, LocalRepairContact effect, bool active)

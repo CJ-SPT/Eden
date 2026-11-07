@@ -1469,7 +1469,7 @@
         {
           "effectId": 2133,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2134,
@@ -1484,7 +1484,7 @@
         {
           "effectId": 5121,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5126,
@@ -1503,8 +1503,7 @@
         }
       ],
       "deferred": [
-        "RemoteRepair",
-        "EnergyWarfare"
+        "RemoteRepair"
       ]
     },
     {
@@ -1757,7 +1756,7 @@
         {
           "effectId": 2133,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2135,
@@ -1772,7 +1771,7 @@
         {
           "effectId": 5121,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5123,
@@ -1796,8 +1795,7 @@
         }
       ],
       "deferred": [
-        "RemoteRepair",
-        "EnergyWarfare"
+        "RemoteRepair"
       ]
     },
     {
@@ -2796,22 +2794,22 @@
         {
           "effectId": 6253,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6256,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6257,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6260,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -2830,7 +2828,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -6845,7 +6842,7 @@
         {
           "effectId": 1219,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 1221,
@@ -6855,7 +6852,7 @@
         {
           "effectId": 3297,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3478,
@@ -6865,7 +6862,7 @@
         {
           "effectId": 5854,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -6884,7 +6881,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -6925,7 +6921,7 @@
         {
           "effectId": 1220,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 1222,
@@ -6935,7 +6931,7 @@
         {
           "effectId": 3298,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3483,
@@ -6945,32 +6941,30 @@
         {
           "effectId": 5854,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6299,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6305,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12739,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12740,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 17924,
@@ -7058,12 +7052,12 @@
         {
           "effectId": 1215,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3299,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3487,
@@ -7078,32 +7072,30 @@
         {
           "effectId": 5854,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6281,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6285,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6287,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6291,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 17928,
@@ -8816,22 +8808,22 @@
         {
           "effectId": 6253,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6256,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6257,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6260,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -8880,7 +8872,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -9357,27 +9348,25 @@
         {
           "effectId": 6241,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6242,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6245,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6246,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 32876,
@@ -9600,12 +9589,12 @@
         {
           "effectId": 5207,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5208,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5209,
@@ -9613,9 +9602,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33081,
@@ -11591,7 +11578,7 @@
         {
           "effectId": 7112,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7204,
@@ -11615,7 +11602,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
       ]
@@ -11675,7 +11661,7 @@
         {
           "effectId": 7112,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8074,
@@ -11684,7 +11670,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
       ]
@@ -11755,7 +11740,7 @@
         {
           "effectId": 7112,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -11774,7 +11759,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "Smartbombs",
         "Disintegrators",
         "MicroJumpDrives",
@@ -11901,7 +11885,7 @@
         {
           "effectId": 7112,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7154,
@@ -11920,7 +11904,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
       ]
@@ -11980,7 +11963,7 @@
         {
           "effectId": 7112,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7155,
@@ -12014,7 +11997,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "Smartbombs",
         "Disintegrators",
         "CommandBursts",
@@ -12056,7 +12038,7 @@
         {
           "effectId": 7091,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -12066,7 +12048,7 @@
         {
           "effectId": 7167,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7168,
@@ -12086,7 +12068,6 @@
       ],
       "deferred": [
         "RemoteRepair",
-        "EnergyWarfare",
         "Smartbombs"
       ]
     },
@@ -13036,12 +13017,12 @@
         {
           "effectId": 11407,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11408,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11410,
@@ -13054,9 +13035,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 73794,
@@ -14514,22 +14493,22 @@
         {
           "effectId": 6241,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6242,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6245,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6246,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12807,
@@ -14542,9 +14521,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "EnergyWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 91849,
@@ -14907,7 +14884,7 @@
         {
           "effectId": 5854,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12949,
@@ -14917,17 +14894,17 @@
         {
           "effectId": 12950,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12951,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12952,
           "capability": "EnergyWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12953,
@@ -14936,7 +14913,6 @@
         }
       ],
       "deferred": [
-        "EnergyWarfare",
         "MicroJumpDrives"
       ]
     }

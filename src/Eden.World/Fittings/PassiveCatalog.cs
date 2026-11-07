@@ -102,7 +102,12 @@ internal static class PassiveCatalog
                         || hull
                             && modifier.Func == "LocationGroupModifier"
                             && modifier.Domain == "shipID"
-                            && modifier.ModifiedAttributeID is (int)DogmaAttributeId.MaxGroupFitted or (int)DogmaAttributeId.MaxGroupOnline
+                            && (
+                                modifier.ModifiedAttributeID is (int)DogmaAttributeId.MaxGroupFitted or (int)DogmaAttributeId.MaxGroupOnline
+                                || modifier.ModifiedAttributeID == (int)DogmaAttributeId.NosOverride
+                                    && modifier.ModifyingAttributeID == (int)DogmaAttributeId.NosOverride
+                                    && modifier.GroupID == CapacitorWarfareRules.NosferatuGroup
+                            )
                     )
                 )
             )

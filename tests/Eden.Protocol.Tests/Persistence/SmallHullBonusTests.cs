@@ -36,6 +36,7 @@ public sealed class SmallHullBonusTests
             Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s).Concat(new[] { 1948, 1968, 2108, 37543, 12709 }).ToHashSet()
         );
         PassiveCatalogFixture.LoadRemoteRepairs(f.CatalogPath);
+        PassiveCatalogFixture.LoadCapacitorModules(f.CatalogPath, new HashSet<int> { 529, 530, 533, 3423, 24572 });
         long ship = SmallHullTests.Board(f, type);
         IReadOnlyList<PassiveModifier> modifiers;
         Dictionary<DogmaAttributeId, double> sources;
@@ -130,6 +131,7 @@ public sealed class SmallHullBonusTests
                         DogmaOperation.PreMultiply or DogmaOperation.PostMultiply => expected * amount,
                         DogmaOperation.Add => expected + amount,
                         DogmaOperation.PostPercent => expected * (1 + amount / 100),
+                        DogmaOperation.PostAssignment => amount,
                         _ => throw new InvalidDataException("Unexpected operational hull operator."),
                     };
                 }
@@ -228,6 +230,9 @@ public sealed class SmallHullBonusTests
                 HullBonusEquipmentGroup.StasisWeb => new(527),
                 HullBonusEquipmentGroup.RemoteShieldBooster => new(3596),
                 HullBonusEquipmentGroup.RemoteArmorRepairer => new(11357),
+                HullBonusEquipmentGroup.RemoteCapacitorTransmitter => new(529),
+                HullBonusEquipmentGroup.EnergyNosferatu => new(530),
+                HullBonusEquipmentGroup.EnergyNeutralizer => new(533),
                 HullBonusEquipmentGroup.Ecm => new(1948),
                 HullBonusEquipmentGroup.SensorDampener => new(1968),
                 HullBonusEquipmentGroup.TargetPainter => new(12709),
@@ -257,6 +262,7 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.Mining => new(stripMiner ? 17482 : 482),
                 HullBonusSkill.RepairSystems => new(523),
                 HullBonusSkill.ShieldOperation => new(399),
+                HullBonusSkill.CapacitorEmissionSystems => new(modifier.Attribute == DogmaAttributeId.PowerTransferAmount ? 530 : 533),
                 HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => new(447),
                 HullBonusSkill.Afterburner => new(439),
                 HullBonusSkill.HighSpeedManeuvering => new(434),

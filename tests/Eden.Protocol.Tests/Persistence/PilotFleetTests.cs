@@ -54,23 +54,25 @@ public sealed class PilotFleetTests
 
     internal static void AddVenture(TestWorld db)
     {
-        using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
-        catalog.Database.ExecuteSqlRaw(
-            """
-            INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(11,'powerOutput'),(48,'cpuOutput'),
-                (1556,'generalMiningHoldCapacity'),(207,'miningYieldMultiplier'),(1842,'miningFrigateYieldBonus'),
-                (182,'requiredSkill1'),(277,'requiredSkill1Level');
-            INSERT INTO ItemGroup VALUES (25,'Frigate',6);
-            INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (32880,'Venture',25,50,1200000,41);
-            INSERT INTO SourceRecord VALUES ('client/types','32880','{{"published":1,"marketGroupID":1,"volume":29500}}');
-            INSERT INTO TypeAttribute SELECT 32880,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
-            INSERT OR REPLACE INTO TypeAttribute VALUES (32880,14,3),(32880,102,2),(32880,11,45),(32880,48,240),
-                (32880,1556,5000),(32880,207,2),(32880,1842,5),(32880,182,32918),(32880,277,1);
-            INSERT INTO ItemType(Id,Name,GroupId) VALUES (32918,'Mining Frigate',257);
-            INSERT INTO TypeAttribute VALUES (32918,275,2);
-            INSERT OR IGNORE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7,17]}}');
-            """
-        );
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(11,'powerOutput'),(48,'cpuOutput'),
+                    (1556,'generalMiningHoldCapacity'),(207,'miningYieldMultiplier'),(1842,'miningFrigateYieldBonus'),
+                    (182,'requiredSkill1'),(277,'requiredSkill1Level');
+                INSERT INTO ItemGroup VALUES (25,'Frigate',6);
+                INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (32880,'Venture',25,50,1200000,41);
+                INSERT INTO SourceRecord VALUES ('client/types','32880','{{"published":1,"marketGroupID":1,"volume":29500}}');
+                INSERT INTO TypeAttribute SELECT 32880,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
+                INSERT OR REPLACE INTO TypeAttribute VALUES (32880,14,3),(32880,102,2),(32880,11,45),(32880,48,240),
+                    (32880,1556,5000),(32880,207,2),(32880,1842,5),(32880,182,32918),(32880,277,1);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (32918,'Mining Frigate',257);
+                INSERT INTO TypeAttribute VALUES (32918,275,2);
+                INSERT OR IGNORE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7,17]}}');
+                """
+            );
+        }
         using WorldDbContext world = new(db.Path);
         world.Add(
             new PilotSkill

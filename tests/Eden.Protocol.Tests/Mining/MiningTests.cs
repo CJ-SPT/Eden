@@ -22,6 +22,7 @@ using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Mining;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -84,36 +85,40 @@ public sealed class MiningTests
 
         public Fixture()
         {
-            using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
-            catalog.Database.ExecuteSqlRaw(
-                """
-                INSERT INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(48,'cpuOutput'),(11,'powerOutput'),(50,'cpu'),(30,'power'),
-                    (182,'requiredSkill1'),(277,'requiredSkill1Level'),(6,'capacitorNeed'),(54,'maxRange'),(73,'duration'),
-                        (77,'miningAmount'),
-                    (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),(564,'scanResolution'),
-                        (5967,'miningCritChance'),(5969,'miningCritBonusYield');
-                INSERT INTO TypeAttribute VALUES (601,14,2),(601,48,135),(601,11,23),(601,76,27000),(601,192,3),(601,552,52),(601,564,475),
-                    (3651,50,65),(3651,30,2),(3651,182,3386),(3651,277,1),(3651,6,5),(3651,54,10000),(3651,73,10000),(3651,77,6),
-                        (3651,5967,0),(3651,5969,2);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3386,'Mining',257),(3410,'Astrogeology',257),
-                    (90727,'Mining Precision',257),(90728,'Mining Exploitation',257),
-                    (3417,'Capacitor Systems Operation',257),(3418,'Capacitor Management',257);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54);
-                INSERT INTO SourceRecord VALUES ('client/types','483','{{"published":1,"marketGroupID":1,"volume":5}}'),
-                    ('client/types','482','{{"published":1,"marketGroupID":1,"volume":5}}');
-                INSERT INTO TypeAttribute VALUES (483,50,60),(483,30,2),(483,182,3386),(483,277,1),(483,6,5),(483,54,10000),
-                    (483,73,15000),(483,77,10),(483,5967,0),(483,5969,2),
-                    (482,50,80),(482,30,4),(482,182,3386),(482,277,4),(482,6,18),(482,54,12000),(482,73,15000),(482,77,15),(482,5967,0),
-                        (482,5969,2);
-                INSERT INTO TypeAttribute VALUES (3386,275,1),(3410,275,3),(90727,275,2),(90728,275,6),(3417,275,1),(3418,275,3);
-                INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
-                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
-                INSERT INTO TypeAttribute VALUES (1230,552,100);
-                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
-                    ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}');
-                """
-            );
+            using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(48,'cpuOutput'),(11,'powerOutput'),(50,'cpu'),(30,'power'),
+                        (182,'requiredSkill1'),(277,'requiredSkill1Level'),(6,'capacitorNeed'),(54,'maxRange'),(73,'duration'),
+                            (77,'miningAmount'),
+                        (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),(564,'scanResolution'),
+                            (5967,'miningCritChance'),(5969,'miningCritBonusYield');
+                    INSERT INTO TypeAttribute VALUES (601,14,2),(601,48,135),(601,11,23),(601,76,27000),(601,192,3),
+                        (601,552,52),(601,564,475),
+                        (3651,50,65),(3651,30,2),(3651,182,3386),(3651,277,1),(3651,6,5),(3651,54,10000),(3651,73,10000),(3651,77,6),
+                            (3651,5967,0),(3651,5969,2);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (3386,'Mining',257),(3410,'Astrogeology',257),
+                        (90727,'Mining Precision',257),(90728,'Mining Exploitation',257),
+                        (3417,'Capacitor Systems Operation',257),(3418,'Capacitor Management',257);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (483,'Miner I',54),(482,'Miner II',54);
+                    INSERT INTO SourceRecord VALUES ('client/types','483','{{"published":1,"marketGroupID":1,"volume":5}}'),
+                        ('client/types','482','{{"published":1,"marketGroupID":1,"volume":5}}');
+                    INSERT INTO TypeAttribute VALUES (483,50,60),(483,30,2),(483,182,3386),(483,277,1),(483,6,5),(483,54,10000),
+                        (483,73,15000),(483,77,10),(483,5967,0),(483,5969,2),
+                        (482,50,80),(482,30,4),(482,182,3386),(482,277,4),(482,6,18),(482,54,12000),(482,73,15000),(482,77,15),(482,5967,0),
+                            (482,5969,2);
+                    INSERT INTO TypeAttribute VALUES (3386,275,1),(3410,275,3),(90727,275,2),(90728,275,6),(3417,275,1),(3418,275,3);
+                    INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
+                    INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
+                    INSERT INTO TypeAttribute VALUES (1230,552,100);
+                    INSERT INTO SourceRecord(Dataset,Key,Data) VALUES
+                        ('client/types','1230','{{"published":1,"marketGroupID":1,"volume":0.1}}');
+                    """
+                );
+            }
+            // Publish catalog edits before opening world operations under the live owner.
             using WorldDbContext world = new(Db.Path);
             world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3386,250),(90000002,3386,250)");
             var pilot = Db.Store.FindPilot(1000001)!;
@@ -203,6 +208,12 @@ public sealed class MiningTests
             _clients.Remove(client);
         }
 
+        public void Reopen()
+        {
+            LiveWorld.Find(Db.Path)?.Dispose();
+            _ = WorldInitialization.Open(Db.Path);
+        }
+
         public void Dispose()
         {
             foreach (var (context, targeting) in _clients)
@@ -245,7 +256,7 @@ public sealed class MiningTests
         Assert.Equal((int)InventoryFlag.GeneralMiningHold, ore.FlagId);
         Assert.InRange(ore.Quantity, 132, 133);
         Assert.Equal(10000 - ore.Quantity, fixture.Remaining());
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -308,7 +319,7 @@ public sealed class MiningTests
         Assert.Equal(expectedOre, ore.Quantity);
         Assert.Equal(10000 - expectedOre, fixture.Remaining());
         Assert.False(mining.IsActive(module));
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -396,7 +407,7 @@ public sealed class MiningTests
         );
         Assert.Equal(63, message["quantity_added"]);
         Assert.NotEmpty(BlueMarshal.Encode(message));
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(ore, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.Id == ore.Id));
     }
 
@@ -500,7 +511,7 @@ public sealed class MiningTests
         Assert.Equal(7, fixture.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Single(i => i.TypeId == 1230).Quantity);
         context.Flight.RefreshAsteroids(fixture.Db.Services.GetRequiredService<IAsteroidField>().List(context.Pilot.SystemId));
         Assert.Null(context.Flight.FindTarget(Fixture.Asteroid));
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Empty(new AsteroidFieldStore(new(fixture.Db.Path)).List(context.Pilot.SystemId));
     }
 
@@ -572,7 +583,7 @@ public sealed class MiningTests
             .Item;
         Assert.Equal(63, unloaded.Quantity);
         Assert.Equal(ore.Id, unloaded.Id);
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(flight.Pilot, fixture.Db.Store.FindPilot(1000001));
         Assert.Equal(unloaded, Assert.Single(fixture.Inventory.List(pilot.PilotId, 60000100)));
         Assert.Null(flight.CallWire("ship", "Undock", [pilot.ShipId]));
@@ -637,7 +648,7 @@ public sealed class MiningTests
             8
         );
         Assert.Throws<InvalidDataException>(() => fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now));
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(
             0,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
@@ -676,7 +687,7 @@ public sealed class MiningTests
                     + "TypeId=3638; PRAGMA user_version=15"
             );
         }
-        _ = WorldInitialization.Open(fixture.Db.Path);
+        fixture.Reopen();
         Assert.Equal(
             149.5,
             fixture.Db.Services.GetRequiredService<Eden.Gameplay.Ships.IPilotShipResources>().Capacitor(context.Pilot.PilotId, now),
