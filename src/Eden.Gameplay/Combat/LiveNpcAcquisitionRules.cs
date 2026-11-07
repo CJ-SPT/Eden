@@ -30,7 +30,9 @@ public static class LiveNpcAcquisitionRules
                 .Where(s => s.SystemId == npc.SystemId)
                 .Select(s => (Ship: s, Range: Math.Max(0, s.Position.DistanceTo(npc.Position) - npc.Radius - s.Radius)))
                 .Where(t =>
-                    t.Range <= NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange)
+                    PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, t.Ship.Id)
+                    && t.Range <= npc.Attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange, double.MaxValue)
+                    && t.Range <= NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange)
                     && t.Ship.Position.DistanceTo(npc.Home) <= NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange)
                 )
                 .OrderBy(t => t.Range)

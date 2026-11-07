@@ -354,15 +354,21 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
     internal static IReadOnlyDictionary<DogmaAttributeId, double> NpcAttributes(
         WorldDbContext world,
         long npcId,
-        IReadOnlyDictionary<DogmaAttributeId, double> attributes
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        double missileRange = 0
     ) =>
-        TackleDefinitions.NpcAttributes(
-            attributes,
-            world
-                .Set<WorldTackle>()
-                .Where(t => t.TargetKind == TackleTargetKind.Npc && t.TargetId == npcId)
-                .AsEnumerable()
-                .Select(t => t.Module())
-                .ToArray()
+        PlayerEwarStore.NpcAttributes(
+            world,
+            npcId,
+            TackleDefinitions.NpcAttributes(
+                attributes,
+                world
+                    .Set<WorldTackle>()
+                    .Where(t => t.TargetKind == TackleTargetKind.Npc && t.TargetId == npcId)
+                    .AsEnumerable()
+                    .Select(t => t.Module())
+                    .ToArray()
+            ),
+            missileRange
         );
 }

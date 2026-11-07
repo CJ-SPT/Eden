@@ -9,6 +9,7 @@ using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Inventory;
@@ -135,7 +136,10 @@ internal sealed record FittingCalculation(
         {
             var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
             if (
-                !SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                !(
+                    SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                    || PlayerEwarCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                )
                 || !ScriptCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
                 || !SupportModuleDefinitions.CompatibleScript(
                     parent.GroupId,
@@ -208,6 +212,17 @@ internal sealed record FittingCalculation(
             )
             .Select(m => m.Item.Id)
             .ToArray();
+        modifiers.AddRange(
+            PlayerEwarRules.Modifiers(
+                ship.Id,
+                turrets,
+                charges
+                    .Where(c => chargeAttributes[c.Item.TypeId].ContainsKey(DogmaAttributeId.ExplosionRadius))
+                    .Select(c => c.Item.Id)
+                    .ToArray(),
+                PlayerEwarStore.Active(world, ship.Id)
+            )
+        );
         modifiers.AddRange(
             NpcEwarRules.Modifiers(
                 ship.Id,
@@ -324,6 +339,7 @@ internal sealed record FittingCalculation(
         var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
+            .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Distinct()

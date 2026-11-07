@@ -76,10 +76,16 @@ internal sealed class SupportModuleWire(
                         or CombatDefinitions.HybridWeaponGroup
                         or CombatDefinitions.ProjectileWeaponGroup
                 || module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun;
-            if (turret || SupportModuleDefinitions.Effect(module.GroupId) is not null)
+            if (turret || SupportModuleDefinitions.Effect(module.GroupId) is not null || PlayerEwarRules.Groups.Contains(module.GroupId))
             {
                 var values = turret ? combat.ModuleAttributes(pilot, module) : fitting.ModuleAttributes(pilot, module);
-                Add(new DogmaItemKey.Item(module.Id), values, turret ? WeaponAttributes : SupportModuleDefinitions.BonusAttributes);
+                Add(
+                    new DogmaItemKey.Item(module.Id),
+                    values,
+                    turret ? WeaponAttributes
+                        : PlayerEwarRules.Groups.Contains(module.GroupId) ? PlayerEwarRules.SourceAttributes
+                        : SupportModuleDefinitions.BonusAttributes
+                );
             }
         }
         foreach (var magazine in ammunition.Read(pilot, ship))

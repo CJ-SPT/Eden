@@ -153,6 +153,43 @@ internal sealed partial class LiveReadModels
             }
         );
 
+    private readonly ResidentSnapshot<int, IReadOnlyList<ElectronicWarfareContact>> _playerEwar = new(
+        "resident.playerEwar",
+        "WorldPlayerEwar"
+    );
+
+    private IReadOnlyList<ElectronicWarfareContact> PlayerEwar() =>
+        Read(
+            _playerEwar,
+            0,
+            () =>
+            {
+                using WorldDbContext world = new(database.Path);
+                return Array.AsReadOnly(
+                    world
+                        .Set<WorldPlayerEwar>()
+                        .OrderBy(e => e.ModuleId)
+                        .ThenBy(e => e.TargetId)
+                        .AsNoTracking()
+                        .AsEnumerable()
+                        .Select(e => e.Contact())
+                        .ToArray()
+                );
+            }
+        );
+
+    internal bool HasPlayerEwar() => PlayerEwar().Count > 0;
+
+    private readonly record struct EwarModuleKey(long Pilot, long Ship, long Module);
+
+    private readonly ResidentSnapshot<EwarModuleKey, bool> _ewarOnline = new("resident.ewarOnline", "WorldItem", "WorldContractEscrow");
+
+    internal bool EwarModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
+        Read(_ewarOnline, new(pilot, ship, module), () => load(pilot, ship, module));
+
+    internal IReadOnlyList<ElectronicWarfareContact> PlayerEwarIncoming(long targetId) =>
+        Array.AsReadOnly(PlayerEwar().Where(e => e.Target.Id == targetId).ToArray());
+
     private void ObserveSpace(IReadOnlyCollection<CombatRowChange> changes)
     {
         _missileWork.Observe(changes);
@@ -160,6 +197,8 @@ internal sealed partial class LiveReadModels
         _tackle.Observe(changes);
         _activeModules.Observe(changes);
         _npcEwar.Observe(changes);
+        _playerEwar.Observe(changes);
+        _ewarOnline.Observe(changes);
     }
 
     private void ClearSpace()
@@ -169,5 +208,7 @@ internal sealed partial class LiveReadModels
         _tackle.Clear();
         _activeModules.Clear();
         _npcEwar.Clear();
+        _playerEwar.Clear();
+        _ewarOnline.Clear();
     }
 }

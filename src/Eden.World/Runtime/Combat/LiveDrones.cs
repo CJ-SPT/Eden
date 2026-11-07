@@ -309,6 +309,7 @@ internal sealed partial class LiveCombatRuntime
         var attributes = npc.Attributes;
         var drone = SystemDrones(npc.SystemId)
             .Where(d => d.Contact.ShipId == ship.ShipId && d.Contact.TargetId == npc.Id && d.Contact.Activity == DroneActivity.Fighting)
+            .Where(d => PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, d.Contact.Id))
             .OrderBy(d => d.Contact.Id)
             .FirstOrDefault(d =>
                 d.Contact.Position.DistanceTo(npc.Position) - d.Contact.Profile.Radius - npc.Radius

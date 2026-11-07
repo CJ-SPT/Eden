@@ -120,6 +120,13 @@ public sealed class CombatHullOperationTests
     public void CenotaphResistanceReducesAnIncomingPaidWebOnTheActualFlightHull()
     {
         using Fixture f = Prepare(85086);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            // This test checks hull/web physics; legality is covered by Crimewatch tests.
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":0}}')"
+            );
+        }
         var wing = f.Db.Store.FindPilot(1000002)!;
         long module;
         using (WorldDbContext world = new(f.Db.Path))

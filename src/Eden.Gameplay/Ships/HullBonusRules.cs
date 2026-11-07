@@ -290,8 +290,9 @@ public static class HullBonusRules
             _ => HullCapability.Unclassified,
         };
 
-    public static bool Operational(HullCapability capability) =>
-        capability
+    public static bool Operational(HullCapability capability, int? equipmentGroup = null) =>
+        equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
+        && capability
             is HullCapability.HullAttributes
                 or HullCapability.Turrets
                 or HullCapability.Missiles
@@ -300,6 +301,7 @@ public static class HullBonusRules
                 or HullCapability.LocalShieldBoost
                 or HullCapability.Propulsion
                 or HullCapability.Tackle
+                or HullCapability.ElectronicWarfare
                 or HullCapability.ArmorPlates
                 or HullCapability.ShieldExtenders
                 or HullCapability.ReinforcedBulkheads;

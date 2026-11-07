@@ -40,7 +40,7 @@ internal static class HullCatalog
                 {
                     throw new InvalidDataException($"Unclassified hull effect {effect.EffectID} on type {typeId}.");
                 }
-                if (!HullBonusRules.Operational(capability))
+                if (!Operational(source))
                 {
                     continue;
                 }
@@ -64,11 +64,14 @@ internal static class HullCatalog
                 (effect.ModifierInfo ?? []).Select(source => new HullEffectCapability(
                     checked((int)effect.EffectID!.Value),
                     Capability(source),
-                    HullBonusRules.Operational(Capability(source))
+                    Operational(source)
                 ))
             )
             .Distinct()
             .ToArray();
+
+    private static bool Operational(ClientDogmaeffectsModifierInfoItem source) =>
+        HullBonusRules.Operational(Capability(source), source.Func == "LocationGroupModifier" ? (int?)source.GroupID : null);
 
     private static HullCapability Capability(ClientDogmaeffectsModifierInfoItem source)
     {

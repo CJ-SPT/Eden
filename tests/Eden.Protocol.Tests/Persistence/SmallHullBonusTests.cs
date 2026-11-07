@@ -28,6 +28,10 @@ public sealed class SmallHullBonusTests
 
     internal static void VerifyBonuses(Fixture f, int type)
     {
+        PassiveCatalogFixture.LoadPlayerEwar(
+            f.CatalogPath,
+            Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s).Concat(new[] { 1948, 1968, 2108, 37543, 12709 }).ToHashSet()
+        );
         long ship = SmallHullTests.Board(f, type);
         IReadOnlyList<PassiveModifier> modifiers;
         Dictionary<DogmaAttributeId, double> sources;
@@ -197,6 +201,9 @@ public sealed class SmallHullBonusTests
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
                 HullBonusEquipmentGroup.WarpScrambler => new(447),
                 HullBonusEquipmentGroup.StasisWeb => new(527),
+                HullBonusEquipmentGroup.Ecm => new(1948),
+                HullBonusEquipmentGroup.SensorDampener => new(1968),
+                HullBonusEquipmentGroup.TargetPainter => new(12709),
                 HullBonusEquipmentGroup.ArmorPlate => new(11293),
                 HullBonusEquipmentGroup.ShieldExtender => new(377),
                 HullBonusEquipmentGroup.ReinforcedBulkhead => new(1333),
@@ -226,6 +233,17 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => new(447),
                 HullBonusSkill.Afterburner => new(439),
                 HullBonusSkill.HighSpeedManeuvering => new(434),
+                HullBonusSkill.ElectronicWarfare => new(1948),
+                HullBonusSkill.TargetPainting => new(12709),
+                HullBonusSkill.WeaponDisruption => new(
+                    modifier.Attribute
+                        is DogmaAttributeId.MissileVelocityBonus
+                            or DogmaAttributeId.MissileLifetimeBonus
+                            or DogmaAttributeId.ExplosionRadiusBonus
+                            or DogmaAttributeId.ExplosionVelocityBonus
+                        ? 37543
+                        : 2108
+                ),
                 _ => throw new InvalidDataException($"No operational skill probe for {modifier.SelectionId}."),
             },
             _ => throw new InvalidDataException("No operational hull probe."),

@@ -256,6 +256,7 @@ internal sealed partial class LiveCombatRuntime
             var charge = PilotFittingStore.ReadAttributes(catalog, chargeId);
             missileRange = NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
         }
+        attributes = PlayerEwarStore.NpcAttributes(world, id, profile.Attributes, missileRange);
         var contributions = Contributions(world, id);
         var mining = world.Set<WorldNpcMiningMember>().Find(id);
         return new(
@@ -297,6 +298,7 @@ internal sealed partial class LiveCombatRuntime
             RepairProfile = NpcRepairRules.Profile(attributes),
             RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),
             ElectronicWarfare = profile.ElectronicWarfare,
+            IncomingElectronicWarfare = PlayerEwarStore.Active(world, id),
             Transit = mining?.Transit(npc),
             Activity = mining?.Activity(
                 npc,

@@ -38,6 +38,7 @@ internal sealed class PilotUpdateCoordinator(
     MissileHandler missiles,
     SupportModuleHandler support,
     TackleHandler tackle,
+    PlayerEwarHandler electronicWarfare,
     DeferredRefitPrimes refits,
     StationGuestHandler guests,
     OnlineStatusHandler online,
@@ -153,6 +154,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorBoosters.Cancel(context);
         support.Cancel(context);
         tackle.Leave(context);
+        electronicWarfare.Cancel(context);
         npcEwar.Leave(context);
         propulsion.Cancel(context);
         targeting.Reset();
@@ -167,6 +169,7 @@ internal sealed class PilotUpdateCoordinator(
         ApplyPlayerDamage(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);
+        electronicWarfare.Advance(context);
         redemption.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))
         {

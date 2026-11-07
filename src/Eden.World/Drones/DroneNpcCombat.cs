@@ -21,7 +21,8 @@ internal static class DroneNpcCombat
         long shipId,
         long now,
         double roll,
-        out bool droneTargetAvailable
+        out bool droneTargetAvailable,
+        IReadOnlyList<ElectronicWarfareContact>? electronicWarfare = null
     )
     {
         droneTargetAvailable = false;
@@ -35,6 +36,7 @@ internal static class DroneNpcCombat
                 d.ControllerShipId == shipId && d.TargetId == npc.Id && d.Activity == DroneActivity.Fighting && d.SystemId == npc.SystemId
             )
             .AsEnumerable()
+            .Where(d => PlayerEwarRules.CanTarget(electronicWarfare ?? [], d.ItemId))
             .OrderBy(d => d.ItemId)
             .Select(d => (Saved: d, Contact: PilotDroneStore.Contact(world, catalog, d)))
             .FirstOrDefault(d =>

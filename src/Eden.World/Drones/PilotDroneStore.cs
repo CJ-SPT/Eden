@@ -596,7 +596,7 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
             {
                 continue;
             }
-            var attributes = catalog.FittingAttributes(npc.TypeId);
+            var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, catalog.FittingAttributes(npc.TypeId));
             var damage = DroneRules.Shot(
                 contact,
                 target,

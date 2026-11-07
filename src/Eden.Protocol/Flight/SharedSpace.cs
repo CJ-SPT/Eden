@@ -6,6 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Combat;
 
 namespace Eden.Protocol.Flight;
 
@@ -107,7 +108,8 @@ internal sealed record ShipContact(
     TackleContact[]? Tackle = null,
     int Stamp = 0,
     bool Bumped = false,
-    long? DirtTime = null
+    long? DirtTime = null,
+    ElectronicWarfareSpaceContact[]? ElectronicWarfare = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

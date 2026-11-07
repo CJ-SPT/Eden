@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 
 namespace Eden.Gameplay.Inventory;
@@ -39,10 +40,18 @@ public static class SupportModuleDefinitions
             TrackingComputerGroup => TrackingScriptGroup,
             SensorBoosterGroup => SensorScriptGroup,
             GuidanceComputerGroup => GuidanceScriptGroup,
+            PlayerEwarRules.SensorDampenerGroup => PlayerEwarRules.DampeningScriptGroup,
             _ => 0,
         };
 
-    public static bool IsScript(int group) => group is TrackingScriptGroup or SensorScriptGroup or GuidanceScriptGroup;
+    public static bool IsScript(int group) =>
+        group
+            is TrackingScriptGroup
+                or SensorScriptGroup
+                or GuidanceScriptGroup
+                or PlayerEwarRules.TrackingDisruptionScriptGroup
+                or PlayerEwarRules.DampeningScriptGroup
+                or PlayerEwarRules.GuidanceDisruptionScriptGroup;
 
     public static bool CompatibleScript(
         int group,
@@ -50,11 +59,20 @@ public static class SupportModuleDefinitions
         IReadOnlyDictionary<DogmaAttributeId, double> module,
         IReadOnlyDictionary<DogmaAttributeId, double> script
     ) =>
-        ScriptGroup(group) == chargeGroup
+        (
+            ScriptGroup(group) == chargeGroup
+            || group == PlayerEwarRules.WeaponDisruptorGroup
+                && chargeGroup is PlayerEwarRules.TrackingDisruptionScriptGroup or PlayerEwarRules.GuidanceDisruptionScriptGroup
+        )
         && IsScript(chargeGroup)
         && module.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeGroup
         && module.GetValueOrDefault(DogmaAttributeId.ChargeSize) == script.GetValueOrDefault(DogmaAttributeId.ChargeSize)
-        && script.GetValueOrDefault(DogmaAttributeId.LauncherGroup) == group;
+        && (
+            script.GetValueOrDefault(DogmaAttributeId.LauncherGroup) == group
+            || group == PlayerEwarRules.WeaponDisruptorGroup
+                && chargeGroup == PlayerEwarRules.GuidanceDisruptionScriptGroup
+                && script.GetValueOrDefault(DogmaAttributeId.LauncherGroup) == GuidanceComputerGroup
+        );
 
     public static SupportModule Define(long itemId, int typeId, int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {

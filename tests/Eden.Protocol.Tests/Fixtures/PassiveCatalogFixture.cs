@@ -44,6 +44,8 @@ internal static class PassiveCatalogFixture
     // inventory, account, market or resource-cache data is embedded.
     internal static void Load(string path) => Load(path, "PassiveCatalog.json", null);
 
+    internal static void LoadPlayerEwar(string path, IReadOnlySet<int>? types = null) => Load(path, "PlayerEwarCatalog.json", types);
+
     internal static void LoadRigs(string path) => Load(path, "RigCatalog.json", null);
 
     internal static void LoadStarterProduction(string path) => Load(path, "StarterProductionCatalog.json", null);

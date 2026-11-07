@@ -8,6 +8,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
 
@@ -28,7 +29,8 @@ internal sealed class FlightSession(
     IPilotTackle? tackle = null,
     IPilotShipAppearance? appearance = null,
     IPilotDrones? drones = null,
-    IPilotCrimewatch? crimewatch = null
+    IPilotCrimewatch? crimewatch = null,
+    IPilotElectronicWarfare? electronicWarfare = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -155,6 +157,7 @@ internal sealed class FlightSession(
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         _destroying = true;
         space.Leave(Pilot.ShipId);
     }
@@ -355,7 +358,8 @@ internal sealed class FlightSession(
             ModuleEffects.Support,
             ModuleEffects.TackleEffects,
             _simulatedStamp,
-            DirtTime: DirtTimestamp()
+            DirtTime: DirtTimestamp(),
+            ElectronicWarfare: ModuleEffects.ElectronicWarfare
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -408,6 +412,12 @@ internal sealed class FlightSession(
     public void SetMiningEffect(MiningContact effect, bool active)
     {
         ModuleEffects.SetMiningEffect(Pilot.ShipId, effect, active);
+        PublishContact();
+    }
+
+    public void SetElectronicWarfareEffect(ElectronicWarfareSpaceContact effect, bool active)
+    {
+        ModuleEffects.SetElectronicWarfareEffect(Pilot.ShipId, effect, active);
         PublishContact();
     }
 
@@ -484,10 +494,12 @@ internal sealed class FlightSession(
         if (_disconnecting)
         {
             tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
+            electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId);
         }
         else
         {
             tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+            electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         }
         ModuleEffects.ReconcileReleasedTackle(tackle, Pilot.PilotId);
         if (!keepBallpark)
@@ -711,6 +723,7 @@ internal sealed class FlightSession(
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
         DepartureEffect(Pilot.ShipId, transit.SourceId, transit.System.Id);

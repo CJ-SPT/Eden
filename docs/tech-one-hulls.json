@@ -129,17 +129,16 @@
         {
           "effectId": 1996,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2734,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -320,7 +319,7 @@
         {
           "effectId": 5019,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5020,
@@ -334,8 +333,7 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -709,12 +707,11 @@
         {
           "effectId": 5795,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -936,12 +933,11 @@
         {
           "effectId": 5028,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -1152,12 +1148,12 @@
         {
           "effectId": 5015,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5016,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5017,
@@ -1176,8 +1172,7 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -1314,22 +1309,21 @@
         {
           "effectId": 3366,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3588,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3589,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -1945,12 +1939,11 @@
         {
           "effectId": 6395,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -2040,7 +2033,7 @@
         {
           "effectId": 5129,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7247,
@@ -2049,8 +2042,7 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -2161,22 +2153,21 @@
         {
           "effectId": 1442,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2756,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4370,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -2214,27 +2205,26 @@
         {
           "effectId": 3587,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3590,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5128,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5187,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -2542,12 +2532,12 @@
         {
           "effectId": 1434,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 1441,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2812,
@@ -2557,7 +2547,7 @@
         {
           "effectId": 4372,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -3712,17 +3702,16 @@
         {
           "effectId": 5827,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6354,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -4032,17 +4021,16 @@
         {
           "effectId": 1551,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5066,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -11266,22 +11254,21 @@
         {
           "effectId": 6352,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6353,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6354,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CombatDrones",
-        "ElectronicWarfare"
+        "CombatDrones"
       ]
     },
     {
@@ -12535,7 +12522,7 @@
         {
           "effectId": 3366,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3367,
@@ -12550,12 +12537,12 @@
         {
           "effectId": 3588,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3589,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5079,
@@ -12568,9 +12555,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "ElectronicWarfare"
-      ]
+      "deferred": []
     },
     {
       "typeId": 64034,

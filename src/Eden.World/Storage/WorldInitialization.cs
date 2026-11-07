@@ -70,6 +70,7 @@ public static class WorldInitialization
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
         world.Set<WorldTackle>().ExecuteDelete();
+        world.Set<WorldPlayerEwar>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.
         world.Set<WorldNpcEwar>().ExecuteDelete();
         world.Set<NpcAggression>().ExecuteDelete();

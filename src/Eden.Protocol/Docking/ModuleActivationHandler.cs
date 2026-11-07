@@ -23,7 +23,8 @@ internal sealed class ModuleActivationHandler(
     CapacitorBoosterHandler capacitorBoosters,
     MissileHandler? missiles = null,
     SupportModuleHandler? support = null,
-    TackleHandler? tackle = null
+    TackleHandler? tackle = null,
+    PlayerEwarHandler? electronicWarfare = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -67,6 +68,8 @@ internal sealed class ModuleActivationHandler(
             var name when SupportModuleWire.Effect(name) is not null => support?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             var name when TackleWire.Effect(name) is not null => tackle?.Call(context, service, method, args)
+                ?? PilotCallResult.Unsupported,
+            var name when PlayerEwarWire.Effect(name) is not null => electronicWarfare?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,

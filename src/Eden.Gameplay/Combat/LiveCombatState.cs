@@ -122,6 +122,8 @@ public sealed record LiveCombatNpc(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes
 )
 {
+    public IReadOnlyList<ElectronicWarfareContact> IncomingElectronicWarfare { get; init; } = [];
+
     public NpcNavigationState Navigation { get; init; }
     public long MotionAt { get; init; }
     public double Mass { get; init; }

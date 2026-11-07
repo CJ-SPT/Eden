@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
@@ -26,6 +27,13 @@ internal static class ScriptCatalog
     private static IReadOnlySet<ScriptEffect> Effects(int group) =>
         group switch
         {
+            PlayerEwarRules.TrackingDisruptionScriptGroup => new HashSet<ScriptEffect>
+            {
+                ScriptEffect.TrackingSpeed,
+                ScriptEffect.OptimalRange,
+                ScriptEffect.Falloff,
+            },
+            PlayerEwarRules.DampeningScriptGroup => new HashSet<ScriptEffect> { ScriptEffect.ScanResolution, ScriptEffect.TargetingRange },
             SupportModuleDefinitions.TrackingScriptGroup => new HashSet<ScriptEffect>
             {
                 ScriptEffect.TrackingSpeed,
@@ -40,7 +48,7 @@ internal static class ScriptCatalog
                 ScriptEffect.TargetingRange,
                 ScriptEffect.SensorStrength,
             },
-            SupportModuleDefinitions.GuidanceScriptGroup => new HashSet<ScriptEffect>
+            SupportModuleDefinitions.GuidanceScriptGroup or PlayerEwarRules.GuidanceDisruptionScriptGroup => new HashSet<ScriptEffect>
             {
                 ScriptEffect.ExplosionRadius,
                 ScriptEffect.ExplosionVelocity,

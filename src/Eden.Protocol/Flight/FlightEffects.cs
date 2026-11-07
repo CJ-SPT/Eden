@@ -1,5 +1,6 @@
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
@@ -24,8 +25,19 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         {
             TackleEffect(ship.Pilot.ShipId, effect, true);
         }
+        foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(ship.ElectronicWarfare ?? []))
+        {
+            ElectronicWarfareEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
+        {
+            ElectronicWarfareEffect(ship.Pilot.ShipId, effect, true);
+        }
         RefreshPropulsion(ship, previous);
     }
+
+    internal void ElectronicWarfareEffect(long shipId, ElectronicWarfareSpaceContact effect, bool active) =>
+        emit(PlayerEwarWire.Graphic(shipId, effect, active));
 
     internal void PropulsionEffect(long shipId, PropulsionContact effect, bool active) =>
         emit(

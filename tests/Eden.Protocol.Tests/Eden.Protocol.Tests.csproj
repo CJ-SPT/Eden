@@ -12,6 +12,7 @@
     <EmbeddedResource Include="Fixtures/LegacyWorldV3.sql" />
     <EmbeddedResource Include="Fixtures/PassiveCatalog.json" />
     <EmbeddedResource Include="Fixtures/RigCatalog.json" />
+    <EmbeddedResource Include="Fixtures/PlayerEwarCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />
     <EmbeddedResource Include="../../docs/starter-production.json" LogicalName="Eden.Protocol.Tests.Fixtures.StarterProductionAudit.json" />
     <EmbeddedResource Include="Fixtures/PassiveTierCatalog.json" />

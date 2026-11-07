@@ -96,6 +96,23 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
                 {
                     continue;
                 }
+                var playerEffects = PlayerEwarStore.Active(world, source.Id);
+                if (!PlayerEwarRules.CanTarget(playerEffects, shipId))
+                {
+                    continue;
+                }
+                if (playerEffects.Any(e => e.Module.Kind == NpcEwarKind.SensorDampening && e.Applied is not null))
+                {
+                    var sourceAttributes = PlayerEwarRules.NpcAttributes(
+                        PilotFittingStore.ReadAttributes(catalog, source.TypeId),
+                        playerEffects
+                    );
+                    double distance = Math.Max(0, target.DistanceTo(source.Position) - (type.Radius ?? 0) - source.Radius);
+                    if (distance > sourceAttributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.MaxTargetRange))
+                    {
+                        continue;
+                    }
+                }
                 foreach (var ability in source.Abilities)
                 {
                     var row =

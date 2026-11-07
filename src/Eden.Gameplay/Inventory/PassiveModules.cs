@@ -52,6 +52,7 @@ public enum PassiveModuleGroup
     ArmorCoating = 98,
     HeatSink = 205,
     SignalAmplifier = 210,
+    SignalDistortionAmplifier = 514,
     TrackingEnhancer = 211,
     CpuEnhancer = 285,
     ShieldResistanceAmplifier = 295,

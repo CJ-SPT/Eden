@@ -81,6 +81,13 @@ public sealed class SmallHullOperationTests
     public void DaredevilWebRoleSlowsTheOtherPilotsActualHullByNinetyPercent()
     {
         using Fixture f = Prepare(17928);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            // This test checks hull/web physics; legality is covered by Crimewatch tests.
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":0}}')"
+            );
+        }
         long module = f.Fit(527);
         var wing = f.Db.Store.FindPilot(1000002)!;
         var pilot = f.Db.Store.FindPilot(1000001)!;

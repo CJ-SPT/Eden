@@ -218,7 +218,12 @@ internal sealed class NpcCombatStore(
         var source = npc is null ? null : profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
         var attributes = npc is null
             ? new Dictionary<DogmaAttributeId, double>()
-            : PilotTackleStore.NpcAttributes(world, npc.Id, profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
+            : PilotTackleStore.NpcAttributes(
+                world,
+                npc.Id,
+                profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId),
+                MissileRange(catalog, npc, profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId))
+            );
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
         if (
@@ -263,9 +268,30 @@ internal sealed class NpcCombatStore(
         NpcMotion.Pursue(npc, targetPosition, hull.Radius ?? 0, source!, attributes, now, destinyStamp);
         var separation = targetPosition - NpcMotion.Position(npc);
         double range = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (source!.Radius ?? 0));
+        var playerEwar = PlayerEwarStore.Active(world, npc.Id);
+        if (
+            !PlayerEwarRules.CanTarget(playerEwar, shipId)
+            || attributes.TryGetValue(DogmaAttributeId.MaxTargetRange, out double targetRange) && targetRange > 0 && range > targetRange
+        )
+        {
+            world.SaveChanges();
+            transaction.Commit();
+            return null;
+        }
         NpcMissileStore.Launch(world, catalog, npc, aggression, attributes, pilot, velocity, now, destinyStamp);
         if (
-            DroneNpcCombat.TryFire(world, catalog, npc, aggression, attributes, shipId, now, roll, out bool droneTargetAvailable) is
+            DroneNpcCombat.TryFire(
+                world,
+                catalog,
+                npc,
+                aggression,
+                attributes,
+                shipId,
+                now,
+                roll,
+                out bool droneTargetAvailable,
+                playerEwar
+            ) is
             { } droneShot
         )
         {

@@ -6,6 +6,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -100,6 +101,10 @@ internal static class FittingCatalog
             return null;
         }
         if (type.GroupId == CapacitorBoosterDefinitions.Group && !CapacitorBoosterCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
+        if (PlayerEwarRules.Groups.Contains(type.GroupId) && !PlayerEwarCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

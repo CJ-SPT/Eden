@@ -651,3 +651,86 @@ Native acceptance: selected **Eden Pilot**, opened the existing Inventory view a
 Final automated acceptance: pinned tool/solution restore and build passed with zero warnings/errors. All **1,010 .NET tests** passed in **8 minutes 10 seconds**, including the 957 previous cases, 40 tackle cases, eight safety cases and five clone-grade cases. The focused tackle run also passed all 40 cases independently after the cycle-boundary correction; the account/safety/training focus passed all 20 selected cases. Existing warp-order assertions were updated to exercise actual warp entry, with synthetic ships clear of collision volumes, while retaining the paid-cycle and hull-loss checks. Both Python suites passed (3 catalog setup and 9 formatting-policy cases); formatting verification passed across 361 files and the 140-character width policy. The full run used the four-worker configuration. Read-only production-catalog performance measurements and the maintainer's native acceptance are recorded separately above. Native end-to-end latency after the final connection-lifetime improvement remains unmeasured; the measured fitting bottleneck is substantially reduced.
 
 The maintainer requested stopping after this milestone. The module goal is paused after committing and pushing this verified milestone; no subsequent module family is started.
+
+## Player electronic warfare (November 6, 2026)
+
+The unrestricted player EWAR cohort implements **77 published static modules**: 71 active modules and six passive Signal Distortion Amplifiers. `tools/Export-PlayerEwarCatalog.py` reproducibly extracts the read-only build-3662168 definitions, their requirements, representative hulls, skills and six scripts into `PlayerEwarCatalog.json`. This fixture also retains the eleven excluded burst jammers, so the admission audit verifies the restriction boundary rather than dropping those entries from its input.
+
+| Family | Group | Supported profiles | Default activation |
+| --- | --- | --- | --- |
+| Racial and multispectral ECM | 201 | 43 | 6470 / `remoteECMFalloff` |
+| Remote sensor dampeners | 208 | 6 | 6422 / `remoteSensorDampFalloff` |
+| Tracking disruptors | 291 | 6 | 6424 / `shipModuleTrackingDisruptor` |
+| Guidance disruptors | 291 | 7 | 6423 / `shipModuleGuidanceDisruptor` |
+| Target painters | 379 | 9 | 6425 / `remoteTargetPaintFalloff` |
+| Signal Distortion Amplifiers | 514 | 6 | Online passive effects 4358/4809–4812 |
+
+All published unrestricted Tech I/named, Tech II, storyline, faction and officer profiles present in these families are admitted. There are no published deadspace or Abyssal entries in this cohort. Synthetic mutations, extra/default-effect changes, unsupported effect metadata and ship restrictions are rejected. All eleven published group-80 burst jammers require specific ship groups in the pinned catalog; they remain unavailable under the unrestricted-first scope. No items, skills, ISK, market offers or manufacturing recipes are granted by this work.
+
+Gameplay owns typed module profiles, range/application rules and effective target modifiers. The integration includes origin/main's resident drone changes through 8d08821. World owns complete catalog admission, ownership/skills, fitting/online checks, source/target health and location, saved capacitor/cooldowns, legality and atomic contact updates. Protocol owns effect-name dispatch, connection-owned cycles, module primes, notifications and observer/snapshot effects. ECM/dampening/disruption/painting skills and the four racial Sensor Compensation skills run through the existing catalog graph once. Admitted hull EWAR bonuses now have an operational owner; representative Maulus, Griffin, Vigil and Impairor coverage checks their earned or role bonuses independently of work skills. Signal Distortion Amplifiers affect only ECM modules through their own catalog selectors and ordinary stacking sequences.
+
+Targeted activation requires a locked live player ship or NPC in the same system, within the effective lock range and the 250 km targeting envelope. It pays the actual effective capacitor cost and writes the contact and cycle deadline in one transaction. Player aggression is checked before payment and recorded even when ECM fails. Non-ECM falloff scales strength by `0.5 ** (((distance - optimal) / falloff) ** 2)` outside optimal. ECM instead rolls racial jamming strength / target racial sensor strength, scaled by range and ECM resistance, clamped to [0,1]; zero resistance is immunity and rolls at or above the resulting probability fail. A failed roll still spends the cycle. Successful ECM removes unrelated locked and pending targets, including completing pending RPCs with cancellation, while permitting any currently successful jammer to be targeted. NPC and player jamming share that targeting exception. A jammed NPC may still attack the jammer itself, but cannot redirect that exception to the jammer's drones.
+
+Dampening modifies ship lock range and scan resolution with target dampening resistance. Tracking disruption modifies turret optimal/falloff/tracking without affecting miners or missiles. Guidance disruption modifies loaded missile motor lifetime/speed and explosion radius/velocity without changing ship speed or turret tracking. Painting modifies signature radius, consumed by lock timing and turret/missile/drone application. Effective modifiers share the native strongest-first dogma stacking sequences. NPC combat uses effective attributes in both SQL and resident paths; NPC missile guidance uses the hull's missile multipliers. Where an NPC catalog profile omits maxTargetRange, dampening uses Eden's existing detection envelope (including nominal missile range where available) as its temporary lock ceiling. This is an explicit adaptation of the existing NPC policy, rather than a claim that the client catalog supplied a missing range.
+
+Scripts 29005/29007 (group 909), 29013/29015 (911) and 40334/40335 (1569) are real reusable one-unit magazines. Selected bonuses double and alternatives are suppressed; the catalog's 0.01 ms reload remains 100 FILETIME ticks. The guidance disruption scripts retain pinned launcherGroup 1396 even though their actual disruptors belong to group 291; the adapter accepts that exact combination only with matching chargeGroup 1569. Wrong-family scripts and active swaps preserve all inventory and paid state. Active markers prevent swapping even after a nominal deadline until the source controller settles its repeat or stop.
+
+Source controllers own paid intervals. Victim-first updates at consecutive repeat boundaries cannot remove an effect before renewal; repeats preserve one HUD active effect. Manual shutdown completes the paid interval. Unpaid repeats, lock loss, source transitions, hull loss and disconnect remove outgoing effects. Incoming player effects may remain on a timed logged-off victim; ordinary travel removes incoming contacts. **World schema 96** adds WorldPlayerEwar, owned module/source/pilot foreign keys, target indexes and transactional fit-cache invalidation triggers. The polymorphic target has no invalid ship-only foreign key. Warm source and victim ticks use resident contact snapshots and a module-ownership/online membership view; they perform no SQL, open no connections and rebuild no fits until a relevant change. Controllers own cancellation; observer ticks do not sweep relational state. Module membership invalidates on item/escrow changes and catalog resets. Restart clears live contacts/active markers while retaining resources, scripts and deadlines. Version-95 migration and repeated initialization are covered without touching the user's save.
+
+Native evidence is inert inspection only: build-3662168 `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, `godma.pyj`, `shipmodulebutton.pyj` and `buffBarConst.pyj`, plus catalog types/typedogma/effects/attributes. `OnEwarStart`/`OnEwarEnd` retain `(sourceBallID,moduleID,targetBallID,buffSlot)`. Successful ECM also supplies `OnJamStart` with the same identities, `electronic`, paid start time and duration, and `OnJamEnd` with the four identifying fields. Observer and snapshot contacts use the catalog GUIDs `effects.SensorDampening`, `effects.TrackingDisruption`, `effects.TargetPaint` and `effects.ElectronicAttributeModifyTarget` through the existing timed OnSpecialFX carrier. The [Carbon Destiny reference](https://github.com/carbonengine/destiny/tree/114e89fa584f0e1a81eb0a679aabf41af8870072) was inspected at revision **114e89fa584f0e1a81eb0a679aabf41af8870072**, including its network client event path; no Carbon ball/transport/Blue format changes are introduced. CCP's [October ECM change](https://www.eveonline.com/news/view/patch-notes-for-october-2018-release) independently documents the jammer-targeting exception; all module values come from the pinned local catalog.
+
+**Automated validation:** Tool and solution restore passed. The solution build passed with zero warnings/errors in **8.19 seconds**. All **1,140 affected .NET cases**, including **65 new player EWAR cases**, passed in **11 minutes 43 seconds** (**705.01 seconds** runner elapsed). This covers admission of every unrestricted profile, all scripts and amplifiers, skill/hull bonuses, actual target and weapon attributes, ECM targeting and pending RPC cancellation, safety/payment rollback, repeated cycles, observer notifications, NPC SQL/resident paths, warm zero-SQL reads, migration and restart. The exact affected selection is recorded below; no full .NET suite was authorized or run.
+
+The final main integration also includes **2cbab8f**, whose additions are limited to capacity-benchmark tests, tooling and documentation. A subsequent build passed with zero warnings/errors in **12.23 seconds**; **39 additional focused cases** (35 utility-hull lifecycle and four world-initialization cases) passed in **51 seconds** (**53.47 seconds** runner elapsed). Both Python policy suites passed: **three catalog-setup cases** in **0.221 seconds** and **nine formatting-policy cases** in **0.017 seconds**. Formatting verification passed across **902 files**, including the 140-character width policy, in **14.04 seconds**. All gameplay validation used isolated temporary worlds; the capacity benchmark itself was not rerun for this milestone.
+
+Earlier combined development runs were stopped on concrete fixture failures and remain incomplete rather than counted as successful runs. Corrections supplied missing security metadata in tackle fixtures, added EWAR equipment probes to the hull-bonus harness, replaced a stale schema-version assertion with the saved version check, and made the shared hull lifecycle test approach the station before docking when undock collision clearance exceeds docking range. The 99 small-hull lifecycle cases also passed independently after that correction. The completed selections cover the corrected fixtures and the final gameplay changes.
+
+The final affected selection uses the following exact .NET filter (join the lines without whitespace):
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwarTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcEwarTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcJammingTargetTests|
+FullyQualifiedName~Eden.Protocol.Tests.Targeting.TargetingTests|
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TargetLockSessionTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests|
+FullyQualifiedName~Eden.Protocol.Tests.Propulsion.TackleTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveTierTests|
+FullyQualifiedName~Eden.Protocol.Tests.Ammunition.AmmunitionTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveCombatObjectTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveSimulationTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotCombatTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotMissileTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileCombatTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileFittingTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcCombatTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcMissileTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.CombatDroneTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullBonusTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullOperationTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.CombatHullTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.CombatHullOperationTests|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|
+FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests|
+FullyQualifiedName~Eden.Protocol.Tests.Hosting.GameplayDependenciesTests|
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.UtilityHullTests.EverySupportedBonusUsesItsCatalogSelectorAndEarnedAmount|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentDroneTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveDroneRulesTests|
+FullyQualifiedName~Eden.Protocol.Tests.Combat.DronePerformanceReplayTests
+```
+
+The additional post-integration selection was:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.UtilityHullTests.HullSupportsAcquisitionSkillsFittingFlightAndRestart|
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified. No game was launched, running host restarted or normal save edited.
+
+**Optional maintainer checks:** See the three [player EWAR checks](../development-client.md#optional-player-electronic-warfare-checks) on a copied save.

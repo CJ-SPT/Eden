@@ -394,7 +394,7 @@ internal sealed partial class PilotMissileStore(
                     && npc.Navigation != NpcNavigationState.Warping
                 )
                 {
-                    var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+                    var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
                     double application = MissileRules.Application(
                         payload.Warhead,
                         attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),

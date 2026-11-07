@@ -24,7 +24,8 @@ internal sealed class FlightSessionFactory(
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null,
     IPilotDrones? drones = null,
-    IPilotCrimewatch? crimewatch = null
+    IPilotCrimewatch? crimewatch = null,
+    IPilotElectronicWarfare? electronicWarfare = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -49,7 +50,8 @@ internal sealed class FlightSessionFactory(
             tackle,
             appearance,
             drones,
-            crimewatch
+            crimewatch,
+            electronicWarfare
         );
     }
 }

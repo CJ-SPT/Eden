@@ -129,6 +129,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             int group = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
             if (
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
@@ -146,7 +147,10 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 throw new InvalidDataException("This module does not use supported ammunition.");
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilot.Id, module.TypeId);
-            if (SupportModuleDefinitions.Effect(group) is not null && world.Set<ActiveFittedModule>().Find(module.Id) is not null)
+            if (
+                (SupportModuleDefinitions.Effect(group) is not null || PlayerEwarRules.Groups.Contains(group))
+                && world.Set<ActiveFittedModule>().Find(module.Id) is not null
+            )
             {
                 throw new InvalidDataException("Deactivate the support module and finish its paid cycle before changing scripts.");
             }

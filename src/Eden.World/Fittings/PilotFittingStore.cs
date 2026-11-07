@@ -115,7 +115,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (world.Ships.Find(itemId) is not { } ship)
         {
-            return ReadAttributes(catalog, typeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            return PlayerEwarStore
+                .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
+                .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
         }
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.OwnerId);
         return ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.SignatureRadius);

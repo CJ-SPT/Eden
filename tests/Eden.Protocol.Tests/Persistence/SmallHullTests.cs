@@ -225,6 +225,10 @@ public sealed class SmallHullTests
         session.Snapshot();
         Assert.True(session.InBallpark);
         Assert.Contains(session.Updates, update => update.Command is DestinyCommand.SetState);
+        // Collision clearance can launch a hull beyond the station's docking range.
+        Assert.IsType<PilotCallResult.Success>(session.Execute(new FlightCommand.Follow(f.StationId, 0, false)));
+        f.Clock.Seconds += checked((long)Math.Ceiling(restarted.Flight.InertiaTime * 6 + 30));
+        session.Checkpoint();
         Assert.IsType<PilotCallResult.Success>(session.Execute(new FlightCommand.Dock(f.StationId, ship)));
     }
 }

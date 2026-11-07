@@ -2,6 +2,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Protocol.Combat;
 
 namespace Eden.Protocol.Flight;
 
@@ -16,6 +17,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
     internal LocalRepairContact[] LocalRepairs { get; private set; } = [];
     internal HardenerContact[] Hardeners { get; private set; } = [];
     internal SupportContact[] Support { get; private set; } = [];
+    internal ElectronicWarfareSpaceContact[] ElectronicWarfare { get; private set; } = [];
     internal TackleContact[] TackleEffects { get; private set; } = [];
     internal TackleEffect[] IncomingTackle { get; private set; } = [];
     internal bool WarpBlocked { get; private set; }
@@ -66,6 +68,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
         Hardeners = [];
         Support = [];
         TackleEffects = [];
+        ElectronicWarfare = [];
         IncomingTackle = [];
         WarpBlocked = false;
         MwdBlocked = false;
@@ -86,6 +89,15 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
     {
         Mining = Mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
         effects.MiningEffect(shipId, effect, active);
+    }
+
+    internal void SetElectronicWarfareEffect(long shipId, ElectronicWarfareSpaceContact effect, bool active)
+    {
+        ElectronicWarfare = ElectronicWarfare
+            .Where(e => e.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<ElectronicWarfareSpaceContact>())
+            .ToArray();
+        effects.ElectronicWarfareEffect(shipId, effect, active);
     }
 
     internal void SetTackleEffect(long shipId, TackleContact effect, bool active)

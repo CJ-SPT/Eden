@@ -783,3 +783,11 @@ To override economic inputs at creation, edit a copy of [economy-settings.exampl
 | `manufacturingIndices` | Optional `{systemId, index}` overrides; unspecified systems use the saved fallback. |
 
 Existing saves preserve their previous service-cost policy and existing paid jobs/policies. They gain daily belt scheduling without replacing their assets, wallets or testing settings. Runtime price recalculation, resource redistribution, ice/gas/anomaly renewal and economic balancing remain separate work. See [implementation and validation](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).
+
+## Optional player electronic warfare checks
+
+These are optional maintainer checks on an isolated copied save. Agent client testing remains disabled. See [scope and automated evidence](protocol/fitting.md#player-electronic-warfare-november-6-2026).
+
+1. Fit earned ECM/dampener/disruptor/painter equipment, exercise matching script drag-and-drop and compare tooltips, capacitor and continuous HUD cycles through a paid stop.
+2. With two appropriately authorized pilots, check victim status/jam timers, cancellation of other locks, targeting the jammer, and source/observer effects; repeat against an NPC.
+3. Reconnect/restart the copied world and verify scripts, spent capacitor and cooldowns persist while live effects clear.

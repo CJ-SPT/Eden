@@ -41,6 +41,7 @@ internal sealed partial class LiveCombatRuntime
                 || NpcPopulationRules.IsCivilian(npc.Role)
                 || npc.Transit is not null
                 || npc.ElectronicWarfare.Count == 0
+                || !PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, shipId)
             )
             {
                 continue;

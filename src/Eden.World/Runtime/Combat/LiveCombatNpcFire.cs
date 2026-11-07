@@ -87,7 +87,19 @@ internal sealed partial class LiveCombatRuntime
         {
             return false;
         }
+        if (!PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, shipId))
+        {
+            return true;
+        }
         var attributes = npc.Attributes;
+        if (
+            attributes.TryGetValue(DogmaAttributeId.MaxTargetRange, out double targetingRange)
+            && targetingRange > 0
+            && ship.Position.DistanceTo(npc.Position) - ship.Radius - npc.Radius > targetingRange
+        )
+        {
+            return true;
+        }
         if (attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType) > 0)
         {
             return now < Math.Min(aggression.ReadyAt, aggression.MissileReadyAt);

@@ -13,7 +13,8 @@ internal sealed class TargetingHandler(
     TimeProvider clock,
     IPilotFitting fitting,
     SharedTargetLocks shared,
-    INpcElectronicWarfare? npcEwar = null
+    INpcElectronicWarfare? npcEwar = null,
+    IPilotElectronicWarfare? electronicWarfare = null
 ) : ISelectedPilotCallHandler, IDisposable
 {
     private sealed record PendingLock(long Started, double Seconds)
@@ -64,7 +65,7 @@ internal sealed class TargetingHandler(
         else if (_pending.Count + _locked.Count > 0)
         {
             double range = fitting.ShipAttributes(context.Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
-            var incoming = npcEwar?.Incoming(_shipId) ?? [];
+            var incoming = Jamming(_shipId);
             foreach (long id in _pending.Keys.Concat(_locked).ToArray())
             {
                 var target = context.Flight.FindTarget(id);
@@ -135,7 +136,7 @@ internal sealed class TargetingHandler(
         {
             return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = scanning.Completion.Task };
         }
-        if (!NpcEwarRules.CanTarget(npcEwar?.Incoming(context.Pilot.ShipId) ?? [], id))
+        if (!NpcEwarRules.CanTarget(Jamming(context.Pilot.ShipId), id))
         {
             return new PilotCallResult.Failure("Electronic countermeasures prevent locking this target.");
         }
@@ -205,6 +206,31 @@ internal sealed class TargetingHandler(
                 return PilotCallResult.Unsupported;
         }
     }
+
+    private IReadOnlyList<NpcEwarContact> Jamming(long ship) =>
+        (npcEwar?.Incoming(ship) ?? [])
+            .Concat(
+                (electronicWarfare?.Incoming(ship) ?? [])
+                    .Where(e => e.Module.Effect == DogmaEffect.PlayerEcm && e.Applied is not null)
+                    .Select(e => new NpcEwarContact(
+                        e.SourceShipId,
+                        e.Module.TypeId,
+                        ship,
+                        new(
+                            NpcEwarKind.Jamming,
+                            e.Module.Effect,
+                            e.Module.DurationMilliseconds,
+                            e.Module.Optimal,
+                            e.Module.Falloff,
+                            1,
+                            e.Applied!
+                        ),
+                        e.Applied!,
+                        e.StartedAt,
+                        e.ExpiresAt
+                    ))
+            )
+            .ToArray();
 
     public void Reset()
     {

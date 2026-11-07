@@ -49,7 +49,13 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId is TackleDefinitions.WebifierGroup or TackleDefinitions.WarpDisruptionGroup or TackleDefinitions.WarpCoreStabilizerGroup
+            PlayerEwarRules.Groups.Contains(groupId)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+                && effects.Any(e => PlayerEwarRules.Matches(groupId, e))
+            || groupId
+                is TackleDefinitions.WebifierGroup
+                    or TackleDefinitions.WarpDisruptionGroup
+                    or TackleDefinitions.WarpCoreStabilizerGroup
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
                 && effects.Any(e => TackleDefinitions.Targeted(e) || e == DogmaEffect.WarpCoreStabilizer)
             || SupportModuleDefinitions.Effect(groupId) is { } support

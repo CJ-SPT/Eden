@@ -1,4 +1,5 @@
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Storage.Migrations;
@@ -8,7 +9,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 95;
+    internal const int CurrentVersion = 96;
 
     public static void Open(
         WorldDbContext world,
@@ -60,7 +61,11 @@ internal static class WorldMigration
         {
             RigFittingSchema.Upgrade(world);
         }
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=95");
+        if (version < 96)
+        {
+            PlayerEwarSchema.Upgrade(world);
+        }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=96");
         history.Commit();
     }
 }

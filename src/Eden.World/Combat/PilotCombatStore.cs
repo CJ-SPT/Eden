@@ -199,7 +199,7 @@ internal sealed class PilotCombatStore(
                 npc.TypeId,
                 NpcMotion.Position(npc),
                 NpcMotion.Velocity(npc),
-                PilotFittingStore.ReadAttributes(catalog, npc.TypeId)
+                PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId))
             );
         }
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];

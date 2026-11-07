@@ -44,6 +44,11 @@ public sealed partial class WorldDbContext(string path) : DbContext
     {
         model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
         model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);
+        model.Entity<WorldPlayerEwar>().ToTable("WorldPlayerEwar").HasKey(e => e.ModuleId);
+        model.Entity<WorldPlayerEwar>().HasOne<OwnedItem>().WithMany().HasForeignKey(e => e.ModuleId);
+        model.Entity<WorldPlayerEwar>().HasOne<Pilot>().WithMany().HasForeignKey(e => e.PilotId);
+        model.Entity<WorldPlayerEwar>().HasOne<Ship>().WithMany().HasForeignKey(e => e.SourceShipId);
+        model.Entity<WorldPlayerEwar>().HasIndex(e => new { e.TargetId, e.TargetKind });
         EconomicSchema.Configure(model);
         CrimewatchSchema.Configure(model);
         DroneSchema.Configure(model);
