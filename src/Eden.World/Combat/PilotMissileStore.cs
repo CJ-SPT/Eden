@@ -141,7 +141,7 @@ internal sealed partial class PilotMissileStore(
         {
             throw new InvalidDataException("A destroyed ship cannot launch missiles.");
         }
-        int systemId = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int systemId = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         SpacePosition origin = new(position.X, position.Y, position.Z);
         bool automatic = FittingCatalog.DefaultEffect(catalog, loaded.TypeId) == DogmaEffect.AutoTargetingMissile;
         double maximumRange = ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
@@ -305,7 +305,7 @@ internal sealed partial class PilotMissileStore(
         {
             var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == source.Key.PilotId);
             var position = pilot.ActiveShip.Position;
-            int sourceSystem = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+            int sourceSystem = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
             if (
                 pilot.ActiveShipId != source.Key.SourceShipId
                 || position is null

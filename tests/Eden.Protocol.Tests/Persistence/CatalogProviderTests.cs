@@ -14,6 +14,25 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class CatalogProviderTests
 {
     [Fact]
+    public void BulkLookupsShareInstancesAndCacheAbsentRecordsWithoutLoadingUnrequestedPayloads()
+    {
+        using TestWorld world = new();
+        var catalog = CatalogProvider.Open(new WorldDatabase(world.Path).CatalogPath);
+        long[] keys = [601, 3638, long.MaxValue, 601];
+        var original = catalog.FindMany(CatalogData.Client.Types, keys);
+        Assert.Equal(2, original.Count);
+        Assert.Same(original[601], catalog.Get(CatalogData.Client.Types, 601L));
+        using var metrics = SessionPerformance.Begin("warm-bulk-catalog", _ => { }, force: true)!;
+        var repeated = catalog.FindMany(CatalogData.Client.Types, keys);
+        Assert.Same(original[601], repeated[601]);
+        Assert.Same(original[3638], repeated[3638]);
+        Assert.False(repeated.ContainsKey(long.MaxValue));
+        Assert.Null(catalog.Find(CatalogData.Client.Types, long.MaxValue));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
     public void HostRetainsTheLatestCatalogGenerationAcrossGarbageCollection()
     {
         using TestWorld world = new();

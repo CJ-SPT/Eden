@@ -1,80 +1,64 @@
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Globalization;
-using Eden.Data.Catalog;
 using Eden.Gameplay.Agents;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
 
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
 {
-    // The pinned catalog is immutable until restart, as with StationDirectory.
     private sealed record Snapshot(
         IReadOnlyList<CatalogAgent> Agents,
         IReadOnlyDictionary<long, CatalogAgent> AgentById,
         IReadOnlyDictionary<long, NpcCharacter> Characters
     );
 
-    private readonly Lazy<Snapshot> _snapshot = new(() => Load(database.CatalogPath));
+    private static readonly CatalogDefinition<Snapshot> s_snapshot = new(
+        "directory/npcs",
+        (catalog, _) => Load(catalog),
+        Estimate: snapshot => 1024 + snapshot.Characters.Count * 1024L + snapshot.Agents.Count * 256L
+    );
 
-    public IReadOnlyList<CatalogAgent> Agents() => _snapshot.Value.Agents;
+    private Snapshot Read()
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return catalog.Definition(s_snapshot, 0);
+    }
 
-    public CatalogAgent? Agent(long id) => NpcCharacterIds.Contains(id) ? _snapshot.Value.AgentById.GetValueOrDefault(id) : null;
+    public IReadOnlyList<CatalogAgent> Agents() => Read().Agents;
 
-    public NpcCharacter? Character(long id) => NpcCharacterIds.Contains(id) ? _snapshot.Value.Characters.GetValueOrDefault(id) : null;
+    public CatalogAgent? Agent(long id) => NpcCharacterIds.Contains(id) ? Read().AgentById.GetValueOrDefault(id) : null;
+
+    public NpcCharacter? Character(long id) => NpcCharacterIds.Contains(id) ? Read().Characters.GetValueOrDefault(id) : null;
 
     public IReadOnlyList<NpcCharacter> Characters(IReadOnlyList<long> ids) =>
         ids.Where(NpcCharacterIds.Contains).Distinct().Order().Select(Character).OfType<NpcCharacter>().ToArray();
 
-    private static Snapshot Load(string path)
+    private static Snapshot Load(CatalogDbContext catalog)
     {
-        using CatalogDbContext catalog = new(path);
         var raw = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/npccharacters")
-            .AsEnumerable()
-            .Select(record => (Id: long.Parse(record.Key, CultureInfo.InvariantCulture), Data: record.Read<ClientNpccharacters>()))
+            .Records(CatalogData.Client.Npccharacters)
+            .Select(record => (Id: record.Key, Data: record.Value))
             .Where(row => row.Data.Deleted != 1)
             .OrderBy(row => row.Id)
             .ToArray();
-        var nameKeys = raw.Select(row => row.Data.NameID?.ToString(CultureInfo.InvariantCulture)).OfType<string>().Distinct().ToArray();
-        // EF 10 otherwise expands the full catalog's 11,393 names into scalar parameters.
-        // One JSON collection parameter avoids seconds of SQLite parameter preparation/binding.
+        var nameKeys = raw.Select(row => row.Data.NameID).OfType<long>().Distinct();
         var names = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/localization_fsd_en-us" && EF.Parameter(nameKeys).Contains(record.Key))
-            .AsEnumerable()
-            .ToDictionary(
-                record => long.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => record.Read<ClientLocalizationFsdDe>().Text ?? ""
-            );
+            .ReadMany(CatalogData.Client.LocalizationFsdEnUs, nameKeys)
+            .ToDictionary(record => record.Key, record => record.Value.Text ?? "");
         var fallbackNames = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "sde/npcCharacters")
-            .AsEnumerable()
-            .ToDictionary(
-                record => long.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => record.Read<SdeNpcCharacters>().Name?.En ?? ""
-            );
-        var stations = catalog.Set<Station>().AsNoTracking().ToDictionary(station => station.Id, station => station.SolarSystemId);
+            .Records(CatalogData.Sde.NpcCharacters)
+            .ToDictionary(record => record.Key, record => record.Value.Name?.En ?? "");
+        var stations = catalog.Stations().ToDictionary(station => station.Id, station => station.SolarSystemId);
         var corporations = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/npccorporations")
-            .AsEnumerable()
-            .ToDictionary(
-                record => int.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => checked((int?)record.Read<ClientNpccorporations>().FactionID)
-            );
+            .Records(CatalogData.Client.Npccorporations)
+            .ToDictionary(record => checked((int)record.Key), record => checked((int?)record.Value.FactionID));
         var space = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/agentsinspace")
-            .AsEnumerable()
-            .ToDictionary(
-                record => long.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => checked((int?)record.Read<ClientAgentsinspace>().SolarSystemID)
-            );
+            .Records(CatalogData.Client.Agentsinspace)
+            .ToDictionary(record => record.Key, record => checked((int?)record.Value.SolarSystemID));
         List<CatalogAgent> agents = [];
         Dictionary<long, NpcCharacter> characters = [];
         foreach (var (id, data) in raw)
@@ -131,6 +115,6 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
                 )
             );
         }
-        return new(agents, agents.ToDictionary(agent => agent.Id), characters);
+        return new(agents.ToImmutableArray(), agents.ToFrozenDictionary(agent => agent.Id), characters.ToFrozenDictionary());
     }
 }

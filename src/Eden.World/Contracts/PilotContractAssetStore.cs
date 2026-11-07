@@ -41,7 +41,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database) : IPilotCo
             .Select(g => new ContractAssetStation(g.Key, g.Count()))
             .ToArray();
         var locations = items.Select(i => i.LocationId).Concat(ships.Select(s => (long)s.StationId)).ToArray();
-        var stations = catalog.Set<Station>().Where(s => locations.Contains(s.Id)).Select(s => s.Id).ToHashSet();
+        var stations = locations.Select(catalog.FindStation).OfType<CatalogStationDefinition>().Select(s => s.Id).ToHashSet();
         return items
             .Where(i => i.LocationId is > 0 and <= int.MaxValue && stations.Contains((int)i.LocationId))
             .Select(i => new ContractAssetStation((int)i.LocationId, i.Count))
@@ -131,7 +131,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database) : IPilotCo
     private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
     {
         // Contract preparation can inspect and split remote personal hangars.
-        if (!world.Pilots.Any(p => p.Id == pilotId) || !catalog.Set<Station>().Any(s => s.Id == stationId))
+        if (!world.Pilots.Any(p => p.Id == pilotId) || catalog.FindStation(stationId) is null)
         {
             throw new InvalidDataException("Unknown pilot or contract station.");
         }

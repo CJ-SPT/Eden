@@ -94,7 +94,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         {
             throw new InvalidDataException("A destroyed ship cannot mine.");
         }
-        int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var attributes = ModuleAttributes(world, catalog, pilotId, module);
         double range = attributes.GetValueOrDefault(DogmaAttributeId.MaxRange);
         double distance =

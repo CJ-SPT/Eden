@@ -6,6 +6,24 @@ Pinned-build data, export inputs and catalog verification.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+
+## Shared location and directory consumers, November 7, 2026
+
+Docking snapshots, character creation, home and jump clones, market regions, contracts, corporation locations and simulation readers now consume immutable station/system definitions. NPC seeding and asteroid population use indexed station/gate collections and bounded per-system celestial pages. No ordinary feature reader queries the relational catalog directly; the hull support audit remains an explicit verification boundary. Source import, migration and verification retain their own database access.
+
+Station, agent and NPC corporation directories use provider-owned immutable definitions rather than per-world caches. Bulk typed lookup fetches only requested keys using one collection parameter, shares decoded instances and caches absent records. Localization does not materialize the full dataset. Sanctioned writable fixture edits replace the directory generation while previously returned snapshots remain unchanged; replacing an installed production catalog still requires restart. The original catalog, saved transactions and enabled gameplay are unchanged.
+
+**Automated validation:** exact station-directory and new bulk-lookup method checks passed during development. Final tool/solution restore, warning-free solution build (5.50 seconds), 20 targeted tests (13.66 seconds wall time), six catalog Python tests (0.305 seconds), nine formatting Python tests (0.015 seconds) and formatting verification passed. These checks cover shared identity, missing results, fixture invalidation, requested-name batching, wire fields, clone and character rollback, courier rejection, NPC placement and asteroid persistence. No optional benchmarks or full .NET suite were run. The final filters were:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.CatalogProviderTests.BulkLookupsShareInstancesAndCacheAbsentRecordsWithoutLoadingUnrequestedPayloads|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogGeographyTests|FullyQualifiedName=Eden.Protocol.Tests.Docking.StationDirectoryTests.NativeDirectoryIncludesRemoteStationsAndCatalogServiceMasksFromAnyPilotLocation|FullyQualifiedName=Eden.Protocol.Tests.Persistence.AgentDirectoryTests.LiveHostBuildWarmsDirectoryBeforePilotRequests|FullyQualifiedName=Eden.Protocol.Tests.Persistence.AgentDirectoryTests.SpaceLocationFallbackAndNoFactionPreserveNoneRatherThanInventingStationOrFactionIds|FullyQualifiedName=Eden.Protocol.Tests.Persistence.AgentDirectoryTests.FixtureEditsReplaceDirectoryWithoutMutatingSnapshotsAndWorldVersion45AddsPrivateAgentContacts|FullyQualifiedName=Eden.Protocol.Tests.Persistence.HomeStationTests.TravelNeverChangesSavedHomeAndPaidSelectionsPersistIndependentlyOfTheActiveShip|FullyQualifiedName=Eden.Protocol.Tests.Persistence.JumpCloneTests.InvalidOrFailedJumpsLeaveBodiesWalletTimerAndInventoryUnchanged|FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcGuardTests.EmpireSystemsHaveThreeGateGuardsAndTwoStationGuards|FullyQualifiedName=Eden.Protocol.Tests.Mining.AsteroidFieldTests.CatalogCountsCreateOnePersistentFieldAcrossConcurrentLoadsAndRestarts|FullyQualifiedName=Eden.Protocol.Tests.Persistence.CharacterCreationTests.FailureAfterShipInsertRollsBackEntireCreation
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.AgentDirectoryTests.ColdDirectoryBindsNameCollectionsOnceRegardlessOfNpcCount|FullyQualifiedName=Eden.Protocol.Tests.Persistence.CourierContractTests.InvalidDestinationOverlargeShipmentsAndInsufficientCollateralLeaveUnchangedState
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. Saved configuration, world-specific overrides, local administration and the final architectural guard remain subsequent milestones.
+
 ## Contents
 
 - [Shared item facts in reference services, November 7, 2026](#shared-item-facts-in-reference-services-november-7-2026)

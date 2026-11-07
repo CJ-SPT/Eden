@@ -46,7 +46,7 @@ internal sealed partial class NpcMiningSeeder
 
     private static SpacePosition? StationPoint(CatalogDbContext catalog, WorldNpcMiningOperation operation)
     {
-        var station = operation.StationId is int id ? catalog.Set<Station>().SingleOrDefault(s => s.Id == id) : null;
+        var station = operation.StationId is int id ? catalog.FindStation(id) : null;
         if (station is null || catalog.FittingType(station.TypeId) is not { } type)
         {
             return null;

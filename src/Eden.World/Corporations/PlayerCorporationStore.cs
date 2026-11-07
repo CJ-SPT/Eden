@@ -149,7 +149,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("That corporation name or ticker is already taken.");
         }
-        var station = catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId);
+        var station = catalog.RequireStation(pilot.ActiveShip.StationId);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         int id = checked((world.Set<SavedCorporation>().Max(c => (int?)c.Id) ?? CorporationRules.FirstCorporationId - 1) + 1);
         var corporation = world

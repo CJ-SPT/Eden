@@ -316,6 +316,9 @@ public sealed partial class CatalogProvider
     public IReadOnlyDictionary<TKey, TValue> Pin<TKey, TValue>(CatalogSource<TKey, TValue> source)
         where TKey : notnull => Table(source).Pinned;
 
+    public IReadOnlyDictionary<TKey, TValue> FindMany<TKey, TValue>(CatalogSource<TKey, TValue> source, IEnumerable<TKey> keys)
+        where TKey : notnull => Table(source).Lookups(keys);
+
     public ImmutableArray<int> TypesInGroup(int groupId) => _groups.Value.GetValueOrDefault(groupId, []);
 
     public ImmutableArray<int> BlueprintsForProduct(int productId) => _blueprints.Value.GetValueOrDefault(productId, []);
@@ -519,6 +522,18 @@ public sealed partial class CatalogProvider
     {
         private readonly ConcurrentDictionary<TKey, Lazy<CatalogValue<TValue>>> _loads = new();
 
+        internal bool TryRead(TKey key, out CatalogValue<TValue> value)
+        {
+            if (owner._cache.TryGetValue(new CacheKey(dataset, JsonSerializer.Serialize(key)), out CatalogValue<TValue>? cached))
+            {
+                Interlocked.Increment(ref owner._hits);
+                value = cached!;
+                return true;
+            }
+            value = default!;
+            return false;
+        }
+
         internal CatalogValue<TValue> Read(TKey key, Func<CatalogValue<TValue>> load)
         {
             CacheKey cacheKey = new(dataset, JsonSerializer.Serialize(key));
@@ -595,6 +610,54 @@ public sealed partial class CatalogProvider
             record is null
                 ? new(false, default!, EntryOverhead)
                 : new(true, record.Read<TValue>(), EntryOverhead + record.Data.Length * PayloadExpansionEstimate);
+
+        internal IReadOnlyDictionary<TKey, TValue> Lookups(IEnumerable<TKey> keys)
+        {
+            Dictionary<TKey, TValue> result = [];
+            List<TKey> missing = [];
+            foreach (var key in keys.Distinct())
+            {
+                if (_pinned.IsValueCreated)
+                {
+                    if (_pinned.Value.TryGetValue(key, out var pinned))
+                    {
+                        result.Add(key, pinned);
+                    }
+                }
+                else if (_memo.TryRead(key, out var cached))
+                {
+                    if (cached.Found)
+                    {
+                        result.Add(key, cached.Value);
+                    }
+                }
+                else
+                {
+                    missing.Add(key);
+                }
+            }
+            if (missing.Count > 0)
+            {
+                _owner.RequireCurrent();
+                using CatalogDbContext catalog = new(_owner.Identity.Path);
+                var encoded = missing.Select(key => JsonSerializer.Serialize(key)).ToArray();
+                Interlocked.Increment(ref _owner._loads);
+                // One collection parameter avoids thousands of scalar SQLite bindings.
+                var rows = catalog
+                    .Set<SourceRecord>()
+                    .Where(record => record.Dataset == _source.Name && EF.Parameter(encoded).Contains(record.Key))
+                    .ToDictionary(record => record.Key);
+                foreach (var key in missing)
+                {
+                    var value = _memo.Read(key, () => Decode(rows.GetValueOrDefault(JsonSerializer.Serialize(key))));
+                    if (value.Found)
+                    {
+                        result.Add(key, value.Value);
+                    }
+                }
+            }
+            return result.ToFrozenDictionary();
+        }
 
         internal CatalogPage<TKey, TValue> Page(string? after, int limit)
         {

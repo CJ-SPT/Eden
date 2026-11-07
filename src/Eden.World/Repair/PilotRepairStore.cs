@@ -28,13 +28,13 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
     private static Pilot Pilot(WorldDbContext world, long pilotId) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
 
-    private static Station Station(CatalogDbContext catalog, Pilot pilot, int stationId)
+    private static CatalogStationDefinition Station(CatalogDbContext catalog, Pilot pilot, int stationId)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
         {
             throw new InvalidDataException("Repairs are available only at your current station.");
         }
-        var station = catalog.Set<Station>().Single(s => s.Id == stationId);
+        var station = catalog.RequireStation(stationId);
         if (!StationCapabilities.Has(catalog, station.OperationId, StationService.Repair))
         {
             throw new InvalidDataException("This station does not provide repair facilities.");

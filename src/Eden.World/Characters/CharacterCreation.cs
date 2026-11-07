@@ -57,7 +57,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
                     : catalog.Read(CatalogData.Client.Ancestries, (long)character.AncestryId)?.BloodlineID
             )
         );
-        var candidates = catalog.Set<Station>().Where(s => stations.Contains(s.Id));
+        var candidates = catalog.Stations().Where(s => stations.Contains(s.Id));
         if (school!.IsStarterSpaceSchool != 1 || stations.Length != 1)
         {
             var systems = catalog
@@ -72,7 +72,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             }
             candidates = candidates.Where(s => s.SolarSystemId == system);
         }
-        if (candidates.Select(s => s.Id).ToArray() is not [int station] || !catalog.Set<NpcCorporation>().Any(c => c.Id == corp))
+        if (candidates.Select(s => s.Id).ToArray() is not [int station] || catalog.NpcCorporationName(checked((int)corp)) is null)
         {
             throw new InvalidDataException("Missing or ambiguous school station or corporation.");
         }

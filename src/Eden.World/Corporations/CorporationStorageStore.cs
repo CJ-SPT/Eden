@@ -82,7 +82,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             throw new InvalidDataException("The corporation's master wallet cannot cover the rental fee.");
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var location = catalog.Set<Station>().Single(s => s.Id == station);
+        var location = catalog.RequireStation(station);
         long last = world
             .Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name='WorldCorporationOffice'")
             .AsEnumerable()

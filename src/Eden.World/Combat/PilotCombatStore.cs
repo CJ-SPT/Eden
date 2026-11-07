@@ -372,7 +372,7 @@ internal sealed class PilotCombatStore(
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
-        int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var targetType = catalog.RequireItem(target.TypeId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var separation = target.Position - new SpacePosition(position.X, position.Y, position.Z);

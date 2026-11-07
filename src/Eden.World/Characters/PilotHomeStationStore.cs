@@ -27,10 +27,9 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
         ?? throw new InvalidDataException("Unknown pilot.");
 
-    private static Station? Station(CatalogDbContext catalog, int id) =>
-        catalog.Set<Station>().Include(s => s.SolarSystem).ThenInclude(s => s.Constellation).SingleOrDefault(s => s.Id == id);
+    private static CatalogStationDefinition? Station(CatalogDbContext catalog, int id) => catalog.FindStation(id);
 
-    private static HomeStation Snapshot(Station station, bool fallback = false) =>
+    private static HomeStation Snapshot(CatalogStationDefinition station, bool fallback = false) =>
         new(station.Id, station.TypeId, station.SolarSystemId, fallback);
 
     private static int? SchoolHeadquarters(CatalogDbContext catalog, Pilot pilot)
@@ -76,13 +75,13 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
             .OfType<int>()
             .Distinct()
             .Select(id => Station(catalog, id))
-            .OfType<Station>()
+            .OfType<CatalogStationDefinition>()
             .OrderBy(station => station.Id)
             .Select(station => new HomeStationCandidate(
                 Snapshot(station),
                 station.Id == current,
                 station.Id == school,
-                HomeStationRules.Errors(station.Id, home.Id, station.SolarSystemId, station.SolarSystem.Constellation.RegionId)
+                HomeStationRules.Errors(station.Id, home.Id, station.SolarSystemId, station.RegionId)
             ))
             .ToArray();
     }
@@ -201,31 +200,31 @@ internal sealed class NpcCorporationDirectory(WorldDatabase database) : INpcCorp
     public NpcCorporationInfo Read(int id)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var corporation = catalog.Set<NpcCorporation>().Find(id) ?? throw new InvalidDataException("Unknown NPC corporation.");
-        return Read(catalog, corporation);
+        if (catalog.NpcCorporationName(id) is null)
+        {
+            throw new InvalidDataException("Unknown NPC corporation.");
+        }
+        return Read(catalog, id);
     }
 
     public IReadOnlyList<NpcCorporationInfo> Read(IReadOnlyList<int> ids)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog
-            .Set<NpcCorporation>()
-            .Where(c => ids.Contains(c.Id))
-            .OrderBy(c => c.Id)
-            .ToArray()
-            .Select(c => Read(catalog, c))
-            .ToArray();
+        return ids.Distinct().Where(id => catalog.NpcCorporationName(id) is not null).Order().Select(id => Read(catalog, id)).ToArray();
     }
 
-    private static NpcCorporationInfo Read(CatalogDbContext catalog, NpcCorporation corporation)
+    private static NpcCorporationInfo Read(CatalogDbContext catalog, int id) => catalog.Definition(s_info, id);
+
+    private static readonly CatalogDefinition<NpcCorporationInfo> s_info = new("directory/npc-corporation", Load);
+
+    private static NpcCorporationInfo Load(CatalogDbContext catalog, int id)
     {
-        int id = corporation.Id;
         var data =
             catalog.Read(CatalogData.Client.Npccorporations, (long)id)
             ?? throw new InvalidDataException("Missing NPC corporation metadata.");
         return new(
             id,
-            corporation.Name,
+            catalog.NpcCorporationName(id)!,
             data.TickerName ?? "",
             checked((int?)data.StationID),
             checked((int?)data.SolarSystemID),

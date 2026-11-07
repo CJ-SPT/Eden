@@ -70,12 +70,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
                 BeltId = rock.BeltId,
                 CorporationId = owner.CorporationId,
                 FactionId = owner.FactionId,
-                StationId = catalog
-                    .Set<Station>()
-                    .Where(s => s.SolarSystemId == systemId)
-                    .OrderBy(s => s.Id)
-                    .Select(s => (int?)s.Id)
-                    .FirstOrDefault(),
+                StationId = catalog.StationsInSystem(systemId).OrderBy(s => s.Id).Select(s => (int?)s.Id).FirstOrDefault(),
             };
             world.Add(encounter);
             world.Add(operation);

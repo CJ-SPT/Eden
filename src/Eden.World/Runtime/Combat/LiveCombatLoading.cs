@@ -160,7 +160,7 @@ internal sealed partial class LiveCombatRuntime
             pilot.ActiveShipId,
             pilot.CorporationId,
             pilot.ActiveShip.TypeId,
-            position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId,
+            position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId,
             position is null ? null : new SpacePosition(position.X, position.Y, position.Z),
             hull.Radius ?? 0,
             attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange),

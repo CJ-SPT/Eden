@@ -85,7 +85,7 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
             && !world.Set<ShipLoss>().Any(l => l.ShipId == shipId)
         )
         {
-            int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+            int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
             var target = new SpacePosition(position.X, position.Y, position.Z);
             var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
             sources ??= Sources(world, catalog, shipId);

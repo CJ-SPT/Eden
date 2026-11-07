@@ -13,12 +13,13 @@ internal static class NpcMotion
 
     internal static SpacePosition Velocity(WorldNpc npc) => new(npc.VelocityX, npc.VelocityY, npc.VelocityZ);
 
-    internal static SpacePosition Home(Celestial belt) => new(belt.X + NpcEncounterDefinitions.AnchorOffset, belt.Y, belt.Z);
+    internal static SpacePosition Home(CatalogCelestialDefinition belt) =>
+        new(belt.X + NpcEncounterDefinitions.AnchorOffset, belt.Y, belt.Z);
 
     internal static SpacePosition Home(WorldNpc npc, CatalogDbContext catalog) =>
         npc.HomeX is double x && npc.HomeY is double y && npc.HomeZ is double z
             ? new(x, y, z)
-            : Home(catalog.Set<Celestial>().Single(b => b.Id == npc.BeltId));
+            : Home(catalog.FindCelestial(npc.BeltId) ?? throw new InvalidDataException($"Missing NPC anchor {npc.BeltId}."));
 
     internal static float Agility(IReadOnlyDictionary<DogmaAttributeId, double> attributes) => NpcMotionRules.Agility(attributes);
 

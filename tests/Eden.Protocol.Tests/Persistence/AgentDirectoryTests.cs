@@ -158,9 +158,16 @@ public sealed class AgentDirectoryTests
         {
             Assert.Equal($"Agent {index}", directory.Character(AgentTestData.AgentId + index)!.Identity.Name);
         }
-        Assert.Equal(1, Assert.Single(observer.ParameterCounts));
+        if (count == 0)
+        {
+            Assert.Empty(observer.ParameterCounts);
+        }
+        else
+        {
+            Assert.Equal(1, Assert.Single(observer.ParameterCounts));
+        }
         Assert.Same(agents, directory.Agents());
-        Assert.Single(observer.ParameterCounts);
+        Assert.Equal(count == 0 ? 0 : 1, observer.ParameterCounts.Count);
     }
 
     private sealed class NameQueryObserver : IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>, IDisposable
@@ -190,10 +197,17 @@ public sealed class AgentDirectoryTests
                 value.Key == RelationalEventId.CommandExecuting.Name
                 && value.Value is CommandEventData data
                 && data.Command.Connection?.DataSource == _path
-                && data.Command.CommandText.Contains("client/localization_fsd_en-us", StringComparison.Ordinal)
+                && (
+                    data.Command.CommandText.Contains("client/localization_fsd_en-us", StringComparison.Ordinal)
+                    || data.Command.Parameters.Cast<System.Data.Common.DbParameter>()
+                        .Any(parameter => Equals(parameter.Value, "client/localization_fsd_en-us"))
+                )
             )
             {
-                ParameterCounts.Add(data.Command.Parameters.Count);
+                ParameterCounts.Add(
+                    data.Command.Parameters.Cast<System.Data.Common.DbParameter>()
+                        .Count(parameter => parameter.Value is string text && text.StartsWith('['))
+                );
             }
         }
 
@@ -277,12 +291,13 @@ public sealed class AgentDirectoryTests
     }
 
     [Fact]
-    public void SnapshotRemainsStableUntilProviderRestartAndWorldVersion45AddsPrivateAgentContacts()
+    public void FixtureEditsReplaceDirectoryWithoutMutatingSnapshotsAndWorldVersion45AddsPrivateAgentContacts()
     {
         using TestWorld db = new();
         AgentTestData.Prepare(db);
         var directory = db.Services.GetRequiredService<INpcDirectory>();
-        Assert.Equal("Agent Étoile", directory.Character(AgentTestData.AgentId)!.Identity.Name);
+        var original = directory.Character(AgentTestData.AgentId)!;
+        Assert.Equal("Agent Étoile", original.Identity.Name);
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             var row = catalog
@@ -295,7 +310,8 @@ public sealed class AgentDirectoryTests
             row.Data = "{\"text\":\"Changed\"}";
             catalog.SaveChanges();
         }
-        Assert.Equal("Agent Étoile", directory.Character(AgentTestData.AgentId)!.Identity.Name);
+        Assert.Equal("Agent Étoile", original.Identity.Name);
+        Assert.Equal("Changed", directory.Character(AgentTestData.AgentId)!.Identity.Name);
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw("DROP TABLE WorldAgentContact; PRAGMA user_version=45");

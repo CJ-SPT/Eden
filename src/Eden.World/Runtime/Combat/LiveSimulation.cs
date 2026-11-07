@@ -328,7 +328,7 @@ internal sealed partial class LiveCombatRuntime
                     var ship = pilot.ActiveShip;
                     var position = ship.Position!;
                     var type = catalog.RequireItem(ship.TypeId);
-                    int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == ship.StationId).SolarSystemId;
+                    int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
                     loaded[pilot.Id] = new(
                         pilot.Id,
                         ship.Id,

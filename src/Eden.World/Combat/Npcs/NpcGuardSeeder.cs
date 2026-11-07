@@ -129,10 +129,7 @@ internal sealed class NpcGuardSeeder
     internal static List<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId)
     {
         List<NpcGuardObstacle> obstacles = [];
-        var bodies = catalog
-            .Set<Celestial>()
-            .Where(body => body.SolarSystemId == systemId && body.GroupId != AsteroidDefinitions.BeltGroup)
-            .ToArray();
+        var bodies = catalog.CelestialsInSystem(systemId).Where(body => body.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
         foreach (var body in bodies)
         {
             if (catalog.FittingType(body.TypeId) is { } type)
@@ -150,17 +147,11 @@ internal sealed class NpcGuardSeeder
             return;
         }
         var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
-        var stations = catalog
-            .Set<Station>()
-            .Where(s => s.SolarSystemId == systemId)
-            .OrderBy(s => s.Id)
-            .ToArray()
-            .Where(station => catalog.FittingType(station.TypeId) is not null)
-            .ToArray();
+        var stations = catalog.StationsInSystem(systemId).Where(station => catalog.FittingType(station.TypeId) is not null).ToArray();
         obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
-        foreach (var gate in catalog.Set<Stargate>().Where(g => g.SolarSystemId == systemId).OrderBy(g => g.Id).ToArray())
+        foreach (var gate in catalog.GatesInSystem(systemId))
         {
-            var body = catalog.Set<Celestial>().Find(gate.Id);
+            var body = catalog.FindCelestial(gate.Id);
             if (body is null)
             {
                 Report($"gate {gate.Id} has no catalog position.");

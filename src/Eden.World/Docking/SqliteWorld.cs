@@ -59,7 +59,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             }
             else if (systemId is int destination)
             {
-                int origin = saved.SystemId ?? catalog.Set<Station>().Find(world.Ships.Find(shipId)!.StationId)!.SolarSystemId;
+                int origin = saved.SystemId ?? catalog.FindStation(world.Ships.Find(shipId)!.StationId)!.SolarSystemId;
                 if (origin != destination)
                 {
                     PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Jumped);
@@ -99,12 +99,12 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var destination = catalog.Set<Station>().Include(s => s.Type).SingleOrDefault(s => s.Id == stationId);
+        var destination = catalog.FindStation(stationId);
         if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)
         {
             throw new InvalidDataException("Dock your active ship at an available station.");
         }
-        int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         CrimewatchPersistence.CheckTravel(
             world,
             catalog,
@@ -116,7 +116,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         if (
             destination.SolarSystemId != system
             || new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(destination.X, destination.Y, destination.Z))
-                > (destination.Type.Radius ?? 0) + shipRadius + DockingDefinitions.MaximumRange
+                > (catalog.RequireItem(destination.TypeId).Radius ?? 0) + shipRadius + DockingDefinitions.MaximumRange
         )
         {
             throw new InvalidDataException("The station is outside docking range.");
@@ -180,32 +180,21 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         var ship = pilot.ActiveShip;
         using CatalogDbContext catalog = new(_database.CatalogPath);
         var type = catalog.RequireItem(ship.TypeId);
-        var station = catalog
-            .Set<Station>()
-            .Include(s => s.Type)
-                .ThenInclude(t => t.Group)
-            .Include(s => s.Owner)
-            .Include(s => s.SolarSystem)
-                .ThenInclude(s => s.Constellation)
-            .Single(s => s.Id == ship.StationId);
-        var system = station.SolarSystem;
+        var station = catalog.RequireStation(ship.StationId);
+        var system = catalog.RequireSystem(station.SolarSystemId);
+        var stationType = catalog.RequireItem(station.TypeId);
         // Hulls with no weapon fittings can omit the zero-valued hardpoint attribute.
         int turretSlots = checked((int)catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft));
         var fitted = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var flight = new FlightProperties(
-            (float)station.Type.Radius!.Value,
+            (float)stationType.Radius!.Value,
             (float)type.Radius!.Value,
             fitted.GetValueOrDefault(DogmaAttributeId.Mass),
             (float)fitted.GetValueOrDefault(DogmaAttributeId.Agility),
             (float)fitted.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
             fitted.GetValueOrDefault(DogmaAttributeId.BaseWarpSpeed) * fitted.GetValueOrDefault(DogmaAttributeId.WarpSpeedMultiplier)
         );
-        var designation = catalog.Set<StationDesignation>().Single(s => s.StationId == station.Id);
-        var identity = new StationIdentity(
-            designation.Format(system.Name, station.Owner.Name),
-            station.Type.GroupId,
-            station.Type.Group.CategoryId
-        );
+        var identity = new StationIdentity(catalog.StationName(station.Id), stationType.GroupId, stationType.CategoryId);
         var hull = new HullProperties(
             fitted.GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
             fitted.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity),
@@ -246,7 +235,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 station.Id,
                 station.TypeId,
                 station.OwnerId,
-                new(system.Id, system.ConstellationId, system.Constellation.RegionId),
+                new(system.Id, system.ConstellationId, system.RegionId),
                 station.OperationId,
                 station.OrbitId,
                 new(station.X, station.Y, station.Z),

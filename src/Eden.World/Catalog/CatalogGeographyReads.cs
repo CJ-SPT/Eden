@@ -6,6 +6,35 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal IEnumerable<CatalogStationDefinition> Stations() =>
+        writable ? Set<Station>().Select(station => station.Id).ToArray().Select(RequireStation) : Definitions.Stations.Values;
+
+    internal IEnumerable<CatalogStationDefinition> StationsInSystem(int id) =>
+        writable
+            ? Stations().Where(station => station.SolarSystemId == id).OrderBy(station => station.Id)
+            : Definitions.StationsInSystem(id);
+
+    internal IEnumerable<CatalogGateDefinition> GatesInSystem(int id) =>
+        writable
+            ? Set<Stargate>()
+                .Where(gate => gate.SolarSystemId == id)
+                .OrderBy(gate => gate.Id)
+                .Select(gate => new CatalogGateDefinition(gate.Id, gate.SolarSystemId, gate.DestinationId, gate.Destination.SolarSystemId))
+                .ToArray()
+            : Definitions.GatesInSystem(id);
+
+    internal string StationName(int id)
+    {
+        if (!writable)
+        {
+            return Definitions.StationNames[id];
+        }
+        var station = RequireStation(id);
+        return Set<StationDesignation>()
+            .Single(value => value.StationId == id)
+            .Format(RequireSystem(station.SolarSystemId).Name, NpcCorporationName(station.OwnerId)!);
+    }
+
     internal CatalogStationDefinition? FindStation(long id)
     {
         if (!writable)

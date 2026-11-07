@@ -120,8 +120,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         long oldest = now - HistorySeconds * TimeSpan.TicksPerSecond;
         world.Set<WorldMissile>().Where(m => m.SourceKind == MissileSourceKind.Npc && m.EndedAt < oldest).ExecuteDelete();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        int targetSystem =
-            pilot.ActiveShip.Position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int targetSystem = pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var rows = world
             .Set<WorldMissile>()
             .Where(m => m.SourceKind == MissileSourceKind.Npc && m.PilotId == pilotId && m.Status == MissileFlightStatus.Flying)

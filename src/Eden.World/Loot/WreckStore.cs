@@ -269,7 +269,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             || wreck.ExpiresAt <= now
             || wreck.OwnerId != pilotId
             || pilot.ActiveShip.Position is not { } position
-            || (position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId) != wreck.SystemId
+            || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != wreck.SystemId
         )
         {
             throw new InvalidDataException("The wreck is unavailable or you do not have its loot rights.");

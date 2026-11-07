@@ -72,10 +72,8 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
     {
         foreach (
             var belt in catalog
-                .Set<Celestial>()
-                .Where(b =>
-                    b.SolarSystemId == systemId && b.GroupId == AsteroidDefinitions.BeltGroup && (!renewBelt.HasValue || b.Id == renewBelt)
-                )
+                .CelestialsInSystem(systemId)
+                .Where(b => b.GroupId == AsteroidDefinitions.BeltGroup && (!renewBelt.HasValue || b.Id == renewBelt))
                 .OrderBy(b => b.Id)
                 .ToArray()
         )

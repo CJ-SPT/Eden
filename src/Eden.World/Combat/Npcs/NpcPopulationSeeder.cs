@@ -75,13 +75,13 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
                 WHERE SystemId={systemId} AND TypeId={rookie} AND DestroyedAt IS NULL AND RetiredAt IS NULL
             """
         );
-        var system = catalog.Set<SolarSystem>().Include(s => s.Constellation).SingleOrDefault(s => s.Id == systemId);
+        var system = catalog.FindSystem(systemId);
         if (system is null)
         {
             Report($"system {systemId} has no catalog definition; no population was substituted.");
             return;
         }
-        var faction = NpcRegions.Pirates(system.Constellation.RegionId);
+        var faction = NpcRegions.Pirates(system.RegionId);
         if (faction is null)
         {
             return;
@@ -97,8 +97,8 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         convoys.Seed(world, catalog, systemId, security, now);
         mining.Seed(world, catalog, systemId, definition, security, now);
         var belts = catalog
-            .Set<Celestial>()
-            .Where(c => c.SolarSystemId == systemId && c.GroupId == AsteroidDefinitions.BeltGroup)
+            .CelestialsInSystem(systemId)
+            .Where(c => c.GroupId == AsteroidDefinitions.BeltGroup)
             .OrderBy(c => c.Id)
             .ToArray();
         foreach (var belt in belts)

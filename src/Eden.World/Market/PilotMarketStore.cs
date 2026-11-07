@@ -38,13 +38,12 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
     private static Pilot Pilot(WorldDbContext world, long id) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
 
-    private static Station Station(CatalogDbContext catalog, int id) =>
-        catalog.Set<Station>().Include(s => s.SolarSystem).ThenInclude(s => s.Constellation).Single(s => s.Id == id);
+    private static CatalogStationDefinition Station(CatalogDbContext catalog, int id) => catalog.RequireStation(id);
 
-    private static bool HasMarket(CatalogDbContext catalog, Station station) =>
+    private static bool HasMarket(CatalogDbContext catalog, CatalogStationDefinition station) =>
         StationCapabilities.Has(catalog, station.OperationId, StationService.Market);
 
-    private static Station TradeStation(CatalogDbContext catalog, Pilot pilot, int stationId)
+    private static CatalogStationDefinition TradeStation(CatalogDbContext catalog, Pilot pilot, int stationId)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
         {
@@ -58,7 +57,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
         return station;
     }
 
-    private void Seed(WorldDbContext world, CatalogDbContext catalog, Station station)
+    private void Seed(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
     {
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
         {
@@ -122,7 +121,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
                     {
                         StationId = station.Id,
                         SystemId = station.SolarSystemId,
-                        RegionId = station.SolarSystem.Constellation.RegionId,
+                        RegionId = station.RegionId,
                         OwnerId = station.OwnerId,
                         TypeId = typeId,
                         Bid = bid,
@@ -197,7 +196,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
             Seed(world, catalog, station);
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
-        int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
+        int region = catalog.RequireSystem(system).RegionId;
         var query = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
@@ -321,7 +320,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         int system = pilot.ActiveShip.Position?.SystemId ?? Station(catalog, pilot.ActiveShip.StationId).SolarSystemId;
-        int region = catalog.Set<SolarSystem>().Where(s => s.Id == system).Select(s => s.Constellation.RegionId).Single();
+        int region = catalog.RequireSystem(system).RegionId;
         var now = clock.GetUtcNow().UtcDateTime;
         long end = now.ToFileTimeUtc();
         long start = now.Date.AddDays(-MarketDefinitions.HistoryDays).ToFileTimeUtc();
@@ -334,7 +333,7 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
             select trade;
         // Personal fills have two wallet entries, but only the seller contributes
         // regional price/volume. NPC executions already contain just one side.
-        var stations = catalog.Set<Station>().Where(s => s.SolarSystem.Constellation.RegionId == region).Select(s => s.Id).ToArray();
+        var stations = catalog.Stations().Where(s => s.RegionId == region).Select(s => s.Id).ToArray();
         var personalFills = world
             .Set<MarketExecution>()
             .AsNoTracking()

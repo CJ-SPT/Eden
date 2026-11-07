@@ -146,7 +146,7 @@ internal sealed partial class PilotMarketStore
         );
     }
 
-    private static decimal BrokerRate(WorldDbContext world, CatalogDbContext catalog, long pilotId, Station station)
+    private static decimal BrokerRate(WorldDbContext world, CatalogDbContext catalog, long pilotId, CatalogStationDefinition station)
     {
         long faction = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId)?.FactionID ?? 0;
         decimal Standing(long owner) => (decimal)(world.Set<SavedNpcStanding>().Find(pilotId, owner)?.Value ?? 0);
@@ -161,7 +161,7 @@ internal sealed partial class PilotMarketStore
         WorldDbContext world,
         CatalogDbContext catalog,
         Pilot pilot,
-        Station station,
+        CatalogStationDefinition station,
         int typeId,
         bool bid,
         long price,
@@ -180,7 +180,7 @@ internal sealed partial class PilotMarketStore
             PilotId = pilot.Id,
             StationId = station.Id,
             SystemId = station.SolarSystemId,
-            RegionId = station.SolarSystem.Constellation.RegionId,
+            RegionId = station.RegionId,
             TypeId = typeId,
             Bid = bid,
             PriceCents = price,

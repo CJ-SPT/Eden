@@ -20,13 +20,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
         {
             return;
         }
-        var stations = catalog
-            .Set<Station>()
-            .Where(s => s.SolarSystemId == systemId)
-            .OrderBy(s => s.Id)
-            .ToArray()
-            .Where(station => catalog.FittingType(station.TypeId) is not null)
-            .ToArray();
+        var stations = catalog.StationsInSystem(systemId).Where(station => catalog.FittingType(station.TypeId) is not null).ToArray();
         var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
         obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
         // Include newly seeded, tracked guard encounters as well as saved ones.

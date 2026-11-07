@@ -187,7 +187,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
     }
 
     private static int System(CatalogDbContext catalog, Ship ship) =>
-        ship.Position!.SystemId ?? catalog.Set<Station>().Single(s => s.Id == ship.StationId).SolarSystemId;
+        ship.Position!.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
 
     public void Sweep(long now)
     {

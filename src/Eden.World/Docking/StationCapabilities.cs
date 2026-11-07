@@ -8,5 +8,5 @@ namespace Eden.World.Docking;
 internal static class StationCapabilities
 {
     internal static bool Has(CatalogDbContext catalog, long operationId, StationService service) =>
-        catalog.Definitions.Find(CatalogData.Client.Stationoperations, operationId)?.Services?.Contains((long)service) == true;
+        catalog.Read(CatalogData.Client.Stationoperations, operationId)?.Services?.Contains((long)service) == true;
 }

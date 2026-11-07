@@ -83,10 +83,7 @@ internal sealed class NpcCombatStore(
             return;
         }
         var systems = targets
-            .Select(t =>
-                t.Pilot.ActiveShip.Position!.SystemId
-                ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId
-            )
+            .Select(t => t.Pilot.ActiveShip.Position!.SystemId ?? catalog.RequireStation(t.Pilot.ActiveShip.StationId).SolarSystemId)
             .Distinct()
             .ToArray();
         var occupied = world
@@ -119,10 +116,8 @@ internal sealed class NpcCombatStore(
             var home = NpcMotion.Home(npc, catalog);
             var target = targets
                 .Where(t =>
-                    (
-                        t.Pilot.ActiveShip.Position!.SystemId
-                        ?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId
-                    ) == npc.SystemId
+                    (t.Pilot.ActiveShip.Position!.SystemId ?? catalog.RequireStation(t.Pilot.ActiveShip.StationId).SolarSystemId)
+                    == npc.SystemId
                 )
                 .Select(t =>
                 {
@@ -229,7 +224,7 @@ internal sealed class NpcCombatStore(
                 MissileRange(catalog, npc, profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId))
             );
         var position = pilot.ActiveShip.Position;
-        int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        int system = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         if (
             pilot.ActiveShipId != shipId
             || position is null

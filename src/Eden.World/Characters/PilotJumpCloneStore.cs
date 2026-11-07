@@ -27,11 +27,10 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         world.Pilots.Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
         ?? throw new InvalidDataException("Unknown pilot.");
 
-    private static Station Station(CatalogDbContext catalog, int id) =>
-        catalog.Set<Station>().Include(s => s.SolarSystem).ThenInclude(s => s.Constellation).SingleOrDefault(s => s.Id == id)
-        ?? throw new InvalidDataException("Unknown jump clone station.");
+    private static CatalogStationDefinition Station(CatalogDbContext catalog, int id) =>
+        catalog.FindStation(id) ?? throw new InvalidDataException("Unknown jump clone station.");
 
-    private static Station CurrentStation(CatalogDbContext catalog, Pilot pilot, bool facility)
+    private static CatalogStationDefinition CurrentStation(CatalogDbContext catalog, Pilot pilot, bool facility)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.OwnerId != pilot.Id || pilot.ActiveShip.StoredInId is not null)
         {
@@ -43,7 +42,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             throw new InvalidDataException("This station has no jump clone facility.");
         }
         // Pochven installation requires standings that Eden does not implement.
-        JumpCloneRules.CheckLocation(station.SolarSystemId, station.SolarSystem.Constellation.RegionId);
+        JumpCloneRules.CheckLocation(station.SolarSystemId, station.RegionId);
         return station;
     }
 
@@ -142,7 +141,14 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         return InstallLimit(world, catalog, Pilot(world, pilotId));
     }
 
-    private SavedJumpClonePayment Pay(WorldDbContext world, Pilot pilot, Station station, JumpClonePaymentKind kind, long quote, long now)
+    private SavedJumpClonePayment Pay(
+        WorldDbContext world,
+        Pilot pilot,
+        CatalogStationDefinition station,
+        JumpClonePaymentKind kind,
+        long quote,
+        long now
+    )
     {
         var wallet = world.Set<PilotWallet>().Find(pilot.Id);
         long balance = JumpCloneRules.Pay(wallet?.Cents ?? 0, quote);
@@ -239,7 +245,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             throw new InvalidDataException("The jump clone is not at that destination.");
         }
         var destination = Station(catalog, stationId);
-        JumpCloneRules.CheckLocation(destination.SolarSystemId, destination.SolarSystem.Constellation.RegionId);
+        JumpCloneRules.CheckLocation(destination.SolarSystemId, destination.RegionId);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var timer = world.Set<SavedJumpCloneTimer>().Find(pilotId);
         JumpCloneRules.CheckTimer(source.Id == stationId, timer?.Time, Skills(world, catalog, pilot), now);

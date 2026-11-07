@@ -27,7 +27,7 @@ internal static class CrimewatchPersistence
     }
 
     internal static int System(CatalogDbContext catalog, Ship ship) =>
-        ship.Position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == ship.StationId).SolarSystemId;
+        ship.Position?.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
 
     internal static SavedEngagement? Engagement(WorldDbContext world, long pilot, long other) =>
         world.Set<SavedEngagement>().Find(Math.Min(pilot, other), Math.Max(pilot, other));

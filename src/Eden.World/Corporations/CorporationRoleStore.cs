@@ -109,7 +109,7 @@ internal sealed class CorporationRoleStore(WorldDatabase database, TimeProvider 
             if (after.BaseId.HasValue)
             {
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                if (!catalog.Set<Station>().Any(s => s.Id == after.BaseId))
+                if (catalog.FindStation(after.BaseId.Value) is null)
                 {
                     throw new InvalidDataException("Choose a known station as the member's base.");
                 }

@@ -61,8 +61,7 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
 
     // Ordinary undocks inherit the station's system; explicit IDs are saved by travel.
     private static int CurrentSystem(CatalogDbContext catalog, Pilot pilot) =>
-        pilot.ActiveShip.Position?.SystemId
-        ?? catalog.Set<Station>().Single(station => station.Id == pilot.ActiveShip.StationId).SolarSystemId;
+        pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
 
     private static DroneSettings Settings(WorldDbContext world, long pilotId) =>
         world.Set<WorldDroneSettings>().Find(pilotId) is { } settings ? new(settings.Aggressive, settings.FocusFire) : new();

@@ -95,20 +95,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         {
             throw new InvalidDataException("Assign this contract to another local pilot or make it public.");
         }
-        var station =
-            catalog
-                .Set<Station>()
-                .Include(s => s.SolarSystem)
-                    .ThenInclude(s => s.Constellation)
-                .SingleOrDefault(s => s.Id == draft.StationId)
-            ?? throw new InvalidDataException("Unknown contract station.");
+        var station = catalog.FindStation(draft.StationId) ?? throw new InvalidDataException("Unknown contract station.");
         var destination = draft.Courier is { } courier
-            ? catalog
-                .Set<Station>()
-                .Include(s => s.SolarSystem)
-                    .ThenInclude(s => s.Constellation)
-                .SingleOrDefault(s => s.Id == courier.DestinationStationId)
-                ?? throw new InvalidDataException("Unknown courier destination station.")
+            ? catalog.FindStation(courier.DestinationStationId) ?? throw new InvalidDataException("Unknown courier destination station.")
             : null;
         var skills = Skills(world, catalog, pilot);
         // Expired contracts retain escrow for collection but release a creation slot.
@@ -134,8 +123,8 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     Type = draft.Type,
                     EndStationId = destination?.Id ?? 0,
                     EndSystemId = destination?.SolarSystemId ?? 0,
-                    EndConstellationId = destination?.SolarSystem.ConstellationId ?? 0,
-                    EndRegionId = destination?.SolarSystem.Constellation.RegionId ?? 0,
+                    EndConstellationId = destination is null ? 0 : catalog.RequireSystem(destination.SolarSystemId).ConstellationId,
+                    EndRegionId = destination?.RegionId ?? 0,
                     DurationDays = draft.Courier?.DurationDays ?? 0,
                     CollateralCents = draft.Courier?.CollateralCents ?? 0,
                     IssuerId = pilotId,
@@ -143,8 +132,8 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                     AssigneeId = draft.AssigneeId,
                     StationId = station.Id,
                     SystemId = station.SolarSystemId,
-                    ConstellationId = station.SolarSystem.ConstellationId,
-                    RegionId = station.SolarSystem.Constellation.RegionId,
+                    ConstellationId = catalog.RequireSystem(station.SolarSystemId).ConstellationId,
+                    RegionId = station.RegionId,
                     Issued = now,
                     Expires = checked(now + TimeSpan.FromMinutes(draft.ExpiryMinutes).Ticks),
                     PriceCents = draft.PriceCents,

@@ -284,7 +284,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
 
     private static void CheckStation(CatalogDbContext catalog, int id)
     {
-        if (!catalog.Set<Station>().Any(s => s.Id == id))
+        if (catalog.FindStation(id) is null)
         {
             throw new InvalidDataException("The redeem station is unavailable.");
         }

@@ -8,6 +8,27 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class CatalogGeographyTests
 {
     [Fact]
+    public void StationDirectoriesShareSnapshotsAndFixtureEditsInvalidateTheirGeneration()
+    {
+        using TestWorld world = new();
+        WorldDatabase database = new(world.Path);
+        var first = new StationDirectory(database);
+        var second = new StationDirectory(database);
+        var original = first.Read();
+        Assert.Same(original, second.Read());
+        double originalX = original.Stations.Single(station => station.Id == 60003760).Position.X;
+        using (CatalogDbContext fixture = new(database.CatalogPath, writable: true))
+        {
+            fixture.Database.ExecuteSqlRaw("UPDATE Station SET X=123 WHERE Id=60003760");
+        }
+        var current = second.Read();
+        Assert.NotSame(original, current);
+        Assert.Same(current, first.Read());
+        Assert.Equal(originalX, original.Stations.Single(station => station.Id == 60003760).Position.X);
+        Assert.Equal(123, current.Stations.Single(station => station.Id == 60003760).Position.X);
+    }
+
+    [Fact]
     public void FixtureEditsInvalidateLocationLookupsAndSystemPagesTogether()
     {
         using TestWorld world = new();
