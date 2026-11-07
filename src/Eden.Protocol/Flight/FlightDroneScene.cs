@@ -37,9 +37,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         {
             update(new DestinyCommand.AddBalls(Ballpark.AddDrones(added, space.Stamp(clock))));
         }
+        var previous = Contacts.ToDictionary(d => d.Id);
         foreach (var drone in current)
         {
-            var old = Contacts.FirstOrDefault(d => d.Id == drone.Id);
+            var old = previous.GetValueOrDefault(drone.Id);
             if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
             {
                 // Michelle uses the control row's owner OR controller to keep a panel entry.

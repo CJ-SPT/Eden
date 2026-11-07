@@ -6,6 +6,45 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Resident drone flight and combat, November 6, 2026
+
+Controlled drones now advance on typed resident state under the existing world owner. The system view shares current identities, profiles, positions and health across sessions. Pilot inputs retain skills, fit bandwidth/control distance, qualifications and aggression settings until the corresponding committed rows or catalog change. Contact comparison uses an identity lookup to avoid repeatedly scanning the old contact array for every visible drone.
+
+The unchanged one-second movement step and Carbon-derived follow/orbit rules remain based on Destiny revision `27ee40b38a563d29054b32f64c3ebc87fabaec1f`, [Ballpark.cpp](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp). Late callbacks take one bounded step. Saved weapon deadlines prevent duplicate payment. Ordinary drone damage and direct NPC retaliation update resident health, contribution history and shared weapon deadlines. NPC fire can stay resident while the ship controls drones.
+
+Recall, mining NPC side effects, fatal drone volleys and fatal retaliation retain SQL transactions. A fallback projects prior dirty state and uses the already selected accuracy draws when settling the current interval. Checkpoints project position, velocity, health, controller/activity, command timestamps and paid shot deadlines. Existing saves need no schema change. Transaction-local reads bypass published views. Committed commands, skill/fit/settings changes, catalog updates and inventory/ownership changes invalidate the appropriate inputs; rolled-back damage cannot appear in later observer reads.
+
+### Matched session replay
+
+`DronePerformanceReplayTests.ReplayNormalSessions` runs normal session ticks, including motion, observer contacts, updates and owner output encoding, with one additional pilot who owns no drones. It uses the same fixture workload on baseline `c62a4a0` and the optimized branch, two warmups and thirty measured one-second frames. The isolated catalog gives NPCs and ships large shields to retain combat throughout the sample. Pursuit starts 40 km away. This is a synthetic fixture replay with serial pilot scheduling. Network backpressure, real catalog scale, native rendering and concurrent request arrival are outside this measurement.
+
+| Owners / deployed drones | Scenario | Baseline median / p95 ms | Resident median / p95 ms | Baseline / resident mean SQL commands | Baseline / resident mean opens | Baseline / resident mean fits |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 / 0 | orbit | 5.70 / 8.11 | 9.50 / 11.25 | 30.50 / 26.53 | 16.07 / 12.07 | 0.00 / 0.00 |
+| 1 / 1 | orbit | 46.89 / 56.81 | 5.25 / 6.54 | 184.33 / 29.67 | 79.63 / 13.73 | 1.23 / 0.00 |
+| 1 / 5 | combat | 59.12 / 71.95 | 4.92 / 7.19 | 292.13 / 33.07 | 80.87 / 13.57 | 1.27 / 0.00 |
+| 1 / 5 | orbit | 64.44 / 86.55 | 5.18 / 7.75 | 289.90 / 33.60 | 79.00 / 13.73 | 1.20 / 0.00 |
+| 1 / 5 | pursuit | 91.81 / 110.78 | 11.12 / 22.50 | 273.50 / 35.33 | 76.20 / 14.47 | 1.00 / 0.00 |
+| 10 / 50 | combat | 990.94 / 1149.90 | 40.99 / 52.87 | 7703.03 / 228.63 | 375.63 / 87.93 | 10.23 / 0.00 |
+| 10 / 50 | orbit | 906.63 / 1052.81 | 55.91 / 75.00 | 7689.37 / 205.37 | 334.67 / 82.97 | 10.20 / 0.00 |
+| 10 / 50 | pursuit | 893.14 / 1440.03 | 43.19 / 49.42 | 7704.10 / 242.93 | 379.33 / 93.10 | 10.00 / 0.00 |
+
+Full frames still contain SQL from other session work and projections triggered when that work crosses SQL boundaries. These counts include those projections. The separate warmed drone-only steps and observer bursts issued zero SQL commands, connection opens or fitting calculations in all eight cases. A deterministic direct-combat regression separately exercises due nonfatal NPC retaliation and duplicate shot callbacks with zero SQL.
+
+After the measured frames, the replay warms a direct drone operation, advances another interval without intervening session SQL, and explicitly checkpoints that dirty state. The fifty-drone orbit/pursuit/combat checkpoints respectively issued 54/78/81 EF commands through one connection. Capture/project/copy held the world owner for 3.84/2.13/4.23 ms; subsequent file writing took 14.34/11.55/16.65 ms outside that owner. Checkpoint costs include other outstanding combat resources. Raw SQLite backup connections are represented by capture/write time and bytes, beyond the EF counters.
+
+Automated cases verify exact position/health round trips after checkpoint, startup control release, skill invalidation, retained raw damage, unchanged-state rejection, concurrent scoop conservation, rollback isolation, owner/observer notifications, fatal settlement, bounded late movement and duplicate callbacks. The contributor guide now requires shared warmed reads, explicit invalidation, transaction projection and measured SQL/connection/fit budgets for simulation changes.
+
+The baseline replay passed eight scenarios in 114 seconds; the final resident replay passed eight in 16 seconds. Raw reports are in ignored `artifacts/drone-replay/drone-replay-final.trx`; the separate baseline checkout has `artifacts/drone-baseline-results/drone-baseline.trx`.
+
+**Automated validation.** Tool and solution restore, solution build, both Python policy suites (3 catalog and 9 formatting cases), formatting across 891 files, the width check and diff whitespace passed. The final affected run passed 313 tests with zero failures/skips in 91 seconds. The eight final resident replay scenarios passed in 16 seconds. The full .NET suite was not requested or run. Development corrected controller-index invalidation, a prerequisite-sensitive test fixture, a distinct database instance in the retaliation fixture, and an asynchronous test flush. An overlapping development build encountered testhost file locks before the final serial build/check sequence.
+
+The exact final affected filter was `FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~LiveDroneRulesTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~DroneRecoveryTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcRepairTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~ShipRigTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~ShipStorageTests`. Replay used `FullyQualifiedName~DronePerformanceReplayTests` with one worker; the affected run used two workers.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this performance milestone.
+
 ## Shared drone contacts, November 6, 2026
 
 Drone contacts are shared per system in the resident world. Committed drone, inventory, pilot, ship and fit changes invalidate the view. Controller membership is indexed by pilot and ship. The owner advances its drones before refreshing its scene once; observers still refresh without owning drones. Transaction-local reads bypass publication.
@@ -19,6 +58,9 @@ The focused filter `FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~Com
 **Optional maintainer checks:** None.
 
 ## Contents
+
+- [Resident drone flight and combat (November 6, 2026)](#resident-drone-flight-and-combat-november-6-2026)
+- [Shared drone contacts (November 6, 2026)](#shared-drone-contacts-november-6-2026)
 
 - [Resident system motion and NPC acquisition (November 5, 2026)](#resident-system-motion-and-npc-acquisition-november-5-2026)
 - [Resident monitoring and scene views (November 5, 2026)](#resident-monitoring-and-scene-views-november-5-2026)

@@ -60,14 +60,7 @@ internal static class DroneNpcCombat
             attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
         ).Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier));
-        var weaponProfile = new DroneNpcWeapon(
-            damage,
-            attributes.GetValueOrDefault(DogmaAttributeId.MaxRange),
-            attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff),
-            attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed),
-            attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
-            attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime)
-        );
+        var weaponProfile = Weapon(attributes);
         var retaliation = DroneRules.Retaliation(
             contact,
             NpcMotion.Position(npc),
@@ -107,6 +100,24 @@ internal static class DroneNpcCombat
             retaliation.Quality,
             new(contact.Id, contact.Profile.Defense, result.Remaining),
             null
+        );
+    }
+
+    internal static DroneNpcWeapon Weapon(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        var damage = new DamageVector(
+            attributes.GetValueOrDefault(DogmaAttributeId.EmDamage),
+            attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
+            attributes.GetValueOrDefault(DogmaAttributeId.KineticDamage),
+            attributes.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
+        ).Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier));
+        return new DroneNpcWeapon(
+            damage,
+            attributes.GetValueOrDefault(DogmaAttributeId.MaxRange),
+            attributes.GetValueOrDefault(DogmaAttributeId.AccuracyFalloff),
+            attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed),
+            attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
+            attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime)
         );
     }
 }
