@@ -193,7 +193,7 @@ internal static class ShipContentAudit
         var hullClass = (HullClass)type.GroupId;
         var milestone = ShipContentRoadmap.ForHull(hullClass, tech);
         bool admitted = HullCatalog.CanAssemble(catalog, type, type.Group.CategoryId);
-        checks.Add(new(ContentOperation.Assembly, admitted, milestone, "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble"));
+        checks.Add(new(ContentOperation.Assembly, admitted, milestone, "HullCatalog.CanAssemble / HullSupportRules.CanAssemble"));
         bool bonuses = HullCatalog.UsesCatalogBonuses(catalog, type.Id);
         checks.Add(
             new(ContentOperation.Bonuses, bonuses, milestone, "HullCatalog.UsesCatalogBonuses; tech-level admission remains explicit.")

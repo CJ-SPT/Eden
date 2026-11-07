@@ -197,20 +197,8 @@ public static class InventoryDefinitions
     public static bool RequiresSpecificShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         ShipRestrictions.Any(attribute => attributes.GetValueOrDefault(attribute) > 0);
 
-    public static bool CanFitShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes, int typeId, int groupId)
-    {
-        var groups = ShipRestrictions
-            .TakeWhile(a => a != DogmaAttributeId.CanFitShipType1)
-            .Select(a => attributes.GetValueOrDefault(a))
-            .Where(value => value > 0)
-            .ToArray();
-        var types = ShipRestrictions
-            .SkipWhile(a => a != DogmaAttributeId.CanFitShipType1)
-            .Select(a => attributes.GetValueOrDefault(a))
-            .Where(value => value > 0)
-            .ToArray();
-        return groups.Length + types.Length == 0 || groups.Contains(groupId) || types.Contains(typeId);
-    }
+    public static bool CanFitShip(IReadOnlyDictionary<DogmaAttributeId, double> attributes, int typeId, int groupId) =>
+        ShipFittingRestrictions.Read(attributes).Allows(typeId, groupId);
 
     public const int MiningLaserGroup = 54;
     public const int StripMinerGroup = 464;

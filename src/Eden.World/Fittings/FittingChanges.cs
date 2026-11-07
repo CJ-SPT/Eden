@@ -13,13 +13,18 @@ using Eden.World.Storage;
 
 namespace Eden.World.Fittings;
 
-internal sealed record FittingCheckpoint(ShipResourceSnapshot Resources, IReadOnlyDictionary<long, InventoryItem> Modules);
+internal sealed record FittingCheckpoint(
+    ShipResourceSnapshot Resources,
+    IReadOnlyDictionary<long, InventoryItem> Modules,
+    HullFittingCapacity Capacity
+);
 
 internal static class FittingChanges
 {
     internal static FittingCheckpoint Capture(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long now)
     {
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
+        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         return new(
             new(
                 PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(attributes), now),
@@ -29,7 +34,8 @@ internal static class FittingChanges
             PilotInventoryStore
                 .List(world, catalog, pilot.Id, pilot.ActiveShipId)
                 .Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId))
-                .ToDictionary(i => i.Id)
+                .ToDictionary(i => i.Id),
+            HullFittingCapacity.Read(calculation.Graph.Attributes(pilot.ActiveShipId))
         );
     }
 
@@ -46,18 +52,26 @@ internal static class FittingChanges
         while (true)
         {
             var calculation = FittingCalculation.Read(world, catalog, pilot);
-            attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
-            long? shutdown = FittingResourceRules.Shutdown(
-                attributes,
-                calculation
-                    .Modules.Where(m => m.Item.Online)
-                    .Select(m => new FittingShutdownCandidate(
-                        m.Item.Id,
-                        calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Cpu),
-                        calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Power)
-                    ))
-                    .ToArray()
+            var constraints = ReadConstraints(catalog, calculation);
+            ModuleFittingConstraints.CheckFitted(constraints);
+            FittingSlotRules.Check(
+                HullFittingCapacity.Read(calculation.Graph.Attributes(pilot.ActiveShipId)),
+                calculation.ResourceUsage(catalog)
             );
+            attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
+            long? shutdown =
+                ModuleFittingConstraints.ShutdownOnlineExcess(constraints)
+                ?? FittingResourceRules.Shutdown(
+                    attributes,
+                    calculation
+                        .Modules.Where(m => m.Item.Online)
+                        .Select(m => new FittingShutdownCandidate(
+                            m.Item.Id,
+                            calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Cpu),
+                            calculation.Graph.Read(m.Item.Id, DogmaAttributeId.Power)
+                        ))
+                        .ToArray()
+                );
             if (shutdown is null)
             {
                 break;
@@ -99,4 +113,19 @@ internal static class FittingChanges
         world.SaveChanges();
         return changed;
     }
+
+    internal static IReadOnlyList<FittedModuleConstraints> ReadConstraints(CatalogDbContext catalog, FittingCalculation calculation) =>
+        calculation
+            .Modules.Select(module =>
+            {
+                var limits = FittingModuleLimits.Read(calculation.Graph.Attributes(module.Item.Id));
+                // The native location item checks type attribute presence before
+                // reading its effective online limit, including offline modules.
+                if (!catalog.FittingAttributes(module.Item.TypeId).ContainsKey(DogmaAttributeId.MaxGroupOnline))
+                {
+                    limits = limits with { MaximumOnline = null };
+                }
+                return new FittedModuleConstraints(module.Item.Id, module.Item.TypeId, module.GroupId, module.Item.Online, limits);
+            })
+            .ToArray();
 }

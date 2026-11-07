@@ -74,18 +74,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             pilot.Id,
             attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity)
         );
-        var fitted = calculation.Modules.Select(m => m.Item).ToArray();
-        var usage = fitted
-            .Select(m => new FittedResourceUsage(
-                m.FlagId,
-                m.Online,
-                calculation.Graph.Read(m.Id, DogmaAttributeId.Cpu),
-                calculation.Graph.Read(m.Id, DogmaAttributeId.Power),
-                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.TurretFitted),
-                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted),
-                InventoryDefinitions.IsRigSlot(m.FlagId) ? calculation.Graph.Read(m.Id, DogmaAttributeId.CalibrationCost) : 0
-            ))
-            .ToArray();
+        var usage = calculation.ResourceUsage(catalog);
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
         world.StageFit(key, revision, result);
         return result;
@@ -163,7 +152,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
         var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
-        var hull = Attributes(catalog, ship.TypeId);
+        var capacity = checkpoint.Capacity;
         var rack = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -243,23 +232,13 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             if (definition.Rack == ModuleRack.Rig)
             {
                 var rigAttributes = Attributes(catalog, item.TypeId);
-                RigRules.CheckFit(hull, rigAttributes, calibrationUsed);
+                RigRules.CheckFit(checkpoint.Resources.Attributes, rigAttributes, calibrationUsed);
                 calibrationUsed += rigAttributes.GetValueOrDefault(DogmaAttributeId.CalibrationCost);
             }
             int group = catalog.FittingType(item.TypeId)!.GroupId;
             if (
-                (
-                    definition.Turret
-                    && equipment.Count(e => e.Effects.Contains(DogmaEffect.TurretFitted))
-                        >= hull.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft)
-                )
-                || (
-                    definition.Launcher
-                    && equipment.Count(e => e.Effects.Contains(DogmaEffect.LauncherFitted))
-                        >= hull.GetValueOrDefault(DogmaAttributeId.LauncherSlotsLeft)
-                )
-                || (definition.MaximumGroup > 0 && equipment.Count(e => e.GroupId == group) >= definition.MaximumGroup)
-                || (definition.MaximumType > 0 && equipment.Count(e => e.TypeId == item.TypeId) >= definition.MaximumType)
+                (definition.Turret && equipment.Count(e => e.Effects.Contains(DogmaEffect.TurretFitted)) >= capacity.Turrets)
+                || (definition.Launcher && equipment.Count(e => e.Effects.Contains(DogmaEffect.LauncherFitted)) >= capacity.Launchers)
             )
             {
                 throw new InvalidDataException("The hull has no compatible hardpoint or module allowance remaining.");
@@ -341,11 +320,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
             CheckHull(catalog, typeId, ship.TypeId);
             int first = definition.FirstFlag;
-            int slots = Math.Clamp(
-                checked((int)hull.GetValueOrDefault(definition.SlotAttribute)),
-                0,
-                definition.Rack == ModuleRack.Rig ? RigRules.MaximumSlots : InventoryDefinitions.SlotsPerRack
-            );
+            int slots = capacity.Slots(definition.Rack);
             return (first, slots);
         }
     }
@@ -415,7 +390,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         item.Online = online;
         if (online)
         {
-            var attributes = ShipAttributes(world, catalog, pilot);
+            var calculation = FittingCalculation.Read(world, catalog, pilot);
+            ModuleFittingConstraints.CheckOnline(FittingChanges.ReadConstraints(catalog, calculation));
+            var attributes = ShipAttributes(world, catalog, pilot, calculation: calculation);
             if (
                 attributes[DogmaAttributeId.CpuLoad] > attributes[DogmaAttributeId.CpuOutput] + InventoryDefinitions.ResourceTolerance
                 || attributes[DogmaAttributeId.PowerLoad]

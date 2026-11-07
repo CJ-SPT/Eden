@@ -83,20 +83,11 @@ public sealed record HullAssemblyProfile(
 
 public static class TechOneHullRules
 {
-    public static bool CanAssemble(HullAssemblyProfile hull) =>
-        hull.Category == InventoryCategory.Ship
-        && hull.Published
-        && hull.TechLevel == 1
-        && (
-            BuildContentPolicy.Current.Hulls.SpecialTypes.Contains(hull.TypeId)
-            || IsSmall(hull.Class)
-            || IsCombat(hull.Class)
-            || IsUtility(hull.Class)
-        );
+    public static bool CanAssemble(HullAssemblyProfile hull) => hull.TechLevel == 1 && HullSupportRules.CanAssemble(hull);
 
-    public static bool IsUtility(HullClass hullClass) => BuildContentPolicy.Current.Hulls.UtilityClasses.Contains((int)hullClass);
+    public static bool IsUtility(HullClass hullClass) => HullSupportRules.IsClass(hullClass, HullCohort.Utility, 1);
 
-    public static bool IsCombat(HullClass hullClass) => BuildContentPolicy.Current.Hulls.CombatClasses.Contains((int)hullClass);
+    public static bool IsCombat(HullClass hullClass) => HullSupportRules.IsClass(hullClass, HullCohort.Combat, 1);
 
-    public static bool IsSmall(HullClass hullClass) => BuildContentPolicy.Current.Hulls.SmallClasses.Contains((int)hullClass);
+    public static bool IsSmall(HullClass hullClass) => HullSupportRules.IsClass(hullClass, HullCohort.Small, 1);
 }

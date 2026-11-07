@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Ship content milestone 2: hull and fitting foundation, November 7, 2026](#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026)
+
 - [Ship content coverage milestone 1, November 7, 2026](#ship-content-coverage-milestone-1-november-7-2026)
 
 - [Player remote shield and armor repairs, November 7, 2026](#player-remote-shield-and-armor-repairs-november-7-2026)
@@ -789,3 +791,25 @@ Both Python suites passed (eight catalog-policy/setup tests in 0.623 seconds and
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** None; this milestone adds offline diagnostics and shares an existing admission predicate.
+
+## Ship content milestone 2: hull and fitting foundation, November 7, 2026
+
+Generic `HullSupportRules` now consume explicit tech-level cohorts. Assembly and bonus loading no longer hard-code T1 eligibility. The enabled cohorts still admit precisely the same **235 IDs**, and future T2/T3/capital cohorts need explicit declarations plus verified capabilities. World caches admission by catalog generation and rejects missing effects, unclassified hull modifiers and unsupported operational modifier shapes. Known deferred roles remain visible on already admitted hulls. Invalid stored operational profiles cannot silently receive the legacy corvette bonus path.
+
+Typed ship restrictions validate all 20 group and 12 type alternatives before numeric conversion. Pilot prerequisites remain independently checked by fitting operations. Effective group/type fitted limits now apply to the entire committed fitting, including existing members. Hull assignment modifiers can raise or lower those limits. Attribute **978** (`maxGroupOnline`) is separate: its lowest declared effective value across all fitted members governs the number online, even if the restrictive member is offline. An explicitly assigned zero permits no online modules; absence means no online limit. Explicit online requests reject excess without notifications or state changes. Fitting/attribute changes that lower the limit offline excess members using Eden's existing highest-item-ID tie break and emit ordinary online-state changes. Slot/hardpoint capacity, allocation and final validation use a coherent graph snapshot. Losing an occupied slot rejects the change without dropping equipment.
+
+Evidence: hash-verified build-3662168 archive **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Inert inspection of `dogma/items/locationDogmaItem.pyj` confirms `CheckCanOnlineItem`, `_GetLowestMaxGroupOnlineDict`, `_OfflineExcessModulesInGroup` and type-attribute presence checks; the minimum includes offline fitted items. `eve/common/script/dogma/baseDogmaStaticSvc.pyj.CanFitModuleToShipTypeOrGroup` confirms alternative group/type admission. `clientDogmaLocation.pyj.CheckCanFitByShipAndType` distinguishes fitted group/type limits. Catalog effect **8029** assigns **1544/978** from hull attribute **793** to capacitor-booster group **76**, establishing the supported hull assignment shape. Hull parsing admits post-assignment only for these fitted/online limit targets; it does not generally enable unknown assignment effects. No Blue/Destiny behavior changes; preceding Carbon references remain applicable.
+
+**Automated validation:** tool/solution restore and solution build passed with zero warnings/errors (3.05 seconds). **93 focused tests passed in 18 seconds**, including 14 new typed-rule and real-world/protocol regressions. They cover exact cohort boundaries, future-tech declarations, every ship-restriction slot, malformed IDs/limits, mixed-type counts, zero versus absence, offline minimum limits, hardpoints and occupied slots, hull-modified allowances, inventory rollback, emitted offlining notifications, rejection without notifications, and reopen persistence. Existing fitting, rig, snapshot, hull assembly and audit checks passed. The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingCapabilityRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.RigRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogAdoptionTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.TechOneHullTests|FullyQualifiedName=Eden.Protocol.Tests.Persistence.UtilityHullTests.CohortIncludesEveryIndustrialAndUtilityHullWithExplicitCapabilities|FullyQualifiedName=Eden.Protocol.Tests.Persistence.SmallHullTests.CohortIncludesEverySmallTechOneEntryAndEveryEffectHasAnExplicitOwner|FullyQualifiedName=Eden.Protocol.Tests.Persistence.CombatHullTests.CohortIncludesEveryMediumAndLargeCombatHullWithExplicitCapabilities
+```
+
+Development began with exact `FittingConstraintTests.HullModifiedFittedLimitAllowsTheSecondModuleAndRejectsTheThirdAtomically`, `EffectiveSlotAllocationAndCapacityRemovalShareOneAuthoritativeGraph` and `LowerOnlineLimitOfflinesExcessAndRejectedOnlinePreservesStateAcrossRestart` filters. The first allowance run exposed the unsupported hull post-assignment path, which is now implemented narrowly. A slot-fixture run failed because its no-tracking catalog edit was not saved; explicit fixture tracking corrected it. Those initial failures are not passing validation. The full .NET suite was not requested or run.
+
+Both Python suites passed (eight catalog setup/policy cases and nine formatting-policy cases), as did formatting verification. The regenerated 6,079-entry inventory retains the exact published and admitted ID sets and state totals from milestone 1; its new SHA-256 is **4C9A2019A56BF09ED6CB66E5F2151D63908082D362406197994D994C38F4A897**. Source catalog fingerprint and saved-world schema are unchanged. This completes the common admission/constraint foundation; role-specific selectors, deployed equipment and additional hull cohorts continue with their owning milestones.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** On a copied save, optionally confirm the native fitting window reflects cascaded offlining; automated checks establish notification contents, not rendering.

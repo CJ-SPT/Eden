@@ -45,6 +45,19 @@ internal sealed record FittingCalculation(
 {
     internal const long OwnerTargetId = long.MinValue;
 
+    internal IReadOnlyList<FittedResourceUsage> ResourceUsage(CatalogDbContext catalog) =>
+        Modules
+            .Select(module => new FittedResourceUsage(
+                module.Item.FlagId,
+                module.Item.Online,
+                Graph.Read(module.Item.Id, DogmaAttributeId.Cpu),
+                Graph.Read(module.Item.Id, DogmaAttributeId.Power),
+                FittingCatalog.Effects(catalog, module.Item.TypeId).Contains(DogmaEffect.TurretFitted),
+                FittingCatalog.Effects(catalog, module.Item.TypeId).Contains(DogmaEffect.LauncherFitted),
+                InventoryDefinitions.IsRigSlot(module.Item.FlagId) ? Graph.Read(module.Item.Id, DogmaAttributeId.CalibrationCost) : 0
+            ))
+            .ToArray();
+
     internal static FittingCalculation Read(
         WorldDbContext world,
         CatalogDbContext catalog,

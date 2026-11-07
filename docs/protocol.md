@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Ship content milestone 2: hull and fitting foundation, November 7, 2026](protocol/fitting.md#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026)
+
 - [Ship content coverage milestone 1, November 7, 2026](protocol/fitting.md#ship-content-coverage-milestone-1-november-7-2026)
 
 - [Capsule destruction and home-station respawn, November 7, 2026](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026)

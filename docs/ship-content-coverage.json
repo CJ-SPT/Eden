@@ -5798,7 +5798,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -5844,7 +5844,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -5890,7 +5890,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -5937,7 +5937,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -5984,7 +5984,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6044,7 +6044,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6085,7 +6085,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6153,7 +6153,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6201,7 +6201,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6247,7 +6247,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6295,7 +6295,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6342,7 +6342,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6388,7 +6388,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6446,7 +6446,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6509,7 +6509,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6555,7 +6555,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6609,7 +6609,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6660,7 +6660,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6730,7 +6730,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6772,7 +6772,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6819,7 +6819,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6884,7 +6884,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -6945,7 +6945,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7006,7 +7006,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7053,7 +7053,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7101,7 +7101,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7149,7 +7149,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7192,7 +7192,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7246,7 +7246,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7292,7 +7292,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7341,7 +7341,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7397,7 +7397,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7454,7 +7454,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7509,7 +7509,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7555,7 +7555,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7603,7 +7603,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7649,7 +7649,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7696,7 +7696,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7754,7 +7754,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7801,7 +7801,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7849,7 +7849,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7900,7 +7900,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7943,7 +7943,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -7986,7 +7986,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8068,7 +8068,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8152,7 +8152,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8234,7 +8234,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8317,7 +8317,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8405,7 +8405,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8490,7 +8490,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8574,7 +8574,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8650,7 +8650,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8697,7 +8697,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8745,7 +8745,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8793,7 +8793,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8840,7 +8840,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8888,7 +8888,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8936,7 +8936,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -8983,7 +8983,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -9030,7 +9030,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -9077,7 +9077,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -9120,7 +9120,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -9159,7 +9159,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -9236,7 +9236,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -11869,7 +11869,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -12633,7 +12633,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -12951,7 +12951,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -13182,7 +13182,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -15373,7 +15373,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -15442,7 +15442,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -15501,7 +15501,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -16328,7 +16328,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -17727,7 +17727,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -17824,7 +17824,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -17886,7 +17886,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -18074,7 +18074,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -19508,7 +19508,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -19590,7 +19590,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -19670,7 +19670,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21097,7 +21097,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21146,7 +21146,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21196,7 +21196,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21258,7 +21258,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21510,7 +21510,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -21583,7 +21583,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36480,7 +36480,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36557,7 +36557,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36586,7 +36586,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36615,7 +36615,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36654,7 +36654,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36737,7 +36737,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36796,7 +36796,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36877,7 +36877,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -36951,7 +36951,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37031,7 +37031,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37104,7 +37104,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37191,7 +37191,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37270,7 +37270,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37337,7 +37337,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37412,7 +37412,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37465,7 +37465,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37538,7 +37538,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37618,7 +37618,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -37698,7 +37698,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39284,7 +39284,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39367,7 +39367,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39419,7 +39419,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39481,7 +39481,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39553,7 +39553,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39608,7 +39608,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39664,7 +39664,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39716,7 +39716,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -39850,7 +39850,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40185,7 +40185,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40274,7 +40274,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40360,7 +40360,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40411,7 +40411,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40465,7 +40465,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40538,7 +40538,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40593,7 +40593,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40660,7 +40660,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40745,7 +40745,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40818,7 +40818,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40895,7 +40895,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -40965,7 +40965,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41040,7 +41040,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41109,7 +41109,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41179,7 +41179,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41253,7 +41253,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41320,7 +41320,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41376,7 +41376,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41439,7 +41439,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41512,7 +41512,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41564,7 +41564,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41630,7 +41630,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41688,7 +41688,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41754,7 +41754,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41822,7 +41822,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41888,7 +41888,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -41944,7 +41944,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -42010,7 +42010,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -42075,7 +42075,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -42140,7 +42140,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -42205,7 +42205,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -42267,7 +42267,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43634,7 +43634,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43697,7 +43697,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43789,7 +43789,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43847,7 +43847,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43905,7 +43905,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -43968,7 +43968,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -44065,7 +44065,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -44162,7 +44162,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -44986,7 +44986,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -80697,7 +80697,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -80759,7 +80759,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -80829,7 +80829,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -80902,7 +80902,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -80963,7 +80963,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -81003,7 +81003,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -81043,7 +81043,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -81083,7 +81083,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -83335,7 +83335,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -83414,7 +83414,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -83499,7 +83499,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -85265,7 +85265,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -85305,7 +85305,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -85354,7 +85354,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86051,7 +86051,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86090,7 +86090,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86137,7 +86137,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86191,7 +86191,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86245,7 +86245,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86301,7 +86301,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86355,7 +86355,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86410,7 +86410,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86493,7 +86493,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86575,7 +86575,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86658,7 +86658,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86750,7 +86750,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86840,7 +86840,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -86929,7 +86929,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87132,7 +87132,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87182,7 +87182,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87371,7 +87371,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87463,7 +87463,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87565,7 +87565,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87627,7 +87627,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87680,7 +87680,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87741,7 +87741,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87795,7 +87795,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -87851,7 +87851,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -101190,7 +101190,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -101267,7 +101267,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -101344,7 +101344,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -101421,7 +101421,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -101545,7 +101545,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -103568,7 +103568,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -103665,7 +103665,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -103713,7 +103713,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -103761,7 +103761,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -103809,7 +103809,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -109944,7 +109944,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -114564,7 +114564,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -115719,7 +115719,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -115823,7 +115823,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -115927,7 +115927,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116037,7 +116037,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116147,7 +116147,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116219,7 +116219,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116301,7 +116301,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116382,7 +116382,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116458,7 +116458,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116514,7 +116514,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116570,7 +116570,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116633,7 +116633,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116692,7 +116692,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116773,7 +116773,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116858,7 +116858,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -116942,7 +116942,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -117063,7 +117063,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -117136,7 +117136,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -117213,7 +117213,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -117953,7 +117953,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -121904,7 +121904,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Fighters",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -121991,7 +121991,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -123514,7 +123514,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Fighters",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -123605,7 +123605,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -123694,7 +123694,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Fighters",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -123785,7 +123785,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -123876,7 +123876,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -124354,7 +124354,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Fighters",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125303,7 +125303,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125392,7 +125392,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125481,7 +125481,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125570,7 +125570,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125660,7 +125660,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125726,7 +125726,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125796,7 +125796,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -125858,7 +125858,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -131658,7 +131658,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -131740,7 +131740,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -135496,7 +135496,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "IndustrialCommand",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -137003,7 +137003,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -137179,7 +137179,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -137251,7 +137251,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -137324,7 +137324,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -137429,7 +137429,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138297,7 +138297,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138348,7 +138348,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138399,7 +138399,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138450,7 +138450,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138736,7 +138736,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138793,7 +138793,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138827,7 +138827,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138880,7 +138880,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138937,7 +138937,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -138984,7 +138984,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -139134,7 +139134,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -139187,7 +139187,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -139240,7 +139240,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -139293,7 +139293,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -139754,7 +139754,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156118,7 +156118,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156183,7 +156183,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156322,7 +156322,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156421,7 +156421,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156515,7 +156515,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -156618,7 +156618,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157320,7 +157320,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157390,7 +157390,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157505,7 +157505,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157631,7 +157631,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157682,7 +157682,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157732,7 +157732,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157774,7 +157774,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -157823,7 +157823,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158506,7 +158506,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158567,7 +158567,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158622,7 +158622,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158724,7 +158724,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158794,7 +158794,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158857,7 +158857,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -158919,7 +158919,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -159920,7 +159920,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalTravel",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -160030,7 +160030,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -160106,7 +160106,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161053,7 +161053,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161126,7 +161126,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161207,7 +161207,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161322,7 +161322,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161367,7 +161367,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161548,7 +161548,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161642,7 +161642,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161740,7 +161740,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161925,7 +161925,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -161976,7 +161976,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -162035,7 +162035,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -163741,7 +163741,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -163808,7 +163808,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164024,7 +164024,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164060,7 +164060,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164147,7 +164147,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164258,7 +164258,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164620,7 +164620,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164801,7 +164801,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -164882,7 +164882,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -165853,7 +165853,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168450,7 +168450,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168505,7 +168505,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168560,7 +168560,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168608,7 +168608,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168658,7 +168658,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168714,7 +168714,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168771,7 +168771,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168827,7 +168827,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -168918,7 +168918,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169001,7 +169001,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169086,7 +169086,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169169,7 +169169,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169467,7 +169467,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169571,7 +169571,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169668,7 +169668,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -169779,7 +169779,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -180780,7 +180780,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -180872,7 +180872,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -180961,7 +180961,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181058,7 +181058,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181166,7 +181166,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181280,7 +181280,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181379,7 +181379,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181465,7 +181465,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181543,7 +181543,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -181797,7 +181797,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -184975,7 +184975,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -185093,7 +185093,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -185219,7 +185219,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -185419,7 +185419,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -185508,7 +185508,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -185600,7 +185600,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -187434,7 +187434,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -187526,7 +187526,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -187611,7 +187611,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -190060,7 +190060,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -190138,7 +190138,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -190210,7 +190210,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -191172,7 +191172,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -195844,7 +195844,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -195942,7 +195942,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -196110,7 +196110,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -196179,7 +196179,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -196271,7 +196271,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -196339,7 +196339,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197054,7 +197054,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197142,7 +197142,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197226,7 +197226,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197354,7 +197354,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197828,7 +197828,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197874,7 +197874,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -197921,7 +197921,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -200934,7 +200934,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -201003,7 +201003,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202077,7 +202077,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202137,7 +202137,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202208,7 +202208,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202282,7 +202282,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202355,7 +202355,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202424,7 +202424,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202479,7 +202479,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202534,7 +202534,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202591,7 +202591,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202679,7 +202679,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202757,7 +202757,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202815,7 +202815,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202903,7 +202903,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -202988,7 +202988,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203078,7 +203078,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203127,7 +203127,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203176,7 +203176,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203236,7 +203236,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203329,7 +203329,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203452,7 +203452,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203532,7 +203532,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203610,7 +203610,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203695,7 +203695,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203773,7 +203773,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -203959,7 +203959,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204037,7 +204037,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204095,7 +204095,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204171,7 +204171,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204229,7 +204229,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204303,7 +204303,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204402,7 +204402,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204605,7 +204605,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204665,7 +204665,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204734,7 +204734,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -204809,7 +204809,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208203,7 +208203,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208356,7 +208356,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208455,7 +208455,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208603,7 +208603,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208717,7 +208717,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -208981,7 +208981,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "CapitalModes",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -209095,7 +209095,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -209783,7 +209783,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -209849,7 +209849,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -210117,7 +210117,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -210183,7 +210183,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -210259,7 +210259,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -210348,7 +210348,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -210402,7 +210402,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechThree",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211043,7 +211043,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211096,7 +211096,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211160,7 +211160,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211209,7 +211209,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211251,7 +211251,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211523,7 +211523,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211577,7 +211577,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -211631,7 +211631,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -212137,7 +212137,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -212231,7 +212231,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -212324,7 +212324,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -212418,7 +212418,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "Supercapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -213460,7 +213460,7 @@
           "operation": "Assembly",
           "implemented": true,
           "milestone": "FittingCapabilities",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -213808,7 +213808,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {
@@ -213890,7 +213890,7 @@
           "operation": "Assembly",
           "implemented": false,
           "milestone": "TechTwoSubcapitals",
-          "evidence": "HullCatalog.CanAssemble / TechOneHullRules.CanAssemble",
+          "evidence": "HullCatalog.CanAssemble / HullSupportRules.CanAssemble",
           "role": null
         },
         {

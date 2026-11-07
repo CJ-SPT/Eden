@@ -16,19 +16,17 @@ public static class BuildContentPolicy
         using var stream =
             typeof(BuildContentPolicy).Assembly.GetManifestResourceStream("Eden.Gameplay.ContentSupport.json")
             ?? throw new InvalidDataException("Missing build-specific content policy.");
-        var policy = JsonSerializer.Deserialize<CatalogContentSupport>(
-            stream,
-            new JsonSerializerOptions(JsonSerializerDefaults.Web) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow }
-        );
+        JsonSerializerOptions options = new(JsonSerializerDefaults.Web) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };
+        options.Converters.Add(new JsonStringEnumConverter());
+        var policy = JsonSerializer.Deserialize<CatalogContentSupport>(stream, options);
         if (
             policy?.Build != PinnedBuild
             || policy.Manufacturing?.HullTypes is null
             || policy.Manufacturing.UtilityTypes is null
             || policy.Insurance?.MaterialValuedHullTypes is null
-            || policy.Hulls?.SpecialTypes is null
-            || policy.Hulls.SmallClasses is null
-            || policy.Hulls.CombatClasses is null
-            || policy.Hulls.UtilityClasses is null
+            || policy.Hulls is null
+            || policy.Hulls.Cohorts.IsDefaultOrEmpty
+            || policy.Hulls.Cohorts.Any(cohort => cohort is null || cohort.Classes is null || cohort.Types is null)
             || policy.DroneHullTypes is null
             || policy.Npcs?.ExcludedTypes is null
             || policy.Npcs.Guards is null
@@ -42,15 +40,16 @@ public static class BuildContentPolicy
         var identifiers = policy
             .Manufacturing.HullTypes.Concat(policy.Manufacturing.UtilityTypes)
             .Concat(policy.Insurance.MaterialValuedHullTypes)
-            .Concat(policy.Hulls.SpecialTypes)
-            .Concat(policy.Hulls.SmallClasses)
-            .Concat(policy.Hulls.CombatClasses)
-            .Concat(policy.Hulls.UtilityClasses)
+            .Concat(policy.Hulls.Cohorts.SelectMany(cohort => cohort.Classes.Concat(cohort.Types)))
             .Concat(policy.DroneHullTypes)
             .Concat(policy.Npcs.ExcludedTypes)
             .Concat(policy.Npcs.PirateRegions.Keys);
         if (
             identifiers.Any(id => id <= 0)
+            || policy.Hulls.Cohorts.Any(cohort =>
+                cohort.TechLevel <= 0 || !Enum.IsDefined(cohort.Cohort) || cohort.Classes.Count + cohort.Types.Count == 0
+            )
+            || policy.Hulls.Cohorts.Select(cohort => (cohort.TechLevel, cohort.Cohort)).Distinct().Count() != policy.Hulls.Cohorts.Length
             || policy.Npcs.FallbackLootModule <= 0
             || policy.StartingEquipment.MinerType <= 0
             || policy.StartingEquipment.WeaponType <= 0

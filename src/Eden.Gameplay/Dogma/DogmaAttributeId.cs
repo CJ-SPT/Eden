@@ -136,6 +136,7 @@ public enum DogmaAttributeId
     LauncherSlotsLeft = 101,
     TurretSlotsLeft = 102,
     MaxGroupFitted = 1544,
+    MaxGroupOnline = 978,
     MaxTypeFitted = 2431,
     StructureKineticResonance = 109,
     StructureThermalResonance = 110,

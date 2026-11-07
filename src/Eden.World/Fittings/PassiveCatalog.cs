@@ -70,7 +70,7 @@ internal static class PassiveCatalog
             )
             .ToImmutableArray();
 
-    internal static PassiveModifier? Parse(ClientDogmaeffectsModifierInfoItem modifier, long phase, bool rig = false)
+    internal static PassiveModifier? Parse(ClientDogmaeffectsModifierInfoItem modifier, long phase, bool rig = false, bool hull = false)
     {
         ModifierDomain? domain = modifier.Domain switch
         {
@@ -92,7 +92,19 @@ internal static class PassiveCatalog
             || selector is null
             || modifier.ModifiedAttributeID is null
             || modifier.ModifyingAttributeID is null
-            || (modifier.Operation is not (0 or 2 or 4 or 6) && !(rig && modifier.Operation == (int)DogmaOperation.PostAssignment))
+            || (
+                modifier.Operation is not (0 or 2 or 4 or 6)
+                && !(
+                    modifier.Operation == (int)DogmaOperation.PostAssignment
+                    && (
+                        rig
+                        || hull
+                            && modifier.Func == "LocationGroupModifier"
+                            && modifier.Domain == "shipID"
+                            && modifier.ModifiedAttributeID is (int)DogmaAttributeId.MaxGroupFitted or (int)DogmaAttributeId.MaxGroupOnline
+                    )
+                )
+            )
         )
         {
             return null;

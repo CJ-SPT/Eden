@@ -18,6 +18,8 @@ Catalog keys follow the importer's compact JSON representation, including unesca
 
 [The build-specific policy](../src/Eden.Gameplay/Content/content-support-3662168.json) owns explicit hull cohorts, drone hulls, manufacturing/insurance cohorts, starter equipment, NPC guard rosters, special-type exclusions, regional pirate distribution and development loot pools. Its typed immutable definition belongs to Gameplay, independently of EF Core or hosting. Native identifiers remain named enums for readability; adding an enum member or generating a record does not add it to a policy set.
 
+Hull cohorts now record their tech level, cohort role, classes and explicit types. The generic hull support rules consume these declarations; the historical Tech I helpers retain their narrower audit API. World also validates every declared effect and every operational modifier before admitting a hull. Recognizing a capability does not authorize an unknown modifier or enable an unlisted tech level. The current declarations preserve the existing 235 admitted hull IDs.
+
 Group/effect/attribute predicates still describe implemented capabilities. Hull admission additionally checks category, publication and technology. Module and NPC profile builders still reject unsupported mechanics, restrictions and invalid inputs. A valid policy entry cannot make an unsupported calculator work, and catalog browsing does not enable content. The default policy exactly preserves the previous cohorts and distributions.
 
 ## Remaining decision dispositions

@@ -19,44 +19,31 @@
     ]
   },
   "hulls": {
-    "specialTypes": [
-      587,
-      594,
-      597,
-      603,
-      2078,
-      3532,
-      42244,
-      32880,
-      33472,
-      85086,
-      85087
-    ],
-    "smallClasses": [
-      25,
-      31,
-      237,
-      420,
-      830,
-      831,
-      893,
-      1022
-    ],
-    "combatClasses": [
-      26,
-      27,
-      419,
-      1201,
-      833,
-      894
-    ],
-    "utilityClasses": [
-      28,
-      463,
-      513,
-      941,
-      4902,
-      5087
+    "cohorts": [
+      {
+        "techLevel": 1,
+        "cohort": "Special",
+        "classes": [],
+        "types": [587, 594, 597, 603, 2078, 3532, 42244, 32880, 33472, 85086, 85087]
+      },
+      {
+        "techLevel": 1,
+        "cohort": "Small",
+        "classes": [25, 31, 237, 420, 830, 831, 893, 1022],
+        "types": []
+      },
+      {
+        "techLevel": 1,
+        "cohort": "Combat",
+        "classes": [26, 27, 419, 1201, 833, 894],
+        "types": []
+      },
+      {
+        "techLevel": 1,
+        "cohort": "Utility",
+        "classes": [28, 463, 513, 941, 4902, 5087],
+        "types": []
+      }
     ]
   },
   "droneHullTypes": [

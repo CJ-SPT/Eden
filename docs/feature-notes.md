@@ -258,6 +258,8 @@ dotnet run --no-build --artifacts-path artifacts/feature-tests --project src/Ede
 
 The ordered milestones below preserve the agreed program. A milestone completes only after its code, affected tests, documentation and remote commit are verified. Evidence blockers remain open; independent work can proceed.
 
+The shared fitting foundation now uses explicit tech-level cohorts and validates operational hull effects before assembly. Future cohorts must be added deliberately; the current 235-hull admission set is preserved. Fitting allocation and final validation use effective slot/hardpoint capacities from the same graph as resource checks. Group/type fitted limits consume effective attributes, and online limits use the lowest declared limit across all fitted members, including offline modules. Rejected changes roll back; lowered online limits cascade through the existing online-state notifications. New role-specific equipment and modifiers continue in their owning milestones. See the [foundation record](protocol/fitting.md#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026).
+
 | Milestone | Required result |
 | --- | --- |
 | 1. Coverage | Production-backed inventory, explicit unknown/deferred/external classifications and accurate existing coverage. |

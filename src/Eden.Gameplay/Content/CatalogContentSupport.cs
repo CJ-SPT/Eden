@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Content;
 
@@ -9,12 +10,7 @@ public sealed record InsuranceContentSupport(ImmutableHashSet<int> MaterialValue
 
 public sealed record StartingEquipmentContent(int MinerType, int WeaponType);
 
-public sealed record HullContentSupport(
-    ImmutableHashSet<int> SpecialTypes,
-    ImmutableHashSet<int> SmallClasses,
-    ImmutableHashSet<int> CombatClasses,
-    ImmutableHashSet<int> UtilityClasses
-);
+public sealed record HullContentSupport(ImmutableArray<HullAdmissionCohort> Cohorts);
 
 public sealed record NpcLootContent(
     ImmutableArray<int> Ammunition,

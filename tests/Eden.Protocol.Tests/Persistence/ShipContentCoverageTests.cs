@@ -127,7 +127,7 @@ public sealed class ShipContentCoverageTests
     }
 
     [Fact]
-    public void InvalidHullRolesPreserveAdmissionAndMissingEffectDefinitionsRemainBlocked()
+    public void InvalidHullRolesAndMissingEffectDefinitionsRejectAdmissionAndRemainBlocked()
     {
         using CatalogFixture fixture = new();
         const int hull = 900021;
@@ -160,7 +160,7 @@ public sealed class ShipContentCoverageTests
         using CatalogDbContext catalog = new(fixture.Path);
         var report = ShipContentAudit.Read(catalog);
         var hullEntry = Assert.Single(report.Entries, entry => entry.TypeId == hull);
-        Assert.True(hullEntry.Admitted);
+        Assert.False(hullEntry.Admitted);
         Assert.Equal(ContentSupportState.EvidenceBlocked, hullEntry.State);
         Assert.Contains(hullEntry.Issues, issue => issue.Reason.Contains("Unclassified hull modifier", StringComparison.Ordinal));
         var moduleEntry = Assert.Single(report.Entries, entry => entry.TypeId == module);
