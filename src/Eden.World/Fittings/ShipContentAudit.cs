@@ -282,14 +282,14 @@ internal static class ShipContentAudit
             checks.Add(new(ContentOperation.Overheating, false, ShipContentMilestone.Overheating, "Native overload routes have no owner."));
         }
         AddDroneConsumers(effects, checks);
-        if (type.GroupId is CapacitorWarfareRules.NosferatuGroup or CapacitorWarfareRules.NeutralizerGroup)
+        if (type.GroupId == CapacitorWarfareRules.NeutralizerGroup)
         {
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
                     false,
                     ShipContentMilestone.EnergyAndRemoteSupport,
-                    "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished."
+                    "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked."
                 )
             );
         }

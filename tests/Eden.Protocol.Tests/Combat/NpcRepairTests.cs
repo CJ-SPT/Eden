@@ -276,6 +276,7 @@ public sealed class NpcRepairTests
         var encounters = f.Db.Services.GetRequiredService<INpcEncounters>();
         NpcContact Read() => encounters.List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
         _ = Read();
+        LiveWorld.Find(f.Db.Path)?.Dispose();
         f.Clock.Seconds = 500;
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         var restart = Read();

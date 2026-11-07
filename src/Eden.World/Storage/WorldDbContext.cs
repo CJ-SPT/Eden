@@ -404,6 +404,11 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldNpc>().Property(n => n.ShieldRepairAt).HasDefaultValue(0L);
         model.Entity<WorldNpc>().Property(n => n.ArmorRepairAt).HasDefaultValue(0L);
         model.Entity<WorldNpc>().Property(n => n.RepairRevision).HasDefaultValue(0L);
+        model
+            .Entity<WorldNpcEnergy>()
+            .ToTable("WorldNpcEnergy", t => t.HasCheckConstraint("CK_NpcEnergy_Charge", "Charge>=0"))
+            .HasKey(n => n.NpcId);
+        model.Entity<WorldNpcEnergy>().HasOne<WorldNpc>().WithMany().HasForeignKey(n => n.NpcId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<WorldNpc>().HasIndex(n => n.SystemId);
         model.Entity<WorldNpc>().HasIndex(n => n.EncounterId);
         model

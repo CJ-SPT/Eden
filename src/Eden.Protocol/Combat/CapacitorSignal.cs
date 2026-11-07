@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Protocol.Combat;
@@ -13,7 +14,7 @@ internal sealed class CapacitorSignal : ICapacitorEvents
 
     internal void Set(CapacitorCycle cycle, bool active)
     {
-        if (cycle.Module.Kind == CapacitorModuleKind.Transfer)
+        if (cycle.Module.Kind == CapacitorModuleKind.Transfer || cycle.TargetKind == TackleTargetKind.Npc)
         {
             return;
         }

@@ -19,7 +19,7 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed partial class CapacitorWarfareTests
 {
-    private static PilotCallContext Client(Fixture f, long account)
+    private static PilotCallContext Client(Fixture f, long account, bool npcContacts = false)
     {
         var pilot = f.Db.Store.FindPilot(account)!;
         var shared = f.Db.Services.GetRequiredService<SharedSpace>();
@@ -27,7 +27,16 @@ public sealed partial class CapacitorWarfareTests
             account,
             pilot.Account,
             [pilot],
-            p => new(f.Db.Store, p, f.Clock, shared, f.Db.Objects, health: f.Db.Services.GetRequiredService<IPilotHealth>()),
+            p =>
+                new(
+                    f.Db.Store,
+                    p,
+                    f.Clock,
+                    shared,
+                    f.Db.Objects,
+                    health: f.Db.Services.GetRequiredService<IPilotHealth>(),
+                    encounters: npcContacts ? f.Db.Services.GetRequiredService<INpcEncounters>() : null
+                ),
             account,
             SignedSettings.Empty
         );

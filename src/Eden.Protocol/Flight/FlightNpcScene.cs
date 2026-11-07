@@ -24,7 +24,9 @@ internal sealed class FlightNpcScene(
 
     internal IReadOnlyList<NpcContact> Contacts => _contacts;
 
-    internal bool InWarp(long id) => _transitingNpcs.Contains(id);
+    internal bool InWarp(long id) =>
+        _transitingNpcs.Contains(id)
+        || _contactIndices.TryGetValue(id, out int index) && _contacts[index].Navigation?.State == NpcNavigationState.Warping;
 
     internal void Clear()
     {

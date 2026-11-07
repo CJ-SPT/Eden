@@ -1,5 +1,6 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 
 namespace Eden.Gameplay.Combat;
 
@@ -34,7 +35,14 @@ public sealed record CapacitorPool(double Charge, double Capacity);
 
 public sealed record CapacitorApplication(double Source, double Target, double Amount);
 
-public sealed record CapacitorCycle(CapacitorModule Module, long SourceShipId, long TargetId, long StartedAt, long ExpiresAt);
+public sealed record CapacitorCycle(
+    CapacitorModule Module,
+    long SourceShipId,
+    long TargetId,
+    long StartedAt,
+    long ExpiresAt,
+    TackleTargetKind TargetKind = TackleTargetKind.Ship
+);
 
 public sealed record CapacitorActivation(CapacitorCycle Cycle, double Capacitor, double TargetCapacitor, double Applied);
 

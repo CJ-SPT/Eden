@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
@@ -73,7 +74,7 @@ internal sealed class CapacitorWarfareHandler(
     {
         if (context.Flight.FindTarget(target) is null)
         {
-            throw new InvalidDataException("Lock another nearby pilot's ship before using a capacitor module.");
+            throw new InvalidDataException("Lock a nearby ship or NPC before using a capacitor module.");
         }
         var result = warfare.Activate(
             context.Pilot.PilotId,
@@ -149,6 +150,7 @@ internal sealed class CapacitorWarfareHandler(
                 || !context.Flight.CanTarget
                 || context.Flight.InWarp
                 || !targeting.IsLocked(effect.TargetId)
+                || effect.TargetKind == TackleTargetKind.Npc && context.Flight.NpcInWarp(effect.TargetId)
                 || context.Flight.FindTarget(effect.TargetId) is null
                 || !warfare.IsOnline(cycle.PilotId, effect.SourceShipId, effect.Module.ItemId)
             )

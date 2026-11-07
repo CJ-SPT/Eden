@@ -5009,13 +5009,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -5062,7 +5055,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -22160,7 +22153,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -22208,7 +22201,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -22811,13 +22804,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -22858,13 +22844,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -43293,13 +43272,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -43340,13 +43312,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -43389,13 +43354,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -43436,13 +43394,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -43490,7 +43441,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -43538,7 +43489,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -43586,7 +43537,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -43634,7 +43585,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -45527,13 +45478,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -45580,7 +45524,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -53954,13 +53898,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -54001,13 +53938,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -54050,13 +53980,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -54097,13 +54020,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -54146,13 +54062,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -54193,13 +54102,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -54247,7 +54149,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -54295,7 +54197,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -54343,7 +54245,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -54391,7 +54293,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -54439,7 +54341,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -54487,7 +54389,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -64715,13 +64617,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -64762,13 +64657,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -64811,13 +64699,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -64858,13 +64739,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -64907,13 +64781,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -64954,13 +64821,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -65003,13 +64863,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -65050,13 +64903,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -65104,7 +64950,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65152,7 +64998,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65200,7 +65046,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65248,7 +65094,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65296,7 +65142,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65344,7 +65190,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65392,7 +65238,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -65440,7 +65286,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76639,7 +76485,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76687,7 +76533,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76735,7 +76581,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76783,7 +76629,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76831,7 +76677,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -76879,7 +76725,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -79487,13 +79333,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -79534,13 +79373,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -79583,13 +79415,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -79630,13 +79455,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -79679,13 +79497,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -79726,13 +79537,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -83941,7 +83745,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -83989,7 +83793,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -84037,7 +83841,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -84085,7 +83889,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -84292,13 +84096,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -84339,13 +84136,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -84388,13 +84178,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -84435,13 +84218,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -97832,13 +97608,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -97879,13 +97648,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -97928,13 +97690,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -97975,13 +97730,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -98024,13 +97772,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -98071,13 +97812,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -98120,13 +97854,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -98167,13 +97894,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -98216,13 +97936,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -98263,13 +97976,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -124807,7 +124513,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -124855,7 +124561,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -124903,7 +124609,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -124946,13 +124652,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -124994,13 +124693,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -125041,13 +124733,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -173324,7 +173009,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173372,7 +173057,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173420,7 +173105,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173468,7 +173153,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173516,7 +173201,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173564,7 +173249,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173612,7 +173297,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173660,7 +173345,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173708,7 +173393,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -173756,7 +173441,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175548,7 +175233,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175596,7 +175281,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175644,7 +175329,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175692,7 +175377,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175740,7 +175425,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175788,7 +175473,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -175831,13 +175516,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -175878,13 +175556,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -175927,13 +175598,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -175974,13 +175638,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -176023,13 +175680,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -176070,13 +175720,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -209926,13 +209569,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -210764,13 +210400,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -210817,7 +210446,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -210865,7 +210494,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],
@@ -210907,13 +210536,6 @@
           "implemented": false,
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
-          "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
           "role": null
         }
       ],
@@ -217943,13 +217565,6 @@
           "milestone": "Overheating",
           "evidence": "Native overload routes have no owner.",
           "role": null
-        },
-        {
-          "operation": "ConsumerCoverage",
-          "implemented": false,
-          "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
-          "role": null
         }
       ],
       "issues": []
@@ -217996,7 +217611,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
-          "evidence": "Player capacitor targets work; NPC capacitor and ability consumers remain unfinished.",
+          "evidence": "Player/NPC capacitor drains work; the NPC repair-suppression formula remains evidence-blocked.",
           "role": null
         }
       ],

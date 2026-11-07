@@ -1,5 +1,6 @@
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
 using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Drones;
@@ -13,7 +14,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 102;
+    internal const int CurrentVersion = 103;
 
     public static void Open(
         WorldDbContext world,
@@ -84,7 +85,8 @@ internal static class WorldMigration
         }
         DroneCombatPersistence.Upgrade(world);
         DroneDelegationPersistence.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=102");
+        NpcEnergySchema.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=103");
         history.Commit();
     }
 }

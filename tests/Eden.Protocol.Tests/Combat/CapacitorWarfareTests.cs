@@ -106,7 +106,7 @@ public sealed partial class CapacitorWarfareTests
         Assert.Equal(8, rejected);
         var report = ShipContentAudit.Read(catalog);
         Assert.All(
-            report.Entries.Where(e => e.Admitted && e.GroupId is 68 or 71),
+            report.Entries.Where(e => e.Admitted && e.GroupId == CapacitorWarfareRules.NeutralizerGroup),
             entry =>
                 Assert.Contains(
                     entry.Checks,
