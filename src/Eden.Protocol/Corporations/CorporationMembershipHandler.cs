@@ -1,4 +1,5 @@
 using Eden.Gameplay.Corporations;
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -34,6 +35,38 @@ internal sealed partial class CorporationHandler
         }
         foreach (var change in membership.Changes(context.Pilot.PilotId, _cursor))
         {
+            if (
+                change.Storage is { } stored
+                && stored.ActorId != context.Pilot.PilotId
+                && stored.Office.CorporationId == corporations.Identity(context.Pilot.PilotId).Id
+            )
+            {
+                if (stored.RentalChanged)
+                {
+                    context.Notifications.Add(new CorporationOfficeRentalChanged(stored.Office.CorporationId, stored.Office.Id));
+                }
+                else if (context.Pilot.Position is null && context.Pilot.StationId == stored.Office.StationId)
+                {
+                    foreach (var item in stored.Items)
+                    {
+                        bool beforeVisible =
+                            item.Previous is { } old
+                            && old.LocationId == stored.Office.Id
+                            && storage.CanObserve(context.Pilot.PilotId, stored.Office.Id, old.FlagId);
+                        bool afterVisible =
+                            item.Item.LocationId == stored.Office.Id
+                            && storage.CanObserve(context.Pilot.PilotId, stored.Office.Id, item.Item.FlagId);
+                        if (afterVisible)
+                        {
+                            InventoryChangesWire.NotifyItemChange(context, beforeVisible ? item : item with { Previous = null });
+                        }
+                        else if (beforeVisible)
+                        {
+                            InventoryChangesWire.NotifyItemChange(context, new(item.Previous! with { Quantity = 0 }, item.Previous));
+                        }
+                    }
+                }
+            }
             if (change.Shares is { } shareChange && shares.CanObserve(context.Pilot.PilotId, shareChange.ShareholderId))
             {
                 context.Notifications.Add(new CorporationShareCacheInvalidated(shareChange));

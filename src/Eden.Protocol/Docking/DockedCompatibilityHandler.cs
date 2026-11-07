@@ -110,10 +110,7 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedP
 
             ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
 
-
             ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")
-            or
-            ("officeManager", "GetMyCorporationsOffices")
             or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };

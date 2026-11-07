@@ -1,8 +1,10 @@
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Docking;
@@ -16,7 +18,8 @@ internal sealed class InventoryTransfers(
     IWrecks wrecks,
     MagazineWire magazinesWire,
     FittingOperations fittingOperations,
-    DeferredRefitPrimes refits
+    DeferredRefitPrimes refits,
+    ICorporationStorage corporationStorage
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -28,6 +31,11 @@ internal sealed class InventoryTransfers(
         long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
         try
         {
+            if (source is >= CorporationStorageRules.FirstOfficeId and <= CorporationStorageRules.LastOfficeId)
+            {
+                CorporationStorageHandler.NotifyItems(context, corporationStorage.Move(context.Pilot.PilotId, destination, request));
+                return PilotCallResult.None;
+            }
             var previousBanks = fittingOperations.ReadBanks(context);
             var previousMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId);
             bool looting =

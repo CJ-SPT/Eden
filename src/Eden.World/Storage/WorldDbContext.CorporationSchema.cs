@@ -10,6 +10,30 @@ public sealed partial class WorldDbContext
 {
     private static void ConfigureCorporations(ModelBuilder model)
     {
+        model
+            .Entity<SavedCorporationOffice>()
+            .ToTable("WorldCorporationOffice", t => t.HasCheckConstraint("CK_CorporationOffice_Fee", "FeeCents>=0"))
+            .HasKey(o => o.Id);
+        model
+            .Entity<SavedCorporationOffice>()
+            .HasOne<SavedCorporation>()
+            .WithMany()
+            .HasForeignKey(o => o.CorporationId)
+            .OnDelete(DeleteBehavior.Restrict);
+        model.Entity<SavedCorporationOffice>().HasIndex(o => new { o.CorporationId, o.StationId }).IsUnique();
+        model
+            .Entity<SavedCorporationOfficeSettings>()
+            .ToTable(
+                "WorldCorporationOfficeSettings",
+                t =>
+                {
+                    t.HasCheckConstraint("CK_CorporationOfficeSettings_Id", "Id=1");
+                    t.HasCheckConstraint("CK_CorporationOfficeSettings_Fee", "RentalFeeCents>=0");
+                    t.HasCheckConstraint("CK_CorporationOfficeSettings_Slots", "OfficeSlots>0");
+                }
+            )
+            .HasKey(s => s.Id);
+
         model.Entity<SavedCorporationShareIssue>().ToTable("WorldCorporationShareIssue").HasKey(i => i.CorporationId);
         model.Entity<SavedCorporationShareIssue>().HasOne<SavedCorporation>().WithMany().HasForeignKey(i => i.CorporationId);
         model

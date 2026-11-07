@@ -16,7 +16,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Corporate LP/EverMark wallets | Published; 191 focused tests and required checks passed |
 | Bills panel reads/preferences and corporate market history reads | Published; 203 focused tests and required checks passed; invoice sources/corporate trading remain separate |
 | Corporation inventory ownership storage | Published; 176 focused tests and required checks passed |
-| Offices and corporation asset access | Pending |
+| Offices and corporation asset access | Implemented: rentals, seven hangar divisions, transfers and asset reports; recurring billing/impound recovery deferred |
 | Member communications and recruitment services | Pending |
 | Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
 | Voting, share issuance/dividends and CEO succession/closure | Pending |

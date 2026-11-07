@@ -345,7 +345,8 @@ public sealed class MiningTests
             dogmaScope.ServiceProvider.GetRequiredService<FittingOperations>(),
             dogmaScope.ServiceProvider.GetRequiredService<DeferredRefitPrimes>(),
             fixture.Db.Services.GetRequiredService<IPilotContracts>(),
-            fixture.Db.Services.GetRequiredService<IPilotInventoryStacks>()
+            fixture.Db.Services.GetRequiredService<IPilotInventoryStacks>(),
+            fixture.Db.Services.GetRequiredService<Eden.Gameplay.Corporations.ICorporationStorage>()
         );
         var info = Assert.IsType<BlueInstance>(inventoryHandler.CallWire(context, "dogmaIM", "ItemGetInfo", [module]));
         var effects = Assert.IsType<Dictionary<long, object?>>(Assert.IsType<Dictionary<string, object?>>(info.State)["activeEffects"]);
