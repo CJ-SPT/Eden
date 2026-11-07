@@ -14,7 +14,8 @@ internal sealed partial class CorporationHandler(
     ICorporationMembership membership,
     ICorporationAdministration administration,
     ICorporationRoles roles,
-    ICorporationShares shares
+    ICorporationShares shares,
+    ICorporationStorage storage
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)

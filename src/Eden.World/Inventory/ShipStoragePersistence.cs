@@ -1,5 +1,7 @@
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.World.Combat;
+using Eden.World.Corporations;
 using Eden.World.Insurance;
 using Eden.World.Loot;
 using Eden.World.Storage;
@@ -57,14 +59,27 @@ internal static class ShipStoragePersistence
 
     internal static void Check(WorldDbContext world)
     {
+        bool officesExist =
+            world
+                .Database.SqlQueryRaw<int>(
+                    "SELECT COUNT(*) AS Value FROM sqlite_master WHERE type='table' AND name='WorldCorporationOffice'"
+                )
+                .AsEnumerable()
+                .Single() != 0;
         foreach (var stored in world.Ships.Where(s => s.StoredInId != null).Include(s => s.Position).ToArray())
         {
             var parent = world.Ships.Find(stored.StoredInId!.Value);
             var wreck = parent is null ? world.Set<WorldWreck>().Find(stored.StoredInId.Value) : null;
-            bool validParent = parent is not null
-                ? parent.OwnerId == stored.OwnerId
-                    && parent.StoredInId is null
-                    && ShipHoldRules.Definition(stored.StorageFlagId)?.AllowsAssembledShip == true
+            var office = officesExist ? world.Set<SavedCorporationOffice>().Find(stored.StoredInId.Value) : null;
+            bool validParent =
+                office is not null
+                    ? office.CorporationId == stored.OwnerId
+                        && office.StationId == stored.StationId
+                        && CorporationStorageRules.IsDivision(stored.StorageFlagId)
+                : parent is not null
+                    ? parent.OwnerId == stored.OwnerId
+                        && parent.StoredInId is null
+                        && ShipHoldRules.Definition(stored.StorageFlagId)?.AllowsAssembledShip == true
                 : wreck?.OwnerId == stored.OwnerId && stored.StorageFlagId == (int)InventoryFlag.Cargo;
             if (!validParent || stored.Position is not null || world.Pilots.Any(p => p.ActiveShipId == stored.Id))
             {

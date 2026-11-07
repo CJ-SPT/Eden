@@ -1,10 +1,12 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Contracts;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Corporations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -22,7 +24,8 @@ internal sealed class InventoryHandler(
     FittingOperations fittingOperations,
     DeferredRefitPrimes refits,
     IPilotContracts contracts,
-    IPilotInventoryStacks stacks
+    IPilotInventoryStacks stacks,
+    ICorporationStorage corporationStorage
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     private const string ShipInventoryPrefix = "@ship:";
@@ -159,12 +162,34 @@ internal sealed class InventoryHandler(
             args is not [long station, long itemId, long quantity, long owner]
             || pilot.Position is not null
             || station != pilot.StationId
-            || owner != pilot.PilotId
+            || owner != pilot.PilotId && owner != pilot.CorpId
             || quantity is <= 0 or > int.MaxValue
             || keywords is { Count: > 0 }
         )
         {
             return new PilotCallResult.Failure("Choose an owned stack at your current station and a valid quantity.");
+        }
+        if (owner != pilot.PilotId)
+        {
+            try
+            {
+                var office =
+                    corporationStorage.Offices(pilot.PilotId).SingleOrDefault(o => o.StationId == station)
+                    ?? throw new InvalidDataException("Your corporation has no office here.");
+                var shared =
+                    corporationStorage.List(pilot.PilotId, office.Id, null).SingleOrDefault(i => i.Id == itemId)
+                    ?? throw new InvalidDataException("This stack is unavailable in your corporation hangars.");
+                InventoryStackRules.Split(shared, (int)quantity);
+                CorporationStorageHandler.NotifyItems(
+                    context,
+                    corporationStorage.Move(pilot.PilotId, office.Id, new([itemId], office.Id, shared.FlagId, (int)quantity))
+                );
+                return PilotCallResult.None;
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         var item = inventory.List(owner, station).Concat(inventory.List(owner, pilot.ShipId)).FirstOrDefault(item => item.Id == itemId);
         string? destination = item switch

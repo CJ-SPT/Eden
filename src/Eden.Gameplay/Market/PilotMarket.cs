@@ -94,6 +94,7 @@ public enum WalletEntryType
     BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,
     RepairBill = 15,
+    OfficeRentalFee = 13,
     Insurance = 19,
     Manufacturing = 56,
     ReprocessingTax = 127,

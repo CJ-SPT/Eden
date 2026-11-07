@@ -180,6 +180,7 @@ internal sealed class PilotCallRouter(
                 or "beyonce"
                 or "entity"
                 or "corpStationMgr"
+                or "officeManager"
                 or "reprocessingSvc"
                 or "repairSvc"
                 or "charMgr"
@@ -210,6 +211,19 @@ internal sealed class PilotCallRouter(
             )
             {
                 return new PilotCallResult.Failure("Bind your current corporation registry.");
+            }
+            if (
+                service == "officeManager"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    context.Pilot.Position is not null
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || !Equals(args[0], (long)context.Pilot.StationId)
+                    || keywords is { Count: > 0 }
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind the office service at your current station.");
             }
             if (method == "MachoResolveObject")
             {
@@ -245,7 +259,7 @@ internal sealed class PilotCallRouter(
                     return PilotCallResult.Unsupported;
                 }
                 if (
-                    service is "corpStationMgr" or "reprocessingSvc"
+                    service is "corpStationMgr" or "reprocessingSvc" or "officeManager"
                     && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId))
                 )
                 {

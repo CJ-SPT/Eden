@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)
+
 - [Player electronic warfare, November 6, 2026](protocol/fitting.md#player-electronic-warfare-november-6-2026)
 
 - [Character biomass (November 6, 2026)](protocol/characters.md#character-biomass-november-6-2026)
