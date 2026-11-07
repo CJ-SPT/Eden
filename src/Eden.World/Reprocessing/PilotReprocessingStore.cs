@@ -32,7 +32,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("Reprocessing is available only at your current station.");
         }
-        var station = Source<SdeNpcStations>(catalog, "sde/npcStations", stationId);
+        var station = catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId);
         if (
             station?.OperationID is not long operationId
             || !StationCapabilities.Has(catalog, operationId, StationService.Reprocessing)
@@ -44,9 +44,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         return station;
     }
-
-    private static T? Source<T>(CatalogDbContext catalog, string dataset, long key)
-        where T : class => catalog.Set<SourceRecord>().Find(dataset, key.ToString(CultureInfo.InvariantCulture))?.Read<T>();
 
     public void CheckStation(long pilotId, int stationId)
     {
@@ -85,7 +82,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
     }
 
     private static double Attribute(CatalogDbContext catalog, int typeId, DogmaAttributeId attribute, double fallback = 0) =>
-        catalog.Set<TypeAttribute>().Find(typeId, (int)attribute)?.Value ?? fallback;
+        catalog.Definitions.Attributes(typeId).GetValueOrDefault(attribute, fallback);
 
     private static double SkillMultiplier(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
     {
@@ -102,11 +99,11 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         decimal tax
     )
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
-        var definition = Source<ClientTypes>(catalog, "client/types", item.TypeId);
-        var materials = Source<ClientTypematerials>(catalog, "client/typematerials", item.TypeId);
+        var type = catalog.Definitions.Items[item.TypeId];
+        var definition = catalog.Definitions.Find(CatalogData.Client.Types, (long)item.TypeId);
+        var materials = catalog.Definitions.Find(CatalogData.Client.Typematerials, (long)item.TypeId);
         if (
-            type.Group.CategoryId != (int)InventoryCategory.Asteroid
+            type.CategoryId != (int)InventoryCategory.Asteroid
             || definition?.PortionSize is not > 0
             || materials?.Materials is not { Length: > 0 }
             || materials.RandomizedMaterials is { Length: > 0 }
@@ -161,7 +158,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
 
     private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int stationId, SdeNpcStations station)
     {
-        long owner = catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId;
+        long owner = catalog.Definitions.Stations[stationId].OwnerId;
         double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, owner)?.Value ?? 0;
         return EconomicRules.ReprocessingTax((decimal)station.ReprocessingStationsTake!.Value, standing);
     }
@@ -250,7 +247,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 ? EconomicStore.Pay(
                     world,
                     pilotId,
-                    catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId,
+                    catalog.Definitions.Stations[stationId].OwnerId,
                     stationId,
                     WalletEntryType.ReprocessingTax,
                     cost,

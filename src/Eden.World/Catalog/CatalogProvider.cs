@@ -29,7 +29,7 @@ public sealed record CatalogCacheStatistics(long Loads, long Hits, int Entries, 
 public sealed class CatalogProvider
 {
     private static readonly object s_gate = new();
-    private static readonly Dictionary<string, WeakReference<CatalogProvider>> s_catalogs = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, Registration> s_catalogs = new(StringComparer.OrdinalIgnoreCase);
     private static long s_generation;
     private readonly MemoryCache _cache;
     private readonly ConcurrentDictionary<string, ICatalogTable> _tables = new(StringComparer.Ordinal);
@@ -38,6 +38,8 @@ public sealed class CatalogProvider
     private readonly Lazy<FrozenDictionary<int, CatalogItemDefinition>> _items;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<int>>> _groups;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<int>>> _blueprints;
+    private readonly Lazy<FrozenDictionary<int, CatalogSystemDefinition>> _systems;
+    private readonly Lazy<FrozenDictionary<int, CatalogStationDefinition>> _stations;
     private readonly CatalogMemo<int, ImmutableDictionary<DogmaAttributeId, double>> _attributes;
     private readonly CatalogMemo<int, ImmutableArray<DogmaEffect>> _effects;
     private readonly CatalogMemo<int, ImmutableDictionary<int, int>> _skills;
@@ -51,10 +53,63 @@ public sealed class CatalogProvider
 
     private readonly record struct CacheKey(string Dataset, string Key);
 
+    private readonly record struct ProductBlueprint(int ProductTypeId, int BlueprintTypeId);
+
     private sealed record CatalogValue<T>(bool Found, T Value, long EstimatedBytes);
+
+    private sealed class Registration
+    {
+        internal WeakReference<CatalogProvider>? Reference { get; set; }
+        internal CatalogProvider? Retained { get; set; }
+        internal int Owners { get; set; }
+    }
+
+    private sealed class Retention(string path) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            lock (s_gate)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+                _disposed = true;
+                var registration = s_catalogs[path];
+                registration.Owners--;
+                if (registration.Owners == 0)
+                {
+                    registration.Retained = null;
+                }
+            }
+        }
+    }
+
+    internal static IDisposable Retain(string path)
+    {
+        string canonical = System.IO.Path.GetFullPath(path);
+        lock (s_gate)
+        {
+            if (!s_catalogs.TryGetValue(canonical, out var registration))
+            {
+                registration = new();
+                s_catalogs.Add(canonical, registration);
+            }
+            registration.Owners++;
+            if (registration.Reference?.TryGetTarget(out var existing) == true)
+            {
+                registration.Retained = existing;
+            }
+        }
+        return new Retention(canonical);
+    }
 
     public CatalogIdentity Identity { get; }
     public IReadOnlyDictionary<int, CatalogItemDefinition> Items => _items.Value;
+    public IReadOnlyDictionary<int, CatalogSystemDefinition> Systems => _systems.Value;
+    public IReadOnlyDictionary<int, CatalogStationDefinition> Stations => _stations.Value;
 
     public CatalogCacheStatistics Statistics
     {
@@ -100,6 +155,8 @@ public sealed class CatalogProvider
             Interlocked.Increment(ref s_generation)
         );
         _items = new(LoadItems);
+        _systems = new(LoadSystems);
+        _stations = new(LoadStations);
         _groups = new(() =>
             Items
                 .Values.GroupBy(item => item.GroupId)
@@ -133,7 +190,12 @@ public sealed class CatalogProvider
         {
             var file = new FileInfo(path);
             FileStamp stamp = new(file.Length, file.LastWriteTimeUtc.Ticks);
-            if (s_catalogs.TryGetValue(path, out var reference) && reference.TryGetTarget(out var current))
+            if (!s_catalogs.TryGetValue(path, out var registration))
+            {
+                registration = new();
+                s_catalogs.Add(path, registration);
+            }
+            if (registration.Reference?.TryGetTarget(out var current) == true)
             {
                 if (current._stamp != stamp)
                 {
@@ -146,8 +208,14 @@ public sealed class CatalogProvider
                 return current;
             }
             var created = new CatalogProvider(path, options ?? new(), stamp);
-            s_catalogs[path] = new(created);
-            foreach (string expired in s_catalogs.Where(pair => !pair.Value.TryGetTarget(out _)).Select(pair => pair.Key).ToArray())
+            registration.Reference = new(created);
+            registration.Retained = registration.Owners > 0 ? created : null;
+            foreach (
+                string expired in s_catalogs
+                    .Where(pair => pair.Value.Owners == 0 && pair.Value.Reference?.TryGetTarget(out _) != true)
+                    .Select(pair => pair.Key)
+                    .ToArray()
+            )
             {
                 s_catalogs.Remove(expired);
             }
@@ -159,9 +227,20 @@ public sealed class CatalogProvider
     {
         lock (s_gate)
         {
-            if (s_catalogs.Remove(System.IO.Path.GetFullPath(path), out var reference) && reference.TryGetTarget(out var current))
+            string canonical = System.IO.Path.GetFullPath(path);
+            if (!s_catalogs.TryGetValue(canonical, out var registration))
+            {
+                return;
+            }
+            if (registration.Reference?.TryGetTarget(out var current) == true)
             {
                 Volatile.Write(ref current._invalidated, 1);
+            }
+            registration.Reference = null;
+            registration.Retained = null;
+            if (registration.Owners == 0)
+            {
+                s_catalogs.Remove(canonical);
             }
         }
     }
@@ -191,6 +270,17 @@ public sealed class CatalogProvider
         value = entry.Value;
         return entry.Found;
     }
+
+    public TValue? Find<TKey, TValue>(CatalogSource<TKey, TValue> source, TKey key)
+        where TKey : notnull
+        where TValue : class => TryGet(source, key, out var value) ? value : null;
+
+    public ClientBlueprintsActivitiesManufacturing? ManufacturingRecipe(int blueprintTypeId) =>
+        // Unlike SDE blueprint keys, client-cache blueprint keys are JSON strings.
+        Find(CatalogData.Client.Blueprints, blueprintTypeId.ToString(CultureInfo.InvariantCulture))?.Activities?.Manufacturing;
+
+    public CatalogStationDefinition? FindStation(long stationId) =>
+        stationId is > 0 and <= int.MaxValue ? Stations.GetValueOrDefault((int)stationId) : null;
 
     public CatalogPage<TKey, TValue> Page<TKey, TValue>(CatalogSource<TKey, TValue> source, string? after = null, int limit = 100)
         where TKey : notnull => Table(source).Page(after, limit);
@@ -222,6 +312,8 @@ public sealed class CatalogProvider
     public void PreloadCore()
     {
         _ = Items;
+        _ = Systems;
+        _ = Stations;
         _ = _groups.Value;
         _ = Pin(CatalogData.Client.Types);
         _ = _blueprints.Value;
@@ -298,13 +390,57 @@ public sealed class CatalogProvider
 
     private FrozenDictionary<int, ImmutableArray<int>> LoadBlueprints() =>
         Pin(CatalogData.Client.Blueprints)
-            .SelectMany(pair => (pair.Value.Activities?.Manufacturing?.Products ?? []).Select(product => (pair.Key, product.TypeID)))
-            .Where(product => product.TypeID is > 0 and <= int.MaxValue)
-            .GroupBy(product => checked((int)product.TypeID!.Value))
+            .SelectMany(pair =>
+                (pair.Value.Activities?.Manufacturing?.Products ?? [])
+                    .Where(product => product.TypeID is > 0 and <= int.MaxValue)
+                    .Select(product => new ProductBlueprint(
+                        checked((int)product.TypeID!.Value),
+                        int.Parse(pair.Key, CultureInfo.InvariantCulture)
+                    ))
+            )
+            .GroupBy(product => product.ProductTypeId)
             .ToFrozenDictionary(
                 group => group.Key,
-                group => group.Select(product => int.Parse(product.Key, CultureInfo.InvariantCulture)).Distinct().Order().ToImmutableArray()
+                group => group.Select(product => product.BlueprintTypeId).Distinct().Order().ToImmutableArray()
             );
+
+    private FrozenDictionary<int, CatalogSystemDefinition> LoadSystems()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        Interlocked.Increment(ref _loads);
+        var systems = catalog
+            .Set<SolarSystem>()
+            .Select(system => new CatalogSystemDefinition(system.Id, system.Name, system.ConstellationId, system.Constellation.RegionId))
+            .AsEnumerable()
+            .ToFrozenDictionary(system => system.Id);
+        Interlocked.Add(ref _pinnedRecords, systems.Count);
+        return systems;
+    }
+
+    private FrozenDictionary<int, CatalogStationDefinition> LoadStations()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        Interlocked.Increment(ref _loads);
+        var stations = catalog
+            .Set<Station>()
+            .Select(station => new CatalogStationDefinition(
+                station.Id,
+                station.TypeId,
+                station.OwnerId,
+                station.SolarSystemId,
+                station.OperationId,
+                station.OrbitId,
+                station.X,
+                station.Y,
+                station.Z
+            ))
+            .AsEnumerable()
+            .ToFrozenDictionary(station => station.Id);
+        Interlocked.Add(ref _pinnedRecords, stations.Count);
+        return stations;
+    }
 
     private CatalogTable<TKey, TValue> Table<TKey, TValue>(CatalogSource<TKey, TValue> source)
         where TKey : notnull

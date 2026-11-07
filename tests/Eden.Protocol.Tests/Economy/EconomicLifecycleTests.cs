@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Eden.Data.Catalog;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Insurance;
@@ -237,6 +238,37 @@ public sealed class EconomicLifecycleTests
         var facility = f.Industry.Facility(Pilot, Station);
         Assert.Equal(0.01d, facility.CostIndex);
         Assert.Equal((double)EconomicRules.NpcFacilityTax, facility.Tax);
+    }
+
+    [Fact]
+    public void ReplacementInsuranceUsesTheCatalogProductRelationshipAfterABlueprintKeyChanges()
+    {
+        using Fixture fixture = new();
+        fixture.EnableServiceCosts();
+        var insurance = fixture.Db.Services.GetRequiredService<IPilotInsurance>();
+        const int hull = 603;
+        const int originalBlueprint = 950;
+        const int replacementBlueprint = 999950;
+        long originalValue = insurance.Price(hull);
+        Assert.Equal(25600000, originalValue);
+        using (CatalogDbContext writable = new(fixture.CatalogPath, writable: true))
+        {
+            var original = writable.Set<SourceRecord>().Find("client/blueprints", JsonSerializer.Serialize(originalBlueprint.ToString()))!;
+            var data = JsonNode.Parse(original.Data)!;
+            data["blueprintTypeID"] = replacementBlueprint;
+            writable.Remove(original);
+            writable.Add(
+                new SourceRecord
+                {
+                    Dataset = "client/blueprints",
+                    Key = JsonSerializer.Serialize(replacementBlueprint.ToString()),
+                    Data = data.ToJsonString(),
+                }
+            );
+            writable.SaveChanges();
+        }
+        Assert.Equal(originalValue, insurance.Price(hull));
+        Assert.Equal<int>([replacementBlueprint], CatalogProvider.Open(fixture.CatalogPath).BlueprintsForProduct(hull));
     }
 
     [Theory]

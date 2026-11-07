@@ -27,8 +27,8 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
     internal static void CheckCatalog(CatalogDbContext catalog, EconomicConfiguration settings)
     {
         if (
-            settings.AdjustedPrices.Any(p => !catalog.Set<ItemType>().Any(t => t.Id == p.TypeId))
-            || settings.ManufacturingIndices.Any(i => !catalog.Set<SolarSystem>().Any(s => s.Id == i.SystemId))
+            settings.AdjustedPrices.Any(p => !catalog.Definitions.Items.ContainsKey(p.TypeId))
+            || settings.ManufacturingIndices.Any(i => !catalog.Definitions.Systems.ContainsKey(i.SystemId))
         )
         {
             throw new InvalidDataException("Economic configuration references an unknown type or solar system.");
@@ -105,22 +105,21 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
     internal static void SeedPrices(WorldDbContext world, CatalogDbContext catalog, EconomicConfiguration settings)
     {
         var materials = catalog
-            .Set<ItemType>()
-            .Where(t => t.Group.CategoryId == (int)InventoryCategory.Material)
+            .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Material)
             .Select(t => t.Id)
             .ToHashSet();
         Dictionary<int, decimal> prices = [];
-        foreach (var record in catalog.Set<SourceRecord>().Where(r => r.Dataset == "client/types").AsEnumerable())
+        foreach (var record in catalog.Definitions.Pin(CatalogData.Client.Types))
         {
-            int type = int.Parse(record.Key, CultureInfo.InvariantCulture);
-            if (materials.Contains(type) && record.Read<ClientTypes>().BasePrice is > 0 and var price && double.IsFinite(price))
+            int type = checked((int)record.Key);
+            if (materials.Contains(type) && record.Value.BasePrice is > 0 and var price && double.IsFinite(price))
             {
                 prices[type] = (decimal)price;
             }
         }
         foreach (var price in settings.AdjustedPrices)
         {
-            if (!catalog.Set<ItemType>().Any(t => t.Id == price.TypeId))
+            if (!catalog.Definitions.Items.ContainsKey(price.TypeId))
             {
                 throw new InvalidDataException($"Unknown adjusted-price type {price.TypeId}.");
             }
@@ -129,7 +128,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         world.AddRange(prices.Select(p => new SavedAdjustedPrice { TypeId = p.Key, PriceIsk = p.Value }));
         foreach (var index in settings.ManufacturingIndices)
         {
-            if (!catalog.Set<SolarSystem>().Any(s => s.Id == index.SystemId))
+            if (!catalog.Definitions.Systems.ContainsKey(index.SystemId))
             {
                 throw new InvalidDataException($"Unknown manufacturing system {index.SystemId}.");
             }

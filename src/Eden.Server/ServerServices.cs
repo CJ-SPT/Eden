@@ -93,6 +93,7 @@ internal static class ServerServices
             services.AddSingleton(population);
         }
         var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        _ = provider.GetRequiredService<CatalogLifetime>();
         _ = provider.GetService<LiveWorld>();
         _ = provider.GetService<ResidentFitCache>();
         if (liveWorld)

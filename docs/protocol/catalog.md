@@ -8,10 +8,29 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Industry and economic catalog adoption, November 7, 2026](#industry-and-economic-catalog-adoption-november-7-2026)
 - [Shared catalog provider, November 7, 2026](#shared-catalog-provider-november-7-2026)
 - [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Industry and economic catalog adoption, November 7, 2026
+
+Industry, insurance, ore reprocessing and economic-price setup now use the shared catalog boundary for their catalog inputs. Immutable station/system indexes supply facility location, ownership and region membership. Manufacturing recipes and attributes are shared definitions; installation still validates ownership, skills, quoted materials/time/cost, blueprint availability and supported products inside the existing world transaction. Saved jobs, inventory changes, money movements, cancellation and delivery retain their existing owners.
+
+`content-support-3662168.json` separates the enabled manufacturing hull/utility sets from implemented module/ship mechanics. Its defaults preserve Merlin, Venture, Badger, Damage Control I and Expanded Cargohold I alongside the existing module/ammunition cohorts. Material-valued insurance has a separate explicit policy set with the same historical three hulls; it discovers their recipes through product-to-blueprint relationships instead of a hand-written hull/blueprint switch. Missing or ambiguous replacement recipes produce no material-based insurance value. Named item/blueprint IDs used only by tests now belong to test fixtures rather than Gameplay.
+
+`CatalogLifetime` retains the latest catalog generation for each active host, including replacement generations after sanctioned fixture writes. This closes a gap in which direct service calls could lose their shared provider between garbage collections. Source registrations become weak again after the final host releases them. Core preload now includes the small station/system indexes; it still leaves the large celestial/localization datasets on demand.
+
+The updated read-only catalog profile, after EF warmup, preloaded 125,398 records in 1,633.32 ms with a 69,964,672-byte managed-memory increase (66.72 MiB). The same 60 source lookups took 158.58 ms / 60 commands / 60 connections through direct readers and 1.79 ms / zero commands / zero connections through warmed shared readers. These measurements establish catalog behavior only, not a whole-gameplay frame improvement.
+
+**Automated validation:** the exact `EconomicLifecycleTests.ReplacementInsuranceUsesTheCatalogProductRelationshipAfterABlueprintKeyChanges` regression passed, as did the host-retention/GC regression. Tool/solution restore, warning-free isolated build (22.09 seconds), 126 affected tests (10 minutes 32 seconds), six catalog Python tests, nine formatting policy tests and formatting verification passed. The final filter was `FullyQualifiedName~Eden.Protocol.Tests.Industry|FullyQualifiedName~Eden.Protocol.Tests.Economy.EconomicLifecycleTests|FullyQualifiedName~Eden.Protocol.Tests.Reprocessing|FullyQualifiedName~Eden.Protocol.Tests.Persistence.Insurance|FullyQualifiedName~Eden.Protocol.Tests.Combat.InsuranceLossTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.InsuranceServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogProviderTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, using isolated output under `artifacts/catalog-adoption`. This includes mine/refine/manufacture/trade/loss/replacement cycles for all three historical starter hulls and persistence/rejection cases. An earlier adoption run was deliberately interrupted after 111 completed tests when lifetime corrections were made; it is not counted as a completed validation. An overlapping intermediate build hit test-held file locks; isolated build/test output resolved that failure. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this catalog-input migration. Native rendering and gameplay feel remain unverified. Fitting/ship/skill adoption, combat/resource adoption, remaining reference-data consumers, saved overrides and the local editor remain subsequent milestones.
+
+Before publication, remote `main` advanced to `298f917` with slow-call fitting-snapshot and shared-connection fixes. The adoption commit was rebased onto that revision, preserving both documentation records and the incoming catalog invalidation/scope behavior. A warning-free isolated integration build (4.77 seconds) and 43 overlapping tests (approximately 3 seconds) passed with filter `FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogProviderTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.SlowCallReplayTests`. The successful 126-test adoption run covers the pre-rebase adoption changes; the 43-test integration run covers the merged catalog/scope/fitting boundaries.
 
 ## Shared catalog provider, November 7, 2026
 

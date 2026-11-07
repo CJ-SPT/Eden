@@ -40,31 +40,24 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         {
             return typeIds.Distinct().ToDictionary(id => id, id => Value(world, catalog, id));
         }
-        var insurable = catalog
-            .Set<ItemType>()
-            .Where(type =>
-                typeIds.Contains(type.Id)
-                && type.Group.CategoryId == (int)InventoryCategory.Ship
-                && type.GroupId != FleetDefinitions.CapsuleGroup
-            )
-            .Select(type => type.Id)
-            .ToHashSet();
-        var keys = insurable.Select(id => id.ToString(CultureInfo.InvariantCulture)).ToArray();
-        var values = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/types" && keys.Contains(record.Key))
-            .AsEnumerable()
+        var definitions = catalog.Definitions;
+        return typeIds
+            .Distinct()
             .ToDictionary(
-                record => int.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => InsuranceRules.CatalogValue(record.Read<ClientTypes>().BasePrice)
+                id => id,
+                id =>
+                    definitions.Items.TryGetValue(id, out var type)
+                    && type.CategoryId == (int)InventoryCategory.Ship
+                    && type.GroupId != FleetDefinitions.CapsuleGroup
+                        ? InsuranceRules.CatalogValue(definitions.Find(CatalogData.Client.Types, (long)id)?.BasePrice)
+                        : 0
             );
-        return typeIds.Distinct().ToDictionary(id => id, id => values.GetValueOrDefault(id));
     }
 
     private static long Value(WorldDbContext world, CatalogDbContext catalog, int typeId)
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).SingleOrDefault(t => t.Id == typeId);
-        if (type?.Group.CategoryId != (int)InventoryCategory.Ship || type.GroupId == FleetDefinitions.CapsuleGroup)
+        var type = catalog.Definitions.Items.GetValueOrDefault(typeId);
+        if (type?.CategoryId != (int)InventoryCategory.Ship || type.GroupId == FleetDefinitions.CapsuleGroup)
         {
             return 0;
         }
@@ -75,10 +68,10 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
                 // A freely recovered hull must not mint ISK through repeated losses.
                 return 0;
             }
-            if (StarterProduction.BlueprintForHull(typeId) is { } blueprint)
+            if (CatalogContentPolicy.Current.Insurance.MaterialValuedHullTypes.Contains(typeId))
             {
-                var key = JsonSerializer.Serialize(((int)blueprint).ToString(CultureInfo.InvariantCulture));
-                var recipe = catalog.Set<SourceRecord>().Find("client/blueprints", key)?.Read<ClientBlueprints>().Activities?.Manufacturing;
+                var blueprints = catalog.Definitions.BlueprintsForProduct(typeId);
+                var recipe = blueprints.Length == 1 ? catalog.Definitions.ManufacturingRecipe(blueprints[0]) : null;
                 if (recipe?.Materials is not { Length: > 0 })
                 {
                     return 0;
@@ -92,8 +85,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
                 );
             }
         }
-        var source = catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture));
-        return InsuranceRules.CatalogValue(source?.Read<ClientTypes>().BasePrice);
+        return InsuranceRules.CatalogValue(catalog.Definitions.Find(CatalogData.Client.Types, (long)typeId)?.BasePrice);
     }
 
     public IReadOnlyList<InsurancePolicy> Contracts(long pilotId)
@@ -207,7 +199,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         {
             throw new InvalidDataException("Insurance changes are available only at your current station.");
         }
-        var station = catalog.Set<Station>().Find(stationId) ?? throw new InvalidDataException("Unknown station.");
+        var station = catalog.Definitions.FindStation(stationId) ?? throw new InvalidDataException("Unknown station.");
         if (!StationCapabilities.Has(catalog, station.OperationId, StationService.Insurance))
         {
             throw new InvalidDataException("This station does not provide insurance.");

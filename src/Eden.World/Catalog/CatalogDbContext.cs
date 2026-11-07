@@ -9,6 +9,11 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext(string path, bool writable = false) : DbContext
 {
+    public CatalogProvider Definitions =>
+        writable
+            ? throw new InvalidOperationException("Use direct writable catalog reads while editing a fixture or import.")
+            : CatalogProvider.Open(path);
+
     public override void Dispose()
     {
         base.Dispose();

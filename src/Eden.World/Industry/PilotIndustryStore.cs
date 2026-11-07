@@ -35,10 +35,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     private static Pilot Pilot(WorldDbContext world, long id) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
 
-    private static IndustryFacility ReadFacility(Station station) =>
+    private static IndustryFacility ReadFacility(CatalogStationDefinition station) =>
         new(station.Id, station.TypeId, station.OwnerId, station.SolarSystemId);
 
-    private IndustryFacility PricedFacility(Station station)
+    private IndustryFacility PricedFacility(CatalogStationDefinition station)
     {
         using WorldDbContext world = new(database.Path);
         bool enabled = EconomicStore.Enabled(world);
@@ -52,12 +52,19 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         );
     }
 
-    private static bool HasService(CatalogDbContext catalog, Station station, StationService service = StationService.Manufacturing) =>
-        StationCapabilities.Has(catalog, station.OperationId, service);
+    private static bool HasService(
+        CatalogDbContext catalog,
+        CatalogStationDefinition station,
+        StationService service = StationService.Manufacturing
+    ) => StationCapabilities.Has(catalog, station.OperationId, service);
 
-    private static Station Station(CatalogDbContext catalog, int id, StationService? service = StationService.Manufacturing)
+    private static CatalogStationDefinition Station(
+        CatalogDbContext catalog,
+        int id,
+        StationService? service = StationService.Manufacturing
+    )
     {
-        var station = catalog.Set<Station>().SingleOrDefault(s => s.Id == id);
+        var station = catalog.Definitions.FindStation(id);
         if (
             station is null
             || (
@@ -72,7 +79,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         return station;
     }
 
-    private static Station CurrentStation(
+    private static CatalogStationDefinition CurrentStation(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
@@ -118,12 +125,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        int systemId =
-            pilot.ActiveShip.Position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
-        int regionId = catalog.Set<SolarSystem>().Where(s => s.Id == systemId).Select(s => s.Constellation.RegionId).Single();
+        int systemId = pilot.ActiveShip.Position?.SystemId ?? catalog.Definitions.Stations[pilot.ActiveShip.StationId].SolarSystemId;
+        int regionId = catalog.Definitions.Systems[systemId].RegionId;
         return catalog
-            .Set<Station>()
-            .Where(s => s.SolarSystem.Constellation.RegionId == regionId)
+            .Definitions.Stations.Values.Where(s => catalog.Definitions.Systems[s.SolarSystemId].RegionId == regionId)
             .OrderBy(s => s.Id)
             .AsEnumerable()
             .Where(s => HasService(catalog, s))
@@ -131,12 +136,12 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             .ToArray();
     }
 
-    private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
-        catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+    private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
+        catalog.Definitions.Attributes(typeId);
 
-    private static bool SupportedProduct(CatalogDbContext catalog, ItemType type)
+    private static bool SupportedProduct(CatalogDbContext catalog, CatalogItemDefinition type)
     {
-        if (StarterProduction.IsHull(type.Id))
+        if (CatalogContentPolicy.Current.Manufacturing.HullTypes.Contains(type.Id))
         {
             return HullCatalog.CanAssemble(catalog, type, (int)InventoryCategory.Ship);
         }
@@ -153,7 +158,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             return false;
         }
-        return StarterProduction.IsUtility(type.Id) && FittingCatalog.Definition(catalog, type.Id) is not null
+        return CatalogContentPolicy.Current.Manufacturing.UtilityTypes.Contains(type.Id)
+                && FittingCatalog.Definition(catalog, type.Id) is not null
             || type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
             || (
@@ -173,13 +179,9 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return catalog
-            .Set<ItemType>()
-            .Where(t =>
-                t.Id == (int)StarterProductionType.Merlin
-                || t.Id == (int)StarterProductionType.Venture
-                || t.Id == (int)StarterProductionType.Badger
-                || t.Id == (int)StarterProductionType.ExpandedCargohold
-                || t.Id == (int)StarterProductionType.DamageControl
+            .Definitions.Items.Values.Where(t =>
+                CatalogContentPolicy.Current.Manufacturing.HullTypes.Contains(t.Id)
+                || CatalogContentPolicy.Current.Manufacturing.UtilityTypes.Contains(t.Id)
                 || t.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 || t.GroupId == CombatDefinitions.HybridWeaponGroup
                 || t.GroupId == InventoryDefinitions.MiningLaserGroup
@@ -210,8 +212,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             throw new InvalidDataException("Use an owned original blueprint in a station Item Hangar.");
         }
         var station =
-            catalog.Set<Station>().SingleOrDefault(s => s.Id == item.LocationId)
-            ?? throw new InvalidDataException("The blueprint is not in a station hangar.");
+            catalog.Definitions.FindStation(item.LocationId) ?? throw new InvalidDataException("The blueprint is not in a station hangar.");
         var facility = ReadFacility(station);
         long? job = world
             .Set<IndustryJob>()
@@ -225,7 +226,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var types = catalog.Set<ItemType>().Where(t => t.Group.CategoryId == (int)InventoryCategory.Blueprint).Select(t => t.Id).ToArray();
+        var types = catalog
+            .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Blueprint)
+            .Select(t => t.Id)
+            .ToArray();
         return world
             .Set<OwnedItem>()
             .AsNoTracking()
@@ -237,7 +241,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             )
             .OrderBy(i => i.Id)
             .AsEnumerable()
-            .Where(i => i.LocationId <= int.MaxValue && catalog.Set<Station>().Any(s => s.Id == i.LocationId))
+            .Where(i => i.LocationId <= int.MaxValue && catalog.Definitions.FindStation(i.LocationId) is not null)
             .Select(i => ReadBlueprint(world, catalog, i))
             .ToArray();
     }
@@ -374,13 +378,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             throw new InvalidDataException("Choose an available blueprint and positive run count at this station.");
         }
-        // This cache's keys are strings, unlike the SDE's numeric blueprint keys.
         var recipe =
-            catalog
-                .Set<SourceRecord>()
-                .Find("client/blueprints", JsonSerializer.Serialize(item.TypeId.ToString(CultureInfo.InvariantCulture)))
-                ?.Read<ClientBlueprints>()
-                .Activities?.Manufacturing
+            catalog.Definitions.ManufacturingRecipe(item.TypeId)
             ?? throw new InvalidDataException("This blueprint has no manufacturing recipe.");
         if (
             recipe.Products is not [var product]
@@ -388,7 +387,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             || request.ProductTypeId.HasValue && product.TypeID != request.ProductTypeId
             || product.Quantity is not > 0
             || recipe.Time is not > 0
-            || !SupportedProduct(catalog, catalog.Set<ItemType>().Single(t => t.Id == (int)product.TypeID.Value))
+            || !catalog.Definitions.Items.TryGetValue((int)product.TypeID.Value, out var productType)
+            || !SupportedProduct(catalog, productType)
         )
         {
             throw new InvalidDataException("This blueprint product is outside the supported starter production and module cohorts.");
@@ -501,10 +501,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 }
             )
             .Entity;
-        double? security = catalog
-            .FindSource("client/systems", station.SolarSystemId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientSystems>()
-            .SecurityStatus;
+        double? security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)station.SolarSystemId)?.SecurityStatus;
         if (EconomicStore.Enabled(world) && security is null)
         {
             throw new InvalidDataException("Missing catalog industry security classification.");

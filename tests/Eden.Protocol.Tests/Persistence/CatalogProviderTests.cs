@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
@@ -12,6 +13,29 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class CatalogProviderTests
 {
+    [Fact]
+    public void HostRetainsTheLatestCatalogGenerationAcrossGarbageCollection()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        var first = CaptureWeak(path);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Assert.True(first.TryGetTarget(out var original));
+        long originalGeneration = original.Identity.Generation;
+        CatalogProvider.Invalidate(path);
+        var second = CaptureWeak(path);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Assert.True(second.TryGetTarget(out var latest));
+        Assert.NotEqual(originalGeneration, latest.Identity.Generation);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference<CatalogProvider> CaptureWeak(string path) => new(CatalogProvider.Open(path));
+
     [Fact]
     public async Task ConcurrentReadersShareDefinitionsAndWarmReadsPerformNoSql()
     {
@@ -124,6 +148,9 @@ public sealed class CatalogProviderTests
         var catalog = CatalogProvider.Open(path);
         catalog.PreloadCore();
         Assert.Equal(6, catalog.Items[601].CategoryId);
+        Assert.Equal(10000002, catalog.Systems[30000142].RegionId);
+        Assert.Equal(30000142, catalog.Stations[60003760].SolarSystemId);
+        Assert.Null(catalog.FindStation(long.MinValue + 60003760));
         Assert.Contains(601, catalog.TypesInGroup(catalog.Items[601].GroupId));
         Assert.Equal<int>([785], catalog.BlueprintsForProduct(48));
         Assert.Empty(catalog.BlueprintsForProduct(int.MaxValue));

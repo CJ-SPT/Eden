@@ -26,20 +26,6 @@ public enum IndustrySkill
     AdvancedMassProduction = 24625,
 }
 
-// Original blueprint types in the pinned build's client/blueprints catalog.
-public enum IndustryBlueprintType
-{
-    Merlin = 950,
-    Venture = 32881,
-    Badger = 983,
-    MinerI = 785,
-    SmallShieldBoosterI = 1032,
-    OneMnAfterburnerI = 1072,
-    GatlingRail75MmI = 1112,
-    IronChargeSmall = 1130,
-    AntimatterChargeSmall = 1137,
-}
-
 public sealed record IndustryFacility(int Id, int TypeId, int OwnerId, int SystemId, double CostIndex = 1, double Tax = 0);
 
 public sealed record OwnedBlueprint(InventoryItem Item, IndustryFacility Facility, long? JobId);

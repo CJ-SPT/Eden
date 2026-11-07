@@ -63,6 +63,8 @@ Generated catalog arrays and maps use `ImmutableArray` and `ImmutableDictionary`
 
 Production catalog replacement requires restart. Writable fixture/tooling context disposal invalidates future provider resolution alongside existing resident caches. Captured immutable values remain valid; an invalidated generation rejects uncached loads rather than mixing old and new source records. World-specific override views will be layered separately during the configuration milestone. Existing direct EF readers and the older fitting/NPC caches remain until their owning features migrate.
 
+`CatalogLifetime` retains the latest source generation while any host using that catalog remains active, including generations loaded after fixture edits. `CatalogDbContext.Definitions` exposes that shared source boundary to migrating readers; writable tooling continues to use its owned EF context. Industry, insurance, reprocessing and economic-price setup use the new boundary. World prices, balances and installed jobs remain transaction-owned inputs; they are not cached as catalog data. Enabled production/insurance cohorts are typed build-specific policy data, distinct from catalog recipe relationships and supported mechanics.
+
 ### Flight coordination
 
 Flight code lives in `Protocol/Flight`. The connection owns one navigation state and one ordered outbound queue. Components receive typed context and emit commands through that existing queue; they do not create independent sessions or timers.
