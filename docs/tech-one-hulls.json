@@ -37,12 +37,17 @@
         {
           "effectId": 5103,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5104,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6368,
@@ -415,17 +420,27 @@
         {
           "effectId": 2135,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
           "effectId": 5109,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5110,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6373,
@@ -520,17 +535,27 @@
         {
           "effectId": 2135,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
           "effectId": 5107,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5108,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6373,
@@ -850,12 +875,17 @@
         {
           "effectId": 5105,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5106,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6368,
@@ -1459,12 +1489,17 @@
         {
           "effectId": 1964,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2133,
           "capability": "EnergyWarfare",
           "operational": false
+        },
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 2134,
@@ -1479,7 +1514,12 @@
         {
           "effectId": 5126,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6368,
@@ -1756,6 +1796,11 @@
         {
           "effectId": 2135,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
@@ -1766,12 +1811,17 @@
         {
           "effectId": 5123,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5124,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6373,
@@ -2080,6 +2130,11 @@
         {
           "effectId": 2134,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
@@ -2095,12 +2150,17 @@
         {
           "effectId": 5122,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5127,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6368,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6368,
@@ -2262,7 +2322,12 @@
         {
           "effectId": 1969,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 2135,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 2135,
@@ -2282,7 +2347,12 @@
         {
           "effectId": 5125,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
+        },
+        {
+          "effectId": 6373,
+          "capability": "RemoteRepair",
+          "operational": true
         },
         {
           "effectId": 6373,
@@ -8435,6 +8505,11 @@
         {
           "effectId": 2134,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
@@ -10538,7 +10613,7 @@
         {
           "effectId": 5725,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5726,
@@ -10553,7 +10628,7 @@
         {
           "effectId": 5738,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -10574,7 +10649,6 @@
       "deferred": [
         "CombatDrones",
         "Probes",
-        "RemoteRepair",
         "Hacking",
         "MicroJumpDrives",
         "FleetRefitting",
@@ -11495,6 +11569,11 @@
         {
           "effectId": 2134,
           "capability": "RemoteRepair",
+          "operational": true
+        },
+        {
+          "effectId": 2134,
+          "capability": "RemoteRepair",
           "operational": false
         },
         {
@@ -11684,7 +11763,7 @@
         {
           "effectId": 7092,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -11694,7 +11773,7 @@
         {
           "effectId": 7094,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7112,
@@ -11724,7 +11803,6 @@
       ],
       "deferred": [
         "CombatDrones",
-        "RemoteRepair",
         "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
@@ -11770,7 +11848,7 @@
         {
           "effectId": 7092,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -11780,7 +11858,7 @@
         {
           "effectId": 7094,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7112,
@@ -11795,7 +11873,6 @@
       ],
       "deferred": [
         "CombatDrones",
-        "RemoteRepair",
         "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
@@ -11852,7 +11929,7 @@
         {
           "effectId": 7092,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -11862,7 +11939,7 @@
         {
           "effectId": 7094,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7112,
@@ -11887,7 +11964,6 @@
       ],
       "deferred": [
         "CombatDrones",
-        "RemoteRepair",
         "EnergyWarfare",
         "Smartbombs",
         "Disintegrators",
@@ -12000,7 +12076,7 @@
         {
           "effectId": 7092,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -12010,7 +12086,7 @@
         {
           "effectId": 7094,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7112,
@@ -12034,7 +12110,6 @@
         }
       ],
       "deferred": [
-        "RemoteRepair",
         "EnergyWarfare",
         "Smartbombs",
         "Disintegrators"
@@ -12080,7 +12155,7 @@
         {
           "effectId": 7092,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7093,
@@ -12090,7 +12165,7 @@
         {
           "effectId": 7094,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7112,
@@ -12130,7 +12205,6 @@
       ],
       "deferred": [
         "CombatDrones",
-        "RemoteRepair",
         "EnergyWarfare",
         "Smartbombs",
         "Disintegrators",

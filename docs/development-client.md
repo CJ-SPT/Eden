@@ -791,3 +791,12 @@ These are optional maintainer checks on an isolated copied save. Agent client te
 1. Fit earned ECM/dampener/disruptor/painter equipment, exercise matching script drag-and-drop and compare tooltips, capacitor and continuous HUD cycles through a paid stop.
 2. With two appropriately authorized pilots, check victim status/jam timers, cancellation of other locks, targeting the jammer, and source/observer effects; repeat against an NPC.
 3. Reconnect/restart the copied world and verify scripts, spent capacitor and cooldowns persist while live effects clear.
+
+
+## Optional remote shield and armor repair checks
+
+Agent validation is automated. These optional checks use a copied save; native rendering and gameplay feel remain unverified.
+
+1. Fit a supported remote shield booster and armor repairer, lock a second pilot's damaged ship and check immediate shield transfer, delayed armor transfer, capacitor use and incoming visuals.
+2. Repeat each repair, stop it mid-cycle and check one continuous HUD activation through the paid stop; have a third pilot observe and reconnect to check the targeted effect snapshot.
+3. Check safety rejection for flagged/engaged targets, then cancel an armor cycle through lock loss or travel and restart the copied save; check that no healing or capacitor refund replays.

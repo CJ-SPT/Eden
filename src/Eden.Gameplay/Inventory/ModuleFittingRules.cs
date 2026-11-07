@@ -49,7 +49,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            PlayerEwarRules.Groups.Contains(groupId)
+            RemoteRepairRules.Effect(groupId) is { } remote
+                && effects.Contains(remote)
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+            || PlayerEwarRules.Groups.Contains(groupId)
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
                 && effects.Any(e => PlayerEwarRules.Matches(groupId, e))
             || groupId

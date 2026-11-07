@@ -65,7 +65,8 @@ internal sealed class PilotUpdateCoordinator(
     PersonalMarketMonitor personalMarket,
     CrimewatchHandler crimewatch,
     PilotDamageMonitor playerDamage,
-    CooperativeFleetHandler fleets
+    CooperativeFleetHandler fleets,
+    RemoteRepairHandler remoteRepairs
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -91,6 +92,7 @@ internal sealed class PilotUpdateCoordinator(
     public void Enter(PilotCallContext context)
     {
         playerDamage.Enter(context);
+        remoteRepairs.Enter(context);
         crimewatch.Enter(context);
         corporations.Enter(context);
         corporationWallet.Enter(context);
@@ -155,6 +157,7 @@ internal sealed class PilotUpdateCoordinator(
         missiles.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);
+        remoteRepairs.Cancel(context);
         hardeners.Cancel(context);
         capacitorBoosters.Cancel(context);
         support.Cancel(context);
@@ -180,6 +183,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             targeting.Advance(context);
         }
+        remoteRepairs.Advance(context);
         capacitorBoosters.Advance(context);
         drones.Advance(context);
         hardeners.Advance(context);

@@ -3,6 +3,7 @@ using Eden.World.Combat;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 97;
+    internal const int CurrentVersion = 98;
 
     public static void Open(
         WorldDbContext world,
@@ -67,7 +68,8 @@ internal static class WorldMigration
             PlayerEwarSchema.Upgrade(world);
         }
         CorporationStorageSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=97");
+        RemoteRepairSchema.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=98");
         history.Commit();
     }
 }

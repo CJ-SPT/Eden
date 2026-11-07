@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
@@ -370,7 +371,8 @@ internal sealed class FlightSession(
             ModuleEffects.TackleEffects,
             _simulatedStamp,
             DirtTime: DirtTimestamp(),
-            ElectronicWarfare: ModuleEffects.ElectronicWarfare
+            ElectronicWarfare: ModuleEffects.ElectronicWarfare,
+            RemoteRepairs: ModuleEffects.RemoteRepairs
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -450,6 +452,12 @@ internal sealed class FlightSession(
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("weapon.publish");
         ModuleEffects.RepeatWeaponEffect(Pilot.ShipId, previous, current);
+        PublishContact();
+    }
+
+    public void SetRemoteRepairEffect(RemoteRepairCycle repair, bool active)
+    {
+        ModuleEffects.SetRemoteRepairEffect(Pilot.ShipId, repair, active);
         PublishContact();
     }
 

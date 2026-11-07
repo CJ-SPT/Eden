@@ -32,6 +32,7 @@ public sealed class SmallHullBonusTests
             f.CatalogPath,
             Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s).Concat(new[] { 1948, 1968, 2108, 37543, 12709 }).ToHashSet()
         );
+        PassiveCatalogFixture.LoadRemoteRepairs(f.CatalogPath);
         long ship = SmallHullTests.Board(f, type);
         IReadOnlyList<PassiveModifier> modifiers;
         Dictionary<DogmaAttributeId, double> sources;
@@ -201,6 +202,8 @@ public sealed class SmallHullBonusTests
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
                 HullBonusEquipmentGroup.WarpScrambler => new(447),
                 HullBonusEquipmentGroup.StasisWeb => new(527),
+                HullBonusEquipmentGroup.RemoteShieldBooster => new(3596),
+                HullBonusEquipmentGroup.RemoteArmorRepairer => new(11357),
                 HullBonusEquipmentGroup.Ecm => new(1948),
                 HullBonusEquipmentGroup.SensorDampener => new(1968),
                 HullBonusEquipmentGroup.TargetPainter => new(12709),
@@ -233,6 +236,9 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => new(447),
                 HullBonusSkill.Afterburner => new(439),
                 HullBonusSkill.HighSpeedManeuvering => new(434),
+                HullBonusSkill.ShieldEmissionSystems => new(3586),
+                HullBonusSkill.RemoteArmorRepairSystems => new(11355),
+                HullBonusSkill.CapitalRemoteArmorRepairSystems => new(3536),
                 HullBonusSkill.ElectronicWarfare => new(1948),
                 HullBonusSkill.TargetPainting => new(12709),
                 HullBonusSkill.WeaponDisruption => new(

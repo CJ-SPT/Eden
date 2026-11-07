@@ -3,6 +3,9 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    RemoteRepairImpedance = 2116,
+    DisallowAssistance = 854,
+    MediumRemoteRepairFittingMultiplier = 2691,
     BehaviorMiningAmount = 2489,
     BehaviorMiningDuration = 2490,
     BehaviorMiningRange = 2673,

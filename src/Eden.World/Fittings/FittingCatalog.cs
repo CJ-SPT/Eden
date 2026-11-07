@@ -108,6 +108,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (RemoteRepairRules.Effect(type.GroupId) is not null && !RemoteRepairCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         var attributes = catalog
             .Set<TypeAttribute>()
             .Where(a => a.ItemTypeId == typeId)

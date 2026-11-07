@@ -187,6 +187,15 @@ internal sealed partial class LiveReadModels
     internal bool EwarModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
         Read(_ewarOnline, new(pilot, ship, module), () => load(pilot, ship, module));
 
+    private readonly ResidentSnapshot<EwarModuleKey, bool> _remoteRepairOnline = new(
+        "resident.remoteRepairOnline",
+        "WorldItem",
+        "WorldContractEscrow"
+    );
+
+    internal bool RemoteRepairModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
+        Read(_remoteRepairOnline, new(pilot, ship, module), () => load(pilot, ship, module));
+
     internal IReadOnlyList<ElectronicWarfareContact> PlayerEwarIncoming(long targetId) =>
         Array.AsReadOnly(PlayerEwar().Where(e => e.Target.Id == targetId).ToArray());
 
@@ -199,6 +208,7 @@ internal sealed partial class LiveReadModels
         _npcEwar.Observe(changes);
         _playerEwar.Observe(changes);
         _ewarOnline.Observe(changes);
+        _remoteRepairOnline.Observe(changes);
     }
 
     private void ClearSpace()
@@ -210,5 +220,6 @@ internal sealed partial class LiveReadModels
         _npcEwar.Clear();
         _playerEwar.Clear();
         _ewarOnline.Clear();
+        _remoteRepairOnline.Clear();
     }
 }

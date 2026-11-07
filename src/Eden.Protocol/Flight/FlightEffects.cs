@@ -1,5 +1,6 @@
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
@@ -40,6 +41,17 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
             foreach (var effect in (ship.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
             {
                 ElectronicWarfareEffect(ship.Pilot.ShipId, effect, true);
+            }
+        }
+        if (Changed(ship.RemoteRepairs, previous?.RemoteRepairs))
+        {
+            foreach (var repair in (previous?.RemoteRepairs ?? []).Except(ship.RemoteRepairs ?? []))
+            {
+                RemoteRepairEffect(ship.Pilot.ShipId, repair, false);
+            }
+            foreach (var repair in (ship.RemoteRepairs ?? []).Except(previous?.RemoteRepairs ?? []))
+            {
+                RemoteRepairEffect(ship.Pilot.ShipId, repair, true);
             }
         }
         RefreshPropulsion(ship, previous);
@@ -169,6 +181,23 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
             WeaponEffect(ship.Pilot.ShipId, effect, true);
         }
     }
+
+    internal void RemoteRepairEffect(long shipId, RemoteRepairCycle repair, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                shipId,
+                repair.Module.ItemId,
+                repair.Module.TypeId,
+                repair.TargetId,
+                null,
+                RemoteRepairWire.Graphic(repair.Module.Effect),
+                false,
+                active,
+                active,
+                repair.Module.DurationMilliseconds,
+                repair.StartedAt
+            )
+        );
 
     internal void LocalRepairEffect(long shipId, LocalRepairContact effect, bool active) =>
         emit(

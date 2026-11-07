@@ -9,6 +9,7 @@ using Eden.World.Fittings;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
+using Eden.World.Repair;
 using Eden.World.Runtime.Combat;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,6 +72,7 @@ public static class WorldInitialization
         world.Set<ActiveFittedModule>().ExecuteDelete();
         world.Set<WorldTackle>().ExecuteDelete();
         world.Set<WorldPlayerEwar>().ExecuteDelete();
+        world.Set<WorldRemoteRepair>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.
         world.Set<WorldNpcEwar>().ExecuteDelete();
         world.Set<NpcAggression>().ExecuteDelete();

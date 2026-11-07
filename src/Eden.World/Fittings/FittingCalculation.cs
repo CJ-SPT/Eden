@@ -5,6 +5,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
@@ -288,6 +289,13 @@ internal sealed record FittingCalculation(
                     Add(module.Item.Id, modifier, false);
                 }
             }
+            if (RemoteRepairCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            {
+                foreach (var modifier in RemoteRepairCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, true);
+                }
+            }
             if (WeaponCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
                 foreach (var modifier in WeaponCatalog.Modifiers(catalog, module.Item.TypeId))
@@ -341,6 +349,7 @@ internal sealed record FittingCalculation(
             .Skills.Concat(MissileDefinitions.Skills)
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
+            .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Distinct()
             .ToArray();

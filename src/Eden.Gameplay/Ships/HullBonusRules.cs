@@ -291,18 +291,27 @@ public static class HullBonusRules
         };
 
     public static bool Operational(HullCapability capability, int? equipmentGroup = null) =>
-        equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
-        && capability
-            is HullCapability.HullAttributes
-                or HullCapability.Turrets
-                or HullCapability.Missiles
-                or HullCapability.OreMining
-                or HullCapability.LocalArmorRepair
-                or HullCapability.LocalShieldBoost
-                or HullCapability.Propulsion
-                or HullCapability.Tackle
-                or HullCapability.ElectronicWarfare
-                or HullCapability.ArmorPlates
-                or HullCapability.ShieldExtenders
-                or HullCapability.ReinforcedBulkheads;
+        (
+            capability == HullCapability.RemoteRepair
+            && (
+                equipmentGroup
+                is null
+                    or (int)HullBonusEquipmentGroup.RemoteShieldBooster
+                    or (int)HullBonusEquipmentGroup.RemoteArmorRepairer
+            )
+        )
+        || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
+            && capability
+                is HullCapability.HullAttributes
+                    or HullCapability.Turrets
+                    or HullCapability.Missiles
+                    or HullCapability.OreMining
+                    or HullCapability.LocalArmorRepair
+                    or HullCapability.LocalShieldBoost
+                    or HullCapability.Propulsion
+                    or HullCapability.Tackle
+                    or HullCapability.ElectronicWarfare
+                    or HullCapability.ArmorPlates
+                    or HullCapability.ShieldExtenders
+                    or HullCapability.ReinforcedBulkheads;
 }

@@ -2,6 +2,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
 
 namespace Eden.Protocol.Flight;
@@ -14,6 +15,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
     internal MiningContact[] Mining { get; private set; } = [];
     internal WeaponContact[] Weapons { get; private set; } = [];
     internal ShieldBoostContact[] ShieldBoosts { get; private set; } = [];
+    internal RemoteRepairCycle[] RemoteRepairs { get; private set; } = [];
     internal LocalRepairContact[] LocalRepairs { get; private set; } = [];
     internal HardenerContact[] Hardeners { get; private set; } = [];
     internal SupportContact[] Support { get; private set; } = [];
@@ -65,6 +67,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
         Weapons = [];
         ShieldBoosts = [];
         LocalRepairs = [];
+        RemoteRepairs = [];
         Hardeners = [];
         Support = [];
         TackleEffects = [];
@@ -120,6 +123,15 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
         Weapons = Weapons.Where(w => w.ModuleId != current.ModuleId).Append(current).ToArray();
         effects.WeaponEffect(shipId, previous, false);
         effects.WeaponEffect(shipId, current, true);
+    }
+
+    internal void SetRemoteRepairEffect(long shipId, RemoteRepairCycle repair, bool active)
+    {
+        RemoteRepairs = RemoteRepairs
+            .Where(r => r.Module.ItemId != repair.Module.ItemId)
+            .Concat(active ? [repair] : Array.Empty<RemoteRepairCycle>())
+            .ToArray();
+        effects.RemoteRepairEffect(shipId, repair, active);
     }
 
     internal void SetLocalRepairEffect(long shipId, LocalRepairContact effect, bool active)

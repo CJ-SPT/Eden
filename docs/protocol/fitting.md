@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Player remote shield and armor repairs, November 7, 2026](#player-remote-shield-and-armor-repairs-november-7-2026)
+
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
@@ -734,3 +736,32 @@ FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests
 **Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified. No game was launched, running host restarted or normal save edited.
 
 **Optional maintainer checks:** See the three [player EWAR checks](../development-client.md#optional-player-electronic-warfare-checks) on a copied save.
+
+
+## Player remote shield and armor repairs, November 7, 2026
+
+This first player logistics milestone admits **89 published unrestricted static modules** from build 3662168: all **44 remote shield boosters** (group 41) and **45 remote armor repairers** (325), small through capital sizes, across the catalog tiers where present. All four Abyssal remote armor profiles remain rejected. Ancillary/mutadaptive repair families, remote hull repair, capacitor transmitters, NPC/structure targets, overheating and ship-restricted equipment remain separate work. No items, skills, ISK, market supply or manufacturing recipes are granted. `tools/Export-RemoteRepairCatalog.py` reproduces the 93-module fixture, including excluded profiles and representative logistics hulls/prerequisites.
+
+Native activation uses `dogmaIM.Activate(moduleID,effectName,targetID,repeat)` with `shipModuleRemoteShieldBooster` (6186) or `shipModuleRemoteArmorRepairer` (6188). It requires an owned online high-slot repairer, earned prerequisites, a live source and a different locked player ship in the same system within the effective targeting envelope. Unsupported profiles, self/NPC targets, wrong owners/effects, missing skills, offline modules, destroyed ships, unavailable targets and insufficient capacitor reject before payment or healing. Medium fitted effect 6953 applies its catalog CPU/grid multiplier. Ordinary/capital emission and remote-repair skills use their own selectors once; supported hull shield/armor logistics bonuses now have an operational owner. Other remote equipment groups remain deferred.
+
+Shield HP transfers immediately on payment; armor HP transfers once at the saved cycle end after source/module/target and assistance revalidation. Both clip to missing HP and cannot revive a destroyed hull. Edge distance subtracts both radii. Beyond optimal, amount scales by `0.5 ** (((distance - optimal) / falloff) ** 2)` and target `remoteRepairImpedance` (2116, default 1). Attribute 854, `disallowAssistance`, rejects assistance. Unaffected saved damage is preserved. Repeats pay each successful new cycle; manual shutdown finishes the paid interval. Lock/target loss, source travel, offlining, ship loss and disconnect cancel outgoing cycles. Restart clears pending remote work and retains paid capacitor/cooldowns, with no offline healing. This deliberately differs from local-repair paid completion.
+
+Typed assistance rules run before payment. High-security aid to suspects, criminals, outlaws or pilots in a limited engagement is blocked pending CONCORD enforcement, with safety/Alpha restrictions also enforced. Low-security aid inherits legal flags and incurs the additional suspect offense for intervening in an engagement or an outlaw's active combat; a peaceful outlaw alone creates no offense. Weapons, PvP, NPC and legal timers transfer with their remaining deadlines, so mutually repairing pilots cannot repeatedly reset countdowns. Assistance creates no hostile contact or limited engagement against the repaired pilot.
+
+**World schema 98** adds `WorldRemoteRepair` with module/source/pilot/target references and a target index. Payment, timers, cooldown and healing/schedule commit together through the existing world owner and transaction projection bridge. Committed changes invalidate resident resources; rejections preserve them. Per-frame module membership uses dependency-invalidated resident snapshots, without SQL or fit recalculation once warmed. Post-commit repair events update shared health and the recipient's native attributes. Receiving notifications read current committed health to avoid overwriting a later hit with an older repair message. Repeats preserve one HUD activation. Observers and snapshots receive targeted, nonoffensive `effects.ShieldTransfer` and `effects.RemoteArmourRepair` effects.
+
+Sources: read-only pinned catalog types/typedogma/effects/attributes and inert code-object inspection of staged `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. `godma.pyj` confirms activation arguments and the existing `OnGodmaShipEffect` environment; `shipmodulebutton.pyj` resolves target/repeat; `crimewatchSvc.pyj` distinguishes assistance for safety. Consulted [Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp), revision **af0d65b29f951260ea09140ca11adf5d40566997**, for the existing tuple/list/primitive boundary; no codec changes are needed. CCP's [Crimewatch introduction](https://www.eveonline.com/news/view/introducing-the-new-and-improved-crimewatch), [neutral-assistance update](https://www.eveonline.com/news/view/war-war-sometimes-changes) and [criminal-timer reference](https://support.eveonline.com/hc/en-us/articles/203268591-Criminal-Timer) establish remaining-time inheritance and later high-security restrictions. No client was launched or controlled.
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors (build **0.64 seconds**). All **33 focused .NET cases** passed, comprising 28 new remote-repair cases and five immediate-dependency cases, in approximately **15 seconds** of reported test duration. Both Python policy suites passed (**3 catalog** and **9 formatting** tests); formatting verification passed across **938 files**, including the 140-character check. The final sequence took **32.40 seconds**. Catalog cohort extraction and the regenerated per-hull capability record use the read-only installed catalog; test worlds/sessions are isolated. No full .NET suite was run. The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName=Eden.Protocol.Tests.Combat.CrimewatchTests.TimerBoundariesAndCriminalPrecedenceNeverShortenExistingDeadlines|FullyQualifiedName=Eden.Protocol.Tests.Repair.ArmorRepairTests.PaysAtStartRepairsOnlyAtEndAndUsesRepairSystemsDurationOnce|FullyQualifiedName=Eden.Protocol.Tests.Hosting.ServerServicesTests.SharesWorldAndGateButIsolatesPilotSessions
+```
+
+ Development started with exact catalog-admission, payment/timing, checkpoint and hull-bonus methods, followed by `FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests`. Earlier incomplete runs exposed corrected legacy nullable-system handling and fixture expectations for sub-ULP recharge and membership-query instrumentation; they are not final passing validation. The full .NET suite was not authorized or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
+
+**Optional maintainer checks:** See the three [remote repair checks](../development-client.md#optional-remote-shield-and-armor-repair-checks) on a copied save.
+
+The maintainer requested stopping after this milestone. Remote hull repair and capacitor transfer are not started.
