@@ -61,7 +61,7 @@ public sealed class ShipContentCoverageTests
         using CatalogDbContext catalog = new(fixture.Path);
         var report = ShipContentAudit.Read(catalog);
         var drones = report.Entries.Where(entry => entry.Category == InventoryCategory.Drone).ToArray();
-        Assert.Equal(41, drones.Count(entry => entry.Admitted));
+        Assert.Equal(76, drones.Count(entry => entry.Admitted));
         Assert.All(drones.Where(entry => entry.Admitted), entry => Assert.Equal(ContentSupportState.Complete, entry.State));
         var oldReport = HullSupportAudit.Read(catalog);
         foreach (int hull in BuildContentPolicy.Current.DroneHullTypes)

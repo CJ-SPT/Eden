@@ -1,4 +1,4 @@
-"""Export inert build-3662168 light/medium combat-drone test inputs; never read world data."""
+"""Export inert build-3662168 static combat-drone test inputs; never read world data."""
 import argparse
 import json
 import pathlib
@@ -15,10 +15,11 @@ def export(catalog_path, output):
         if record('sde/_sde', '"sde"').get('buildNumber') != 3662168:
             raise ValueError('Expected the pinned build-3662168 catalog')
         pending = {16229, 33151, 2476, 3436, 3437, 3442, 12305, 12484, 12485, 12486, 12487,
-                   23566, 23606, 23618, 24241, 33699}
+                   23566, 23606, 23618, 24241, 33699, 3441, 23594}
         for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100'):
             attrs = dict(catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (type_id,)))
-            if record('client/types', type_id).get('published') == 1 and attrs.get(1272) in (5, 10):
+            source = record('client/types', type_id)
+            if source.get('published') == 1 and source.get('metaGroupID') != 15 and attrs.get(1272, 0) > 0:
                 pending.add(type_id)
         types, records, attributes, effects = [], {}, set(), set()
         while pending:

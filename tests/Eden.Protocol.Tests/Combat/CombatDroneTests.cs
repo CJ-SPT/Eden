@@ -47,15 +47,7 @@ public sealed class CombatDroneTests
         using var document = JsonDocument.Parse(stream);
         foreach (var type in document.RootElement.GetProperty("types").EnumerateArray())
         {
-            if (
-                type.GetProperty("groupId").GetInt32() == DroneRules.CombatDroneGroup
-                && type.GetProperty("attributes")
-                    .EnumerateArray()
-                    .Any(a =>
-                        a.GetProperty("id").GetInt32() == (int)DogmaAttributeId.DroneBandwidthUsed
-                        && a.GetProperty("value").GetDouble() is 5 or 10
-                    )
-            )
+            if (type.GetProperty("groupId").GetInt32() == DroneRules.CombatDroneGroup)
             {
                 yield return [Brutix, type.GetProperty("id").GetInt32()];
                 yield return [BrutixNavyIssue, type.GetProperty("id").GetInt32()];
@@ -126,19 +118,12 @@ public sealed class CombatDroneTests
     }
 
     [Fact]
-    public void EveryPublishedStaticLightAndMediumProfileUsesItsOwnCatalogInputs()
+    public void EveryPublishedStaticCombatProfileUsesItsOwnCatalogInputs()
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.Base.CatalogPath);
-        var types = catalog.Set<ItemType>().Where(t => t.GroupId == DroneRules.CombatDroneGroup).ToArray();
-        var admitted = types
-            .Where(t =>
-                catalog.FittingAttributes(t.Id).GetValueOrDefault(DogmaAttributeId.DroneBandwidthUsed)
-                    is DroneRules.LightBandwidth
-                        or DroneRules.MediumBandwidth
-            )
-            .ToArray();
-        Assert.Equal(41, admitted.Length);
+        var admitted = catalog.Set<ItemType>().Where(t => t.GroupId == DroneRules.CombatDroneGroup).ToArray();
+        Assert.Equal(76, admitted.Length);
         foreach (var type in admitted)
         {
             var profile = DroneCatalog.Profile(catalog, type.Id);
@@ -146,7 +131,7 @@ public sealed class CombatDroneTests
             Assert.Equal(catalog.FittingAttributes(type.Id)[DogmaAttributeId.WeaponCycleTime], profile.CycleMilliseconds);
             Assert.True(profile.Damage.Total > 0);
         }
-        Assert.Throws<InvalidDataException>(() => DroneCatalog.Profile(catalog, 2476));
+        Assert.Equal(CombatDroneKind.Heavy, DroneCatalog.Profile(catalog, 2476).Kind);
     }
 
     [Theory]
@@ -218,7 +203,8 @@ public sealed class CombatDroneTests
     [InlineData(Brutix, "duplicate")]
     [InlineData(Brutix, "foreign")]
     [InlineData(Brutix, "wrong-hold")]
-    [InlineData(Brutix, "heavy")]
+    [InlineData(Brutix, "heavy-skill")]
+    [InlineData(Brutix, "sentry-skill")]
     [InlineData(Brutix, "hull")]
     [InlineData(BrutixNavyIssue, "docked")]
     [InlineData(BrutixNavyIssue, "skill")]
@@ -227,17 +213,23 @@ public sealed class CombatDroneTests
     [InlineData(BrutixNavyIssue, "duplicate")]
     [InlineData(BrutixNavyIssue, "foreign")]
     [InlineData(BrutixNavyIssue, "wrong-hold")]
-    [InlineData(BrutixNavyIssue, "heavy")]
+    [InlineData(BrutixNavyIssue, "heavy-skill")]
+    [InlineData(BrutixNavyIssue, "sentry-skill")]
     [InlineData(BrutixNavyIssue, "hull")]
     public void RejectedLaunchLeavesInventoryAndControlUnchanged(int hullType, string failure)
     {
         using Fixture f = new(hullType);
-        long stack = f.Bay(
-            failure == "heavy" ? 2476 : HammerheadTwo,
-            failure == "heavy" ? 1
-                : failure == "count" ? 6
-                : 5
-        );
+        int type = failure switch
+        {
+            "heavy-skill" => 2476,
+            "sentry-skill" => 23561,
+            _ => HammerheadTwo,
+        };
+        int quantity =
+            failure is "heavy-skill" or "sentry-skill" ? 1
+            : failure == "count" ? 6
+            : 5;
+        long stack = f.Bay(type, quantity);
         if (failure != "docked")
         {
             f.Space();
@@ -245,6 +237,14 @@ public sealed class CombatDroneTests
         if (failure == "skill")
         {
             f.Base.Train((int)DroneSkill.MediumDroneOperation, 0);
+        }
+        if (failure == "heavy-skill")
+        {
+            f.Base.Train((int)DroneSkill.HeavyDroneOperation, 0);
+        }
+        if (failure == "sentry-skill")
+        {
+            f.Base.Train((int)DroneSkill.SentryDroneInterfacing, 0);
         }
         if (failure == "bandwidth")
         {
@@ -271,26 +271,14 @@ public sealed class CombatDroneTests
             }
             world.SaveChanges();
         }
-        IReadOnlyList<DroneStack> request =
-            failure == "duplicate"
-                ? [new(stack, 1), new(stack, 1)]
-                :
-                [
-                    new(
-                        stack,
-                        failure == "heavy" ? 1
-                            : failure == "count" ? 6
-                            : 5
-                    ),
-                ];
-        Assert.Throws<InvalidDataException>(() => f.Drones.Launch(f.Pilot, request, f.Now));
+        IReadOnlyList<DroneStack> request = failure == "duplicate" ? [new(stack, 1), new(stack, 1)] : [new(stack, quantity)];
+        var error = Assert.Throws<InvalidDataException>(() => f.Drones.Launch(f.Pilot, request, f.Now));
+        if (failure is "skill" or "heavy-skill" or "sentry-skill")
+        {
+            Assert.Contains("trained", error.Message);
+        }
         using WorldDbContext after = new(f.Base.Db.Path);
-        Assert.Equal(
-            failure == "heavy" ? 1
-                : failure == "count" ? 6
-                : 5,
-            after.Set<OwnedItem>().Find(stack)!.Quantity
-        );
+        Assert.Equal(quantity, after.Set<OwnedItem>().Find(stack)!.Quantity);
         Assert.Empty(after.Set<WorldDrone>());
     }
 

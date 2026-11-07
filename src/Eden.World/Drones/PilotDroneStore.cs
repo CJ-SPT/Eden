@@ -352,7 +352,8 @@ internal sealed partial class PilotDroneStore(
                 _ => DroneActivity.Idle,
             };
             drone.Orbiting = false;
-            drone.SpeedLimit = DroneCatalog.Skilled(world, catalog, pilotId, typeId).MaximumSpeed;
+            var profile = DroneCatalog.Skilled(world, catalog, pilotId, typeId);
+            drone.SpeedLimit = profile.Kind == CombatDroneKind.Sentry ? 0 : profile.MaximumSpeed;
             if (order == DroneOrder.Reconnect)
             {
                 drone.UpdatedAt = now;

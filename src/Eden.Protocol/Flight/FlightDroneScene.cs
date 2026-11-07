@@ -60,7 +60,13 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
                 || old.SpeedLimit != drone.SpeedLimit
             )
             {
-                if (drone.TargetId != 0 && drone.ShipId != 0)
+                if (drone.ShipId != 0 && drone.Profile.Kind == CombatDroneKind.Sentry)
+                {
+                    update(new DestinyCommand.SetMaxSpeed(drone.Id, 0));
+                    update(new DestinyCommand.SetSpeedFraction(drone.Id, 0));
+                    update(new DestinyCommand.Stop(drone.Id));
+                }
+                else if (drone.TargetId != 0 && drone.ShipId != 0)
                 {
                     update(new DestinyCommand.SetMaxSpeed(drone.Id, drone.SpeedLimit));
                     update(new DestinyCommand.SetSpeedFraction(drone.Id, 1));

@@ -40,18 +40,19 @@ internal static class DroneCatalog
         var source = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = fittedAttributes ?? catalog.FittingAttributes(typeId);
         double bandwidth = attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidthUsed);
+        var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
         if (
             type.GroupId != DroneRules.CombatDroneGroup
             || source?.Published != 1
             || source.MetaGroupID == AbyssalMetaGroup
-            || bandwidth is not (DroneRules.LightBandwidth or DroneRules.MediumBandwidth)
             || InventoryDefinitions.RequiresSpecificShip(attributes)
             || !FittingCatalog.Effects(catalog, typeId).SetEquals([DogmaEffect.LaserFired])
             || FittingCatalog.DefaultEffect(catalog, typeId) != DogmaEffect.LaserFired
         )
         {
-            throw new InvalidDataException("Only supported static light and medium combat drones can launch.");
+            throw new InvalidDataException("Only supported static combat drones can launch.");
         }
+        var kind = DroneRules.Kind(bandwidth, required);
         double Positive(DogmaAttributeId id)
         {
             double value = attributes.GetValueOrDefault(id);
@@ -81,7 +82,7 @@ internal static class DroneCatalog
             (float)type.Radius.Value,
             (float)Positive(DogmaAttributeId.Agility),
             (float)Positive(DogmaAttributeId.MaxVelocity),
-            (float)Positive(DogmaAttributeId.EntityCruiseSpeed),
+            kind == CombatDroneKind.Sentry ? 0 : (float)Positive(DogmaAttributeId.EntityCruiseSpeed),
             Positive(DogmaAttributeId.EntityFlyRange),
             Positive(DogmaAttributeId.MaxRange),
             Positive(DogmaAttributeId.AccuracyFalloff),
@@ -89,7 +90,8 @@ internal static class DroneCatalog
             Positive(DogmaAttributeId.WeaponSignatureResolution),
             Positive(DogmaAttributeId.WeaponCycleTime),
             damage,
-            ShipHealth.DefenseFrom(attributes)
+            ShipHealth.DefenseFrom(attributes),
+            kind
         );
     }
 

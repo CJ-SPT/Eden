@@ -34,10 +34,21 @@ public enum DroneSkill
     AdvancedDroneAvionics = 23566,
     LightDroneOperation = 24241,
     MediumDroneOperation = 33699,
+    HeavyDroneOperation = 3441,
+    SentryDroneInterfacing = 23594,
     AmarrDroneSpecialization = 12484,
     MinmatarDroneSpecialization = 12485,
     GallenteDroneSpecialization = 12486,
     CaldariDroneSpecialization = 12487,
+}
+
+public enum CombatDroneKind
+{
+    Unspecified,
+    Light,
+    Medium,
+    Heavy,
+    Sentry,
 }
 
 public sealed record DroneProfile(
@@ -56,7 +67,8 @@ public sealed record DroneProfile(
     double SignatureReference,
     double CycleMilliseconds,
     DamageVector Damage,
-    HullDefense Defense
+    HullDefense Defense,
+    CombatDroneKind Kind = CombatDroneKind.Unspecified
 );
 
 public sealed record DroneContact(

@@ -81,12 +81,12 @@
     {
       "category": "Drone",
       "state": "Complete",
-      "count": 41
+      "count": 76
     },
     {
       "category": "Drone",
       "state": "Planned",
-      "count": 105
+      "count": 70
     },
     {
       "category": "Drone",
@@ -9555,15 +9555,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -13409,15 +13409,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -13433,15 +13433,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -14198,15 +14198,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -14222,15 +14222,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -14246,15 +14246,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -14366,15 +14366,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -14390,15 +14390,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -121275,15 +121275,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -121376,15 +121376,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -121400,15 +121400,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -121424,15 +121424,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134592,15 +134592,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134616,15 +134616,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134640,15 +134640,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134664,15 +134664,15 @@
       "category": "Drone",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134736,15 +134736,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134760,15 +134760,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -134976,15 +134976,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -135000,15 +135000,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -135024,15 +135024,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -135048,15 +135048,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -135216,15 +135216,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -135240,15 +135240,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153585,15 +153585,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153609,15 +153609,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153681,15 +153681,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153705,15 +153705,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153777,15 +153777,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153801,15 +153801,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153873,15 +153873,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -153897,15 +153897,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -161698,15 +161698,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -196019,15 +196019,15 @@
       "category": "Drone",
       "techLevel": null,
       "metaGroup": 19,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null
@@ -201045,15 +201045,15 @@
       "category": "Drone",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         10
       ],
       "checks": [
         {
           "operation": "Operation",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "DroneCatalog.Profile; launch still requires an admitted drone hull.",
           "role": null

@@ -34,6 +34,34 @@ public static class DroneRules
 
     public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);
 
+    public static CombatDroneKind Kind(double bandwidth, IReadOnlySet<int> requiredSkills)
+    {
+        if (!double.IsFinite(bandwidth) || bandwidth <= 0)
+        {
+            throw new InvalidDataException("Invalid combat drone bandwidth.");
+        }
+        if (requiredSkills.Contains((int)DroneSkill.SentryDroneInterfacing))
+        {
+            return CombatDroneKind.Sentry;
+        }
+        if (requiredSkills.Contains((int)DroneSkill.HeavyDroneOperation))
+        {
+            return CombatDroneKind.Heavy;
+        }
+        if (requiredSkills.Contains((int)DroneSkill.MediumDroneOperation))
+        {
+            return CombatDroneKind.Medium;
+        }
+        if (requiredSkills.Contains((int)DroneSkill.LightDroneOperation) || bandwidth == LightBandwidth)
+        {
+            return CombatDroneKind.Light;
+        }
+        // Preserve typed calculation callers that predate explicit kind metadata.
+        return bandwidth == MediumBandwidth
+            ? CombatDroneKind.Medium
+            : throw new InvalidDataException("The combat drone operation kind is unknown.");
+    }
+
     public static double OwnerAccuracyRoll(double roll) => (roll - NpcRetaliationChance) / (1 - NpcRetaliationChance);
 
     public static DroneRetaliation Retaliation(
@@ -81,9 +109,16 @@ public static class DroneRules
         IReadOnlySet<int> requiredSkills
     )
     {
-        int operation = skills.GetValueOrDefault(
-            profile.Bandwidth == LightBandwidth ? DroneSkill.LightDroneOperation : DroneSkill.MediumDroneOperation
-        );
+        var kind = profile.Kind == CombatDroneKind.Unspecified ? Kind(profile.Bandwidth, requiredSkills) : profile.Kind;
+        var operationSkill = kind switch
+        {
+            CombatDroneKind.Light => DroneSkill.LightDroneOperation,
+            CombatDroneKind.Medium => DroneSkill.MediumDroneOperation,
+            CombatDroneKind.Heavy => DroneSkill.HeavyDroneOperation,
+            CombatDroneKind.Sentry => DroneSkill.SentryDroneInterfacing,
+            _ => throw new InvalidDataException("Unsupported combat drone operation kind."),
+        };
+        int operation = skills.GetValueOrDefault(operationSkill);
         double damage =
             (1 + operation * OperationDamagePerLevel)
             * (1 + skills.GetValueOrDefault(DroneSkill.DroneInterfacing) * InterfacingDamagePerLevel);
@@ -105,6 +140,7 @@ public static class DroneRules
         double durability = 1 + skills.GetValueOrDefault(DroneSkill.DroneDurability) * DurabilityPerLevel;
         return profile with
         {
+            Kind = kind,
             Damage = profile.Damage.Scale(damage),
             MaximumSpeed =
                 profile.MaximumSpeed * (float)(1 + skills.GetValueOrDefault(DroneSkill.DroneNavigation) * NavigationSpeedPerLevel),
@@ -121,6 +157,10 @@ public static class DroneRules
     public static DroneContact Move(DroneContact drone, SpacePosition target, float targetRadius, bool orbit, int stamp, double seconds)
     {
         var profile = drone.Profile;
+        if (profile.Kind == CombatDroneKind.Sentry)
+        {
+            return drone with { Velocity = SpacePosition.Zero, SpeedLimit = 0, Orbiting = false };
+        }
         double range = orbit ? profile.OrbitRange : 0;
         double centerRange = range + targetRadius + profile.Radius;
         double distance = drone.Position.DistanceTo(target);

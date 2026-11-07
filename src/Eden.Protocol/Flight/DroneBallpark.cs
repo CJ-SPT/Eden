@@ -21,9 +21,10 @@ internal static partial class Ballpark
     private static SlimItem WriteDrone(BinaryWriter writer, DroneContact drone)
     {
         var profile = drone.Profile;
-        bool controlled = drone.ShipId != 0 && drone.TargetId != 0;
+        // Sentries keep their controller/state rows without a Follow/Orbit motion target.
+        bool following = drone.ShipId != 0 && drone.TargetId != 0 && profile.Kind != CombatDroneKind.Sentry;
         var mode =
-            !controlled ? NavigationMode.Stop
+            !following ? NavigationMode.Stop
             : drone.Orbiting ? NavigationMode.Orbit
             : NavigationMode.Follow;
         WriteBallHeader(
@@ -42,9 +43,9 @@ internal static partial class Ballpark
         writer.Write(drone.SpeedLimit);
         WritePosition(writer, drone.Velocity);
         writer.Write(profile.Agility);
-        writer.Write(controlled ? 1f : 0f);
+        writer.Write(following ? 1f : 0f);
         writer.Write((sbyte)-1);
-        if (controlled)
+        if (following)
         {
             writer.Write(drone.TargetId);
             writer.Write((float)(drone.Activity == DroneActivity.ReturningToBay ? 0 : profile.OrbitRange));
