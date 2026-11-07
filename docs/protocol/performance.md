@@ -6,6 +6,100 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## NPC and player capacity, November 6, 2026
+
+`NpcCapacityBenchmarkTests.MeasureNpcAndPlayerCapacityThroughNormalSessions` compares NPC population and connected-player population through normal session ticks on isolated fixture databases. The reproducible runner is `tools/Measure-NpcCapacity.ps1`. This benchmark owns its exact population and disables the fixture's two-belt population seeder through changes to the temporary catalog.
+
+Both ship populations use 50 m radii and 1,500,100 kg masses. Combat gives each ship one turret on a one-second firing cycle, large target ranges and large shields to retain every participant. Players lock and activate their real fitted civilian gun through the router. NPCs acquire the nearest player through normal AI and move, orbit and fire through their ordinary handlers. Every combat NPC must have fired in the final normal frame; every player gun must remain active. Checkpoint verification asserts the exact population, aggression membership and paid NPC deadlines. Idle cases disable NPC acquisition and leave player guns inactive.
+
+The local machine has an Intel Core i5-14600KF (14 cores, 20 logical processors) and 31.8 GiB RAM. Final measurements use Release, .NET SDK 10.0.403, .NET 10.0.14, and `DOTNET_TieredCompilation=0`, retaining optimized compilation while avoiding population-dependent tier promotion during the short samples. The initial default-tiered exploratory sweep is retained separately and is excluded from the final comparison.
+
+Setup time includes fixture creation, cloning, initial snapshots, target locking and first volleys. Four warmup frames precede thirty measured one-second simulation steps. A complete frame advances all connected clients serially, including shared system motion, NPC acquisition, gunfire, observer contacts, notifications and Blue output encoding. Raw output bytes, CPU time, allocations, collection counts and phase timings are recorded. Allocation, SQL and byte rates cover measured frames. Collection totals span warmups, frames, component probes and the final flush; working set is sampled at reporting. Background checkpoints fire on simulated 15-second deadlines, and their capture/write/SQL costs are recorded separately. Three consecutive frames above two seconds stop a case after at least ten samples; the report retains the actual sample count.
+
+The 250 ms p95 threshold is an explicit headroom budget. The 1,000 ms p95 threshold represents the one-second simulation cadence. These are measured workload thresholds for this machine. The fixture excludes network encryption/backpressure, request arrival, missiles, EWAR, drones, death/respawn settlement, mining AI and real-catalog diversity. Production tiered PGO and background machine load can change the results. Existing NPCs in unoccupied systems are not equivalent to this active visible population.
+
+After the normal-session sample, ten component samples measure the existing collision resolver on current NPC positions with zero velocities and ten repeat observer contact reads. A separate ten-sample resident-operation replay advances actual ship/NPC motion, acquisition, player volleys and NPC retaliation through the World APIs using fixed 0.5 accuracy draws, with session housekeeping and output excluded. Full frames retain their ordinary random draws. The latter asserts zero SQL commands, connections and fitting calculations once warmed. It measures component execution time. Complete frames include session housekeeping and output. Inclusive phase timings overlap and must not be added together.
+
+### Measured capacity
+
+Production code was pinned to `8d0882105c939a1e2b03b0b93011732642121cca`. All 28 controlled cases retained thirty measured frames. Every warmed resident-operation probe issued zero SQL commands, connection opens and fitting calculations. Full-frame SQL counts include projections triggered by session transactions.
+
+With the 250 ms p95 headroom budget, the largest passing tested single-player battle had **1,000 NPCs** (161.1 ms p95); **1,250 exceeded it** (279.4 ms). Two players with 1,000 NPCs passed at 236.2 ms. Ten players with 500 NPCs passed near the threshold at 242.4 ms; ten players with 1,000 NPCs took 445.1 ms.
+
+The 1,000 ms cadence budget held for 2,000 fighting NPCs with one player (428.5 ms p95) and ten players (892.4 ms). A 4,000-NPC battle with one player exceeded it at 1,593.5 ms p95. Four thousand idle NPCs with one player took 744.7 ms p95. Capacity between tested populations remains unmeasured.
+
+The following pairs are **median / p95 full-frame milliseconds**.
+
+| NPCs with one player | Idle | Fighting |
+| --- | --- | --- |
+| 0 | 2.6 / 5.8 | n/a |
+| 1 | 3.2 / 8.1 | 4.8 / 7.3 |
+| 100 | 7.2 / 12.2 | 14.5 / 19.4 |
+| 500 | 26.8 / 40.0 | 55.0 / 66.7 |
+| 1,000 | 69.3 / 81.0 | 135.0 / 161.1 |
+| 1,250 | n/a | 246.6 / 279.4 |
+| 1,500 | n/a | 320.9 / 370.1 |
+| 2,000 | 211.2 / 228.9 | 393.1 / 428.5 |
+| 4,000 | 685.9 / 744.7 | 1395.1 / 1593.5 |
+
+The player sweep holds one NPC constant. In the fighting comparison with 101 total ships, 100 NPCs plus one connected player took 14.5 ms median, while 100 connected players plus one NPC took 527.4 ms median. The NPC and player cost curves have different scaling because players introduce additional sessions, personal monitoring and observer output.
+
+| Connected players with one NPC | Idle median / p95 ms | Fighting median / p95 ms | Fighting mean SQL commands / opens |
+| --- | --- | --- | --- |
+| 1 | 3.2 / 8.1 | 4.8 / 7.3 | 25.9 / 9.0 |
+| 10 | 31.1 / 41.3 | 50.9 / 61.1 | 228.6 / 81.9 |
+| 25 | 64.4 / 67.7 | 123.6 / 134.2 | 569.1 / 202.0 |
+| 50 | 132.7 / 135.9 | 244.8 / 270.6 | 1119.8 / 402.0 |
+| 100 | 298.0 / 342.7 | 527.4 / 573.0 | 2238.5 / 802.0 |
+
+| Mixed battle | Median / p95 ms | Mean SQL commands / opens | Mean allocations MiB/frame | Encoded output MiB/step |
+| --- | --- | --- | --- | --- |
+| 2 players, 1,000 NPCs | 207.7 / 236.2 | 3024.8 / 17.0 | 267.5 | 1.30 |
+| 10 players, 100 NPCs | 62.5 / 65.5 | 521.7 / 81.9 | 26.7 | 0.30 |
+| 10 players, 500 NPCs | 207.4 / 242.4 | 1713.7 / 81.9 | 131.0 | 1.37 |
+| 10 players, 1,000 NPCs | 381.7 / 445.1 | 3204.5 / 81.9 | 352.1 | 2.70 |
+| 10 players, 2,000 NPCs | 791.0 / 892.4 | 6192.5 / 81.9 | 1096.7 | 5.38 |
+
+### Where the time goes
+
+| One-player battle | Full-frame median ms | Motion median ms | Projection median ms | NPC-combat phase median ms | Resident-operation component median ms | Mean allocations MiB/frame |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1,000 NPCs | 135.0 | 38.9 | 50.5 | 24.4 | 50.9 | 257.0 |
+| 2,000 NPCs | 393.1 | 155.6 | 108.2 | 90.0 | 197.4 | 914.8 |
+| 4,000 NPCs | 1395.1 | 576.0 | 212.8 | 511.2 | 958.9 | 3355.5 |
+
+At 2,000 idle NPCs, the full frame allocates 657.0 MiB on average and the collision-only component takes 135.6 ms median. At 4,000 fighting NPCs, allocations reach approximately 3.28 GiB per frame; the collision-only component takes 473.5 ms median and the complete resident-operation component takes 958.9 ms. The paired collision loops, heap-allocated position arithmetic and per-hit contributor-map copies explain why both simulation cost and allocations grow faster than NPC count. Their individual CPU shares need a sampling profiler to separate completely.
+
+SQL is also material. A one-player/1,000-NPC battle averages 3,006.4 EF commands and nine EF connection opens per complete frame, while its resident-operation component issues zero. `CombatTransactionBridge` flushes every dirty combat object before every EF transaction, including read snapshots. This moves projection work into session monitoring. Coalescing that work must retain transaction consistency and measure checkpoint capture pauses.
+
+The isolated component omits output and session housekeeping; the full-frame measurement determines the capacity figures. Raw JSON reports include every frame, CPU/SQL/allocation/byte counters, inclusive phase distributions, cold setup and separate checkpoint capture/write/SQL records. Raw SQLite backup/file connections are represented by checkpoint capture/write times and bytes beyond the EF connection counters. Ignored reports live under `artifacts/npc-capacity/{final,mixed,boundary}`. Exploratory tiered runs and the separate development probe remain outside those final result directories.
+
+### Optimization candidates supported by the profile
+
+1. **Prune collision candidates and remove temporary vectors from pair rejection.** `ShipCollisions.Resolve` runs every body against every other body. `Potential` constructs four `SpacePosition` reference objects before rejecting a distant pair. A spatial index using swept bounds can reduce the number of candidates while retaining the existing response calculation and deterministic ordering. Scalar arithmetic in the rejection path can reduce allocations independently. The pinned Carbon engine obtains candidates from `mPartition->GetCollisionCandidates` before invoking `Potential`, in both `Gradient` and `CalculateCollisionResponse`. Preserve high-speed crossings, overlapping hulls and owner/observer ordering in the affected tests. [Eden collision loop](../../src/Eden.Gameplay/Flight/SystemMotion.cs), [position representation](../../src/Eden.Gameplay/Flight/SpacePosition.cs), [Carbon Destiny 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp#L2519-L2548)
+2. **Reduce whole-world projection at read transaction boundaries.** `CombatTransactionBridge.TransactionStarting` flushes every dirty combat object before every EF transaction. Read snapshots can therefore project NPC positions, aggression and combat contributions during ordinary monitoring. The `combat.project` phase and command counts expose this work in the full-frame benchmark, while the component replay remains SQL-free. Narrow the snapshot inputs and preserve coherent reads, rollback isolation, kill/loot settlement and checkpoint recovery. Batch projection work that remains necessary. [Transaction bridge](../../src/Eden.World/Runtime/CombatPersistenceBridge.cs), [resident projection](../../src/Eden.World/Runtime/Combat/LiveCombatProjection.cs)
+3. **Accumulate damage history without copying the victim's entire contributor map per hit.** `LiveNpcCombatRules.Fire` copies `ship.Contributions` on each NPC shot. When many distinct NPCs repeatedly shoot one player, both the map and the number of copies grow with population. Return typed contribution changes and accumulate them under the world owner, or batch volleys against one victim while publishing immutable snapshots. Preserve damage totals, final-blow metadata and checkpoint/restart history. This is a source-supported candidate; the benchmark does not isolate its exact share of CPU time. [NPC volley rules](../../src/Eden.Gameplay/Combat/LiveNpcCombatRules.cs)
+4. **Share versioned NPC contacts and index per-client lookups.** `SimulationContacts` rebuilds a system-wide contact array for callers, while handlers repeatedly test visible membership and locate earlier weapon contacts. Share immutable current views with invalidation on motion, damage, weapon deadlines, EWAR and membership changes. Retain same-tick notifications and visibility rules. The contact/observer component timings quantify the current combined cost. [Resident contacts](../../src/Eden.World/Runtime/Combat/LiveSimulation.cs), [NPC handler](../../src/Eden.Protocol/Combat/NpcCombatHandler.cs), [observer scene](../../src/Eden.Protocol/Flight/FlightNpcScene.cs)
+5. **Review active-object eviction before increasing global populations.** The runtime's 8,192-NPC and 512-ship retention thresholds clear the complete combat cache. Crossing a threshold can cause repeated projection and hydration while those actors remain active. An eviction policy should distinguish active ownership from cold entries and project payments before evicting. The population ladder remains below these thresholds. [Runtime retention](../../src/Eden.World/Runtime/Combat/LiveCombatRuntime.cs)
+
+### Reproduce
+
+```powershell
+.\tools\Measure-NpcCapacity.ps1 -NpcCounts @(0,1,100,500,1000,2000,4000) -PlayerCounts @(10,25,50,100) -Output artifacts/npc-capacity/final
+.\tools\Measure-NpcCapacity.ps1 -NpcPlayers 10 -NpcCounts @(100,500,1000,2000) -PlayerCounts @() -Modes combat -NoBuild -Output artifacts/npc-capacity/mixed
+.\tools\Measure-NpcCapacity.ps1 -NpcPlayers 2 -NpcCounts @(1000) -PlayerCounts @() -Modes combat -NoBuild -Output artifacts/npc-capacity/mixed
+.\tools\Measure-NpcCapacity.ps1 -NpcCounts @(1250,1500) -PlayerCounts @() -Modes combat -NoBuild -Output artifacts/npc-capacity/boundary
+```
+
+The runner restores all environment variables it changes, stops at the first failed validation, and writes a JSON report plus TRX for every case. Normal test execution uses a small two-player/eight-NPC idle case. Large workloads require explicit runner parameters or the `EDEN_CAPACITY_NPCS`, `EDEN_CAPACITY_PLAYERS`, `EDEN_CAPACITY_MODE` and `EDEN_CAPACITY_FRAMES` environment variables. `EDEN_CAPACITY_OUTPUT` chooses the report directory. Benchmark state never uses the normal world save.
+
+**Automated validation.** All 28 controlled population cases passed with thirty measured frames each, taking 778.02 seconds combined test time. The final affected filter `FullyQualifiedName~NpcCapacityBenchmarkTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~NpcAggressionTests` passed 59 tests in 22 seconds. Tool restore, solution restore, the Release solution build (zero warnings/errors), both Python policy suites (3 catalog and 9 formatting cases), formatting across 892 files, strict width checks and diff whitespace passed. The full .NET suite was not requested or run. Development corrected argument adapters, nullable coordinate assignment and an enum spelling before the passing runs. Assertions added after the capacity runs verify the matched masses and radii; the final small replay passed those checks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this automated benchmark milestone.
+
+
 ## Resident drone flight and combat, November 6, 2026
 
 Controlled drones now advance on typed resident state under the existing world owner. The system view shares current identities, profiles, positions and health across sessions. Pilot inputs retain skills, fit bandwidth/control distance, qualifications and aggression settings until the corresponding committed rows or catalog change. Contact comparison uses an identity lookup to avoid repeatedly scanning the old contact array for every visible drone.
@@ -58,6 +152,8 @@ The focused filter `FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~Com
 **Optional maintainer checks:** None.
 
 ## Contents
+
+- [NPC and player capacity (November 6, 2026)](#npc-and-player-capacity-november-6-2026)
 
 - [Resident drone flight and combat (November 6, 2026)](#resident-drone-flight-and-combat-november-6-2026)
 - [Shared drone contacts (November 6, 2026)](#shared-drone-contacts-november-6-2026)
