@@ -49,6 +49,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Connection admission and stalled transport recovery, November 6, 2026](protocol/startup.md#connection-admission-and-stalled-transport-recovery-november-6-2026)
 
+- [Space cleanup after drone scoop and recall, November 6, 2026](protocol/drones.md#space-cleanup-after-drone-scoop-and-recall-november-6-2026)
 - [Approaching and orbiting drone contacts, November 6, 2026](protocol/drones.md#approaching-and-orbiting-drone-contacts-november-6-2026)
 - [Drone control after changing ships and lost-drone recovery, November 6, 2026](protocol/drones.md#drone-control-after-changing-ships-and-lost-drone-recovery-november-6-2026)
 - [Launch inventory and normal-undock synchronization, November 6, 2026](protocol/drones.md#launch-inventory-and-normal-undock-synchronization-november-6-2026)

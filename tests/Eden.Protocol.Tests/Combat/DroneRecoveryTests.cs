@@ -26,6 +26,83 @@ public sealed class DroneRecoveryTests(ITestOutputHelper output)
     private const int SystemId = 30000144;
 
     [Theory]
+    [InlineData("cargo")]
+    [InlineData("scoopBay")]
+    [InlineData("recall")]
+    public void ScoopingAndRecallingFiveDronesQueuesRemovalForOwnerAndObserver(string route)
+    {
+        using Fixture f = new();
+        var ids = f.Launch(quantity: 5);
+        if (route != "recall")
+        {
+            f.Drones.Release(f.Pilot, f.Ship);
+        }
+        var wing = f.Base.Db.Store.FindPilot(1000002)!;
+        var position = f.Base.Db.Store.FindPilot(1000001)!.Position!;
+        f.Base.Db.Store.SetPosition(wing.ShipId, position + new SpacePosition(100, 0, 0), SystemId);
+        using var ownerScope = f.Base.Db.Services.CreateScope();
+        using var observerScope = f.Base.Db.Services.CreateScope();
+        using var owner = Context(f, ownerScope.ServiceProvider, 1000001);
+        using var observer = Context(f, observerScope.ServiceProvider, 1000002);
+        owner.Flight.Snapshot();
+        observer.Flight.Snapshot();
+        Assert.Equal(5, observer.Flight.VisibleDrones.Count);
+        owner.Flight.Updates.Clear();
+        observer.Flight.Updates.Clear();
+        foreach (long id in ids)
+        {
+            if (route == "recall")
+            {
+                Command(ownerScope.ServiceProvider, owner, "CmdReturnBay", new List<object?> { id });
+            }
+            else
+            {
+                object?[] args = route == "scoopBay" ? [new object?[] { id }] : [id];
+                Reply(Bound(ownerScope.ServiceProvider, owner, "ship", route == "scoopBay" ? "ScoopDrone" : "Scoop", args));
+            }
+        }
+        if (route == "recall")
+        {
+            f.Base.Clock.Seconds++;
+            ownerScope.ServiceProvider.GetRequiredService<DroneHandler>().Advance(owner);
+        }
+        observer.Flight.RefreshDrones();
+        foreach (var viewer in new[] { owner, observer })
+        {
+            Assert.Empty(viewer.Flight.VisibleDrones);
+            var removals = viewer.Flight.Updates.Where(u => u.Command is DestinyCommand.RemoveBall).ToArray();
+            Assert.Equal(ids.Order(), removals.Select(u => ((DestinyCommand.RemoveBall)u.Command).Id).Order());
+            Assert.All(removals, u => Assert.False(((DestinyCommand.RemoveBall)u.Command).Explode));
+            var wire = removals.Select(u => BlueMarshal.Decode(BlueMarshal.Encode(u))).ToArray();
+            output.WriteLine("DRONE_REMOVAL=" + JsonSerializer.Serialize(new { ids, wire }));
+            // RealFlushState appends its own explosion map to these server arguments.
+            foreach (var value in wire)
+            {
+                var update = Assert.IsType<object?[]>(value);
+                var command = Assert.IsType<object?[]>(update[1]);
+                Assert.Equal("RemoveBalls", BlueMarshal.Text(command[0]));
+                var arguments = Assert.IsType<object?[]>(command[1]);
+                Assert.Single(arguments);
+            }
+            viewer.Flight.Updates.Clear();
+            viewer.Flight.RefreshDrones();
+            Assert.DoesNotContain(viewer.Flight.Updates, u => u.Command is DestinyCommand.RemoveBall);
+        }
+        using WorldDbContext reopened = new(f.Base.Db.Path);
+        Assert.All(
+            ids,
+            id =>
+            {
+                var item = reopened.Set<OwnedItem>().Find(id)!;
+                Assert.Equal(f.Ship, item.LocationId);
+                Assert.Equal((int)(route == "cargo" ? InventoryFlag.Cargo : InventoryFlag.DroneBay), item.FlagId);
+                Assert.Equal(1, item.Quantity);
+                Assert.Null(reopened.Set<WorldDrone>().Find(id)!.SystemId);
+            }
+        );
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void OverviewTupleAndPanelListScoopTheSameIndividual(bool tuple)

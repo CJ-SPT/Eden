@@ -28,9 +28,10 @@ internal abstract record DestinyCommand(string Name) : BlueModel
 
     internal sealed record RemoveBall(long Id, bool Explode) : DestinyCommand(Explode ? "RemoveBall" : "RemoveBalls")
     {
-        // Bulk removal notifies DoBallsRemove before deleting native balls,
-        // letting brackets close their labels and bindings while the ball is alive.
-        protected override object?[] Arguments => Explode ? [Id, true] : [new BlueList<long>([Id]), null, false];
+        // Park.RealFlushState appends the explosion map before calling RemoveBalls.
+        // Send only the ID list. Supplying optional local-handler arguments here
+        // makes the native dispatch exceed its arity and leaves stale space objects.
+        protected override object?[] Arguments => Explode ? [Id, true] : [new BlueList<long>([Id])];
     }
 
     internal sealed record AddBalls(BallparkAddition Addition) : DestinyCommand("AddBalls")

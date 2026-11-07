@@ -114,19 +114,7 @@ public sealed class TypedFlightTests
     [Fact]
     public void DeparturesUseNativeBulkCleanupWhileDestructionKeepsTheExplosionPath()
     {
-        Equal(
-            new object?[]
-            {
-                "RemoveBalls",
-                new object?[]
-                {
-                    new List<object?> { 10L },
-                    null,
-                    false,
-                },
-            },
-            new DestinyCommand.RemoveBall(10, false)
-        );
+        Equal(new object?[] { "RemoveBalls", new object?[] { new List<object?> { 10L } } }, new DestinyCommand.RemoveBall(10, false));
         Equal(new object?[] { "RemoveBall", new object?[] { 10L, true } }, new DestinyCommand.RemoveBall(10, true));
     }
 }

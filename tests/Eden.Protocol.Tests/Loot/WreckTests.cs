@@ -298,17 +298,7 @@ public sealed class WreckTests
         flight.RefreshWrecks();
         var removed = Assert.Single(flight.WireUpdates().Cast<object?[]>().Select(u => (object?[])u[1]!));
         Assert.Equal("RemoveBalls", removed[0]);
-        Assert.Equal(
-            BlueMarshal.Encode(
-                new object?[]
-                {
-                    new List<object?> { f.Wreck.Id },
-                    null,
-                    false,
-                }
-            ),
-            BlueMarshal.Encode(removed[1])
-        );
+        Assert.Equal(BlueMarshal.Encode(new object?[] { new List<object?> { f.Wreck.Id } }), BlueMarshal.Encode(removed[1]));
         Assert.Empty(flight.VisibleWrecks);
     }
 
