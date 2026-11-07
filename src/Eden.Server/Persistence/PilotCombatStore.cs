@@ -301,7 +301,11 @@ internal sealed class PilotCombatStore(
                     victim.Id,
                     pilotId,
                     pilot.ActiveShipId,
-                    shot,
+                    shot.Health,
+                    shot.Weapon.Damage.Scale(shot.Quality),
+                    shot.Applied,
+                    shot.Quality,
+                    shot.Weapon.TypeId,
                     paid.Count > 1,
                     settlement.Destroyed ? lookup.FindPilot(victim.AccountId, victim.Id)! : null,
                     insurance

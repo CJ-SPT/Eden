@@ -468,6 +468,6 @@ public sealed class CrimewatchTests
         Assert.Empty(reopened.Set<SavedCrimewatch>());
         Assert.Empty(reopened.Set<SavedEngagement>());
         Assert.Empty(reopened.Set<SavedLogoff>());
-        Assert.Equal(91, WorldMigration.CurrentVersion);
+        Assert.Equal(92, WorldMigration.CurrentVersion);
     }
 }

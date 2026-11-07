@@ -115,7 +115,7 @@ internal sealed record ShipContact(
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null)
+internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
@@ -351,6 +351,28 @@ internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null)
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)
                 .ToArray();
+        }
+    }
+
+    public PilotCombatPresence? Find(int systemId, long shipId)
+    {
+        lock (MotionLock)
+        {
+            if (_ships.TryGetValue(shipId, out var ship))
+            {
+                return
+                    ship.Pilot.SystemId == systemId
+                    && ship.Pilot.Position is { } position
+                    && ship.Warp is null
+                    && ship.DepartureGate is null
+                    && !ship.Arriving
+                    && ship.Health?.Remaining.Destroyed != true
+                    ? new(shipId, position, ship.Velocity)
+                    : null;
+            }
+            return crimewatch?.LoggedOff(systemId).FirstOrDefault(p => p.Pilot.ShipId == shipId)?.Pilot.Position is { } offline
+                ? new(shipId, offline, SpacePosition.Zero)
+                : null;
         }
     }
 }

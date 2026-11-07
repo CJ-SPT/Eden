@@ -351,8 +351,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldMissile>().ToTable("WorldMissile").HasKey(m => m.Id);
         model.Entity<WorldMissile>().Property(m => m.Id).ValueGeneratedOnAdd();
         model.Entity<WorldMissile>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId);
-        // Source/target identities are discriminated by SourceKind: a player
-        // projectile targets an NPC; an NPC projectile targets a player ship.
+        // SourceKind and TargetKind discriminate player and NPC identities.
         // Operations validate availability; historical identities outlive hulls.
         // A launched projectile retains its module identity after destruction
         // or unfitting; ModuleId deliberately has no inventory foreign key.

@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol;
 using Eden.Server.Catalog;
@@ -11,7 +13,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.Server.Persistence;
 
 [Injectable]
-internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clock, SecurityStatusSignal security) : IPilotMissiles
+internal sealed partial class PilotMissileStore(
+    WorldDatabase database,
+    TimeProvider clock,
+    SecurityStatusSignal security,
+    IPilotCombatPresence presence,
+    SqliteWorld lookup,
+    IShipLootRoll lootRoll,
+    IPilotDamageEvents damageEvents
+) : IPilotMissiles
 {
     private const int HistorySeconds = 120;
 
@@ -57,7 +67,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         return launches;
     }
 
-    private static MissileLaunch LaunchCore(
+    private MissileLaunch LaunchCore(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
@@ -133,44 +143,80 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             var aggressors = world.Set<NpcAggression>().Where(a => a.TargetShipId == pilot.ActiveShipId).Select(a => a.NpcId).ToArray();
             var candidates = world
                 .Set<WorldNpc>()
-                .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null && aggressors.Contains(n.Id))
+                .Where(n =>
+                    n.SystemId == systemId
+                    && n.DestroyedAt == null
+                    && n.RetiredAt == null
+                    && n.Navigation != NpcNavigationState.Warping
+                    && aggressors.Contains(n.Id)
+                )
                 .AsEnumerable()
                 .Select(n => new MissileAggressor(n.Id, NpcMotion.Position(n)))
                 .ToArray();
-            targetId = MissileRules.AcquireAggressor(origin, maximumRange, candidates);
+            var pilotAggressors = world
+                .Set<SavedPilotHostility>()
+                .Where(h => h.TargetShipId == pilot.ActiveShipId && h.ExpiresAt > now)
+                .Select(h => h.SourceShipId)
+                .ToArray()
+                .Select(id => presence.Find(systemId, id))
+                .OfType<PilotCombatPresence>()
+                .Where(p => EligibleAutomaticTarget(world, catalog, pilot, p.ShipId, systemId, now))
+                .Select(p => new MissileAggressor(p.ShipId, p.Position));
+            targetId = MissileRules.AcquireAggressor(origin, maximumRange, candidates.Concat(pilotAggressors).ToArray());
         }
         else if (targetId is not long selected || !lockedTargets.Contains(selected))
         {
-            throw new InvalidDataException("Lock a nearby NPC before launching missiles.");
+            throw new InvalidDataException("Lock a nearby ship before launching missiles.");
         }
         var npc = targetId is long id ? world.Set<WorldNpc>().Find(id) : null;
-        if (
-            npc is null
-            || npc.DestroyedAt.HasValue
-            || npc.RetiredAt.HasValue
-            || npc.SystemId != systemId
-            || npc.Navigation == NpcNavigationState.Warping
-        )
+        Pilot? victim = null;
+        AggressionDecision? aggression = null;
+        MissileTarget target;
+        ItemType targetType;
+        if (npc is not null)
         {
-            throw new InvalidDataException(automatic ? "No attacking NPC is available for automatic missiles." : "The NPC is unavailable.");
+            if (
+                npc.DestroyedAt.HasValue
+                || npc.RetiredAt.HasValue
+                || npc.SystemId != systemId
+                || npc.Navigation == NpcNavigationState.Warping
+            )
+            {
+                throw new InvalidDataException("The NPC is unavailable.");
+            }
+            targetType = catalog.Set<ItemType>().Find(npc.TypeId)!;
+            target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
         }
-        var npcType = catalog.Set<ItemType>().Find(npc.TypeId)!;
+        else
+        {
+            victim = targetId is long shipId ? FindVictim(world, catalog, systemId, shipId, now) : null;
+            var contact = targetId is long targetShip ? presence.Find(systemId, targetShip) : null;
+            if (victim is null || victim.Id == pilotId || contact is null)
+            {
+                throw new InvalidDataException("No eligible attacking ship is available, or the target is unavailable.");
+            }
+            aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, systemId, now);
+            targetType = catalog.Set<ItemType>().Find(victim.ActiveShip.TypeId)!;
+            target = new(contact.Position, contact.Velocity, (float)(targetType.Radius ?? 0));
+        }
         var sourceType = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!;
-        double distance = Math.Max(0, origin.DistanceTo(NpcMotion.Position(npc)) - (sourceType.Radius ?? 0) - (npcType.Radius ?? 0));
+        double distance = Math.Max(0, origin.DistanceTo(target.Position) - (sourceType.Radius ?? 0) - (targetType.Radius ?? 0));
         if (distance > maximumRange || distance > NpcEncounterDefinitions.VisibilityRange)
         {
-            throw new InvalidDataException("The NPC is outside missile targeting range.");
+            throw new InvalidDataException("The target is outside missile targeting range.");
         }
         var drive = MissileChargeCatalog.Drive(catalog, loaded.TypeId, charge);
         var warhead = MissileRules.Warhead(charge, calculation.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier));
         var flight = MissileFlightRules.Launch(
             drive,
             new(origin, motion.Velocity, motion.MaximumSpeed, motion.RearDirection),
-            new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(npcType.Radius ?? 0)),
+            target,
             charge.GetValueOrDefault(DogmaAttributeId.AimedMissileLaunch) != 0
         );
         MissilePayload payload = new(flight, warhead);
-        long launchBoundary = now - now % TimeSpan.TicksPerSecond;
+        // Pilot contacts describe the launch instant. Rounding their birth down
+        // would backdate moving targets and make interception depend on clock phase.
+        long launchBoundary = victim is null ? now - now % TimeSpan.TicksPerSecond : now;
         var projectile = world
             .Set<WorldMissile>()
             .Add(
@@ -184,8 +230,9 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                     ChargeTypeId = loaded.TypeId,
                     GroupId = chargeType.GroupId,
                     SystemId = systemId,
-                    TargetId = npc.Id,
-                    TargetRadius = (float)(npcType.Radius ?? 0),
+                    TargetId = targetId!.Value,
+                    TargetKind = victim is null ? MissileTargetKind.Npc : MissileTargetKind.Pilot,
+                    TargetRadius = target.Radius,
                     CorporationId = pilot.CorporationId,
                     LaunchStamp = motion.Stamp,
                     LaunchedAt = launchBoundary,
@@ -205,8 +252,15 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
         // Retaliation begins on the offensive launch, not after flight time.
-        NpcHostility.Record(world, catalog, npc, pilot.ActiveShipId, now);
-        CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
+        if (victim is not null)
+        {
+            CrimewatchPersistence.Player(world, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
+        }
+        else
+        {
+            NpcHostility.Record(world, catalog, npc!, pilot.ActiveShipId, now);
+            CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
+        }
         world.SaveChanges();
         return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);
     }
@@ -219,6 +273,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             return;
         }
         bool destroyed = false;
+        List<PendingPilotImpact> pilotImpacts = [];
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -276,7 +331,7 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             foreach (var row in due.Where(m => m.UpdatedAt == boundary))
             {
                 var payload = row.Payload();
-                var npc = world.Set<WorldNpc>().Find(row.TargetId);
+                var npc = row.TargetKind == MissileTargetKind.Npc ? world.Set<WorldNpc>().Find(row.TargetId) : null;
                 MissileTarget? target = null;
                 if (
                     npc is { DestroyedAt: null, RetiredAt: null }
@@ -287,6 +342,16 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
                     double offset = npc.MotionAt == 0 ? 0 : (row.UpdatedAt - npc.MotionAt) / (double)TimeSpan.TicksPerSecond;
                     target = new(NpcMotion.Position(npc) + NpcMotion.Velocity(npc) * offset, NpcMotion.Velocity(npc), row.TargetRadius);
                 }
+                if (
+                    row.TargetKind == MissileTargetKind.Pilot
+                    && FindVictim(world, catalog, systemId, row.TargetId, now) is not null
+                    && presence.Find(systemId, row.TargetId) is { } contact
+                )
+                {
+                    // The contact is current. Reconstruct this step's start for the existing flight integrator.
+                    double offset = Math.Min(0, (row.UpdatedAt - now) / (double)TimeSpan.TicksPerSecond);
+                    target = new(contact.Position + contact.Velocity * offset, contact.Velocity, row.TargetRadius);
+                }
                 var next = MissileFlightRules.Tick(payload.Flight, target);
                 long time = checked(row.LaunchedAt + (long)Math.Round(next.ElapsedSeconds * TimeSpan.TicksPerSecond));
                 steps.Add(new(row, payload with { Flight = next }, npc, time));
@@ -294,12 +359,26 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
             foreach (var step in steps.OrderBy(s => s.Time).ThenBy(s => s.Row.Id))
             {
                 var (row, payload, npc, time) = step;
+                if (world.Pilots.Find(row.PilotId)!.ActiveShipId != row.SourceShipId)
+                {
+                    row.Status = MissileFlightStatus.Expired;
+                    row.EndedAt = time;
+                    continue;
+                }
                 row.Save(payload);
                 row.UpdatedAt = time;
                 row.Status = payload.Flight.Status;
                 if (row.Status != MissileFlightStatus.Flying)
                 {
                     row.EndedAt = time;
+                }
+                if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
+                {
+                    var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
+                    if (victim is not null && presence.Find(systemId, row.TargetId) is { } contact)
+                    {
+                        pilotImpacts.Add(ApplyPilotImpact(world, catalog, row, payload, victim, contact, time));
+                    }
                 }
                 if (
                     row.Status == MissileFlightStatus.Impact
@@ -350,6 +429,15 @@ internal sealed class PilotMissileStore(WorldDatabase database, TimeProvider clo
         world.Set<WorldMissile>().Where(m => m.EndedAt < oldest && (m.Outcome == null || m.Reported)).ExecuteDelete();
         world.SaveChanges();
         transaction.Commit();
+        foreach (var impact in pilotImpacts)
+        {
+            damageEvents.Publish(
+                impact.Damage with
+                {
+                    Capsule = impact.Damage.Health.Remaining.Destroyed ? lookup.FindPilot(impact.AccountId, impact.Damage.PilotId)! : null,
+                }
+            );
+        }
         if (destroyed)
         {
             security.Publish();

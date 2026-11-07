@@ -58,6 +58,13 @@ internal static class CrimewatchPersistence
         attacker.SystemId = target.SystemId = system;
         attacker.Apply(CrimewatchRules.Player(attacker.Timers(), end, decision.Flag, true, now));
         target.Apply(CrimewatchRules.Player(target.Timers(), end, CrimewatchFlag.None, false, now));
+        long sourceShip = world.Pilots.Find(source)!.ActiveShipId;
+        long victimShip = world.Pilots.Find(victim)!.ActiveShipId;
+        world.Set<SavedPilotHostility>().Where(h => h.ExpiresAt <= now).ExecuteDelete();
+        var hostility =
+            world.Set<SavedPilotHostility>().Find(sourceShip, victimShip)
+            ?? world.Add(new SavedPilotHostility { SourceShipId = sourceShip, TargetShipId = victimShip }).Entity;
+        hostility.ExpiresAt = Math.Max(hostility.ExpiresAt, checked(end + CrimewatchRules.PvpDuration.Ticks));
         if (decision.Engagement)
         {
             var engagement =
@@ -71,6 +78,20 @@ internal static class CrimewatchPersistence
         if (world.Set<SavedLogoff>().Find(victim) is { } logoff)
         {
             logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, target.PvpUntil);
+        }
+    }
+
+    internal static void PlayerImpact(WorldDbContext world, long source, long victim, int system, long now)
+    {
+        foreach (long pilotId in new[] { source, victim })
+        {
+            var state = State(world, pilotId);
+            state.SystemId = system;
+            state.Apply(state.Timers() with { Pvp = CrimewatchRules.Extend(state.Timers().Pvp, now, CrimewatchRules.PvpDuration) });
+            if (world.Set<SavedLogoff>().Find(pilotId) is { } logoff)
+            {
+                logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, state.PvpUntil);
+            }
         }
     }
 

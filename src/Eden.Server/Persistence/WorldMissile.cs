@@ -17,6 +17,7 @@ public sealed class WorldMissile
     public int GroupId { get; set; }
     public int SystemId { get; set; }
     public long TargetId { get; set; }
+    public MissileTargetKind TargetKind { get; set; }
     public float TargetRadius { get; set; }
     public int CorporationId { get; set; }
     public int LaunchStamp { get; set; }

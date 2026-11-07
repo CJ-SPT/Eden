@@ -187,6 +187,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             missiles.Advance(context);
         }
+        ApplyPlayerDamage(context);
         shields.Advance(context);
         using (SessionPerformance.Phase("update.repairs"))
         {

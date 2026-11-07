@@ -69,6 +69,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             new WorldMissile
             {
                 SourceKind = MissileSourceKind.Npc,
+                TargetKind = MissileTargetKind.Pilot,
                 SourceTypeId = source.Id,
                 PilotId = pilot.Id,
                 SourceShipId = npc.Id,

@@ -99,6 +99,10 @@ internal sealed class MissileHandler(
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var locked = context.Flight.VisibleNpcs.Where(n => targeting.IsLocked(n.Id)).Select(n => n.Id).ToHashSet();
+        if (target is long pilotTarget && targeting.IsLocked(pilotTarget) && context.Flight.FindPilotWeaponTarget(pilotTarget) is not null)
+        {
+            locked.Add(pilotTarget);
+        }
         var launches = missiles.LaunchBank(
             context.Pilot.PilotId,
             module,
@@ -185,10 +189,7 @@ internal sealed class MissileHandler(
         }
         foreach (var cycle in _cycles.Values.ToArray())
         {
-            if (
-                !cycle.Launcher.Automatic
-                && (!targeting.IsLocked(cycle.Target) || !context.Flight.VisibleNpcs.Any(n => n.Id == cycle.Target))
-            )
+            if (!cycle.Launcher.Automatic && (!targeting.IsLocked(cycle.Target) || context.Flight.FindTarget(cycle.Target) is null))
             {
                 Stop(context, cycle);
                 continue;

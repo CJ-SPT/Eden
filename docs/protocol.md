@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Pilot missile combat and automatic retaliation, November 6, 2026](protocol/combat.md#pilot-missile-combat-and-automatic-retaliation-november-6-2026)
+
 - [Pilot turret combat and loss settlement, November 6, 2026](protocol/combat.md#pilot-turret-combat-and-loss-settlement-november-6-2026)
 
 - [Enforced safety and persistent aggression, November 6, 2026](protocol/combat.md#enforced-safety-and-persistent-aggression-november-6-2026)

@@ -74,12 +74,7 @@ internal sealed record DamageMessageNotification(CombatMessage Message) : PilotN
 }
 
 internal sealed record PilotIncomingCombatMessage(PilotDamage Hit)
-    : CombatMessage(
-        Hit.Shot.Applied,
-        CombatMessages.HitQuality(Hit.Shot.Quality),
-        Hit.Shot.Weapon.TypeId,
-        Hit.Shot.Weapon.Damage.Scale(Hit.Shot.Quality)
-    )
+    : CombatMessage(Hit.Applied, CombatMessages.HitQuality(Hit.Quality), Hit.WeaponType, Hit.Damage)
 {
     public override Dictionary<string, object?> ToBlue() =>
         new()

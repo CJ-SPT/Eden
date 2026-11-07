@@ -10,7 +10,7 @@ internal sealed class PilotDamageSignal(SharedSpace space) : IPilotDamageEvents
 
     public void Publish(PilotDamage damage)
     {
-        space.ApplyDamage(damage.Shot.Health);
+        space.ApplyDamage(damage.Health);
         Applied?.Invoke(damage);
     }
 }

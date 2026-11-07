@@ -5,6 +5,12 @@ namespace Eden.Gameplay.Combat;
 
 public sealed record MissileFiringState(SpacePosition Velocity, float MaximumSpeed, SpacePosition RearDirection, int Stamp);
 
+public enum MissileTargetKind
+{
+    Npc,
+    Pilot,
+}
+
 public sealed record MissileAggressor(long Id, SpacePosition Position);
 
 public sealed record MissileLauncher(long ItemId, int TypeId, int ChargeTypeId, double CycleMilliseconds, bool Automatic);

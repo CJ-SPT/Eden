@@ -55,18 +55,18 @@ internal sealed class PilotDamageMonitor(
         // Never hold the inbox lock while loss handling enters world persistence.
         foreach (var damage in pending)
         {
-            var shot = damage.Shot;
-            if (!context.Selected || shot.Health.ShipId != context.Pilot.ShipId)
+            var health = damage.Health;
+            if (!context.Selected || health.ShipId != context.Pilot.ShipId)
             {
                 continue;
             }
             context.NotificationsBeforeFlight.Add(new DamageMessageNotification(new PilotIncomingCombatMessage(damage)));
-            context.Flight.NotifyHealth(shot.Health);
+            context.Flight.NotifyHealth(health);
             context.Notifications.Add(
                 new ModuleAttributesChanged([
-                    Attribute(DogmaAttributeId.ShieldCharge, shot.Health.Remaining.Shield),
-                    Attribute(DogmaAttributeId.ArmorDamage, shot.Health.Defense.Armor - shot.Health.Remaining.Armor),
-                    Attribute(DogmaAttributeId.Damage, shot.Health.Defense.Structure - shot.Health.Remaining.Structure),
+                    Attribute(DogmaAttributeId.ShieldCharge, health.Remaining.Shield),
+                    Attribute(DogmaAttributeId.ArmorDamage, health.Defense.Armor - health.Remaining.Armor),
+                    Attribute(DogmaAttributeId.Damage, health.Defense.Structure - health.Remaining.Structure),
                 ])
             );
             if (damage.Capsule is { } capsule)
