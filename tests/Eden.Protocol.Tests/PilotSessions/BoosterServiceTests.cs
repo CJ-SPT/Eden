@@ -1,4 +1,3 @@
-using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
@@ -6,7 +5,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
-using Eden.Server.Persistence;
+using Eden.World.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;

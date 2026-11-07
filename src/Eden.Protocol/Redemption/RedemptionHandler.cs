@@ -1,6 +1,7 @@
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Fittings;
@@ -7,7 +6,9 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

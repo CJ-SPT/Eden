@@ -2,9 +2,12 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
-using Eden.Protocol.PilotSessions;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.Infrastructure.Diagnostics;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Propulsion;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Combat;

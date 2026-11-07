@@ -5,8 +5,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Propulsion;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Loot;
+using Eden.Infrastructure.Registration;
 
 namespace Eden.Protocol.Flight;
 

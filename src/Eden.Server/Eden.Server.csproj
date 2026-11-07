@@ -4,6 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
+    <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />
+    <ProjectReference Include="../Eden.World/Eden.World.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -13,9 +15,7 @@
     <ProjectReference Include="../Eden.Protocol/Eden.Protocol.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Persistence/starter-market.json" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
   </ItemGroup>
 </Project>

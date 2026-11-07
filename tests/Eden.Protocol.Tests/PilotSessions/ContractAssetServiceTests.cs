@@ -5,8 +5,9 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

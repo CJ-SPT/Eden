@@ -1,6 +1,4 @@
 using Eden.Gameplay.Dogma;
-using Eden.Gameplay.Mining;
-using Eden.Gameplay.Propulsion;
 
 namespace Eden.Gameplay.Inventory;
 

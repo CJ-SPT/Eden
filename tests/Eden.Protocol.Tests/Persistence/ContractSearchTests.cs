@@ -1,7 +1,7 @@
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Inventory;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

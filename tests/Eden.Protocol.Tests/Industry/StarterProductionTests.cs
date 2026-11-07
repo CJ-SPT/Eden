@@ -13,9 +13,15 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
+using Eden.World.Economy;
+using Eden.World.Fittings;
+using Eden.World.Market;
+using Eden.World.Mining;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -3,10 +3,10 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;

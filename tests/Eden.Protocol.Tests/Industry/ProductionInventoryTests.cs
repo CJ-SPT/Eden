@@ -1,13 +1,13 @@
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
-using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Industry.StarterProductionTests.Fixture;

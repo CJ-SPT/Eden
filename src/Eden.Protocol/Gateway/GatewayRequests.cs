@@ -1,3 +1,4 @@
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Gateway.Plans;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;

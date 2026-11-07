@@ -1,6 +1,5 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
-using Eden.Gameplay.Market;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;

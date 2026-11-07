@@ -2,10 +2,12 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Skills;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;

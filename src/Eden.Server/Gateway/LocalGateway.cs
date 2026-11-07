@@ -1,5 +1,6 @@
 using System.Net;
-using Eden.Protocol;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Gateway;
 using Eden.Server.Launcher;
 using Google.Protobuf.WellKnownTypes;

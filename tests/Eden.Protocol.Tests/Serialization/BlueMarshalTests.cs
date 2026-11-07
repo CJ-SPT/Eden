@@ -1,5 +1,4 @@
 using Eden.Protocol.Docking;
-using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Tests.Serialization;

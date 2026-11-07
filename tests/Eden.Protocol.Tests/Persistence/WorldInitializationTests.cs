@@ -1,6 +1,9 @@
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Combat;
+using Eden.World.Docking;
+using Eden.World.Drones;
+using Eden.World.Mining;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

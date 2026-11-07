@@ -5,7 +5,8 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
-using Eden.Protocol;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Chat;
 using Microsoft.Extensions.DependencyInjection;
 

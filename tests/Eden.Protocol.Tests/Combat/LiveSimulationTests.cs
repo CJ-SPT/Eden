@@ -2,8 +2,12 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
-using Eden.Protocol.PilotSessions;
-using Eden.Server.Persistence;
+using Eden.Infrastructure.Diagnostics;
+using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
+using Eden.World.Propulsion;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

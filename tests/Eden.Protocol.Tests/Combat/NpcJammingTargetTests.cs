@@ -1,8 +1,9 @@
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
-using Eden.Server.Persistence;
+using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;

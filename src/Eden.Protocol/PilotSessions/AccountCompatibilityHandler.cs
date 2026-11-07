@@ -1,6 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
-using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;

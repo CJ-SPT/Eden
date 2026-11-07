@@ -1,5 +1,4 @@
 using Eden.Gameplay.Corporations;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;

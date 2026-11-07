@@ -4,10 +4,6 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Loot;
-using Eden.Protocol.Mining;
-using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 

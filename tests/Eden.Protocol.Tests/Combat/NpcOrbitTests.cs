@@ -1,13 +1,12 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;

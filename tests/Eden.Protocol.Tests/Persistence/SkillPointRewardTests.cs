@@ -1,7 +1,6 @@
-using Eden.Gameplay.Redemption;
-using Eden.Gameplay.Skills;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Inventory;
+using Eden.World.Redemption;
+using Eden.World.Storage;
 
 namespace Eden.Protocol.Tests.Persistence;
 

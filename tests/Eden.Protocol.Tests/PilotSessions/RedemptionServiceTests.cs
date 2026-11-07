@@ -4,8 +4,8 @@ using Eden.Protocol.Redemption;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;

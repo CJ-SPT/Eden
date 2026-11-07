@@ -2,7 +2,6 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
-using Eden.Gameplay.Propulsion;
 
 namespace Eden.Gameplay.Combat;
 

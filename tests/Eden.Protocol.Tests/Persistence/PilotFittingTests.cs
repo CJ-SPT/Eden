@@ -5,8 +5,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Persistence;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +15,7 @@ public sealed class PilotFittingTests
 {
     private static void Prepare(TestWorld db)
     {
-        using Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
+        using Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw(
             """
             INSERT INTO DogmaAttribute(Id,Name) VALUES (14,'hiSlots'),(48,'cpuOutput'),(11,'powerOutput'),(50,'cpu'),(30,'power'),
@@ -102,7 +101,7 @@ public sealed class PilotFittingTests
             world.Database.ExecuteSqlRaw("INSERT INTO WorldPilotSkill VALUES (90000001,3386,250)");
         }
         var module = fitting.Fit(pilot.PilotId, [stack], pilot.StationId, (int)InventoryFlag.AutoFit)[^1].Item;
-        using (Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        using (Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw("UPDATE TypeAttribute SET Value=64 WHERE ItemTypeId=601 AND AttributeId=48");
         }

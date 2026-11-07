@@ -5,7 +5,6 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
-using Eden.Protocol.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Docking;
@@ -16,7 +15,7 @@ public sealed class StationGuestTests
     public void TickerPrimingResolvesNpcCorporationsWithoutVisiblePilotsAndIgnoresUnknownIds()
     {
         using TestWorld world = new();
-        PassiveCatalogFixture.LoadNpcPopulation(new Eden.Server.Persistence.WorldDatabase(world.Path).CatalogPath);
+        PassiveCatalogFixture.LoadNpcPopulation(new Eden.World.Storage.WorldDatabase(world.Path).CatalogPath);
         using Client client = new(world, world.Store.FindPilot(1000001)!);
         foreach (bool selected in new[] { true, false })
         {

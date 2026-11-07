@@ -1,12 +1,11 @@
 using System.Text.Json;
 using Eden.Gameplay.Characters;
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Flight;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

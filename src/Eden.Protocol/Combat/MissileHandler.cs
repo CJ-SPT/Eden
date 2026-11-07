@@ -1,9 +1,8 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
-using Eden.Gameplay.Dogma;
-using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;

@@ -1,8 +1,7 @@
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 
 namespace Eden.Protocol.Tests.Persistence;
 

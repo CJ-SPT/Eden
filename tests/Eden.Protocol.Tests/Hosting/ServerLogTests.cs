@@ -1,4 +1,4 @@
-using Eden.Server;
+using Eden.Infrastructure.Diagnostics;
 
 namespace Eden.Protocol.Tests.Hosting;
 

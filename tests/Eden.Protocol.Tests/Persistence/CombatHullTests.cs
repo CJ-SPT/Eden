@@ -1,9 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using Eden.Gameplay.Ships;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Persistence;

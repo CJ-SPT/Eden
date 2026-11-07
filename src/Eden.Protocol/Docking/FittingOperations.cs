@@ -1,22 +1,10 @@
-using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
-using Eden.Gameplay.Loot;
-using Eden.Gameplay.Mining;
-using Eden.Gameplay.Propulsion;
-using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
-using Eden.Protocol.Ammunition;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Loot;
-using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Propulsion;
-using Eden.Protocol.Repair;
-using Eden.Protocol.Serialization;
-using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Docking;
 

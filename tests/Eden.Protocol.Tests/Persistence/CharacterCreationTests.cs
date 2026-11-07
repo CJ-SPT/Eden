@@ -1,7 +1,6 @@
 using Eden.Gameplay.Characters;
-using Eden.Protocol.Characters;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Persistence;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

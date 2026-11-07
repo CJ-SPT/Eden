@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
-using Eden.Server.Persistence;
+using Eden.World.Characters;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 
 namespace Eden.Protocol.Tests.Launcher;

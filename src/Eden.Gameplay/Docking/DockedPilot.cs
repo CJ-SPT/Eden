@@ -1,5 +1,4 @@
 using Eden.Gameplay.Corporations;
-using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Docking;

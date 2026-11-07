@@ -3,7 +3,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Repair;
-using Eden.Protocol.Combat;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;

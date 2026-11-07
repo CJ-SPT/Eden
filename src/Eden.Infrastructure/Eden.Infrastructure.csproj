@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="Eden.Server" />
+    <InternalsVisibleTo Include="Eden.World" />
+    <InternalsVisibleTo Include="Eden.Protocol.Tests" />
+  </ItemGroup>
+</Project>

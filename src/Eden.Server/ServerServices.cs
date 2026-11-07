@@ -1,15 +1,34 @@
 using System.Reflection;
 using Eden.Gameplay.Combat;
-using Eden.Protocol;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Launcher;
-using Eden.Server.Persistence;
+using Eden.World.Combat.Npcs;
+using Eden.World.Docking;
+using Eden.World.Fittings;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
 
 internal static class ServerServices
 {
+    private static readonly Assembly[] ImplementationAssemblies =
+    [
+        typeof(ServerServices).Assembly,
+        typeof(IPilotSession).Assembly,
+        typeof(SqliteWorld).Assembly,
+    ];
+    private static readonly HashSet<Assembly> ContractAssemblies =
+    [
+        .. ImplementationAssemblies,
+        typeof(IPilotHealth).Assembly,
+        typeof(IPilotOperationScope).Assembly,
+    ];
+
     public static ServiceProvider Build(
         WorldDatabase database,
         TimeProvider? clock = null,
@@ -43,7 +62,7 @@ internal static class ServerServices
         services.AddSingleton(new NpcProfileCatalog(cache: population is null));
         services.AddSingleton(clock ?? TimeProvider.System);
         services.AddSingleton(options ?? new LauncherOptions());
-        foreach (Assembly assembly in new[] { typeof(ServerServices).Assembly, typeof(InjectableAttribute).Assembly })
+        foreach (Assembly assembly in ImplementationAssemblies)
         {
             foreach (Type implementation in assembly.GetTypes())
             {
@@ -59,15 +78,7 @@ internal static class ServerServices
                     _ => throw new InvalidOperationException($"Unknown service lifetime on {implementation}."),
                 };
                 services.Add(new ServiceDescriptor(implementation, implementation, lifetime));
-                foreach (
-                    Type contract in implementation
-                        .GetInterfaces()
-                        .Where(i =>
-                            i.Assembly == typeof(InjectableAttribute).Assembly
-                            || i.Assembly == typeof(ServerServices).Assembly
-                            || i.Assembly == typeof(IPilotHealth).Assembly
-                        )
-                )
+                foreach (Type contract in implementation.GetInterfaces().Where(i => ContractAssemblies.Contains(i.Assembly)))
                 {
                     services.Add(new ServiceDescriptor(contract, provider => provider.GetRequiredService(implementation), lifetime));
                 }

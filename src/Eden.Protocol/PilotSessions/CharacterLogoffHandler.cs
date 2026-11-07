@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Registration;
 
 namespace Eden.Protocol.PilotSessions;
 

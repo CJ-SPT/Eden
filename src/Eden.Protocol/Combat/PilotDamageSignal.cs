@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Flight;
 
 namespace Eden.Protocol.Combat;

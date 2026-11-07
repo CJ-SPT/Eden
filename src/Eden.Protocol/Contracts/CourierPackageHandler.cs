@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Contracts;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 

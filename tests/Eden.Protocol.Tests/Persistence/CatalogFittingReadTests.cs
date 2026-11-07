@@ -1,6 +1,7 @@
-using Eden.Protocol.PilotSessions;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.Infrastructure.Diagnostics;
+using Eden.World.Catalog;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Persistence;

@@ -4,8 +4,15 @@ using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Combat;
+using Eden.World.Contracts;
+using Eden.World.Insurance;
+using Eden.World.Inventory;
+using Eden.World.Market;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

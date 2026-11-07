@@ -3,9 +3,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
-using Eden.Protocol.Loot;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;

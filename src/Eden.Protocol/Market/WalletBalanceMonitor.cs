@@ -1,4 +1,5 @@
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Market;

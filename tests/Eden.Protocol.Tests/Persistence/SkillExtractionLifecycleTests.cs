@@ -1,7 +1,9 @@
-using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
-using Eden.Server.Persistence;
+using Eden.World.Characters;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Persistence;

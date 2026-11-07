@@ -1,11 +1,10 @@
 using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Protocol.Docking;
-using Eden.Protocol.Flight;
-using Eden.Protocol.Mining;
 using Eden.Protocol.Skills;
-using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
 

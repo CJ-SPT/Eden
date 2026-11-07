@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Eden.Gameplay.Docking;
-using Eden.Protocol.Flight;
-using Eden.Protocol.Mining;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Flight;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;

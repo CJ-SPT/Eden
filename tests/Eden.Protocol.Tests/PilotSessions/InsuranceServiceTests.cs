@@ -1,10 +1,8 @@
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Market;
-using Eden.Protocol.Insurance;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 

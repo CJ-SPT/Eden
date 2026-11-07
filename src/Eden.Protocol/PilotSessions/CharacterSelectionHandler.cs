@@ -2,10 +2,9 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Characters;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.PilotSessions;
 

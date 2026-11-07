@@ -2,6 +2,7 @@ using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;

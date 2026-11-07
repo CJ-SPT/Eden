@@ -7,8 +7,12 @@ using Eden.Gameplay.Loot;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Tests.Combat;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Contracts;
+using Eden.World.Inventory;
+using Eden.World.Market;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

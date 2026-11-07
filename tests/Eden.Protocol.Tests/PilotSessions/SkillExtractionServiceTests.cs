@@ -7,8 +7,9 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 

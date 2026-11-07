@@ -1,11 +1,10 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

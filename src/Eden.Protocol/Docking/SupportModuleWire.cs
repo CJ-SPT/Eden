@@ -2,6 +2,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.PilotSessions;
 

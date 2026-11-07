@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Chat;
-using Eden.Server.Persistence;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Chat;

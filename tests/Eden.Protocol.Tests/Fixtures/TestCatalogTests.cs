@@ -1,5 +1,6 @@
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Fixtures;

@@ -1,8 +1,8 @@
 using Eden.Gameplay.Calendar;
 using Eden.Gameplay.Characters;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Calendar;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

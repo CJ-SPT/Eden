@@ -4,9 +4,8 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Flight;

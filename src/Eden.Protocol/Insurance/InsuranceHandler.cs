@@ -1,6 +1,7 @@
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;

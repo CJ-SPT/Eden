@@ -2,15 +2,17 @@ using System.Net;
 using System.Net.Sockets;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Operations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
 using Eden.Server;
 using Eden.Server.Launcher;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Hosting;
@@ -48,6 +50,10 @@ public sealed class ServerServicesTests
         using var second = world.Services.CreateScope();
         var session = first.ServiceProvider.GetRequiredService<IPilotSession>();
         Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
+        Assert.Same(
+            first.ServiceProvider.GetRequiredService<CatalogFittingReadScope>(),
+            first.ServiceProvider.GetRequiredService<IPilotOperationScope>()
+        );
         Assert.Contains(
             first.ServiceProvider.GetRequiredService<MiningHandler>(),
             first.ServiceProvider.GetServices<IModuleEffectSource>()

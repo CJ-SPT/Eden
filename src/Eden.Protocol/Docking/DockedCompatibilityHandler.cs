@@ -1,7 +1,6 @@
-using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
-using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 

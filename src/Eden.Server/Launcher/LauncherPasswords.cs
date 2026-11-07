@@ -1,4 +1,4 @@
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 

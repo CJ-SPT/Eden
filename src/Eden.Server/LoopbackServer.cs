@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
-using Eden.Protocol;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Transport;
 using Eden.Server.Launcher;
 using Microsoft.Extensions.DependencyInjection;

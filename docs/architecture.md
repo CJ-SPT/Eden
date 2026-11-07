@@ -14,25 +14,31 @@
 | Project | Responsibility |
 | --- | --- |
 | `src/Eden.Gameplay` | Typed gameplay rules, state, commands and persistence interfaces. |
-| `src/Eden.Server` | Host the loopback session and own the SQLite world. |
+| `src/Eden.Infrastructure` | Runtime-only registration metadata, operation scopes, logging and diagnostics. |
+| `src/Eden.World` | Authoritative world state, SQLite persistence, catalog access and resident caches. |
+| `src/Eden.Server` | Compose services, host connections/endpoints and schedule background work. |
 | `src/Eden.Protocol` | Frame and decode messages, negotiate encrypted sessions, and adapt client calls and notifications to typed gameplay operations. |
 | `tests/Eden.Protocol.Tests` | Verify wire formats, login, ship movement, docking, and SQLite persistence. |
 
-Gameplay owns skill queue and character rules, fitting/targeting/module calculations, station economics, navigation transitions and NPC motion. Server loads typed inputs using each operation's existing world/catalog contexts and commits related writes together. Protocol owns dispatch, immutable wire projections, ordered effect replay and connection-scoped queues. See the [architecture audit milestones](protocol/architecture.md#architecture-audit-milestone-1).
+Gameplay owns skill queue and character rules, fitting/targeting/module calculations, station economics, navigation transitions and NPC motion. World loads typed inputs using each operation's existing world/catalog contexts and commits related writes together. Protocol owns dispatch, immutable wire projections, ordered effect replay and connection-scoped queues. See the [architecture audit milestones](protocol/architecture.md#architecture-audit-milestone-1).
+
+World feature folders follow Gameplay ownership: a feature's stores, entities, schema helpers and specialized catalog readers live together. `Combat/Npcs` owns NPC operations and populations; `Combat/Weapons` owns weapon catalog readers. `Storage` holds contexts, connection plumbing, initialization and migration coordination. `Catalog` holds shared catalog models and readers, including generated data. `Runtime` holds resident state, caches and checkpoints; its `Combat` folder holds resident combat and simulation. Host timers live in `Server/Maintenance`.
+
+Gameplay and Infrastructure depend only on .NET. World and Protocol each reference Gameplay and Infrastructure, with their own database or wire packages; neither references the other. Server composes all four. `Directory.Build.targets` enforces allowed project references, including references unused by compiled code. Generated catalog files are kept out of readability size comparisons.
 
 Startup calls `WorldInitialization.Initialize` explicitly before starting either listener. Resolving `SqliteWorld` only creates a reader; it does not migrate a save. Development tests use `WorldInitialization.Open` for deliberate restart/migration checks and the shared `TestClock` for wall time and elapsed time. Integration coverage includes the production `FlightSessionFactory`; focused simulations supply explicit substitutes for the infrastructure they omit.
 
 Known protocol data uses named immutable models: inventory/dogma state, character cards, flight commands, combat notifications, market and industry replies, skill queues and brain effects. Handlers return `PilotCallResult`, distinguishing successful Python None, unsupported calls and errors. Protocol adapters use named properties such as `DogmaAllInfo.ShipState` and `PilotBrainState.ShipEffects`; explicit `BlueModel.ToBlue()` adapters preserve the native client formats. The low-level Blue codec retains its flexible Python value graph. See the [type-boundary audit and acceptance results](protocol/architecture.md#named-protocol-models-final-audit).
 
-The server uses Microsoft DI to discover services marked with `[Injectable]` and creates one scope per client connection. The [contributor guide](../AGENTS.md#services-and-protocol-calls) explains service lifetimes and how to add a protocol handler.
+The server uses Microsoft DI to discover services marked with Infrastructure's `[Injectable]` attribute in an explicit Server/Protocol/World assembly list and creates one scope per client connection. Its explicit contract assembly list also includes Gameplay and Infrastructure. Each interface registration resolves the registered concrete instance, preserving scoped and singleton identity. The [contributor guide](../AGENTS.md#services-and-protocol-calls) explains service lifetimes and how to add a protocol handler.
 
 Use the root EditorConfig and shared build properties for new projects. Follow [Microsoft's C# conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and keep production and test projects separate as in [Microsoft's project layout guide](https://learn.microsoft.com/en-us/dotnet/core/tutorials/libraries).
 
 ## Architecture
 
-Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.Server references both to compose the host and implement catalog and SQLite operations. Gameplay references neither adapter assembly. Combat health, fitting and module modifiers, targeting, mining yield, propulsion, skill planning, character rules and feature persistence contracts use this boundary. Client effect names and notification construction stay in Protocol. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by Server.
+Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.World implements catalog and SQLite operations. Eden.Server composes the host and both adapters. Gameplay references neither adapter assembly. Combat health, fitting and module modifiers, targeting, mining yield, propulsion, skill planning, character rules and feature persistence contracts use this boundary. Client effect names and notification construction stay in Protocol. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by World.
 
-Manufacturing illustrates the persistence boundary. The Server store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. Server then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.
+Manufacturing illustrates the persistence boundary. The World store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. World then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.
 
 ### Session performance diagnostics
 

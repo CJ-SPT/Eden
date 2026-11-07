@@ -1,6 +1,7 @@
 using System.Text;
 using System.Xml.Linq;
 using Eden.Gameplay.Chat;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Transport;
 
 namespace Eden.Protocol.Chat;

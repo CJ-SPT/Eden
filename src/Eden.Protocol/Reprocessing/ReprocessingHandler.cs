@@ -1,5 +1,6 @@
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Reprocessing;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;

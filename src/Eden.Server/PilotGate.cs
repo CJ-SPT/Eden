@@ -1,4 +1,4 @@
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Eden.Server.Launcher;
 
 namespace Eden.Server;

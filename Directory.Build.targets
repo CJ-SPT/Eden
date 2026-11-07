@@ -1,0 +1,30 @@
+<Project>
+  <Target
+    Name="CheckEdenProjectDependencies"
+    BeforeTargets="ResolveReferences"
+    Condition="'$(MSBuildProjectName)' != 'Eden.Protocol.Tests'"
+  >
+    <PropertyGroup>
+      <_EdenRuntimeOnly Condition="'$(MSBuildProjectName)' == 'Eden.Gameplay' Or '$(MSBuildProjectName)' == 'Eden.Infrastructure'"
+        >true</_EdenRuntimeOnly>
+    </PropertyGroup>
+    <ItemGroup>
+      <_AllowedEdenReference Include="Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.World'" />
+      <_AllowedEdenReference Include="Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.Protocol'" />
+      <_AllowedEdenReference
+        Include="Eden.Gameplay;Eden.Infrastructure;Eden.Protocol;Eden.World"
+        Condition="'$(MSBuildProjectName)' == 'Eden.Server'"
+      />
+      <_ForbiddenEdenReference Include="@(ProjectReference->'%(Filename)')" />
+      <_ForbiddenEdenReference Remove="@(_AllowedEdenReference)" />
+    </ItemGroup>
+    <Error
+      Condition="'@(_ForbiddenEdenReference)' != ''"
+      Text="$(MSBuildProjectName) cannot reference @(_ForbiddenEdenReference). See docs/architecture.md."
+    />
+    <Error
+      Condition="'$(_EdenRuntimeOnly)' == 'true' And '@(PackageReference)' != ''"
+      Text="$(MSBuildProjectName) must depend only on the .NET runtime."
+    />
+  </Target>
+</Project>

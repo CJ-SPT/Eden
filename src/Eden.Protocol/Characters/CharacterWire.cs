@@ -6,7 +6,6 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Characters;
 

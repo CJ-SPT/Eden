@@ -1,7 +1,7 @@
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Chat;
 using Eden.Server.Launcher;

@@ -1,6 +1,5 @@
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Tests.Fixtures;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 

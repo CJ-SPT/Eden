@@ -3,14 +3,12 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
-using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Propulsion;
-using Eden.Protocol.Repair;
 using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Combat;

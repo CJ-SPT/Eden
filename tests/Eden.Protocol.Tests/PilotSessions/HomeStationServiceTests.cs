@@ -6,10 +6,11 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Characters;
+using Eden.World.Docking;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;

@@ -1,10 +1,7 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Mail;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;

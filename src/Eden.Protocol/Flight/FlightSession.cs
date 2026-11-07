@@ -8,15 +8,8 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
-using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Loot;
-using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Propulsion;
-using Eden.Protocol.Repair;
-using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
@@ -337,7 +330,7 @@ internal sealed partial class FlightSession(
 
     public void RefreshNpcs()
     {
-        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("contact.npcs");
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("contact.npcs");
         if (!InBallpark)
         {
             return;
@@ -903,7 +896,7 @@ internal sealed partial class FlightSession(
 
     public void RepeatWeaponEffect(WeaponContact previous, WeaponContact current)
     {
-        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("weapon.publish");
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("weapon.publish");
         _weapons = _weapons.Where(w => w.ModuleId != current.ModuleId).Append(current).ToArray();
         Effects.WeaponEffect(Pilot.ShipId, previous, false);
         Effects.WeaponEffect(Pilot.ShipId, current, true);
@@ -967,7 +960,7 @@ internal sealed partial class FlightSession(
 
     public void RefreshPeers()
     {
-        using var phase = Eden.Protocol.PilotSessions.SessionPerformance.Phase("contact.peers");
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("contact.peers");
         lock (space.MotionLock)
         {
             RefreshPeersCore();

@@ -1,6 +1,5 @@
 using System.Text;
 using Eden.Protocol.Chat;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Transport;
 using Microsoft.Extensions.DependencyInjection;

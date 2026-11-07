@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Project boundaries and feature layout, November 6, 2026](protocol/architecture.md#project-boundaries-and-feature-layout-november-6-2026)
+
 - [Pilot missile combat and automatic retaliation, November 6, 2026](protocol/combat.md#pilot-missile-combat-and-automatic-retaliation-november-6-2026)
 
 - [Pilot turret combat and loss settlement, November 6, 2026](protocol/combat.md#pilot-turret-combat-and-loss-settlement-november-6-2026)

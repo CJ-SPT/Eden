@@ -1,4 +1,3 @@
-using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +5,8 @@ using Eden.Protocol.Redemption;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Market;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

@@ -6,11 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Industry;
-using Eden.Protocol.Propulsion;
-using Eden.Protocol.Serialization;
+using Eden.Infrastructure.Registration;
 
 namespace Eden.Protocol.Skills;
 

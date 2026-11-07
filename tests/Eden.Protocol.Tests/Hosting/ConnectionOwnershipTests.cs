@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Transport;
 using Eden.Server;
 using Microsoft.Extensions.DependencyInjection;

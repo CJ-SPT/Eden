@@ -4,14 +4,11 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Insurance;
-using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Repair;
-using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Market;

@@ -1,8 +1,8 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Eden.Protocol;
-using Eden.Server.Persistence;
+using Eden.Infrastructure.Registration;
+using Eden.World.Storage;
 
 namespace Eden.Server.Chat;
 

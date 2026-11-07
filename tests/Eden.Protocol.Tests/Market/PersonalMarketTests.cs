@@ -1,16 +1,20 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.Server.Maintenance;
+using Eden.World.Catalog;
+using Eden.World.Inventory;
+using Eden.World.Market;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

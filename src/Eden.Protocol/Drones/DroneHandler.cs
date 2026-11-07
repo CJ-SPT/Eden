@@ -1,11 +1,11 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Drones;

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Eden.Server.Catalog;
+using Eden.World.Catalog;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Fixtures;

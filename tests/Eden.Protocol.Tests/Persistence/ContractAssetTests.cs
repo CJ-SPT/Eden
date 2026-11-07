@@ -1,10 +1,11 @@
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Industry;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

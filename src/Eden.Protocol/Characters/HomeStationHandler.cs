@@ -1,6 +1,7 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;

@@ -10,7 +10,6 @@ using Eden.Gameplay.Chat;
 using Eden.Protocol.Chat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server.Chat;
 using Microsoft.Extensions.DependencyInjection;
 

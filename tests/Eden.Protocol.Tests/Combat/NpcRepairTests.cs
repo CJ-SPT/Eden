@@ -1,10 +1,13 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
-using Eden.Protocol.PilotSessions;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
+using Eden.World.Fittings;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

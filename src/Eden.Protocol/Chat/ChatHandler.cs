@@ -1,4 +1,5 @@
 using Eden.Gameplay.Chat;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 

@@ -1,25 +1,24 @@
 using System.Net;
 using System.Text.Json;
 using Eden.Gameplay.Characters;
-using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Chat;
 using Eden.Protocol.Tests.Combat;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server.Chat;
 using Eden.Server.Launcher;
-using Eden.Server.Persistence;
+using Eden.World.Combat;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -239,12 +238,12 @@ public sealed class TranslocationTests
     private static void PrepareBelts(TestWorld db)
     {
         NpcEncounterTests.Prepare(db);
-        using (Eden.Server.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        using (Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             foreach (int belt in new[] { 40009232, 40009245 })
             {
                 catalog.Add(
-                    new Eden.Server.Catalog.SourceRecord
+                    new Eden.World.Catalog.SourceRecord
                     {
                         Dataset = "client/asteroidcountbytypeidbeltid",
                         Key = belt.ToString(global::System.Globalization.CultureInfo.InvariantCulture),

@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using System.Security.Cryptography;
-using Eden.Protocol;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Transport;
 

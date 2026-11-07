@@ -1,8 +1,8 @@
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -10,9 +10,13 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Ammunition;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Combat.Npcs;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Loot;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

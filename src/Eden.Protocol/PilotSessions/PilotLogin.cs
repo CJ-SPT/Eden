@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 

@@ -1,3 +1,5 @@
+using Eden.Infrastructure.Registration;
+
 namespace Eden.Protocol.Targeting;
 
 [Injectable(InjectionType.Singleton)]

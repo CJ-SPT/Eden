@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Project boundaries and feature layout, November 6, 2026](#project-boundaries-and-feature-layout-november-6-2026)
 - [Attribute-based DI acceptance](#attribute-based-di-acceptance)
 - [Named protocol models: shared session plumbing](#named-protocol-models-shared-session-plumbing)
 - [Named protocol models: inventory and docked services](#named-protocol-models-inventory-and-docked-services)
@@ -31,6 +32,24 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Architecture audit milestone 10](#architecture-audit-milestone-10)
 - [Architecture audit milestone 11: wallet header duplication](#architecture-audit-milestone-11-wallet-header-duplication)
 - [Architecture audit milestone 12](#architecture-audit-milestone-12)
+
+## Project boundaries and feature layout, November 6, 2026
+
+World state, feature stores, catalog access and database plumbing now live in `Eden.World`; shared registration metadata, operation scopes, logging and performance measurements live in runtime-only `Eden.Infrastructure`. Server retains composition, endpoints and maintenance scheduling. World and Protocol reference Gameplay and Infrastructure independently. Build guards and tests enforce the project graph. Service discovery explicitly scans Server, Protocol and World while preserving registration lifetimes and concrete/interface identity.
+
+The former Persistence directory is grouped by feature, with Storage, Catalog and Runtime holding shared infrastructure. Context entity declarations are separated from context setup. Generated catalog namespaces and documentation links follow the new locations, and the starter market keeps its original embedded-resource name. No gameplay rules, schema versions or wire behavior changed. A body comparison verified all 190 unsplit relocated files against the prior revision; context/entity splits were covered by compilation and persistence tests.
+
+**Automated validation:** tool/solution restore, build with zero warnings/errors, 117 focused .NET tests (22 seconds wall time), catalog setup (3 tests), formatting policy (9 tests), and formatting verification passed. The complete final validation sequence took 41 seconds. Earlier development builds caught relocation imports and a formatter-only diagnostic setting; those issues were corrected before this sequence. The full .NET suite was not run.
+
+The test filter was:
+
+```text
+FullyQualifiedName~Hosting|FullyQualifiedName~Fixtures.TestCatalogTests|FullyQualifiedName~Fixtures.TestClockTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~PersonalMarketTests|FullyQualifiedName~EconomicWorldTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this structural milestone.
 
 ## Attribute-based DI acceptance
 

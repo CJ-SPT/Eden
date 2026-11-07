@@ -4,9 +4,10 @@ using Eden.Protocol.Corporations;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Persistence;
+using Eden.World.Corporations;
+using Eden.World.Market;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

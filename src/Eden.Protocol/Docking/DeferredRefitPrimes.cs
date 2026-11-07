@@ -1,4 +1,5 @@
 using Eden.Gameplay.Ammunition;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.PilotSessions;
 

@@ -1,6 +1,5 @@
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
-using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 

@@ -1,6 +1,4 @@
 using Eden.Gameplay.Combat;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Combat;
 

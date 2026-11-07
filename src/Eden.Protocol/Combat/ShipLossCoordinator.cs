@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Mining;

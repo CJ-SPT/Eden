@@ -1,8 +1,4 @@
-using Eden.Gameplay.Combat;
-using Eden.Gameplay.Inventory;
-using Eden.Gameplay.Mining;
-using Eden.Gameplay.Propulsion;
-using Eden.Gameplay.Repair;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Mining;

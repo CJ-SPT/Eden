@@ -1,4 +1,6 @@
 using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.Characters;

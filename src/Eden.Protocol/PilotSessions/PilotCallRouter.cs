@@ -1,10 +1,9 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
-using Eden.Protocol.Loot;
-using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.PilotSessions;

@@ -1,9 +1,8 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.Docking;
-using Eden.Protocol.Skills;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Persistence;
+using Eden.World.Docking;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 

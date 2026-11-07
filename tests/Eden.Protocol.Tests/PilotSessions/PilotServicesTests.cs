@@ -8,9 +8,9 @@ using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Inventory;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +25,7 @@ public sealed class PilotServicesTests
         using var scope = world.Services.CreateScope();
         using StringWriter output = new();
         using StringWriter errors = new();
-        Eden.Server.ServerLog log = new(false, output, errors);
+        Eden.Infrastructure.Diagnostics.ServerLog log = new(false, output, errors);
         SessionDiagnostics diagnostics = new(log.Information, log.Warning, log.Trace);
         var session = ActivatorUtilities.CreateInstance<PilotServices>(scope.ServiceProvider, diagnostics);
         var malformed = Request("station", "GetGuests", []);

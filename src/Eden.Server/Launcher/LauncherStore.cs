@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using Eden.Gameplay.Docking;
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
-using Eden.Server.Persistence;
+using Eden.World.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 

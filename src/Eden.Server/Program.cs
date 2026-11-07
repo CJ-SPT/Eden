@@ -1,15 +1,17 @@
 using System.Net;
 using System.Text.Json;
 using Eden.Gameplay.Redemption;
-using Eden.Protocol.Chat;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
 using Eden.Server.Authentication;
-using Eden.Server.Catalog;
 using Eden.Server.Chat;
 using Eden.Server.Gateway;
 using Eden.Server.Launcher;
-using Eden.Server.Persistence;
+using Eden.Server.Maintenance;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;

@@ -1,6 +1,5 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -10,10 +9,13 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.PilotSessions;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Tests.Ammunition;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Persistence;
+using Eden.World.Characters;
+using Eden.World.Market;
+using Eden.World.Runtime;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

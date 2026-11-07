@@ -1,6 +1,7 @@
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 

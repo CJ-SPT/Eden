@@ -4,9 +4,11 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Skills;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Mining;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 

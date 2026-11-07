@@ -1,4 +1,4 @@
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;

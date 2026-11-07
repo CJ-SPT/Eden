@@ -1,11 +1,10 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
-using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Tests.Combat;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Persistence;
+using Eden.World.Combat.Npcs;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;

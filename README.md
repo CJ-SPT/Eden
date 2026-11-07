@@ -11,6 +11,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 | Connect accounts or host a remote server | [Launcher hosting](docs/launcher.md) |
 | Browse all documentation | [Documentation index](docs/README.md) |
 | Contribute or validate a change | [Contributor guide](AGENTS.md) and [automated validation](docs/testing.md) |
+| Find the code for a feature | [Project boundaries and feature layout](docs/architecture.md#projects-and-conventions) |
 | Investigate native behavior or prior milestones | [Protocol records by topic](docs/protocol.md) |
 
 ## Current status

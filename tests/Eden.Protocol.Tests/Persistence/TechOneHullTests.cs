@@ -8,13 +8,12 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
-using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
-using Eden.Protocol.Tests.Fixtures;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Combat;
+using Eden.World.Docking;
+using Eden.World.Repair;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 

@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 using Eden.Gameplay.Chat;
-using Eden.Protocol;
+using Eden.Infrastructure.Registration;
 using Eden.Protocol.Chat;
 using Eden.Server.Launcher;
 

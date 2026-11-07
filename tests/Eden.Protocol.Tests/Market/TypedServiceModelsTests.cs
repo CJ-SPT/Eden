@@ -3,7 +3,6 @@ using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
-using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Market;
 using Eden.Protocol.Serialization;

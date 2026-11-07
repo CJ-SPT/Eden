@@ -5,10 +5,12 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Skills;
-using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
-using Eden.Server.Catalog;
-using Eden.Server.Persistence;
+using Eden.World.Catalog;
+using Eden.World.Characters;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,4 +1,3 @@
-using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;

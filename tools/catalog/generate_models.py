@@ -114,7 +114,7 @@ def generate(database, output):
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Eden.Server.Catalog;
+namespace Eden.World.Catalog;
 
 """
     groups = [f"    public static class {family}\n    {{\n" + "\n".join(rows) + "\n    }"
