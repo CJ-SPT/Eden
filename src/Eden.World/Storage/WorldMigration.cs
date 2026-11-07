@@ -7,7 +7,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 93;
+    internal const int CurrentVersion = 94;
 
     public static void Open(
         WorldDbContext world,
@@ -54,6 +54,7 @@ internal static class WorldMigration
             PRAGMA user_version=93;
             """
         );
+        WorldVersion94.Apply(world, version);
         history.Commit();
     }
 }

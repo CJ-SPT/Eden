@@ -4,8 +4,8 @@ public sealed record CharacterDeletionState(long ReadyAt, long? DeletedAt);
 
 public static class CharacterDeletionRules
 {
-    // Eden uses the traditional ten-hour biomass cooling-off period.
-    public static readonly TimeSpan PreparationDelay = TimeSpan.FromHours(10);
+    // Leave time to undo an accidental request without a long sandbox wait.
+    public static readonly TimeSpan PreparationDelay = TimeSpan.FromMinutes(10);
 
     public static long ReadyAt(long now) => checked(now + PreparationDelay.Ticks);
 

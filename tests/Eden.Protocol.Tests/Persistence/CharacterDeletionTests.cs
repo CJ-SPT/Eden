@@ -29,6 +29,7 @@ public sealed class CharacterDeletionTests
     public void TypedReadinessUsesTheExactDeadline(long offset, bool ready)
     {
         long deadline = CharacterDeletionRules.ReadyAt(1);
+        Assert.Equal(1 + TimeSpan.FromMinutes(10).Ticks, deadline);
         CharacterDeletionState state = new(deadline, null);
         if (ready)
         {
@@ -70,7 +71,7 @@ public sealed class CharacterDeletionTests
             training.SaveChanges();
         }
         long ready = store.Prepare(Account, Pilot);
-        clock.AdvanceWallTime(TimeSpan.FromHours(1));
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
         Assert.Equal(ready, store.Prepare(Account, Pilot));
         Assert.Equal(new(ready, null), store.Read(Account, Pilot));
         Assert.Throws<InvalidDataException>(() => creation.Create(Account, character with { Name = "Fourth Pilot" }));
@@ -80,7 +81,7 @@ public sealed class CharacterDeletionTests
             WorldInitialization.Initialize(new(db.Path));
             Assert.Equal(new(ready, null), store.Read(Account, Pilot));
         }
-        clock.AdvanceWallTime(TimeSpan.FromHours(9));
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(9));
         store.Delete(Account, Pilot);
         Assert.Null(db.Store.FindPilot(Account, Pilot));
         Assert.Equal(2, db.Store.ListPilots(Account).Count);
@@ -141,6 +142,54 @@ public sealed class CharacterDeletionTests
         Assert.Equal(2, reopened.Pilots.Count());
         Assert.Empty(reopened.Set<SavedCharacterDeletion>());
         Assert.Equal(WorldMigration.CurrentVersion, reopened.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    [InlineData(15)]
+    [InlineData(601)]
+    public void Version93MigrationShortensPendingWaitFromOriginalRequestAndPreservesDeletedRecords(int elapsedMinutes)
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock);
+        long requestedAt = clock.Now;
+        long oldDeadline = requestedAt + TimeSpan.FromHours(10).Ticks;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(new SavedCharacterDeletion { PilotId = Pilot, ReadyAt = oldDeadline });
+            world.Add(
+                new SavedCharacterDeletion
+                {
+                    PilotId = 90000002,
+                    ReadyAt = oldDeadline,
+                    DeletedAt = requestedAt,
+                }
+            );
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=93");
+        }
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(elapsedMinutes));
+        WorldInitialization.Initialize(new(db.Path), clock);
+        WorldInitialization.Initialize(new(db.Path), clock);
+        var store = db.Services.GetRequiredService<ICharacterDeletion>();
+        long ready = requestedAt + TimeSpan.FromMinutes(10).Ticks;
+        Assert.Equal(new(ready, null), store.Read(Account, Pilot));
+        Assert.Equal(ready, store.Prepare(Account, Pilot));
+        using WorldDbContext reopened = new(db.Path);
+        var deleted = reopened.Set<SavedCharacterDeletion>().Find(90000002L)!;
+        Assert.Equal(oldDeadline, deleted.ReadyAt);
+        Assert.Equal(requestedAt, deleted.DeletedAt);
+        if (elapsedMinutes >= 10)
+        {
+            store.Delete(Account, Pilot);
+            Assert.Null(db.Store.FindPilot(Account, Pilot));
+        }
+        else
+        {
+            Assert.Throws<InvalidDataException>(() => store.Delete(Account, Pilot));
+            Assert.NotNull(db.Store.FindPilot(Account, Pilot));
+        }
     }
 
     [Fact]
