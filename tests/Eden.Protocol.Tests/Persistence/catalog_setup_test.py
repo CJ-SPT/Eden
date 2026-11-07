@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools/catalog"))
 from build import publish
-from generate_models import generate
+from generate_models import Emitter, Shape, generate
 
 
 class CatalogPublicationTests(unittest.TestCase):
@@ -58,6 +58,32 @@ class CatalogPublicationTests(unittest.TestCase):
 
 
 class CatalogModelGenerationTests(unittest.TestCase):
+    def test_map_promotion_retains_previous_field_types(self):
+        shape = Shape()
+        shape.observe({"first": {"value": 7}})
+        shape.observe({"123": {"value": "seven"}})
+        emitter = Emitter()
+        emitter.type(shape, "Sample")
+        declarations = "\n".join(emitter.definitions)
+        self.assertNotIn("JsonElement", declarations)
+        self.assertIn("JsonTokenType.Number", declarations)
+        self.assertIn("JsonTokenType.String", declarations)
+        self.assertIn("long Value", declarations)
+        self.assertIn("string Value", declarations)
+
+    def test_mixed_numbers_preserve_large_integers_in_both_orders(self):
+        for observations in ([2**53 + 1, 0.25], [0.25, 2**53 + 1]):
+            shape = Shape()
+            for value in observations:
+                shape.observe(value)
+            emitter = Emitter()
+            emitter.type(shape, "ExactNumber")
+            declarations = "\n".join(emitter.definitions)
+            self.assertIn("long Value", declarations)
+            self.assertIn("double Value", declarations)
+            self.assertIn("when reader.TryGetInt64(out _)", declarations)
+            self.assertEqual(shape.schema(), Shape.from_schema(shape.schema()).schema())
+
     def test_payload_models_are_generated_into_data_project(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -65,9 +91,9 @@ class CatalogModelGenerationTests(unittest.TestCase):
             registry = root / "registry.g.cs"
             models = root / "models.g.cs"
             with closing(sqlite3.connect(database)) as db, db:
-                db.execute("CREATE TABLE SourceDataset(Name TEXT PRIMARY KEY)")
+                db.execute("CREATE TABLE SourceDataset(Name TEXT PRIMARY KEY,Source TEXT,Sha256 TEXT,Rows INTEGER)")
                 db.execute("CREATE TABLE SourceRecord(Dataset TEXT,Key TEXT,Data TEXT)")
-                db.execute("INSERT INTO SourceDataset VALUES ('client/sample')")
+                db.execute("INSERT INTO SourceDataset VALUES ('client/sample','pinned sample','sample-sha256',1)")
                 db.execute("INSERT INTO SourceRecord VALUES ('client/sample','1','{\"quantity\":7}')")
             generate(database, registry, models)
             self.assertIn("namespace Eden.World.Catalog;", registry.read_text())

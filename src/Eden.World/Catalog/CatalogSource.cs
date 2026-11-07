@@ -7,22 +7,29 @@ namespace Eden.World.Catalog;
 public interface ICatalogSource
 {
     string Name { get; }
+    Type KeyType { get; }
+    Type ValueType { get; }
+    CatalogDatasetDescriptor Descriptor { get; }
     internal void Configure(ModelBuilder model);
     internal long Verify(CatalogDbContext db);
 }
 
 /// <summary>A build-specific SQLite view with a typed payload and an indexed source key.</summary>
-public sealed class CatalogSource<T>(string name) : ICatalogSource
+public abstract class CatalogSource<T>(string name) : ICatalogSource
 {
     public string Name { get; } = name;
+    public abstract Type KeyType { get; }
+    public Type ValueType => typeof(T);
+    public CatalogDatasetDescriptor Descriptor => CatalogSchemas.Get(Name);
 
     public IQueryable<CatalogEntry<T>> Query(CatalogDbContext db) => db.Set<CatalogEntry<T>>(Name);
 
-    public T Get<TKey>(CatalogDbContext db, TKey key)
+    protected T GetEncoded(CatalogDbContext db, string encoded)
     {
-        string encoded = JsonSerializer.Serialize(key);
         return Query(db).Single(r => r.Key == encoded).Value;
     }
+
+    protected abstract void ValidateKey(string encoded);
 
     void ICatalogSource.Configure(ModelBuilder model)
     {
@@ -43,6 +50,7 @@ public sealed class CatalogSource<T>(string name) : ICatalogSource
         // Materialize every payload through its EF mapping before activating the catalog.
         foreach (var entry in Query(db).AsEnumerable())
         {
+            ValidateKey(entry.Key);
             if (entry.Value is null)
             {
                 throw new InvalidDataException($"Missing {Name} record {entry.Key}.");
@@ -50,5 +58,20 @@ public sealed class CatalogSource<T>(string name) : ICatalogSource
             count++;
         }
         return count;
+    }
+}
+
+public sealed class CatalogSource<TKey, TValue>(string name) : CatalogSource<TValue>(name)
+{
+    public override Type KeyType => typeof(TKey);
+
+    public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, JsonSerializer.Serialize(key));
+
+    protected override void ValidateKey(string encoded)
+    {
+        if (JsonSerializer.Deserialize<TKey>(encoded) is null)
+        {
+            throw new InvalidDataException($"Missing {Name} key.");
+        }
     }
 }

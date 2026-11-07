@@ -36,8 +36,8 @@ internal static class StationUndockCatalog
             {
                 continue;
             }
-            var position = Position(locator.Position);
-            var direction = Position(locator.Direction);
+            var position = Position(locator.Position?.X, locator.Position?.Y, locator.Position?.Z);
+            var direction = Position(locator.Direction?.X, locator.Direction?.Y, locator.Direction?.Z);
             if (direction.Length == 0)
             {
                 throw new InvalidDataException($"Station type {stationTypeId} has an invalid undock direction.");
@@ -49,8 +49,8 @@ internal static class StationUndockCatalog
 
     private static string Key(long id) => id.ToString(CultureInfo.InvariantCulture);
 
-    private static SpacePosition Position(ClientDungeonsRoomsValueObjectsValuePosition? value) =>
-        value is { X: double x, Y: double y, Z: double z } && double.IsFinite(x) && double.IsFinite(y) && double.IsFinite(z)
+    private static SpacePosition Position(double? sourceX, double? sourceY, double? sourceZ) =>
+        sourceX is double x && sourceY is double y && sourceZ is double z && double.IsFinite(x) && double.IsFinite(y) && double.IsFinite(z)
             ? new(x, y, z)
             : throw new InvalidDataException("Station undock locator is missing finite coordinates.");
 }

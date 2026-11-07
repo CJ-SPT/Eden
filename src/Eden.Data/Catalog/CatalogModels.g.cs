@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Eden.Data.Catalog;
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAccountingentrytypes
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -14,6 +15,7 @@ public sealed class ClientAccountingentrytypes
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAccountingkeys
 {
     [JsonPropertyName("currency")] public string? Currency { get; init; }
@@ -23,6 +25,7 @@ public sealed class ClientAccountingkeys
     [JsonPropertyName("keyType")] public string? KeyType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAchievementevents
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -30,12 +33,14 @@ public sealed class ClientAchievementevents
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAchievementsSimpleConditionsValue
 {
     [JsonPropertyName("statistic")] public long? Statistic { get; init; }
     [JsonPropertyName("targetValue")] public long? TargetValue { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAchievements
 {
     [JsonPropertyName("achievementID")] public long? AchievementID { get; init; }
@@ -47,12 +52,14 @@ public sealed class ClientAchievements
     [JsonPropertyName("simpleConditions")] public Dictionary<string, ClientAchievementsSimpleConditionsValue>? SimpleConditions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAgencyhelpvideogroups
 {
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
     [JsonPropertyName("videos")] public long[]? Videos { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAgencyhelpvideos
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -60,6 +67,7 @@ public sealed class ClientAgencyhelpvideos
     [JsonPropertyName("path")] public string? Path { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAgentsinspace
 {
     [JsonPropertyName("dungeonID")] public long? DungeonID { get; init; }
@@ -68,6 +76,7 @@ public sealed class ClientAgentsinspace
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAncestries
 {
     [JsonPropertyName("bloodlineID")] public long? BloodlineID { get; init; }
@@ -82,6 +91,7 @@ public sealed class ClientAncestries
     [JsonPropertyName("willpower")] public long? Willpower { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientArchetypes
 {
     [JsonPropertyName("contentTags")] public string[]? ContentTags { get; init; }
@@ -90,15 +100,73 @@ public sealed class ClientArchetypes
     [JsonPropertyName("titleID")] public long? TitleID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientAtomsParametersInputsItemDefaultValueObject
+{
+    [JsonPropertyName("n_fields")] public long? NFields { get; init; }
+    [JsonPropertyName("n_sequence_fields")] public long? NSequenceFields { get; init; }
+    [JsonPropertyName("n_unnamed_fields")] public long? NUnnamedFields { get; init; }
+    [JsonPropertyName("x")] public double? X { get; init; }
+    [JsonPropertyName("y")] public double? Y { get; init; }
+    [JsonPropertyName("z")] public double? Z { get; init; }
+}
+
+[JsonConverter(typeof(ClientAtomsParametersInputsItemDefaultValueChoiceConverter))]
+public abstract record ClientAtomsParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientAtomsParametersInputsItemDefaultValueChoiceLong(long Value) : ClientAtomsParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientAtomsParametersInputsItemDefaultValueChoiceDouble(double Value) : ClientAtomsParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientAtomsParametersInputsItemDefaultValueChoiceObject(ClientAtomsParametersInputsItemDefaultValueObject Value) : ClientAtomsParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientAtomsParametersInputsItemDefaultValueChoiceString(string Value) : ClientAtomsParametersInputsItemDefaultValueChoice;
+
+internal sealed class ClientAtomsParametersInputsItemDefaultValueChoiceConverter : JsonConverter<ClientAtomsParametersInputsItemDefaultValueChoice>
+{
+    public override ClientAtomsParametersInputsItemDefaultValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientAtomsParametersInputsItemDefaultValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientAtomsParametersInputsItemDefaultValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientAtomsParametersInputsItemDefaultValueChoiceObject(JsonSerializer.Deserialize<ClientAtomsParametersInputsItemDefaultValueObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientAtomsParametersInputsItemDefaultValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientAtomsParametersInputsItemDefaultValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientAtomsParametersInputsItemDefaultValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientAtomsParametersInputsItemDefaultValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientAtomsParametersInputsItemDefaultValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientAtomsParametersInputsItemDefaultValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientAtomsParametersInputsItemDefaultValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientAtomsParametersInputsItemDefaultValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAtomsParametersInputsItem
 {
-    [JsonPropertyName("defaultValue")] public JsonElement? DefaultValue { get; init; }
+    [JsonPropertyName("defaultValue")] public ClientAtomsParametersInputsItemDefaultValueChoice? DefaultValue { get; init; }
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("isRequired")] public long? IsRequired { get; init; }
     [JsonPropertyName("parameterKey")] public string? ParameterKey { get; init; }
     [JsonPropertyName("parameterType")] public string? ParameterType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAtomsParametersOutputsItem
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -106,17 +174,20 @@ public sealed class ClientAtomsParametersOutputsItem
     [JsonPropertyName("parameterType")] public string? ParameterType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAtomsParameters
 {
     [JsonPropertyName("inputs")] public ClientAtomsParametersInputsItem[]? Inputs { get; init; }
     [JsonPropertyName("outputs")] public ClientAtomsParametersOutputsItem[]? Outputs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAtomsSubtitle
 {
     [JsonPropertyName("text")] public string? Text { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAtoms
 {
     [JsonPropertyName("atomType")] public long? AtomType { get; init; }
@@ -127,6 +198,7 @@ public sealed class ClientAtoms
     [JsonPropertyName("tags")] public string[]? Tags { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadataEventsValuePlaybackDuration
 {
     [JsonPropertyName("playbackDurationMax")] public double? PlaybackDurationMax { get; init; }
@@ -134,6 +206,7 @@ public sealed class ClientAudiometadataEventsValuePlaybackDuration
     [JsonPropertyName("playbackDurationType")] public string? PlaybackDurationType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadataEventsValue
 {
     [JsonPropertyName("eventID")] public long? EventID { get; init; }
@@ -147,12 +220,14 @@ public sealed class ClientAudiometadataEventsValue
     [JsonPropertyName("wwiseID")] public string? WwiseID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadataSoundBanksValueParent
 {
     [JsonPropertyName("id")] public string? Id { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadataSoundBanksValue
 {
     [JsonPropertyName("EssentialMedia")] public long? EssentialMedia { get; init; }
@@ -164,12 +239,14 @@ public sealed class ClientAudiometadataSoundBanksValue
     [JsonPropertyName("shortId")] public long? ShortId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadataWemFileIDsValue
 {
     [JsonPropertyName("IsEssential")] public long? IsEssential { get; init; }
     [JsonPropertyName("SoundBank")] public string? SoundBank { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientAudiometadata
 {
     [JsonPropertyName("Events")] public Dictionary<string, ClientAudiometadataEventsValue>? Events { get; init; }
@@ -177,23 +254,27 @@ public sealed class ClientAudiometadata
     [JsonPropertyName("WemFileIDs")] public Dictionary<string, ClientAudiometadataWemFileIDsValue>? WemFileIDs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsHangarvideosFoldersLanguageOverrides
 {
     [JsonPropertyName("zh")] public string[]? Zh { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsHangarvideosFolders
 {
     [JsonPropertyName("default")] public string[]? Default { get; init; }
     [JsonPropertyName("languageOverrides")] public ClientBillboardsHangarvideosFoldersLanguageOverrides? LanguageOverrides { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsHangarvideosGameplayFolderOverrides
 {
     [JsonPropertyName("triglavianInvasion")] public ClientBillboardsHangarvideosFolders? TriglavianInvasion { get; init; }
     [JsonPropertyName("triglavianOvertaken")] public ClientBillboardsHangarvideosFolders? TriglavianOvertaken { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsHangarvideosSize
 {
     [JsonPropertyName("height")] public double? Height { get; init; }
@@ -203,6 +284,7 @@ public sealed class ClientBillboardsHangarvideosSize
     [JsonPropertyName("width")] public double? Width { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsHangarvideos
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -213,11 +295,13 @@ public sealed class ClientBillboardsHangarvideos
     [JsonPropertyName("sound")] public long? Sound { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsInspacevideosGameplayFolderOverrides
 {
     [JsonPropertyName("triglavianInvasion")] public ClientBillboardsHangarvideosFolders? TriglavianInvasion { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboardsInspacevideos
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -228,12 +312,14 @@ public sealed class ClientBillboardsInspacevideos
     [JsonPropertyName("sound")] public long? Sound { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBillboards
 {
     [JsonPropertyName("hangarvideos")] public ClientBillboardsHangarvideos? Hangarvideos { get; init; }
     [JsonPropertyName("inspacevideos")] public ClientBillboardsInspacevideos? Inspacevideos { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBilltypes
 {
     [JsonPropertyName("billTypeName")] public string? BillTypeName { get; init; }
@@ -241,6 +327,7 @@ public sealed class ClientBilltypes
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBloodlines
 {
     [JsonPropertyName("charisma")] public long? Charisma { get; init; }
@@ -255,26 +342,30 @@ public sealed class ClientBloodlines
     [JsonPropertyName("willpower")] public long? Willpower { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesCopyingMaterialsItem
 {
     [JsonPropertyName("quantity")] public long? Quantity { get; init; }
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesCopyingSkillsItem
 {
     [JsonPropertyName("level")] public long? Level { get; init; }
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesCopying
 {
     [JsonPropertyName("materials")] public ClientBlueprintsActivitiesCopyingMaterialsItem[]? Materials { get; init; }
-    [JsonPropertyName("products")] public JsonElement[]? Products { get; init; }
+    [JsonPropertyName("products")] public CatalogAbsent[]? Products { get; init; }
     [JsonPropertyName("skills")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? Skills { get; init; }
     [JsonPropertyName("time")] public long? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesInventionProductsItem
 {
     [JsonPropertyName("probability")] public double? Probability { get; init; }
@@ -282,6 +373,7 @@ public sealed class ClientBlueprintsActivitiesInventionProductsItem
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesInvention
 {
     [JsonPropertyName("materials")] public ClientBlueprintsActivitiesCopyingMaterialsItem[]? Materials { get; init; }
@@ -290,6 +382,7 @@ public sealed class ClientBlueprintsActivitiesInvention
     [JsonPropertyName("time")] public long? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivitiesManufacturing
 {
     [JsonPropertyName("materials")] public ClientBlueprintsActivitiesCopyingMaterialsItem[]? Materials { get; init; }
@@ -298,6 +391,7 @@ public sealed class ClientBlueprintsActivitiesManufacturing
     [JsonPropertyName("time")] public long? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprintsActivities
 {
     [JsonPropertyName("copying")] public ClientBlueprintsActivitiesCopying? Copying { get; init; }
@@ -308,6 +402,7 @@ public sealed class ClientBlueprintsActivities
     [JsonPropertyName("research_time")] public ClientBlueprintsActivitiesCopying? ResearchTime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBlueprints
 {
     [JsonPropertyName("activities")] public ClientBlueprintsActivities? Activities { get; init; }
@@ -315,6 +410,7 @@ public sealed class ClientBlueprints
     [JsonPropertyName("maxProductionLimit")] public long? MaxProductionLimit { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientBrackets
 {
     [JsonPropertyName("iconOffset")] public long? IconOffset { get; init; }
@@ -325,6 +421,7 @@ public sealed class ClientBrackets
     [JsonPropertyName("texturePathEmpty")] public string? TexturePathEmpty { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCareerpaths
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -332,6 +429,7 @@ public sealed class ClientCareerpaths
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCategories
 {
     [JsonPropertyName("categoryID")] public long? CategoryID { get; init; }
@@ -341,6 +439,7 @@ public sealed class ClientCategories
     [JsonPropertyName("sofBuildClass")] public string? SofBuildClass { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCertificatesCertificatesValueSkillTypesValue
 {
     [JsonPropertyName("advanced")] public long? Advanced { get; init; }
@@ -350,6 +449,7 @@ public sealed class ClientCertificatesCertificatesValueSkillTypesValue
     [JsonPropertyName("standard")] public long? Standard { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCertificatesCertificatesValue
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -359,12 +459,14 @@ public sealed class ClientCertificatesCertificatesValue
     [JsonPropertyName("skillTypes")] public Dictionary<string, ClientCertificatesCertificatesValueSkillTypesValue>? SkillTypes { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCertificates
 {
     [JsonPropertyName("certificates")] public Dictionary<string, ClientCertificatesCertificatesValue>? Certificates { get; init; }
     [JsonPropertyName("masteries")] public Dictionary<string, Dictionary<string, long[]>>? Masteries { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientChallengesEventConditions
 {
     [JsonPropertyName("attackerShipGroupID")] public long[]? AttackerShipGroupID { get; init; }
@@ -395,6 +497,7 @@ public sealed class ClientChallengesEventConditions
     [JsonPropertyName("weaponTypeID")] public long[]? WeaponTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientChallengesReward
 {
     [JsonPropertyName("amount")] public long? Amount { get; init; }
@@ -402,6 +505,7 @@ public sealed class ClientChallengesReward
     [JsonPropertyName("type_id")] public long? TypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientChallenges
 {
     [JsonPropertyName("achievement_event_type")] public string? AchievementEventType { get; init; }
@@ -424,6 +528,7 @@ public sealed class ClientChallenges
     [JsonPropertyName("should_only_appear_once_per_season")] public long? ShouldOnlyAppearOncePerSeason { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterAvatarbehaviors
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
@@ -431,6 +536,7 @@ public sealed class ClientCharacterAvatarbehaviors
     [JsonPropertyName("resPathList")] public string[]? ResPathList { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterColorlocations
 {
     [JsonPropertyName("colorKey")] public string? ColorKey { get; init; }
@@ -439,18 +545,21 @@ public sealed class ClientCharacterColorlocations
     [JsonPropertyName("hasWeight")] public long? HasWeight { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterColornames
 {
     [JsonPropertyName("colorName")] public string? ColorName { get; init; }
     [JsonPropertyName("hairColor")] public long? HairColor { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterModifierlocations
 {
     [JsonPropertyName("modifierKey")] public string? ModifierKey { get; init; }
     [JsonPropertyName("variationKey")] public string? VariationKey { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterPortraitresources
 {
     [JsonPropertyName("resPath")] public string? ResPath { get; init; }
@@ -458,6 +567,7 @@ public sealed class ClientCharacterPortraitresources
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterResources
 {
     [JsonPropertyName("clothingAlsoCoversCategory")] public long? ClothingAlsoCoversCategory { get; init; }
@@ -471,12 +581,14 @@ public sealed class ClientCharacterResources
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCharacterSculptinglocations
 {
     [JsonPropertyName("weightKeyCategory")] public string? WeightKeyCategory { get; init; }
     [JsonPropertyName("weightKeyPrefix")] public string? WeightKeyPrefix { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCheckpoints
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -484,18 +596,21 @@ public sealed class ClientCheckpoints
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientClientlocationlists
 {
-    [JsonPropertyName("excludedLocationIDs")] public JsonElement[]? ExcludedLocationIDs { get; init; }
+    [JsonPropertyName("excludedLocationIDs")] public CatalogAbsent[]? ExcludedLocationIDs { get; init; }
     [JsonPropertyName("includedLocationIDs")] public long[]? IncludedLocationIDs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientClonegrades
 {
     [JsonPropertyName("internalDescription")] public string? InternalDescription { get; init; }
     [JsonPropertyName("skills")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCommandsets
 {
     [JsonPropertyName("commands")] public string[]? Commands { get; init; }
@@ -504,6 +619,7 @@ public sealed class ClientCommandsets
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCommunityTrackTemplates
 {
     [JsonPropertyName("goal")] public long? Goal { get; init; }
@@ -511,6 +627,7 @@ public sealed class ClientCommunityTrackTemplates
     [JsonPropertyName("tale_templates")] public long[]? TaleTemplates { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConstellationsCenter
 {
     [JsonPropertyName("x")] public double? X { get; init; }
@@ -518,6 +635,7 @@ public sealed class ClientConstellationsCenter
     [JsonPropertyName("z")] public double? Z { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConstellations
 {
     [JsonPropertyName("center")] public ClientConstellationsCenter? Center { get; init; }
@@ -530,6 +648,7 @@ public sealed class ClientConstellations
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContenttags
 {
     [JsonPropertyName("contentTagType")] public string? ContentTagType { get; init; }
@@ -538,11 +657,13 @@ public sealed class ClientContenttags
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContenttagtypes
 {
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContrabandtypesFactionsValue
 {
     [JsonPropertyName("attackMinSec")] public double? AttackMinSec { get; init; }
@@ -551,11 +672,13 @@ public sealed class ClientContrabandtypesFactionsValue
     [JsonPropertyName("standingLoss")] public double? StandingLoss { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContrabandtypes
 {
     [JsonPropertyName("factions")] public Dictionary<string, ClientContrabandtypesFactionsValue>? Factions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContributionmethodsParametersItem
 {
     [JsonPropertyName("icon")] public string? Icon { get; init; }
@@ -567,6 +690,7 @@ public sealed class ClientContributionmethodsParametersItem
     [JsonPropertyName("title")] public string? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientContributionmethods
 {
     [JsonPropertyName("contentTags")] public string[]? ContentTags { get; init; }
@@ -581,6 +705,7 @@ public sealed class ClientContributionmethods
     [JsonPropertyName("unit")] public long? Unit { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientControltowerresourcesResourcesItem
 {
     [JsonPropertyName("factionID")] public long? FactionID { get; init; }
@@ -590,11 +715,13 @@ public sealed class ClientControltowerresourcesResourcesItem
     [JsonPropertyName("resourceTypeID")] public long? ResourceTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientControltowerresources
 {
     [JsonPropertyName("resources")] public ClientControltowerresourcesResourcesItem[]? Resources { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConversationagents
 {
     [JsonPropertyName("imagePath")] public string? ImagePath { get; init; }
@@ -604,6 +731,7 @@ public sealed class ClientConversationagents
     [JsonPropertyName("scenePath")] public string? ScenePath { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConversationsLinesItemLineHintsItemImageColor
 {
     [JsonPropertyName("a")] public double? A { get; init; }
@@ -615,6 +743,7 @@ public sealed class ClientConversationsLinesItemLineHintsItemImageColor
     [JsonPropertyName("r")] public double? R { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConversationsLinesItemLineHintsItem
 {
     [JsonPropertyName("iconID")] public long? IconID { get; init; }
@@ -623,6 +752,7 @@ public sealed class ClientConversationsLinesItemLineHintsItem
     [JsonPropertyName("text")] public long? Text { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConversationsLinesItem
 {
     [JsonPropertyName("agentID")] public long? AgentID { get; init; }
@@ -637,17 +767,20 @@ public sealed class ClientConversationsLinesItem
     [JsonPropertyName("uiHighlights")] public long[]? UiHighlights { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientConversations
 {
     [JsonPropertyName("lines")] public ClientConversationsLinesItem[]? Lines { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCorporationactivities
 {
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCorporationrolegroups
 {
     [JsonPropertyName("appliesTo")] public string? AppliesTo { get; init; }
@@ -659,6 +792,7 @@ public sealed class ClientCorporationrolegroups
     [JsonPropertyName("roleMask")] public long? RoleMask { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCorporationroles
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -666,6 +800,7 @@ public sealed class ClientCorporationroles
     [JsonPropertyName("roleName")] public string? RoleName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCratesAnimatedSplash
 {
     [JsonPropertyName("color")] public ClientConversationsLinesItemLineHintsItemImageColor? Color { get; init; }
@@ -674,6 +809,7 @@ public sealed class ClientCratesAnimatedSplash
     [JsonPropertyName("width")] public long? Width { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCratesLootTableByRace
 {
     [JsonPropertyName("amarr")] public long? Amarr { get; init; }
@@ -682,6 +818,7 @@ public sealed class ClientCratesLootTableByRace
     [JsonPropertyName("minmatar")] public long? Minmatar { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCratesStaticSplash
 {
     [JsonPropertyName("height")] public long? Height { get; init; }
@@ -689,6 +826,7 @@ public sealed class ClientCratesStaticSplash
     [JsonPropertyName("width")] public long? Width { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCrates
 {
     [JsonPropertyName("animatedSplash")] public ClientCratesAnimatedSplash? AnimatedSplash { get; init; }
@@ -705,6 +843,7 @@ public sealed class ClientCrates
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientCurrencybuckets
 {
     [JsonPropertyName("capacity")] public long? Capacity { get; init; }
@@ -712,23 +851,27 @@ public sealed class ClientCurrencybuckets
     [JsonPropertyName("redeemTypeID")] public long? RedeemTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDbuffcollectionsItemModifiersItem
 {
     [JsonPropertyName("dogmaAttributeID")] public long? DogmaAttributeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDbuffcollectionsLocationGroupModifiersItem
 {
     [JsonPropertyName("dogmaAttributeID")] public long? DogmaAttributeID { get; init; }
     [JsonPropertyName("groupID")] public long? GroupID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDbuffcollectionsLocationRequiredSkillModifiersItem
 {
     [JsonPropertyName("dogmaAttributeID")] public long? DogmaAttributeID { get; init; }
     [JsonPropertyName("skillID")] public long? SkillID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDbuffcollections
 {
     [JsonPropertyName("aggregateMode")] public string? AggregateMode { get; init; }
@@ -742,6 +885,7 @@ public sealed class ClientDbuffcollections
     [JsonPropertyName("showOutputValueInUI")] public string? ShowOutputValueInUI { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDefaultoverviews
 {
     [JsonPropertyName("defaultOverviewGroups")] public long[]? DefaultOverviewGroups { get; init; }
@@ -749,24 +893,60 @@ public sealed class ClientDefaultoverviews
     [JsonPropertyName("overviewShortName")] public string? OverviewShortName { get; init; }
 }
 
+[JsonConverter(typeof(ClientDialogsSuppressableChoiceConverter))]
+public abstract record ClientDialogsSuppressableChoice;
+
+public sealed record ClientDialogsSuppressableChoiceBool(bool Value) : ClientDialogsSuppressableChoice;
+
+public sealed record ClientDialogsSuppressableChoiceString(string Value) : ClientDialogsSuppressableChoice;
+
+internal sealed class ClientDialogsSuppressableChoiceConverter : JsonConverter<ClientDialogsSuppressableChoice>
+{
+    public override ClientDialogsSuppressableChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.True or JsonTokenType.False => new ClientDialogsSuppressableChoiceBool(JsonSerializer.Deserialize<bool>(ref reader, options)!),
+            JsonTokenType.String => new ClientDialogsSuppressableChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientDialogsSuppressableChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientDialogsSuppressableChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientDialogsSuppressableChoiceBool item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientDialogsSuppressableChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientDialogsSuppressableChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDialogs
 {
     [JsonPropertyName("bodyID")] public long? BodyID { get; init; }
     [JsonPropertyName("closable")] public bool? Closable { get; init; }
     [JsonPropertyName("dialogID")] public long? DialogID { get; init; }
     [JsonPropertyName("dialogType")] public string? DialogType { get; init; }
-    [JsonPropertyName("suppressable")] public JsonElement? Suppressable { get; init; }
+    [JsonPropertyName("suppressable")] public ClientDialogsSuppressableChoice? Suppressable { get; init; }
     [JsonPropertyName("titleID")] public long? TitleID { get; init; }
     [JsonPropertyName("urlAudio")] public string? UrlAudio { get; init; }
     [JsonPropertyName("urlIcon")] public string? UrlIcon { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDogmaattributecategories
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDogmaattributes
 {
     [JsonPropertyName("attributeID")] public long? AttributeID { get; init; }
@@ -789,6 +969,7 @@ public sealed class ClientDogmaattributes
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDogmaeffectsModifierInfoItem
 {
     [JsonPropertyName("domain")] public string? Domain { get; init; }
@@ -801,6 +982,7 @@ public sealed class ClientDogmaeffectsModifierInfoItem
     [JsonPropertyName("skillTypeID")] public long? SkillTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDogmaeffects
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -832,6 +1014,7 @@ public sealed class ClientDogmaeffects
     [JsonPropertyName("trackingSpeedAttributeID")] public long? TrackingSpeedAttributeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDogmaunits
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -839,6 +1022,7 @@ public sealed class ClientDogmaunits
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonenvironmenttemplates
 {
     [JsonPropertyName("dungeonWideTemplates")] public long[]? DungeonWideTemplates { get; init; }
@@ -846,23 +1030,60 @@ public sealed class ClientDungeonenvironmenttemplates
     [JsonPropertyName("systemWideTemplates")] public long[]? SystemWideTemplates { get; init; }
 }
 
+[JsonConverter(typeof(ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceConverter))]
+public abstract record ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice;
+
+public sealed record ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceArray(long[] Value) : ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice;
+
+public sealed record ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceString(string Value) : ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice;
+
+internal sealed class ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceConverter : JsonConverter<ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice>
+{
+    public override ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceArray(JsonSerializer.Deserialize<long[]>(ref reader, options)!),
+            JsonTokenType.String => new ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonobjectivesClientObjectivesBlackboardParametersItem
 {
-    [JsonPropertyName("defaultValue")] public JsonElement? DefaultValue { get; init; }
+    [JsonPropertyName("defaultValue")] public ClientDungeonobjectivesClientObjectivesBlackboardParametersItemDefaultValueChoice? DefaultValue { get; init; }
     [JsonPropertyName("parameterKey")] public string? ParameterKey { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonobjectivesClientObjectivesOverridesDestroyTargets
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("title")] public string? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonobjectivesClientObjectivesOverrides
 {
     [JsonPropertyName("destroy_targets")] public ClientDungeonobjectivesClientObjectivesOverridesDestroyTargets? DestroyTargets { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonobjectivesClientObjectives
 {
     [JsonPropertyName("blackboardParameters")] public ClientDungeonobjectivesClientObjectivesBlackboardParametersItem[]? BlackboardParameters { get; init; }
@@ -871,11 +1092,13 @@ public sealed class ClientDungeonobjectivesClientObjectives
     [JsonPropertyName("overrides")] public ClientDungeonobjectivesClientObjectivesOverrides? Overrides { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonobjectives
 {
     [JsonPropertyName("clientObjectives")] public ClientDungeonobjectivesClientObjectives? ClientObjectives { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsConnectionsItem
 {
     [JsonPropertyName("allowedShipRaces")] public long[]? AllowedShipRaces { get; init; }
@@ -884,6 +1107,7 @@ public sealed class ClientDungeonsConnectionsItem
     [JsonPropertyName("fromObjectID")] public long? FromObjectID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsRoomsValueObjectsValueEntitiesValue
 {
     [JsonPropertyName("additionalLootId")] public long? AdditionalLootId { get; init; }
@@ -897,6 +1121,7 @@ public sealed class ClientDungeonsRoomsValueObjectsValueEntitiesValue
     [JsonPropertyName("triggerSpawn")] public long? TriggerSpawn { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsRoomsValueObjectsValueGuardCommand
 {
     [JsonPropertyName("aggressionRange")] public double? AggressionRange { get; init; }
@@ -912,16 +1137,7 @@ public sealed class ClientDungeonsRoomsValueObjectsValueGuardCommand
     [JsonPropertyName("orbitRange")] public double? OrbitRange { get; init; }
 }
 
-public sealed class ClientDungeonsRoomsValueObjectsValuePosition
-{
-    [JsonPropertyName("n_fields")] public long? NFields { get; init; }
-    [JsonPropertyName("n_sequence_fields")] public long? NSequenceFields { get; init; }
-    [JsonPropertyName("n_unnamed_fields")] public long? NUnnamedFields { get; init; }
-    [JsonPropertyName("x")] public double? X { get; init; }
-    [JsonPropertyName("y")] public double? Y { get; init; }
-    [JsonPropertyName("z")] public double? Z { get; init; }
-}
-
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsRoomsValueObjectsValue
 {
     [JsonPropertyName("entities")] public Dictionary<string, ClientDungeonsRoomsValueObjectsValueEntitiesValue>? Entities { get; init; }
@@ -933,7 +1149,7 @@ public sealed class ClientDungeonsRoomsValueObjectsValue
     [JsonPropertyName("objectNameID")] public long? ObjectNameID { get; init; }
     [JsonPropertyName("order")] public long? Order { get; init; }
     [JsonPropertyName("pitch")] public double? Pitch { get; init; }
-    [JsonPropertyName("position")] public ClientDungeonsRoomsValueObjectsValuePosition? Position { get; init; }
+    [JsonPropertyName("position")] public ClientAtomsParametersInputsItemDefaultValueObject? Position { get; init; }
     [JsonPropertyName("radius")] public double? Radius { get; init; }
     [JsonPropertyName("roll")] public double? Roll { get; init; }
     [JsonPropertyName("roomID")] public long? RoomID { get; init; }
@@ -941,6 +1157,7 @@ public sealed class ClientDungeonsRoomsValueObjectsValue
     [JsonPropertyName("yaw")] public double? Yaw { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsRoomsValue
 {
     [JsonPropertyName("messageHeaderID")] public long? MessageHeaderID { get; init; }
@@ -954,12 +1171,14 @@ public sealed class ClientDungeonsRoomsValue
     [JsonPropertyName("z")] public long? Z { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeonsStandingRestrictionsItem
 {
     [JsonPropertyName("corpID")] public long? CorpID { get; init; }
     [JsonPropertyName("minStandings")] public double? MinStandings { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDungeons
 {
     [JsonPropertyName("archetypeID")] public long? ArchetypeID { get; init; }
@@ -980,11 +1199,13 @@ public sealed class ClientDungeons
     [JsonPropertyName("useDefaultSpaceMusic")] public long? UseDefaultSpaceMusic { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDusticons
 {
     [JsonPropertyName("iconFile")] public string? IconFile { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDynamicitemattributesAttributeIDsValue
 {
     [JsonPropertyName("highIsGood")] public long? HighIsGood { get; init; }
@@ -992,18 +1213,21 @@ public sealed class ClientDynamicitemattributesAttributeIDsValue
     [JsonPropertyName("min")] public double? Min { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDynamicitemattributesInputOutputMappingItem
 {
     [JsonPropertyName("applicableTypes")] public long[]? ApplicableTypes { get; init; }
     [JsonPropertyName("resultingType")] public long? ResultingType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientDynamicitemattributes
 {
     [JsonPropertyName("attributeIDs")] public Dictionary<string, ClientDynamicitemattributesAttributeIDsValue>? AttributeIDs { get; init; }
     [JsonPropertyName("inputOutputMapping")] public ClientDynamicitemattributesInputOutputMappingItem[]? InputOutputMapping { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsControllerVariableTriggers
 {
     [JsonPropertyName("Blast_Scale")] public double? BlastScale { get; init; }
@@ -1017,6 +1241,7 @@ public sealed class ClientEffectsControllerVariableTriggers
     [JsonPropertyName("star_state")] public double? StarState { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsSourceDamage
 {
     [JsonPropertyName("delay")] public double? Delay { get; init; }
@@ -1024,6 +1249,7 @@ public sealed class ClientEffectsSourceDamage
     [JsonPropertyName("size")] public double? Size { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffects
 {
     [JsonPropertyName("animationName")] public string? AnimationName { get; init; }
@@ -1042,12 +1268,14 @@ public sealed class ClientEffects
     [JsonPropertyName("type")] public string? Type { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsequencesItemStepsItemCallFunctionsItem
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("target")] public string? Target { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsequencesItemStepsItemScaling
 {
     [JsonPropertyName("amount")] public double? Amount { get; init; }
@@ -1055,6 +1283,7 @@ public sealed class ClientEffectsequencesItemStepsItemScaling
     [JsonPropertyName("sourceValue")] public string? SourceValue { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsequencesItemStepsItem
 {
     [JsonPropertyName("callFunctions")] public ClientEffectsequencesItemStepsItemCallFunctionsItem[]? CallFunctions { get; init; }
@@ -1068,6 +1297,7 @@ public sealed class ClientEffectsequencesItemStepsItem
     [JsonPropertyName("target")] public string? Target { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEffectsequencesItem
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
@@ -1075,6 +1305,7 @@ public sealed class ClientEffectsequencesItem
     [JsonPropertyName("stops")] public string[]? Stops { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEmpireselection
 {
     [JsonPropertyName("bloodlines")] public Dictionary<string, long>? Bloodlines { get; init; }
@@ -1085,6 +1316,7 @@ public sealed class ClientEmpireselection
     [JsonPropertyName("sealPath")] public string? SealPath { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEmpiretechnologiesExamplesValue
 {
     [JsonPropertyName("iconAmarr")] public string? IconAmarr { get; init; }
@@ -1101,6 +1333,7 @@ public sealed class ClientEmpiretechnologiesExamplesValue
     [JsonPropertyName("titleMinmatar")] public long? TitleMinmatar { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEmpiretechnologies
 {
     [JsonPropertyName("examples")] public Dictionary<string, ClientEmpiretechnologiesExamplesValue>? Examples { get; init; }
@@ -1118,26 +1351,30 @@ public sealed class ClientEmpiretechnologies
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplateanchorcategoryids
 {
     [JsonPropertyName("baseEnvironment")] public long? BaseEnvironment { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplateanchortypeids
 {
     [JsonPropertyName("baseEnvironment")] public long? BaseEnvironment { get; init; }
     [JsonPropertyName("overrides")] public Dictionary<string, long>? Overrides { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesAudioTriggers
 {
     [JsonPropertyName("onEnter")] public long? OnEnter { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesDistanceField
 {
     [JsonPropertyName("anchorBallDimensionMultiplication")] public double[]? AnchorBallDimensionMultiplication { get; init; }
-    [JsonPropertyName("dimensions")] public ClientDungeonsRoomsValueObjectsValuePosition? Dimensions { get; init; }
+    [JsonPropertyName("dimensions")] public ClientAtomsParametersInputsItemDefaultValueObject? Dimensions { get; init; }
     [JsonPropertyName("distanceThreshold")] public double? DistanceThreshold { get; init; }
     [JsonPropertyName("dynamicDimensions")] public long? DynamicDimensions { get; init; }
     [JsonPropertyName("maxDistance")] public double? MaxDistance { get; init; }
@@ -1146,23 +1383,27 @@ public sealed class ClientEnvironmenttemplatesDistanceField
     [JsonPropertyName("timeAdjustmentSecondsOut")] public double? TimeAdjustmentSecondsOut { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesExampleUsage
 {
     [JsonPropertyName("id")] public long? Id { get; init; }
     [JsonPropertyName("usageType")] public long? UsageType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesGraphicIDAttachmentsItem
 {
     [JsonPropertyName("background")] public long? Background { get; init; }
     [JsonPropertyName("graphicID")] public long? GraphicID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesNebulaOverrides
 {
     [JsonPropertyName("tint")] public ClientConversationsLinesItemLineHintsItemImageColor? Tint { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesPostProcessRangesBloom
 {
     [JsonPropertyName("max")] public double? Max { get; init; }
@@ -1172,12 +1413,14 @@ public sealed class ClientEnvironmenttemplatesPostProcessRangesBloom
     [JsonPropertyName("n_unnamed_fields")] public long? NUnnamedFields { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesPostProcessRanges
 {
     [JsonPropertyName("bloom")] public ClientEnvironmenttemplatesPostProcessRangesBloom? Bloom { get; init; }
     [JsonPropertyName("fog")] public ClientEnvironmenttemplatesPostProcessRangesBloom? Fog { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesPostProcess
 {
     [JsonPropertyName("path")] public string? Path { get; init; }
@@ -1185,6 +1428,7 @@ public sealed class ClientEnvironmenttemplatesPostProcess
     [JsonPropertyName("useGodRaysSunColor")] public long? UseGodRaysSunColor { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesStaticParticleFieldStaticClustersValue
 {
     [JsonPropertyName("baseColor")] public ClientConversationsLinesItemLineHintsItemImageColor? BaseColor { get; init; }
@@ -1194,6 +1438,7 @@ public sealed class ClientEnvironmenttemplatesStaticParticleFieldStaticClustersV
     [JsonPropertyName("radius")] public double? Radius { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplatesStaticParticleField
 {
     [JsonPropertyName("density")] public double? Density { get; init; }
@@ -1204,6 +1449,7 @@ public sealed class ClientEnvironmenttemplatesStaticParticleField
     [JsonPropertyName("transformFile")] public string? TransformFile { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEnvironmenttemplates
 {
     [JsonPropertyName("activationRadius")] public double? ActivationRadius { get; init; }
@@ -1225,6 +1471,7 @@ public sealed class ClientEnvironmenttemplates
     [JsonPropertyName("subEnvironmentTypeIDs")] public long[]? SubEnvironmentTypeIDs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEpicarcsMissionsValue
 {
     [JsonPropertyName("agentID")] public long? AgentID { get; init; }
@@ -1232,6 +1479,7 @@ public sealed class ClientEpicarcsMissionsValue
     [JsonPropertyName("nextMissions")] public long[]? NextMissions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEpicarcs
 {
     [JsonPropertyName("arcRestartInterval")] public long? ArcRestartInterval { get; init; }
@@ -1242,6 +1490,7 @@ public sealed class ClientEpicarcs
     [JsonPropertyName("missions")] public Dictionary<string, ClientEpicarcsMissionsValue>? Missions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEssreservekeys
 {
     [JsonPropertyName("keyTypeID")] public long? KeyTypeID { get; init; }
@@ -1249,16 +1498,19 @@ public sealed class ClientEssreservekeys
     [JsonPropertyName("totalPulses")] public long? TotalPulses { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEventmessagetypes
 {
     [JsonPropertyName("messageTypeName")] public string? MessageTypeName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientEventtypes
 {
     [JsonPropertyName("eventTypeName")] public string? EventTypeName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExpertsystems
 {
     [JsonPropertyName("associatedShipTypes")] public long[]? AssociatedShipTypes { get; init; }
@@ -1269,6 +1521,7 @@ public sealed class ClientExpertsystems
     [JsonPropertyName("skillsGranted")] public Dictionary<string, long>? SkillsGranted { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExplosionbucketidsRacialExplosionsAmarrItem
 {
     [JsonPropertyName("chanceMultiplier")] public long? ChanceMultiplier { get; init; }
@@ -1278,6 +1531,7 @@ public sealed class ClientExplosionbucketidsRacialExplosionsAmarrItem
     [JsonPropertyName("localScale")] public double? LocalScale { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExplosionbucketidsRacialExplosions
 {
     [JsonPropertyName("amarr")] public ClientExplosionbucketidsRacialExplosionsAmarrItem[]? Amarr { get; init; }
@@ -1291,6 +1545,7 @@ public sealed class ClientExplosionbucketidsRacialExplosions
     [JsonPropertyName("triglavian")] public ClientExplosionbucketidsRacialExplosionsAmarrItem[]? Triglavian { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExplosionbucketidsSpecialExplosion
 {
     [JsonPropertyName("explosionID")] public string? ExplosionID { get; init; }
@@ -1299,12 +1554,14 @@ public sealed class ClientExplosionbucketidsSpecialExplosion
     [JsonPropertyName("localScale")] public double? LocalScale { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExplosionbucketids
 {
     [JsonPropertyName("racialExplosions")] public ClientExplosionbucketidsRacialExplosions? RacialExplosions { get; init; }
     [JsonPropertyName("specialExplosion")] public ClientExplosionbucketidsSpecialExplosion? SpecialExplosion { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientExplosionids
 {
     [JsonPropertyName("childExplosionType")] public long? ChildExplosionType { get; init; }
@@ -1312,6 +1569,7 @@ public sealed class ClientExplosionids
     [JsonPropertyName("modelSwitchDelayInMs")] public long? ModelSwitchDelayInMs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFactions
 {
     [JsonPropertyName("corporationID")] public long? CorporationID { get; init; }
@@ -1328,6 +1586,7 @@ public sealed class ClientFactions
     [JsonPropertyName("uniqueName")] public long? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilities
 {
     [JsonPropertyName("disallowInHighSec")] public bool? DisallowInHighSec { get; init; }
@@ -1339,29 +1598,34 @@ public sealed class ClientFighterabilities
     [JsonPropertyName("turretGraphicID")] public long? TurretGraphicID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilitiesbytypeAbilitySlot0
 {
     [JsonPropertyName("abilityID")] public long? AbilityID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilitiesbytypeAbilitySlot1
 {
     [JsonPropertyName("abilityID")] public long? AbilityID { get; init; }
     [JsonPropertyName("cooldownSeconds")] public double? CooldownSeconds { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilitiesbytypeAbilitySlot2Charges
 {
     [JsonPropertyName("chargeCount")] public long? ChargeCount { get; init; }
     [JsonPropertyName("rearmTimeSeconds")] public double? RearmTimeSeconds { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilitiesbytypeAbilitySlot2
 {
     [JsonPropertyName("abilityID")] public long? AbilityID { get; init; }
     [JsonPropertyName("charges")] public ClientFighterabilitiesbytypeAbilitySlot2Charges? Charges { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientFighterabilitiesbytype
 {
     [JsonPropertyName("abilitySlot0")] public ClientFighterabilitiesbytypeAbilitySlot0? AbilitySlot0 { get; init; }
@@ -1369,11 +1633,13 @@ public sealed class ClientFighterabilitiesbytype
     [JsonPropertyName("abilitySlot2")] public ClientFighterabilitiesbytypeAbilitySlot2? AbilitySlot2 { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGlobaltypes
 {
     [JsonPropertyName("resourceDistribution")] public Dictionary<string, double>? ResourceDistribution { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGoals
 {
     [JsonPropertyName("icon")] public string? Icon { get; init; }
@@ -1381,6 +1647,7 @@ public sealed class ClientGoals
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphicidsAnimationStateObjects
 {
     [JsonPropertyName("animationState")] public string? AnimationState { get; init; }
@@ -1395,6 +1662,7 @@ public sealed class ClientGraphicidsAnimationStateObjects
     [JsonPropertyName("vulnerable_inactive")] public string? VulnerableInactive { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphicidsControllerVariableOverrides
 {
     [JsonPropertyName("ActivationState")] public double? ActivationState { get; init; }
@@ -1430,11 +1698,13 @@ public sealed class ClientGraphicidsControllerVariableOverrides
     [JsonPropertyName("worldarc_active")] public double? WorldarcActive { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphicidsIconInfo
 {
     [JsonPropertyName("folder")] public string? Folder { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphicids
 {
     [JsonPropertyName("albedoColor")] public double[]? AlbedoColor { get; init; }
@@ -1453,21 +1723,24 @@ public sealed class ClientGraphicids
     [JsonPropertyName("sofRaceName")] public string? SofRaceName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphiclocationsDirectionalLocatorsItem
 {
     [JsonPropertyName("category")] public string? Category { get; init; }
-    [JsonPropertyName("direction")] public ClientDungeonsRoomsValueObjectsValuePosition? Direction { get; init; }
+    [JsonPropertyName("direction")] public ClientAtomsParametersInputsItemDefaultValueObject? Direction { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
-    [JsonPropertyName("position")] public ClientDungeonsRoomsValueObjectsValuePosition? Position { get; init; }
+    [JsonPropertyName("position")] public ClientAtomsParametersInputsItemDefaultValueObject? Position { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphiclocationsLocatorsItem
 {
     [JsonPropertyName("category")] public string? Category { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
-    [JsonPropertyName("position")] public ClientDungeonsRoomsValueObjectsValuePosition? Position { get; init; }
+    [JsonPropertyName("position")] public ClientAtomsParametersInputsItemDefaultValueObject? Position { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphiclocations
 {
     [JsonPropertyName("directionalLocators")] public ClientGraphiclocationsDirectionalLocatorsItem[]? DirectionalLocators { get; init; }
@@ -1475,6 +1748,7 @@ public sealed class ClientGraphiclocations
     [JsonPropertyName("locators")] public ClientGraphiclocationsLocatorsItem[]? Locators { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGraphicmaterialsets
 {
     [JsonPropertyName("colorHull")] public ClientConversationsLinesItemLineHintsItemImageColor? ColorHull { get; init; }
@@ -1494,6 +1768,7 @@ public sealed class ClientGraphicmaterialsets
     [JsonPropertyName("sofRaceHint")] public string? SofRaceHint { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphicsCategoriesCategoryListItem
 {
     [JsonPropertyName("categoryName")] public string? CategoryName { get; init; }
@@ -1502,12 +1777,14 @@ public sealed class ClientGroupgraphicsCategoriesCategoryListItem
     [JsonPropertyName("graphicIDs")] public long[]? GraphicIDs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphicsCategories
 {
     [JsonPropertyName("categoryAttribute")] public string? CategoryAttribute { get; init; }
     [JsonPropertyName("categoryList")] public ClientGroupgraphicsCategoriesCategoryListItem[]? CategoryList { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphicsTypeIDsValueTypeCategoriesTypeCategoryListItem
 {
     [JsonPropertyName("graphicIDs")] public long[]? GraphicIDs { get; init; }
@@ -1516,12 +1793,14 @@ public sealed class ClientGroupgraphicsTypeIDsValueTypeCategoriesTypeCategoryLis
     [JsonPropertyName("typeCategoryRangeEnd")] public double? TypeCategoryRangeEnd { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphicsTypeIDsValueTypeCategories
 {
     [JsonPropertyName("typeCategoryAttribute")] public string? TypeCategoryAttribute { get; init; }
     [JsonPropertyName("typeCategoryList")] public ClientGroupgraphicsTypeIDsValueTypeCategoriesTypeCategoryListItem[]? TypeCategoryList { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphicsTypeIDsValue
 {
     [JsonPropertyName("color")] public ClientConversationsLinesItemLineHintsItemImageColor? Color { get; init; }
@@ -1529,6 +1808,7 @@ public sealed class ClientGroupgraphicsTypeIDsValue
     [JsonPropertyName("typeCategories")] public ClientGroupgraphicsTypeIDsValueTypeCategories? TypeCategories { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroupgraphics
 {
     [JsonPropertyName("categories")] public ClientGroupgraphicsCategories? Categories { get; init; }
@@ -1537,12 +1817,14 @@ public sealed class ClientGroupgraphics
     [JsonPropertyName("typeIDs")] public Dictionary<string, ClientGroupgraphicsTypeIDsValue>? TypeIDs { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGrouprewardsTablesItemEntriesItem
 {
     [JsonPropertyName("playerCount")] public long? PlayerCount { get; init; }
     [JsonPropertyName("quantity")] public long? Quantity { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGrouprewardsTablesItem
 {
     [JsonPropertyName("delayed")] public long? Delayed { get; init; }
@@ -1552,6 +1834,7 @@ public sealed class ClientGrouprewardsTablesItem
     [JsonPropertyName("securityCriteria")] public long? SecurityCriteria { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGrouprewards
 {
     [JsonPropertyName("damageContributionMultiplier")] public double? DamageContributionMultiplier { get; init; }
@@ -1564,6 +1847,7 @@ public sealed class ClientGrouprewards
     [JsonPropertyName("tables")] public ClientGrouprewardsTablesItem[]? Tables { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientGroups
 {
     [JsonPropertyName("anchorable")] public long? Anchorable { get; init; }
@@ -1577,12 +1861,14 @@ public sealed class ClientGroups
     [JsonPropertyName("useBasePrice")] public long? UseBasePrice { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientHuecategories
 {
     [JsonPropertyName("hue")] public long? Hue { get; init; }
     [JsonPropertyName("hueNameID")] public long? HueNameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIconids
 {
     [JsonPropertyName("iconFile")] public string? IconFile { get; init; }
@@ -1590,6 +1876,7 @@ public sealed class ClientIconids
     [JsonPropertyName("obsolete")] public long? Obsolete { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivities
 {
     [JsonPropertyName("activityID")] public long? ActivityID { get; init; }
@@ -1597,19 +1884,22 @@ public sealed class ClientIndustryActivities
     [JsonPropertyName("description")] public string? Description { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityModifierSourcesCopying
 {
     [JsonPropertyName("cost")] public ClientDbuffcollectionsItemModifiersItem[]? Cost { get; init; }
-    [JsonPropertyName("material")] public JsonElement[]? Material { get; init; }
+    [JsonPropertyName("material")] public CatalogAbsent[]? Material { get; init; }
     [JsonPropertyName("time")] public ClientDbuffcollectionsItemModifiersItem[]? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityModifierSourcesManufacturingMaterialItem
 {
     [JsonPropertyName("dogmaAttributeID")] public long? DogmaAttributeID { get; init; }
     [JsonPropertyName("filterID")] public long? FilterID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityModifierSourcesManufacturing
 {
     [JsonPropertyName("cost")] public ClientDbuffcollectionsItemModifiersItem[]? Cost { get; init; }
@@ -1617,13 +1907,15 @@ public sealed class ClientIndustryActivityModifierSourcesManufacturing
     [JsonPropertyName("time")] public ClientIndustryActivityModifierSourcesManufacturingMaterialItem[]? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityModifierSourcesReaction
 {
-    [JsonPropertyName("cost")] public JsonElement[]? Cost { get; init; }
+    [JsonPropertyName("cost")] public CatalogAbsent[]? Cost { get; init; }
     [JsonPropertyName("material")] public ClientIndustryActivityModifierSourcesManufacturingMaterialItem[]? Material { get; init; }
     [JsonPropertyName("time")] public ClientIndustryActivityModifierSourcesManufacturingMaterialItem[]? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityModifierSources
 {
     [JsonPropertyName("copying")] public ClientIndustryActivityModifierSourcesCopying? Copying { get; init; }
@@ -1634,6 +1926,7 @@ public sealed class ClientIndustryActivityModifierSources
     [JsonPropertyName("research_time")] public ClientIndustryActivityModifierSourcesCopying? ResearchTime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryActivityTargetFilters
 {
     [JsonPropertyName("categoryIDs")] public long[]? CategoryIDs { get; init; }
@@ -1641,6 +1934,7 @@ public sealed class ClientIndustryActivityTargetFilters
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryAssemblyLinesDetailsPerCategoryItem
 {
     [JsonPropertyName("categoryID")] public long? CategoryID { get; init; }
@@ -1649,6 +1943,7 @@ public sealed class ClientIndustryAssemblyLinesDetailsPerCategoryItem
     [JsonPropertyName("time_multiplier")] public double? TimeMultiplier { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryAssemblyLinesDetailsPerGroupItem
 {
     [JsonPropertyName("cost_multiplier")] public double? CostMultiplier { get; init; }
@@ -1657,6 +1952,7 @@ public sealed class ClientIndustryAssemblyLinesDetailsPerGroupItem
     [JsonPropertyName("time_multiplier")] public double? TimeMultiplier { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryAssemblyLinesDetailsPerTypeListItem
 {
     [JsonPropertyName("material_multiplier")] public double? MaterialMultiplier { get; init; }
@@ -1664,6 +1960,7 @@ public sealed class ClientIndustryAssemblyLinesDetailsPerTypeListItem
     [JsonPropertyName("type_list_id")] public long? TypeListId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryAssemblyLines
 {
     [JsonPropertyName("activity")] public long? Activity { get; init; }
@@ -1678,17 +1975,20 @@ public sealed class ClientIndustryAssemblyLines
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryInstallationTypesAssemblyLinesItem
 {
     [JsonPropertyName("assemblyLine")] public long? AssemblyLine { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientIndustryInstallationTypes
 {
     [JsonPropertyName("assembly_lines")] public ClientIndustryInstallationTypesAssemblyLinesItem[]? AssemblyLines { get; init; }
     [JsonPropertyName("type_id")] public long? TypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientInfobubblesValueMiscBonusesItem
 {
     [JsonPropertyName("bonus")] public double? Bonus { get; init; }
@@ -1698,17 +1998,20 @@ public sealed class ClientInfobubblesValueMiscBonusesItem
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientInfobubblesValuePreReqSkillsValueSkillsValue
 {
     [JsonPropertyName("display")] public long? Display { get; init; }
     [JsonPropertyName("level")] public long? Level { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientInfobubblesValuePreReqSkillsValue
 {
     [JsonPropertyName("skills")] public Dictionary<string, ClientInfobubblesValuePreReqSkillsValueSkillsValue>? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientInfobubblesValueTypesValueItem
 {
     [JsonPropertyName("bonus")] public double? Bonus { get; init; }
@@ -1717,6 +2020,7 @@ public sealed class ClientInfobubblesValueTypesValueItem
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientInfobubblesValue
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -1733,6 +2037,7 @@ public sealed class ClientInfobubblesValue
     [JsonPropertyName("types")] public Dictionary<string, ClientInfobubblesValueTypesValueItem[]>? Types { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientItemtraderrecipes
 {
     [JsonPropertyName("displayNameID")] public long? DisplayNameID { get; init; }
@@ -1743,6 +2048,7 @@ public sealed class ClientItemtraderrecipes
     [JsonPropertyName("outputItems")] public Dictionary<string, long>? OutputItems { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientJumps
 {
     [JsonPropertyName("fromCoordinate")] public ClientConstellationsCenter? FromCoordinate { get; init; }
@@ -1754,6 +2060,7 @@ public sealed class ClientJumps
     [JsonPropertyName("toSystemID")] public long? ToSystemID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLandmarks
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -1765,6 +2072,7 @@ public sealed class ClientLandmarks
     [JsonPropertyName("position2d")] public double[]? Position2d { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdDeTokensValueKwargs
 {
     [JsonPropertyName("decimalPlaces")] public long? DecimalPlaces { get; init; }
@@ -1776,6 +2084,7 @@ public sealed class ClientLocalizationFsdDeTokensValueKwargs
     [JsonPropertyName("to")] public string? To { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdDeTokensValue
 {
     [JsonPropertyName("args")] public long? Args { get; init; }
@@ -1786,20 +2095,23 @@ public sealed class ClientLocalizationFsdDeTokensValue
     [JsonPropertyName("variableType")] public long? VariableType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdDe
 {
     [JsonPropertyName("language")] public string? Language { get; init; }
-    [JsonPropertyName("metadata")] public JsonElement? Metadata { get; init; }
+    [JsonPropertyName("metadata")] public CatalogAbsent? Metadata { get; init; }
     [JsonPropertyName("text")] public string? Text { get; init; }
     [JsonPropertyName("tokens")] public Dictionary<string, ClientLocalizationFsdDeTokensValue>? Tokens { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdFrMetadata
 {
     [JsonPropertyName("article")] public string? Article { get; init; }
     [JsonPropertyName("genitiveArticle")] public string? GenitiveArticle { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdFr
 {
     [JsonPropertyName("language")] public string? Language { get; init; }
@@ -1808,6 +2120,7 @@ public sealed class ClientLocalizationFsdFr
     [JsonPropertyName("tokens")] public Dictionary<string, ClientLocalizationFsdDeTokensValue>? Tokens { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdItTokensValueKwargs
 {
     [JsonPropertyName("decimalPlaces")] public long? DecimalPlaces { get; init; }
@@ -1817,6 +2130,7 @@ public sealed class ClientLocalizationFsdItTokensValueKwargs
     [JsonPropertyName("to")] public string? To { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdItTokensValue
 {
     [JsonPropertyName("args")] public long? Args { get; init; }
@@ -1827,14 +2141,57 @@ public sealed class ClientLocalizationFsdItTokensValue
     [JsonPropertyName("variableType")] public long? VariableType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientLocalizationFsdIt
 {
     [JsonPropertyName("language")] public string? Language { get; init; }
-    [JsonPropertyName("metadata")] public JsonElement? Metadata { get; init; }
+    [JsonPropertyName("metadata")] public CatalogAbsent? Metadata { get; init; }
     [JsonPropertyName("text")] public string? Text { get; init; }
     [JsonPropertyName("tokens")] public Dictionary<string, ClientLocalizationFsdItTokensValue>? Tokens { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientLocalizationFsdMainMapValue
+{
+    [JsonPropertyName("FullPath")] public string? FullPath { get; init; }
+    [JsonPropertyName("label")] public string? Label { get; init; }
+    [JsonPropertyName("messageID")] public long? MessageID { get; init; }
+}
+
+[JsonConverter(typeof(ClientLocalizationFsdMainChoiceConverter))]
+public abstract record ClientLocalizationFsdMainChoice;
+
+public sealed record ClientLocalizationFsdMainChoiceArray(string[] Value) : ClientLocalizationFsdMainChoice;
+
+public sealed record ClientLocalizationFsdMainChoiceMap(Dictionary<string, ClientLocalizationFsdMainMapValue> Value) : ClientLocalizationFsdMainChoice;
+
+internal sealed class ClientLocalizationFsdMainChoiceConverter : JsonConverter<ClientLocalizationFsdMainChoice>
+{
+    public override ClientLocalizationFsdMainChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientLocalizationFsdMainChoiceArray(JsonSerializer.Deserialize<string[]>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientLocalizationFsdMainChoiceMap(JsonSerializer.Deserialize<Dictionary<string, ClientLocalizationFsdMainMapValue>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientLocalizationFsdMainChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientLocalizationFsdMainChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientLocalizationFsdMainChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientLocalizationFsdMainChoiceMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientLocalizationFsdMainChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMarketgroups
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -1844,6 +2201,7 @@ public sealed class ClientMarketgroups
     [JsonPropertyName("parentGroupID")] public long? ParentGroupID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMenuhighlights
 {
     [JsonPropertyName("menuName")] public string? MenuName { get; init; }
@@ -1851,6 +2209,7 @@ public sealed class ClientMenuhighlights
     [JsonPropertyName("typeID")] public long[]? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMetagroups
 {
     [JsonPropertyName("color")] public ClientConversationsLinesItemLineHintsItemImageColor? Color { get; init; }
@@ -1860,18 +2219,69 @@ public sealed class ClientMetagroups
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientMissionsClientObjectivesContextParametersItemValueArrayItem
+{
+    [JsonPropertyName("group_id")] public long? GroupId { get; init; }
+    [JsonPropertyName("quantity")] public long? Quantity { get; init; }
+    [JsonPropertyName("type_id")] public long? TypeId { get; init; }
+    [JsonPropertyName("type_list_id")] public long? TypeListId { get; init; }
+}
+
+[JsonConverter(typeof(ClientMissionsClientObjectivesContextParametersItemValueChoiceConverter))]
+public abstract record ClientMissionsClientObjectivesContextParametersItemValueChoice;
+
+public sealed record ClientMissionsClientObjectivesContextParametersItemValueChoiceArray(ClientMissionsClientObjectivesContextParametersItemValueArrayItem[] Value) : ClientMissionsClientObjectivesContextParametersItemValueChoice;
+
+public sealed record ClientMissionsClientObjectivesContextParametersItemValueChoiceLong(long Value) : ClientMissionsClientObjectivesContextParametersItemValueChoice;
+
+public sealed record ClientMissionsClientObjectivesContextParametersItemValueChoiceObject(ClientMissionsClientObjectivesContextParametersItemValueArrayItem Value) : ClientMissionsClientObjectivesContextParametersItemValueChoice;
+
+internal sealed class ClientMissionsClientObjectivesContextParametersItemValueChoiceConverter : JsonConverter<ClientMissionsClientObjectivesContextParametersItemValueChoice>
+{
+    public override ClientMissionsClientObjectivesContextParametersItemValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientMissionsClientObjectivesContextParametersItemValueChoiceArray(JsonSerializer.Deserialize<ClientMissionsClientObjectivesContextParametersItemValueArrayItem[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientMissionsClientObjectivesContextParametersItemValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientMissionsClientObjectivesContextParametersItemValueChoiceObject(JsonSerializer.Deserialize<ClientMissionsClientObjectivesContextParametersItemValueArrayItem>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientMissionsClientObjectivesContextParametersItemValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientMissionsClientObjectivesContextParametersItemValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientMissionsClientObjectivesContextParametersItemValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientMissionsClientObjectivesContextParametersItemValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientMissionsClientObjectivesContextParametersItemValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientMissionsClientObjectivesContextParametersItemValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsClientObjectivesContextParametersItem
 {
     [JsonPropertyName("key")] public string? Key { get; init; }
-    [JsonPropertyName("value")] public JsonElement? Value { get; init; }
+    [JsonPropertyName("value")] public ClientMissionsClientObjectivesContextParametersItemValueChoice? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsClientObjectives
 {
     [JsonPropertyName("contextParameters")] public ClientMissionsClientObjectivesContextParametersItem[]? ContextParameters { get; init; }
     [JsonPropertyName("objectiveChainID")] public long? ObjectiveChainID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsCourierMission
 {
     [JsonPropertyName("objectiveQuantity")] public long? ObjectiveQuantity { get; init; }
@@ -1879,6 +2289,7 @@ public sealed class ClientMissionsCourierMission
     [JsonPropertyName("objectiveTypeID")] public long? ObjectiveTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsKillMission
 {
     [JsonPropertyName("dropItemInMissionContainer")] public long? DropItemInMissionContainer { get; init; }
@@ -1888,12 +2299,14 @@ public sealed class ClientMissionsKillMission
     [JsonPropertyName("objectiveTypeID")] public long? ObjectiveTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsMissionRewardsBonusReward
 {
     [JsonPropertyName("rewardQuantity")] public long? RewardQuantity { get; init; }
     [JsonPropertyName("rewardTypeID")] public long? RewardTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissionsMissionRewards
 {
     [JsonPropertyName("bonusReward")] public ClientMissionsMissionRewardsBonusReward? BonusReward { get; init; }
@@ -1901,6 +2314,7 @@ public sealed class ClientMissionsMissionRewards
     [JsonPropertyName("reward")] public ClientMissionsMissionRewardsBonusReward? Reward { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMissions
 {
     [JsonPropertyName("agentTypeID")] public long? AgentTypeID { get; init; }
@@ -1924,12 +2338,14 @@ public sealed class ClientMissions
     [JsonPropertyName("nodeGraphID")] public long? NodeGraphID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientMusictriggers
 {
     [JsonPropertyName("category")] public string? Category { get; init; }
     [JsonPropertyName("trigger")] public string? Trigger { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNewactivities
 {
     [JsonPropertyName("bannerEvent")] public long? BannerEvent { get; init; }
@@ -1944,6 +2360,7 @@ public sealed class ClientNewactivities
     [JsonPropertyName("startDatetime")] public string? StartDatetime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNewfeatures
 {
     [JsonPropertyName("agencyTexturePath")] public string? AgencyTexturePath { get; init; }
@@ -1960,6 +2377,66 @@ public sealed class ClientNewfeatures
     [JsonPropertyName("startDate")] public string? StartDate { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientNodegraphsNodesValueAtomParametersValueConnection
+{
+    [JsonPropertyName("node")] public string? Node { get; init; }
+    [JsonPropertyName("parameter")] public string? Parameter { get; init; }
+}
+
+[JsonConverter(typeof(ClientNodegraphsNodesValueAtomParametersValueValueChoiceConverter))]
+public abstract record ClientNodegraphsNodesValueAtomParametersValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueAtomParametersValueValueChoiceLong(long Value) : ClientNodegraphsNodesValueAtomParametersValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueAtomParametersValueValueChoiceDouble(double Value) : ClientNodegraphsNodesValueAtomParametersValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueAtomParametersValueValueChoiceObject(ClientAtomsParametersInputsItemDefaultValueObject Value) : ClientNodegraphsNodesValueAtomParametersValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueAtomParametersValueValueChoiceString(string Value) : ClientNodegraphsNodesValueAtomParametersValueValueChoice;
+
+internal sealed class ClientNodegraphsNodesValueAtomParametersValueValueChoiceConverter : JsonConverter<ClientNodegraphsNodesValueAtomParametersValueValueChoice>
+{
+    public override ClientNodegraphsNodesValueAtomParametersValueValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientNodegraphsNodesValueAtomParametersValueValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientNodegraphsNodesValueAtomParametersValueValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientNodegraphsNodesValueAtomParametersValueValueChoiceObject(JsonSerializer.Deserialize<ClientAtomsParametersInputsItemDefaultValueObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientNodegraphsNodesValueAtomParametersValueValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientNodegraphsNodesValueAtomParametersValueValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientNodegraphsNodesValueAtomParametersValueValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientNodegraphsNodesValueAtomParametersValueValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodegraphsNodesValueAtomParametersValueValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodegraphsNodesValueAtomParametersValueValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodegraphsNodesValueAtomParametersValueValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientNodegraphsNodesValueAtomParametersValueValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientNodegraphsNodesValueAtomParametersValue
+{
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
+    [JsonPropertyName("value")] public ClientNodegraphsNodesValueAtomParametersValueValueChoice? Value { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueConnections
 {
     [JsonPropertyName("group_nodes")] public string[]? GroupNodes { get; init; }
@@ -1976,56 +2453,92 @@ public sealed class ClientNodegraphsNodesValueConnections
     [JsonPropertyName("validation")] public string[]? Validation { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersAtomId
 {
     [JsonPropertyName("value")] public long? Value { get; init; }
 }
 
-public sealed class ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection
-{
-    [JsonPropertyName("node")] public string? Node { get; init; }
-    [JsonPropertyName("parameter")] public string? Parameter { get; init; }
-}
-
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersBlackboardKey
 {
-    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection? Connection { get; init; }
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
     [JsonPropertyName("value")] public string? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersCharacterId
 {
-    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection? Connection { get; init; }
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersClientGraphInstanceIdBlackboardKey
 {
     [JsonPropertyName("value")] public string? Value { get; init; }
 }
 
-public sealed class ClientNodegraphsNodesValueNodeParametersDefaultValue
+[JsonConverter(typeof(ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceConverter))]
+public abstract record ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceLong(long Value) : ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice;
+
+public sealed record ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceString(string Value) : ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice;
+
+internal sealed class ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceConverter : JsonConverter<ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice>
 {
-    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection? Connection { get; init; }
-    [JsonPropertyName("value")] public JsonElement? Value { get; init; }
+    public override ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.String => new ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice variant.");
+        }
+    }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientNodegraphsNodesValueNodeParametersDefaultValue
+{
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
+    [JsonPropertyName("value")] public ClientNodegraphsNodesValueNodeParametersDefaultValueValueChoice? Value { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersDelay
 {
-    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection? Connection { get; init; }
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
     [JsonPropertyName("value")] public double? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersIsNot
 {
-    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueNodeParametersBlackboardKeyConnection? Connection { get; init; }
+    [JsonPropertyName("connection")] public ClientNodegraphsNodesValueAtomParametersValueConnection? Connection { get; init; }
     [JsonPropertyName("value")] public long? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParametersWaitTime
 {
     [JsonPropertyName("value")] public double? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValueNodeParameters
 {
     [JsonPropertyName("atom_id")] public ClientNodegraphsNodesValueNodeParametersAtomId? AtomId { get; init; }
@@ -2066,6 +2579,7 @@ public sealed class ClientNodegraphsNodesValueNodeParameters
     [JsonPropertyName("wait_time")] public ClientNodegraphsNodesValueNodeParametersWaitTime? WaitTime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValuePosition
 {
     [JsonPropertyName("n_fields")] public long? NFields { get; init; }
@@ -2075,9 +2589,10 @@ public sealed class ClientNodegraphsNodesValuePosition
     [JsonPropertyName("y")] public double? Y { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsNodesValue
 {
-    [JsonPropertyName("atomParameters")] public Dictionary<string, JsonElement>? AtomParameters { get; init; }
+    [JsonPropertyName("atomParameters")] public Dictionary<string, ClientNodegraphsNodesValueAtomParametersValue>? AtomParameters { get; init; }
     [JsonPropertyName("comment")] public string? Comment { get; init; }
     [JsonPropertyName("connections")] public ClientNodegraphsNodesValueConnections? Connections { get; init; }
     [JsonPropertyName("nodeParameters")] public ClientNodegraphsNodesValueNodeParameters? NodeParameters { get; init; }
@@ -2085,12 +2600,14 @@ public sealed class ClientNodegraphsNodesValue
     [JsonPropertyName("position")] public ClientNodegraphsNodesValuePosition? Position { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphsRemote
 {
     [JsonPropertyName("remoteGraph")] public long? RemoteGraph { get; init; }
     [JsonPropertyName("scope")] public string? Scope { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodegraphs
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -2101,23 +2618,82 @@ public sealed class ClientNodegraphs
     [JsonPropertyName("tags")] public string[]? Tags { get; init; }
 }
 
+[JsonConverter(typeof(ClientNodetypesParametersInputsItemDefaultValueChoiceConverter))]
+public abstract record ClientNodetypesParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientNodetypesParametersInputsItemDefaultValueChoiceLong(long Value) : ClientNodetypesParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientNodetypesParametersInputsItemDefaultValueChoiceDouble(double Value) : ClientNodetypesParametersInputsItemDefaultValueChoice;
+
+public sealed record ClientNodetypesParametersInputsItemDefaultValueChoiceString(string Value) : ClientNodetypesParametersInputsItemDefaultValueChoice;
+
+internal sealed class ClientNodetypesParametersInputsItemDefaultValueChoiceConverter : JsonConverter<ClientNodetypesParametersInputsItemDefaultValueChoice>
+{
+    public override ClientNodetypesParametersInputsItemDefaultValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientNodetypesParametersInputsItemDefaultValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientNodetypesParametersInputsItemDefaultValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.String => new ClientNodetypesParametersInputsItemDefaultValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientNodetypesParametersInputsItemDefaultValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientNodetypesParametersInputsItemDefaultValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientNodetypesParametersInputsItemDefaultValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodetypesParametersInputsItemDefaultValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientNodetypesParametersInputsItemDefaultValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientNodetypesParametersInputsItemDefaultValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientNodetypesParametersInputsItem
+{
+    [JsonPropertyName("defaultValue")] public ClientNodetypesParametersInputsItemDefaultValueChoice? DefaultValue { get; init; }
+    [JsonPropertyName("description")] public string? Description { get; init; }
+    [JsonPropertyName("isRequired")] public long? IsRequired { get; init; }
+    [JsonPropertyName("parameterKey")] public string? ParameterKey { get; init; }
+    [JsonPropertyName("parameterType")] public string? ParameterType { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientNodetypesParameters
+{
+    [JsonPropertyName("inputs")] public ClientNodetypesParametersInputsItem[]? Inputs { get; init; }
+    [JsonPropertyName("outputs")] public ClientAtomsParametersOutputsItem[]? Outputs { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodetypesPorts
 {
     [JsonPropertyName("inPorts")] public string[]? InPorts { get; init; }
     [JsonPropertyName("outPorts")] public string[]? OutPorts { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNodetypes
 {
     [JsonPropertyName("color")] public ClientConversationsLinesItemLineHintsItemImageColor? Color { get; init; }
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
-    [JsonPropertyName("parameters")] public ClientAtomsParameters? Parameters { get; init; }
+    [JsonPropertyName("parameters")] public ClientNodetypesParameters? Parameters { get; init; }
     [JsonPropertyName("ports")] public ClientNodetypesPorts? Ports { get; init; }
     [JsonPropertyName("subtitle")] public ClientAtomsSubtitle? Subtitle { get; init; }
     [JsonPropertyName("tags")] public string[]? Tags { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccharactersAgent
 {
     [JsonPropertyName("agentDivisionID")] public long? AgentDivisionID { get; init; }
@@ -2127,11 +2703,13 @@ public sealed class ClientNpccharactersAgent
     [JsonPropertyName("storyLineMissions")] public long[]? StoryLineMissions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccharactersSkillsItem
 {
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccharacters
 {
     [JsonPropertyName("agent")] public ClientNpccharactersAgent? Agent { get; init; }
@@ -2159,6 +2737,7 @@ public sealed class ClientNpccharacters
     [JsonPropertyName("willpower")] public long? Willpower { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccorporationdivisions
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -2168,6 +2747,7 @@ public sealed class ClientNpccorporationdivisions
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccorporationsDivisionsValue
 {
     [JsonPropertyName("divisionNumber")] public long? DivisionNumber { get; init; }
@@ -2175,6 +2755,7 @@ public sealed class ClientNpccorporationsDivisionsValue
     [JsonPropertyName("size")] public long? Size { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpccorporations
 {
     [JsonPropertyName("allowedMemberRaces")] public long[]? AllowedMemberRaces { get; init; }
@@ -2213,35 +2794,148 @@ public sealed class ClientNpccorporations
     [JsonPropertyName("url")] public string? Url { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpcstationtaxmodifierWarFactionID
 {
     [JsonPropertyName("taxModifierByValue")] public Dictionary<string, double>? TaxModifierByValue { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpcstationtaxmodifier
 {
     [JsonPropertyName("warFactionID")] public ClientNpcstationtaxmodifierWarFactionID? WarFactionID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientNpcstructuresettings
 {
     [JsonPropertyName("warFactionIdBased")] public Dictionary<string, Dictionary<string, double>>? WarFactionIdBased { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientObjectivechainsContextParametersItemDefaultValueArrayItemObject
+{
+    [JsonPropertyName("dungeon_object_id")] public long? DungeonObjectId { get; init; }
+    [JsonPropertyName("group_id")] public long? GroupId { get; init; }
+    [JsonPropertyName("type_id")] public long? TypeId { get; init; }
+}
+
+[JsonConverter(typeof(ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceConverter))]
+public abstract record ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceLong(long Value) : ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceObject(ClientObjectivechainsContextParametersItemDefaultValueArrayItemObject Value) : ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice;
+
+internal sealed class ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceConverter : JsonConverter<ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice>
+{
+    public override ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceObject(JsonSerializer.Deserialize<ClientObjectivechainsContextParametersItemDefaultValueArrayItemObject>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientObjectivechainsContextParametersItemDefaultValueObject
+{
+    [JsonPropertyName("group_id")] public long? GroupId { get; init; }
+    [JsonPropertyName("quantity")] public long? Quantity { get; init; }
+    [JsonPropertyName("type_id")] public long? TypeId { get; init; }
+}
+
+[JsonConverter(typeof(ClientObjectivechainsContextParametersItemDefaultValueChoiceConverter))]
+public abstract record ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueChoiceLong(long Value) : ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueChoiceArray(ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice[] Value) : ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueChoiceDouble(double Value) : ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueChoiceObject(ClientObjectivechainsContextParametersItemDefaultValueObject Value) : ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+public sealed record ClientObjectivechainsContextParametersItemDefaultValueChoiceString(string Value) : ClientObjectivechainsContextParametersItemDefaultValueChoice;
+
+internal sealed class ClientObjectivechainsContextParametersItemDefaultValueChoiceConverter : JsonConverter<ClientObjectivechainsContextParametersItemDefaultValueChoice>
+{
+    public override ClientObjectivechainsContextParametersItemDefaultValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientObjectivechainsContextParametersItemDefaultValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartArray => new ClientObjectivechainsContextParametersItemDefaultValueChoiceArray(JsonSerializer.Deserialize<ClientObjectivechainsContextParametersItemDefaultValueArrayItemChoice[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientObjectivechainsContextParametersItemDefaultValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientObjectivechainsContextParametersItemDefaultValueChoiceObject(JsonSerializer.Deserialize<ClientObjectivechainsContextParametersItemDefaultValueObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientObjectivechainsContextParametersItemDefaultValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientObjectivechainsContextParametersItemDefaultValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientObjectivechainsContextParametersItemDefaultValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientObjectivechainsContextParametersItemDefaultValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientObjectivechainsContextParametersItemDefaultValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientObjectivechainsContextParametersItemDefaultValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientObjectivechainsContextParametersItemDefaultValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientObjectivechainsContextParametersItemDefaultValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientObjectivechainsContextParametersItemDefaultValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivechainsContextParametersItem
 {
-    [JsonPropertyName("defaultValue")] public JsonElement? DefaultValue { get; init; }
+    [JsonPropertyName("defaultValue")] public ClientObjectivechainsContextParametersItemDefaultValueChoice? DefaultValue { get; init; }
     [JsonPropertyName("isRequired")] public long? IsRequired { get; init; }
     [JsonPropertyName("parameterKey")] public string? ParameterKey { get; init; }
     [JsonPropertyName("parameterType")] public string? ParameterType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientObjectivechainsObjectivesItemTaskOverridesValue
+{
+    [JsonPropertyName("icon")] public string? Icon { get; init; }
+    [JsonPropertyName("title")] public string? Title { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivechainsObjectivesItemTriggersOnCompleteItem
 {
     [JsonPropertyName("action")] public string? Action { get; init; }
     [JsonPropertyName("objectiveKey")] public string? ObjectiveKey { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivechainsObjectivesItemTriggers
 {
     [JsonPropertyName("on_complete")] public ClientObjectivechainsObjectivesItemTriggersOnCompleteItem[]? OnComplete { get; init; }
@@ -2249,22 +2943,24 @@ public sealed class ClientObjectivechainsObjectivesItemTriggers
     [JsonPropertyName("on_start")] public ClientObjectivechainsObjectivesItemTriggersOnCompleteItem[]? OnStart { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivechainsObjectivesItem
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("groups")] public string[]? Groups { get; init; }
-    [JsonPropertyName("inputParametersMap")] public Dictionary<string, JsonElement>? InputParametersMap { get; init; }
+    [JsonPropertyName("inputParametersMap")] public Dictionary<string, string>? InputParametersMap { get; init; }
     [JsonPropertyName("key")] public string? Key { get; init; }
     [JsonPropertyName("objectiveType")] public long? ObjectiveType { get; init; }
     [JsonPropertyName("renderingOrder")] public long? RenderingOrder { get; init; }
     [JsonPropertyName("showCompleted")] public long? ShowCompleted { get; init; }
     [JsonPropertyName("startActive")] public long? StartActive { get; init; }
-    [JsonPropertyName("taskOverrides")] public Dictionary<string, JsonElement>? TaskOverrides { get; init; }
+    [JsonPropertyName("taskOverrides")] public Dictionary<string, ClientObjectivechainsObjectivesItemTaskOverridesValue>? TaskOverrides { get; init; }
     [JsonPropertyName("title")] public string? Title { get; init; }
     [JsonPropertyName("tooltip")] public string? Tooltip { get; init; }
     [JsonPropertyName("triggers")] public ClientObjectivechainsObjectivesItemTriggers? Triggers { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivechains
 {
     [JsonPropertyName("contextParameters")] public ClientObjectivechainsContextParametersItem[]? ContextParameters { get; init; }
@@ -2273,6 +2969,7 @@ public sealed class ClientObjectivechains
     [JsonPropertyName("tags")] public string[]? Tags { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectives
 {
     [JsonPropertyName("dungeonID")] public long? DungeonID { get; init; }
@@ -2283,6 +2980,7 @@ public sealed class ClientObjectives
     [JsonPropertyName("titleIcon")] public string? TitleIcon { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetasktypesInputParametersItem
 {
     [JsonPropertyName("isRequired")] public long? IsRequired { get; init; }
@@ -2290,6 +2988,7 @@ public sealed class ClientObjectivetasktypesInputParametersItem
     [JsonPropertyName("parameterType")] public string? ParameterType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetasktypes
 {
     [JsonPropertyName("icon")] public string? Icon { get; init; }
@@ -2298,6 +2997,7 @@ public sealed class ClientObjectivetasktypes
     [JsonPropertyName("title")] public string? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetypesTasksItemInputParameters
 {
     [JsonPropertyName("activity_id")] public string? ActivityId { get; init; }
@@ -2343,12 +3043,14 @@ public sealed class ClientObjectivetypesTasksItemInputParameters
     [JsonPropertyName("window_id")] public string? WindowId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetypesTasksItemTriggersOnCompleteItem
 {
     [JsonPropertyName("action")] public string? Action { get; init; }
     [JsonPropertyName("taskKey")] public string? TaskKey { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetypesTasksItemTriggers
 {
     [JsonPropertyName("on_complete")] public ClientObjectivetypesTasksItemTriggersOnCompleteItem[]? OnComplete { get; init; }
@@ -2356,6 +3058,7 @@ public sealed class ClientObjectivetypesTasksItemTriggers
     [JsonPropertyName("on_start")] public ClientObjectivetypesTasksItemTriggersOnCompleteItem[]? OnStart { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetypesTasksItem
 {
     [JsonPropertyName("icon")] public string? Icon { get; init; }
@@ -2368,6 +3071,7 @@ public sealed class ClientObjectivetypesTasksItem
     [JsonPropertyName("triggers")] public ClientObjectivetypesTasksItemTriggers? Triggers { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientObjectivetypes
 {
     [JsonPropertyName("inputParameters")] public ClientObjectivetasktypesInputParametersItem[]? InputParameters { get; init; }
@@ -2376,6 +3080,7 @@ public sealed class ClientObjectivetypes
     [JsonPropertyName("title")] public string? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationcategories
 {
     [JsonPropertyName("description")] public long? Description { get; init; }
@@ -2388,6 +3093,7 @@ public sealed class ClientOperationcategories
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationsOnCompletionRewardsItem
 {
     [JsonPropertyName("amount")] public long? Amount { get; init; }
@@ -2397,6 +3103,7 @@ public sealed class ClientOperationsOnCompletionRewardsItem
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperations
 {
     [JsonPropertyName("agencyContentGroupID")] public long? AgencyContentGroupID { get; init; }
@@ -2410,17 +3117,18 @@ public sealed class ClientOperations
     [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("notificationDescription")] public long? NotificationDescription { get; init; }
     [JsonPropertyName("notificationTitle")] public long? NotificationTitle { get; init; }
-    [JsonPropertyName("onActivationRewards")] public JsonElement[]? OnActivationRewards { get; init; }
+    [JsonPropertyName("onActivationRewards")] public CatalogAbsent[]? OnActivationRewards { get; init; }
     [JsonPropertyName("onCompletionRewards")] public ClientOperationsOnCompletionRewardsItem[]? OnCompletionRewards { get; init; }
     [JsonPropertyName("operationPrerequisites")] public long? OperationPrerequisites { get; init; }
     [JsonPropertyName("primaryTags")] public long[]? PrimaryTags { get; init; }
     [JsonPropertyName("secondaryTags")] public long[]? SecondaryTags { get; init; }
     [JsonPropertyName("siteConnection")] public long? SiteConnection { get; init; }
-    [JsonPropertyName("skillRewards")] public JsonElement[]? SkillRewards { get; init; }
+    [JsonPropertyName("skillRewards")] public CatalogAbsent[]? SkillRewards { get; init; }
     [JsonPropertyName("tasksInOperation")] public long[]? TasksInOperation { get; init; }
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationsites
 {
     [JsonPropertyName("disableWarpToEntryPointRedirect")] public long? DisableWarpToEntryPointRedirect { get; init; }
@@ -2432,6 +3140,7 @@ public sealed class ClientOperationsites
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasksClientSkipConditionsItem
 {
     [JsonPropertyName("identifier")] public string? Identifier { get; init; }
@@ -2440,12 +3149,14 @@ public sealed class ClientOperationtasksClientSkipConditionsItem
     [JsonPropertyName("skipCondition")] public string? SkipCondition { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasksDungeonBlackboardMessagesItem
 {
     [JsonPropertyName("messageName")] public string? MessageName { get; init; }
     [JsonPropertyName("value")] public string? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasksEventConditions
 {
     [JsonPropertyName("agentTypeID")] public string[]? AgentTypeID { get; init; }
@@ -2464,12 +3175,14 @@ public sealed class ClientOperationtasksEventConditions
     [JsonPropertyName("windowID")] public string[]? WindowID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasksOnCompletionRewardsItem
 {
     [JsonPropertyName("amount")] public long? Amount { get; init; }
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasksServerSkipConditionsItem
 {
     [JsonPropertyName("operand")] public string? Operand { get; init; }
@@ -2477,6 +3190,7 @@ public sealed class ClientOperationtasksServerSkipConditionsItem
     [JsonPropertyName("skipCondition")] public string? SkipCondition { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtasks
 {
     [JsonPropertyName("achievementEventType")] public long? AchievementEventType { get; init; }
@@ -2497,6 +3211,7 @@ public sealed class ClientOperationtasks
     [JsonPropertyName("title")] public long? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOperationtreestructures
 {
     [JsonPropertyName("connections")] public Dictionary<string, long[]>? Connections { get; init; }
@@ -2504,6 +3219,7 @@ public sealed class ClientOperationtreestructures
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientOverriddenCoordinates
 {
     [JsonPropertyName("pos")] public double[]? Pos { get; init; }
@@ -2512,6 +3228,7 @@ public sealed class ClientOverriddenCoordinates
     [JsonPropertyName("solarsystem")] public string? Solarsystem { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPaints
 {
     [JsonPropertyName("finish")] public string? Finish { get; init; }
@@ -2521,6 +3238,422 @@ public sealed class ClientPaints
     [JsonPropertyName("rarity")] public string? Rarity { get; init; }
 }
 
+[JsonConverter(typeof(ClientPaperdollcacheArrayItemArrayItemChoiceConverter))]
+public abstract record ClientPaperdollcacheArrayItemArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemArrayItemChoiceLong(long Value) : ClientPaperdollcacheArrayItemArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemArrayItemChoiceDouble(double Value) : ClientPaperdollcacheArrayItemArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemArrayItemChoiceString(string Value) : ClientPaperdollcacheArrayItemArrayItemChoice;
+
+internal sealed class ClientPaperdollcacheArrayItemArrayItemChoiceConverter : JsonConverter<ClientPaperdollcacheArrayItemArrayItemChoice>
+{
+    public override ClientPaperdollcacheArrayItemArrayItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientPaperdollcacheArrayItemArrayItemChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheArrayItemArrayItemChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheArrayItemArrayItemChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheArrayItemArrayItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheArrayItemArrayItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheArrayItemArrayItemChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheArrayItemArrayItemChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheArrayItemArrayItemChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheArrayItemArrayItemChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheArrayItemChoiceConverter))]
+public abstract record ClientPaperdollcacheArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemChoiceArray(ClientPaperdollcacheArrayItemArrayItemChoice[] Value) : ClientPaperdollcacheArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemChoiceDouble(double Value) : ClientPaperdollcacheArrayItemChoice;
+
+public sealed record ClientPaperdollcacheArrayItemChoiceString(string Value) : ClientPaperdollcacheArrayItemChoice;
+
+internal sealed class ClientPaperdollcacheArrayItemChoiceConverter : JsonConverter<ClientPaperdollcacheArrayItemChoice>
+{
+    public override ClientPaperdollcacheArrayItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientPaperdollcacheArrayItemChoiceArray(JsonSerializer.Deserialize<ClientPaperdollcacheArrayItemArrayItemChoice[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheArrayItemChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheArrayItemChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheArrayItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheArrayItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheArrayItemChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheArrayItemChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheArrayItemChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheArrayItemChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceLong(long Value) : ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceString(string Value) : ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice>
+{
+    public override ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientPaperdollcacheObjectValueArrayItemObjectKelvinColor
+{
+    [JsonPropertyName("temperature")] public double? Temperature { get; init; }
+    [JsonPropertyName("type")] public string? Type { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientPaperdollcacheObjectValueArrayItemObject
+{
+    [JsonPropertyName("animation_lipsync_audio")] public string? AnimationLipsyncAudio { get; init; }
+    [JsonPropertyName("animation_lipsync_audio_delay")] public ClientPaperdollcacheObjectValueArrayItemObjectAnimationLipsyncAudioDelayChoice? AnimationLipsyncAudioDelay { get; init; }
+    [JsonPropertyName("animation_path")] public string? AnimationPath { get; init; }
+    [JsonPropertyName("color")] public double[]? Color { get; init; }
+    [JsonPropertyName("coneAlphaInner")] public double? ConeAlphaInner { get; init; }
+    [JsonPropertyName("coneAlphaOuter")] public double? ConeAlphaOuter { get; init; }
+    [JsonPropertyName("coneDirection")] public double[]? ConeDirection { get; init; }
+    [JsonPropertyName("curveset")] public string[]? Curveset { get; init; }
+    [JsonPropertyName("custom")] public bool? Custom { get; init; }
+    [JsonPropertyName("falloff")] public double? Falloff { get; init; }
+    [JsonPropertyName("gender")] public string? Gender { get; init; }
+    [JsonPropertyName("kelvinColor")] public ClientPaperdollcacheObjectValueArrayItemObjectKelvinColor? KelvinColor { get; init; }
+    [JsonPropertyName("name")] public string? Name { get; init; }
+    [JsonPropertyName("position")] public double[]? Position { get; init; }
+    [JsonPropertyName("position_path")] public string? PositionPath { get; init; }
+    [JsonPropertyName("primaryLighting")] public long? PrimaryLighting { get; init; }
+    [JsonPropertyName("prs_name")] public string? PrsName { get; init; }
+    [JsonPropertyName("prs_path")] public string? PrsPath { get; init; }
+    [JsonPropertyName("radius")] public double? Radius { get; init; }
+    [JsonPropertyName("specularIntensity")] public double? SpecularIntensity { get; init; }
+    [JsonPropertyName("type")] public string? Type { get; init; }
+    [JsonPropertyName("useKelvinColor")] public long? UseKelvinColor { get; init; }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueArrayItemChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueArrayItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemChoiceLong(long Value) : ClientPaperdollcacheObjectValueArrayItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemChoiceArray(double[] Value) : ClientPaperdollcacheObjectValueArrayItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemChoiceDouble(double Value) : ClientPaperdollcacheObjectValueArrayItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemChoiceObject(ClientPaperdollcacheObjectValueArrayItemObject Value) : ClientPaperdollcacheObjectValueArrayItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueArrayItemChoiceString(string Value) : ClientPaperdollcacheObjectValueArrayItemChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueArrayItemChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueArrayItemChoice>
+{
+    public override ClientPaperdollcacheObjectValueArrayItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientPaperdollcacheObjectValueArrayItemChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartArray => new ClientPaperdollcacheObjectValueArrayItemChoiceArray(JsonSerializer.Deserialize<double[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueArrayItemChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientPaperdollcacheObjectValueArrayItemChoiceObject(JsonSerializer.Deserialize<ClientPaperdollcacheObjectValueArrayItemObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheObjectValueArrayItemChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueArrayItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueArrayItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueArrayItemChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueArrayItemChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueArrayItemChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueArrayItemChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueArrayItemChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueArrayItemChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceArray(double[] Value) : ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceLong(long Value) : ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice>
+{
+    public override ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceArray(JsonSerializer.Deserialize<double[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceDouble(double Value) : ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceString(string Value) : ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice>
+{
+    public override ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientPaperdollcacheObjectValueObjectValueObject
+{
+    [JsonPropertyName("Attributes")] public string[]? Attributes { get; init; }
+    [JsonPropertyName("BlinkMult")] public double? BlinkMult { get; init; }
+    [JsonPropertyName("MarkerPosition")] public double[]? MarkerPosition { get; init; }
+    [JsonPropertyName("Triangles")] public Dictionary<string, long[]>? Triangles { get; init; }
+    [JsonPropertyName("Tris")] public ClientPaperdollcacheObjectValueObjectValueObjectTrisItemItemItemChoice[][][]? Tris { get; init; }
+    [JsonPropertyName("VertData")] public Dictionary<string, ClientPaperdollcacheObjectValueObjectValueObjectVertDataValueItemItemChoice[][]>? VertData { get; init; }
+    [JsonPropertyName("VertPositions")] public Dictionary<string, double[]>? VertPositions { get; init; }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueObjectValueChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueChoiceArray(double[] Value) : ClientPaperdollcacheObjectValueObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueChoiceDouble(double Value) : ClientPaperdollcacheObjectValueObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueChoiceObject(ClientPaperdollcacheObjectValueObjectValueObject Value) : ClientPaperdollcacheObjectValueObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueObjectValueChoiceString(string Value) : ClientPaperdollcacheObjectValueObjectValueChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueObjectValueChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueObjectValueChoice>
+{
+    public override ClientPaperdollcacheObjectValueObjectValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientPaperdollcacheObjectValueObjectValueChoiceArray(JsonSerializer.Deserialize<double[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueObjectValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientPaperdollcacheObjectValueObjectValueChoiceObject(JsonSerializer.Deserialize<ClientPaperdollcacheObjectValueObjectValueObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheObjectValueObjectValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueObjectValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueObjectValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueObjectValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueObjectValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueObjectValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueObjectValueChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheObjectValueChoiceConverter))]
+public abstract record ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceLong(long Value) : ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceArray(ClientPaperdollcacheObjectValueArrayItemChoice[] Value) : ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceBool(bool Value) : ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceDouble(double Value) : ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceObject(Dictionary<string, ClientPaperdollcacheObjectValueObjectValueChoice> Value) : ClientPaperdollcacheObjectValueChoice;
+
+public sealed record ClientPaperdollcacheObjectValueChoiceString(string Value) : ClientPaperdollcacheObjectValueChoice;
+
+internal sealed class ClientPaperdollcacheObjectValueChoiceConverter : JsonConverter<ClientPaperdollcacheObjectValueChoice>
+{
+    public override ClientPaperdollcacheObjectValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientPaperdollcacheObjectValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartArray => new ClientPaperdollcacheObjectValueChoiceArray(JsonSerializer.Deserialize<ClientPaperdollcacheObjectValueArrayItemChoice[]>(ref reader, options)!),
+            JsonTokenType.True or JsonTokenType.False => new ClientPaperdollcacheObjectValueChoiceBool(JsonSerializer.Deserialize<bool>(ref reader, options)!),
+            JsonTokenType.Number => new ClientPaperdollcacheObjectValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientPaperdollcacheObjectValueChoiceObject(JsonSerializer.Deserialize<Dictionary<string, ClientPaperdollcacheObjectValueObjectValueChoice>>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheObjectValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheObjectValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheObjectValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheObjectValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueChoiceBool item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheObjectValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheObjectValueChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientPaperdollcacheChoiceConverter))]
+public abstract record ClientPaperdollcacheChoice;
+
+public sealed record ClientPaperdollcacheChoiceArray(ClientPaperdollcacheArrayItemChoice[] Value) : ClientPaperdollcacheChoice;
+
+public sealed record ClientPaperdollcacheChoiceObject(Dictionary<string, ClientPaperdollcacheObjectValueChoice> Value) : ClientPaperdollcacheChoice;
+
+public sealed record ClientPaperdollcacheChoiceString(string Value) : ClientPaperdollcacheChoice;
+
+internal sealed class ClientPaperdollcacheChoiceConverter : JsonConverter<ClientPaperdollcacheChoice>
+{
+    public override ClientPaperdollcacheChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientPaperdollcacheChoiceArray(JsonSerializer.Deserialize<ClientPaperdollcacheArrayItemChoice[]>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientPaperdollcacheChoiceObject(JsonSerializer.Deserialize<Dictionary<string, ClientPaperdollcacheObjectValueChoice>>(ref reader, options)!),
+            JsonTokenType.String => new ClientPaperdollcacheChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientPaperdollcacheChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientPaperdollcacheChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientPaperdollcacheChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientPaperdollcacheChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientPaperdollcacheChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPaperdollsColorSelectionsItem
 {
     [JsonPropertyName("colorID")] public long? ColorID { get; init; }
@@ -2530,6 +3663,7 @@ public sealed class ClientPaperdollsColorSelectionsItem
     [JsonPropertyName("weight")] public double? Weight { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPaperdollsModifiersItem
 {
     [JsonPropertyName("modifierLocationID")] public long? ModifierLocationID { get; init; }
@@ -2537,6 +3671,7 @@ public sealed class ClientPaperdollsModifiersItem
     [JsonPropertyName("paperdollResourceVariation")] public long? PaperdollResourceVariation { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPaperdollsSculptWeightsItem
 {
     [JsonPropertyName("sculptLocationID")] public long? SculptLocationID { get; init; }
@@ -2545,6 +3680,7 @@ public sealed class ClientPaperdollsSculptWeightsItem
     [JsonPropertyName("weightUpDown")] public double? WeightUpDown { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPaperdolls
 {
     [JsonPropertyName("backgroundID")] public long? BackgroundID { get; init; }
@@ -2594,12 +3730,14 @@ public sealed class ClientPaperdolls
     [JsonPropertyName("squintRight")] public double? SquintRight { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPetitionevents
 {
     [JsonPropertyName("eventText")] public string? EventText { get; init; }
     [JsonPropertyName("eventTextID")] public long? EventTextID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPetitionproperties
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -2613,6 +3751,7 @@ public sealed class ClientPetitionproperties
     [JsonPropertyName("required")] public long? Required { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPodguide
 {
     [JsonPropertyName("groupID")] public long? GroupID { get; init; }
@@ -2625,6 +3764,7 @@ public sealed class ClientPodguide
     [JsonPropertyName("texturePath")] public string? TexturePath { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPodguidegroups
 {
     [JsonPropertyName("belongsToGroup")] public long? BelongsToGroup { get; init; }
@@ -2633,6 +3773,7 @@ public sealed class ClientPodguidegroups
     [JsonPropertyName("groupType")] public string? GroupType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPvpfilamenteventdates
 {
     [JsonPropertyName("QA")] public long? QA { get; init; }
@@ -2642,6 +3783,7 @@ public sealed class ClientPvpfilamenteventdates
     [JsonPropertyName("startDate")] public string? StartDate { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientPvpfilamentmatchtypes
 {
     [JsonPropertyName("bannedModulesTypeListID")] public long? BannedModulesTypeListID { get; init; }
@@ -2666,6 +3808,7 @@ public sealed class ClientPvpfilamentmatchtypes
     [JsonPropertyName("shipRestrictionsHintID")] public long? ShipRestrictionsHintID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientRaces
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -2675,12 +3818,14 @@ public sealed class ClientRaces
     [JsonPropertyName("skills")] public Dictionary<string, long>? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientRecruitmentgroups
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
     [JsonPropertyName("nameID")] public long? NameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientRecruitmenttypes
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
@@ -2688,6 +3833,7 @@ public sealed class ClientRecruitmenttypes
     [JsonPropertyName("recruitmentGroupID")] public long? RecruitmentGroupID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientRegions
 {
     [JsonPropertyName("center")] public ClientConstellationsCenter? Center { get; init; }
@@ -2703,12 +3849,14 @@ public sealed class ClientRegions
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSchematicsTypesValue
 {
     [JsonPropertyName("isInput")] public long? IsInput { get; init; }
     [JsonPropertyName("quantity")] public long? Quantity { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSchematics
 {
     [JsonPropertyName("cycleTime")] public long? CycleTime { get; init; }
@@ -2717,12 +3865,14 @@ public sealed class ClientSchematics
     [JsonPropertyName("types")] public Dictionary<string, ClientSchematicsTypesValue>? Types { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSchoolmap
 {
     [JsonPropertyName("schoolID")] public long? SchoolID { get; init; }
     [JsonPropertyName("solarSystemID")] public long? SolarSystemID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSchools
 {
     [JsonPropertyName("careerAgents")] public long[]? CareerAgents { get; init; }
@@ -2738,6 +3888,7 @@ public sealed class ClientSchools
     [JsonPropertyName("titleID")] public long? TitleID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSeasonalcampaignsloginrewardsAlphaRewardsValue
 {
     [JsonPropertyName("blueprintMaterialLevel")] public long? BlueprintMaterialLevel { get; init; }
@@ -2751,6 +3902,7 @@ public sealed class ClientSeasonalcampaignsloginrewardsAlphaRewardsValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSeasonalcampaignsloginrewards
 {
     [JsonPropertyName("alphaRewards")] public Dictionary<string, ClientSeasonalcampaignsloginrewardsAlphaRewardsValue>? AlphaRewards { get; init; }
@@ -2761,6 +3913,7 @@ public sealed class ClientSeasonalcampaignsloginrewards
     [JsonPropertyName("windowHeaderBackground")] public string? WindowHeaderBackground { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSeasonselection
 {
     [JsonPropertyName("agencyLargeSeasonSelectionTitleID")] public long? AgencyLargeSeasonSelectionTitleID { get; init; }
@@ -2770,6 +3923,7 @@ public sealed class ClientSeasonselection
     [JsonPropertyName("seasonSelectionTitleID")] public long? SeasonSelectionTitleID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSelectiongroups
 {
     [JsonPropertyName("pitch")] public double? Pitch { get; init; }
@@ -2779,11 +3933,13 @@ public sealed class ClientSelectiongroups
     [JsonPropertyName("yaw")] public double? Yaw { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipCosmeticSlotCategories
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipCosmeticSlotConfigurations
 {
     [JsonPropertyName("allow_all_ships")] public long? AllowAllShips { get; init; }
@@ -2793,6 +3949,7 @@ public sealed class ClientShipCosmeticSlotConfigurations
     [JsonPropertyName("ships")] public long[]? Ships { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipCosmeticSlots
 {
     [JsonPropertyName("allowed_design_component_categories")] public long[]? AllowedDesignComponentCategories { get; init; }
@@ -2802,30 +3959,34 @@ public sealed class ClientShipCosmeticSlots
     [JsonPropertyName("name")] public long? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipSkinDesignComponentRarities
 {
     [JsonPropertyName("name")] public long? Name { get; init; }
     [JsonPropertyName("rank")] public long? Rank { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipSkinDesignComponentsAssociatedTypeIdsItem
 {
     [JsonPropertyName("license_uses_granted")] public long? LicenseUsesGranted { get; init; }
     [JsonPropertyName("type_id")] public long? TypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipSkinDesignComponentsSequenceBinder
 {
     [JsonPropertyName("count")] public long? Count { get; init; }
     [JsonPropertyName("item_type_id")] public long? ItemTypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipSkinDesignComponents
 {
     [JsonPropertyName("associated_type_ids")] public ClientShipSkinDesignComponentsAssociatedTypeIdsItem[]? AssociatedTypeIds { get; init; }
     [JsonPropertyName("category")] public long? Category { get; init; }
     [JsonPropertyName("description")] public long? Description { get; init; }
-    [JsonPropertyName("disallowed_slots")] public JsonElement[]? DisallowedSlots { get; init; }
+    [JsonPropertyName("disallowed_slots")] public CatalogAbsent[]? DisallowedSlots { get; init; }
     [JsonPropertyName("finish")] public string? Finish { get; init; }
     [JsonPropertyName("icon_file")] public string? IconFile { get; init; }
     [JsonPropertyName("internal_name")] public string? InternalName { get; init; }
@@ -2838,6 +3999,7 @@ public sealed class ClientShipSkinDesignComponents
     [JsonPropertyName("sequence_binder")] public ClientShipSkinDesignComponentsSequenceBinder? SequenceBinder { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientShipcosmeticlicenses
 {
     [JsonPropertyName("cosmeticType")] public long? CosmeticType { get; init; }
@@ -2846,6 +4008,7 @@ public sealed class ClientShipcosmeticlicenses
     [JsonPropertyName("slotGroup")] public long? SlotGroup { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkillplans
 {
     [JsonPropertyName("careerPathID")] public long? CareerPathID { get; init; }
@@ -2858,12 +4021,14 @@ public sealed class ClientSkillplans
     [JsonPropertyName("skillRequirements")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? SkillRequirements { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkilltreegroups
 {
     [JsonPropertyName("childSkillTreeGroups")] public long[]? ChildSkillTreeGroups { get; init; }
     [JsonPropertyName("skills")] public long[]? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkinlicenses
 {
     [JsonPropertyName("duration")] public long? Duration { get; init; }
@@ -2872,6 +4037,7 @@ public sealed class ClientSkinlicenses
     [JsonPropertyName("skinID")] public long? SkinID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkinmaterials
 {
     [JsonPropertyName("displayNameID")] public long? DisplayNameID { get; init; }
@@ -2879,12 +4045,46 @@ public sealed class ClientSkinmaterials
     [JsonPropertyName("skinMaterialID")] public long? SkinMaterialID { get; init; }
 }
 
+[JsonConverter(typeof(ClientSkinsSkinDescriptionChoiceConverter))]
+public abstract record ClientSkinsSkinDescriptionChoice;
+
+public sealed record ClientSkinsSkinDescriptionChoiceLong(long Value) : ClientSkinsSkinDescriptionChoice;
+
+public sealed record ClientSkinsSkinDescriptionChoiceString(string Value) : ClientSkinsSkinDescriptionChoice;
+
+internal sealed class ClientSkinsSkinDescriptionChoiceConverter : JsonConverter<ClientSkinsSkinDescriptionChoice>
+{
+    public override ClientSkinsSkinDescriptionChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientSkinsSkinDescriptionChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.String => new ClientSkinsSkinDescriptionChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSkinsSkinDescriptionChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSkinsSkinDescriptionChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSkinsSkinDescriptionChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSkinsSkinDescriptionChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSkinsSkinDescriptionChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkins
 {
     [JsonPropertyName("allowCCPDevs")] public bool? AllowCCPDevs { get; init; }
     [JsonPropertyName("internalName")] public string? InternalName { get; init; }
     [JsonPropertyName("isStructureSkin")] public bool? IsStructureSkin { get; init; }
-    [JsonPropertyName("skinDescription")] public JsonElement? SkinDescription { get; init; }
+    [JsonPropertyName("skinDescription")] public ClientSkinsSkinDescriptionChoice? SkinDescription { get; init; }
     [JsonPropertyName("skinID")] public long? SkinID { get; init; }
     [JsonPropertyName("skinMaterialID")] public long? SkinMaterialID { get; init; }
     [JsonPropertyName("types")] public long[]? Types { get; init; }
@@ -2892,18 +4092,21 @@ public sealed class ClientSkins
     [JsonPropertyName("visibleTranquility")] public bool? VisibleTranquility { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkyboxeffectsFar
 {
     [JsonPropertyName("distInLightYears")] public double? DistInLightYears { get; init; }
     [JsonPropertyName("scale")] public double? Scale { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkyboxeffectsSource
 {
     [JsonPropertyName("solarSystemID")] public long? SolarSystemID { get; init; }
     [JsonPropertyName("worldPosition")] public double[]? WorldPosition { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSkyboxeffects
 {
     [JsonPropertyName("far")] public ClientSkyboxeffectsFar? Far { get; init; }
@@ -2913,6 +4116,7 @@ public sealed class ClientSkyboxeffects
     [JsonPropertyName("source")] public ClientSkyboxeffectsSource? Source { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentDisruptedStargatesValue
 {
     [JsonPropertyName("position")] public ClientConstellationsCenter? Position { get; init; }
@@ -2921,6 +4125,7 @@ public sealed class ClientSolarsystemcontentDisruptedStargatesValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueAsteroidBeltsValueStatistics
 {
     [JsonPropertyName("density")] public double? Density { get; init; }
@@ -2941,6 +4146,7 @@ public sealed class ClientSolarsystemcontentPlanetsValueAsteroidBeltsValueStatis
     [JsonPropertyName("temperature")] public double? Temperature { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueAsteroidBeltsValue
 {
     [JsonPropertyName("asteroidBeltNameID")] public long? AsteroidBeltNameID { get; init; }
@@ -2949,11 +4155,13 @@ public sealed class ClientSolarsystemcontentPlanetsValueAsteroidBeltsValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueMoonsValueMiningBeacon
 {
     [JsonPropertyName("position")] public ClientConstellationsCenter? Position { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueMoonsValueNpcStationsValueRotation
 {
     [JsonPropertyName("pitch")] public double? Pitch { get; init; }
@@ -2961,6 +4169,7 @@ public sealed class ClientSolarsystemcontentPlanetsValueMoonsValueNpcStationsVal
     [JsonPropertyName("yaw")] public double? Yaw { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueMoonsValueNpcStationsValue
 {
     [JsonPropertyName("graphicID")] public long? GraphicID { get; init; }
@@ -2980,6 +4189,7 @@ public sealed class ClientSolarsystemcontentPlanetsValueMoonsValueNpcStationsVal
     [JsonPropertyName("useOperationName")] public bool? UseOperationName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueMoonsValuePlanetAttributes
 {
     [JsonPropertyName("heightMap1")] public long? HeightMap1 { get; init; }
@@ -2988,6 +4198,7 @@ public sealed class ClientSolarsystemcontentPlanetsValueMoonsValuePlanetAttribut
     [JsonPropertyName("shaderPreset")] public long? ShaderPreset { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValueMoonsValue
 {
     [JsonPropertyName("environmentTemplateID")] public long? EnvironmentTemplateID { get; init; }
@@ -3002,6 +4213,7 @@ public sealed class ClientSolarsystemcontentPlanetsValueMoonsValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentPlanetsValue
 {
     [JsonPropertyName("asteroidBelts")] public Dictionary<string, ClientSolarsystemcontentPlanetsValueAsteroidBeltsValue>? AsteroidBelts { get; init; }
@@ -3017,6 +4229,7 @@ public sealed class ClientSolarsystemcontentPlanetsValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentSecondarySun
 {
     [JsonPropertyName("effectBeaconTypeID")] public long? EffectBeaconTypeID { get; init; }
@@ -3025,6 +4238,7 @@ public sealed class ClientSolarsystemcontentSecondarySun
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentStarNpcStationsValue
 {
     [JsonPropertyName("graphicID")] public long? GraphicID { get; init; }
@@ -3043,6 +4257,7 @@ public sealed class ClientSolarsystemcontentStarNpcStationsValue
     [JsonPropertyName("useOperationName")] public bool? UseOperationName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentStarStatistics
 {
     [JsonPropertyName("age")] public double? Age { get; init; }
@@ -3054,6 +4269,7 @@ public sealed class ClientSolarsystemcontentStarStatistics
     [JsonPropertyName("temperature")] public double? Temperature { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentStar
 {
     [JsonPropertyName("id")] public long? Id { get; init; }
@@ -3063,6 +4279,7 @@ public sealed class ClientSolarsystemcontentStar
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontentStargatesValue
 {
     [JsonPropertyName("allowedShipsTypeListID")] public long? AllowedShipsTypeListID { get; init; }
@@ -3073,6 +4290,7 @@ public sealed class ClientSolarsystemcontentStargatesValue
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSolarsystemcontent
 {
     [JsonPropertyName("border")] public bool? Border { get; init; }
@@ -3110,11 +4328,271 @@ public sealed class ClientSolarsystemcontent
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSoundids
 {
     [JsonPropertyName("wwiseEvent")] public string? WwiseEvent { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientSpacecomponentsbytypeValueValueArrayItemObject
+{
+    [JsonPropertyName("enumObject")] public string? EnumObject { get; init; }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueArrayItemChoiceConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueArrayItemChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueArrayItemChoiceLong(long Value) : ClientSpacecomponentsbytypeValueValueArrayItemChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueArrayItemChoiceObject(ClientSpacecomponentsbytypeValueValueArrayItemObject Value) : ClientSpacecomponentsbytypeValueValueArrayItemChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueArrayItemChoiceString(string Value) : ClientSpacecomponentsbytypeValueValueArrayItemChoice;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueArrayItemChoiceConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueArrayItemChoice>
+{
+    public override ClientSpacecomponentsbytypeValueValueArrayItemChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueArrayItemChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueArrayItemChoiceObject(JsonSerializer.Deserialize<ClientSpacecomponentsbytypeValueValueArrayItemObject>(ref reader, options)!),
+            JsonTokenType.String => new ClientSpacecomponentsbytypeValueValueArrayItemChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueArrayItemChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueArrayItemChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueArrayItemChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueArrayItemChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueArrayItemChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueArrayItemChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientSpacecomponentsbytypeValueValueMapValueObject
+{
+    [JsonPropertyName("fleetCounterTableID")] public long? FleetCounterTableID { get; init; }
+    [JsonPropertyName("initialSpawnNpcFleetTypeID")] public long? InitialSpawnNpcFleetTypeID { get; init; }
+    [JsonPropertyName("iskRewards")] public long? IskRewards { get; init; }
+    [JsonPropertyName("lpRewards")] public Dictionary<string, long>? LpRewards { get; init; }
+    [JsonPropertyName("ownerID")] public long? OwnerID { get; init; }
+    [JsonPropertyName("qtyRequired")] public long? QtyRequired { get; init; }
+    [JsonPropertyName("spawnTableID")] public long? SpawnTableID { get; init; }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueMapValueChoiceConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueMapValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueChoiceDouble(double Value) : ClientSpacecomponentsbytypeValueValueMapValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueChoiceObject(ClientSpacecomponentsbytypeValueValueMapValueObject Value) : ClientSpacecomponentsbytypeValueValueMapValueChoice;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueMapValueChoiceConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueMapValueChoice>
+{
+    public override ClientSpacecomponentsbytypeValueValueMapValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueMapValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueMapValueChoiceObject(JsonSerializer.Deserialize<ClientSpacecomponentsbytypeValueValueMapValueObject>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueMapValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueMapValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueMapValueChoiceObject item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueObjectValueChoiceConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueObjectValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueObjectValueChoiceLong(long Value) : ClientSpacecomponentsbytypeValueValueObjectValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueObjectValueChoiceDouble(double Value) : ClientSpacecomponentsbytypeValueValueObjectValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueObjectValueChoiceMap(Dictionary<string, double> Value) : ClientSpacecomponentsbytypeValueValueObjectValueChoice;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueObjectValueChoiceConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueObjectValueChoice>
+{
+    public override ClientSpacecomponentsbytypeValueValueObjectValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientSpacecomponentsbytypeValueValueObjectValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueObjectValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueObjectValueChoiceMap(JsonSerializer.Deserialize<Dictionary<string, double>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueObjectValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueObjectValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueObjectValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueObjectValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueObjectValueChoiceMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueObjectValueChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceLong(long Value) : ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceDouble(double Value) : ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceMap(Dictionary<string, long> Value) : ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice>
+{
+    public override ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceMap(JsonSerializer.Deserialize<Dictionary<string, long>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueMapValueMapValueChoiceMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueMapValueChoiceDataConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueMapValueChoiceData;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueChoiceDataLong(long Value) : ClientSpacecomponentsbytypeValueValueMapValueChoiceData;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueChoiceDataDouble(double Value) : ClientSpacecomponentsbytypeValueValueMapValueChoiceData;
+
+public sealed record ClientSpacecomponentsbytypeValueValueMapValueChoiceDataMap(Dictionary<string, ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice> Value) : ClientSpacecomponentsbytypeValueValueMapValueChoiceData;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueMapValueChoiceDataConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueMapValueChoiceData>
+{
+    public override ClientSpacecomponentsbytypeValueValueMapValueChoiceData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientSpacecomponentsbytypeValueValueMapValueChoiceDataLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueMapValueChoiceDataDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueMapValueChoiceDataMap(JsonSerializer.Deserialize<Dictionary<string, ClientSpacecomponentsbytypeValueValueMapValueMapValueChoice>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueChoiceData token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueMapValueChoiceData value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueMapValueChoiceDataLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueMapValueChoiceDataDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueMapValueChoiceDataMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueMapValueChoiceData variant.");
+        }
+    }
+}
+
+[JsonConverter(typeof(ClientSpacecomponentsbytypeValueValueChoiceConverter))]
+public abstract record ClientSpacecomponentsbytypeValueValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueChoiceLong(long Value) : ClientSpacecomponentsbytypeValueValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueChoiceArray(ClientSpacecomponentsbytypeValueValueArrayItemChoice[] Value) : ClientSpacecomponentsbytypeValueValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueChoiceDouble(double Value) : ClientSpacecomponentsbytypeValueValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueChoiceString(string Value) : ClientSpacecomponentsbytypeValueValueChoice;
+
+public sealed record ClientSpacecomponentsbytypeValueValueChoiceMap(Dictionary<string, ClientSpacecomponentsbytypeValueValueMapValueChoiceData> Value) : ClientSpacecomponentsbytypeValueValueChoice;
+
+internal sealed class ClientSpacecomponentsbytypeValueValueChoiceConverter : JsonConverter<ClientSpacecomponentsbytypeValueValueChoice>
+{
+    public override ClientSpacecomponentsbytypeValueValueChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.Number when reader.TryGetInt64(out _) => new ClientSpacecomponentsbytypeValueValueChoiceLong(JsonSerializer.Deserialize<long>(ref reader, options)!),
+            JsonTokenType.StartArray => new ClientSpacecomponentsbytypeValueValueChoiceArray(JsonSerializer.Deserialize<ClientSpacecomponentsbytypeValueValueArrayItemChoice[]>(ref reader, options)!),
+            JsonTokenType.Number => new ClientSpacecomponentsbytypeValueValueChoiceDouble(JsonSerializer.Deserialize<double>(ref reader, options)!),
+            JsonTokenType.String => new ClientSpacecomponentsbytypeValueValueChoiceString(JsonSerializer.Deserialize<string>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientSpacecomponentsbytypeValueValueChoiceMap(JsonSerializer.Deserialize<Dictionary<string, ClientSpacecomponentsbytypeValueValueMapValueChoiceData>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientSpacecomponentsbytypeValueValueChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientSpacecomponentsbytypeValueValueChoiceLong item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueChoiceDouble item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueChoiceString item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientSpacecomponentsbytypeValueValueChoiceMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientSpacecomponentsbytypeValueValueChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSpaceobjecthighlights
 {
     [JsonPropertyName("disableBox")] public long? DisableBox { get; init; }
@@ -3127,6 +4605,74 @@ public sealed class ClientSpaceobjecthighlights
     [JsonPropertyName("spaceObjectType")] public string? SpaceObjectType { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientStarmapcacheArrayItem
+{
+    [JsonPropertyName("fromCenter")] public double[]? FromCenter { get; init; }
+    [JsonPropertyName("fromSystemID")] public long? FromSystemID { get; init; }
+    [JsonPropertyName("jumpType")] public long? JumpType { get; init; }
+    [JsonPropertyName("toCenter")] public double[]? ToCenter { get; init; }
+    [JsonPropertyName("toSystemID")] public long? ToSystemID { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientStarmapcacheMapValue
+{
+    [JsonPropertyName("center")] public double[]? Center { get; init; }
+    [JsonPropertyName("neighbours")] public long[]? Neighbours { get; init; }
+    [JsonPropertyName("regionID")] public long? RegionID { get; init; }
+    [JsonPropertyName("solarSystemIDs")] public long[]? SolarSystemIDs { get; init; }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed class ClientStarmapcacheObjectValue
+{
+    [JsonPropertyName("center")] public double[]? Center { get; init; }
+    [JsonPropertyName("constellationID")] public long? ConstellationID { get; init; }
+    [JsonPropertyName("constellationIDs")] public long[]? ConstellationIDs { get; init; }
+    [JsonPropertyName("factionID")] public long? FactionID { get; init; }
+    [JsonPropertyName("neighbours")] public long[]? Neighbours { get; init; }
+    [JsonPropertyName("planetCountByType")] public Dictionary<string, long>? PlanetCountByType { get; init; }
+    [JsonPropertyName("planetItemIDs")] public long[]? PlanetItemIDs { get; init; }
+    [JsonPropertyName("regionID")] public long? RegionID { get; init; }
+    [JsonPropertyName("solarSystemIDs")] public long[]? SolarSystemIDs { get; init; }
+    [JsonPropertyName("sunTypeID")] public long? SunTypeID { get; init; }
+}
+
+[JsonConverter(typeof(ClientStarmapcacheChoiceConverter))]
+public abstract record ClientStarmapcacheChoice;
+
+public sealed record ClientStarmapcacheChoiceArray(ClientStarmapcacheArrayItem[] Value) : ClientStarmapcacheChoice;
+
+public sealed record ClientStarmapcacheChoiceMap(Dictionary<string, ClientStarmapcacheObjectValue> Value) : ClientStarmapcacheChoice;
+
+internal sealed class ClientStarmapcacheChoiceConverter : JsonConverter<ClientStarmapcacheChoice>
+{
+    public override ClientStarmapcacheChoice Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.StartArray => new ClientStarmapcacheChoiceArray(JsonSerializer.Deserialize<ClientStarmapcacheArrayItem[]>(ref reader, options)!),
+            JsonTokenType.StartObject => new ClientStarmapcacheChoiceMap(JsonSerializer.Deserialize<Dictionary<string, ClientStarmapcacheObjectValue>>(ref reader, options)!),
+            _ => throw new JsonException("Unexpected ClientStarmapcacheChoice token."),
+        };
+
+    public override void Write(Utf8JsonWriter writer, ClientStarmapcacheChoice value, JsonSerializerOptions options)
+    {
+        switch (value)
+        {
+            case ClientStarmapcacheChoiceArray item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            case ClientStarmapcacheChoiceMap item:
+                JsonSerializer.Serialize(writer, item.Value, options);
+                break;
+            default:
+                throw new JsonException("Unexpected ClientStarmapcacheChoice variant.");
+        }
+    }
+}
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientStationoperations
 {
     [JsonPropertyName("activityID")] public long? ActivityID { get; init; }
@@ -3143,17 +4689,20 @@ public sealed class ClientStationoperations
     [JsonPropertyName("stationTypes")] public Dictionary<string, long>? StationTypes { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientStationservices
 {
     [JsonPropertyName("descriptionID")] public long? DescriptionID { get; init; }
     [JsonPropertyName("serviceNameID")] public long? ServiceNameID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientStationstandingsrestrictions
 {
     [JsonPropertyName("services")] public Dictionary<string, double>? Services { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSurveys
 {
     [JsonPropertyName("apiClassName")] public string? ApiClassName { get; init; }
@@ -3161,7 +4710,7 @@ public sealed class ClientSurveys
     [JsonPropertyName("description")] public string? Description { get; init; }
     [JsonPropertyName("endDate")] public string? EndDate { get; init; }
     [JsonPropertyName("gracePeriod")] public long? GracePeriod { get; init; }
-    [JsonPropertyName("itemRewards")] public JsonElement[]? ItemRewards { get; init; }
+    [JsonPropertyName("itemRewards")] public CatalogAbsent[]? ItemRewards { get; init; }
     [JsonPropertyName("minAccountAgeHours")] public long? MinAccountAgeHours { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("resPath")] public string? ResPath { get; init; }
@@ -3170,6 +4719,7 @@ public sealed class ClientSurveys
     [JsonPropertyName("vgsRewards")] public long[]? VgsRewards { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSystemsNeighboursItem
 {
     [JsonPropertyName("jumpType")] public long? JumpType { get; init; }
@@ -3177,6 +4727,7 @@ public sealed class ClientSystemsNeighboursItem
     [JsonPropertyName("stargateID")] public long? StargateID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientSystems
 {
     [JsonPropertyName("center")] public ClientConstellationsCenter? Center { get; init; }
@@ -3197,6 +4748,7 @@ public sealed class ClientSystems
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTags
 {
     [JsonPropertyName("internalName")] public string? InternalName { get; init; }
@@ -3204,6 +4756,7 @@ public sealed class ClientTags
     [JsonPropertyName("titleLabelID")] public long? TitleLabelID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTraveleffectsHidingEffect
 {
     [JsonPropertyName("effectDuration")] public double? EffectDuration { get; init; }
@@ -3211,6 +4764,7 @@ public sealed class ClientTraveleffectsHidingEffect
     [JsonPropertyName("shipHideDelay")] public double? ShipHideDelay { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTraveleffects
 {
     [JsonPropertyName("effect")] public string? Effect { get; init; }
@@ -3220,6 +4774,7 @@ public sealed class ClientTraveleffects
     [JsonPropertyName("type")] public string? Type { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTriggertypes
 {
     [JsonPropertyName("allowOnGuardObject")] public bool? AllowOnGuardObject { get; init; }
@@ -3227,24 +4782,28 @@ public sealed class ClientTriggertypes
     [JsonPropertyName("triggerTypeName")] public string? TriggerTypeName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypedogmaDogmaAttributesItem
 {
     [JsonPropertyName("attributeID")] public long? AttributeID { get; init; }
     [JsonPropertyName("value")] public double? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypedogmaDogmaEffectsItem
 {
     [JsonPropertyName("effectID")] public long? EffectID { get; init; }
     [JsonPropertyName("isDefault")] public long? IsDefault { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypedogma
 {
     [JsonPropertyName("dogmaAttributes")] public ClientTypedogmaDogmaAttributesItem[]? DogmaAttributes { get; init; }
     [JsonPropertyName("dogmaEffects")] public ClientTypedogmaDogmaEffectsItem[]? DogmaEffects { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypelist
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -3259,12 +4818,14 @@ public sealed class ClientTypelist
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypematerialsMaterialsItem
 {
     [JsonPropertyName("materialTypeID")] public long? MaterialTypeID { get; init; }
     [JsonPropertyName("quantity")] public long? Quantity { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypematerialsRandomizedMaterialsItem
 {
     [JsonPropertyName("materialTypeID")] public long? MaterialTypeID { get; init; }
@@ -3272,12 +4833,14 @@ public sealed class ClientTypematerialsRandomizedMaterialsItem
     [JsonPropertyName("quantityMin")] public long? QuantityMin { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypematerials
 {
     [JsonPropertyName("materials")] public ClientTypematerialsMaterialsItem[]? Materials { get; init; }
     [JsonPropertyName("randomizedMaterials")] public ClientTypematerialsRandomizedMaterialsItem[]? RandomizedMaterials { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientTypes
 {
     [JsonPropertyName("basePrice")] public double? BasePrice { get; init; }
@@ -3310,6 +4873,7 @@ public sealed class ClientTypes
     [JsonPropertyName("wreckTypeID")] public long? WreckTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientUiblinks
 {
     [JsonPropertyName("blinkType")] public long? BlinkType { get; init; }
@@ -3319,6 +4883,7 @@ public sealed class ClientUiblinks
     [JsonPropertyName("uiElementPath")] public string? UiElementPath { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientUielementtypes
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -3326,6 +4891,7 @@ public sealed class ClientUielementtypes
     [JsonPropertyName("uiElementID")] public string? UiElementID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientUihelppointers
 {
     [JsonPropertyName("defaultDirection")] public long? DefaultDirection { get; init; }
@@ -3341,6 +4907,7 @@ public sealed class ClientUihelppointers
     [JsonPropertyName("uiElementName")] public string? UiElementName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientUihidingtemplates
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -3348,6 +4915,7 @@ public sealed class ClientUihidingtemplates
     [JsonPropertyName("uiElements")] public Dictionary<string, string>? UiElements { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientUihighlights
 {
     [JsonPropertyName("additionalEffects")] public string[]? AdditionalEffects { get; init; }
@@ -3365,6 +4933,7 @@ public sealed class ClientUihighlights
     [JsonPropertyName("uiElementName")] public string? UiElementName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientVoidspaceencounters
 {
     [JsonPropertyName("dungeonIDs")] public long[]? DungeonIDs { get; init; }
@@ -3377,6 +4946,7 @@ public sealed class ClientVoidspaceencounters
     [JsonPropertyName("validShipTypeListID")] public long? ValidShipTypeListID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientWarzonespositiondataSystemsValueTerritorySprite
 {
     [JsonPropertyName("imageHeight")] public long? ImageHeight { get; init; }
@@ -3386,6 +4956,7 @@ public sealed class ClientWarzonespositiondataSystemsValueTerritorySprite
     [JsonPropertyName("yOffset")] public long? YOffset { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientWarzonespositiondataSystemsValue
 {
     [JsonPropertyName("isVisible")] public long? IsVisible { get; init; }
@@ -3395,6 +4966,7 @@ public sealed class ClientWarzonespositiondataSystemsValue
     [JsonPropertyName("ypos")] public long? Ypos { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientWarzonespositiondata
 {
     [JsonPropertyName("mapHeight")] public long? MapHeight { get; init; }
@@ -3402,23 +4974,27 @@ public sealed class ClientWarzonespositiondata
     [JsonPropertyName("systems")] public Dictionary<string, ClientWarzonespositiondataSystemsValue>? Systems { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ClientWrecks
 {
     [JsonPropertyName("raceIdToWreckTypeId")] public Dictionary<string, long>? RaceIdToWreckTypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ExoplanetField6JOFbbCRMSQpFhYx10NrOLoopt4Qige3
 {
     [JsonPropertyName("epoch")] public double? Epoch { get; init; }
     [JsonPropertyName("flux")] public double? Flux { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class IndexBlueprints
 {
     [JsonPropertyName("key")] public string? Key { get; init; }
     [JsonPropertyName("value")] public string? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class MapCelestials
 {
     [JsonPropertyName("celestialID")] public long? CelestialID { get; init; }
@@ -3435,6 +5011,7 @@ public sealed class MapCelestials
     [JsonPropertyName("z")] public double? Z { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class MapNpcStations
 {
     [JsonPropertyName("celestialIndex")] public long? CelestialIndex { get; init; }
@@ -3455,12 +5032,14 @@ public sealed class MapNpcStations
     [JsonPropertyName("z")] public double? Z { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSde
 {
     [JsonPropertyName("buildNumber")] public long? BuildNumber { get; init; }
     [JsonPropertyName("releaseDate")] public string? ReleaseDate { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeAccountingEntryTypesDescription
 {
     [JsonPropertyName("de")] public string? De { get; init; }
@@ -3473,6 +5052,7 @@ public sealed class SdeAccountingEntryTypesDescription
     [JsonPropertyName("zh")] public string? Zh { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeAccountingEntryTypes
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3481,6 +5061,7 @@ public sealed class SdeAccountingEntryTypes
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeAncestries
 {
     [JsonPropertyName("bloodlineID")] public long? BloodlineID { get; init; }
@@ -3495,12 +5076,14 @@ public sealed class SdeAncestries
     [JsonPropertyName("willpower")] public long? Willpower { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeAppliedProximityEffectsDbuffsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
     [JsonPropertyName("_value")] public double? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeAppliedProximityEffects
 {
     [JsonPropertyName("dbuffs")] public SdeAppliedProximityEffectsDbuffsItem[]? Dbuffs { get; init; }
@@ -3508,12 +5091,14 @@ public sealed class SdeAppliedProximityEffects
     [JsonPropertyName("radius")] public long? Radius { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeArchetypes
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeBloodlines
 {
     [JsonPropertyName("charisma")] public long? Charisma { get; init; }
@@ -3528,6 +5113,7 @@ public sealed class SdeBloodlines
     [JsonPropertyName("willpower")] public long? Willpower { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeBlueprintsActivitiesCopying
 {
     [JsonPropertyName("materials")] public ClientBlueprintsActivitiesCopyingMaterialsItem[]? Materials { get; init; }
@@ -3535,6 +5121,7 @@ public sealed class SdeBlueprintsActivitiesCopying
     [JsonPropertyName("time")] public long? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeBlueprintsActivities
 {
     [JsonPropertyName("copying")] public SdeBlueprintsActivitiesCopying? Copying { get; init; }
@@ -3545,6 +5132,7 @@ public sealed class SdeBlueprintsActivities
     [JsonPropertyName("research_time")] public SdeBlueprintsActivitiesCopying? ResearchTime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeBlueprints
 {
     [JsonPropertyName("activities")] public SdeBlueprintsActivities? Activities { get; init; }
@@ -3552,6 +5140,7 @@ public sealed class SdeBlueprints
     [JsonPropertyName("maxProductionLimit")] public long? MaxProductionLimit { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCategories
 {
     [JsonPropertyName("iconID")] public long? IconID { get; init; }
@@ -3559,6 +5148,7 @@ public sealed class SdeCategories
     [JsonPropertyName("published")] public bool? Published { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCertificatesSkillTypesItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -3569,6 +5159,7 @@ public sealed class SdeCertificatesSkillTypesItem
     [JsonPropertyName("standard")] public long? Standard { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCertificates
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3578,6 +5169,7 @@ public sealed class SdeCertificates
     [JsonPropertyName("skillTypes")] public SdeCertificatesSkillTypesItem[]? SkillTypes { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCharacterAttributes
 {
     [JsonPropertyName("description")] public string? Description { get; init; }
@@ -3587,22 +5179,26 @@ public sealed class SdeCharacterAttributes
     [JsonPropertyName("shortDescription")] public string? ShortDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCharacterTitles
 {
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCloneGrades
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("skills")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCompressibleTypes
 {
     [JsonPropertyName("compressedTypeID")] public long? CompressedTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeContrabandTypesFactionsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -3612,11 +5208,13 @@ public sealed class SdeContrabandTypesFactionsItem
     [JsonPropertyName("standingLoss")] public double? StandingLoss { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeContrabandTypes
 {
     [JsonPropertyName("factions")] public SdeContrabandTypesFactionsItem[]? Factions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCorporationRoleGroups
 {
     [JsonPropertyName("appliesTo")] public string? AppliesTo { get; init; }
@@ -3626,6 +5224,7 @@ public sealed class SdeCorporationRoleGroups
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeCorporationRoles
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3634,6 +5233,7 @@ public sealed class SdeCorporationRoles
     [JsonPropertyName("shortName")] public string? ShortName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDbuffCollections
 {
     [JsonPropertyName("aggregateMode")] public string? AggregateMode { get; init; }
@@ -3647,6 +5247,7 @@ public sealed class SdeDbuffCollections
     [JsonPropertyName("showOutputValueInUI")] public string? ShowOutputValueInUI { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDogmaAttributes
 {
     [JsonPropertyName("attributeCategoryID")] public long? AttributeCategoryID { get; init; }
@@ -3668,6 +5269,7 @@ public sealed class SdeDogmaAttributes
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDogmaEffects
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3697,6 +5299,7 @@ public sealed class SdeDogmaEffects
     [JsonPropertyName("trackingSpeedAttributeID")] public long? TrackingSpeedAttributeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDogmaUnits
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3704,6 +5307,7 @@ public sealed class SdeDogmaUnits
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDungeons
 {
     [JsonPropertyName("allowedShipsList")] public long[]? AllowedShipsList { get; init; }
@@ -3714,6 +5318,7 @@ public sealed class SdeDungeons
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDynamicItemAttributesAttributeIDsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -3722,12 +5327,14 @@ public sealed class SdeDynamicItemAttributesAttributeIDsItem
     [JsonPropertyName("min")] public double? Min { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeDynamicItemAttributes
 {
     [JsonPropertyName("attributeIDs")] public SdeDynamicItemAttributesAttributeIDsItem[]? AttributeIDs { get; init; }
     [JsonPropertyName("inputOutputMapping")] public ClientDynamicitemattributesInputOutputMappingItem[]? InputOutputMapping { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeEpicArcsMissionsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -3736,6 +5343,7 @@ public sealed class SdeEpicArcsMissionsItem
     [JsonPropertyName("nextMissions")] public long[]? NextMissions { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeEpicArcs
 {
     [JsonPropertyName("arcRestartInterval")] public long? ArcRestartInterval { get; init; }
@@ -3745,6 +5353,7 @@ public sealed class SdeEpicArcs
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeExpertSystems
 {
     [JsonPropertyName("associatedShipTypes")] public long[]? AssociatedShipTypes { get; init; }
@@ -3755,6 +5364,7 @@ public sealed class SdeExpertSystems
     [JsonPropertyName("skillsGranted")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? SkillsGranted { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFactions
 {
     [JsonPropertyName("corporationID")] public long? CorporationID { get; init; }
@@ -3771,6 +5381,7 @@ public sealed class SdeFactions
     [JsonPropertyName("uniqueName")] public bool? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFighterAbilities
 {
     [JsonPropertyName("disallowInHighSec")] public bool? DisallowInHighSec { get; init; }
@@ -3782,24 +5393,28 @@ public sealed class SdeFighterAbilities
     [JsonPropertyName("turretGraphicID")] public long? TurretGraphicID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFighterAbilitiesByTypeAbilitySlot1
 {
     [JsonPropertyName("abilityID")] public long? AbilityID { get; init; }
     [JsonPropertyName("cooldownSeconds")] public long? CooldownSeconds { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFighterAbilitiesByTypeAbilitySlot2Charges
 {
     [JsonPropertyName("chargeCount")] public long? ChargeCount { get; init; }
     [JsonPropertyName("rearmTimeSeconds")] public long? RearmTimeSeconds { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFighterAbilitiesByTypeAbilitySlot2
 {
     [JsonPropertyName("abilityID")] public long? AbilityID { get; init; }
     [JsonPropertyName("charges")] public SdeFighterAbilitiesByTypeAbilitySlot2Charges? Charges { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFighterAbilitiesByType
 {
     [JsonPropertyName("abilitySlot0")] public ClientFighterabilitiesbytypeAbilitySlot0? AbilitySlot0 { get; init; }
@@ -3807,6 +5422,7 @@ public sealed class SdeFighterAbilitiesByType
     [JsonPropertyName("abilitySlot2")] public SdeFighterAbilitiesByTypeAbilitySlot2? AbilitySlot2 { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemContributionMultiplier
 {
     [JsonPropertyName("defaultValue")] public long? DefaultValue { get; init; }
@@ -3818,6 +5434,7 @@ public sealed class SdeFreelanceJobSchemasValueItemContributionMultiplier
     [JsonPropertyName("unsetDescription")] public SdeAccountingEntryTypesDescription? UnsetDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemMaxContributionsPerParticipant
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -3826,6 +5443,7 @@ public sealed class SdeFreelanceJobSchemasValueItemMaxContributionsPerParticipan
     [JsonPropertyName("unsetDescription")] public SdeAccountingEntryTypesDescription? UnsetDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItemBoolean
 {
     [JsonPropertyName("choiceLabel")] public SdeAccountingEntryTypesDescription? ChoiceLabel { get; init; }
@@ -3837,6 +5455,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItemBoolean
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDeliveryDeliveryLocation
 {
     [JsonPropertyName("acceptedValueTypes")] public string[]? AcceptedValueTypes { get; init; }
@@ -3847,6 +5466,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDeliveryDel
     [JsonPropertyName("unsetDescription")] public SdeAccountingEntryTypesDescription? UnsetDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDeliveryInventoryType
 {
     [JsonPropertyName("acceptedValueTypes")] public string[]? AcceptedValueTypes { get; init; }
@@ -3856,6 +5476,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDeliveryInv
     [JsonPropertyName("unsetDescription")] public SdeAccountingEntryTypesDescription? UnsetDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDelivery
 {
     [JsonPropertyName("deliveryLocation")] public SdeFreelanceJobSchemasValueItemParametersItemItemDeliveryDeliveryLocation? DeliveryLocation { get; init; }
@@ -3865,6 +5486,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItemItemDelivery
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItemMatcher
 {
     [JsonPropertyName("acceptedValueTypes")] public string[]? AcceptedValueTypes { get; init; }
@@ -3877,6 +5499,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItemMatcher
     [JsonPropertyName("unsetDescription")] public SdeAccountingEntryTypesDescription? UnsetDescription { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItemParametersItem
 {
     [JsonPropertyName("_key")] public string? Key { get; init; }
@@ -3885,6 +5508,7 @@ public sealed class SdeFreelanceJobSchemasValueItemParametersItem
     [JsonPropertyName("matcher")] public SdeFreelanceJobSchemasValueItemParametersItemMatcher? Matcher { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemasValueItem
 {
     [JsonPropertyName("_key")] public string? Key { get; init; }
@@ -3901,11 +5525,13 @@ public sealed class SdeFreelanceJobSchemasValueItem
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeFreelanceJobSchemas
 {
     [JsonPropertyName("_value")] public SdeFreelanceJobSchemasValueItem[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeGraphicMaterialSetsColorHull
 {
     [JsonPropertyName("a")] public double? A { get; init; }
@@ -3914,6 +5540,7 @@ public sealed class SdeGraphicMaterialSetsColorHull
     [JsonPropertyName("r")] public double? R { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeGraphicMaterialSets
 {
     [JsonPropertyName("colorHull")] public SdeGraphicMaterialSetsColorHull? ColorHull { get; init; }
@@ -3933,6 +5560,7 @@ public sealed class SdeGraphicMaterialSets
     [JsonPropertyName("sofRaceHint")] public string? SofRaceHint { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeGraphics
 {
     [JsonPropertyName("graphicFile")] public string? GraphicFile { get; init; }
@@ -3944,6 +5572,7 @@ public sealed class SdeGraphics
     [JsonPropertyName("sofRaceName")] public string? SofRaceName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeGroups
 {
     [JsonPropertyName("anchorable")] public bool? Anchorable { get; init; }
@@ -3956,6 +5585,7 @@ public sealed class SdeGroups
     [JsonPropertyName("useBasePrice")] public bool? UseBasePrice { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryAssemblyLinesDetailsPerCategoryItem
 {
     [JsonPropertyName("categoryID")] public long? CategoryID { get; init; }
@@ -3964,6 +5594,7 @@ public sealed class SdeIndustryAssemblyLinesDetailsPerCategoryItem
     [JsonPropertyName("timeMultiplier")] public double? TimeMultiplier { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryAssemblyLinesDetailsPerGroupItem
 {
     [JsonPropertyName("costMultiplier")] public double? CostMultiplier { get; init; }
@@ -3972,6 +5603,7 @@ public sealed class SdeIndustryAssemblyLinesDetailsPerGroupItem
     [JsonPropertyName("timeMultiplier")] public double? TimeMultiplier { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryAssemblyLinesDetailsPerTypeListItem
 {
     [JsonPropertyName("materialMultiplier")] public double? MaterialMultiplier { get; init; }
@@ -3979,6 +5611,7 @@ public sealed class SdeIndustryAssemblyLinesDetailsPerTypeListItem
     [JsonPropertyName("typeListID")] public long? TypeListID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryAssemblyLines
 {
     [JsonPropertyName("activityID")] public long? ActivityID { get; init; }
@@ -3992,28 +5625,33 @@ public sealed class SdeIndustryAssemblyLines
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryInstallationTypesAssemblyLinesItem
 {
     [JsonPropertyName("assemblyLineID")] public long? AssemblyLineID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryInstallationTypes
 {
     [JsonPropertyName("assemblyLines")] public SdeIndustryInstallationTypesAssemblyLinesItem[]? AssemblyLines { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryModifierSourcesCopying
 {
     [JsonPropertyName("cost")] public ClientDbuffcollectionsItemModifiersItem[]? Cost { get; init; }
     [JsonPropertyName("time")] public ClientDbuffcollectionsItemModifiersItem[]? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryModifierSourcesReaction
 {
     [JsonPropertyName("material")] public ClientIndustryActivityModifierSourcesManufacturingMaterialItem[]? Material { get; init; }
     [JsonPropertyName("time")] public ClientIndustryActivityModifierSourcesManufacturingMaterialItem[]? Time { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeIndustryModifierSources
 {
     [JsonPropertyName("copying")] public SdeIndustryModifierSourcesCopying? Copying { get; init; }
@@ -4024,6 +5662,7 @@ public sealed class SdeIndustryModifierSources
     [JsonPropertyName("researchTime")] public SdeIndustryModifierSourcesCopying? ResearchTime { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeLandmarks
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4033,6 +5672,7 @@ public sealed class SdeLandmarks
     [JsonPropertyName("position")] public ClientConstellationsCenter? Position { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeLinkWithShip
 {
     [JsonPropertyName("applyPvpFlag")] public bool? ApplyPvpFlag { get; init; }
@@ -4050,6 +5690,7 @@ public sealed class SdeLinkWithShip
     [JsonPropertyName("solarsystemInterferenceCost")] public double? SolarsystemInterferenceCost { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapAsteroidBeltsStatistics
 {
     [JsonPropertyName("density")] public double? Density { get; init; }
@@ -4066,6 +5707,7 @@ public sealed class SdeMapAsteroidBeltsStatistics
     [JsonPropertyName("temperature")] public double? Temperature { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapAsteroidBelts
 {
     [JsonPropertyName("celestialIndex")] public long? CelestialIndex { get; init; }
@@ -4079,6 +5721,7 @@ public sealed class SdeMapAsteroidBelts
     [JsonPropertyName("uniqueName")] public SdeAccountingEntryTypesDescription? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapConstellations
 {
     [JsonPropertyName("factionID")] public long? FactionID { get; init; }
@@ -4089,6 +5732,7 @@ public sealed class SdeMapConstellations
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapMoonsAttributes
 {
     [JsonPropertyName("heightMap1")] public long? HeightMap1 { get; init; }
@@ -4096,6 +5740,7 @@ public sealed class SdeMapMoonsAttributes
     [JsonPropertyName("shaderPreset")] public long? ShaderPreset { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapMoonsStatistics
 {
     [JsonPropertyName("density")] public double? Density { get; init; }
@@ -4113,6 +5758,7 @@ public sealed class SdeMapMoonsStatistics
     [JsonPropertyName("temperature")] public double? Temperature { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapMoons
 {
     [JsonPropertyName("attributes")] public SdeMapMoonsAttributes? Attributes { get; init; }
@@ -4128,6 +5774,7 @@ public sealed class SdeMapMoons
     [JsonPropertyName("uniqueName")] public SdeAccountingEntryTypesDescription? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapPlanets
 {
     [JsonPropertyName("asteroidBeltIDs")] public long[]? AsteroidBeltIDs { get; init; }
@@ -4144,6 +5791,7 @@ public sealed class SdeMapPlanets
     [JsonPropertyName("uniqueName")] public SdeAccountingEntryTypesDescription? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapRegions
 {
     [JsonPropertyName("constellationIDs")] public long[]? ConstellationIDs { get; init; }
@@ -4155,6 +5803,7 @@ public sealed class SdeMapRegions
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapSecondarySuns
 {
     [JsonPropertyName("effectBeaconTypeID")] public long? EffectBeaconTypeID { get; init; }
@@ -4163,12 +5812,14 @@ public sealed class SdeMapSecondarySuns
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapSolarSystemsPosition2D
 {
     [JsonPropertyName("x")] public double? X { get; init; }
     [JsonPropertyName("y")] public double? Y { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapSolarSystems
 {
     [JsonPropertyName("border")] public bool? Border { get; init; }
@@ -4196,12 +5847,14 @@ public sealed class SdeMapSolarSystems
     [JsonPropertyName("wormholeClassID")] public long? WormholeClassID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapStargatesDestination
 {
     [JsonPropertyName("solarSystemID")] public long? SolarSystemID { get; init; }
     [JsonPropertyName("stargateID")] public long? StargateID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapStargates
 {
     [JsonPropertyName("destination")] public SdeMapStargatesDestination? Destination { get; init; }
@@ -4210,6 +5863,7 @@ public sealed class SdeMapStargates
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapStarsStatistics
 {
     [JsonPropertyName("age")] public double? Age { get; init; }
@@ -4219,6 +5873,7 @@ public sealed class SdeMapStarsStatistics
     [JsonPropertyName("temperature")] public double? Temperature { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMapStars
 {
     [JsonPropertyName("radius")] public long? Radius { get; init; }
@@ -4227,6 +5882,7 @@ public sealed class SdeMapStars
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMarketGroups
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4236,17 +5892,20 @@ public sealed class SdeMarketGroups
     [JsonPropertyName("parentGroupID")] public long? ParentGroupID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMasteriesValueItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
     [JsonPropertyName("_value")] public long[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMasteries
 {
     [JsonPropertyName("_value")] public SdeMasteriesValueItem[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMercenaryTacticalOperations
 {
     [JsonPropertyName("anarchyImpact")] public long? AnarchyImpact { get; init; }
@@ -4257,6 +5916,7 @@ public sealed class SdeMercenaryTacticalOperations
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMetaGroupsColor
 {
     [JsonPropertyName("b")] public double? B { get; init; }
@@ -4264,6 +5924,7 @@ public sealed class SdeMetaGroupsColor
     [JsonPropertyName("r")] public double? R { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMetaGroups
 {
     [JsonPropertyName("color")] public SdeMetaGroupsColor? Color { get; init; }
@@ -4273,6 +5934,7 @@ public sealed class SdeMetaGroups
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMetenoxMoonDrill
 {
     [JsonPropertyName("miningCycleTime")] public long? MiningCycleTime { get; init; }
@@ -4280,6 +5942,7 @@ public sealed class SdeMetenoxMoonDrill
     [JsonPropertyName("reagentsConsumedPerCycle")] public long? ReagentsConsumedPerCycle { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesAnnotations
 {
     [JsonPropertyName("requiredEnlistmentWithFactionID")] public long? RequiredEnlistmentWithFactionID { get; init; }
@@ -4288,34 +5951,40 @@ public sealed class SdeMilitaryCampaignObjectivesAnnotations
     [JsonPropertyName("warning2")] public SdeAccountingEntryTypesDescription? Warning2 { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItemMatcherValuesItem
 {
     [JsonPropertyName("valueType")] public string? ValueType { get; init; }
     [JsonPropertyName("values")] public string[]? Values { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItemMatcher
 {
     [JsonPropertyName("values")] public SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItemMatcherValuesItem[]? Values { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItem
 {
     [JsonPropertyName("key")] public string? Key { get; init; }
     [JsonPropertyName("matcher")] public SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItemMatcher? Matcher { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesContributionMethodConfiguration
 {
     [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("parameters")] public SdeMilitaryCampaignObjectivesContributionMethodConfigurationParametersItem[]? Parameters { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesIssuer
 {
     [JsonPropertyName("corporationID")] public long? CorporationID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesRewardsIsk
 {
     [JsonPropertyName("amountPerInterval")] public long? AmountPerInterval { get; init; }
@@ -4323,11 +5992,13 @@ public sealed class SdeMilitaryCampaignObjectivesRewardsIsk
     [JsonPropertyName("progressInterval")] public long? ProgressInterval { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesRewardsStandingIssuer
 {
     [JsonPropertyName("factionID")] public long? FactionID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesRewardsStanding
 {
     [JsonPropertyName("gainPercentPerInterval")] public double? GainPercentPerInterval { get; init; }
@@ -4335,6 +6006,7 @@ public sealed class SdeMilitaryCampaignObjectivesRewardsStanding
     [JsonPropertyName("progressInterval")] public long? ProgressInterval { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectivesRewards
 {
     [JsonPropertyName("isk")] public SdeMilitaryCampaignObjectivesRewardsIsk? Isk { get; init; }
@@ -4342,6 +6014,7 @@ public sealed class SdeMilitaryCampaignObjectivesRewards
     [JsonPropertyName("standing")] public SdeMilitaryCampaignObjectivesRewardsStanding? Standing { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignObjectives
 {
     [JsonPropertyName("annotations")] public SdeMilitaryCampaignObjectivesAnnotations? Annotations { get; init; }
@@ -4358,6 +6031,7 @@ public sealed class SdeMilitaryCampaignObjectives
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaignsAnnotations
 {
     [JsonPropertyName("aoCampaignCardButtonImage")] public string? AoCampaignCardButtonImage { get; init; }
@@ -4406,6 +6080,7 @@ public sealed class SdeMilitaryCampaignsAnnotations
     [JsonPropertyName("towCampaignCardButtonImage")] public string? TowCampaignCardButtonImage { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMilitaryCampaigns
 {
     [JsonPropertyName("annotations")] public SdeMilitaryCampaignsAnnotations? Annotations { get; init; }
@@ -4415,6 +6090,7 @@ public sealed class SdeMilitaryCampaigns
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMissionsCourierMission
 {
     [JsonPropertyName("objectiveQuantity")] public long? ObjectiveQuantity { get; init; }
@@ -4422,6 +6098,7 @@ public sealed class SdeMissionsCourierMission
     [JsonPropertyName("objectiveTypeID")] public long? ObjectiveTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMissionsKillMission
 {
     [JsonPropertyName("dropItemInMissionContainer")] public long? DropItemInMissionContainer { get; init; }
@@ -4430,6 +6107,7 @@ public sealed class SdeMissionsKillMission
     [JsonPropertyName("objectiveTypeID")] public long? ObjectiveTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMissionsMessagesItem
 {
     [JsonPropertyName("_key")] public string? Key { get; init; }
@@ -4443,6 +6121,7 @@ public sealed class SdeMissionsMessagesItem
     [JsonPropertyName("zh")] public string? Zh { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeMissions
 {
     [JsonPropertyName("agentTypeID")] public long? AgentTypeID { get; init; }
@@ -4460,12 +6139,14 @@ public sealed class SdeMissions
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNotificationTypes
 {
     [JsonPropertyName("displayName")] public SdeAccountingEntryTypesDescription? DisplayName { get; init; }
     [JsonPropertyName("internalName")] public string? InternalName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCharactersAgent
 {
     [JsonPropertyName("agentTypeID")] public long? AgentTypeID { get; init; }
@@ -4474,6 +6155,7 @@ public sealed class SdeNpcCharactersAgent
     [JsonPropertyName("level")] public long? Level { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCharacters
 {
     [JsonPropertyName("agent")] public SdeNpcCharactersAgent? Agent { get; init; }
@@ -4494,6 +6176,7 @@ public sealed class SdeNpcCharacters
     [JsonPropertyName("uniqueName")] public bool? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCorporationDivisions
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4503,6 +6186,7 @@ public sealed class SdeNpcCorporationDivisions
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCorporationsDivisionsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -4511,12 +6195,14 @@ public sealed class SdeNpcCorporationsDivisionsItem
     [JsonPropertyName("size")] public long? Size { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCorporationsInvestorsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
     [JsonPropertyName("_value")] public long? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcCorporations
 {
     [JsonPropertyName("allowedMemberRaces")] public long[]? AllowedMemberRaces { get; init; }
@@ -4553,6 +6239,7 @@ public sealed class SdeNpcCorporations
     [JsonPropertyName("uniqueName")] public bool? UniqueName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeNpcStations
 {
     [JsonPropertyName("celestialIndex")] public long? CelestialIndex { get; init; }
@@ -4569,6 +6256,7 @@ public sealed class SdeNpcStations
     [JsonPropertyName("useOperationName")] public bool? UseOperationName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdePlanetResourcesReagent
 {
     [JsonPropertyName("amount_per_cycle")] public long? AmountPerCycle { get; init; }
@@ -4578,6 +6266,7 @@ public sealed class SdePlanetResourcesReagent
     [JsonPropertyName("unsecured_capacity")] public long? UnsecuredCapacity { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdePlanetResources
 {
     [JsonPropertyName("power")] public long? Power { get; init; }
@@ -4585,6 +6274,7 @@ public sealed class SdePlanetResources
     [JsonPropertyName("workforce")] public long? Workforce { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdePlanetSchematicsTypesItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -4592,6 +6282,7 @@ public sealed class SdePlanetSchematicsTypesItem
     [JsonPropertyName("quantity")] public long? Quantity { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdePlanetSchematics
 {
     [JsonPropertyName("cycleTime")] public long? CycleTime { get; init; }
@@ -4600,6 +6291,7 @@ public sealed class SdePlanetSchematics
     [JsonPropertyName("types")] public SdePlanetSchematicsTypesItem[]? Types { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeProximityTrap
 {
     [JsonPropertyName("dbuffDuration")] public long? DbuffDuration { get; init; }
@@ -4612,6 +6304,7 @@ public sealed class SdeProximityTrap
     [JsonPropertyName("triggerRange")] public long? TriggerRange { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeRaces
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4621,6 +6314,7 @@ public sealed class SdeRaces
     [JsonPropertyName("skills")] public SdeNpcCorporationsInvestorsItem[]? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSchools
 {
     [JsonPropertyName("careerAgents")] public long[]? CareerAgents { get; init; }
@@ -4636,6 +6330,7 @@ public sealed class SdeSchools
     [JsonPropertyName("title")] public SdeAccountingEntryTypesDescription? Title { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeShipTreeElements
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4643,6 +6338,7 @@ public sealed class SdeShipTreeElements
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeShipTreeFactions
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4650,6 +6346,7 @@ public sealed class SdeShipTreeFactions
     [JsonPropertyName("icon")] public string? Icon { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeShipTreeGroupsPreReqSkillsItemSkillsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
@@ -4657,12 +6354,14 @@ public sealed class SdeShipTreeGroupsPreReqSkillsItemSkillsItem
     [JsonPropertyName("level")] public long? Level { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeShipTreeGroupsPreReqSkillsItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
     [JsonPropertyName("skills")] public SdeShipTreeGroupsPreReqSkillsItemSkillsItem[]? Skills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeShipTreeGroups
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
@@ -4675,6 +6374,7 @@ public sealed class SdeShipTreeGroups
     [JsonPropertyName("preReqSkills")] public SdeShipTreeGroupsPreReqSkillsItem[]? PreReqSkills { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkillPlans
 {
     [JsonPropertyName("careerPathID")] public long? CareerPathID { get; init; }
@@ -4687,35 +6387,41 @@ public sealed class SdeSkillPlans
     [JsonPropertyName("skillRequirements")] public ClientBlueprintsActivitiesCopyingSkillsItem[]? SkillRequirements { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinMaterials
 {
     [JsonPropertyName("displayName")] public SdeAccountingEntryTypesDescription? DisplayName { get; init; }
     [JsonPropertyName("materialSetID")] public long? MaterialSetID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrComponentPointValues
 {
     [JsonPropertyName("_value")] public SdeNpcCorporationsInvestorsItem[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrComponentRarities
 {
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
     [JsonPropertyName("rank")] public long? Rank { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrComponentsAssociatedTypeIdsItem
 {
     [JsonPropertyName("licenseUsesGranted")] public long? LicenseUsesGranted { get; init; }
     [JsonPropertyName("typeID")] public long? TypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrComponentsSequenceBinder
 {
     [JsonPropertyName("count")] public long? Count { get; init; }
     [JsonPropertyName("itemTypeID")] public long? ItemTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrComponents
 {
     [JsonPropertyName("associatedTypeIds")] public SdeSkinrComponentsAssociatedTypeIdsItem[]? AssociatedTypeIds { get; init; }
@@ -4731,6 +6437,7 @@ public sealed class SdeSkinrComponents
     [JsonPropertyName("sequenceBinder")] public SdeSkinrComponentsSequenceBinder? SequenceBinder { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrSlotConfigurations
 {
     [JsonPropertyName("allowAllShips")] public bool? AllowAllShips { get; init; }
@@ -4740,6 +6447,7 @@ public sealed class SdeSkinrSlotConfigurations
     [JsonPropertyName("ships")] public long[]? Ships { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrSlots
 {
     [JsonPropertyName("allowedDesignComponentCategories")] public long[]? AllowedDesignComponentCategories { get; init; }
@@ -4747,17 +6455,20 @@ public sealed class SdeSkinrSlots
     [JsonPropertyName("name")] public SdeAccountingEntryTypesDescription? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrSlotsToMaterialsValueItem
 {
     [JsonPropertyName("materialID")] public long? MaterialID { get; init; }
     [JsonPropertyName("slotID")] public long? SlotID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkinrSlotsToMaterials
 {
     [JsonPropertyName("_value")] public SdeSkinrSlotsToMaterialsValueItem[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSkins
 {
     [JsonPropertyName("allowCCPDevs")] public bool? AllowCCPDevs { get; init; }
@@ -4769,6 +6480,7 @@ public sealed class SdeSkins
     [JsonPropertyName("visibleTranquility")] public bool? VisibleTranquility { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSovereigntyUpgradesFuel
 {
     [JsonPropertyName("hourly_upkeep")] public long? HourlyUpkeep { get; init; }
@@ -4776,6 +6488,7 @@ public sealed class SdeSovereigntyUpgradesFuel
     [JsonPropertyName("type_id")] public long? TypeId { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSovereigntyUpgrades
 {
     [JsonPropertyName("fuel")] public SdeSovereigntyUpgradesFuel? Fuel { get; init; }
@@ -4786,6 +6499,7 @@ public sealed class SdeSovereigntyUpgrades
     [JsonPropertyName("workforce_production")] public long? WorkforceProduction { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeStationOperations
 {
     [JsonPropertyName("activityID")] public long? ActivityID { get; init; }
@@ -4802,17 +6516,20 @@ public sealed class SdeStationOperations
     [JsonPropertyName("stationTypes")] public SdeNpcCorporationsInvestorsItem[]? StationTypes { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeStationServices
 {
     [JsonPropertyName("description")] public SdeAccountingEntryTypesDescription? Description { get; init; }
     [JsonPropertyName("serviceName")] public SdeAccountingEntryTypesDescription? ServiceName { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeStationStandingsRestrictions
 {
     [JsonPropertyName("services")] public SdeAppliedProximityEffectsDbuffsItem[]? Services { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSystemDbuffEmitters
 {
     [JsonPropertyName("dbuffs")] public SdeAppliedProximityEffectsDbuffsItem[]? Dbuffs { get; init; }
@@ -4821,6 +6538,7 @@ public sealed class SdeSystemDbuffEmitters
     [JsonPropertyName("interval")] public long? Interval { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeSystemWideEffects
 {
     [JsonPropertyName("dbuffs")] public SdeAppliedProximityEffectsDbuffsItem[]? Dbuffs { get; init; }
@@ -4828,6 +6546,7 @@ public sealed class SdeSystemWideEffects
     [JsonPropertyName("environmentTypeID")] public long? EnvironmentTypeID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeBonusMiscBonusesItem
 {
     [JsonPropertyName("bonus")] public double? Bonus { get; init; }
@@ -4837,6 +6556,7 @@ public sealed class SdeTypeBonusMiscBonusesItem
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeBonusRoleBonusesItem
 {
     [JsonPropertyName("bonus")] public double? Bonus { get; init; }
@@ -4845,12 +6565,14 @@ public sealed class SdeTypeBonusRoleBonusesItem
     [JsonPropertyName("unitID")] public long? UnitID { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeBonusTypesItem
 {
     [JsonPropertyName("_key")] public long? Key { get; init; }
     [JsonPropertyName("_value")] public SdeTypeBonusRoleBonusesItem[]? Value { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeBonus
 {
     [JsonPropertyName("iconID")] public long? IconID { get; init; }
@@ -4859,23 +6581,27 @@ public sealed class SdeTypeBonus
     [JsonPropertyName("types")] public SdeTypeBonusTypesItem[]? Types { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeDogmaDogmaEffectsItem
 {
     [JsonPropertyName("effectID")] public long? EffectID { get; init; }
     [JsonPropertyName("isDefault")] public bool? IsDefault { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeDogma
 {
     [JsonPropertyName("dogmaAttributes")] public ClientTypedogmaDogmaAttributesItem[]? DogmaAttributes { get; init; }
     [JsonPropertyName("dogmaEffects")] public SdeTypeDogmaDogmaEffectsItem[]? DogmaEffects { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeElements
 {
     [JsonPropertyName("elements")] public SdeNpcCorporationsInvestorsItem[]? Elements { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypeLists
 {
     [JsonPropertyName("displayDescription")] public SdeAccountingEntryTypesDescription? DisplayDescription { get; init; }
@@ -4889,6 +6615,7 @@ public sealed class SdeTypeLists
     [JsonPropertyName("name")] public string? Name { get; init; }
 }
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class SdeTypes
 {
     [JsonPropertyName("basePrice")] public double? BasePrice { get; init; }

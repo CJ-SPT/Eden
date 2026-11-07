@@ -41,6 +41,8 @@ On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage t
 
 Setup downloads and verifies CCP's exact-build export on the first run, decodes the staged client, and checks the replacement catalog before installing it. Normal play uses the installed catalog and save offline. See the [Windows client guide](docs/development-client.md#creating-and-recreating-the-databases) for offline setup, save migration, and verification.
 
+All 442 catalog datasets have generated typed keys and payloads in `Eden.Data`; see the [schema and provenance report](src/Eden.Data/Catalog/CatalogSchema.g.json) and [catalog implementation record](docs/protocol/catalog.md#complete-typed-catalog-schemas-november-7-2026). Shared runtime access, saved overrides and the local configuration editor are being implemented in subsequent milestones.
+
 ## Build and run
 
 Use the SDK pinned in [global.json](global.json), 64-bit Python 3.11 or later, and PowerShell 7 on Windows. Run from the repository root. After a code milestone is stable, validate in this order; select a .NET filter for the affected behavior and immediate dependencies, and stop to investigate a failed step.

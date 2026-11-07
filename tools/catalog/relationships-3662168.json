@@ -1,0 +1,38 @@
+{
+  "client/types": [
+    { "path": "/groupID", "target": "client/groups" },
+    { "path": "/graphicID", "target": "client/graphicids" },
+    { "path": "/marketGroupID", "target": "client/marketgroups" },
+    { "path": "/raceID", "target": "client/races" },
+    { "path": "/variationParentTypeID", "target": "client/types" },
+    { "path": "/wreckTypeID", "target": "client/types" }
+  ],
+  "client/groups": [
+    { "path": "/categoryID", "target": "client/categories" }
+  ],
+  "client/blueprints": [
+    { "path": "/blueprintTypeID", "target": "client/types" },
+    { "path": "/activities/manufacturing/materials/*/typeID", "target": "client/types" },
+    { "path": "/activities/manufacturing/products/*/typeID", "target": "client/types" },
+    { "path": "/activities/manufacturing/skills/*/typeID", "target": "client/types" }
+  ],
+  "client/typedogma": [
+    { "path": "/dogmaAttributes/*/attributeID", "target": "client/dogmaattributes" },
+    { "path": "/dogmaEffects/*/effectID", "target": "client/dogmaeffects" }
+  ],
+  "client/dogmaeffects": [
+    { "path": "/modifierInfo/*/modifiedAttributeID", "target": "client/dogmaattributes" },
+    { "path": "/modifierInfo/*/modifyingAttributeID", "target": "client/dogmaattributes" }
+  ],
+  "client/systems": [
+    { "path": "/constellationID", "target": "client/constellations" },
+    { "path": "/regionID", "target": "client/regions" },
+    { "path": "/sunTypeID", "target": "client/types" }
+  ],
+  "sde/npcStations": [
+    { "path": "/operationID", "target": "sde/stationOperations" },
+    { "path": "/ownerID", "target": "sde/npcCorporations" },
+    { "path": "/solarSystemID", "target": "sde/mapSolarSystems" },
+    { "path": "/typeID", "target": "sde/types" }
+  ]
+}

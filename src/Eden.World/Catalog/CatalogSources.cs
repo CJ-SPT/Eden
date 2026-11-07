@@ -84,10 +84,16 @@ internal static class CatalogSources
         {
             throw new InvalidDataException("The catalog failed Jita geography or Ibis flight verification.");
         }
-        var counts = db.Set<SourceDataset>().ToDictionary(d => d.Name, d => d.Rows);
+        var counts = db.Set<SourceDataset>().ToDictionary(d => d.Name);
         foreach (var source in s_sources)
         {
-            if (!counts.Remove(source.Name, out long expected) || source.Verify(db) != expected)
+            if (
+                !counts.Remove(source.Name, out var expected)
+                || source.Descriptor.Source != expected.Source
+                || source.Descriptor.Sha256 != expected.Sha256
+                || source.Descriptor.Records != expected.Rows
+                || source.Verify(db) != expected.Rows
+            )
             {
                 throw new InvalidDataException($"Source count mismatch for {source.Name}.");
             }
