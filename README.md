@@ -99,6 +99,8 @@ Gameplay builds independently of Protocol, Server, EF Core and the host containe
 
 ### Session performance diagnostics
 
+Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.ps1`; see the [capacity measurements and optimization candidates](docs/protocol/performance.md#npc-and-player-capacity-november-6-2026).
+
 Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
 
 The live host loads the immutable NPC/agent directory before admitting clients. Its name lookup uses one collection parameter so catalog initialization does not bind thousands of individual SQLite parameters; see the [agent directory latency record](docs/protocol/performance.md#agent-directory-first-request-latency-november-6-2026).
