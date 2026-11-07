@@ -7,7 +7,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 92;
+    internal const int CurrentVersion = 93;
 
     public static void Open(
         WorldDbContext world,
@@ -46,6 +46,14 @@ internal static class WorldMigration
         }
         using var history = world.Database.BeginTransaction();
         WorldVersions86To92.Apply(world, catalog, clock, version, economy, economics);
+        world.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS WorldCharacterDeletion(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                ReadyAt INTEGER NOT NULL, DeletedAt INTEGER);
+            PRAGMA user_version=93;
+            """
+        );
         history.Commit();
     }
 }

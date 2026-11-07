@@ -199,8 +199,14 @@ internal sealed record CharacterSelectionReply(AccountProfile Account, IReadOnly
         };
 }
 
-internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoints, TrainingEntry? Active, long? QueueEnd, long BalanceCents)
-    : BlueModel
+internal sealed record CharacterSelectionCard(
+    DockedPilot Pilot,
+    long SkillPoints,
+    TrainingEntry? Active,
+    long? QueueEnd,
+    long BalanceCents,
+    long? DeleteReadyAt = null
+) : BlueModel
 {
     // Existing selection-card placeholder; this is not a persisted logoff timestamp.
     private const long PlaceholderLogoffDate = 134000000000000000L;
@@ -226,7 +232,7 @@ internal sealed record CharacterSelectionCard(DockedPilot Pilot, long SkillPoint
                 ["unreadMailCount"] = 0,
                 ["paperdollState"] = 0,
                 ["lockTypeID"] = null,
-                ["deletePrepareDateTime"] = null,
+                ["deletePrepareDateTime"] = DeleteReadyAt,
                 ["logoffDate"] = PlaceholderLogoffDate,
                 ["skillTypeID"] = Active?.Target.TypeId,
                 ["toLevel"] = Active?.Target.Level,

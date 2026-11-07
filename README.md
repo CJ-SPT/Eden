@@ -18,7 +18,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 | Area | Implemented scope and limits |
 | --- | --- |
-| Accounts and characters | Launcher registration/login, three character slots, profiles, skill training, remapping, learning implants/boosters, skill injectors/extraction, redemption and personal clones. |
+| Accounts and characters | Launcher registration/login, three character slots, persistent biomass preparation/cancellation and final deletion, profiles, skill training, remapping, learning implants/boosters, skill injectors/extraction, redemption and personal clones. |
 | Shared world and travel | Multi-pilot flight, docking, warp, gates, collision motion, bookmarks, maps and developer translocation. |
 | Ships and fitting | Persistent hulls/holds, personal saved fitting plans, supported Tech I hulls, catalog-backed modules, saved weapon groups and light/medium combat drones on Brutix and Brutix Navy Issue. Lost drones can be reconnected or scooped into a drone bay or cargo. Market availability does not imply gameplay support. |
 | Combat and NPCs | Pilot turret and missile damage, shared ship-loss settlement, enforced safety, saved aggression timers and timed logout presence; regional belt pirates, defensive empire guards, passive high-security station convoys, high-security NPC mining/hauling and response fleets, NPC turrets/missiles, declared electronic warfare and local repairs, bounties, security/standing history, ship losses and wrecks. |

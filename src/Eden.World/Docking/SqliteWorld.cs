@@ -128,7 +128,9 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
     {
         using WorldDbContext world = new(_database.Path);
         return world
-            .Pilots.Where(p => p.AccountId == accountId)
+            .Pilots.Where(p =>
+                p.AccountId == accountId && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
+            )
             .OrderBy(p => p.Id)
             .Select(p => p.Id)
             .ToArray()
@@ -144,7 +146,11 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             .Include(p => p.Account)
             .Include(p => p.ActiveShip)
                 .ThenInclude(s => s.Position)
-            .Where(p => p.AccountId == accountId && (pilotId == null || p.Id == pilotId))
+            .Where(p =>
+                p.AccountId == accountId
+                && (pilotId == null || p.Id == pilotId)
+                && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
+            )
             .OrderBy(p => p.Id)
             .FirstOrDefault();
         if (pilot is null)

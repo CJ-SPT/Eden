@@ -42,6 +42,8 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
+        model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);
         EconomicSchema.Configure(model);
         CrimewatchSchema.Configure(model);
         DroneSchema.Configure(model);

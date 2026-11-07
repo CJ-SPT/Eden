@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Character biomass (November 6, 2026)](#character-biomass-november-6-2026)
 - [Character interaction history (November 5, 2026)](#character-interaction-history-november-5-2026)
 - [Private pilot Show Info notes (November 4, 2026)](#private-pilot-show-info-notes-november-4-2026)
 - [Pilot Show Info header and tab startup follow-up (November 4, 2026)](#pilot-show-info-header-and-tab-startup-follow-up-november-4-2026)
@@ -28,6 +29,24 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Character biomass (November 6, 2026)
+
+The maintainer's screenshot reports **Invalid Packet Destination: Unsupported local call charUnboundMgr.PrepareCharacterForDelete** at character selection. The handler was missing all three biomass calls, and selection cards always returned `deletePrepareDateTime=None`.
+
+Inert inspection of pinned build **3662168** `eve/client/script/ui/login/charSelection/characterSelection.pyj` confirms `SubmitToBiomassQueue` calls `PrepareCharacterForDelete(charID)` and uses its numeric FILETIME reply as the deletion-ready deadline. `UndoTermination` calls `CancelCharacterDeletePrepare(charID)`. `Terminate` compares that deadline to wall-clock time; after the native confirmation, `DeleteCharacter(charID)` expects a falsy success result and reloads selection data. `loginCharacterselection/charselData.pyj` reads `deletePrepareDateTime` directly. Eden returns an integer deadline for preparation and Python None for cancel/delete, with no extra notifications.
+
+Eden uses a ten-hour cooling-off period as an explicit gameplay policy. Repeating preparation retains the existing deadline. Cancellation is idempotent and allows normal selection again; a new preparation starts a fresh deadline. Pending characters retain their slot and cannot enter the game until canceled. Final deletion requires a prepared, owned character at or beyond the saved deadline, then removes it from account lookup and selection and frees its slot. Selection refreshes its roster before accepting an ID, so stale cards cannot restore access. Malformed calls, extra keywords, foreign or unknown IDs and calls made after character selection reject without writes. The host already allows only one connected session per account.
+
+World schema **93** adds `WorldCharacterDeletion` with ready and deleted timestamps. Final deletion is a permanent tombstone: identity, name reservation, assets and public/historical references remain saved; IDs are never reused. Owned ship positions and the training queue are removed in the same transaction so a deleted pilot cannot remain an in-space target or keep training. Assets are inaccessible through that character and are not transferred to another pilot. Player-corporation membership, open personal market orders, undelivered industry jobs, and unresolved issuer/acceptor/bidder contracts must be settled first. These checks run for initial preparation and again at final deletion; cancellation remains available. This avoids orphaning corporate leadership, escrow or counterparties while broader biomass settlement is outside this change.
+
+Reference: unchanged `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), especially its integer and None type handlers; the existing Blue codec suffices. No gameplay Python was executed and no installed world save was modified.
+
+**Automated validation:** Passed tool restore (0.16 s), solution restore (0.59 s), solution build (2.70 s, zero warnings/errors), 106 focused .NET tests (20.97 s), catalog policy (3 tests, 0.25 s), formatting policy (9 tests, 0.14 s), and formatting verification (12.79 s), about 38 seconds total. Final .NET filter: `FullyQualifiedName~CharacterDeletionTests|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~CharacterLogoffTests|FullyQualifiedName~LauncherAccountTests`. The initial exact regression filter was `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PilotServicesTests.BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions` (1 passed, build 5.33 s / tests 5.70 s). Coverage includes native session replies and selection cards, deadline boundaries, cancellation, rejected calls and unchanged state, slot replacement, retained identity, file-backed and resident persistence, checkpoint/shutdown/reopen, schema-92 migration, obligation checks and transactional rollback of training/space cleanup. The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The screenshot establishes the original error only; rendering, input and countdown behavior remain unverified.
+
+**Optional maintainer checks:** After rebuilding/restarting, prepare and cancel biomass to check the countdown and restored login. After the deadline, confirm final deletion removes the card and allows a replacement character.
 
 ## Character interaction history (November 5, 2026)
 

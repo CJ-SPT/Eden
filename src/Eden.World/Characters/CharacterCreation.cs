@@ -28,7 +28,9 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         using var transaction = world.Database.BeginTransaction();
         if (
             ValidateName(world, character.Name) != CharacterNameResult.Available
-            || world.Pilots.Count(p => p.AccountId == accountId) >= ICharacterCreation.Slots
+            || world.Pilots.Count(p =>
+                p.AccountId == accountId && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
+            ) >= ICharacterCreation.Slots
         )
         {
             throw new InvalidDataException("Name unavailable or all character slots occupied.");

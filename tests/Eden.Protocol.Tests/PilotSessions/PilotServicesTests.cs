@@ -558,12 +558,56 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task UnknownMethodsReceiveAnError()
     {
-        var packets = await ExchangeAsync("charUnboundMgr", "DeleteCharacter", [90000001], 42);
+        var packets = await ExchangeAsync("charUnboundMgr", "UnknownCharacterMethod", [90000001], 42);
         var packet = Assert.Single(packets);
         Assert.EndsWith(".ErrorResponse", packet.Name);
         var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
         Assert.Equal(0, body[1]);
-        Assert.Equal("Unsupported local call charUnboundMgr.DeleteCharacter", body[2]);
+        Assert.Equal("Unsupported local call charUnboundMgr.UnknownCharacterMethod", body[2]);
+    }
+
+    [Fact]
+    public async Task BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions()
+    {
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock);
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "PrepareCharacterForDelete", [90000001L]),
+            Request("charUnboundMgr", "GetCharacterSelectionData", []),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("charUnboundMgr", "DeleteCharacter", [90000001L])
+        );
+        long ready = clock.Now + CharacterDeletionRules.PreparationDelay.Ticks;
+        Assert.Equal(ready, Result(packets[0]));
+        var roster = BlueRead.Tuple(Result(packets[1]), 4);
+        var card = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(roster[2])));
+        Assert.Equal(ready, BlueRead.Fields(card.State)["deletePrepareDateTime"]);
+        Assert.All(packets.Skip(2), p => Assert.EndsWith(".ErrorResponse", p.Name));
+
+        packets = await ExchangeAsync(
+            world,
+            43,
+            Request("charUnboundMgr", "CancelCharacterDeletePrepare", [90000001L]),
+            Request("charUnboundMgr", "GetCharacterSelectionData", []),
+            Request("charUnboundMgr", "PrepareCharacterForDelete", [90000001L])
+        );
+        Assert.Null(Result(packets[0]));
+        roster = BlueRead.Tuple(Result(packets[1]), 4);
+        card = Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(roster[2])));
+        Assert.Null(BlueRead.Fields(card.State)["deletePrepareDateTime"]);
+        clock.AdvanceWallTime(CharacterDeletionRules.PreparationDelay);
+        packets = await ExchangeAsync(
+            world,
+            44,
+            Request("charUnboundMgr", "DeleteCharacter", [90000001L]),
+            Request("charUnboundMgr", "GetCharacterSelectionData", []),
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L])
+        );
+        Assert.Null(Result(packets[0]));
+        Assert.Empty(Assert.IsType<List<object?>>(BlueRead.Tuple(Result(packets[1]), 4)[2]));
+        Assert.EndsWith(".ErrorResponse", packets[2].Name);
     }
 
     [Fact]

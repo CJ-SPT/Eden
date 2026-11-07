@@ -12,6 +12,7 @@ namespace Eden.Protocol.PilotSessions;
 internal sealed class CharacterSelectionHandler(
     IPilotLookup pilots,
     ICharacterCreation creation,
+    ICharacterDeletion deletion,
     IPilotSkillReader skills,
     IPilotTraining training,
     IPilotWalletReader wallet,
@@ -29,12 +30,21 @@ internal sealed class CharacterSelectionHandler(
         if (service == "charUnboundMgr" && method == "SelectCharacterID")
         {
             var id = arguments is object?[] { Length: > 0 } args ? args[0] : keywords?.GetValueOrDefault("charID");
+            context.Roster = pilots.ListPilots(context.AccountId);
             if (context.Selected || context.Roster.FirstOrDefault(p => Equals(p.PilotId, id)) is not { } selected)
             {
                 return new PilotCallResult.Failure("Unknown pilot for this account");
             }
+            if (deletion.Read(context.AccountId, selected.PilotId) is not null)
+            {
+                return new PilotCallResult.Failure("Cancel biomass preparation before selecting this pilot.");
+            }
             context.Select(selected);
             return PilotCallResult.None;
+        }
+        if (service == "charUnboundMgr" && method is "PrepareCharacterForDelete" or "CancelCharacterDeletePrepare" or "DeleteCharacter")
+        {
+            return DeleteCharacter(context, method, arguments, keywords);
         }
         if (service == "charUnboundMgr" && method == "CreateCharacterWithDoll" && !context.Selected)
         {
@@ -99,10 +109,53 @@ internal sealed class CharacterSelectionHandler(
         && call[1] is object?[] { Length: 1 } ids
         && Equals(ids[0], pilotId);
 
-    private CharacterSelectionReply CharacterSelection(PilotCallContext context) =>
-        new(context.Account, context.Roster.Select(Card).ToArray());
+    private PilotCallResult DeleteCharacter(
+        PilotCallContext context,
+        string method,
+        object? arguments,
+        Dictionary<string, object?>? keywords
+    )
+    {
+        if (
+            context.Selected
+            || arguments is not object?[] { Length: 1 } args
+            || args[0] is not long id
+            || id <= 0
+            || keywords is { Count: > 0 }
+        )
+        {
+            return new PilotCallResult.Failure("Biomass requires one owned character ID at character selection.");
+        }
+        try
+        {
+            if (method == "PrepareCharacterForDelete")
+            {
+                return deletion.Prepare(context.AccountId, id);
+            }
+            if (method == "CancelCharacterDeletePrepare")
+            {
+                deletion.Cancel(context.AccountId, id);
+            }
+            else
+            {
+                deletion.Delete(context.AccountId, id);
+            }
+            context.Roster = pilots.ListPilots(context.AccountId);
+            return PilotCallResult.None;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
 
-    private CharacterSelectionCard Card(DockedPilot pilot)
+    private CharacterSelectionReply CharacterSelection(PilotCallContext context)
+    {
+        context.Roster = pilots.ListPilots(context.AccountId);
+        return new(context.Account, context.Roster.Select(p => Card(context.AccountId, p)).ToArray());
+    }
+
+    private CharacterSelectionCard Card(long accountId, DockedPilot pilot)
     {
         var queue = training.Advance(pilot.PilotId).Queue;
         var head = queue.FirstOrDefault();
@@ -110,6 +163,13 @@ internal sealed class CharacterSelectionHandler(
         long points =
             skills.ReadSkills(pilot.PilotId).Sum(skill => skill.Points)
             + (active is null ? 0 : active.PointsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) - active.StartPoints);
-        return new(pilot, points, active, queue.LastOrDefault()?.EndTime, wallet.Balance(pilot.PilotId));
+        return new(
+            pilot,
+            points,
+            active,
+            queue.LastOrDefault()?.EndTime,
+            wallet.Balance(pilot.PilotId),
+            deletion.Read(accountId, pilot.PilotId)?.ReadyAt
+        );
     }
 }
