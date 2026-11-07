@@ -47,9 +47,9 @@ Use the SDK pinned in [global.json](global.json), 64-bit Python 3.11 or later, a
 
 ```powershell
 dotnet tool restore
-dotnet restore
-dotnet build --no-restore
-dotnet test --no-build --filter 'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
+dotnet restore --artifacts-path artifacts/feature-tests
+dotnet build --no-restore --artifacts-path artifacts/feature-tests
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter 'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
 python tests/Eden.Protocol.Tests/Persistence/catalog_setup_test.py
 python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
 .\tools\Format.ps1 -Check

@@ -6,11 +6,17 @@ The [README build order](../README.md#build-and-run) is the quick reference. Thi
 
 ## Focused tests
 
-During development, build changed code and run focused tests for the affected behavior and its immediate dependencies. Restore tools and packages first when needed, then use `dotnet build --no-restore` followed by a class filter, for example:
+During an edit, run the exact rule method through the feature runner:
 
 ```powershell
-dotnet test --no-build --filter 'FullyQualifiedName~Eden.Protocol.Tests.Flight.ShipCollisionTests'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Flight.ShipCollisionTests.FixedBodyReflectsRadialVelocityUsingCarbonsDampedImpulse'
 ```
+
+The runner incrementally builds the test project and its dependencies in ignored `artifacts/feature-tests`, then reports the matched count and build/test times. Empty filters and zero matches fail. Each run retains a TRX report under that output directory. The separate output allows a server using the default build directory to keep running.
+
+Once the method passes, combine the affected classes and immediate dependencies in one filter. Run tool/solution restore, the solution build, focused tests, both Python policy suites and formatting verification when the milestone is stable, following the README order. Use `--artifacts-path artifacts/feature-tests` consistently for restore, build and test.
+
+For new features, test calculation and rejection variants directly against typed `Eden.Gameplay` inputs. Use real worlds and simulated sessions for persistence, ownership, routing and notification assertions. This keeps data-driven rule coverage inexpensive while integration tests exercise the boundaries.
 
 Record the filter and results. Add focused bug regressions when practical; cover expected outcomes across gameplay rules, protocol replies/notifications, and persistence as applicable. Include rejection and unchanged-state checks for inventory/ownership, reopen/restart checks for persistence, and repeated-cycle/order checks using `TestClock` and simulated sessions for timing or synchronization. Exercise catalog variants with data-driven tests.
 
