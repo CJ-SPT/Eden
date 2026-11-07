@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
@@ -57,7 +58,7 @@ internal static class HullSupportAudit
             var effects = HullCatalog.Capabilities(catalog, type.Id).OrderBy(e => e.EffectId).ThenBy(e => e.Capability).ToArray();
             var deferred = effects.Where(e => !e.Operational).Select(e => e.Capability).ToHashSet();
             deferred.UnionWith(HullBonusRules.DeferredRoles(type.Id, (HullClass)type.GroupId));
-            if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)
+            if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0 && !DroneRules.SupportsHull(type.Id))
             {
                 deferred.Add(HullCapability.CombatDrones);
             }

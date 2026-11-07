@@ -240,6 +240,50 @@ Local hull repairers support **all 25 published profiles** across small, medium,
 
 Weapon grouping supports native linking, merging, splitting, group-all and ungroup-all for supported matching turrets and missile launchers. Groups persist per assembled ship and return through the native ship-state prime. Grouped activation, stopping and ammunition transfers cover every member, with atomic volley payments. See the [weapon grouping notes](protocol/fitting.md#persistent-weapon-grouping).
 
+### Ship and module completion program
+
+The build-3662168 completion program covers ordinary functional static hulls, ship modules/rigs, charges, drones, subsystems and carrier fighters. Each family includes its actual static tiers. Restricted equipment follows its ship role. Complete roles include the required exploration, fleet and ship-to-ship capital mechanics. Acquisition/production expansion, CONCORD, sovereignty and full player structures are separate programs. Per-item mutations and bespoke special-edition mechanics are deferred; existing supported special editions remain available. Unknown server rules are evidence blockers, not permission to invent replacements.
+
+The reproducible [ship content inventory](ship-content-coverage.json) records publication, actual production admission, individual capability checks, missing milestones, explicit exceptions and catalog provenance. **Complete** means its recorded production checks pass, not native acceptance or an obtainable production chain. **Partial** retains successful fitting/assembly while exposing missing roles or overheating. Planned, evidence-blocked, external-dependency, deferred-special and nonfunctional entries remain visible. A supported drone profile does not enable additional drone hulls. Rig fitting is recorded separately from unfinished drone/exploration/salvage consumers. The older [Tech I inventory](tech-one-hulls.json) remains a narrower assembly-cohort record.
+
+Generate both from the repository root with the installed catalog and an absolute output path. These commands do not open a saved world or start listeners:
+
+```powershell
+$catalog = Join-Path $env:LOCALAPPDATA 'Eden\catalog.sqlite'
+$coverage = Join-Path $PWD 'docs\ship-content-coverage.json'
+$hulls = Join-Path $PWD 'docs\tech-one-hulls.json'
+dotnet run --no-build --artifacts-path artifacts/feature-tests --project src/Eden.Server -- --export-ship-content-coverage $catalog $coverage
+dotnet run --no-build --artifacts-path artifacts/feature-tests --project src/Eden.Server -- --export-hull-coverage $catalog $hulls
+```
+
+The ordered milestones below preserve the agreed program. A milestone completes only after its code, affected tests, documentation and remote commit are verified. Evidence blockers remain open; independent work can proceed.
+
+| Milestone | Required result |
+| --- | --- |
+| 1. Coverage | Production-backed inventory, explicit unknown/deferred/external classifications and accurate existing coverage. |
+| 2. Fitting capabilities | Capability-backed hull cohorts, restricted equipment, supported selectors and coherent fitting snapshots. |
+| 3. Combat drones | Eligible hull bonuses, heavy/sentry drones, drone equipment, assist/guard and existing recovery guarantees. |
+| 4. Energy and support | Neutralizers, nosferatu, capacitor transfers, remote hull repair, tracking and sensor assistance. |
+| 5. Advanced defenses | Ancillary repairs, mutadaptive repairs, reactive hardeners, assault damage controls and signature suppression. |
+| 6. Overheating | Module/rack overload, condition, burnout, skills, paste repair and saved damage. |
+| 7. Information/salvage | Ship/cargo/survey scanners, passive/automatic targeting, directional scans, tractors and salvage. |
+| 8. Mining | Crystals, modulated/deep-core mining, hazards, ice, gas and mining drones. |
+| 9. Probes | Probe lifecycle, formations, scan resolution, recovery, upgrades and native results. |
+| 10. Exploration | Catalog-backed targets, data/relic analyzers and authoritative hacking attempts. |
+| 11. Cloaks/micro jumps | Cloak visibility, restrictions and timers; micro-jump spool, interruption and displacement. |
+| 12. Fleet services | Bursts, shared ship bays, in-space refitting/boarding, frigate escape and micro-jump fields. |
+| 13. Area/interdiction | Smartbombs, burst jams, bombs/defenders, probes/bubbles, focused scripts, grapplers and nullifiers. |
+| 14. Weapons | Disintegrators, Vorton chains, breacher pods/counters and remaining restricted ordinary weapon variants. |
+| 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |
+| 16. T3 | Tactical modes, strategic-cruiser subsystem assembly/refitting and nondestructive T3 rig removal. |
+| 17. Utility drones | Repair, salvage, energy, EWAR, web and functional hybrid drones. |
+| 18. Capital travel | Capital/capsule lifecycle, docking/gate restrictions, fuel, cynos, portals and jump timers. |
+| 19. Capital modes | Siege, triage, bastion, flex hardeners, emergency energizers and sensor arrays. |
+| 20. Fighters | Tubes, squadrons, movement, abilities, losses, replenishment, recall and native fighter state. |
+| 21. Industrial command | Industrial cores, shipboard compression, industrial services, P.A.N.I.C. and ship clones. |
+| 22. Supercapitals | Superweapons, lances/reapers, phenomena, command-carrier abilities and capital field systems. |
+| 23. Closure | Every ordinary entry assigned and supported consumers verified; remaining blockers/dependencies reported honestly. |
+
 ## Protocol coverage
 
 The [client RPC inventory](client-routes/README.md) lists missing handler candidates and compatibility routes from inert inspection of pinned build 3662168. It includes sortable route lists, client call sites and a repeatable audit tool; dynamic calls and partial feature support still need review.

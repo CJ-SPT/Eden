@@ -216,17 +216,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         int typeId = sources[0].TypeId;
         var chargeType = catalog.RequireItem(typeId);
         var chargeAttributes = Attributes(catalog, typeId);
-        if (
-            !(
-                TurretChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
-                || MissileChargeCatalog.Supported(catalog, typeId, chargeType.GroupId)
-                || ScriptCatalog.Supported(catalog, typeId, chargeType.GroupId)
-            )
-            && !(
-                chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
-                && chargeAttributes.GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0
-            )
-        )
+        if (!AmmunitionCatalog.Supported(catalog, typeId, chargeType.GroupId))
         {
             throw new InvalidDataException("Use supported ammunition, capacitor booster charges or module scripts.");
         }

@@ -9,5 +9,6 @@
     <InternalsVisibleTo Include="Eden.Server" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <EmbeddedResource Include="Market/starter-market.json" LogicalName="Eden.Server.Persistence.starter-market.json" />
+    <EmbeddedResource Include="Fittings/ship-content-roadmap-3662168.json" LogicalName="Eden.World.ShipContentRoadmap.json" />
   </ItemGroup>
 </Project>

@@ -28,6 +28,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 See [feature implementation notes](docs/feature-notes.md) for catalog coverage, restrictions and examples, and [protocol records](docs/protocol.md) for milestone evidence. Agent validation is automated; native rendering, input and gameplay feel remain unverified unless a record explicitly documents live acceptance for that change. Historical observations do not establish acceptance of later changes.
 
+The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies.
+
 ## Local game data
 
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.

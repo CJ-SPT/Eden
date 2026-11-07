@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Ship content coverage milestone 1, November 7, 2026](#ship-content-coverage-milestone-1-november-7-2026)
+
 - [Player remote shield and armor repairs, November 7, 2026](#player-remote-shield-and-armor-repairs-november-7-2026)
 
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
@@ -765,3 +767,25 @@ FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedNa
 **Optional maintainer checks:** See the three [remote repair checks](../development-client.md#optional-remote-shield-and-armor-repair-checks) on a copied save.
 
 The maintainer requested stopping after this milestone. Remote hull repair and capacitor transfer are not started.
+
+## Ship content coverage milestone 1, November 7, 2026
+
+The new [ship and module completion program](../feature-notes.md#ship-and-module-completion-program) resumes with an offline, typed inventory. `--export-ship-content-coverage <catalog.sqlite> <output.json>` reads the catalog without opening a saved world or starting listeners. It records production admission separately from capability completion and assigns missing work to the agreed 23 milestones. Unknown families/effects remain explicit evidence blockers. Structure equipment, structure fighters/charges, moon-survey and Entosis outcomes are external dependencies. Abyssal profiles and festival content are deferred; four Lux gun definitions remain nonfunctional. The report does not certify native acceptance or economic supply.
+
+The committed [snapshot](../ship-content-coverage.json) contains all **6,079 published entries** across ships, modules/rigs, charges, drones, subsystems, structure modules and fighters. Source fingerprint: **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**. An independent read-only SQL/typed-source comparison confirms the exact ID set, with no missing or duplicate published entries. A second process produced byte-identical JSON (SHA-256 **DC27161DD736F4EC3D4170BCC87083DE29D9AD2B2F5AF1F6C0ADFFEBAC2BFBD8**).
+
+Production admission is **235 hulls**, **3,144 modules/rigs**, **800 charges** and **41 drones**. Missing overload mechanics remain visible on otherwise supported modules. Drone/exploration/salvage rigs retain fitting/modifier coverage separately from unfinished consumer coverage. The old Tech I report no longer unconditionally defers the two working Brutix drone bays; it still retains genuinely missing drone bonuses/roles. Unclassified hull effects retain their IDs and earlier successful assembly checks. Ammunition loading and the new report share the same admission predicate rather than maintaining a second whitelist.
+
+Source evidence is the pinned catalog plus the actual hull, fitting, rig, drone, turret/missile charge and script validators. This offline inventory adds no native wire behavior or simulation mechanics; the previously documented Carbon references remain unchanged. No client or running world was accessed. An initial export used a nonexistent project-relative output directory and failed without writing a report; the documented absolute-path invocation and final exports succeeded.
+
+**Automated validation:** tool/solution restore passed; solution build passed with zero warnings/errors (3.15 seconds). The final focused filter passed **151 tests in 37 seconds**, including six new inventory tests, ammunition, capacitor boosters, scripted support, missile fitting, rigs and the three existing hull-cohort audits. Development began with the exact `ShipContentCoverageTests.PublishedInventoryRetainsUnknownExternalDeferredAndNonfunctionalEntries` filter. Final filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.AmmunitionTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.CapacitorBoosterTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName=Eden.Protocol.Tests.Persistence.UtilityHullTests.CohortIncludesEveryIndustrialAndUtilityHullWithExplicitCapabilities|FullyQualifiedName=Eden.Protocol.Tests.Persistence.SmallHullTests.CohortIncludesEverySmallTechOneEntryAndEveryEffectHasAnExplicitOwner|FullyQualifiedName=Eden.Protocol.Tests.Persistence.CombatHullTests.CohortIncludesEveryMediumAndLargeCombatHullWithExplicitCapabilities
+```
+
+Both Python suites passed (eight catalog-policy/setup tests in 0.623 seconds and nine formatting-policy tests in 0.017 seconds); formatting verification passed. Export reproduction took approximately nine seconds. Tests cover unpublished/out-of-category exclusion, unknown-family retention, external/deferred/nonfunctional classification, supported drone bays and rigs, EWAR/overload separation, missing effect definitions, unclassified hull roles, deterministic ordering, unchanged catalog bytes and input-overwrite rejection. The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None; this milestone adds offline diagnostics and shares an existing admission predicate.

@@ -54,6 +54,11 @@ internal static class Program
             HullSupportAudit.Export(hullCatalog, hullOutput);
             return;
         }
+        if (args is ["--export-ship-content-coverage", var contentCatalog, var contentOutput])
+        {
+            ShipContentAudit.Export(contentCatalog, contentOutput);
+            return;
+        }
         string? Value(string option)
         {
             int index = Array.IndexOf(args, option);

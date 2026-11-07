@@ -14,6 +14,7 @@ BOUNDARIES = {
     "src/Eden.World/Catalog/CatalogSource.cs": "Generated source mappings and full source verification.",
     "src/Eden.World/Catalog/CatalogSources.cs": "Installed catalog build/provenance verification.",
     "src/Eden.World/Fittings/HullSupportAudit.cs": "Explicit offline hull verification/export tool.",
+    "src/Eden.World/Fittings/ShipContentAudit.cs": "Explicit offline ship/module coverage inventory using production validators.",
     "src/Eden.Server/Program.cs": "Explicit offline catalog creation and verification commands.",
 }
 WORLD_TRANSPORT = {

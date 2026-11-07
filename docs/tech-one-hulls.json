@@ -5021,7 +5021,6 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
         "CommandBursts",
         "MicroJumpDrives"
       ]
@@ -9974,7 +9973,6 @@
         }
       ],
       "deferred": [
-        "CombatDrones",
         "CommandBursts",
         "MicroJumpDrives"
       ]
