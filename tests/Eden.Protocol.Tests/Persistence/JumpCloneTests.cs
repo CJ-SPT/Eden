@@ -442,8 +442,22 @@ public sealed class JumpCloneTests
             );
             world.SaveChanges();
         }
-        long pod = HomeStationTestData.MakeActiveCapsule(db, original.StationId);
-        fleet.Board(original.PilotId, original.ShipId, pod);
+        long pod;
+        using (WorldDbContext world = new(db.Path))
+        {
+            pod = InventoryPersistence.NextId(world);
+            world.Add(
+                new Ship
+                {
+                    Id = pod,
+                    OwnerId = original.PilotId,
+                    TypeId = FleetDefinitions.CapsuleType,
+                    StationId = original.StationId,
+                    Name = "Unused capsule",
+                }
+            );
+            world.SaveChanges();
+        }
         Assert.Throws<InvalidDataException>(() => fleet.Leave(90000002, original.ShipId));
         Assert.Throws<InvalidDataException>(() => fleet.Leave(original.PilotId, pod));
         db.Store.SetPosition(original.ShipId, new(1, 2, 3));

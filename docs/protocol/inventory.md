@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Capsule retirement on boarding (November 6, 2026)](#capsule-retirement-on-boarding-november-6-2026)
 - [Personal ship insurance](#personal-ship-insurance)
 - [Native inventory stack division](#native-inventory-stack-division)
 - [Persistent ship dirt and native cleaning](#persistent-ship-dirt-and-native-cleaning)
@@ -16,6 +17,26 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Capsule retirement on boarding (November 6, 2026)
+
+Boarding a docked ship previously changed only the active-ship identity, leaving the old capsule in the hangar. Ordinary `ship.Board` and `dogmaIM.CreateNewbieShip` now retire the capsule in the same transaction as adopting the target hull. The active-ship foreign key is saved before capsule deletion; failure rolls back both the switch and task progress. Ordinary previous hulls, their cargo/fittings and unrelated capsules remain intact. This fixes subsequent boarding operations; it does not purge existing inactive capsules from saves.
+
+`IPilotFleet.Board` now returns the existing named `ShipBoarding` model so the protocol handler receives the committed inventory changes. The client gets an `OnItemChange` moving the retired singleton to Graveyard location 8, with its previous station and hangar flag. The assembled row keeps quantity -1 and omits a quantity-change entry. Repeated boarding is a no-op for inventory; recovery retries also remain harmless after the previous capsule has been deleted. Existing capsule reuse when leaving a hull remains supported.
+
+Inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**) rechecked `clientDogmaLocation._MakeShipActive`: it calls `Board(shipID, session.shipid)` and unpacks the existing four-part dogma reply. Station `CreateNewbieShip` passes the previous ship and location to the recovery call. `invCache.OnItemChange` removes junk-location rows and rejects quantity-change entries on negative-quantity assembled rows. The installed catalog confirms capsule type **670**, group **29**, volume **1,000 m³**. Consulted local [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), including its DBRow read/write adapters; this change uses the existing Blue row encoding and changes no codec or Destiny format.
+
+**Automated validation.** The final affected-test run passed **458/458 cases**, including **10 new regression cases**, in **44 seconds**. Tool and solution restore, build with zero warnings/errors, the Python catalog (**3**) and formatting-policy (**9**) suites passed. Formatting verification (**871 files**), changed-file text hygiene, documentation links/anchors and `git diff --check` passed. The final required sequence took **66.46 seconds** overall. No full .NET suite was authorized or run. Coverage includes three repeated leave/board and recovery cycles, new/reused recovery hulls, restart, current-ship and repeated-request no-ops, unchanged cargo and unrelated pods, foreign/remote/packaged/untrained/stale/in-space rejection, atomic rollback on capsule deletion failure, and native removal notification fields with the unchanged dogma reply. The development run exposed two test setup errors, corrected before its **41-case** pass; the first wider run passed **435/436** cases and exposed a missing capsule volume in the shared combat fixture. That fixture now includes the catalog volume required to construct the removal notification. The next wider run passed **456/458** cases and exposed two existing recovery assertions that expected only the three creation changes; both now assert the fourth capsule-removal change and the capsule's absence.
+
+Final affected-test filter (`dotnet test --no-build --filter`, `xUnit.MaxParallelThreads=4`):
+
+```text
+FullyQualifiedName~PilotFleetTests|FullyQualifiedName~CorvetteRecoveryTests|FullyQualifiedName~JumpCloneTests|FullyQualifiedName~JumpCloneServiceTests|FullyQualifiedName~HomeStationTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~ShipInventoryRulesTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~CourierContractTests|FullyQualifiedName~PilotHealthTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native rendering, input and hangar refresh remain unverified.
+
+**Optional maintainer checks.** With Ship Hangar open, leave a hull and board it again; confirm the pod tile disappears. Repeat using Board my Corvette from a pod.
 
 ## Personal ship insurance
 

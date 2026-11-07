@@ -59,6 +59,7 @@ public sealed class NpcCombatTests
                     INSERT INTO TypeAttribute VALUES (601,14,2),(601,48,125),(601,11,23),
                         (3638,6,0),(3638,51,1000),(3638,54,10000),(3638,64,1),(3638,117,1),(3638,158,3000),(3638,160,500),(3638,620,40);
                     INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (29,'Capsule',6);
+                    INSERT INTO SourceRecord VALUES ('client/types','670','{{"published":1,"volume":1000}}');
                     INSERT INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (670,'Capsule',29,0,32000,2);
                     INSERT INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
                     INSERT OR REPLACE INTO TypeAttribute VALUES (670,9,150),(670,263,63),(670,265,156),(670,482,125),
@@ -267,7 +268,9 @@ public sealed class NpcCombatTests
         f.Db.Store.SetPosition(capsule.ShipId, null);
         var recovery = f.Db.Services.GetRequiredService<IPilotFleet>().RecoverCorvette(Fixture.PilotId, capsule.ShipId, capsule.StationId);
         Assert.Equal(FleetDefinitions.CorvetteGroup, recovery.Pilot.ShipGroupId);
-        Assert.Equal(3, recovery.Changes.Count);
+        Assert.Equal(4, recovery.Changes.Count);
+        Assert.Equal(0, Assert.Single(recovery.Changes, c => c.Item.Id == capsule.ShipId).Item.Quantity);
+        Assert.Null(f.Db.Services.GetRequiredService<IPilotFleet>().Find(Fixture.PilotId, capsule.ShipId));
         Assert.NotEqual(Fixture.ShipId, recovery.Pilot.ShipId);
         // Return in the recovery hull and recover the original singleton, not a
         // new module grant. A restart never rolls the loss contents again.

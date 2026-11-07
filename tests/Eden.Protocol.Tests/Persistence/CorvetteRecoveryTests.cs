@@ -51,7 +51,7 @@ public sealed class CorvetteRecoveryTests
                 )
                 .Item;
             long ship = Assert.Single(Fleet.Assemble(Pilot.PilotId, [purchase.Id], "Working Venture").ShipIds);
-            Venture = Fleet.Board(Pilot.PilotId, ship, original.ShipId);
+            Venture = Fleet.Board(Pilot.PilotId, ship, original.ShipId).Pilot;
         }
 
         public ShipBoarding Recover() => Fleet.RecoverCorvette(Venture.PilotId, Venture.ShipId, Venture.StationId);
@@ -123,6 +123,30 @@ public sealed class CorvetteRecoveryTests
         Assert.Equal(3, saved.Ships.Count(s => s.OwnerId == f.Pilot.PilotId));
         Assert.Equal(4, saved.Set<OwnedItem>().Count(i => i.OwnerId == f.Pilot.PilotId));
         Assert.True(InventoryPersistence.NextId(saved) > saved.Set<OwnedItem>().Max(i => i.Id));
+    }
+
+    [Fact]
+    public void RecoveryFromACapsuleRemovesItForBothNewAndReusedCorvettes()
+    {
+        using Fixture f = new();
+        HomeStationTestData.Prepare(f.Db);
+        long? recovered = null;
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            var capsule = f.Fleet.Leave(f.Pilot.PilotId, f.Venture.ShipId).Pilot;
+            var recovery = f.Fleet.RecoverCorvette(capsule.PilotId, capsule.ShipId, capsule.StationId);
+            Assert.Equal(recovered ?? recovery.Pilot.ShipId, recovery.Pilot.ShipId);
+            recovered = recovery.Pilot.ShipId;
+            Assert.Equal(cycle == 0 ? 4 : 1, recovery.Changes.Count);
+            var removed = Assert.Single(recovery.Changes, c => c.Item.Id == capsule.ShipId);
+            Assert.Equal(0, removed.Item.Quantity);
+            Assert.Equal(capsule.ShipId, removed.Previous!.Id);
+            Assert.Null(f.Fleet.Find(capsule.PilotId, capsule.ShipId));
+            Assert.Empty(f.Fleet.RecoverCorvette(capsule.PilotId, capsule.ShipId, capsule.StationId).Changes);
+            Assert.Equal(recovered, WorldInitialization.Open(f.Db.Path).FindPilot(1000001)!.ShipId);
+            Assert.DoesNotContain(f.Fleet.Ships(capsule.PilotId, capsule.StationId), s => s.GroupId == FleetDefinitions.CapsuleGroup);
+            f.Fleet.Board(capsule.PilotId, f.Venture.ShipId, recovery.Pilot.ShipId);
+        }
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -110,16 +111,16 @@ public sealed class PilotFleetTests
         Assert.Equal(stack.Id, second);
         Assert.DoesNotContain(f.Inventory.List(original.PilotId, original.StationId), i => i.CategoryId == (int)InventoryCategory.Ship);
         Assert.Equal(3, f.Fleet.Ships(original.PilotId, original.StationId).Count);
-        var boarded = f.Fleet.Board(original.PilotId, first, original.ShipId);
+        var boarded = f.Fleet.Board(original.PilotId, first, original.ShipId).Pilot;
         Assert.Equal((int)StarterShipType.Venture, boarded.ShipTypeId);
         Assert.Equal("Prospector", boarded.ShipName);
         Assert.Equal(50, boarded.CargoCapacity);
-        Assert.Equal(first, f.Fleet.Board(original.PilotId, first, original.ShipId).ShipId);
+        Assert.Equal(first, f.Fleet.Board(original.PilotId, first, original.ShipId).Pilot.ShipId);
         Assert.Single(f.Inventory.List(original.PilotId, original.ShipId));
         Assert.Empty(f.Inventory.List(original.PilotId, first));
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(first, f.Pilot.ShipId);
-        Assert.Equal(original.ShipId, f.Fleet.Board(original.PilotId, original.ShipId, first).ShipId);
+        Assert.Equal(original.ShipId, f.Fleet.Board(original.PilotId, original.ShipId, first).Pilot.ShipId);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.True(InventoryPersistence.NextId(saved) > Math.Max(first, second));
         Assert.Equal(2, TaskTrackingTestData.Count(f.Db, TaskEvents.Boarded));
@@ -208,6 +209,171 @@ public sealed class PilotFleetTests
         Assert.Equal(pilot.SystemId, previous[2]);
         Assert.NotEmpty(BlueMarshal.Encode(state));
         Assert.Equal(3, Assert.IsType<List<object?>>(Call("@hangar", "List")).Count);
+    }
+
+    [Fact]
+    public void BoardingFromACapsuleRemovesOnlyThatCapsuleAcrossRepeatedCyclesAndRestart()
+    {
+        using Fixture f = new();
+        HomeStationTestData.Prepare(f.Db);
+        var original = f.Pilot;
+        long unused = HomeStationTestData.MakeActiveCapsule(f.Db, HomeStationTestData.Other);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Pilots.Find(original.PilotId)!.ActiveShipId = original.ShipId;
+            world.SaveChanges();
+        }
+        var cargo = Assert.Single(
+            f.Inventory.List(original.PilotId, original.StationId),
+            i => i.TypeId == InventoryDefinitions.CivilianMinerType
+        );
+        f.Inventory.Move(original.PilotId, [cargo.Id], original.StationId, original.ShipId, (int)InventoryFlag.Cargo, null);
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            var capsule = f.Fleet.Leave(original.PilotId, original.ShipId).Pilot;
+            Assert.Empty(f.Fleet.Board(original.PilotId, capsule.ShipId, capsule.ShipId).Changes);
+            Assert.NotNull(f.Fleet.Find(original.PilotId, capsule.ShipId));
+            var boarding = f.Fleet.Board(original.PilotId, original.ShipId, capsule.ShipId);
+            Assert.Equal(original.ShipId, boarding.Pilot.ShipId);
+            var removed = Assert.Single(boarding.Changes);
+            Assert.Equal(capsule.ShipId, removed.Item.Id);
+            Assert.Equal(0, removed.Item.Quantity);
+            Assert.Equal(original.StationId, removed.Previous!.LocationId);
+            Assert.Equal(1, removed.Previous.Quantity);
+            Assert.Null(f.Fleet.Find(original.PilotId, capsule.ShipId));
+            Assert.Empty(f.Fleet.Board(original.PilotId, original.ShipId, capsule.ShipId).Changes);
+            Assert.Equal(original.ShipId, WorldInitialization.Open(f.Db.Path).FindPilot(1000001)!.ShipId);
+            Assert.DoesNotContain(f.Fleet.Ships(original.PilotId, original.StationId), s => s.GroupId == FleetDefinitions.CapsuleGroup);
+            Assert.NotNull(f.Fleet.Find(original.PilotId, unused));
+            Assert.Equal(cargo.Id, Assert.Single(f.Inventory.List(original.PilotId, original.ShipId)).Id);
+        }
+        Assert.Equal(3, TaskTrackingTestData.Count(f.Db, TaskEvents.Boarded));
+    }
+
+    [Theory]
+    [InlineData("foreign")]
+    [InlineData("remote")]
+    [InlineData("packaged")]
+    [InlineData("untrained")]
+    [InlineData("stale")]
+    [InlineData("space")]
+    public void RejectedBoardingPreservesTheActiveCapsuleAndTarget(string rejection)
+    {
+        using Fixture f = new();
+        HomeStationTestData.Prepare(f.Db);
+        var original = f.Pilot;
+        var stack = f.Buy();
+        long target = rejection == "packaged" ? stack.Id : Assert.Single(f.Fleet.Assemble(original.PilotId, [stack.Id], null).ShipIds);
+        var capsule = f.Fleet.Leave(original.PilotId, original.ShipId).Pilot;
+        long previous = capsule.ShipId;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            switch (rejection)
+            {
+                case "foreign":
+                    target = f.Db.Store.FindPilot(1000002)!.ShipId;
+                    break;
+                case "remote":
+                    world.Ships.Find(target)!.StationId = HomeStationTestData.Other;
+                    break;
+                case "untrained":
+                    world.Set<PilotSkill>().Find(original.PilotId, (int)MiningSkill.Frigate)!.Points = 0;
+                    break;
+                case "stale":
+                    previous = original.ShipId;
+                    break;
+                case "space":
+                    f.Db.Store.SetPosition(capsule.ShipId, SpacePosition.Zero, original.SystemId);
+                    break;
+            }
+            world.SaveChanges();
+        }
+        using WorldDbContext saved = new(f.Db.Path);
+        var before = saved
+            .Ships.AsNoTracking()
+            .OrderBy(s => s.Id)
+            .Select(s => new
+            {
+                s.Id,
+                s.OwnerId,
+                s.StationId,
+            })
+            .ToArray();
+        Assert.Throws<InvalidDataException>(() => f.Fleet.Board(original.PilotId, target, previous));
+        Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
+        Assert.NotNull(f.Fleet.Find(original.PilotId, capsule.ShipId));
+        Assert.Equal(
+            before,
+            saved
+                .Ships.AsNoTracking()
+                .OrderBy(s => s.Id)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.OwnerId,
+                    s.StationId,
+                })
+                .ToArray()
+        );
+        Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.Boarded));
+    }
+
+    [Fact]
+    public void CapsuleRemovalFailureRollsBackTheShipSwitchAndTaskProgress()
+    {
+        using Fixture f = new();
+        HomeStationTestData.Prepare(f.Db);
+        var original = f.Pilot;
+        var capsule = f.Fleet.Leave(original.PilotId, original.ShipId).Pilot;
+        using WorldDbContext world = new(f.Db.Path);
+        world.Database.ExecuteSqlRaw(
+            """
+            CREATE TRIGGER RejectCapsuleRemoval BEFORE DELETE ON WorldShip
+            WHEN OLD.TypeId = 670 BEGIN SELECT RAISE(ABORT, 'test capsule removal failure'); END;
+            """
+        );
+        Assert.Throws<DbUpdateException>(() => f.Fleet.Board(original.PilotId, original.ShipId, capsule.ShipId));
+        Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
+        Assert.NotNull(f.Fleet.Find(original.PilotId, capsule.ShipId));
+        Assert.NotNull(f.Fleet.Find(original.PilotId, original.ShipId));
+        Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.Boarded));
+    }
+
+    [Fact]
+    public void NativeBoardingRemovesTheCapsuleFromTheCachedHangarAndKeepsTheDogmaReply()
+    {
+        using Fixture f = new();
+        HomeStationTestData.Prepare(f.Db);
+        var original = f.Pilot;
+        var capsule = f.Fleet.Leave(original.PilotId, original.ShipId).Pilot;
+        using var scope = f.Db.Services.CreateScope();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(
+            1000001,
+            capsule.Account,
+            [capsule],
+            p => new(f.Db.Store, p, TimeProvider.System, new SharedSpace(), f.Db.Objects),
+            1,
+            SignedSettings.Empty
+        );
+        context.Select(capsule);
+        var reply = router.CallWire(context, "ship", "Board", new object?[] { original.ShipId, capsule.ShipId }, _ => { });
+        Assert.Equal(4, Assert.IsType<object?[]>(reply).Length);
+        Assert.NotEmpty(BlueMarshal.Encode(reply));
+        Assert.Equal(original.ShipId, context.Pilot.ShipId);
+        var removed = Assert.Single(context.Notifications.OfType<ItemChanged>());
+        Assert.Equal(capsule.ShipId, removed.Item.Id);
+        Assert.Equal((int)InventoryLocation.Graveyard, removed.Item.LocationId);
+        Assert.Equal((int)InventoryFlag.AutoFit, removed.Item.FlagId);
+        Assert.Equal(InventoryWireDefinitions.AssembledQuantity, removed.Item.Quantity);
+        Assert.Equal(original.StationId, removed.Previous[InventoryColumn.Location]);
+        Assert.Equal((int)InventoryFlag.Hangar, removed.Previous[InventoryColumn.Flag]);
+        Assert.False(removed.Previous.ContainsKey(InventoryColumn.Quantity));
+        Assert.Single(context.Notifications.OfType<ServerBrainUpdated>());
+        Assert.NotEmpty(BlueMarshal.Encode(removed.Arguments));
+        context.Notifications.Clear();
+        router.CallWire(context, "ship", "Board", new object?[] { original.ShipId, capsule.ShipId }, _ => { });
+        Assert.Empty(context.Notifications.OfType<ItemChanged>());
     }
 
     [Fact]

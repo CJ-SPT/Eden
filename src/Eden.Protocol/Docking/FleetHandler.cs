@@ -82,11 +82,15 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
             }
             if (method == "Board" && args is [long shipId, long oldShipId])
             {
-                var pilot = fleet.Board(context.Pilot.PilotId, shipId, oldShipId);
+                var boarding = fleet.Board(context.Pilot.PilotId, shipId, oldShipId);
                 refits.Clear();
-                context.ChangeShip(pilot);
+                context.ChangeShip(boarding.Pilot);
                 RefreshBrain(context);
-                return dogma.ShipState(pilot);
+                foreach (var change in boarding.Changes)
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                return dogma.ShipState(boarding.Pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
         }

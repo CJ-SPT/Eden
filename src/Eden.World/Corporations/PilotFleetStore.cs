@@ -201,7 +201,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
     }
 
-    public DockedPilot Board(long pilotId, long shipId, long previousShipId)
+    public ShipBoarding Board(long pilotId, long shipId, long previousShipId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -230,10 +230,10 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                 TaskEvents.Boarded
             );
         }
-        pilot.ActiveShipId = shipId;
-        world.SaveChanges();
+        List<InventoryChange> changes = [];
+        AdoptShip(world, catalog, pilot, ship, changes);
         transaction.Commit();
-        return lookup.FindPilot(pilot.AccountId, pilotId)!;
+        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
     }
 
     public ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId)
@@ -250,11 +250,18 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         int activeGroup = catalog.Set<ItemType>().Single(t => t.Id == active.TypeId).GroupId;
         if (pilot.ActiveShipId != previousShipId)
         {
-            // A repeated request for the previous hull cannot create another kit.
+            // A repeated request cannot create another kit, even after its old capsule was removed.
             if (
                 activeGroup == FleetDefinitions.CorvetteGroup
-                && world.Ships.Any(s =>
-                    s.Id == previousShipId && s.OwnerId == pilotId && s.StationId == stationId && s.Position == null && s.StoredInId == null
+                && (
+                    !world.Ships.Any(s => s.Id == previousShipId)
+                    || world.Ships.Any(s =>
+                        s.Id == previousShipId
+                        && s.OwnerId == pilotId
+                        && s.StationId == stationId
+                        && s.Position == null
+                        && s.StoredInId == null
+                    )
                 )
             )
             {
@@ -369,9 +376,24 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             TaskEvents.Boarded
         );
-        pilot.ActiveShipId = recovered.Id;
-        world.SaveChanges();
+        AdoptShip(world, catalog, pilot, recovered, changes);
         transaction.Commit();
         return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
+    }
+
+    private static void AdoptShip(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship ship, List<InventoryChange> changes)
+    {
+        var old = pilot.ActiveShip;
+        pilot.ActiveShip = ship;
+        pilot.ActiveShipId = ship.Id;
+        // Save the active-ship FK before removing the capsule, within the caller's transaction.
+        world.SaveChanges();
+        if (old.Id != ship.Id && catalog.Set<ItemType>().Find(old.TypeId)?.GroupId == FleetDefinitions.CapsuleGroup)
+        {
+            var previous = Read(catalog, old);
+            ShipStoragePersistence.Destroy(world, old);
+            world.SaveChanges();
+            changes.Add(new(previous with { Quantity = 0 }, previous));
+        }
     }
 }

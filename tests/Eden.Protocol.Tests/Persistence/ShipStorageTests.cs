@@ -404,7 +404,7 @@ public sealed class ShipStorageTests
         long foreign = f.Db.Store.FindPilot(1000002)!.ShipId;
         Assert.IsType<PilotCallResult.Failure>(router.Call(context, $"@ship:{foreign}", "List", Array.Empty<object?>(), _ => { }));
         var fleet = f.Db.Services.GetRequiredService<IPilotFleet>();
-        context.ChangeShip(fleet.Board(f.PilotId, 1000000000001, stored.Carrier));
+        context.ChangeShip(fleet.Board(f.PilotId, 1000000000001, stored.Carrier).Pilot);
         Assert.Contains(Names().Locations, location => location.Id == stored.Child && location.Name == "Stored trial");
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {
