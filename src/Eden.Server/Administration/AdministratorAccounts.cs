@@ -26,11 +26,11 @@ internal sealed class AdministratorAccounts(string worldPath)
         if (
             name.Length is < 1 or > 64
             || name.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '_' and not '-' and not '.')
-            || password.Length is < 12 or > 128
+            || password.Length is < 6 or > 128
         )
         {
             throw new InvalidDataException(
-                "Use an administrator name of 1–64 letters/digits, dots, dashes or underscores " + "and a 12–128 character password."
+                "Use an administrator name of 1–64 letters/digits, dots, dashes or underscores " + "and a 6–128 character password."
             );
         }
         AdministratorCredential credential = new(name, "", Guid.NewGuid().ToString("N"));
