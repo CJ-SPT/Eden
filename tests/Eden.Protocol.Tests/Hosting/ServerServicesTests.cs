@@ -50,9 +50,9 @@ public sealed class ServerServicesTests
         using var second = world.Services.CreateScope();
         var session = first.ServiceProvider.GetRequiredService<IPilotSession>();
         Assert.Same(session, first.ServiceProvider.GetRequiredService<PilotServices>());
-        Assert.Same(
+        Assert.Contains(
             first.ServiceProvider.GetRequiredService<CatalogFittingReadScope>(),
-            first.ServiceProvider.GetRequiredService<IPilotOperationScope>()
+            first.ServiceProvider.GetServices<IPilotOperationScope>()
         );
         Assert.Contains(
             first.ServiceProvider.GetRequiredService<MiningHandler>(),

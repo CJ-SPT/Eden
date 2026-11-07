@@ -6,6 +6,7 @@ using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Launcher;
+using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.Fittings;
@@ -43,6 +44,7 @@ internal static class ServerServices
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
+        services.AddSingleton(_ => CatalogProvider.Open(database.CatalogPath));
         services.AddSingleton(new SessionDiagnostics(ServerLog.Console.Information, ServerLog.Console.Warning, ServerLog.Console.Trace));
         if (liveWorld)
         {

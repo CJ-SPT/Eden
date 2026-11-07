@@ -6,11 +6,19 @@ namespace Eden.World.Catalog;
 
 internal static class CatalogSources
 {
+    internal const int PinnedBuild = 3662168;
     private static readonly ICatalogSource[] s_sources = typeof(CatalogData)
         .GetNestedTypes()
         .SelectMany(group => group.GetFields())
         .Select(field => (ICatalogSource)field.GetValue(null)!)
         .ToArray();
+
+    internal static IReadOnlyList<ICatalogSource> All => s_sources;
+
+    private static readonly IReadOnlyDictionary<string, ICatalogSource> s_byName = s_sources.ToDictionary(source => source.Name);
+
+    internal static bool Owns(ICatalogSource source) =>
+        s_byName.TryGetValue(source.Name, out var registered) && ReferenceEquals(registered, source);
 
     internal static void Configure(ModelBuilder model)
     {
@@ -34,7 +42,7 @@ internal static class CatalogSources
             throw new InvalidDataException("Unsupported catalog schema. Run tools/Setup-Catalog.ps1 with the staged client.");
         }
         var build = db.Set<SourceRecord>().SingleOrDefault(r => r.Dataset == "sde/_sde" && r.Key == "\"sde\"");
-        if (build?.Read<JsonElement>().GetProperty("buildNumber").GetInt32() != 3662168)
+        if (build?.Read<JsonElement>().GetProperty("buildNumber").GetInt32() != PinnedBuild)
         {
             throw new InvalidDataException("Run the catalog setup command for EVE build 3662168.");
         }

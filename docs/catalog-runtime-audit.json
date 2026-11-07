@@ -2,8 +2,8 @@
   "build": 3662168,
   "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
   "counts": {
-    "catalog-read": 287,
-    "catalog-context": 401,
+    "catalog-read": 290,
+    "catalog-context": 407,
     "content-identifier": 136,
     "type-selection": 15
   },
@@ -879,6 +879,60 @@
       "text": "public sealed partial class CatalogDbContext"
     },
     {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 81,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 85,
+      "kind": "catalog-read",
+      "text": "foreach (var dataset in catalog.Set<SourceDataset>().OrderBy(dataset => dataset.Name))"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 212,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 277,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 390,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 392,
+      "kind": "catalog-read",
+      "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 411,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 412,
+      "kind": "catalog-read",
+      "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 437,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
       "line": 14,
       "kind": "catalog-context",
@@ -910,13 +964,13 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSources.cs",
-      "line": 27,
+      "line": 35,
       "kind": "catalog-context",
       "text": "internal static void CheckBuild(CatalogDbContext db)"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSources.cs",
-      "line": 45,
+      "line": 53,
       "kind": "catalog-context",
       "text": "using CatalogDbContext db = new(path);"
     },

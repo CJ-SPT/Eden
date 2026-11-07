@@ -4,6 +4,7 @@
     <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
     <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <InternalsVisibleTo Include="Eden.Server" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />

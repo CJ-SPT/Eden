@@ -59,6 +59,10 @@ Manufacturing illustrates the persistence boundary. The World store loads the re
 
 Generated catalog arrays and maps use `ImmutableArray` and `ImmutableDictionary`. Sharing a definition therefore does not allow a caller to alter its collections for another reader. This applies to nested values and heterogeneous-value variants as well as dataset roots. `CatalogAbsent` retains its pinned-empty validation. Saved-world EF entities remain mutable transaction-owned models under `Eden.Data.World`; they are not catalog definitions or a replacement for the existing resident world owner.
 
+`WorldDatabase.Catalog` resolves a shared `CatalogProvider` generation. New readers use generated sources (`catalog.Get(CatalogData.Client.Types, typeId)`), immutable attribute/effect/skill maps, item/group indexes or the product-to-blueprint index. `CatalogReadScope` captures one generation per operation, including nested/concurrent readers. The provider retains only weak registrations globally and a bounded lazy record cache; host ownership pins the active provider. Normal startup preloads core item metadata, client type definitions and blueprint indexes before opening listeners. It does not copy the entire catalog into another in-memory SQLite database.
+
+Production catalog replacement requires restart. Writable fixture/tooling context disposal invalidates future provider resolution alongside existing resident caches. Captured immutable values remain valid; an invalidated generation rejects uncached loads rather than mixing old and new source records. World-specific override views will be layered separately during the configuration milestone. Existing direct EF readers and the older fitting/NPC caches remain until their owning features migrate.
+
 ### Flight coordination
 
 Flight code lives in `Protocol/Flight`. The connection owns one navigation state and one ordered outbound queue. Components receive typed context and emit commands through that existing queue; they do not create independent sessions or timers.

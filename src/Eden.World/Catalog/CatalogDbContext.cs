@@ -13,6 +13,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         base.Dispose();
         if (writable)
         {
+            CatalogProvider.Invalidate(path);
             LiveWorld.CatalogChanged(path);
         }
     }
@@ -22,6 +23,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         await base.DisposeAsync();
         if (writable)
         {
+            CatalogProvider.Invalidate(path);
             LiveWorld.CatalogChanged(path);
         }
     }

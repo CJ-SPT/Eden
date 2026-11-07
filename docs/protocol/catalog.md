@@ -8,9 +8,24 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Shared catalog provider, November 7, 2026](#shared-catalog-provider-november-7-2026)
 - [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Shared catalog provider, November 7, 2026
+
+`CatalogProvider` supplies generated typed source lookup, stable source-key paging, shared item/group/product indexes, immutable attributes, effects and required skills. Concurrent requests share in-flight loads and completed definitions, including missing results. Core item metadata, client types and manufacturing blueprint relationships are pinned at startup; other records use a cache with a default **64 MiB estimated-size limit**. Pinned definitions are additional to that limit. Estimates describe retained payload cost rather than an exact process-RAM quota. Paging is capped at 500 rows. Cache and generation diagnostics are available through typed properties.
+
+Catalog identity combines canonical path, pinned build and ordered source provenance fingerprints. A scoped operation captures one provider generation. Sanctioned fixture/tooling writes invalidate future resolution; a captured generation retains immutable values and refuses uncached reads after invalidation. Unexpected installed-file replacement requires a server restart. Separate catalog paths remain isolated. The provider accepts generated source objects only, avoiding an alternate decoder under an existing dataset/cache key. Saved-world overrides are not part of the shared base cache and remain a subsequent milestone.
+
+**Read-only full-catalog profile:** after warming EF metadata, core preload took **1,000.85 ms** for **53,299 item definitions** and **111,698 pinned records**. Retained managed memory increased by **67,191,512 bytes** (64.08 MiB); working set increased by **85,553,152 bytes** (81.59 MiB). These are one local measurement, not a fixed memory requirement. For the same 60 lookups (20 cycles over type IDs 601, 3638 and 3651), direct readers took **127.80 ms / 60 SQL commands / 60 connections**; warmed shared readers took **0.73 ms / zero SQL commands / zero connections**. Gameplay frame and checkpoint improvements are not claimed before feature adoption.
+
+**Automated validation:** the exact `CatalogProviderTests.ConcurrentReadersShareDefinitionsAndWarmReadsPerformNoSql` method passed. Final tool/solution restore, warning-free build (0.93 seconds), 46 focused tests (6.19 seconds plus 1.79 seconds build), six catalog Python tests, nine formatting policy tests and formatting verification passed. The focused filter was `FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogProviderTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogSchemaTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests`. Coverage includes concurrent first loads, warmed SQL/connection/fitting counts, negative caching, cache bounds, source paging, namespace/DI ownership, isolated source files, writable invalidation and product indexes. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this infrastructure milestone. Feature migration, saved configuration/overrides and the local editor remain subsequent milestones.
 
 ## Immutable catalog collections and world namespaces, November 7, 2026
 
