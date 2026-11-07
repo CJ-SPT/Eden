@@ -18,7 +18,7 @@ public sealed class WorldInitializationTests
     [InlineData(0)]
     [InlineData(84)]
     [InlineData(WorldMigration.CurrentVersion)]
-    public void LiveServicesCanStartBeforeMigratingMissingDroneAndMiningSchema(int version)
+    public void StartupReconcilesMissingDroneAndMiningSchemaBeforeResidentServicesStart(int version)
     {
         string directory = TestDirectory.Create("eden-live-init-").FullName;
         try
@@ -40,15 +40,11 @@ public sealed class WorldInitializationTests
                 string schemaVersion = $"PRAGMA user_version={version}";
                 world.Database.ExecuteSqlRaw(schemaVersion);
             }
+            WorldInitialization.Initialize(database);
+            WorldInitialization.Initialize(database);
             using (var services = ServerServices.Build(database, liveWorld: true))
             {
-                using (WorldDbContext before = new(database.Path))
-                {
-                    Assert.Equal(version, before.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
-                    Assert.DoesNotContain("WorldDrone", before.Database.SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master"));
-                }
-                WorldInitialization.Initialize(database);
-                WorldInitialization.Initialize(database);
+                Assert.Throws<InvalidOperationException>(() => WorldInitialization.Initialize(database));
                 using WorldDbContext saved = new(database.Path);
                 Assert.Equal(WorldMigration.CurrentVersion, saved.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
                 Assert.Empty(saved.Set<WorldDrone>());

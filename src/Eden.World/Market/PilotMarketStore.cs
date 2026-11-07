@@ -91,9 +91,9 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
                 order = AddOrder(id, false);
             }
             // Reuse existing identities so the historical execution ledger remains valid.
-            order.PriceCents = TestingMarketRules.PriceCents;
-            order.Remaining = TestingMarketRules.Stock;
-            order.Entered = TestingMarketRules.Stock;
+            order.PriceCents = world.Settings.DevelopmentSupply.TestingPriceCents;
+            order.Remaining = world.Settings.DevelopmentSupply.TestingStock;
+            order.Entered = world.Settings.DevelopmentSupply.TestingStock;
             order.Issued = Now;
         }
         foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.Contains(o.TypeId)))
@@ -159,12 +159,16 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
                 && !o.Bid
                 && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
             )
-            .Where(o => o.Remaining != TestingMarketRules.Stock || o.PriceCents != TestingMarketRules.PriceCents || o.Issued <= cutoff)
+            .Where(o =>
+                o.Remaining != world.Settings.DevelopmentSupply.TestingStock
+                || o.PriceCents != world.Settings.DevelopmentSupply.TestingPriceCents
+                || o.Issued <= cutoff
+            )
             .ExecuteUpdate(setters =>
                 setters
-                    .SetProperty(o => o.Remaining, TestingMarketRules.Stock)
-                    .SetProperty(o => o.Entered, TestingMarketRules.Stock)
-                    .SetProperty(o => o.PriceCents, TestingMarketRules.PriceCents)
+                    .SetProperty(o => o.Remaining, world.Settings.DevelopmentSupply.TestingStock)
+                    .SetProperty(o => o.Entered, world.Settings.DevelopmentSupply.TestingStock)
+                    .SetProperty(o => o.PriceCents, world.Settings.DevelopmentSupply.TestingPriceCents)
                     .SetProperty(o => o.Issued, o => o.Issued <= cutoff ? now : o.Issued)
             );
     }

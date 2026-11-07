@@ -93,9 +93,23 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
             return;
         }
         var band = NpcSpawnRules.SecurityBand(security);
-        guards.Seed(world, catalog, systemId, definition, band, now);
-        convoys.Seed(world, catalog, systemId, security, now);
-        mining.Seed(world, catalog, systemId, definition, security, now);
+        var policy = world.Settings.NpcPopulation;
+        if (policy.Guards)
+        {
+            guards.Seed(world, catalog, systemId, definition, band, now);
+        }
+        if (policy.Convoys)
+        {
+            convoys.Seed(world, catalog, systemId, security, now);
+        }
+        if (policy.Mining)
+        {
+            mining.Seed(world, catalog, systemId, definition, security, now);
+        }
+        if (!policy.Pirates)
+        {
+            return;
+        }
         var belts = catalog
             .CelestialsInSystem(systemId)
             .Where(c => c.GroupId == AsteroidDefinitions.BeltGroup)

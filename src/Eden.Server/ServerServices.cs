@@ -8,6 +8,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Server.Launcher;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
@@ -39,9 +40,14 @@ internal static class ServerServices
         bool liveWorld = false,
         bool combatObjects = true,
         bool residentReads = true,
-        bool simulationObjects = true
+        bool simulationObjects = true,
+        bool loadConfiguration = true
     )
     {
+        if (loadConfiguration)
+        {
+            WorldConfigurationStore.LoadActive(database);
+        }
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);
         services.AddSingleton(_ => CatalogProvider.Open(database.CatalogPath));

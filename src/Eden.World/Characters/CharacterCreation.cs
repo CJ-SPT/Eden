@@ -93,7 +93,10 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         world.Database.ExecuteSql(
             $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({shipId},{pilotId},{hull},{station},{shipName})"
         );
-        StartingSkills.Grant(world, catalog, pilotId, character.RaceId);
+        if (database.Settings.Progression.GrantStartingSkills)
+        {
+            StartingSkills.Grant(world, catalog, pilotId, character.RaceId);
+        }
         PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
         TestingWalletFunding.Grant(world, pilotId, created);
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });

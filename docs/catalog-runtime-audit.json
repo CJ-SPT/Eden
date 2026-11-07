@@ -3,7 +3,7 @@
   "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
   "counts": {
     "catalog-read": 127,
-    "catalog-context": 458,
+    "catalog-context": 460,
     "content-identifier": 134,
     "type-selection": 8
   },
@@ -717,8 +717,14 @@
       "text": "internal enum MessageArgumentType"
     },
     {
+      "path": "src/Eden.Server/Configuration/ConfigurationCommands.cs",
+      "line": 45,
+      "kind": "catalog-context",
+      "text": "using (CatalogDbContext catalog = new(database.CatalogPath))"
+    },
+    {
       "path": "src/Eden.Server/Program.cs",
-      "line": 29,
+      "line": 30,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(candidate, writable: true);"
     },
@@ -1951,6 +1957,12 @@
       "line": 156,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>"
+    },
+    {
+      "path": "src/Eden.World/Configuration/WorldConfigurationStore.cs",
+      "line": 107,
+      "kind": "catalog-context",
+      "text": "internal static void Seed(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)"
     },
     {
       "path": "src/Eden.World/Contracts/AuctionContractStore.cs",
@@ -3340,25 +3352,25 @@
     },
     {
       "path": "src/Eden.World/Market/PilotMarketStore.cs",
-      "line": 175,
+      "line": 179,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Market/PilotMarketStore.cs",
-      "line": 191,
+      "line": 195,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Market/PilotMarketStore.cs",
-      "line": 320,
+      "line": 324,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Market/PilotMarketStore.cs",
-      "line": 374,
+      "line": 378,
       "kind": "catalog-context",
       "text": "private static decimal TaxRate(WorldDbContext world, CatalogDbContext catalog, long pilotId)"
     },
@@ -4360,13 +4372,13 @@
     },
     {
       "path": "src/Eden.World/Storage/WorldInitialization.cs",
-      "line": 46,
+      "line": 51,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Storage/WorldMigration.cs",
-      "line": 18,
+      "line": 19,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     }

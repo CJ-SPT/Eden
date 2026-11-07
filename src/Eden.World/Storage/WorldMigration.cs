@@ -1,5 +1,6 @@
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -11,7 +12,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 98;
+    internal const int CurrentVersion = 99;
 
     public static void Open(
         WorldDbContext world,
@@ -69,7 +70,9 @@ internal static class WorldMigration
         }
         CorporationStorageSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=98");
+        WorldConfigurationSchema.Upgrade(world);
+        WorldConfigurationStore.Seed(world, catalog, clock);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=99");
         history.Commit();
     }
 }

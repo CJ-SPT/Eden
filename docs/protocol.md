@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Versioned world configuration, November 7, 2026](protocol/catalog.md#versioned-world-configuration-november-7-2026)
+
 - [Shared location and directory consumers, November 7, 2026](protocol/catalog.md#shared-location-and-directory-consumers-november-7-2026)
 
 - [Bound dogma and ship-call latency, November 7, 2026](protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026)

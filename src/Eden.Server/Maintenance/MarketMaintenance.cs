@@ -2,13 +2,17 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
+using Eden.World.Storage;
 
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clock, IResourceRenewal? resources = null)
-    : IDisposable,
-        IAsyncDisposable
+internal sealed class MarketMaintenance(
+    IPersonalMarket market,
+    TimeProvider clock,
+    IResourceRenewal? resources = null,
+    WorldDatabase? database = null
+) : IDisposable, IAsyncDisposable
 {
     internal static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
     private readonly object _gate = new();
@@ -34,7 +38,8 @@ internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clo
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_stopping, this);
-            _timer ??= clock.CreateTimer(_ => Queue(), null, Interval, Interval);
+            var interval = database is null ? Interval : TimeSpan.FromMilliseconds(database.Settings.Simulation.MarketPollMilliseconds);
+            _timer ??= clock.CreateTimer(_ => Queue(), null, interval, interval);
         }
     }
 
@@ -60,7 +65,7 @@ internal sealed class MarketMaintenance(IPersonalMarket market, TimeProvider clo
                         {
                             if (resources.Renew() == 0)
                             {
-                                _nextResourceCheck = clock.GetUtcNow().AddMinutes(1);
+                                _nextResourceCheck = clock.GetUtcNow().AddSeconds(database?.Settings.Simulation.ResourceCheckSeconds ?? 60);
                             }
                         }
                         Volatile.Write(ref _lastFailure, null);

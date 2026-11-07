@@ -8,6 +8,7 @@ using Eden.Gameplay.Combat;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Drones;
 using Eden.World.Economy;
@@ -30,6 +31,10 @@ public static class WorldInitialization
         Eden.Gameplay.Economy.EconomicConfiguration? economics = null
     )
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is not null)
+        {
+            throw new InvalidOperationException("Startup reconciliation requires a stopped world.");
+        }
         Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(economy?.InstitutionalStock ?? Eden.Gameplay.Market.NpcSupplyRules.Stock);
         if (economics is not null)
         {
@@ -49,6 +54,7 @@ public static class WorldInitialization
             EconomicStore.CheckCatalog(catalog, economics);
         }
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        WorldConfigurationStore.Activate(database);
         while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
         {
             // Reconcile overdue catalog belts before admitting connections.

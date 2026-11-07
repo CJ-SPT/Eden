@@ -7,6 +7,24 @@ Pinned-build data, export inputs and catalog verification.
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 
+
+## Versioned world configuration, November 7, 2026
+
+World schema 99 captures existing policies and economic projections in an immutable baseline revision. Typed groups cover economy, development supply, resources, NPC population, progression and simulation. Staged revisions retain active behavior until startup validates and activates them before gameplay reconciliation and resident service construction. The startup ownership lease excludes an existing server during this phase. Invalid pending revisions retain the previous active configuration and record a readable failure; history remains immutable and restorable.
+
+World-specific adjusted prices and manufacturing indices are supported economic overrides for existing catalog IDs. Their current client synchronization paths already exist; native-client payload fields remain read-only. Original source definitions and provider caches remain shared and unchanged. Save/import/restore use the same validation, generation conflict checks, existing world transactions and durable checkpoint boundary. Settings affect future operations without replaying grants, rewriting paid jobs/balances or rescheduling saved deadlines. New population switches retain living residents. See [configuration setup, compatibility and commands](../world-configuration.md).
+
+**Automated validation:** the exact staged/restart/world-isolation test passed during development. Tool/solution restore, warning-free build (final incremental build 3.86 seconds), 19 targeted tests (12.76 seconds total wall time), six catalog Python tests (0.286 seconds), nine formatting Python tests (0.016 seconds) and formatting verification passed. Checks cover migration/default retention, decimal persistence, invalid inputs, immutable history, stale writes, import/export/restore, activation rejection, state-write rollback, interrupted checkpoint retry, new-pilot policy effects, resident preservation, startup reconciliation, dependency ownership and an existing paid manufacturing lifecycle. No optional benchmarks or full .NET suite were run. Filters:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.DataModelOwnershipTests|FullyQualifiedName=Eden.Protocol.Tests.Economy.EconomicLifecycleTests.ManufacturingValidatesQuoteAndFundsThenPersistsPaidJobWithoutCancellationRefund|FullyQualifiedName=Eden.Protocol.Tests.Persistence.CharacterCreationTests.FailureAfterShipInsertRollsBackEntireCreation
+FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcGuardTests.RestartPopulationPolicyStopsNewGuardsAndPreservesLivingResidents
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. The authenticated local editor and final architectural adoption guard remain subsequent milestones.
+
 ## Shared location and directory consumers, November 7, 2026
 
 Docking snapshots, character creation, home and jump clones, market regions, contracts, corporation locations and simulation readers now consume immutable station/system definitions. NPC seeding and asteroid population use indexed station/gate collections and bounded per-system celestial pages. No ordinary feature reader queries the relational catalog directly; the hull support audit remains an explicit verification boundary. Source import, migration and verification retain their own database access.

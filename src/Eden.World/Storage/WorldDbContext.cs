@@ -26,6 +26,7 @@ using Eden.World.Calendar;
 using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Configuration;
 using Eden.World.Contracts;
 using Eden.World.Docking;
 using Eden.World.Drones;
@@ -50,6 +51,8 @@ namespace Eden.World.Storage;
 
 public sealed partial class WorldDbContext(string path) : DbContext
 {
+    private readonly WorldConfigurationSlot? _configuration = string.IsNullOrEmpty(path) ? null : WorldConfigurationSlot.For(path);
+    internal Eden.Gameplay.Configuration.WorldSettings Settings => _configuration?.Settings ?? WorldConfigurationSlot.Defaults;
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<Ship> Ships => Set<Ship>();
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
@@ -81,6 +84,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        WorldConfigurationSchema.Configure(model);
         model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
         model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);
         model.Entity<WorldPlayerEwar>().ToTable("WorldPlayerEwar").HasKey(e => e.ModuleId);

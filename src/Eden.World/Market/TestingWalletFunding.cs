@@ -19,12 +19,13 @@ internal static class TestingWalletFunding
             return;
         }
         var wallet = world.Set<PilotWallet>().Find(pilotId) ?? world.Add(new PilotWallet { PilotId = pilotId }).Entity;
-        wallet.Cents = TestingMarketRules.GrantBalance(wallet.Cents);
+        long grant = world.Settings.DevelopmentSupply.GrantCents;
+        wallet.Cents = checked(wallet.Cents + grant);
         world.Add(
             new TestingWalletGrant
             {
                 PilotId = pilotId,
-                AmountCents = TestingMarketRules.GrantCents,
+                AmountCents = grant,
                 BalanceCents = wallet.Cents,
                 Time = time,
             }

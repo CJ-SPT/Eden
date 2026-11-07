@@ -15,6 +15,7 @@ using Eden.Protocol.Tests.Propulsion;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Configuration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
@@ -28,6 +29,41 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcGuardTests
 {
+    [Fact]
+    public void RestartPopulationPolicyStopsNewGuardsAndPreservesLivingResidents()
+    {
+        using TestWorld db = new(regionalNpcs: true);
+        Prepare(db);
+        var original = Seed(db, Now);
+        Assert.Equal(5, original.Count);
+        long destroyed = original[0].Id;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Set<WorldNpc>().Where(npc => npc.Id == destroyed).ExecuteUpdate(set => set.SetProperty(npc => npc.DestroyedAt, Now));
+        }
+        WorldDatabase database = new(db.Path);
+        WorldConfigurationStore configurations = new(database, TimeProvider.System);
+        var state = configurations.Read();
+        configurations.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with { NpcPopulation = new(false, false, false, false) },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database);
+        long afterRespawn = Now + TimeSpan.FromSeconds(NpcEncounterDefinitions.RespawnSeconds + 1).Ticks;
+        var retained = Seed(db, afterRespawn);
+        Assert.Equal(original.Where(npc => npc.Id != destroyed).Select(npc => npc.Id), retained.Select(npc => npc.Id));
+        var disabled = configurations.Read();
+        configurations.Restore(disabled.Generation, state.Active.Id, "restore");
+        WorldInitialization.Initialize(database);
+        var restored = Seed(db, afterRespawn);
+        Assert.Equal(5, restored.Count);
+        Assert.DoesNotContain(restored, npc => npc.Id == destroyed);
+    }
+
     private const int SystemId = 30000142;
     private const long PilotId = 90000001;
     private const long ShipId = 1000000000001;

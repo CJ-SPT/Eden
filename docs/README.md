@@ -7,6 +7,7 @@
 | Guide | Use it for |
 | --- | --- |
 | [Windows client setup](development-client.md) | Stage build 3662168, prepare the catalog, manage saves, launch locally and use developer travel. Optional gameplay procedures are labeled separately. |
+| [Saved world configuration](world-configuration.md) | Stage settings and economic overrides for restart, inspect history, and import/export or restore revisions. |
 | [Desktop launcher hosting](launcher.md) | Register accounts, configure developer access, host remotely and provision native chat trust. |
 
 ## Development

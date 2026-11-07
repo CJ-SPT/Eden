@@ -20,7 +20,7 @@ internal static class WorldConnections
     internal static SqliteConnection Create(string path) =>
         LiveWorld.Find(path) is { } live ? new LiveConnection(live) : FileConnection(path);
 
-    internal static void RequireDurableClose(SqliteConnection connection)
+    internal static void RequireDurableClose(System.Data.Common.DbConnection connection)
     {
         if (connection is LiveConnection live)
         {

@@ -6,6 +6,7 @@ using Eden.Protocol.Gateway;
 using Eden.Protocol.Serialization;
 using Eden.Server.Authentication;
 using Eden.Server.Chat;
+using Eden.Server.Configuration;
 using Eden.Server.Gateway;
 using Eden.Server.Launcher;
 using Eden.Server.Maintenance;
@@ -59,6 +60,10 @@ internal static class Program
         }
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
         string worldPath = Path.GetFullPath(Value("--world") ?? Path.Combine(directory, "world.sqlite"));
+        if (ConfigurationCommands.TryRun(args, worldPath))
+        {
+            return;
+        }
         bool economyWorld = args.Contains("--economy-world");
         if (economyWorld && File.Exists(worldPath))
         {
@@ -97,8 +102,23 @@ internal static class Program
             options.Validate();
         }
         string? preparationRoot = Value("--prepare-login");
+        if (preparationRoot is null)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
+            using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            WorldInitialization.Initialize(
+                new WorldDatabase(worldPath),
+                economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
+                economics: economicConfiguration
+            );
+        }
         // Ticket preparation signs a local claim without opening the saved world.
-        using var services = ServerServices.Build(new WorldDatabase(worldPath), options: options, liveWorld: preparationRoot is null);
+        using var services = ServerServices.Build(
+            new WorldDatabase(worldPath),
+            options: options,
+            liveWorld: preparationRoot is null,
+            loadConfiguration: preparationRoot is null
+        );
         if (preparationRoot is { } root)
         {
             if (!OperatingSystem.IsWindows())
@@ -117,11 +137,6 @@ internal static class Program
             return;
         }
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
-        WorldInitialization.Initialize(
-            new WorldDatabase(worldPath),
-            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
-            economics: economicConfiguration
-        );
         var accounts = services.GetRequiredService<LauncherStore>();
         accounts.Initialize();
         if (Value("--grant-redeem") is { } redeemPath)
