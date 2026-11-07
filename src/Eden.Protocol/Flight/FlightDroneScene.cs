@@ -16,7 +16,8 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         context.Pilot.Position is not { } position
             ? []
             : (drones?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-                .Where(d => position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                // A controller must keep simulating its flight even beyond the observer grid.
+                .Where(d => d.ShipId == context.Pilot.ShipId || position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
                 .ToArray();
 
     internal void RefreshDrones(FlightSceneContext context)
@@ -41,21 +42,23 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             var old = Contacts.FirstOrDefault(d => d.Id == drone.Id);
             if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
             {
-                update(new DestinyCommand.DroneStateChanged(new(drone)));
+                // Michelle uses the control row's owner OR controller to keep a panel entry.
+                // The physical slim keeps the owner for reconnect and scooping.
+                if (drone.ShipId != 0 || old is { ShipId: not 0 })
+                {
+                    update(new DestinyCommand.DroneStateChanged(new(drone, Removed: drone.ShipId == 0)));
+                }
                 update(new DestinyCommand.OnSlimItemChange(drone.Id, new DroneSlimItem(drone)));
             }
             if (
                 old is null
-                || old.Position != drone.Position
                 || old.TargetId != drone.TargetId
-                || old.Activity != drone.Activity
+                || (old.Activity == DroneActivity.ReturningToBay) != (drone.Activity == DroneActivity.ReturningToBay)
                 || old.ShipId != drone.ShipId
                 || old.Orbiting != drone.Orbiting
                 || old.SpeedLimit != drone.SpeedLimit
             )
             {
-                update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
-                update(new DestinyCommand.SetBallVelocity(drone.Id, drone.Velocity.X, drone.Velocity.Y, drone.Velocity.Z));
                 if (drone.TargetId != 0 && drone.ShipId != 0)
                 {
                     update(new DestinyCommand.SetMaxSpeed(drone.Id, drone.SpeedLimit));
@@ -69,8 +72,11 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
                         )
                     );
                 }
-                else
+                else if (old is { ShipId: not 0 })
                 {
+                    // Anchor a newly released drone once at its final authoritative position.
+                    update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
+                    update(new DestinyCommand.SetBallVelocity(drone.Id, 0, 0, 0));
                     update(new DestinyCommand.Stop(drone.Id));
                 }
             }

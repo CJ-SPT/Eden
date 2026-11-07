@@ -7,7 +7,9 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Targeting;
 using Eden.World.Combat.Npcs;
 using Eden.World.Drones;
 using Eden.World.Inventory;
@@ -117,10 +119,26 @@ public sealed class DroneSynchronizationTests(ITestOutputHelper output)
         using var observer = Context(f, observerScope.ServiceProvider, 1000002);
         observer.Flight.Snapshot();
         Assert.Empty(observer.Flight.VisibleDrones);
-        var launch = f.Drones.Launch(f.Pilot, [new(stack, 5)], f.Now);
-        owner.Flight.RefreshDrones();
+        var services = ownerScope.ServiceProvider;
+        var launch = Launch(services, owner, stack);
+        Assert.Equal(5, owner.Flight.Updates.Count(u => u.Command is DestinyCommand.Follow { Mode: NavigationMode.Orbit }));
         var initial = f.Drones.List(systemId, f.Now).ToDictionary(drone => drone.Id, drone => drone.Position);
         Assert.Equal(5, initial.Count);
+        observer.Flight.RefreshDrones();
+        Assert.Equal(5, observer.Flight.Updates.Count(u => u.Command is DestinyCommand.Follow { Mode: NavigationMode.Orbit }));
+        owner.Flight.Updates.Clear();
+        observer.Flight.Updates.Clear();
+        f.Base.Clock.Seconds++;
+        services.GetRequiredService<DroneHandler>().Advance(owner);
+        observer.Flight.RefreshDrones();
+        foreach (var session in new[] { owner, observer })
+        {
+            Assert.All(session.Flight.VisibleDrones, d => Assert.NotEqual(initial[d.Id], d.Position));
+            Assert.DoesNotContain(
+                session.Flight.Updates,
+                u => u.Command is DestinyCommand.Follow or DestinyCommand.SetBallPosition or DestinyCommand.SetBallVelocity
+            );
+        }
         for (int cycle = 0; cycle < 4; cycle++)
         {
             owner.Flight.Updates.Clear();
@@ -153,13 +171,24 @@ public sealed class DroneSynchronizationTests(ITestOutputHelper output)
             world.Set<WorldNpc>().Find(f.Npc.Id)!.SystemId = systemId;
             world.SaveChanges();
         }
-        f.Drones.Order(f.Pilot, ids, DroneOrder.Engage, f.Npc.Id, new HashSet<long> { f.Npc.Id }, f.Now);
+        owner.Flight.RefreshNpcs();
+        var targeting = services.GetRequiredService<TargetingHandler>();
+        targeting.CallWire(owner, "dogmaIM", "AddTarget", [f.Npc.Id]);
+        f.Base.Clock.Seconds += 30;
+        targeting.Advance(owner);
+        Assert.True(targeting.IsLocked(f.Npc.Id));
+        var group = ids.Cast<object?>().ToList();
+        Command(services, owner, "CmdEngage", group, f.Npc.Id);
         Assert.All(f.Drones.List(systemId, f.Now), drone => Assert.Equal(DroneActivity.Fighting, drone.Activity));
-        f.Drones.Order(f.Pilot, ids, DroneOrder.Orbit, null, new HashSet<long>(), f.Now);
-        f.Drones.Release(f.Pilot, f.Ship);
-        f.Drones.Order(f.Pilot, ids, DroneOrder.Reconnect, null, new HashSet<long>(), f.Now);
-        f.Drones.Order(f.Pilot, ids, DroneOrder.ReturnToBay, null, new HashSet<long>(), f.Now);
-        Assert.Equal(5, f.Tick().Changes.Count);
+        Command(services, owner, "CmdReturnHome", new List<object?> { ids[0] });
+        Assert.Equal(DroneActivity.Returning, owner.Flight.VisibleDrones.Single(d => d.Id == ids[0]).Activity);
+        Command(services, owner, "CmdReturnBay", group);
+        for (int cycle = 0; cycle < 30 && owner.Flight.VisibleDrones.Count > 0; cycle++)
+        {
+            f.Base.Clock.Seconds++;
+            await Tick(f, services, owner);
+        }
+        Assert.Empty(owner.Flight.VisibleDrones);
         Assert.Empty(f.Drones.List(systemId, f.Now));
         await Tick(f, observerScope.ServiceProvider, observer);
         Assert.Empty(observer.Flight.VisibleDrones);
@@ -178,7 +207,38 @@ public sealed class DroneSynchronizationTests(ITestOutputHelper output)
         );
     }
 
-    private static PilotCallContext Context(Fixture f, IServiceProvider services, long account)
+    internal static PilotCallResult Bound(
+        IServiceProvider services,
+        PilotCallContext pilot,
+        string service,
+        string method,
+        params object?[] args
+    )
+    {
+        object location =
+            service == "ship"
+                ? new object?[] { (long)pilot.Pilot.LocationId, pilot.Pilot.Position is null ? 15L : 5L }
+                : (long)pilot.Pilot.SystemId;
+        return services
+            .GetRequiredService<PilotCallRouter>()
+            .Call(pilot, service, "MachoBindObject", new object?[] { location, new object?[] { method, args } }, _ => { });
+    }
+
+    internal static BlueModel Reply(PilotCallResult result)
+    {
+        Assert.True(result is PilotCallResult.Success, result.ToString());
+        return Assert.IsType<BoundPilotReply>(((PilotCallResult.Success)result).Reply).Reply;
+    }
+
+    internal static DroneLaunchReply Launch(IServiceProvider services, PilotCallContext pilot, long stack) =>
+        Assert.IsType<DroneLaunchReply>(
+            Reply(Bound(services, pilot, "ship", "LaunchDrones", new List<object?> { new object?[] { stack, 5L } }, null, false))
+        );
+
+    internal static void Command(IServiceProvider services, PilotCallContext pilot, string method, params object?[] args) =>
+        Assert.IsType<DroneCommandReply>(Reply(Bound(services, pilot, "entity", method, args)));
+
+    internal static PilotCallContext Context(Fixture f, IServiceProvider services, long account)
     {
         var pilot = f.Base.Db.Store.FindPilot(account)!;
         PilotCallContext context = new(

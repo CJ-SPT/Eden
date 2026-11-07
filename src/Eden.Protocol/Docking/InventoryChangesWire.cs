@@ -39,6 +39,10 @@ internal static class InventoryChangesWire
         }
         else
         {
+            if (previous.OwnerId != item.OwnerId)
+            {
+                old[InventoryColumn.Owner] = previous.OwnerId;
+            }
             if (previous.LocationId != item.LocationId)
             {
                 old[InventoryColumn.Location] = previous.LocationId;

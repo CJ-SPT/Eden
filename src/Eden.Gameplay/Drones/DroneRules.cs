@@ -14,6 +14,9 @@ public static class DroneRules
     public const double LightBandwidth = 5;
     public const double MediumBandwidth = 10;
     public const double BaseControlRange = 20_000;
+
+    // EVE University, Drones: deployed drones lose their controller beyond 500 km.
+    public const double ShutdownDistance = 500_000;
     public const double RecallRange = 2500;
     public const double LaunchOffset = 100;
 

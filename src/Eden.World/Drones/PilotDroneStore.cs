@@ -20,16 +20,20 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Drones;
 
 [Injectable]
-internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSignal security) : IPilotDrones
+internal sealed partial class PilotDroneStore(WorldDatabase database, SecurityStatusSignal security) : IPilotDrones
 {
     private const int ProbabilityResolution = 1_000_000;
 
-    private static Pilot InSpace(WorldDbContext world, long pilotId)
+    private static Pilot InSpace(WorldDbContext world, long pilotId, bool requireDroneHull = true)
     {
         var pilot =
             world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
             ?? throw new InvalidDataException("Choose an existing pilot.");
-        if (pilot.ActiveShip.Position is null || !DroneRules.SupportsHull(pilot.ActiveShip.TypeId))
+        if (pilot.ActiveShip.Position is null)
+        {
+            throw new InvalidDataException("Use drones while your ship is in space.");
+        }
+        if (requireDroneHull && !DroneRules.SupportsHull(pilot.ActiveShip.TypeId))
         {
             throw new InvalidDataException("Light and medium combat drones require a Brutix or Brutix Navy Issue in space.");
         }
@@ -145,6 +149,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         List<InventoryChange> changes = [];
         List<DroneLaunch> launches = [];
         int systemId = CurrentSystem(catalog, pilot);
+        double launchOffset = (catalog.FittingType(ship.TypeId)?.Radius ?? 0) + DroneRules.LaunchOffset;
         foreach (var (stack, request, profile) in pending)
         {
             var previous = PilotInventoryStore.Read(catalog, stack);
@@ -199,7 +204,8 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 saved.SystemId = systemId;
                 saved.Activity = DroneActivity.Idle;
                 saved.TargetId = ship.Id;
-                var origin = Position(position) + new SpacePosition(DroneRules.LaunchOffset + index * profile.Radius * 2, 0, 0);
+                var origin = Position(position) + new SpacePosition(launchOffset + profile.Radius, 0, 0);
+                launchOffset += profile.Radius * 2;
                 (saved.X, saved.Y, saved.Z) = (origin.X, origin.Y, origin.Z);
                 (saved.VelocityX, saved.VelocityY, saved.VelocityZ) = (0, 0, 0);
                 saved.UpdatedAt = now;
@@ -241,6 +247,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         var position = pilot.ActiveShip.Position!;
         int systemId = CurrentSystem(catalog, pilot);
         double range = DroneRules.ControlRange(DroneCatalog.Skills(world, catalog, pilotId));
+        double droneRange = order == DroneOrder.Reconnect ? NpcEncounterDefinitions.VisibilityRange : DroneRules.ShutdownDistance;
         var selected = drones.Select(id => world.Set<WorldDrone>().Find(id)).ToArray();
         if (
             selected.Any(d =>
@@ -248,11 +255,11 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 || d.PilotId != pilotId
                 || d.SystemId != systemId
                 || (order == DroneOrder.Reconnect ? d.ControllerShipId != 0 : d.ControllerShipId != pilot.ActiveShipId)
-                || Position(position).DistanceTo(new(d.X, d.Y, d.Z)) > range
+                || Position(position).DistanceTo(new(d.X, d.Y, d.Z)) > droneRange
             )
         )
         {
-            throw new InvalidDataException("Command only your drones in this ship's control range.");
+            throw new InvalidDataException("These drones are unavailable to your current ship.");
         }
         if (order == DroneOrder.Engage)
         {
@@ -288,7 +295,13 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         foreach (var entry in selected)
         {
             var drone = entry!;
-            PilotSkillReader.CheckRequirements(world, catalog, pilotId, world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId);
+            if (order == DroneOrder.Abandon)
+            {
+                Release(drone);
+                continue;
+            }
+            int typeId = world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId;
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
             drone.ControllerShipId = pilot.ActiveShipId;
             drone.CommandedAt = now;
             drone.TargetId = order == DroneOrder.Engage ? targetId!.Value : pilot.ActiveShipId;
@@ -299,12 +312,11 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 DroneOrder.Orbit => DroneActivity.Returning,
                 _ => DroneActivity.Idle,
             };
-            if (order != DroneOrder.Reconnect)
+            drone.Orbiting = false;
+            drone.SpeedLimit = DroneCatalog.Skilled(world, catalog, pilotId, typeId).MaximumSpeed;
+            if (order == DroneOrder.Reconnect)
             {
-                drone.Orbiting = false;
-                drone.SpeedLimit = DroneCatalog
-                    .Skilled(world, catalog, pilotId, world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId)
-                    .MaximumSpeed;
+                drone.UpdatedAt = now;
             }
         }
         world.SaveChanges();
@@ -351,8 +363,9 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
     public bool WasDestroyed(long droneId)
     {
         using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return world.Set<WorldDrone>().Find(droneId) is { } drone && Contact(world, catalog, drone).Health.Remaining.Destroyed;
+        // NPC destruction moves the item to the graveyard. Scooping a damaged drone
+        // can change its owner's durability skills, but must never play an explosion.
+        return world.Set<OwnedItem>().Any(i => i.Id == droneId && i.LocationId == (int)InventoryLocation.Graveyard);
     }
 
     public IReadOnlyDictionary<long, ShipHealth> BayHealth(long pilotId, long shipId, IReadOnlySet<long> ids)
@@ -413,6 +426,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                 || !DroneRules.SupportsHull(ship.TypeId)
                 || drone.ControllerShipId != ship.Id
                 || systemId != drone.SystemId
+                || Position(source).DistanceTo(new(drone.X, drone.Y, drone.Z)) > DroneRules.ShutdownDistance
             )
             {
                 Release(drone);
@@ -444,7 +458,7 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
             }
             // One bounded step per observed interval. Offline/late callbacks never replay combat.
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
-            double controlRange = DroneRules.ControlRange(DroneCatalog.Skills(world, catalog, pilotId));
+            double controlRange = DroneRules.ControlRange(skills);
             if (drone.Activity == DroneActivity.Idle && settings.Aggressive)
             {
                 var attacking = world
@@ -479,7 +493,6 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
                     || npc.RetiredAt.HasValue
                     || npc.Navigation == NpcNavigationState.Warping
                     || npc.SystemId != drone.SystemId
-                    || Position(source).DistanceTo(NpcMotion.Position(npc)) > controlRange
                 )
             )
             {
@@ -525,6 +538,12 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
             contact = DroneRules.Move(contact, target, radius, drone.Activity != DroneActivity.ReturningToBay, stamp, seconds);
             (drone.X, drone.Y, drone.Z) = (contact.Position.X, contact.Position.Y, contact.Position.Z);
             (drone.VelocityX, drone.VelocityY, drone.VelocityZ) = (contact.Velocity.X, contact.Velocity.Y, contact.Velocity.Z);
+            if (contact.Position.DistanceTo(Position(source)) > DroneRules.ShutdownDistance)
+            {
+                Release(drone);
+                released = true;
+                continue;
+            }
             drone.SpeedLimit = contact.SpeedLimit;
             drone.Orbiting = contact.Orbiting;
             drone.Shield = ChargedResource.Recharged(
@@ -571,6 +590,10 @@ internal sealed class PilotDroneStore(WorldDatabase database, SecurityStatusSign
         drone.ControllerShipId = 0;
         drone.TargetId = 0;
         drone.Activity = DroneActivity.Idle;
+        drone.Orbiting = false;
+        drone.SpeedLimit = 0;
+        drone.ShotAt = 0;
+        drone.ShotTargetId = 0;
         drone.VelocityX = drone.VelocityY = drone.VelocityZ = 0;
     }
 

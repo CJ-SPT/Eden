@@ -21,7 +21,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
-| [Combat drones](protocol/drones.md) | Brutix and Brutix Navy Issue light/medium drone launch, control, NPC combat, recall and saved state. |
+| [Combat drones](protocol/drones.md) | Brutix and Brutix Navy Issue light/medium drone launch, control, NPC combat, recall, reconnect, abandonment and scooping. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
 | [Architecture and typed boundaries](protocol/architecture.md) | Named models, Gameplay boundaries, orchestration, persistence and architecture audits. |
 | [Session performance and resident state](protocol/performance.md) | Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints. |
@@ -49,6 +49,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Connection admission and stalled transport recovery, November 6, 2026](protocol/startup.md#connection-admission-and-stalled-transport-recovery-november-6-2026)
 
+- [Drone control after changing ships and lost-drone recovery, November 6, 2026](protocol/drones.md#drone-control-after-changing-ships-and-lost-drone-recovery-november-6-2026)
 - [Launch inventory and normal-undock synchronization, November 6, 2026](protocol/drones.md#launch-inventory-and-normal-undock-synchronization-november-6-2026)
 - [Brutix Navy Issue launch compatibility, November 6, 2026](protocol/drones.md#brutix-navy-issue-launch-compatibility-november-6-2026)
 - [Brutix light and medium combat drones, November 6, 2026](protocol/drones.md#brutix-light-and-medium-combat-drones-november-6-2026)

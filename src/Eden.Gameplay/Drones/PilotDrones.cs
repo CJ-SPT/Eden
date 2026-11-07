@@ -20,6 +20,7 @@ public enum DroneOrder
     Orbit,
     ReturnToBay,
     Reconnect,
+    Abandon,
 }
 
 public enum DroneSkill
@@ -113,6 +114,7 @@ public interface IPilotDrones
 {
     DroneOperation Launch(long pilotId, IReadOnlyList<DroneStack> stacks, long now);
     void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now);
+    IReadOnlyList<InventoryChange> Scoop(long pilotId, IReadOnlyList<long> drones, InventoryFlag hold, long now);
     DroneUpdate Advance(long pilotId, long now, int stamp);
     IReadOnlyList<DroneContact> List(int systemId, long now);
     bool WasDestroyed(long droneId);

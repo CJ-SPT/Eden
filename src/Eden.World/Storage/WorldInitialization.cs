@@ -61,6 +61,10 @@ public static class WorldInitialization
                     .SetProperty(d => d.VelocityX, 0)
                     .SetProperty(d => d.VelocityY, 0)
                     .SetProperty(d => d.VelocityZ, 0)
+                    .SetProperty(d => d.SpeedLimit, 0)
+                    .SetProperty(d => d.Orbiting, false)
+                    .SetProperty(d => d.ShotAt, 0)
+                    .SetProperty(d => d.ShotTargetId, 0)
             );
         // Live module bonuses belong to a connection. A restart retains paid
         // capacitor/cooldowns but never leaves an orphaned active bonus.

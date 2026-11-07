@@ -450,7 +450,13 @@ public sealed class CombatDroneTests
         var saved = f.Drones.List(SystemId, f.Now).Single();
         Assert.Equal(before.Position, saved.Position);
         Assert.Equal(ids[0], saved.Id);
-        f.Drones.Order(f.Pilot, ids, DroneOrder.Reconnect, null, new HashSet<long>(), f.Now);
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var client = DroneSynchronizationTests.Context(f, scope.ServiceProvider, 1000001);
+        client.Flight.Snapshot();
+        var snapshot = Assert.Single(client.Flight.Updates.Select(u => u.Command).OfType<DestinyCommand.SetState>()).Snapshot;
+        Assert.Empty(snapshot.Drones!);
+        Assert.Equal(saved.Id, Assert.Single(snapshot.Slims.OfType<DroneSlimItem>()).Drone.Id);
+        DroneSynchronizationTests.Command(scope.ServiceProvider, client, "CmdReconnectToDrones", ids.Cast<object?>().ToList());
         Assert.Equal(f.Ship, f.Drones.List(SystemId, f.Now).Single().ShipId);
     }
 

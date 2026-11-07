@@ -102,7 +102,7 @@ internal sealed record DroneSlimItem(DroneContact Drone) : SlimItem
     {
         var fields = Fields(Drone.Id, Drone.Profile.TypeId, Drone.PilotId, DroneRules.CombatDroneGroup, (int)InventoryCategory.Drone);
         fields["controllerID"] = Drone.ShipId == 0 ? null : Drone.ShipId;
-        fields["controllerOwnerID"] = Drone.PilotId;
+        fields["controllerOwnerID"] = Drone.ShipId == 0 ? null : Drone.PilotId;
         fields["corpID"] = Drone.CorporationId;
         return Wrap(fields);
     }

@@ -52,8 +52,11 @@ internal sealed class DroneHandler(
             return PilotCallResult.None;
         }
         bool launch = service == "ship" && method == "LaunchDrones";
-        bool command = service == "entity" && method is "CmdEngage" or "CmdReturnHome" or "CmdReturnBay" or "CmdReconnectToDrones";
-        if (!launch && !command)
+        bool scoop = service == "ship" && method is "Scoop" or "ScoopDrone";
+        bool command =
+            service == "entity"
+            && method is "CmdEngage" or "CmdReturnHome" or "CmdReturnBay" or "CmdReconnectToDrones" or "CmdAbandonDrone";
+        if (!launch && !command && !scoop)
         {
             return PilotCallResult.Unsupported;
         }
@@ -65,6 +68,20 @@ internal sealed class DroneHandler(
         {
             context.Flight.Checkpoint();
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            if (scoop)
+            {
+                bool toBay = method == "ScoopDrone";
+                IReadOnlyList<long> selection = (toBay, args) switch
+                {
+                    (true, [var items]) => ReadIds(items),
+                    (false, [long item]) => [item],
+                    _ => throw new InvalidDataException("Choose a drone to scoop."),
+                };
+                var hold = toBay ? InventoryFlag.DroneBay : InventoryFlag.Cargo;
+                Notify(context, drones.Scoop(context.Pilot.PilotId, selection, hold, now));
+                context.Flight.RefreshDrones();
+                return toBay ? new DroneCommandReply() : PilotCallResult.None;
+            }
             if (launch)
             {
                 if (args is not [List<object?> items, var behalf, bool] || behalf is not null && !Equals(behalf, context.Pilot.PilotId))
@@ -89,15 +106,16 @@ internal sealed class DroneHandler(
                 "CmdEngage" => DroneOrder.Engage,
                 "CmdReturnBay" => DroneOrder.ReturnToBay,
                 "CmdReconnectToDrones" => DroneOrder.Reconnect,
+                "CmdAbandonDrone" => DroneOrder.Abandon,
                 _ => DroneOrder.Orbit,
             };
             long? target = null;
             IReadOnlyList<long> ids;
             if (method == "CmdReconnectToDrones" && args.Length == 0)
             {
-                ids = drones
-                    .List(context.Pilot.SystemId, now)
-                    .Where(d => d.PilotId == context.Pilot.PilotId && d.ShipId == 0)
+                context.Flight.RefreshDrones();
+                ids = context
+                    .Flight.VisibleDrones.Where(d => d.PilotId == context.Pilot.PilotId && d.ShipId == 0)
                     .Select(d => d.Id)
                     .Take(DroneRules.MaximumDrones)
                     .ToArray();

@@ -71,7 +71,7 @@ internal static partial class Ballpark
             items,
             new SolarSystemSlim(pilot.SystemId),
             damage,
-            drones?.Select(d => new Eden.Protocol.Drones.DroneState(d)).ToArray()
+            drones?.Where(d => d.ShipId != 0).Select(d => new Eden.Protocol.Drones.DroneState(d)).ToArray()
         );
     }
 
