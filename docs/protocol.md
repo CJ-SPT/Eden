@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Flight coordination extraction, November 6, 2026](protocol/architecture.md#flight-coordination-extraction-november-6-2026)
+
 - [Readable migration steps, November 6, 2026](protocol/architecture.md#readable-migration-steps-november-6-2026)
 
 - [Project boundaries and feature layout, November 6, 2026](protocol/architecture.md#project-boundaries-and-feature-layout-november-6-2026)

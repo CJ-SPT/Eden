@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
@@ -254,5 +255,30 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         {
             ShieldBoostEffect(ship.Pilot.ShipId, effect, true);
         }
+    }
+
+    internal void WarpEffect(long id, bool start)
+    {
+        // The simulation command moves the ball. This separate toggle drives the pilot's tunnel and peer flash.
+        emit(new DestinyCommand.SpecialEffect(id, null, null, null, null, "effects.Warping", false, start, true));
+    }
+
+    internal void DepartureEffect(long shipId, long gateId, int systemId, int durationMilliseconds) =>
+        emit(new DestinyCommand.JumpOut(shipId, gateId, systemId, durationMilliseconds));
+
+    internal void ArrivalEffect(long shipId) =>
+        emit(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));
+
+    internal static void CorrectPosition(
+        Action<StampedDestinyUpdate> send,
+        long id,
+        SpacePosition position,
+        SpacePosition velocity,
+        int stamp
+    )
+    {
+        send(new(stamp, new DestinyCommand.SetBallPosition(id, position.X, position.Y, position.Z)));
+        // This restores a missed sample. Ordinary prediction avoids setters that reset native interpolation and facing.
+        send(new(stamp, new DestinyCommand.SetBallVelocity(id, velocity.X, velocity.Y, velocity.Z)));
     }
 }

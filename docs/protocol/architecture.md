@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Flight coordination extraction, November 6, 2026](#flight-coordination-extraction-november-6-2026)
 - [Readable migration steps, November 6, 2026](#readable-migration-steps-november-6-2026)
 - [Project boundaries and feature layout, November 6, 2026](#project-boundaries-and-feature-layout-november-6-2026)
 - [Attribute-based DI acceptance](#attribute-based-di-acceptance)
@@ -33,6 +34,35 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Architecture audit milestone 10](#architecture-audit-milestone-10)
 - [Architecture audit milestone 11: wallet header duplication](#architecture-audit-milestone-11-wallet-header-duplication)
 - [Architecture audit milestone 12](#architecture-audit-milestone-12)
+
+## Flight coordination extraction, November 6, 2026
+
+`FlightSession` is now a 931-line coordinator retaining the current pilot, navigation, lifecycle coordination and single ordered outbound queue. `FlightScene` owns visibility, target lookup, reconciliation, snapshots and observer recovery, with dedicated NPC and drone contact helpers. `FlightTravel` owns gate validation, pending transitions, deadlines and arrival decisions. `FlightModuleEffects` owns active effects and fitting/propulsion state, using the existing `FlightEffects` adapter for wire commands. Typed context and named decisions cross these boundaries; no component creates another navigation state or outbound queue.
+
+The extraction preserves departure/arrival sequencing, snapshot-before-effect replay, shared movement order stamps, propulsion property updates before effect replay, hull adoption before old-hull removal, and disconnect cleanup. Gate deadlines are sampled after catalog reads, and scene reads sample time at their original emission points. Gameplay movement arithmetic, wire representations, schema version, persistence ownership and checkpoint behavior are unchanged. Movement dispatch and warp/follow behavior were checked against the pinned [Carbon Destiny Ballpark.cpp, revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp).
+
+New `TestClock` cases repeat hull replacement and same-system relocation three times with active module effects. They assert that a replacement hull is added before the destroyed hull is removed, and the next snapshot contains the current ego without stale effects or motion. Existing focused coverage exercises transition deadlines, movement/collisions, observer replay, targeting, combat, drones and ship loss.
+
+**Automated validation:** The broader extraction run passed 780 focused .NET tests in 397.4 seconds, followed by both isolated socket cases in 7.1 seconds. After preserving constructor-seeded hull values for lazy effect initialization, a fresh tool/solution restore and build (zero warnings/errors), 230 flight/propulsion tests (92.9 seconds), both isolated socket cases (7.3 seconds), catalog setup (3 tests), formatting policy (9 tests) and formatting verification passed. That final sequence took 116.7 seconds. Documentation checks covered 306 local links and anchors with no failures. The full .NET suite was not run.
+
+The broader extraction filter was:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~TargetingTests|FullyQualifiedName~TargetLockSessionTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~PilotMissileTests|FullyQualifiedName~PilotHealthTests|FullyQualifiedName~InsuranceLossTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~NpcJammingTargetTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion|FullyQualifiedName~Eden.Protocol.Tests.Repair|FullyQualifiedName~MiningTests|FullyQualifiedName~NpcMiningSessionTests|FullyQualifiedName~CrimewatchTests)&FullyQualifiedName!~TranslocationTests.RepeatedNativeTranslocationsKeepChatConnectedUntilActualPilotLogoff
+```
+
+The final follow-up and isolated filters were:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Propulsion)&FullyQualifiedName!~TranslocationTests.RepeatedNativeTranslocationsKeepChatConnectedUntilActualPilotLogoff
+FullyQualifiedName~TranslocationTests.RepeatedNativeTranslocationsKeepChatConnectedUntilActualPilotLogoff
+```
+
+An earlier 243-case development batch passed 241 tests but hit the unchanged 15-second socket fixture deadline in both repeated native-translocation chat cases. Both passed separately on the original `f4e987d` revision and on the extraction. The final runs therefore execute those cases separately; combined-batch timing remains a limitation. An intervening formatting check caught a missing blank line before a comment, corrected before final verification. No socket timeouts or gameplay behavior were changed to obtain these results.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a gate jump and translocation, checking the destination scene and effect presentation. Native rendering, input and gameplay feel remain unverified.
 
 ## Readable migration steps, November 6, 2026
 

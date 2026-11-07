@@ -8,13 +8,12 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
-using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed partial class FlightSession(
+internal sealed class FlightSession(
     IShipPositionStore world,
     DockedPilot pilot,
     TimeProvider clock,
@@ -32,13 +31,63 @@ internal sealed partial class FlightSession(
     IPilotCrimewatch? crimewatch = null
 ) : IDisposable
 {
-    internal const int ArrivalDurationTicks = 8;
+    internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
+    internal const int JumpDurationTicks = FlightTravel.JumpDurationTicks;
+    internal const int TranslocationDurationTicks = FlightTravel.TranslocationDurationTicks;
+
     private FlightEffects? _effects;
-    private FlightEffects Effects => _effects ??= new(Update);
+    private FlightScene? _scene;
+    private FlightModuleEffects? _moduleEffects;
+
+    // Docking can replace Pilot before the lazy effect state is first needed.
+    private readonly FlightProperties _initialFlight = pilot.Flight;
     private NavigationState _navigation = new();
-    private ShipContact[] _peers = [];
     private ShipDirtState? _dirt;
     private bool _disconnecting;
+    private bool _destroying;
+    private int _simulatedStamp = space.Stamp(clock);
+    private readonly FlightTravel _travel = new();
+
+    private FlightEffects Effects => _effects ??= new(Update);
+    private FlightScene Scene =>
+        _scene ??= new(space, clock, objects, Effects, Update, Updates.Add, health, encounters, wrecks, missiles, drones);
+    private FlightSceneContext SceneContext => new(Pilot, InBallpark, CanTarget, _simulatedStamp);
+    private FlightModuleEffects ModuleEffects => _moduleEffects ??= new(_initialFlight, modules, Effects);
+    private int Stamp => space.Stamp(clock);
+
+    public bool InBallpark { get; private set; }
+    internal int CurrentStamp => Stamp;
+
+    public bool Translocating => _travel.Translocating;
+    public DockedPilot Pilot { get; private set; } = pilot;
+    public List<StampedDestinyUpdate> Updates { get; } = [];
+    public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
+    public bool CanTarget =>
+        InBallpark && !_destroying && Pilot.Position is not null && _travel.Gate is null && !Translocating && _navigation.Warp is null;
+
+    public bool InWarp => _navigation.Warp is not null;
+    public bool MicrowarpdriveBlocked => ModuleEffects.MwdBlocked;
+
+    // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
+    // the terminal hull transition still prevent local module activations.
+    public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _travel.Gate is null && !Translocating;
+    public SpacePosition Velocity => _navigation.Velocity;
+    public float BaseSpeed => ModuleEffects.BaseFlight.MaxSpeed;
+
+    internal IReadOnlyList<DroneContact> VisibleDrones => Scene.VisibleDrones;
+    public IReadOnlyList<NpcContact> VisibleNpcs => Scene.VisibleNpcs;
+    public IReadOnlyList<WreckContact> VisibleWrecks => Scene.VisibleWrecks;
+    public IReadOnlyList<MissileContact> VisibleMissiles => Scene.VisibleMissiles;
+
+    public void RefreshDrones() => Scene.RefreshDrones(SceneContext);
+
+    private void PublishContact()
+    {
+        if (InBallpark && !_destroying)
+        {
+            space.Publish(CreateContact());
+        }
+    }
 
     private long? DirtTimestamp()
     {
@@ -85,441 +134,21 @@ internal sealed partial class FlightSession(
         }
     }
 
-    private readonly Dictionary<long, long> _peerOrderSequences = new();
-    private StaticSpaceObject[] _visibleAsteroids = [];
-    private MiningContact[] _mining = [];
-    private WeaponContact[] _weapons = [];
-    private ShieldBoostContact[] _shieldBoosts = [];
-    private LocalRepairContact[] _localRepairs = [];
-    private HardenerContact[] _hardeners = [];
-    private SupportContact[] _support = [];
-    private TackleContact[] _tackleEffects = [];
-    private TackleEffect[] _incomingTackle = [];
-    private bool _warpBlocked;
-    private bool _mwdBlocked;
-    private PropulsionContact? _propulsion;
-    private FlightProperties _baseFlight = pilot.Flight;
-    private NpcContact[] _npcs = [];
-    private HashSet<long> _transitingNpcs = [];
-    private WreckContact[] _wrecks = [];
-    private MissileContact[] _missiles = [];
-    private bool _destroying;
-    public bool InBallpark { get; private set; }
-    private int _simulatedStamp = space.Stamp(clock);
-    private int Stamp => space.Stamp(clock);
-    internal int CurrentStamp => Stamp;
+    public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);
 
-    private sealed record GateTransit(
-        long SourceId,
-        StaticSpaceObject Exit,
-        FlightSystem System,
-        IReadOnlyList<StaticSpaceObject> Objects,
-        int TransferStamp
-    );
+    internal PilotWeaponTarget? FindPilotWeaponTarget(long id) => Scene.FindPilotWeaponTarget(SceneContext, id);
 
-    // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
-    private const int JumpDurationTicks = 10;
-    private GateTransit? _jump;
+    internal bool NpcInWarp(long id) => Scene.NpcInWarp(id);
 
-    // The pinned cyno camera has a one-second look phase. Keep the source scene
-    // alive for three ticks so its native camera/controller handoff can begin.
-    internal const int TranslocationDurationTicks = 3;
+    public void RefreshMissiles() => Scene.RefreshMissiles(SceneContext);
 
-    private sealed record TranslocationTransit(
-        IPilotTranslocation Travel,
-        TranslocationTarget Target,
-        IReadOnlyList<StaticSpaceObject> Objects,
-        int TransferStamp,
-        bool AwaitingSourceState = false
-    );
+    private StaticSpaceObject? NavigationTarget(long id) => Scene.NavigationTarget(SceneContext, id);
 
-    private TranslocationTransit? _translocation;
-    private bool _translocationArrival;
-    public bool Translocating => _translocation is not null;
-    private bool _awaitingArrival;
-    private int? _arrivalStamp;
-    public DockedPilot Pilot { get; private set; } = pilot;
-    public List<StampedDestinyUpdate> Updates { get; } = [];
-    public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
-    public bool CanTarget =>
-        InBallpark && !_destroying && Pilot.Position is not null && _jump is null && !Translocating && _navigation.Warp is null;
+    public void RefreshWrecks() => Scene.RefreshWrecks(SceneContext);
 
-    public bool InWarp => _navigation.Warp is not null;
-    public bool MicrowarpdriveBlocked => _mwdBlocked;
+    public void RefreshNpcs() => Scene.RefreshNpcs(SceneContext);
 
-    // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
-    // the terminal hull transition still prevent local module activations.
-    public bool CanUseSelfModules => InBallpark && !_destroying && Pilot.Position is not null && _jump is null && !Translocating;
-    public SpacePosition Velocity => _navigation.Velocity;
-    public float BaseSpeed => _baseFlight.MaxSpeed;
-
-    public TargetContact? FindTarget(long id)
-    {
-        if (!CanTarget)
-        {
-            return null;
-        }
-        if (space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
-        {
-            return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
-        }
-        if (_npcs.FirstOrDefault(n => n.Id == id && n.Warp is null) is { } npc)
-        {
-            return new(id, npc.TypeId, npc.Position, npc.Radius);
-        }
-        if (_drones.FirstOrDefault(d => d.Id == id) is { } drone)
-        {
-            return new(id, drone.Profile.TypeId, drone.Position, drone.Profile.Radius);
-        }
-        if (_wrecks.FirstOrDefault(w => w.Id == id) is { } wreck)
-        {
-            return new(id, wreck.TypeId, wreck.Position, wreck.Radius);
-        }
-        return VisibleObjects().FirstOrDefault(o => o.Id == id && o.CategoryId == AsteroidDefinitions.Category) is { } asteroid
-            ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius)
-            : null;
-    }
-
-    internal PilotWeaponTarget? FindPilotWeaponTarget(long id) =>
-        CanTarget
-        && space.Peers(Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
-            is { } ship
-            ? new(id, ship.Velocity)
-            : null;
-
-    private StaticSpaceObject[] VisibleObjects() =>
-        objects
-            .Where(o =>
-                o.CategoryId != AsteroidDefinitions.Category
-                || (Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
-            )
-            .ToArray();
-
-    public IReadOnlyList<NpcContact> VisibleNpcs => _npcs;
-
-    internal bool NpcInWarp(long id) => _transitingNpcs.Contains(id);
-
-    public IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
-    public IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
-
-    private MissileContact[] ReadMissiles() =>
-        Pilot.Position is not { } position
-            ? []
-            : (missiles?.List(Pilot.SystemId) ?? [])
-                .Where(m => position.DistanceTo(m.Flight.Position) <= NpcEncounterDefinitions.VisibilityRange)
-                .ToArray();
-
-    public void RefreshMissiles()
-    {
-        if (!InBallpark)
-        {
-            return;
-        }
-        var current = ReadMissiles();
-        foreach (var departed in _missiles.ExceptBy(current.Select(m => m.Id), m => m.Id))
-        {
-            Update(new DestinyCommand.RemoveBall(departed.Id, missiles?.Impacted(departed.Id) == true));
-        }
-        var added = current.ExceptBy(_missiles.Select(m => m.Id), m => m.Id).ToArray();
-        if (added.Length > 0)
-        {
-            Update(new DestinyCommand.AddBalls(Ballpark.AddMissiles(added, Stamp)));
-        }
-        foreach (var missile in current)
-        {
-            var previous = _missiles.FirstOrDefault(m => m.Id == missile.Id);
-            if (previous is not null && previous.Flight.ElapsedSeconds != missile.Flight.ElapsedSeconds)
-            {
-                var position = missile.Flight.Position;
-                var velocity = missile.Flight.Velocity;
-                Update(new DestinyCommand.SetBallPosition(missile.Id, position.X, position.Y, position.Z));
-                Update(new DestinyCommand.SetBallVelocity(missile.Id, velocity.X, velocity.Y, velocity.Z));
-            }
-            if (previous is not null && missile.Flight.Orphaned && !previous.Flight.Orphaned)
-            {
-                var point = missile.Flight.Goto;
-                Update(new DestinyCommand.GotoPoint(missile.Id, point.X, point.Y, point.Z));
-            }
-        }
-        _missiles = current;
-    }
-
-    private StaticSpaceObject? NavigationTarget(long id)
-    {
-        if (id == Pilot.ShipId || Pilot.Position is not { } position)
-        {
-            return null;
-        }
-        var target =
-            VisibleObjects().FirstOrDefault(o => o.Id == id)
-            ?? (
-                space
-                    .Peers(Pilot)
-                    .FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.AlignTo is null && s.DepartureGate is null)
-                    is { } peer
-                    ? new StaticSpaceObject(
-                        peer.Pilot.ShipId,
-                        peer.Pilot.ShipTypeId,
-                        peer.Pilot.ShipGroupId,
-                        peer.Pilot.ShipCategoryId,
-                        checked((int)peer.Pilot.PilotId),
-                        peer.Pilot.Position!,
-                        peer.Pilot.Flight.ShipRadius
-                    )
-                    : null
-            )
-            ?? (
-                _npcs.FirstOrDefault(n => n.Id == id) is { } npc
-                    ? new(npc.Id, npc.TypeId, npc.GroupId, npc.CategoryId, npc.CorporationId, npc.Position, npc.Radius)
-                : _wrecks.FirstOrDefault(w => w.Id == id) is { } wreck
-                    ? new(
-                        wreck.Id,
-                        wreck.TypeId,
-                        WreckDefinitions.Group,
-                        WreckDefinitions.Category,
-                        checked((int)wreck.OwnerId),
-                        wreck.Position,
-                        wreck.Radius
-                    )
-                : null
-            );
-        return target is not null && position.DistanceTo(target.Position) <= NavigationDefinitions.MaximumTargetDistance ? target : null;
-    }
-
-    private WreckContact[] ReadWrecks() =>
-        Pilot.Position is not { } position
-            ? []
-            : (wrecks?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-                .Where(w => w.SystemId == Pilot.SystemId && position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
-                .ToArray();
-
-    public void RefreshWrecks()
-    {
-        if (!InBallpark)
-        {
-            return;
-        }
-        var current = ReadWrecks();
-        foreach (var departed in _wrecks.ExceptBy(current.Select(w => w.Id), w => w.Id))
-        {
-            Update(new DestinyCommand.RemoveBall(departed.Id, false));
-        }
-        var added = current.ExceptBy(_wrecks.Select(w => w.Id), w => w.Id).ToArray();
-        if (added.Length > 0)
-        {
-            Update(new DestinyCommand.AddBalls(Ballpark.AddWrecks(added, Stamp)));
-        }
-        foreach (var wreck in current)
-        {
-            if (_wrecks.FirstOrDefault(w => w.Id == wreck.Id) is { } previous && previous != wreck)
-            {
-                Update(new DestinyCommand.OnSlimItemChange(wreck.Id, Ballpark.WreckSlim(wreck)));
-            }
-        }
-        _wrecks = current;
-    }
-
-    private NpcContact[] ReadNpcs()
-    {
-        var contacts = Pilot.Position is null ? [] : encounters?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [];
-        _transitingNpcs = contacts.Where(n => n.SystemId == Pilot.SystemId && n.Warp is not null).Select(n => n.Id).ToHashSet();
-        return contacts
-            .Where(n => n.SystemId == Pilot.SystemId && Pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange)
-            .ToArray();
-    }
-
-    public void RefreshNpcs()
-    {
-        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("contact.npcs");
-        if (!InBallpark)
-        {
-            return;
-        }
-        var current = ReadNpcs();
-        var previousById = _npcs.ToDictionary(n => n.Id);
-        foreach (var departed in _npcs.ExceptBy(current.Select(n => n.Id), n => n.Id))
-        {
-            if (departed.Activity is { } activity)
-            {
-                Update(NpcActivityWire.Effect(activity, false));
-            }
-            foreach (var effect in departed.ElectronicWarfare ?? [])
-            {
-                Update(NpcEwarWire.Effect(effect, false));
-            }
-            if (departed.Weapon is { } weapon)
-            {
-                NpcWeaponEffect(departed.Id, weapon, false);
-            }
-            if (departed.Warp is not null)
-            {
-                WarpEffect(departed.Id, false);
-            }
-            Update(new DestinyCommand.RemoveBall(departed.Id, encounters?.WasDestroyed(departed.Id) == true));
-        }
-        var added = current.ExceptBy(_npcs.Select(n => n.Id), n => n.Id).ToArray();
-        if (added.Length > 0)
-        {
-            Update(new DestinyCommand.AddBalls(Ballpark.AddNpcs(added, Stamp)));
-        }
-        foreach (var npc in current)
-        {
-            var previous = previousById.GetValueOrDefault(npc.Id);
-            bool warpChanged = previous is not null && NpcWarpChanged(previous, npc);
-            if (previous?.Activity != npc.Activity)
-            {
-                if (previous?.Activity is { } stoppedActivity)
-                {
-                    Update(NpcActivityWire.Effect(stoppedActivity, false));
-                }
-                if (npc.Activity is { } startedActivity)
-                {
-                    Update(NpcActivityWire.Effect(startedActivity, true));
-                }
-            }
-            foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(npc.ElectronicWarfare ?? []))
-            {
-                Update(NpcEwarWire.Effect(effect, false));
-            }
-            foreach (var effect in (npc.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
-            {
-                Update(NpcEwarWire.Effect(effect, true));
-            }
-            if (previous is not null && previous.MaxSpeed != npc.MaxSpeed)
-            {
-                Update(new DestinyCommand.SetMaxSpeed(npc.Id, (double)npc.MaxSpeed));
-            }
-            if (!warpChanged && previous is not null && npc.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks)
-            {
-                CorrectPosition(
-                    npc.Id,
-                    npc.Position,
-                    npc.Navigation?.Velocity ?? SpacePosition.Zero,
-                    npc.Stamp == 0 ? _simulatedStamp : npc.Stamp
-                );
-            }
-            if (!warpChanged && previous is not null && NpcCourseChanged(previous.Navigation, npc.Navigation))
-            {
-                ApplyNpcCourse(npc);
-            }
-            if (warpChanged)
-            {
-                // Native AddBalls reads partial full state even for existing IDs.
-                // Replay the timed warp directly: WarpTo would start alignment again.
-                // Landing restores position, velocity and solidity in the same update.
-                Update(new DestinyCommand.AddBalls(Ballpark.AddNpcs([npc], Stamp)));
-            }
-            if (previous?.Warp is not null && npc.Warp is null)
-            {
-                WarpEffect(npc.Id, false);
-            }
-            if ((warpChanged || previous is null) && npc.Warp is not null)
-            {
-                WarpEffect(npc.Id, true);
-            }
-            if (previous?.Weapon != npc.Weapon)
-            {
-                if (previous?.Weapon is { } stopped)
-                {
-                    NpcWeaponEffect(npc.Id, stopped, false);
-                }
-                if (npc.Weapon is { } started)
-                {
-                    NpcWeaponEffect(npc.Id, started, true);
-                }
-            }
-            if (
-                previous is not null
-                && (
-                    npc.Health.Remaining.Armor != previous.Health.Remaining.Armor
-                    || npc.Health.Remaining.Structure != previous.Health.Remaining.Structure
-                    || npc.Health.Remaining.Shield < previous.Health.Remaining.Shield
-                    || npc.RepairRevision != previous.RepairRevision
-                )
-            )
-            {
-                NotifyHealth(npc.Health);
-            }
-        }
-        _npcs = current;
-    }
-
-    private void ApplyNpcCourse(NpcContact npc)
-    {
-        int stamp = npc.Stamp == 0 ? _simulatedStamp : npc.Stamp;
-        void Send(DestinyCommand command) => Updates.Add(new(stamp, command));
-        var course = npc.Navigation;
-        if (npc.Warp is { } warp)
-        {
-            Send(new DestinyCommand.WarpTo(npc.Id, warp.Destination.X, warp.Destination.Y, warp.Destination.Z, 0, warp.WireFactor));
-        }
-        else if (course is null || course.State == NpcNavigationState.Idle)
-        {
-            Send(new DestinyCommand.Stop(npc.Id));
-        }
-        else if (course.TargetId != 0)
-        {
-            Send(
-                new DestinyCommand.Follow(
-                    course.State == NpcNavigationState.Orbiting ? NavigationMode.Orbit : NavigationMode.Follow,
-                    npc.Id,
-                    course.TargetId,
-                    course.FollowRange
-                )
-            );
-        }
-        else if (course.Destination is { } destination)
-        {
-            Send(new DestinyCommand.GotoPoint(npc.Id, destination.X, destination.Y, destination.Z));
-        }
-        Send(new DestinyCommand.SetSpeedFraction(npc.Id, course?.SpeedFraction ?? 0));
-    }
-
-    private static bool NpcWarpChanged(NpcContact previous, NpcContact current) =>
-        (previous.Warp is null) != (current.Warp is null)
-        || previous.Warp?.Destination != current.Warp?.Destination
-        || previous.Warp?.Distance != current.Warp?.Distance
-        || previous.Warp?.WireFactor != current.Warp?.WireFactor;
-
-    private static bool NpcCourseChanged(NpcNavigationContact? previous, NpcNavigationContact? current) =>
-        previous?.State != current?.State
-        || previous?.TargetId != current?.TargetId
-        || previous?.FollowRange != current?.FollowRange
-        || previous?.SpeedFraction != current?.SpeedFraction
-        || previous?.Destination != current?.Destination;
-
-    private void NpcWeaponEffect(long npcId, NpcWeaponContact weapon, bool active)
-    {
-        if (weapon.TurretTypeId <= 0)
-        {
-            return;
-        }
-        Update(
-            new DestinyCommand.TimedSpecialEffect(
-                npcId,
-                npcId,
-                weapon.TurretTypeId,
-                weapon.TargetId,
-                null,
-                "effects.Laser",
-                true,
-                active,
-                active,
-                weapon.Duration,
-                weapon.StartedAt
-            )
-        );
-    }
-
-    public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon)
-    {
-        if (_npcs.FirstOrDefault(n => n.Id == npcId)?.Weapon is { } previous)
-        {
-            NpcWeaponEffect(npcId, previous, false);
-        }
-        NpcWeaponEffect(npcId, weapon, true);
-        _npcs = _npcs.Select(n => n.Id == npcId ? n with { Weapon = weapon } : n).ToArray();
-    }
+    public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Scene.NotifyNpcWeapon(npcId, weapon);
 
     public void BeginShipLoss()
     {
@@ -533,27 +162,11 @@ internal sealed partial class FlightSession(
     public void ReplaceDestroyedShip(DockedPilot capsule)
     {
         long destroyed = Pilot.ShipId;
-        foreach (var npc in _npcs.Where(n => n.Weapon?.TargetId == destroyed))
-        {
-            NpcWeaponEffect(npc.Id, npc.Weapon!, false);
-        }
-        _npcs = _npcs.Select(n => n.Weapon?.TargetId == destroyed ? n with { Weapon = null } : n).ToArray();
+        Scene.StopNpcWeapons(destroyed);
         Pilot = capsule;
-        _baseFlight = capsule.Flight;
-        _propulsion = null;
-        modules = [];
+        ModuleEffects.AdoptHull(capsule.Flight);
         _navigation.AdoptHull();
-        _missiles = [];
-        _mining = [];
-        _weapons = [];
-        _shieldBoosts = [];
-        _localRepairs = [];
-        _hardeners = [];
-        _support = [];
-        _tackleEffects = [];
-        _incomingTackle = [];
-        _warpBlocked = false;
-        _mwdBlocked = false;
+        Scene.ForgetMissiles();
         _destroying = false;
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
@@ -563,36 +176,11 @@ internal sealed partial class FlightSession(
         space.Publish(contact);
     }
 
-    public void NotifyHealth(ShipHealth current)
-    {
-        _npcs = _npcs.Select(n => n.Id == current.ShipId ? n with { Health = current } : n).ToArray();
-        Update(new DestinyCommand.OnDamageStateChange(current.ShipId, current.DamageState()));
-    }
+    public void NotifyHealth(ShipHealth current) => Scene.NotifyHealth(current);
 
-    public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids)
-    {
-        objects = objects.Where(o => o.CategoryId != AsteroidDefinitions.Category).Concat(asteroids).ToArray();
-        RefreshVisibleAsteroids();
-    }
+    public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids) => Scene.RefreshAsteroids(SceneContext, asteroids);
 
-    private void RefreshVisibleAsteroids()
-    {
-        if (!InBallpark)
-        {
-            return;
-        }
-        var current = VisibleObjects().Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
-        {
-            Update(new DestinyCommand.RemoveBall(departed.Id, false));
-        }
-        var added = current.ExceptBy(_visibleAsteroids.Select(o => o.Id), o => o.Id).ToArray();
-        if (added.Length > 0)
-        {
-            Update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, Stamp)));
-        }
-        _visibleAsteroids = current;
-    }
+    private void RefreshVisibleAsteroids() => Scene.RefreshVisibleAsteroids(SceneContext);
 
     private ShipMotion Motion() =>
         new(
@@ -602,7 +190,7 @@ internal sealed partial class FlightSession(
             Pilot.Position!,
             Pilot.Flight,
             _navigation,
-            _jump is null && !_destroying,
+            _travel.Gate is null && !_destroying,
             _navigation.FollowTarget is { } target ? NavigationTarget(target.Id) : null
         );
 
@@ -622,7 +210,7 @@ internal sealed partial class FlightSession(
             int now = Stamp;
             if (Pilot.Position is not null && world is ISystemMotionStore motionStore)
             {
-                var history = space.Advance(Motion(), now, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), motionStore, objects);
+                var history = space.Advance(Motion(), now, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), motionStore, Scene.Objects);
                 bool recover = history.Count > 0 && history[0].Ship.Stamp > _simulatedStamp + 1;
                 if (recover)
                 {
@@ -665,12 +253,8 @@ internal sealed partial class FlightSession(
         }
     }
 
-    private void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp)
-    {
-        Updates.Add(new(stamp, new DestinyCommand.SetBallPosition(id, position.X, position.Y, position.Z)));
-        // This restores a missed sample. Ordinary prediction avoids setters that reset native interpolation and facing.
-        Updates.Add(new(stamp, new DestinyCommand.SetBallVelocity(id, velocity.X, velocity.Y, velocity.Z)));
-    }
+    private void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
+        Scene.CorrectPosition(id, position, velocity, stamp);
 
     public void RefreshTackle(bool force = false)
     {
@@ -678,19 +262,20 @@ internal sealed partial class FlightSession(
         {
             return;
         }
-        tackle.Sweep(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        var incoming = tackle.Incoming(Pilot.ShipId).ToArray();
-        if (!force && _incomingTackle.SequenceEqual(incoming) && _navigation.WarpDestination is null)
+        if (
+            !ModuleEffects.RefreshTackle(
+                tackle,
+                Pilot,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                force,
+                _navigation.WarpDestination is not null
+            )
+        )
         {
             return;
         }
-        _incomingTackle = incoming;
-        var attributes = tackle.ShipAttributes(Pilot.PilotId);
-        _warpBlocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
-        _mwdBlocked = incoming.Any(t => t.Module.MwdBlock > 0);
-        _baseFlight = _baseFlight with { MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity) };
         ApplyFlightProperties();
-        if (_warpBlocked && _navigation.WarpDestination is not null)
+        if (ModuleEffects.WarpBlocked && _navigation.WarpDestination is not null)
         {
             _navigation.CancelAlignment();
             _navigation.Stop();
@@ -707,7 +292,7 @@ internal sealed partial class FlightSession(
             Pilot.Flight,
             position,
             NavigationTarget,
-            objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray()
+            Scene.Objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray()
         );
         Pilot = Pilot with { Position = tick.Position };
         ApplyChanges(tick.Changes);
@@ -756,19 +341,19 @@ internal sealed partial class FlightSession(
             _navigation.AlignStamp,
             (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
             _navigation.FollowTarget?.Id ?? 0,
-            _jump?.SourceId,
-            Stamp - _arrivalStamp < ArrivalDurationTicks,
-            modules,
-            _mining,
+            _travel.Gate?.Destination.SourceId,
+            _travel.IsArriving(Stamp),
+            ModuleEffects.Modules,
+            ModuleEffects.Mining,
             health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
-            _weapons,
-            _shieldBoosts,
-            _propulsion,
+            ModuleEffects.Weapons,
+            ModuleEffects.ShieldBoosts,
+            ModuleEffects.Propulsion,
             _navigation.FollowMode,
-            _localRepairs,
-            _hardeners,
-            _support,
-            _tackleEffects,
+            ModuleEffects.LocalRepairs,
+            ModuleEffects.Hardeners,
+            ModuleEffects.Support,
+            ModuleEffects.TackleEffects,
             _simulatedStamp,
             DirtTime: DirtTimestamp()
         );
@@ -776,30 +361,7 @@ internal sealed partial class FlightSession(
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
         Checkpoint();
-        _baseFlight = _baseFlight with
-        {
-            MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-            WarpSpeed =
-                attributes.GetValueOrDefault(DogmaAttributeId.BaseWarpSpeed)
-                * attributes.GetValueOrDefault(DogmaAttributeId.WarpSpeedMultiplier),
-            Mass = attributes.GetValueOrDefault(DogmaAttributeId.Mass),
-            Agility = (float)attributes.GetValueOrDefault(DogmaAttributeId.Agility),
-        };
-        Pilot = Pilot with
-        {
-            Ship = Pilot.Ship with
-            {
-                CargoCapacity = attributes.GetValueOrDefault(DogmaAttributeId.CargoCapacity),
-                Hull = new(
-                    attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
-                    attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity),
-                    attributes.GetValueOrDefault(DogmaAttributeId.CapacitorRechargeTime),
-                    attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
-                    attributes.GetValueOrDefault(DogmaAttributeId.ArmorHitPoints),
-                    attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
-                ),
-            },
-        };
+        Pilot = ModuleEffects.RefreshFitting(Pilot, attributes);
         ApplyFlightProperties();
     }
 
@@ -810,34 +372,22 @@ internal sealed partial class FlightSession(
             throw new InvalidDataException("Invalid ship navigation speed.");
         }
         Checkpoint();
-        _baseFlight = _baseFlight with { MaxSpeed = (float)speed };
+        ModuleEffects.SetBaseSpeed(speed);
         ApplyFlightProperties();
     }
 
     public void SetPropulsionEffect(PropulsionContact? effect)
     {
         Checkpoint();
-        var previous = _propulsion;
-        _propulsion = effect;
+        var change = ModuleEffects.SetPropulsion(effect);
         ApplyFlightProperties();
-        if (previous is not null)
-        {
-            Effects.PropulsionEffect(Pilot.ShipId, previous, false);
-        }
-        if (effect is not null)
-        {
-            Effects.PropulsionEffect(Pilot.ShipId, effect, true);
-        }
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.ReplayPropulsion(Pilot.ShipId, change);
+        PublishContact();
     }
 
     private void ApplyFlightProperties()
     {
-        var running = _mwdBlocked && _propulsion?.Module.Effect == DogmaEffect.Microwarpdrive ? null : _propulsion;
-        var properties = running?.Module.Apply(_baseFlight) ?? _baseFlight;
+        var properties = ModuleEffects.Flight;
         if (Pilot.Flight == properties)
         {
             return;
@@ -857,105 +407,53 @@ internal sealed partial class FlightSession(
 
     public void SetMiningEffect(MiningContact effect, bool active)
     {
-        _mining = _mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
-        Effects.MiningEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetMiningEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void SetTackleEffect(TackleContact effect, bool active)
     {
-        _tackleEffects = _tackleEffects
-            .Where(t => t.Module.ItemId != effect.Module.ItemId)
-            .Concat(active ? [effect] : Array.Empty<TackleContact>())
-            .ToArray();
-        Effects.TackleEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetTackleEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
-    public void RefreshModules(IReadOnlyList<InventoryItem> items) =>
-        modules = items
-            .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
-            .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId))
-            .ToArray();
+    public void RefreshModules(IReadOnlyList<InventoryItem> items) => ModuleEffects.RefreshModules(items);
 
     public void SetWeaponEffect(WeaponContact effect, bool active)
     {
-        _weapons = _weapons.Where(w => w.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<WeaponContact>()).ToArray();
-        Effects.WeaponEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetWeaponEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void RepeatWeaponEffect(WeaponContact previous, WeaponContact current)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("weapon.publish");
-        _weapons = _weapons.Where(w => w.ModuleId != current.ModuleId).Append(current).ToArray();
-        Effects.WeaponEffect(Pilot.ShipId, previous, false);
-        Effects.WeaponEffect(Pilot.ShipId, current, true);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.RepeatWeaponEffect(Pilot.ShipId, previous, current);
+        PublishContact();
     }
 
     public void SetLocalRepairEffect(LocalRepairContact effect, bool active)
     {
-        _localRepairs = _localRepairs
-            .Where(r => r.ModuleId != effect.ModuleId)
-            .Concat(active ? [effect] : Array.Empty<LocalRepairContact>())
-            .ToArray();
-        Effects.LocalRepairEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetLocalRepairEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void SetHardenerEffect(HardenerContact effect, bool active)
     {
-        _hardeners = _hardeners
-            .Where(h => h.Module.ItemId != effect.Module.ItemId)
-            .Concat(active ? [effect] : Array.Empty<HardenerContact>())
-            .ToArray();
-        Effects.HardenerEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetHardenerEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void SetSupportEffect(SupportContact effect, bool active)
     {
-        _support = _support
-            .Where(h => h.Module.ItemId != effect.Module.ItemId)
-            .Concat(active ? [effect] : Array.Empty<SupportContact>())
-            .ToArray();
-        Effects.SupportEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetSupportEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void SetShieldBoostEffect(ShieldBoostContact effect, bool active)
     {
-        _shieldBoosts = _shieldBoosts
-            .Where(b => b.ModuleId != effect.ModuleId)
-            .Concat(active ? [effect] : Array.Empty<ShieldBoostContact>())
-            .ToArray();
-        Effects.ShieldBoostEffect(Pilot.ShipId, effect, active);
-        if (InBallpark && !_destroying)
-        {
-            space.Publish(CreateContact());
-        }
+        ModuleEffects.SetShieldBoostEffect(Pilot.ShipId, effect, active);
+        PublishContact();
     }
 
     public void RefreshPeers()
@@ -974,97 +472,7 @@ internal sealed partial class FlightSession(
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
-        var current = space.Peers(Pilot);
-        if (
-            current.Any(ship =>
-                ship.Warp is not null
-                && Array.Exists(
-                    _peers,
-                    old => old.Pilot.ShipId == ship.Pilot.ShipId && old.Warp != ship.Warp && old.AlignTo != ship.Warp.Destination
-                )
-            )
-        )
-        {
-            Snapshot(current, contact);
-            return;
-        }
-        foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
-        {
-            Update(new DestinyCommand.RemoveBall(departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true));
-            _peerOrderSequences.Remove(departed.Pilot.ShipId);
-        }
-        // Native Destiny predicts the common movement and collisions between stamped course changes.
-        // Absolute position setters collapse its interpolation interval and are reserved for recovery.
-        foreach (var ship in current)
-        {
-            var previous = Array.Find(_peers, peer => peer.Pilot.ShipId == ship.Pilot.ShipId);
-            if (previous is null)
-            {
-                // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
-                Update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, Stamp)));
-                _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
-                Effects.Replay(ship, null);
-                if (ship.Arriving)
-                {
-                    ArrivalEffect(ship.Pilot.ShipId);
-                }
-                // The client plays the arrival flash when it loads a ship already in warp.
-                continue;
-            }
-            Effects.Replay(ship, previous);
-            if (ship.DirtTime != previous.DirtTime || ship.Pilot.CorpId != previous.Pilot.CorpId)
-            {
-                Update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));
-            }
-            if (
-                ship.Health is { } currentHealth
-                && previous.Health is { } previousHealth
-                && (
-                    currentHealth.Remaining.Armor != previousHealth.Remaining.Armor
-                    || currentHealth.Remaining.Structure != previousHealth.Remaining.Structure
-                    || currentHealth.Remaining.Shield != previousHealth.Remaining.Shield
-                )
-            )
-            {
-                NotifyHealth(currentHealth);
-            }
-            if (ship.DepartureGate is long departure && previous.DepartureGate != departure)
-            {
-                DepartureEffect(ship.Pilot.ShipId, departure, objects.Single(o => o.Id == departure).DestinationSystemId!.Value);
-            }
-            long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
-            bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
-            if (missing)
-            {
-                CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
-                ApplyCourse(ship);
-            }
-            else
-            {
-                foreach (var order in space.Orders(ship.Pilot.ShipId, after))
-                {
-                    Updates.Add(order.Update);
-                }
-            }
-            _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
-            if (ship.Warp is not null)
-            {
-                if (ship.Warp != previous.Warp)
-                {
-                    WarpEffect(ship.Pilot.ShipId, true);
-                }
-                continue;
-            }
-            if (ship.AlignTo is not null)
-            {
-                continue;
-            }
-            if (previous.Warp is not null)
-            {
-                WarpEffect(ship.Pilot.ShipId, false);
-            }
-        }
-        _peers = current;
+        Scene.RefreshPeers(SceneContext, contact);
     }
 
     public IEnumerable<PilotContact> VisiblePilots() => space.Peers(Pilot).Select(ship => ship.Pilot).Prepend(PilotContact.From(Pilot));
@@ -1081,35 +489,14 @@ internal sealed partial class FlightSession(
         {
             tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         }
-        if (tackle is not null && _incomingTackle.Length > 0)
-        {
-            _baseFlight = _baseFlight with
-            {
-                MaxSpeed = (float)tackle.ShipAttributes(Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-            };
-        }
+        ModuleEffects.ReconcileReleasedTackle(tackle, Pilot.PilotId);
         if (!keepBallpark)
         {
             InBallpark = false;
-            _peers = [];
-            _peerOrderSequences.Clear();
-            _visibleAsteroids = [];
-            _missiles = [];
-            _npcs = [];
-            _wrecks = [];
+            Scene.LeaveSpace();
         }
-        _propulsion = null;
-        Pilot = Pilot with { Flight = _baseFlight };
-        _mining = [];
-        _weapons = [];
-        _shieldBoosts = [];
-        _localRepairs = [];
-        _hardeners = [];
-        _support = [];
-        _tackleEffects = [];
-        _incomingTackle = [];
-        _warpBlocked = false;
-        _mwdBlocked = false;
+        ModuleEffects.ClearEffects();
+        Pilot = Pilot with { Flight = ModuleEffects.BaseFlight };
         space.Leave(Pilot.ShipId);
     }
 
@@ -1122,7 +509,7 @@ internal sealed partial class FlightSession(
         }
         finally
         {
-            _translocation = null;
+            _travel.CancelTranslocation();
             LeaveSpace();
         }
     }
@@ -1148,15 +535,11 @@ internal sealed partial class FlightSession(
                 Updates.Clear();
             }
             Pilot = destination;
-            objects = destinationObjects;
-            _baseFlight = destination.Flight;
+            Scene.ReplaceObjects(destinationObjects);
+            ModuleEffects.SetBaseFlight(destination.Flight);
             _navigation = new();
             _simulatedStamp = Stamp;
-            _jump = null;
-            _translocation = null;
-            _translocationArrival = false;
-            _awaitingArrival = false;
-            _arrivalStamp = null;
+            _travel.Reset();
             if (wasWarping)
             {
                 WarpEffect(Pilot.ShipId, false);
@@ -1177,7 +560,7 @@ internal sealed partial class FlightSession(
                 Update(new DestinyCommand.Stop(Pilot.ShipId));
                 // Michelle retains this park and skips a SetState after another command at the same tick.
                 // Diff the contacts the viewer actually has against the destination grid.
-                _arrivalStamp = _simulatedStamp;
+                _travel.ArrivedAt(_simulatedStamp);
                 RefreshVisibleAsteroids();
                 RefreshWrecks();
                 RefreshMissiles();
@@ -1197,11 +580,8 @@ internal sealed partial class FlightSession(
         {
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
             _navigation = new();
-            _jump = null;
-            _arrivalStamp = null;
-            _awaitingArrival = false;
             _simulatedStamp = Stamp;
-            _translocation = new(travel, target, destinationObjects, Stamp + TranslocationDurationTicks);
+            _travel.BeginTranslocation(travel, target, destinationObjects, Stamp);
             if (wasWarping)
             {
                 WarpEffect(Pilot.ShipId, false);
@@ -1218,21 +598,20 @@ internal sealed partial class FlightSession(
         IReadOnlyList<StaticSpaceObject> destinationObjects
     )
     {
-        _translocation = new(travel, target, destinationObjects, int.MaxValue, AwaitingSourceState: true);
+        _travel.QueueTranslocation(travel, target, destinationObjects);
     }
 
     public PilotTranslocation? CompleteTranslocation()
     {
         lock (space.MotionLock)
         {
-            if (_translocation is not { AwaitingSourceState: false } transit || Stamp < transit.TransferStamp)
+            if (_travel.TranslocationDue(Stamp) is not { } transit)
             {
                 return null;
             }
             var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target.Id);
             Relocate(moved.Pilot, transit.Objects);
-            _awaitingArrival = true;
-            _translocationArrival = true;
+            _travel.CompleteTranslocation();
             return moved;
         }
     }
@@ -1257,7 +636,7 @@ internal sealed partial class FlightSession(
         if (!InBallpark && Pilot.Position is { } position)
         {
             // A legacy save or a disconnect during warp can leave the ship inside a rigid body.
-            foreach (var body in objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
+            foreach (var body in Scene.Objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
             {
                 var radial = position - body.Position;
                 double surface = body.Radius + Pilot.Flight.ShipRadius;
@@ -1270,29 +649,24 @@ internal sealed partial class FlightSession(
         }
         bool entering = !InBallpark;
         InBallpark = true;
-        bool arriving = entering && _awaitingArrival;
-        if (arriving)
-        {
-            _awaitingArrival = false;
-            _arrivalStamp = Stamp;
-        }
+        bool arriving = _travel.BeginArrival(entering, Stamp);
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
         Snapshot(space.Peers(Pilot), contact);
         if (arriving)
         {
-            if (_translocationArrival)
+            if (_travel.TranslocationArrival)
             {
                 Update(new DestinyCommand.SpecialEffect(Pilot.ShipId, null, null, null, null, "effects.JumpDriveIn", false, true, false));
-                _translocationArrival = false;
+                _travel.ArrivalEffectSent();
             }
             else
             {
                 ArrivalEffect(Pilot.ShipId);
             }
         }
-        if (_translocation is { AwaitingSourceState: true } departure)
+        if (_travel.Translocation is { AwaitingSourceState: true } departure)
         {
             // A station-origin TR first loads a real source-space ego. Only then
             // can the client's native jump camera take over from its undock camera.
@@ -1300,92 +674,11 @@ internal sealed partial class FlightSession(
         }
     }
 
-    private void Snapshot(ShipContact[] peers, ShipContact own)
-    {
-        _peers = peers;
-        _peerOrderSequences.Clear();
-        foreach (var peer in peers)
-        {
-            _peerOrderSequences[peer.Pilot.ShipId] = space.OrderSequence(peer.Pilot.ShipId);
-        }
-        int stamp = Stamp;
-        var visible = VisibleObjects();
-        _npcs = ReadNpcs();
-        _wrecks = ReadWrecks();
-        _missiles = ReadMissiles();
-        _drones = ReadDrones();
-        _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
-        Updates.Add(
-            new(stamp, new DestinyCommand.SetState(Ballpark.Snapshot(own, stamp, visible, peers, _npcs, _wrecks, _missiles, _drones)))
-        );
-        foreach (var npc in _npcs.Where(n => n.Weapon is not null))
-        {
-            NpcWeaponEffect(npc.Id, npc.Weapon!, true);
-        }
-        foreach (var effect in _npcs.SelectMany(n => n.ElectronicWarfare ?? []))
-        {
-            Update(NpcEwarWire.Effect(effect, true));
-        }
-        foreach (var activity in _npcs.Select(n => n.Activity).OfType<Eden.Gameplay.Mining.NpcActivityContact>())
-        {
-            Update(NpcActivityWire.Effect(activity, true));
-        }
-        foreach (var npc in _npcs.Where(n => n.Warp is not null))
-        {
-            WarpEffect(npc.Id, true);
-        }
-        Effects.Replay(own, null);
-        foreach (var peer in peers)
-        {
-            Effects.Replay(peer, null);
-        }
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
-        {
-            WarpEffect(Pilot.ShipId, true);
-        }
-    }
+    private void Snapshot(ShipContact[] peers, ShipContact own) => Scene.Snapshot(SceneContext, peers, own);
 
-    private void ApplyCourse(ShipContact ship)
-    {
-        void Send(DestinyCommand command)
-        {
-            Updates.Add(new(ship.Stamp, command));
-            if (ship.Pilot.ShipId == Pilot.ShipId)
-            {
-                space.RecordOrder(Pilot.ShipId, new(ship.Stamp, command));
-            }
-        }
-        long id = ship.Pilot.ShipId;
-        if (ship.AlignTo is { } end)
-        {
-            Send(new DestinyCommand.SetSpeedFraction(id, 1d));
-            Send(new DestinyCommand.SetBallVelocity(id, ship.Velocity.X, ship.Velocity.Y, ship.Velocity.Z));
-            Send(new DestinyCommand.WarpTo(id, end.X, end.Y, end.Z, 0d, ship.WarpFactor));
-            return;
-        }
-        if (ship.Heading is null)
-        {
-            Send(new DestinyCommand.Stop(id));
-        }
-        else
-        {
-            if (ship.FollowRange is double range)
-            {
-                Send(new DestinyCommand.Follow(ship.FollowMode, id, ship.FollowTargetId, range));
-            }
-            else
-            {
-                Send(new DestinyCommand.GotoDirection(id, ship.Heading.X, ship.Heading.Y, ship.Heading.Z));
-            }
-            Send(new DestinyCommand.SetSpeedFraction(id, ship.SpeedFraction));
-        }
-    }
+    private void ApplyCourse(ShipContact ship) => Scene.ApplyCourse(SceneContext, ship);
 
-    private void WarpEffect(long id, bool start)
-    {
-        // The simulation command moves the ball. This separate toggle drives the pilot's tunnel and peer flash.
-        Update(new DestinyCommand.SpecialEffect(id, null, null, null, null, "effects.Warping", false, start, true));
-    }
+    private void WarpEffect(long id, bool start) => Effects.WarpEffect(id, start);
 
     private void SetAtRest() => _navigation.SetAtRest();
 
@@ -1396,68 +689,38 @@ internal sealed partial class FlightSession(
         space.RecordOrder(Pilot.ShipId, update);
     }
 
-    private PilotCallResult.Failure? TravelFailure(CrimewatchTravel action, int? destination = null)
-    {
-        try
-        {
-            crimewatch?.CheckTravel(Pilot.PilotId, action, destination);
-            return null;
-        }
-        catch (InvalidDataException error)
-        {
-            return new(error.Message);
-        }
-    }
+    private PilotCallResult.Failure? TravelFailure(CrimewatchTravel action, int? destination = null) =>
+        FlightTravel.CheckPermission(crimewatch, Pilot.PilotId, action, destination);
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems)
     {
-        long sourceId = request.SourceId;
-        long exitId = request.ExitId;
-        long shipId = request.ShipId;
         Checkpoint();
-        if (
-            !InBallpark
-            || Translocating
-            || Pilot.Position is not { } position
-            || _jump is not null
-            || _navigation.Warp is not null
-            || _navigation.WarpDestination is not null
-            || shipId != Pilot.ShipId
-            || objects.FirstOrDefault(o => o.Id == sourceId) is not { DestinationSystemId: int systemId } source
-            || source.DestinationGateId != exitId
-            || position.DistanceTo(source.Position) > source.Radius + Pilot.Flight.ShipRadius + 2500
-        )
-        {
-            return PilotCallResult.Unsupported;
-        }
-        if (TravelFailure(CrimewatchTravel.Jump, systemId) is { } blocked)
-        {
-            return blocked;
-        }
-        var destination = systems.Load(systemId);
-        var exit = destination.FirstOrDefault(o =>
-            o.Id == exitId && o.DestinationGateId == source.Id && o.DestinationSystemId == Pilot.SystemId
+        var departure = _travel.PrepareGate(
+            new(Pilot, InBallpark, InWarp, _navigation.WarpDestination is not null),
+            request,
+            Scene.Objects,
+            systems,
+            crimewatch
         );
-        if (exit is null)
+        if (departure.Destination is not { } transit)
         {
-            return PilotCallResult.Unsupported;
+            return departure.Result;
         }
-        // Keep the source balls alive while the jump camera turns, fades the UI, and enters the tunnel.
-        _arrivalStamp = null;
-        _jump = new(source.Id, exit, systems.GetSystem(systemId), destination, Stamp + JumpDurationTicks);
+        // Keep the source scene alive for the camera handoff before transferring the pilot.
+        _travel.BeginGate(transit, Stamp);
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
         SetAtRest();
         Update(new DestinyCommand.Stop(Pilot.ShipId));
-        DepartureEffect(Pilot.ShipId, source.Id, systemId);
+        DepartureEffect(Pilot.ShipId, transit.SourceId, transit.System.Id);
         space.Publish(CreateContact());
         return PilotCallResult.None;
     }
 
     public bool CompleteJump()
     {
-        if (_jump is not { } jump || Stamp < jump.TransferStamp)
+        if (_travel.GateDue(Stamp) is not { } jump)
         {
             return false;
         }
@@ -1465,20 +728,18 @@ internal sealed partial class FlightSession(
         var position = jump.Exit.Position + new SpacePosition(lane * (jump.Exit.Radius + Pilot.Flight.ShipRadius + 12_000), 0, 0);
         world.SetPosition(Pilot.ShipId, position, jump.System.Id);
         LeaveSpace();
-        objects = jump.Objects;
+        Scene.ReplaceObjects(jump.Objects);
         Pilot = Pilot with { Position = position, CurrentSystem = jump.System };
-        _jump = null;
-        _awaitingArrival = true;
+        _travel.CompleteGate();
         return true;
     }
 
     // SubwayService reads graphicInfo[0] to preload the skybox and attach the destination camera.
     private void DepartureEffect(long shipId, long gateId, int systemId) =>
-        Update(new DestinyCommand.JumpOut(shipId, gateId, systemId, JumpDurationTicks * 1000));
+        Effects.DepartureEffect(shipId, gateId, systemId, JumpDurationTicks * 1000);
 
     // SubwayService completes the gate transition. JumpIn supplies the ship flash.
-    private void ArrivalEffect(long shipId) =>
-        Update(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));
+    private void ArrivalEffect(long shipId) => Effects.ArrivalEffect(shipId);
 
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null)
     {
@@ -1487,11 +748,11 @@ internal sealed partial class FlightSession(
             return blocked;
         }
         RefreshTackle(true);
-        if (_warpBlocked)
+        if (ModuleEffects.WarpBlocked)
         {
             return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
         }
-        var body = objects.FirstOrDefault(item => item.Id == target);
+        var body = Scene.Objects.FirstOrDefault(item => item.Id == target);
         if (body is null && coordinates is null)
         {
             return PilotCallResult.Unsupported;
@@ -1563,17 +824,17 @@ internal sealed partial class FlightSession(
             WarpEffect(Pilot.ShipId, false);
         }
         if (
-            (_jump is not null || _navigation.Warp is not null || _navigation.WarpDestination is not null)
+            (_travel.Gate is not null || _navigation.Warp is not null || _navigation.WarpDestination is not null)
             && command is not FlightCommand.RefreshState
         )
         {
             // The native docking navigator retries its warp order on a timer.
             // Acknowledge the same destination without restarting the active course.
-            if (_jump is null && command is FlightCommand.WarpTo retry)
+            if (_travel.Gate is null && command is FlightCommand.WarpTo retry)
             {
                 return _navigation.WarpOrder == (retry.TargetId, retry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
             }
-            if (_jump is null && command is FlightCommand.WarpToPoint pointRetry)
+            if (_travel.Gate is null && command is FlightCommand.WarpToPoint pointRetry)
             {
                 return _navigation.WarpOrder == (pointRetry.OrderId, pointRetry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
             }
@@ -1637,7 +898,8 @@ internal sealed partial class FlightSession(
             case FlightCommand.Dock(var station, var ship)
                 when ship == Pilot.ShipId
                     && station is > 0 and <= int.MaxValue
-                    && objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station) is { } destination:
+                    && Scene.Objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station)
+                        is { } destination:
                 if (TravelFailure(CrimewatchTravel.Dock) is { } denied)
                 {
                     return denied;

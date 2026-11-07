@@ -6,42 +6,43 @@ using Eden.Protocol.Drones;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed partial class FlightSession
+internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IPilotDrones? drones, Action<DestinyCommand> update)
 {
-    private DroneContact[] _drones = [];
-    internal IReadOnlyList<DroneContact> VisibleDrones => _drones;
+    internal DroneContact[] Contacts { get; private set; } = [];
 
-    private DroneContact[] ReadDrones() =>
-        Pilot.Position is not { } position
+    internal void Capture(FlightSceneContext context) => Contacts = ReadDrones(context);
+
+    private DroneContact[] ReadDrones(FlightSceneContext context) =>
+        context.Pilot.Position is not { } position
             ? []
-            : (drones?.List(Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
+            : (drones?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 .Where(d => position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
                 .ToArray();
 
-    public void RefreshDrones()
+    internal void RefreshDrones(FlightSceneContext context)
     {
-        if (!InBallpark)
+        if (!context.InBallpark)
         {
             return;
         }
-        var current = ReadDrones();
-        foreach (var departed in _drones.ExceptBy(current.Select(d => d.Id), d => d.Id))
+        var current = ReadDrones(context);
+        foreach (var departed in Contacts.ExceptBy(current.Select(d => d.Id), d => d.Id))
         {
-            Update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
-            Update(new DestinyCommand.RemoveBall(departed.Id, drones?.WasDestroyed(departed.Id) == true));
+            update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
+            update(new DestinyCommand.RemoveBall(departed.Id, drones?.WasDestroyed(departed.Id) == true));
         }
-        var added = current.ExceptBy(_drones.Select(d => d.Id), d => d.Id).ToArray();
+        var added = current.ExceptBy(Contacts.Select(d => d.Id), d => d.Id).ToArray();
         if (added.Length > 0)
         {
-            Update(new DestinyCommand.AddBalls(Ballpark.AddDrones(added, Stamp)));
+            update(new DestinyCommand.AddBalls(Ballpark.AddDrones(added, space.Stamp(clock))));
         }
         foreach (var drone in current)
         {
-            var old = _drones.FirstOrDefault(d => d.Id == drone.Id);
+            var old = Contacts.FirstOrDefault(d => d.Id == drone.Id);
             if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
             {
-                Update(new DestinyCommand.DroneStateChanged(new(drone)));
-                Update(new DestinyCommand.OnSlimItemChange(drone.Id, new DroneSlimItem(drone)));
+                update(new DestinyCommand.DroneStateChanged(new(drone)));
+                update(new DestinyCommand.OnSlimItemChange(drone.Id, new DroneSlimItem(drone)));
             }
             if (
                 old is null
@@ -53,13 +54,13 @@ internal sealed partial class FlightSession
                 || old.SpeedLimit != drone.SpeedLimit
             )
             {
-                Update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
-                Update(new DestinyCommand.SetBallVelocity(drone.Id, drone.Velocity.X, drone.Velocity.Y, drone.Velocity.Z));
+                update(new DestinyCommand.SetBallPosition(drone.Id, drone.Position.X, drone.Position.Y, drone.Position.Z));
+                update(new DestinyCommand.SetBallVelocity(drone.Id, drone.Velocity.X, drone.Velocity.Y, drone.Velocity.Z));
                 if (drone.TargetId != 0 && drone.ShipId != 0)
                 {
-                    Update(new DestinyCommand.SetMaxSpeed(drone.Id, drone.SpeedLimit));
-                    Update(new DestinyCommand.SetSpeedFraction(drone.Id, 1));
-                    Update(
+                    update(new DestinyCommand.SetMaxSpeed(drone.Id, drone.SpeedLimit));
+                    update(new DestinyCommand.SetSpeedFraction(drone.Id, 1));
+                    update(
                         new DestinyCommand.Follow(
                             drone.Orbiting ? NavigationMode.Orbit : NavigationMode.Follow,
                             drone.Id,
@@ -70,16 +71,16 @@ internal sealed partial class FlightSession
                 }
                 else
                 {
-                    Update(new DestinyCommand.Stop(drone.Id));
+                    update(new DestinyCommand.Stop(drone.Id));
                 }
             }
             if (old is not null && old.Health != drone.Health)
             {
-                Update(new DestinyCommand.OnDamageStateChange(drone.Id, drone.Health.DamageState()));
+                update(new DestinyCommand.OnDamageStateChange(drone.Id, drone.Health.DamageState()));
             }
             if (drone.ShotAt != 0 && old?.ShotAt != drone.ShotAt)
             {
-                Update(
+                update(
                     new DestinyCommand.TimedSpecialEffect(
                         drone.Id,
                         drone.Id,
@@ -96,6 +97,6 @@ internal sealed partial class FlightSession
                 );
             }
         }
-        _drones = current;
+        Contacts = current;
     }
 }

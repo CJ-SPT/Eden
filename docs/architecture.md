@@ -6,6 +6,7 @@
 
 - [Projects and conventions](#projects-and-conventions)
 - [Architecture](#architecture)
+- [Flight coordination](#flight-coordination)
 - [Session performance diagnostics](#session-performance-diagnostics)
 - [Resident world and background saves](#resident-world-and-background-saves)
 
@@ -41,6 +42,21 @@ Use the root EditorConfig and shared build properties for new projects. Follow [
 Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.World implements catalog and SQLite operations. Eden.Server composes the host and both adapters. Gameplay references neither adapter assembly. Combat health, fitting and module modifiers, targeting, mining yield, propulsion, skill planning, character rules and feature persistence contracts use this boundary. Client effect names and notification construction stay in Protocol. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by World.
 
 Manufacturing illustrates the persistence boundary. The World store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. World then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.
+
+### Flight coordination
+
+Flight code lives in `Protocol/Flight`. The connection owns one navigation state and one ordered outbound queue. Components receive typed context and emit commands through that existing queue; they do not create independent sessions or timers.
+
+| Owner | Responsibility |
+| --- | --- |
+| [FlightSession](../src/Eden.Protocol/Flight/FlightSession.cs) | Current pilot, navigation, lifecycle and persistence coordination, ordered outbound updates. |
+| [FlightScene](../src/Eden.Protocol/Flight/FlightScene.cs) | Visible objects, target lookup, contact reconciliation, snapshots and observer course recovery. |
+| [FlightNpcScene](../src/Eden.Protocol/Flight/FlightNpcScene.cs), [FlightDroneScene](../src/Eden.Protocol/Flight/FlightDroneScene.cs) | NPC and drone contact caches and their scene updates. |
+| [FlightTravel](../src/Eden.Protocol/Flight/FlightTravel.cs) | Gate validation, pending gate/translocation state, deadlines and arrival decisions. |
+| [FlightModuleEffects](../src/Eden.Protocol/Flight/FlightModuleEffects.cs) | Active effects, fitting/propulsion state and replay through the existing wire adapter. |
+| [FlightEffects](../src/Eden.Protocol/Flight/FlightEffects.cs) | Stateless effect and position-correction command construction. |
+
+Lifecycle methods expose the sequence directly: persist a transfer, leave the source scene, adopt the destination, and mark arrival. Snapshot construction publishes the same pilot contact it serializes before replaying effects. Propulsion changes apply flight properties before stop/start effects. These boundaries preserve the existing timing, cleanup and notification order; movement rules remain in Gameplay. See the [flight extraction validation](protocol/architecture.md#flight-coordination-extraction-november-6-2026).
 
 ### Session performance diagnostics
 

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Combat;
@@ -11,6 +12,56 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class FlightBoundaryTests
 {
+    private sealed class SimulatedPositions : IShipPositionStore
+    {
+        public void SetPosition(long shipId, SpacePosition? position, int? systemId = null) { }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RepeatedHullAndLocationTransitionsClearEffectsBeforeTheNextSnapshot(bool replaceHull)
+    {
+        using TestWorld db = new();
+        var original = db.Store.FindPilot(1000001)! with { Position = SpacePosition.Zero };
+        TestClock clock = new();
+        using FlightSession flight = new(new SimulatedPositions(), original, clock, new SharedSpace(), []);
+        flight.Snapshot();
+
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            flight.SetMiningEffect(new(11, 1, 99, clock.Now, 1000), true);
+            flight.SetWeaponEffect(new(12, 2, 3, 99, clock.Now, 2000), true);
+            flight.SetShieldBoostEffect(new(13, 4, clock.Now, 3000), true);
+            flight.SetPropulsionEffect(new(new PropulsionModule(14, 5, 4000, 1, 1, 1, 1), clock.Now));
+            flight.Updates.Clear();
+
+            if (replaceHull)
+            {
+                long destroyed = flight.Pilot.ShipId;
+                flight.BeginShipLoss();
+                flight.ReplaceDestroyedShip(original with { ShipId = destroyed + 1 });
+                Assert.Collection(
+                    flight.Updates,
+                    update => Assert.IsType<DestinyCommand.AddBalls>(update.Command),
+                    update => Assert.Equal(new DestinyCommand.RemoveBall(destroyed, true), update.Command)
+                );
+            }
+            else
+            {
+                flight.Relocate(original with { Position = new((cycle + 1) * 10_000, 0, 0) }, []);
+            }
+
+            flight.Updates.Clear();
+            clock.Seconds++;
+            flight.Snapshot();
+            var state = Assert.IsType<DestinyCommand.SetState>(Assert.Single(flight.Updates).Command);
+            Assert.Equal(flight.Pilot.ShipId, state.Snapshot.Ego);
+            Assert.Equal(original.Flight, flight.Pilot.Flight);
+            Assert.False(flight.Moving);
+        }
+    }
+
     private sealed class CountingHealth(IPilotHealth inner) : IPilotHealth
     {
         public int Reads { get; private set; }
