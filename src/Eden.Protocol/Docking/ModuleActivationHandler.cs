@@ -26,7 +26,8 @@ internal sealed class ModuleActivationHandler(
     TackleHandler? tackle = null,
     PlayerEwarHandler? electronicWarfare = null,
     RemoteRepairHandler? remoteRepairs = null,
-    CapacitorWarfareHandler? capacitorWarfare = null
+    CapacitorWarfareHandler? capacitorWarfare = null,
+    RemoteAssistanceHandler? remoteAssistance = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -76,6 +77,8 @@ internal sealed class ModuleActivationHandler(
             var name when RemoteRepairWire.Effect(name) is not null => remoteRepairs?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             var name when CapacitorWire.Effect(name) is not null => capacitorWarfare?.Call(context, service, method, args)
+                ?? PilotCallResult.Unsupported,
+            var name when RemoteAssistanceWire.Effect(name) is not null => remoteAssistance?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,

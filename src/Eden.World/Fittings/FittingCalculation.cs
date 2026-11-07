@@ -162,6 +162,7 @@ internal sealed record FittingCalculation(
                 !(
                     SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                     || PlayerEwarCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                    || RemoteAssistanceCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                 )
                 || !ScriptCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
                 || !SupportModuleDefinitions.CompatibleScript(
@@ -224,6 +225,11 @@ internal sealed record FittingCalculation(
             .Select(t => t.Module())
             .ToArray();
         modifiers.AddRange(TackleDefinitions.Modifiers(ship.Id, incoming));
+        var gunneryModules = modules.Where(m => m.RequiredSkills.Contains((int)CombatSkill.Gunnery)).Select(m => m.Item.Id).ToArray();
+        foreach (var assistance in PilotRemoteAssistanceStore.Active(world, ship.Id))
+        {
+            modifiers.AddRange(RemoteAssistanceRules.Modifiers(ship.Id, gunneryModules, assistance.Module, assistance.EdgeDistance));
+        }
         var npcEwar = NpcEwarStore.Active(world, ship.Id);
         var turrets = modules
             .Where(m =>

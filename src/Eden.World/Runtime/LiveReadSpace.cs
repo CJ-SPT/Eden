@@ -5,6 +5,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Repair;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
@@ -186,6 +187,25 @@ internal sealed partial class LiveReadModels
 
     private readonly record struct EwarModuleKey(long Pilot, long Ship, long Module);
 
+    private readonly ResidentSnapshot<long, IReadOnlyList<RemoteAssistanceContact>> _remoteAssistance = new(
+        "resident.remoteAssistance",
+        "WorldRemoteAssistance"
+    );
+    private readonly ResidentSnapshot<EwarModuleKey, bool> _remoteAssistanceActive = new(
+        "resident.remoteAssistanceActive",
+        "WorldRemoteAssistance",
+        "WorldItem",
+        "WorldContractEscrow"
+    );
+
+    internal IReadOnlyList<RemoteAssistanceContact> RemoteAssistanceIncoming(
+        long ship,
+        Func<long, IReadOnlyList<RemoteAssistanceContact>> load
+    ) => Read(_remoteAssistance, ship, () => load(ship));
+
+    internal bool RemoteAssistanceActive(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
+        Read(_remoteAssistanceActive, new(pilot, ship, module), () => load(pilot, ship, module));
+
     private readonly ResidentSnapshot<EwarModuleKey, bool> _ewarOnline = new("resident.ewarOnline", "WorldItem", "WorldContractEscrow");
 
     internal bool EwarModuleOnline(long pilot, long ship, long module, Func<long, long, long, bool> load) =>
@@ -222,6 +242,8 @@ internal sealed partial class LiveReadModels
         _playerEwar.Observe(changes);
         _ewarOnline.Observe(changes);
         _remoteRepairOnline.Observe(changes);
+        _remoteAssistance.Observe(changes);
+        _remoteAssistanceActive.Observe(changes);
     }
 
     private void ClearSpace()
@@ -234,5 +256,7 @@ internal sealed partial class LiveReadModels
         _playerEwar.Clear();
         _ewarOnline.Clear();
         _remoteRepairOnline.Clear();
+        _remoteAssistance.Clear();
+        _remoteAssistanceActive.Clear();
     }
 }

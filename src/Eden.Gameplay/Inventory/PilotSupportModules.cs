@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Repair;
 
 namespace Eden.Gameplay.Inventory;
 
@@ -43,6 +44,8 @@ public static class SupportModuleDefinitions
             OmnidirectionalTrackingLinkGroup => TrackingScriptGroup,
             SensorBoosterGroup => SensorScriptGroup,
             GuidanceComputerGroup => GuidanceScriptGroup,
+            RemoteAssistanceRules.TrackingGroup => TrackingScriptGroup,
+            RemoteAssistanceRules.SensorGroup => SensorScriptGroup,
             PlayerEwarRules.SensorDampenerGroup => PlayerEwarRules.DampeningScriptGroup,
             _ => 0,
         };

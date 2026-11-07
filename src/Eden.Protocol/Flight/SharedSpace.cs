@@ -32,7 +32,7 @@ internal sealed record LocalRepairContact(
     RepairLayer Layer = RepairLayer.Armor
 );
 
-internal sealed record SupportContact(SupportModule Module, long StartedAt);
+internal sealed record SupportContact(SupportModule Module, long StartedAt, long? TargetId = null);
 
 internal sealed record TackleContact(TackleModule Module, long TargetId, long StartedAt);
 

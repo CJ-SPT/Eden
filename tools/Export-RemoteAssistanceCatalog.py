@@ -40,7 +40,7 @@ def export(catalog_path, output):
                 for modifier in record('client/dogmaeffects', binding['effectID']).get('modifierInfo', []):
                     if modifier.get('groupID') in GROUPS or modifier.get('skillTypeID') in (3433,):
                         pending.add(hull)
-        types, records, attributes, effects = [], {}, {2135, 2138}, set()
+        types, records, attributes, effects = [], {}, {2135, 2138, 854, 872}, set()
         while pending:
             type_id = min(pending)
             pending.remove(type_id)

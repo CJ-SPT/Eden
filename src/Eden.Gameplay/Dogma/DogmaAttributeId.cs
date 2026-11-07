@@ -4,6 +4,7 @@ namespace Eden.Gameplay.Dogma;
 public enum DogmaAttributeId
 {
     RemoteAssistanceImpedance = 2135,
+    DisallowAgainstEwImmuneTarget = 1798,
     RemoteRepairImpedance = 2116,
     RemoteCapacitorImpedance = 6463,
     PowerTransferAmount = 90,

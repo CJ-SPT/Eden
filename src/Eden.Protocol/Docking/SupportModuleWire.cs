@@ -2,6 +2,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Drones;
@@ -61,6 +62,8 @@ internal sealed class SupportModuleWire(
             // Pinned effect 6557 declares no world graphic; the HUD cycle still uses ShipEffectChanged.
             DogmaEffect.OmnidirectionalTrackingLink => null,
             DogmaEffect.SensorBooster => "effects.ElectronicAttributeModifyActivate",
+            DogmaEffect.RemoteTrackingComputer => "effects.TurretWeaponRangeTrackingSpeedMultiplyTarget",
+            DogmaEffect.RemoteSensorBooster => "effects.ElectronicAttributeModifyTarget",
             _ => "effects.TurretWeaponRangeTrackingSpeedMultiplyActivate",
         };
 
@@ -84,7 +87,12 @@ internal sealed class SupportModuleWire(
                         or CombatDefinitions.HybridWeaponGroup
                         or CombatDefinitions.ProjectileWeaponGroup
                 || module.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun;
-            if (turret || SupportModuleDefinitions.Effect(module.GroupId) is not null || PlayerEwarRules.Groups.Contains(module.GroupId))
+            if (
+                turret
+                || SupportModuleDefinitions.Effect(module.GroupId) is not null
+                || PlayerEwarRules.Groups.Contains(module.GroupId)
+                || RemoteAssistanceRules.Effect(module.GroupId) is not null
+            )
             {
                 var values = turret ? combat.ModuleAttributes(pilot, module) : fitting.ModuleAttributes(pilot, module);
                 Add(

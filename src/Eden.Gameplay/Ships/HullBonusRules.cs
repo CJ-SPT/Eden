@@ -48,6 +48,7 @@ public enum HullCapability
     FrigateEscapeRecovery,
     MiningCrystals,
     DeepCoreMining,
+    RemoteElectronicAssistance,
 }
 
 // Catalog selectors are IDs, independent of a pilot's trained level.
@@ -112,6 +113,8 @@ public enum HullBonusSkill
 
 public enum HullBonusEquipmentGroup
 {
+    RemoteTrackingComputer = 209,
+    RemoteSensorBooster = 290,
     ShieldExtender = 38,
     RemoteShieldBooster = 41,
     WarpScrambler = 52,
@@ -230,6 +233,8 @@ public static class HullBonusRules
                 or HullBonusEquipmentGroup.AncillaryRemoteShieldBooster
                 or HullBonusEquipmentGroup.AncillaryRemoteArmorRepairer
                 or HullBonusEquipmentGroup.MutadaptiveRemoteArmorRepairer => HullCapability.RemoteRepair,
+                HullBonusEquipmentGroup.RemoteTrackingComputer or HullBonusEquipmentGroup.RemoteSensorBooster =>
+                    HullCapability.RemoteElectronicAssistance,
                 HullBonusEquipmentGroup.EnergyNosferatu
                 or HullBonusEquipmentGroup.EnergyNeutralizer
                 or HullBonusEquipmentGroup.RemoteCapacitorTransmitter => HullCapability.EnergyWarfare,
@@ -338,5 +343,6 @@ public static class HullBonusRules
                     or HullCapability.ArmorPlates
                     or HullCapability.ShieldExtenders
                     or HullCapability.ReinforcedBulkheads
-                    or HullCapability.CombatDrones;
+                    or HullCapability.CombatDrones
+                    or HullCapability.RemoteElectronicAssistance;
 }

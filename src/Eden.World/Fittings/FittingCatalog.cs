@@ -120,6 +120,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (RemoteAssistanceRules.Effect(type.GroupId) is not null && !RemoteAssistanceCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (CapacitorWarfareRules.Effect(type.GroupId) is not null && !CapacitorModuleCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

@@ -274,7 +274,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 shipId,
                 effect.Module.ItemId,
                 effect.Module.TypeId,
-                shipId,
+                effect.TargetId ?? shipId,
                 null,
                 graphic,
                 false,

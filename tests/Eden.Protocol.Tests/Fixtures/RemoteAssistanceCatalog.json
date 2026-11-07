@@ -5755,6 +5755,42 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 854,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 261773,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 137,
+        "name": "disallowAssistance",
+        "attributeID": 854,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 6,
+        "description": "If this module is in use and this attribute is 1, then assistance modules cannot be used on the ship."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 872,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "If this module is in use and this attribute is 1, then offensive modules cannot be used on the ship if they apply modifiers for the duration of their effect. If this is put on a ship or NPC with value of 1, then the ship or NPC are immune to offensive modifiers (target jamming, tracking disruption etc.)",
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "attributeID": 872,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 6,
+        "name": "disallowOffensiveModifiers"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 901,
       "data": {
         "stackable": 1,

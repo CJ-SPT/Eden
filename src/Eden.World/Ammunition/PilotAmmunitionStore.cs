@@ -7,6 +7,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -136,6 +137,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
+                && !(RemoteAssistanceCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
@@ -153,8 +155,11 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilot.Id, module.TypeId);
             if (
-                (SupportModuleDefinitions.Effect(group) is not null || PlayerEwarRules.Groups.Contains(group))
-                && world.Set<ActiveFittedModule>().Find(module.Id) is not null
+                (
+                    SupportModuleDefinitions.Effect(group) is not null
+                    || PlayerEwarRules.Groups.Contains(group)
+                    || RemoteAssistanceRules.Effect(group) is not null
+                ) && world.Set<ActiveFittedModule>().Find(module.Id) is not null
             )
             {
                 throw new InvalidDataException("Deactivate the support module and finish its paid cycle before changing scripts.");

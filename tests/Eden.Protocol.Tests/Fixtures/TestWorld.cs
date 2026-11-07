@@ -33,9 +33,20 @@ internal sealed class TestWorld : IDisposable
     internal const string DropCloneGradeSchema = DropShipStorageSchema + "ALTER TABLE WorldAccount DROP COLUMN CloneGrade; ";
     internal const string DropSafetySchema = DropCloneGradeSchema + "ALTER TABLE WorldPilot DROP COLUMN SafetyLevel; ";
 
+    internal const string DropRemoteAssistanceSchema = """
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Item;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Active;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Position;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Selection;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Owner;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_System;
+        DROP TABLE IF EXISTS WorldRemoteAssistance;
+        """;
+
     // Remove the newer live-module table so version 31 can rename the historical table.
     internal const string DropTestingMarketSchema =
-        DropSafetySchema
+        DropRemoteAssistanceSchema
+        + DropSafetySchema
         + """
             DROP TABLE WorldMissile;
             DROP TABLE WorldTackle;

@@ -99,6 +99,7 @@ public static class WorldInitialization
         world.Set<WorldTackle>().ExecuteDelete();
         world.Set<WorldPlayerEwar>().ExecuteDelete();
         world.Set<WorldRemoteRepair>().ExecuteDelete();
+        world.Set<WorldRemoteAssistance>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.
         world.Set<WorldNpcEwar>().ExecuteDelete();
         world.Set<NpcAggression>().ExecuteDelete();

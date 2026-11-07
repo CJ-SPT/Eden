@@ -26,7 +26,8 @@ internal sealed record ShipContentRoadmap(
             HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,
             HullCapability.MiningDrones => ShipContentMilestone.Mining,
             HullCapability.UtilityDrones => ShipContentMilestone.UtilityDrones,
-            HullCapability.EnergyWarfare or HullCapability.RemoteRepair => ShipContentMilestone.EnergyAndRemoteSupport,
+            HullCapability.EnergyWarfare or HullCapability.RemoteRepair or HullCapability.RemoteElectronicAssistance =>
+                ShipContentMilestone.EnergyAndRemoteSupport,
             HullCapability.Probes => ShipContentMilestone.ProbeScanning,
             HullCapability.Hacking => ShipContentMilestone.Exploration,
             HullCapability.Salvaging or HullCapability.TractorBeams => ShipContentMilestone.InformationAndSalvage,
