@@ -43,7 +43,8 @@ public sealed class BoosterTests
         Assert.Equal(1, result.Change.Item.Quantity);
         Assert.NotEqual(item, booster.ItemId);
         Assert.Throws<InvalidDataException>(() => BoosterTestData.Consume(db, item));
-        WorldInitialization.Open(db.Path);
+        live.Dispose();
+        WorldInitialization.Initialize(new(db.Path), clock);
         using var reopened = ServerServices.Build(new(db.Path), clock);
         Assert.Equal(booster, Assert.Single(reopened.GetRequiredService<IPilotBoosters>().Read(BoosterTestData.Pilot).Boosters));
         clock.UtcNow = new DateTimeOffset(DateTime.FromFileTimeUtc(booster.ExpiresAt));

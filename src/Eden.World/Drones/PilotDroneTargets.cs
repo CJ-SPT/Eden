@@ -24,7 +24,6 @@ internal sealed partial class PilotDroneStore
             || victim.Id == source.Id
             || victim.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
-            || catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
             || world.Set<ShipLoss>().Any(l => l.ShipId == ship)
             || world.Set<SavedLogoff>().Find(victim.Id) is { } logoff && logoff.ExpiresAt <= now
             ? null
@@ -105,26 +104,30 @@ internal sealed partial class PilotDroneStore
         var result = PilotHealthStore.Apply(world, shipId, defense, damage, now);
         var party = PilotInteractionHistoryStore.Player(world, source, source.ActiveShipId, profile.TypeId);
         PilotInteractionHistoryStore.Damage(world, shipId, party, result.Applied);
-        var insurance = result.Remaining.Destroyed
-            ? ShipLossPersistence.Apply(
-                world,
-                catalog,
-                victim,
-                null,
-                shipId,
-                drone.SystemId!.Value,
-                victim.ActiveShip.Position!,
-                now,
-                lootRoll,
-                party
-            )
+        var loss = result.Remaining.Destroyed
+            ? losses.Apply(world, catalog, victim, shipId, drone.SystemId!.Value, victim.ActiveShip.Position!, now, party)
             : null;
         ShipHealth health = new(shipId, defense, result.Remaining);
         double quality = damage.Total / profile.Damage.Total;
         return new(
             victim.AccountId,
             new(drone.ItemId, profile.TypeId, shipId, result.Applied, damage, health, quality),
-            new(victim.Id, source.Id, source.ActiveShipId, health, damage, result.Applied, quality, profile.TypeId, false, null, insurance)
+            new(
+                victim.Id,
+                source.Id,
+                source.ActiveShipId,
+                health,
+                damage,
+                result.Applied,
+                quality,
+                profile.TypeId,
+                false,
+                null,
+                loss?.Insurance
+            )
+            {
+                InventoryChanges = loss?.Changes ?? [],
+            }
         );
     }
 

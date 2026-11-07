@@ -1,6 +1,7 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Combat;
 
@@ -28,7 +29,12 @@ public sealed record PilotDamage(
     bool Banked,
     DockedPilot? Capsule,
     InsurancePayout? Insurance
-);
+)
+{
+    public IReadOnlyList<InventoryChange> InventoryChanges { get; init; } = [];
+}
+
+public sealed record PilotLossResult(InsurancePayout? Insurance, IReadOnlyList<InventoryChange> Changes);
 
 public interface IPilotDamageEvents
 {

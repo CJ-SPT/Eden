@@ -33,6 +33,42 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class PilotMissileTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MissileCapsuleImpactRespawnsAtHomeWithoutInsuranceOrNpcRewards(bool resident)
+    {
+        using var f = Prepare();
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
+        long launcher = MissileCombatTests.Load(f, Launcher, Charge);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(VictimShip)!.TypeId = FleetDefinitions.CapsuleType;
+            world.SaveChanges();
+        }
+        Space(f);
+        AlmostLost(f);
+        var home = f.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotHomeStation>().Read(Victim);
+        List<PilotDamage> messages = [];
+        f.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
+        Launch(f, launcher);
+        Advance(f);
+        Assert.True(Assert.Single(Store(f).TakeImpacts(f.PilotId)).Destroyed);
+        var loss = Assert.Single(messages);
+        Assert.Null(loss.Capsule!.Position);
+        Assert.Equal(home.Id, loss.Capsule.StationId);
+        Assert.Null(loss.Insurance);
+        Assert.Equal(2, loss.InventoryChanges.Count);
+        Advance(f);
+        Assert.Single(messages);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Single(saved.Set<SavedHomeCloneTransfer>());
+        Assert.Equal(2, saved.Set<SavedCombatReport>().Count());
+        Assert.Empty(saved.Set<WorldWreck>());
+        Assert.Empty(saved.Set<NpcBounty>());
+        Assert.Empty(saved.Set<SavedInsuranceLedger>());
+    }
+
     private const int Launcher = 499;
     private const int Charge = 212;
     private const int AutomaticCharge = 269;
@@ -51,6 +87,7 @@ public sealed class PilotMissileTests
             INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (29,'Capsule',6);
             INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (670,'Capsule',29,0,32000,2);
             INSERT OR IGNORE INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
+            INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','670','{{"published":1,"volume":1000}}');
             INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','601','{{"wreckTypeID":26557}}');
             """
         );
@@ -220,7 +257,22 @@ public sealed class PilotMissileTests
             }
             else if (condition == "capsule")
             {
-                world.Ships.Find(VictimShip)!.TypeId = FleetDefinitions.CapsuleType;
+                // Ship loss creates a new capsule identity; a paid projectile
+                // must never reacquire that replacement as its original target.
+                var old = world.Ships.Find(VictimShip)!;
+                var capsule = world
+                    .Ships.Add(
+                        new Ship
+                        {
+                            Id = InventoryPersistence.NextId(world),
+                            OwnerId = Victim,
+                            TypeId = FleetDefinitions.CapsuleType,
+                            StationId = old.StationId,
+                            Name = "Escaped capsule",
+                        }
+                    )
+                    .Entity;
+                world.Pilots.Find(Victim)!.ActiveShip = capsule;
             }
             else if (condition == "expired")
             {

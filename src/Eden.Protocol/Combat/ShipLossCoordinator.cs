@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
@@ -22,7 +23,8 @@ internal sealed class ShipLossCoordinator(
     MissileHandler? missiles = null,
     SupportModuleHandler? support = null,
     TackleHandler? tackle = null,
-    RemoteRepairHandler? remoteRepairs = null
+    RemoteRepairHandler? remoteRepairs = null,
+    ISystemObjects? systems = null
 )
 {
     internal void Replace(PilotCallContext context, DockedPilot capsule)
@@ -42,6 +44,9 @@ internal sealed class ShipLossCoordinator(
         refits.Clear();
         // Wreck.Prepare needs the still-loaded hull for rotation/explosion timing.
         context.Flight.RefreshWrecks();
-        context.ReplaceDestroyedShip(capsule);
+        var destination = capsule.Position is null
+            ? (systems ?? throw new InvalidOperationException("Respawning a pilot requires the destination system.")).Load(capsule.SystemId)
+            : null;
+        context.ReplaceDestroyedShip(capsule, destination);
     }
 }

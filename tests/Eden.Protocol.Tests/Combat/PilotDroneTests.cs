@@ -26,6 +26,40 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class PilotDroneTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DronesDestroyCapsulesAndLeaveTheReplacementDockedAtHome(bool resident)
+    {
+        using var f = Prepare();
+        using LiveWorld? live = resident ? new(new(f.Base.Db.Path), f.Base.Clock, _ => { }) : null;
+        var ids = f.Launch();
+        using (WorldDbContext world = new(f.Base.Db.Path))
+        {
+            world.Ships.Find(VictimShip)!.TypeId = FleetDefinitions.CapsuleType;
+            world.SaveChanges();
+        }
+        Space(f);
+        AlmostLost(f);
+        var home = f.Base.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotHomeStation>().Read(Victim);
+        List<PilotDamage> messages = [];
+        f.Base.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
+        Engage(f, ids);
+        Assert.True(Assert.Single(f.Tick().Hits).Health.Remaining.Destroyed);
+        var loss = Assert.Single(messages);
+        Assert.Null(loss.Capsule!.Position);
+        Assert.Equal(home.Id, loss.Capsule.StationId);
+        Assert.Null(loss.Insurance);
+        Assert.Equal(2, loss.InventoryChanges.Count);
+        Assert.Empty(f.Tick(30).Hits);
+        using WorldDbContext saved = new(f.Base.Db.Path);
+        Assert.Single(saved.Set<SavedHomeCloneTransfer>());
+        Assert.Equal(2, saved.Set<SavedCombatReport>().Count());
+        Assert.Empty(saved.Set<WorldWreck>());
+        Assert.Empty(saved.Set<NpcBounty>());
+        Assert.Empty(saved.Set<SavedInsuranceLedger>());
+    }
+
     private const long Victim = 90000002;
     private const long VictimShip = 1000000000002;
     private const int SystemId = 30000144;
@@ -42,6 +76,7 @@ public sealed class PilotDroneTests
             INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (29,'Capsule',6);
             INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Capacity,Mass,Radius) VALUES (670,'Capsule',29,0,32000,2);
             INSERT OR IGNORE INTO TypeAttribute SELECT 670,AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=601;
+            INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','670','{{"published":1,"volume":1000}}');
             INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','601','{{"wreckTypeID":26557,"basePrice":1000000}}');
             """
         );
@@ -134,7 +169,7 @@ public sealed class PilotDroneTests
     [InlineData(.2, ShipSafetyLevel.Full, "safety")]
     [InlineData(.8, ShipSafetyLevel.Disabled, "safety")]
     [InlineData(0, ShipSafetyLevel.Full, "range")]
-    [InlineData(0, ShipSafetyLevel.Full, "capsule")]
+    [InlineData(.2, ShipSafetyLevel.Partial, "capsule")]
     [InlineData(0, ShipSafetyLevel.Full, "dock")]
     [InlineData(0, ShipSafetyLevel.Full, "system")]
     [InlineData(0, ShipSafetyLevel.Full, "absent")]

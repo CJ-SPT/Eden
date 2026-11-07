@@ -22,7 +22,6 @@ internal sealed partial class PilotMissileStore
         if (
             victim?.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
-            || catalog.FittingType(victim.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup
             || world.Set<ShipLoss>().Any(l => l.ShipId == shipId)
             || world.Set<SavedLogoff>().Find(victim.Id) is { } logoff && logoff.ExpiresAt <= now
         )
@@ -96,19 +95,8 @@ internal sealed partial class PilotMissileStore
         var party = PilotInteractionHistoryStore.Player(world, attacker, row.SourceShipId, row.LauncherTypeId);
         PilotInteractionHistoryStore.Damage(world, row.TargetId, party, result.Applied);
         CrimewatchPersistence.PlayerImpact(world, row.PilotId, victim.Id, row.SystemId, time);
-        var insurance = result.Remaining.Destroyed
-            ? ShipLossPersistence.Apply(
-                world,
-                catalog,
-                victim,
-                null,
-                row.TargetId,
-                row.SystemId,
-                victim.ActiveShip.Position!,
-                time,
-                lootRoll,
-                party
-            )
+        var loss = result.Remaining.Destroyed
+            ? losses.Apply(world, catalog, victim, row.TargetId, row.SystemId, victim.ActiveShip.Position!, time, party)
             : null;
         ShipHealth health = new(row.TargetId, defense, result.Remaining);
         MissileImpact outcome = new(
@@ -128,7 +116,10 @@ internal sealed partial class PilotMissileStore
         world.SaveChanges();
         return new(
             victim.AccountId,
-            new(victim.Id, row.PilotId, row.SourceShipId, health, damage, result.Applied, 1, row.ChargeTypeId, false, null, insurance)
+            new(victim.Id, row.PilotId, row.SourceShipId, health, damage, result.Applied, 1, row.ChargeTypeId, false, null, loss?.Insurance)
+            {
+                InventoryChanges = loss?.Changes ?? [],
+            }
         );
     }
 }

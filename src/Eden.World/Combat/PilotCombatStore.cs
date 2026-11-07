@@ -32,8 +32,8 @@ internal sealed class PilotCombatStore(
     WorldDatabase database,
     SecurityStatusSignal security,
     SqliteWorld lookup,
-    IShipLootRoll lootRoll,
-    IPilotDamageEvents damageEvents
+    IPilotDamageEvents damageEvents,
+    PilotLossSettlement losses
 ) : IPilotCombat
 {
     private const int CrystalProbabilityResolution = 1_000_000;
@@ -177,12 +177,11 @@ internal sealed class PilotCombatStore(
             if (
                 victim?.ActiveShip.Position is not { } saved
                 || victim.Id == pilotId
-                || catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
                 || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
                 || !double.IsFinite(playerTarget.Velocity.DistanceTo(SpacePosition.Zero))
             )
             {
-                throw new InvalidDataException("The target ship is unavailable; capsule destruction is not supported.");
+                throw new InvalidDataException("The target ship is unavailable.");
             }
             int system = CrimewatchPersistence.System(catalog, victim.ActiveShip);
             aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
@@ -240,6 +239,7 @@ internal sealed class PilotCombatStore(
         );
         CombatDamageSettlement settlement;
         InsurancePayout? insurance = null;
+        PilotLossResult? loss = null;
         if (victim is not null)
         {
             var defense = ShipHealth.DefenseFrom(target.Attributes);
@@ -248,18 +248,8 @@ internal sealed class PilotCombatStore(
             PilotInteractionHistoryStore.Damage(world, targetId, attacker, applied.Applied);
             if (applied.Remaining.Destroyed)
             {
-                insurance = ShipLossPersistence.Apply(
-                    world,
-                    catalog,
-                    victim,
-                    null,
-                    targetId,
-                    target.SystemId,
-                    victim.ActiveShip.Position!,
-                    now,
-                    lootRoll,
-                    attacker
-                );
+                loss = losses.Apply(world, catalog, victim, targetId, target.SystemId, victim.ActiveShip.Position!, now, attacker);
+                insurance = loss.Insurance;
             }
             settlement = new(new(targetId, defense, applied.Remaining), applied.Applied, applied.Remaining.Destroyed, null);
         }
@@ -320,6 +310,9 @@ internal sealed class PilotCombatStore(
                     settlement.Destroyed ? lookup.FindPilot(victim.AccountId, victim.Id)! : null,
                     insurance
                 )
+                {
+                    InventoryChanges = loss?.Changes ?? [],
+                }
             );
         }
         return new(shot, paid.Select(p => p.Weapon).ToArray(), paid.Where(p => p.Magazine is not null).Select(p => p.Magazine!).ToArray());

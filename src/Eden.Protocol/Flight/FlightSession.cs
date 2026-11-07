@@ -174,7 +174,7 @@ internal sealed class FlightSession(
         space.Leave(Pilot.ShipId);
     }
 
-    public void ReplaceDestroyedShip(DockedPilot capsule)
+    public void ReplaceDestroyedShip(DockedPilot capsule, IReadOnlyList<StaticSpaceObject>? destination = null)
     {
         long destroyed = Pilot.ShipId;
         Scene.StopNpcWeapons(destroyed);
@@ -183,6 +183,18 @@ internal sealed class FlightSession(
         _navigation.AdoptHull();
         Scene.ForgetMissiles();
         _destroying = false;
+        if (capsule.Position is null)
+        {
+            // A dead pod has no replacement ego in this ballpark. The session
+            // delta loads the home station after the old pod's terminal removal.
+            Update(new DestinyCommand.RemoveBall(destroyed, true));
+            InBallpark = false;
+            Scene.LeaveSpace();
+            Scene.ReplaceObjects(destination ?? throw new InvalidOperationException("The respawn system is missing."));
+            _navigation.Dock();
+            _travel.Reset();
+            return;
+        }
         // The client can adopt an already loaded capsule as ego during the ship
         // session delta. Keep the old hull until the capsule ball has arrived.
         var contact = CreateContact();

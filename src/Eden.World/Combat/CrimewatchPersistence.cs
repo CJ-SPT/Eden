@@ -47,7 +47,7 @@ internal static class CrimewatchPersistence
                 Security(catalog, system),
                 source.SafetyLevel,
                 world.Set<Account>().Find(source.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
-                victim.ActiveShip.TypeId == FleetDefinitions.CapsuleType,
+                catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                 target.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
                 Engagement(world, source.Id, victim.Id)?.ExpiresAt > now

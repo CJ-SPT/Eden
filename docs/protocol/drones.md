@@ -4,6 +4,8 @@
 
 Drone motion, observer reads and nonfatal direct combat use shared resident state. See the [performance measurements and checkpoint boundaries](performance.md#resident-drone-flight-and-combat-november-6-2026).
 
+Legal capsule targets now use the shared [capsule destruction and home-station respawn lifecycle](combat.md#capsule-destruction-and-home-station-respawn-november-7-2026). The original pilot-target milestone below records its earlier capsule exclusion.
+
 ## Drone combat against pilot ships, November 7, 2026
 
 The existing 41 light/medium combat-drone profiles on Brutix and Brutix Navy Issue now accept locked pilot ships as well as NPCs. Manual engagement checks current ownership/controller, system, authoritative target presence, lock and control range before changing any selected drone. Capsules, destroyed controllers, missing/expired contacts and rejected safety checks leave the entire selection and aggression state unchanged. Ongoing pursuit retains the existing lock/control-range policy, but cancels attacks when the target docks, warps, changes systems, disappears, dies or becomes illegal under current safety/engagement rights. Capsule destruction remains unsupported.

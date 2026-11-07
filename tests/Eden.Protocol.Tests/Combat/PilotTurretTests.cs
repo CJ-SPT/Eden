@@ -170,7 +170,7 @@ public sealed class PilotTurretTests
         }
         f.Clock.Milliseconds += 2000;
         Assert.Throws<InvalidDataException>(() => Fire(f));
-        Assert.Throws<InvalidDataException>(() => Fire(f, target: capsule));
+        Assert.False(Fire(f, target: capsule).Destroyed);
         f.Db.Services.GetService<LiveWorld>()?.Dispose();
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         Assert.Equal(capsule, f.Db.Store.FindPilot(1000002)!.ShipId);
@@ -461,9 +461,10 @@ public sealed class PilotTurretTests
     [Theory]
     [InlineData(FleetDefinitions.CapsuleType)]
     [InlineData(TestCapsuleVariant)]
-    public void CapsuleExclusionUsesTheCatalogGroupForEveryVariant(int type)
+    public void CapsuleCriminalSafetyUsesTheCatalogGroupForEveryVariant(int type)
     {
-        using var f = Prepare();
+        using var f = Prepare(.2);
+        f.Db.Services.GetRequiredService<IPilotSafety>().Set(Attacker, ShipSafetyLevel.Partial);
         if (type == TestCapsuleVariant)
         {
             using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true);

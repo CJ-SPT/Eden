@@ -24,6 +24,7 @@ internal sealed partial class LiveCombatRuntime
     private sealed record DronePlayer(
         long PilotId,
         long ShipId,
+        bool Capsule,
         bool Alpha,
         ShipSafetyLevel Safety,
         bool Outlaw,
@@ -51,11 +52,7 @@ internal sealed partial class LiveCombatRuntime
                     .Pilots.Include(p => p.ActiveShip)
                         .ThenInclude(s => s.Position)
                     .SingleOrDefault(p => p.ActiveShipId == shipId);
-                if (
-                    pilot?.ActiveShip.Position is null
-                    || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
-                    || world.Set<ShipLoss>().Any(l => l.ShipId == shipId)
-                )
+                if (pilot?.ActiveShip.Position is null || world.Set<ShipLoss>().Any(l => l.ShipId == shipId))
                 {
                     return null;
                 }
@@ -73,6 +70,7 @@ internal sealed partial class LiveCombatRuntime
                 return new DronePlayer(
                     pilot.Id,
                     shipId,
+                    catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                     world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
                     pilot.SafetyLevel,
                     (world.Set<SavedSecurityStatus>().Find(pilot.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
@@ -107,7 +105,7 @@ internal sealed partial class LiveCombatRuntime
         try
         {
             return CrimewatchRules.Decide(
-                new(security, source.Safety, source.Alpha, false, DroneTimers(victim).Flag(now), victim.Outlaw, engagement > now)
+                new(security, source.Safety, source.Alpha, victim.Capsule, DroneTimers(victim).Flag(now), victim.Outlaw, engagement > now)
             );
         }
         catch (InvalidDataException)

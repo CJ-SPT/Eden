@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
@@ -63,10 +64,10 @@ internal sealed class PilotCallContext(
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
 
-    public void ReplaceDestroyedShip(DockedPilot pilot)
+    public void ReplaceDestroyedShip(DockedPilot pilot, IReadOnlyList<StaticSpaceObject>? destination = null)
     {
         DestroyedShip = Pilot;
-        Flight.ReplaceDestroyedShip(pilot);
+        Flight.ReplaceDestroyedShip(pilot, destination);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
 

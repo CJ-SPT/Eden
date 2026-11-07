@@ -32,8 +32,8 @@ internal sealed partial class PilotMissileStore(
     SecurityStatusSignal security,
     IPilotCombatPresence presence,
     SqliteWorld lookup,
-    IShipLootRoll lootRoll,
-    IPilotDamageEvents damageEvents
+    IPilotDamageEvents damageEvents,
+    PilotLossSettlement losses
 ) : IPilotMissiles
 {
     private const int HistorySeconds = 120;

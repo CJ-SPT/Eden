@@ -35,7 +35,7 @@ internal sealed partial class PilotDroneStore(
     IPilotCombatPresence presence,
     IPilotDamageEvents damageEvents,
     SqliteWorld lookup,
-    IShipLootRoll lootRoll
+    PilotLossSettlement losses
 ) : IPilotDrones
 {
     private const int ProbabilityResolution = 1_000_000;

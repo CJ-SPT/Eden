@@ -221,7 +221,8 @@ public sealed class ImplantTests
         Assert.Equal(CharacterAttributes.Default.ToDogma()[attribute] + bonus, result.Snapshot.Attributes.ToDogma()[attribute]);
         Assert.Equal(1, Assert.Single(result.Changes).Item.Quantity);
         Assert.Throws<InvalidDataException>(() => ImplantTestData.Store(db).Install(ImplantTestData.Pilot, item));
-        WorldInitialization.Open(db.Path);
+        live.Dispose();
+        WorldInitialization.Initialize(new(db.Path), clock);
         using var reopened = ServerServices.Build(new(db.Path), clock);
         var implants = reopened.GetRequiredService<IPilotImplants>();
         Assert.Equal(installed, Assert.Single(implants.Read(ImplantTestData.Pilot).Implants));

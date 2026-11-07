@@ -6,6 +6,7 @@ using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Combat;
 
@@ -14,7 +15,9 @@ internal sealed class PilotDamageMonitor(
     PilotDamageSignal signal,
     ShipLossCoordinator loss,
     CharacterInteractionHistoryHandler history,
-    TimeProvider clock
+    TimeProvider clock,
+    ImplantHandler implants,
+    PilotBrain brain
 ) : IDisposable
 {
     private const int MaximumPendingMessages = 512;
@@ -25,6 +28,7 @@ internal sealed class PilotDamageMonitor(
     {
         Dispose();
         _pilotId = context.Pilot.PilotId;
+        implants.Enter(context);
         signal.Applied += Receive;
     }
 
@@ -71,6 +75,15 @@ internal sealed class PilotDamageMonitor(
             );
             if (damage.Capsule is { } capsule)
             {
+                bool podLoss = capsule.Position is null;
+                if (podLoss)
+                {
+                    context.NotificationsBeforeFlight.Add(new PlayerPodDeathNotification());
+                }
+                foreach (var change in damage.InventoryChanges)
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
                 history.NotifyDestruction(context);
                 if (damage.Insurance is { } payout)
                 {
@@ -79,6 +92,12 @@ internal sealed class PilotDamageMonitor(
                     );
                 }
                 loss.Replace(context, capsule);
+                if (podLoss)
+                {
+                    implants.Refresh(context);
+                    context.Notifications.Add(new ServerBrainUpdated(brain.Update(capsule.PilotId, capsule.ShipId)));
+                    context.Notifications.Add(new JumpCloneCacheInvalidated());
+                }
             }
         }
 
@@ -101,4 +120,9 @@ internal sealed class PilotDamageMonitor(
             _pending.Clear();
         }
     }
+}
+
+internal sealed record PlayerPodDeathNotification() : PilotNotification("OnPlayerPodDeath")
+{
+    public override object?[] Arguments => [];
 }

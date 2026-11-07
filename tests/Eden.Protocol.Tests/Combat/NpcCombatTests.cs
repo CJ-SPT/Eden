@@ -30,6 +30,7 @@ using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -270,7 +271,8 @@ public sealed class NpcCombatTests
                 }
             );
         }
-        _ = WorldInitialization.Open(f.Db.Path);
+        f.Db.Services.GetService<LiveWorld>()?.Dispose();
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         Assert.Equal(capsule.ShipId, f.Pilot.ShipId);
         f.Db.Store.SetPosition(capsule.ShipId, null);
         var recovery = f.Db.Services.GetRequiredService<IPilotFleet>().RecoverCorvette(Fixture.PilotId, capsule.ShipId, capsule.StationId);
@@ -286,7 +288,7 @@ public sealed class NpcCombatTests
         var contact = Assert.Single(wrecks.List(capsule.SystemId, f.Clock.Now));
         var loot = wrecks.Read(Fixture.PilotId, contact.Id, f.Clock.Now).Items;
         wrecks.Take(Fixture.PilotId, recovery.Pilot.ShipId, contact.Id, loot.Select(i => i.Id).ToArray(), null, f.Clock.Now);
-        _ = WorldInitialization.Open(f.Db.Path);
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         using WorldDbContext restored = new(f.Db.Path);
         var module = restored.Set<OwnedItem>().Find(f.Module)!;
         Assert.Equal(recovery.Pilot.ShipId, module.LocationId);
