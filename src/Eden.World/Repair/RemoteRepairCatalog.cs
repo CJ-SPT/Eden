@@ -12,6 +12,7 @@ internal static class RemoteRepairCatalog
     private const int AbyssalMetaGroup = 15;
     private const int ShieldOverload = 3201;
     private const int ArmorOverload = 3200;
+    private const int HullOverload = 3002;
     private const int OverloadCategory = 5;
     private const int MediumFittingAdjustment = 6953;
 
@@ -37,7 +38,12 @@ internal static class RemoteRepairCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
-        int overload = group == RemoteRepairRules.ShieldGroup ? ShieldOverload : ArmorOverload;
+        int overload = group switch
+        {
+            RemoteRepairRules.ShieldGroup => ShieldOverload,
+            RemoteRepairRules.ArmorGroup => ArmorOverload,
+            _ => HullOverload,
+        };
         var expected = new HashSet<int> { (int)DogmaEffect.HighPower, (int)DogmaEffect.Online, (int)active, overload };
         if (effects.Any(e => e.EffectID == MediumFittingAdjustment))
         {

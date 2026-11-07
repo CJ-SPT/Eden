@@ -134,7 +134,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             return;
         }
         RemoteRepairApplied? applied = null;
-        if (cycle.Module.Kind == RemoteRepairKind.Armor)
+        if (cycle.Module.Kind is RemoteRepairKind.Armor or RemoteRepairKind.Hull)
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             var pilot = Pilot(world, pilotId);
@@ -237,6 +237,10 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         if (module.Kind == RemoteRepairKind.Armor)
         {
             saved.ArmorDamage = health.Defense.Armor - health.Remaining.Armor;
+        }
+        else if (module.Kind == RemoteRepairKind.Hull)
+        {
+            saved.StructureDamage = health.Defense.Structure - health.Remaining.Structure;
         }
         saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
         return new(target.Pilot.Id, health);

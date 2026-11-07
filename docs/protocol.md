@@ -67,6 +67,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Player remote shield and armor repairs, November 7, 2026](protocol/fitting.md#player-remote-shield-and-armor-repairs-november-7-2026)
 
+- [Player remote hull repair, November 7, 2026](protocol/fitting.md#player-remote-hull-repair-november-7-2026)
+
 - [Cooperative fleet foundation, November 7, 2026](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026)
 
 - [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)

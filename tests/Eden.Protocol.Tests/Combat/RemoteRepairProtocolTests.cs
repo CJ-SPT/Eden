@@ -22,6 +22,7 @@ public sealed partial class RemoteRepairTests
     [Theory]
     [InlineData(3586, "shipModuleRemoteShieldBooster", "effects.ShieldTransfer")]
     [InlineData(11355, "shipModuleRemoteArmorRepairer", "effects.RemoteArmourRepair")]
+    [InlineData(27932, "shipModuleRemoteHullRepairer", "effects.RemoteHullRepair")]
     public void ProductionDispatchRepeatsPaidStopAndObserverSnapshotsPreserveTheHudCycle(int type, string effect, string graphic)
     {
         using Fixture f = Prepare();
@@ -31,9 +32,8 @@ public sealed partial class RemoteRepairTests
         using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         using var sourceScope = f.Db.Services.CreateScope();
         using var targetScope = f.Db.Services.CreateScope();
-        var shared = f.Db.Services.GetRequiredService<SharedSpace>();
-        using var source = Client(1000001);
-        using var target = Client(1000002);
+        using var source = RemoteClient(f, 1000001);
+        using var target = RemoteClient(f, 1000002);
         var targeting = sourceScope.ServiceProvider.GetRequiredService<TargetingHandler>();
         var handler = sourceScope.ServiceProvider.GetRequiredService<RemoteRepairHandler>();
         var receiver = targetScope.ServiceProvider.GetRequiredService<RemoteRepairHandler>();
@@ -47,6 +47,7 @@ public sealed partial class RemoteRepairTests
         Assert.IsType<PilotCallResult.Success>(activation.Call(source, "dogmaIM", "Activate", [module, effect, Target(f), 2L]));
         var prime = handler.ActiveEffect(source.Pilot, module);
         Assert.NotNull(prime);
+        double structureBefore = Health(f).Remaining.Structure;
         target.Flight.RefreshPeers();
         Assert.Contains(
             target.Flight.Updates,
@@ -67,6 +68,16 @@ public sealed partial class RemoteRepairTests
         receiver.Advance(target);
         Assert.Single(source.Notifications, n => n.Name == "OnGodmaShipEffect");
         Assert.Contains(target.Notifications, n => n.Name == "OnModuleAttributeChanges");
+        if (type == 27932)
+        {
+            Assert.Equal(structureBefore + 48, Health(f).Remaining.Structure, 6);
+            var hullUpdate = target
+                .Notifications.OfType<ModuleAttributesChanged>()
+                .SelectMany(n => n.Changes)
+                .Last(c => c.Attribute == Eden.Gameplay.Dogma.DogmaAttributeId.Damage);
+            Assert.Equal(2, hullUpdate.Value, 6);
+            Assert.Equal(100, Health(f).Defense.Armor - Health(f).Remaining.Armor);
+        }
         Assert.IsType<PilotCallResult.Success>(activation.Call(source, "dogmaIM", "Deactivate", [module, effect]));
         Assert.NotNull(handler.ActiveEffect(source.Pilot, module));
         f.Clock.Milliseconds += (long)prime.DurationMilliseconds!.Value;
@@ -74,23 +85,66 @@ public sealed partial class RemoteRepairTests
         Assert.Null(handler.ActiveEffect(source.Pilot, module));
         using WorldDbContext world = new(f.Db.Path);
         Assert.Empty(world.Set<WorldRemoteRepair>());
+    }
 
-        PilotCallContext Client(long account)
+    private static PilotCallContext RemoteClient(Fixture f, long account)
+    {
+        var pilot = f.Db.Store.FindPilot(account)!;
+        var shared = f.Db.Services.GetRequiredService<SharedSpace>();
+        PilotCallContext context = new(
+            account,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, shared, f.Db.Objects, health: f.Db.Services.GetRequiredService<IPilotHealth>()),
+            account,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        context.Flight.Updates.Clear();
+        return context;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeHullRepairCancellationNeverAppliesThePendingCycle(bool disconnect)
+    {
+        using Fixture f = Prepare();
+        long module = f.Fit(27932);
+        Space(f);
+        Damage(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var scope = f.Db.Services.CreateScope();
+        using var source = RemoteClient(f, 1000001);
+        using var target = RemoteClient(f, 1000002);
+        var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        var handler = scope.ServiceProvider.GetRequiredService<RemoteRepairHandler>();
+        var activation = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
+        targeting.CallWire(source, "dogmaIM", "AddTarget", [Target(f)]);
+        f.Clock.Seconds += 30;
+        targeting.Advance(source);
+        Assert.True(targeting.IsLocked(Target(f)));
+        Assert.IsType<PilotCallResult.Success>(
+            activation.Call(source, "dogmaIM", "Activate", [module, "shipModuleRemoteHullRepairer", Target(f), 2L])
+        );
+        if (disconnect)
         {
-            var pilot = f.Db.Store.FindPilot(account)!;
-            PilotCallContext context = new(
-                account,
-                pilot.Account,
-                [pilot],
-                p => new(f.Db.Store, p, f.Clock, shared, f.Db.Objects, health: f.Db.Services.GetRequiredService<IPilotHealth>()),
-                account,
-                SignedSettings.Empty
-            );
-            context.Select(pilot);
-            context.Flight.Snapshot();
-            context.Flight.Updates.Clear();
-            return context;
+            handler.Cancel(source);
         }
+        else
+        {
+            targeting.CallWire(source, "dogmaIM", "RemoveTarget", [Target(f)]);
+            handler.Advance(source);
+        }
+        Assert.Null(handler.ActiveEffect(source.Pilot, module));
+        f.Clock.Seconds += 30;
+        handler.Advance(source);
+        Store(f).Complete(f.PilotId, module, f.Clock.Now);
+        Assert.Equal(50, Health(f).Defense.Structure - Health(f).Remaining.Structure, 7);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Empty(world.Set<WorldRemoteRepair>());
+        Assert.NotNull(world.Set<ModuleCooldown>().Find(module));
     }
 
     [Fact]

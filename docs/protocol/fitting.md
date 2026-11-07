@@ -14,6 +14,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Player remote shield and armor repairs, November 7, 2026](#player-remote-shield-and-armor-repairs-november-7-2026)
 
+- [Player remote hull repair, November 7, 2026](#player-remote-hull-repair-november-7-2026)
+
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
@@ -768,7 +770,31 @@ FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedNa
 
 **Optional maintainer checks:** See the three [remote repair checks](../development-client.md#optional-remote-shield-and-armor-repair-checks) on a copied save.
 
-The maintainer requested stopping after this milestone. Remote hull repair and capacitor transfer are not started.
+At that checkpoint the maintainer requested stopping; remote hull repair and capacitor transfer had not started. Remote hull repair subsequently continued under the ship-content program below.
+
+## Player remote hull repair, November 7, 2026
+
+Ship-content milestone **4a** adds all **eight published static remote hull repairers** from build 3662168, group 585: T1/T2 small, medium, large and capital profiles (3986, 4296, 4299, 27904, 27930, 27932, 27934 and 41475). Player logistics now admits 97 static repairers. The production-backed coverage export retains the new profiles as **Partial** because overheating remains unfinished. Capacitor warfare/transfers and tracking/sensor assistance remain in milestone 4; this checkpoint does not close that milestone or the completion program. Existing player-only target scope remains: drone, NPC and structure repair targets are not added here. Capital-sized profiles are exercised with explicit fixture budgets on a corvette, not represented as real-budget capital fits or newly admitted capital hulls.
+
+The native activation name is `shipModuleRemoteHullRepairer`, effect **6185**; its catalog graphic is `effects.RemoteHullRepair`. Amount comes from `structureDamageAmount` (**83**, typed `HullRepairAmount`); duration, capacitor, optimal, falloff and impedance use the same explicit targeted-repair fields as existing logistics. Remote Hull Repair Systems (**27902**) and Capital Remote Hull Repair Systems (**27936**) each contribute their catalog 5% capacitor reduction per earned level to modules requiring that skill. Capital profiles require both skills, so both multipliers apply once; neither changes amount or duration. No new hull bonus classification is inferred.
+
+Capacitor, assistance consequences, cooldown and the pending cycle commit atomically at activation. Hull HP is applied at the saved cycle end after source/module/target and assistance revalidation. Healing clips to missing structure, preserves armor and cannot revive a destroyed ship. Edge distance, falloff and target impedance are evaluated at completion. Repeated or early completions cannot duplicate or accelerate healing. Manual deactivation finishes the paid interval; lock loss, disconnect, travel or offlining cancel pending work. Restart clears pending work while retaining spent capacitor, cooldowns and completed repairs. Existing `WorldRemoteRepair` storage is reused with the appended Hull enum value; no schema change or offline healing is introduced.
+
+Committed repair events use current recipient health for shield, armor and structure attribute updates; structure damage is native attribute **3**, not hit points or repair amount. Native activation/repeats retain one HUD cycle and targeted nonoffensive observer effects, including snapshot replay. Hull updates cannot overwrite a later hit with a stale repair event. No items, skills, supply, production recipes or safety privileges are granted.
+
+Sources: read-only installed build-3662168 catalog, fingerprint **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**, including effects 6185/3002, attributes 83/2116, the eight module definitions and skill selectors 2979/2980. `tools/Export-RemoteRepairCatalog.py` now reproduces 101 published shield/armor/hull profiles, including the four still-rejected mutated armor profiles and all required skill records. Existing fixture records are semantically unchanged. Inert inspection of pinned `moduleButtonTooltip.pyj`, `AddRemoteHullRepairInfo`, confirms the structure-damage-amount field and native hull-repair tooltip; effect naming/graphics come from catalog metadata. Staged `code.ccp` SHA-256 was verified as **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. This reuses the [existing Carbon-reviewed codec/repair boundary](#player-remote-shield-and-armor-repairs-november-7-2026); no serialization or Destiny movement rules change. No client was launched or controlled.
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. All **158 affected .NET cases** passed; the timed restore/build/test sequence took **41.49 seconds**, including **38.01 seconds** for the test runner. Cases cover every new profile, earned skill levels and both capital selectors, exact deadlines, duplicate completion, health-layer preservation, real edge-distance falloff/impedance, invalid ownership/skills/resources/targets/range, assistance safety, completion revalidation, native repeat/manual stop/lock-loss/disconnect, observer replay and resident checkpoint/restart behavior. The focused selection is recorded below. Both Python policy suites passed (**8 catalog**, **9 formatting** cases; **0.94 seconds** combined command time). Formatting verification passed across **1,035 files**, including the 140-column check, in **14.14 seconds**. Evidence checks verified **458 local documentation links**, the new section anchors and byte-identical fixture reproduction in **0.32 seconds**; existing fixture records remain semantically unchanged. The production export changes exactly the eight new repair profiles and increases admitted modules/rigs from 3,196 to **3,204**. No full .NET suite was requested or run.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Repair.HullRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Repair.ArmorRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Repair.ShieldBoostTests|FullyQualifiedName=Eden.Protocol.Tests.Combat.CrimewatchTests.TimerBoundariesAndCriminalPrecedenceNeverShortenExistingDeadlines|FullyQualifiedName=Eden.Protocol.Tests.Hosting.ServerServicesTests.SharesWorldAndGateButIsolatesPilotSessions
+```
+
+Development began with exact `EveryStaticHullRepairerPaysEarnedCostAndHealsOnlyOnceAtItsDeadline`, then the logistics class and exact new boundary methods. Earlier failed builds exposed a missing import and an incorrect nullable-value assumption in new tests. Earlier falloff runs exposed missing fixture attribute metadata and station coordinates used instead of ship position. These were corrected; the final 158-case run covers the corrected source and fixtures.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
+
+**Optional maintainer checks:** On a copied save, activate a remote hull repairer on a damaged wingmate and observe the hull bar and beam at cycle end; manually stop during a paid interval and confirm it finishes once; interrupt a second interval by losing lock and confirm it does not heal.
 
 ## Ship content coverage milestone 1, November 7, 2026
 

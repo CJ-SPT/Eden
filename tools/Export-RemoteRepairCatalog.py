@@ -1,11 +1,11 @@
-"""Export build-3662168 remote shield/armor repair modules and inert fitting inputs from the read-only catalog."""
+"""Export build-3662168 remote shield/armor/hull repair modules and inert fitting inputs from the read-only catalog."""
 import argparse
 import json
 from pathlib import Path
 import sqlite3
 
 
-GROUPS = {41, 325}
+GROUPS = {41, 325, 585}
 BUILD = 3662168
 
 
@@ -23,8 +23,8 @@ def export(catalog_path, output):
             source = record('client/types', type_id) if group_id in GROUPS else {}
             if source.get('published') == 1:
                 cohort.append(type_id)
-        if len(cohort) != 93:
-            raise ValueError('Expected 93 published remote shield/armor modules')
+        if len(cohort) != 101:
+            raise ValueError('Expected 101 published remote shield/armor/hull modules')
         # Include representative supported logistics hulls and all prerequisite skills.
         pending = set(cohort) | {601, 620, 625, 582, 590}
         types, records, attributes, effects = [], {}, {2116, 854, 2691}, set()

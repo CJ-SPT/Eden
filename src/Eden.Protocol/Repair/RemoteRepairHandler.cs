@@ -185,6 +185,13 @@ internal sealed class RemoteRepairHandler(
                         Now(),
                         health.Defense.Armor - health.Remaining.Armor
                     ),
+                    new(
+                        context.Pilot.PilotId,
+                        new DogmaItemKey.Item(health.ShipId),
+                        DogmaAttributeId.Damage,
+                        Now(),
+                        health.Defense.Structure - health.Remaining.Structure
+                    ),
                 ])
             );
         }

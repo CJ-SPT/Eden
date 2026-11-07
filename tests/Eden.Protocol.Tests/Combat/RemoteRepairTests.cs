@@ -75,6 +75,7 @@ public sealed partial class RemoteRepairTests
                 ShipId = Target(f),
                 ShieldCharge = 0,
                 ArmorDamage = 100,
+                StructureDamage = 50,
                 UpdatedAt = f.Clock.Now,
             }
         );
@@ -91,10 +92,15 @@ public sealed partial class RemoteRepairTests
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog
             .Set<ItemType>()
-            .Where(t => t.GroupId == RemoteRepairRules.ShieldGroup || t.GroupId == RemoteRepairRules.ArmorGroup)
+            .Where(t =>
+                t.GroupId == RemoteRepairRules.ShieldGroup
+                || t.GroupId == RemoteRepairRules.ArmorGroup
+                || t.GroupId == RemoteRepairRules.HullGroup
+            )
             .ToArray();
         int shield = 0;
         int armor = 0;
+        int hull = 0;
         foreach (var type in types)
         {
             bool abyssal = catalog.Require(CatalogData.Client.Types, (long)type.Id).MetaGroupID == 15;
@@ -106,14 +112,19 @@ public sealed partial class RemoteRepairTests
                 {
                     shield++;
                 }
-                else
+                else if (type.GroupId == RemoteRepairRules.ArmorGroup)
                 {
                     armor++;
+                }
+                else
+                {
+                    hull++;
                 }
             }
         }
         Assert.Equal(44, shield);
         Assert.Equal(45, armor);
+        Assert.Equal(8, hull);
     }
 
     [Theory]
@@ -159,16 +170,16 @@ public sealed partial class RemoteRepairTests
         Assert.Equal(result.Cycle.CompletesAt, world.Set<ModuleCooldown>().Find(module)!.ReadyAt);
     }
 
-    [Fact]
-    public void MissingLockAndUnsafeAssistanceRejectWithoutPaymentOrHealing()
+    [Theory]
+    [InlineData(3586, DogmaEffect.RemoteShieldBoost)]
+    [InlineData(27932, DogmaEffect.RemoteHullRepair)]
+    public void MissingLockAndUnsafeAssistanceRejectWithoutPaymentOrHealing(int type, DogmaEffect effect)
     {
         using Fixture f = Prepare();
-        long module = f.Fit(3586);
+        long module = f.Fit(type);
         Space(f);
         Damage(f);
-        Assert.Throws<InvalidDataException>(() =>
-            Store(f).Start(f.PilotId, module, DogmaEffect.RemoteShieldBoost, Target(f), new HashSet<long>(), f.Clock.Now)
-        );
+        Assert.Throws<InvalidDataException>(() => Store(f).Start(f.PilotId, module, effect, Target(f), new HashSet<long>(), f.Clock.Now));
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -182,7 +193,7 @@ public sealed partial class RemoteRepairTests
             world.SaveChanges();
         }
         var before = Health(f);
-        Assert.Throws<InvalidDataException>(() => Start(f, module, DogmaEffect.RemoteShieldBoost));
+        Assert.Throws<InvalidDataException>(() => Start(f, module, effect));
         Assert.Equal(before, Health(f));
         using WorldDbContext verify = new(f.Db.Path);
         Assert.Empty(verify.Set<WorldRemoteRepair>());

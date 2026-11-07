@@ -8,6 +8,7 @@ public enum RemoteRepairKind
 {
     Shield,
     Armor,
+    Hull,
 }
 
 public enum RemoteRepairSkill
@@ -16,6 +17,8 @@ public enum RemoteRepairSkill
     RemoteArmorRepairSystems = 16069,
     CapitalRemoteArmorRepairSystems = 24568,
     CapitalShieldEmissionSystems = 24571,
+    RemoteHullRepairSystems = 27902,
+    CapitalRemoteHullRepairSystems = 27936,
 }
 
 public sealed record RemoteRepairModule(
@@ -53,12 +56,14 @@ public static class RemoteRepairRules
 {
     public const int ShieldGroup = 41;
     public const int ArmorGroup = 325;
+    public const int HullGroup = 585;
 
     public static DogmaEffect? Effect(int group) =>
         group switch
         {
             ShieldGroup => DogmaEffect.RemoteShieldBoost,
             ArmorGroup => DogmaEffect.RemoteArmorRepair,
+            HullGroup => DogmaEffect.RemoteHullRepair,
             _ => null,
         };
 
@@ -68,12 +73,18 @@ public static class RemoteRepairRules
         {
             DogmaEffect.RemoteShieldBoost => RemoteRepairKind.Shield,
             DogmaEffect.RemoteArmorRepair => RemoteRepairKind.Armor,
+            DogmaEffect.RemoteHullRepair => RemoteRepairKind.Hull,
             _ => throw new InvalidDataException("Unsupported remote repair effect."),
         };
         double duration = values.GetValueOrDefault(DogmaAttributeId.Duration);
         double cost = values.GetValueOrDefault(DogmaAttributeId.CapacitorNeed);
         double amount = values.GetValueOrDefault(
-            kind == RemoteRepairKind.Shield ? DogmaAttributeId.ShieldBonus : DogmaAttributeId.ArmorRepairAmount
+            kind switch
+            {
+                RemoteRepairKind.Shield => DogmaAttributeId.ShieldBonus,
+                RemoteRepairKind.Armor => DogmaAttributeId.ArmorRepairAmount,
+                _ => DogmaAttributeId.HullRepairAmount,
+            }
         );
         double optimal = values.GetValueOrDefault(DogmaAttributeId.MaxRange);
         double falloff = values.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness);
@@ -117,16 +128,19 @@ public static class RemoteRepairRules
         }
         return health with
         {
-            Remaining =
-                kind == RemoteRepairKind.Shield
-                    ? health.Remaining with
-                    {
-                        Shield = Math.Min(health.Defense.Shield, health.Remaining.Shield + amount),
-                    }
-                    : health.Remaining with
-                    {
-                        Armor = Math.Min(health.Defense.Armor, health.Remaining.Armor + amount),
-                    },
+            Remaining = kind switch
+            {
+                RemoteRepairKind.Shield => health.Remaining with
+                {
+                    Shield = Math.Min(health.Defense.Shield, health.Remaining.Shield + amount),
+                },
+                RemoteRepairKind.Armor => health.Remaining with { Armor = Math.Min(health.Defense.Armor, health.Remaining.Armor + amount) },
+                RemoteRepairKind.Hull => health.Remaining with
+                {
+                    Structure = Math.Min(health.Defense.Structure, health.Remaining.Structure + amount),
+                },
+                _ => throw new InvalidDataException("Unsupported remote repair kind."),
+            },
         };
     }
 }

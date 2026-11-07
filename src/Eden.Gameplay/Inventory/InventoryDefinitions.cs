@@ -111,6 +111,7 @@ public enum DogmaEffect
     NpcEnergyNeutralization = 6691,
     NpcWebifier = 575,
     NpcWarpDisruption = 563,
+    RemoteHullRepair = 6185,
     RemoteShieldBoost = 6186,
     RemoteArmorRepair = 6188,
     ShieldBoosting = 4,
