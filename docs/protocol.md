@@ -29,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Readable migration steps, November 6, 2026](protocol/architecture.md#readable-migration-steps-november-6-2026)
+
 - [Project boundaries and feature layout, November 6, 2026](protocol/architecture.md#project-boundaries-and-feature-layout-november-6-2026)
 
 - [Pilot missile combat and automatic retaliation, November 6, 2026](protocol/combat.md#pilot-missile-combat-and-automatic-retaliation-november-6-2026)

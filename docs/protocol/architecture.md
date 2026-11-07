@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Readable migration steps, November 6, 2026](#readable-migration-steps-november-6-2026)
 - [Project boundaries and feature layout, November 6, 2026](#project-boundaries-and-feature-layout-november-6-2026)
 - [Attribute-based DI acceptance](#attribute-based-di-acceptance)
 - [Named protocol models: shared session plumbing](#named-protocol-models-shared-session-plumbing)
@@ -32,6 +33,22 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Architecture audit milestone 10](#architecture-audit-milestone-10)
 - [Architecture audit milestone 11: wallet header duplication](#architecture-audit-milestone-11-wallet-header-duplication)
 - [Architecture audit milestone 12](#architecture-audit-milestone-12)
+
+## Readable migration steps, November 6, 2026
+
+`WorldMigration` now contains 51 lines of explicit orchestration. Ten named steps under `Storage/Migrations` hold legacy conversion, initial economy configuration, historical version ranges, NPC prerequisites and saved-world validation. The extraction reconstructed the original sequence before writing the coordinator, preserving SQL, original-version checks, current-version reconciliation and transaction boundaries. Schema version remains 92. Resolving a world reader still performs no migration.
+
+**Automated validation:** restore/build, 130 focused .NET tests (25.2 seconds wall time), both Python policy suites (3 and 9 tests), formatting verification, and documentation checks passed. Added negative/future-version cases assert rejection and byte-for-byte unchanged saves; existing coverage exercises legacy upgrades, rollback, reopen, current-schema reconciliation, ownership, history, economy and Crimewatch. The full .NET suite was not run.
+
+The test filter was:
+
+```text
+FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~Persistence.WorldTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InteractionHistoryPersistenceTests|FullyQualifiedName~PersonalMarket|FullyQualifiedName~Economy|FullyQualifiedName~Economic|FullyQualifiedName~Crimewatch|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this structural milestone.
 
 ## Project boundaries and feature layout, November 6, 2026
 

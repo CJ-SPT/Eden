@@ -8,6 +8,27 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class WorldMigrationTests
 {
     [Theory]
+    [InlineData(-1)]
+    [InlineData(WorldMigration.CurrentVersion + 1)]
+    public void UnsupportedVersionLeavesTheSaveUnchanged(int version)
+    {
+        using TestWorld fixture = new();
+        using (var connection = new SqliteConnection($"Data Source={fixture.Path};Pooling=false"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = $"PRAGMA user_version={version}";
+            command.ExecuteNonQuery();
+        }
+        byte[] before = File.ReadAllBytes(fixture.Path);
+
+        var error = Assert.Throws<InvalidDataException>(() => WorldInitialization.Initialize(new(fixture.Path)));
+
+        Assert.Equal($"Unsupported Eden world version {version}.", error.Message);
+        Assert.Equal(before, File.ReadAllBytes(fixture.Path));
+    }
+
+    [Theory]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
