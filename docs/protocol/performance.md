@@ -6,6 +6,18 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Shared drone contacts, November 6, 2026
+
+Drone contacts are shared per system in the resident world. Committed drone, inventory, pilot, ship and fit changes invalidate the view. Controller membership is indexed by pilot and ship. The owner advances its drones before refreshing its scene once; observers still refresh without owning drones. Transaction-local reads bypass publication.
+
+Automated validation uses `ResidentDroneTests.WarmObserversAndControllerChecksShareContactsAndSeeCommittedOrders`. Ten warmed observer/controller reads issue zero SQL commands, connections or fitting calculations and see recall changes immediately. The baseline five-drone owner path issued 178 SQL commands with two contact reads. This milestone removes the initial owner read and shares unchanged observer contacts. Movement remains SQL-backed at this milestone.
+
+The focused filter `FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~DroneRecoveryTests|FullyQualifiedName~ResidentReadTests` passed 164 tests in 67 seconds. Tool/solution restore and solution build passed with zero warnings/errors. Both Python suites passed (3 catalog, 9 formatting cases); formatting checked 887 files and the width limit. Initial development corrected a changed parameter type and fixture property reads included in the measurement. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
 ## Contents
 
 - [Resident system motion and NPC acquisition (November 5, 2026)](#resident-system-motion-and-npc-acquisition-november-5-2026)

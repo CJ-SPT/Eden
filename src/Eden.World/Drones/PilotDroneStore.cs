@@ -13,6 +13,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -359,7 +360,27 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
         );
     }
 
-    public IReadOnlyList<DroneContact> List(int systemId, long now)
+    public bool HasControlled(long pilotId, long shipId) => ListControllers().Contains((pilotId, shipId));
+
+    private IReadOnlySet<(long Pilot, long Ship)> ListControllers() =>
+        LiveReadModels.Find(database.Path)?.DroneControllers(ReadControllers) ?? ReadControllers();
+
+    private IReadOnlySet<(long Pilot, long Ship)> ReadControllers()
+    {
+        using WorldDbContext world = new(database.Path);
+        return world
+            .Set<WorldDrone>()
+            .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
+            .Select(d => new { d.PilotId, d.ControllerShipId })
+            .AsEnumerable()
+            .Select(d => (d.PilotId, d.ControllerShipId))
+            .ToHashSet();
+    }
+
+    public IReadOnlyList<DroneContact> List(int systemId, long now) =>
+        LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId)) ?? ReadContacts(systemId);
+
+    private IReadOnlyList<DroneContact> ReadContacts(int systemId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);

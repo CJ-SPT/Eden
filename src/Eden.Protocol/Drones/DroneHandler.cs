@@ -175,10 +175,9 @@ internal sealed class DroneHandler(
             return;
         }
         _nextTick = checked(now + TimeSpan.TicksPerSecond);
-        // Observers need arrivals, movement and removals even without owning drones.
-        context.Flight.RefreshDrones();
-        if (!context.Flight.VisibleDrones.Any(d => d.ShipId == context.Pilot.ShipId && d.PilotId == context.Pilot.PilotId))
+        if (!drones.HasControlled(context.Pilot.PilotId, context.Pilot.ShipId))
         {
+            context.Flight.RefreshDrones();
             return;
         }
         var result = drones.Advance(context.Pilot.PilotId, now, context.Flight.CurrentStamp);
