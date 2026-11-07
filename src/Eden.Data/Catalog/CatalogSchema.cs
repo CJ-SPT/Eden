@@ -1,13 +1,24 @@
+using System.Collections.Immutable;
+
 namespace Eden.Data.Catalog;
+
+public sealed record CatalogFieldCompatibility(bool Editable, string Reason)
+{
+    public static CatalogFieldCompatibility InstalledSource { get; } =
+        new(false, "Installed source fields and identities require a compatible client synchronization contract.");
+}
 
 public sealed record CatalogShapeDescriptor(
     string Kind,
     bool AllowsNull,
     bool WideInteger,
-    IReadOnlyDictionary<string, CatalogShapeDescriptor>? Fields = null,
+    ImmutableDictionary<string, CatalogShapeDescriptor>? Fields = null,
     CatalogShapeDescriptor? Element = null,
-    IReadOnlyDictionary<string, CatalogShapeDescriptor>? Alternatives = null
-);
+    ImmutableDictionary<string, CatalogShapeDescriptor>? Alternatives = null
+)
+{
+    public CatalogFieldCompatibility Compatibility => CatalogFieldCompatibility.InstalledSource;
+}
 
 public sealed record CatalogRelationshipDescriptor(string Path, string Target);
 
@@ -20,7 +31,7 @@ public sealed record CatalogDatasetDescriptor(
     string ValueType,
     CatalogShapeDescriptor KeySchema,
     CatalogShapeDescriptor ValueSchema,
-    IReadOnlyList<CatalogRelationshipDescriptor> Relationships
+    ImmutableArray<CatalogRelationshipDescriptor> Relationships
 );
 
 public sealed record CatalogSchemaReport(
@@ -28,5 +39,5 @@ public sealed record CatalogSchemaReport(
     int DatasetCount,
     long RecordCount,
     int UnresolvedFields,
-    IReadOnlyList<CatalogDatasetDescriptor> Datasets
+    ImmutableArray<CatalogDatasetDescriptor> Datasets
 );

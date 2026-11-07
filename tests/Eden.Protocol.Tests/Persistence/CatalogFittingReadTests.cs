@@ -150,11 +150,11 @@ public sealed class CatalogFittingReadTests
     }
 
     [Fact]
-    public async Task TickScopeRetainsTypedDefinitionsWhileLegacySourcesExpireAtTheNextOperation()
+    public async Task TickScopesShareTypedDefinitionsAndMissingResultsAcrossOperations()
     {
         using TestWorld db = new();
         string path = new WorldDatabase(db.Path).CatalogPath;
-        CatalogFittingReadScope scopes = new();
+        CatalogConnectionScope scopes = new();
         var shared = CatalogProvider.Open(path);
         shared.Attributes(601);
         Assert.NotEmpty(shared.Items);
@@ -163,13 +163,13 @@ public sealed class CatalogFittingReadTests
         {
             using (CatalogDbContext first = new(path))
             {
-                Assert.Null(first.FindSource("missing", "key"));
+                Assert.Null(first.Read(CatalogData.Client.Types, long.MaxValue));
                 Assert.NotEmpty(first.FittingAttributes(601));
                 Assert.NotNull(first.FittingType(601));
             }
             await Task.Yield();
             using CatalogDbContext second = new(path);
-            Assert.Null(second.FindSource("missing", "key"));
+            Assert.Null(second.Read(CatalogData.Client.Types, long.MaxValue));
             Assert.NotEmpty(second.FittingAttributes(601));
             Assert.NotNull(second.FittingType(601));
             Assert.Equal(1, metrics.Commands);
@@ -177,22 +177,22 @@ public sealed class CatalogFittingReadTests
         using (scopes.Begin())
         {
             using CatalogDbContext next = new(path);
-            Assert.Null(next.FindSource("missing", "key"));
+            Assert.Null(next.Read(CatalogData.Client.Types, long.MaxValue));
             Assert.NotEmpty(next.FittingAttributes(601));
             Assert.NotNull(next.FittingType(601));
         }
-        Assert.Equal(2, metrics.Commands);
+        Assert.Equal(1, metrics.Commands);
     }
 
     [Fact]
-    public void ReadOnlyOperationReusesMissingSourcesAndAttributesWithoutSharingMutableCopies()
+    public void ReadOnlyOperationReusesMissingTypedRecordsAndAttributesWithoutSharingMutableCopies()
     {
         using TestWorld db = new();
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
         var first = catalog.FittingAttributes(601);
         using var metrics = SessionPerformance.Begin("catalog", _ => { }, force: true)!;
-        Assert.Null(catalog.FindSource("missing", "key"));
-        Assert.Null(catalog.FindSource("missing", "key"));
+        Assert.Null(catalog.Read(CatalogData.Client.Types, long.MaxValue));
+        Assert.Null(catalog.Read(CatalogData.Client.Types, long.MaxValue));
         var modified = first.ToDictionary();
         var key = first.Keys.First();
         modified[key]++;
@@ -207,20 +207,22 @@ public sealed class CatalogFittingReadTests
         string path = new WorldDatabase(db.Path).CatalogPath;
         using (CatalogDbContext catalog = new(path, writable: true))
         {
-            Assert.Null(catalog.FindSource("performance", "key"));
+            Assert.Null(catalog.Read(CatalogData.Client.Types, (long)int.MaxValue));
             catalog.Add(
                 new SourceRecord
                 {
-                    Dataset = "performance",
-                    Key = "key",
-                    Data = "{}",
+                    Dataset = "client/types",
+                    Key = int.MaxValue.ToString(),
+                    Data = "{\"volume\":42}",
                 }
             );
             catalog.SaveChanges();
             catalog.ChangeTracker.Clear();
-            Assert.Equal("{}", catalog.FindSource("performance", "key")!.Data);
-            catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='[]' WHERE Dataset='performance' AND Key='key'");
-            Assert.Equal("[]", catalog.FindSource("performance", "key")!.Data);
+            Assert.Equal(42, catalog.Read(CatalogData.Client.Types, (long)int.MaxValue)!.Volume);
+            catalog.Database.ExecuteSqlRaw(
+                "UPDATE SourceRecord SET Data='{{\"volume\":84}}' WHERE Dataset='client/types' AND Key='2147483647'"
+            );
+            Assert.Equal(84, catalog.Read(CatalogData.Client.Types, (long)int.MaxValue)!.Volume);
             var attribute = catalog.FittingAttributes(601).First();
             catalog.Database.ExecuteSql(
                 $"""
@@ -231,6 +233,6 @@ public sealed class CatalogFittingReadTests
             Assert.Equal(attribute.Value + 123, catalog.FittingAttributes(601)[attribute.Key]);
         }
         using CatalogDbContext reopened = new(path);
-        Assert.Equal("[]", reopened.FindSource("performance", "key")!.Data);
+        Assert.Equal(84, reopened.Read(CatalogData.Client.Types, (long)int.MaxValue)!.Volume);
     }
 }

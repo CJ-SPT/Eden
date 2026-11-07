@@ -1,3 +1,5 @@
+using Eden.Gameplay.Content;
+
 namespace Eden.Gameplay.Combat;
 
 // Pinned build 3662168 clone-soldier types share ordinary asteroid cruiser
@@ -37,9 +39,5 @@ public enum NpcDevelopmentType
 
 public static class NpcSpecialTypes
 {
-    public static IReadOnlySet<int> Excluded { get; } =
-        Enum.GetValues<NpcCloneSoldierType>()
-            .Select(type => (int)type)
-            .Concat(Enum.GetValues<NpcDevelopmentType>().Select(type => (int)type))
-            .ToHashSet();
+    public static IReadOnlySet<int> Excluded => BuildContentPolicy.Current.Npcs.ExcludedTypes;
 }

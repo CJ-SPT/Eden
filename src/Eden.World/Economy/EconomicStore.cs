@@ -58,13 +58,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
     internal static Dictionary<int, decimal> Prices(WorldDbContext world) =>
         world.Set<SavedAdjustedPrice>().AsNoTracking().ToDictionary(p => p.TypeId, p => p.PriceIsk);
 
-    internal static void Initialize(
-        WorldDbContext world,
-        CatalogDbContext catalog,
-        long now,
-        bool newEconomy,
-        EconomicConfiguration? configuration
-    )
+    internal static void Initialize(WorldDbContext world, CatalogDbContext catalog, bool newEconomy, EconomicConfiguration? configuration)
     {
         if (!world.Set<SavedEconomicPolicy>().Any())
         {
@@ -85,6 +79,10 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
             }
             world.SaveChanges();
         }
+    }
+
+    internal static void ReconcileBelts(WorldDbContext world, long now)
+    {
         var policy = Policy(world);
         var known = world.Set<SavedBeltRenewal>().Select(b => b.BeltId).ToHashSet();
         var belts = world.Set<WorldAsteroid>().Select(a => new BeltLocation(a.BeltId, a.SystemId)).Distinct().ToArray();

@@ -73,7 +73,6 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var saved = world.Set<WorldNpcEwar>().Where(e => e.TargetShipId == shipId).ToArray();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);

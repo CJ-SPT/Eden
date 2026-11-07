@@ -1,12 +1,1170 @@
 {
   "build": 3662168,
-  "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
+  "purpose": "Completed adoption inventory; native identifiers and mechanics are intentional, classified below.",
   "counts": {
     "catalog-read": 128,
     "catalog-context": 461,
-    "content-identifier": 134,
+    "content-identifier": 132,
     "type-selection": 8
   },
+  "coverage": {
+    "typedDatasets": 442,
+    "sourceRecords": 4913627,
+    "generatedPayloadClasses": 522,
+    "generatedVariantTypes": 27,
+    "unresolvedFields": 0,
+    "catalogAccessViolations": [],
+    "buildPolicy": "src/Eden.Gameplay/Content/content-support-3662168.json",
+    "rawReader": "Removed; source inputs use generated typed access.",
+    "legacySourceCache": "Removed; connection scope only reuses operation-owned transport."
+  },
+  "boundaries": {
+    "src/Eden.Data/Catalog/Entities.cs": "Installed-record storage and typed deserialization models.",
+    "src/Eden.World/Catalog/CatalogDbContext.cs": "Catalog context, writable fixtures and generated lookup adapters.",
+    "src/Eden.World/Catalog/CatalogFittingReads.cs": "Typed core projections and explicit writable fixture reads.",
+    "src/Eden.World/Catalog/CatalogGeographyReads.cs": "Typed geography projections and writable fixture reads.",
+    "src/Eden.World/Catalog/CatalogConnectionScope.cs": "Operation-owned read-only catalog connection transport.",
+    "src/Eden.World/Catalog/CatalogProvider.cs": "Shared bounded source loading, indexes and administration pages.",
+    "src/Eden.World/Catalog/CatalogProvider.Geography.cs": "Shared indexed location loading.",
+    "src/Eden.World/Catalog/CatalogSource.cs": "Generated source mappings and full source verification.",
+    "src/Eden.World/Catalog/CatalogSources.cs": "Installed catalog build/provenance verification.",
+    "src/Eden.World/Fittings/HullSupportAudit.cs": "Explicit offline hull verification/export tool.",
+    "src/Eden.Server/Program.cs": "Explicit offline catalog creation and verification commands."
+  },
+  "boundaryPrefixes": {
+    "src/Eden.World/Storage/Migrations/": "Saved-world upgrades and reference integrity verification.",
+    "tests/": "Explicit fixtures, verification and isolated writable catalog tests.",
+    "tools/": "Catalog import, migration, generation and verification tooling."
+  },
+  "worldTransportExceptions": {
+    "src/Eden.World/Storage/WorldConnections.cs": "Owned world connection plumbing.",
+    "src/Eden.World/Storage/WorldDbContext.cs": "World context and detached checkpoint connection plumbing.",
+    "src/Eden.World/Runtime/LiveWorld.cs": "Owned world memory image and detached checkpoint transport.",
+    "src/Eden.World/Runtime/WorldSnapshot.cs": "Detached world checkpoint image transport.",
+    "src/Eden.Server/Launcher/LauncherStore.cs": "Authentication persistence through the existing world connection owner."
+  },
+  "hardcodedDecisionDispositions": [
+    {
+      "path": "src/Eden.Gameplay/Agents/AgentDirectory.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "public enum AgentType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 39,
+      "kind": "content-identifier",
+      "text": "public enum HybridChargeType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 72,
+      "kind": "content-identifier",
+      "text": "public const int FrequencyCrystalGroup = 86;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 73,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedBeamCrystalGroup = 374;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 74,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedPulseCrystalGroup = 375;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public const int HybridChargeGroup = 85;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 76,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedRailgunChargeGroup = 373;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 77,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedBlasterChargeGroup = 377;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 78,
+      "kind": "content-identifier",
+      "text": "public const int ProjectileChargeGroup = 83;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 79,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedAutocannonChargeGroup = 372;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ammunition/PilotAmmunition.cs",
+      "line": 80,
+      "kind": "content-identifier",
+      "text": "public const int AdvancedArtilleryChargeGroup = 376;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Bookmarks/PersonalBookmarks.cs",
+      "line": 88,
+      "kind": "content-identifier",
+      "text": "public const int SolarSystemTypeId = 5;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Bookmarks/PersonalBookmarks.cs",
+      "line": 89,
+      "kind": "content-identifier",
+      "text": "public const int RegionTypeId = 3;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Bookmarks/PersonalBookmarks.cs",
+      "line": 90,
+      "kind": "content-identifier",
+      "text": "public const int ConstellationTypeId = 4;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Characters/CharacterSearch.cs",
+      "line": 19,
+      "kind": "content-identifier",
+      "text": "public const int ResultType = 2;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Characters/PilotBoosters.cs",
+      "line": 32,
+      "kind": "content-identifier",
+      "text": "public const int Group = 303;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Characters/PilotImplants.cs",
+      "line": 28,
+      "kind": "content-identifier",
+      "text": "public const int LearningGroup = 745;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Characters/PilotJumpClones.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum InfomorphSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Characters/PilotSecurityStatus.cs",
+      "line": 3,
+      "kind": "content-identifier",
+      "text": "public enum SecuritySkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/CombatDefinitions.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum CombatWeaponType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/CombatDefinitions.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public enum CombatSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/CombatDefinitions.cs",
+      "line": 70,
+      "kind": "content-identifier",
+      "text": "public const int EnergyWeaponGroup = 53;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/CombatDefinitions.cs",
+      "line": 71,
+      "kind": "content-identifier",
+      "text": "public const int HybridWeaponGroup = 74;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/CombatDefinitions.cs",
+      "line": 72,
+      "kind": "content-identifier",
+      "text": "public const int ProjectileWeaponGroup = 55;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/MissileDefinitions.cs",
+      "line": 6,
+      "kind": "content-identifier",
+      "text": "public enum MissileSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcConvoyRules.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public const int GroupId = 297;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcEncounters.cs",
+      "line": 64,
+      "kind": "content-identifier",
+      "text": "public const int GuristasRookieType = 30380;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcGuardRules.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "public enum NpcGuardType",
+      "disposition": "named-build-identifiers",
+      "reason": "Names remain as native identifiers; roster/admission/selection data lives in the build policy."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcLootRules.cs",
+      "line": 6,
+      "kind": "content-identifier",
+      "text": "public enum NpcLootType",
+      "disposition": "named-build-identifiers",
+      "reason": "Names remain as native identifiers; roster/admission/selection data lives in the build policy."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcSpecialTypes.cs",
+      "line": 8,
+      "kind": "content-identifier",
+      "text": "public enum NpcCloneSoldierType",
+      "disposition": "named-build-identifiers",
+      "reason": "Names remain as native identifiers; roster/admission/selection data lives in the build policy."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/NpcSpecialTypes.cs",
+      "line": 34,
+      "kind": "content-identifier",
+      "text": "public enum NpcDevelopmentType",
+      "disposition": "named-build-identifiers",
+      "reason": "Names remain as native identifiers; roster/admission/selection data lives in the build policy."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PilotHealth.cs",
+      "line": 43,
+      "kind": "content-identifier",
+      "text": "public enum DefenseSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum ElectronicWarfareSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 73,
+      "kind": "content-identifier",
+      "text": "public const int EcmGroup = 201;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 74,
+      "kind": "content-identifier",
+      "text": "public const int SensorDampenerGroup = 208;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public const int WeaponDisruptorGroup = 291;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 76,
+      "kind": "content-identifier",
+      "text": "public const int TargetPainterGroup = 379;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 77,
+      "kind": "content-identifier",
+      "text": "public const int TrackingDisruptionScriptGroup = 909;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 78,
+      "kind": "content-identifier",
+      "text": "public const int DampeningScriptGroup = 911;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/PlayerElectronicWarfare.cs",
+      "line": 79,
+      "kind": "content-identifier",
+      "text": "public const int GuidanceDisruptionScriptGroup = 1569;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Contracts/CourierRules.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "public const int PackageType = 3468;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Contracts/CourierRules.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "public const int PackageGroup = 649;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Contracts/PilotContracts.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum ContractType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Contracts/PilotContracts.cs",
+      "line": 34,
+      "kind": "content-identifier",
+      "text": "public enum ContractSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Corporations/PlayerCorporations.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public const int CorporationType = 2;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Docking/PilotFleet.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public const int CorvetteGroup = 237;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Docking/PilotFleet.cs",
+      "line": 14,
+      "kind": "content-identifier",
+      "text": "public const int CapsuleGroup = 29;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Docking/PilotFleet.cs",
+      "line": 15,
+      "kind": "content-identifier",
+      "text": "public const int CapsuleType = 670;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Docking/PilotFleet.cs",
+      "line": 29,
+      "kind": "content-identifier",
+      "text": "public enum StarterShipType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
+      "line": 9,
+      "kind": "content-identifier",
+      "text": "public const int CombatDroneGroup = 100;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
+      "line": 35,
+      "kind": "type-selection",
+      "text": "public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    },
+    {
+      "path": "src/Eden.Gameplay/Drones/PilotDrones.cs",
+      "line": 26,
+      "kind": "content-identifier",
+      "text": "public enum DroneSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Industry/PilotIndustry.cs",
+      "line": 21,
+      "kind": "content-identifier",
+      "text": "public enum IndustrySkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Insurance/ShipInsurance.cs",
+      "line": 76,
+      "kind": "content-identifier",
+      "text": "public const int StationGroup = 15;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
+      "line": 81,
+      "kind": "content-identifier",
+      "text": "public enum FittingSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
+      "line": 214,
+      "kind": "content-identifier",
+      "text": "public const int MiningLaserGroup = 54;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
+      "line": 215,
+      "kind": "content-identifier",
+      "text": "public const int StripMinerGroup = 464;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
+      "line": 219,
+      "kind": "content-identifier",
+      "text": "public const int CivilianMinerType = 3651;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PassiveModules.cs",
+      "line": 79,
+      "kind": "content-identifier",
+      "text": "public enum PassiveModuleSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 20,
+      "kind": "content-identifier",
+      "text": "public const int TrackingComputerGroup = 213;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 21,
+      "kind": "content-identifier",
+      "text": "public const int SensorBoosterGroup = 212;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 22,
+      "kind": "content-identifier",
+      "text": "public const int GuidanceComputerGroup = 1396;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 23,
+      "kind": "content-identifier",
+      "text": "public const int TrackingScriptGroup = 907;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 24,
+      "kind": "content-identifier",
+      "text": "public const int SensorScriptGroup = 910;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/PilotSupportModules.cs",
+      "line": 25,
+      "kind": "content-identifier",
+      "text": "public const int GuidanceScriptGroup = 1400;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/RigRules.cs",
+      "line": 24,
+      "kind": "content-identifier",
+      "text": "public enum RiggingSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Inventory/ShipHoldRules.cs",
+      "line": 59,
+      "kind": "content-identifier",
+      "text": "public enum HoldCargoType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Loot/Wrecks.cs",
+      "line": 39,
+      "kind": "content-identifier",
+      "text": "public const int Group = 186;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Loot/Wrecks.cs",
+      "line": 53,
+      "kind": "content-identifier",
+      "text": "public const int StarterLootType = 34; // Catalog Tritanium.",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Market/PilotMarket.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public enum MarketSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Market/PilotMarket.cs",
+      "line": 86,
+      "kind": "content-identifier",
+      "text": "public enum WalletEntryType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Market/PilotMarket.cs",
+      "line": 145,
+      "kind": "content-identifier",
+      "text": "public const int PlexTypeId = 44992;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Mining/AsteroidField.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "public const int BeltGroup = 9;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Mining/PilotMining.cs",
+      "line": 42,
+      "kind": "content-identifier",
+      "text": "public enum MiningSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Mining/PilotMining.cs",
+      "line": 51,
+      "kind": "content-identifier",
+      "text": "public enum MiningLaserType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Notifications/PilotInbox.cs",
+      "line": 3,
+      "kind": "content-identifier",
+      "text": "public enum InboxNotificationType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotPropulsion.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum NavigationSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotPropulsion.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "public enum PropulsionModuleType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotPropulsion.cs",
+      "line": 83,
+      "kind": "content-identifier",
+      "text": "public const int AfterburnerGroup = 46;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotTackle.cs",
+      "line": 58,
+      "kind": "content-identifier",
+      "text": "public const int WebifierGroup = 65;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotTackle.cs",
+      "line": 59,
+      "kind": "content-identifier",
+      "text": "public const int WarpDisruptionGroup = 52;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Propulsion/PilotTackle.cs",
+      "line": 60,
+      "kind": "content-identifier",
+      "text": "public const int WarpCoreStabilizerGroup = 315;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Redemption/CurrencyRewards.cs",
+      "line": 5,
+      "kind": "content-identifier",
+      "text": "public enum RedeemCurrencyType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Redemption/CurrencyRewards.cs",
+      "line": 29,
+      "kind": "type-selection",
+      "text": "(RedeemCurrencyType)typeId switch",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/LocalRepairDefinitions.cs",
+      "line": 44,
+      "kind": "content-identifier",
+      "text": "public const int Group = 63;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotHardening.cs",
+      "line": 18,
+      "kind": "content-identifier",
+      "text": "public const int ShieldGroup = 77;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotHardening.cs",
+      "line": 19,
+      "kind": "content-identifier",
+      "text": "public const int ArmorGroup = 328;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotLocalRepairing.cs",
+      "line": 24,
+      "kind": "content-identifier",
+      "text": "public const int Group = 62;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotRemoteRepairing.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public enum RemoteRepairSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotRemoteRepairing.cs",
+      "line": 54,
+      "kind": "content-identifier",
+      "text": "public const int ShieldGroup = 41;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotRemoteRepairing.cs",
+      "line": 55,
+      "kind": "content-identifier",
+      "text": "public const int ArmorGroup = 325;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotRepair.cs",
+      "line": 34,
+      "kind": "content-identifier",
+      "text": "public const int StationGroup = 15;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotShieldBoosting.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "public enum ShieldBoosterType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotShieldBoosting.cs",
+      "line": 23,
+      "kind": "content-identifier",
+      "text": "public enum ShieldBoostSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Repair/PilotShieldBoosting.cs",
+      "line": 31,
+      "kind": "content-identifier",
+      "text": "public const int Group = 40;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Reprocessing/PilotReprocessing.cs",
+      "line": 44,
+      "kind": "content-identifier",
+      "text": "public enum ReprocessingSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/HullBonusRules.cs",
+      "line": 52,
+      "kind": "content-identifier",
+      "text": "public enum HullBonusSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/HullBonusRules.cs",
+      "line": 155,
+      "kind": "type-selection",
+      "text": "IReadOnlyList<HullCapability> roles = (TechOneHullType)typeId switch",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/PilotCapacitorBoosting.cs",
+      "line": 18,
+      "kind": "content-identifier",
+      "text": "public const int Group = 76;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/PilotCapacitorBoosting.cs",
+      "line": 19,
+      "kind": "content-identifier",
+      "text": "public const int ChargeGroup = 87;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public enum TechOneHullType",
+      "disposition": "named-build-identifiers",
+      "reason": "Names remain as native identifiers; roster/admission/selection data lives in the build policy."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
+      "line": 94,
+      "kind": "type-selection",
+      "text": "|| IsUtility(hull.Class)",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    },
+    {
+      "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
+      "line": 97,
+      "kind": "type-selection",
+      "text": "public static bool IsUtility(HullClass hullClass) => BuildContentPolicy.Current.Hulls.UtilityClasses.Contains((int)hullClass);",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    },
+    {
+      "path": "src/Eden.Gameplay/Skills/SkillExtraction.cs",
+      "line": 26,
+      "kind": "content-identifier",
+      "text": "public const int ExtractorType = 40519;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Skills/SkillInjectors.cs",
+      "line": 6,
+      "kind": "content-identifier",
+      "text": "public enum SkillInjectorType",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Skills/SkillInjectors.cs",
+      "line": 56,
+      "kind": "content-identifier",
+      "text": "public const int Group = 1739;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Targeting/TargetingDefinitions.cs",
+      "line": 5,
+      "kind": "content-identifier",
+      "text": "public enum TargetingSkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Infrastructure/Registration/InjectableAttribute.cs",
+      "line": 3,
+      "kind": "content-identifier",
+      "text": "public enum InjectionType",
+      "disposition": "registration-metadata",
+      "reason": "DI lifetime identifiers; not game content."
+    },
+    {
+      "path": "src/Eden.Protocol/Characters/PlayerOwnerLookupHandler.cs",
+      "line": 44,
+      "kind": "content-identifier",
+      "text": "private const int CharacterGroup = 1;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Characters/PlayerOwnerLookupHandler.cs",
+      "line": 45,
+      "kind": "content-identifier",
+      "text": "private const int CharacterType = 1373;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Chat/XmppWire.cs",
+      "line": 20,
+      "kind": "content-identifier",
+      "text": "internal const int CharacterType = 1373;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Corporations/CorporationStorageHandler.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "internal const int OfficeTypeId = 27;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Corporations/CorporationStorageHandler.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "internal const int OfficeGroupId = 16;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Docking/DockedWire.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "private const int CharacterTypeId = 1373;",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Serialization/BluePackedRow.cs",
+      "line": 4,
+      "kind": "content-identifier",
+      "text": "internal enum BlueColumnType : long",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.Protocol/Serialization/MessageArgumentType.cs",
+      "line": 4,
+      "kind": "content-identifier",
+      "text": "internal enum MessageArgumentType",
+      "disposition": "protocol-identifier",
+      "reason": "Native wire/owner/item representation identifiers stay named in Protocol."
+    },
+    {
+      "path": "src/Eden.World/Combat/PlayerEwarCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/MissileLauncherCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/MissileLauncherCatalog.cs",
+      "line": 15,
+      "kind": "content-identifier",
+      "text": "private const int HullOverride = 5994;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/TurretChargeCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "private const int HullResistanceOverride = 5994;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Drones/DroneCatalog.cs",
+      "line": 20,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Drones/PilotDroneStore.cs",
+      "line": 45,
+      "kind": "type-selection",
+      "text": "if (requireDroneHull && !DroneRules.SupportsHull(pilot.ActiveShip.TypeId))",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    },
+    {
+      "path": "src/Eden.World/Drones/PilotDroneStore.cs",
+      "line": 468,
+      "kind": "type-selection",
+      "text": "|| !DroneRules.SupportsHull(ship.TypeId)",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    },
+    {
+      "path": "src/Eden.World/Fittings/PassiveCatalog.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Fittings/ScriptCatalog.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "private const int StarGroup = 6;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Mining/MiningLaserCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Propulsion/AfterburnerCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Propulsion/TackleCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/ArmorRepairCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/CapacitorBoosterCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/HardenerCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/HullRepairCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/ShieldBoosterCatalog.cs",
+      "line": 12,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Repair/SupportModuleCatalog.cs",
+      "line": 11,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
+      "line": 159,
+      "kind": "type-selection",
+      "text": "|| !DroneRules.SupportsHull(ship.TypeId)",
+      "disposition": "build-content-policy",
+      "reason": "Admission delegates to the immutable build policy; recognizing a profile is insufficient."
+    }
+  ],
   "entries": [
     {
       "path": "src/Eden.Gameplay/Agents/AgentDirectory.cs",
@@ -172,25 +1330,25 @@
     },
     {
       "path": "src/Eden.Gameplay/Combat/NpcGuardRules.cs",
-      "line": 16,
+      "line": 17,
       "kind": "content-identifier",
       "text": "public enum NpcGuardType"
     },
     {
       "path": "src/Eden.Gameplay/Combat/NpcLootRules.cs",
-      "line": 4,
+      "line": 6,
       "kind": "content-identifier",
       "text": "public enum NpcLootType"
     },
     {
       "path": "src/Eden.Gameplay/Combat/NpcSpecialTypes.cs",
-      "line": 6,
+      "line": 8,
       "kind": "content-identifier",
       "text": "public enum NpcCloneSoldierType"
     },
     {
       "path": "src/Eden.Gameplay/Combat/NpcSpecialTypes.cs",
-      "line": 32,
+      "line": 34,
       "kind": "content-identifier",
       "text": "public enum NpcDevelopmentType"
     },
@@ -304,27 +1462,15 @@
     },
     {
       "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
-      "line": 8,
+      "line": 9,
       "kind": "content-identifier",
       "text": "public const int CombatDroneGroup = 100;"
     },
     {
       "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
-      "line": 11,
-      "kind": "content-identifier",
-      "text": "private const int BrutixHullType = 16229;"
-    },
-    {
-      "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
-      "line": 12,
-      "kind": "content-identifier",
-      "text": "private const int BrutixNavyIssueHullType = 33151;"
-    },
-    {
-      "path": "src/Eden.Gameplay/Drones/DroneRules.cs",
-      "line": 37,
+      "line": 35,
       "kind": "type-selection",
-      "text": "public static bool SupportsHull(int typeId) => typeId is BrutixHullType or BrutixNavyIssueHullType;"
+      "text": "public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);"
     },
     {
       "path": "src/Eden.Gameplay/Drones/PilotDrones.cs",
@@ -622,21 +1768,21 @@
     },
     {
       "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
-      "line": 6,
+      "line": 7,
       "kind": "content-identifier",
       "text": "public enum TechOneHullType"
     },
     {
       "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
-      "line": 89,
+      "line": 94,
       "kind": "type-selection",
-      "text": "&& (Enum.IsDefined((TechOneHullType)hull.TypeId) || IsSmall(hull.Class) || IsCombat(hull.Class) || IsUtility(hull.Class));"
+      "text": "|| IsUtility(hull.Class)"
     },
     {
       "path": "src/Eden.Gameplay/Ships/TechOneHullRules.cs",
-      "line": 91,
+      "line": 97,
       "kind": "type-selection",
-      "text": "public static bool IsUtility(HullClass hullClass) =>"
+      "text": "public static bool IsUtility(HullClass hullClass) => BuildContentPolicy.Current.Hulls.UtilityClasses.Contains((int)hullClass);"
     },
     {
       "path": "src/Eden.Gameplay/Skills/SkillExtraction.cs",
@@ -820,85 +1966,85 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 410,
+      "line": 411,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 435,
+      "line": 436,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 437,
+      "line": 438,
       "kind": "catalog-read",
       "text": "var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 461,
+      "line": 462,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 475,
+      "line": 476,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 521,
+      "line": 522,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 610,
+      "line": 611,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 612,
+      "line": 613,
       "kind": "catalog-read",
       "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 651,
-      "kind": "catalog-context",
-      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
-    },
-    {
-      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 679,
+      "line": 652,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
       "line": 680,
-      "kind": "catalog-read",
-      "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
-    },
-    {
-      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 709,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 710,
+      "line": 681,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 751,
+      "line": 710,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 711,
+      "kind": "catalog-read",
+      "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 752,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
@@ -984,7 +2130,7 @@
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
       "line": 78,
       "kind": "catalog-context",
-      "text": "public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, JsonSerializer.Serialize(key));"
+      "text": "public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, CatalogKey.Encode(key));"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSources.cs",
@@ -1396,7 +2542,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 202,
+      "line": 201,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -1456,7 +2602,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcEncounterStore.cs",
-      "line": 206,
+      "line": 205,
       "kind": "catalog-context",
       "text": "private Profile ReadProfile(CatalogDbContext catalog, int typeId)"
     },
@@ -1468,7 +2614,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcEwarStore.cs",
-      "line": 176,
+      "line": 175,
       "kind": "catalog-context",
       "text": "private IReadOnlyList<NpcEwarSource> Sources(WorldDbContext world, CatalogDbContext catalog, long shipId)"
     },
@@ -1642,25 +2788,25 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 54,
+      "line": 53,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 169,
+      "line": 168,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 332,
+      "line": 330,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 530,
+      "line": 528,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -1828,31 +2974,31 @@
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarStore.cs",
-      "line": 72,
+      "line": 71,
       "kind": "catalog-read",
       "text": "int group = item is null ? 0 : catalog.FittingType(item.TypeId)!.GroupId;"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarStore.cs",
-      "line": 102,
+      "line": 101,
       "kind": "catalog-read",
       "text": "double radius = catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0;"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarStore.cs",
-      "line": 158,
+      "line": 157,
       "kind": "catalog-read",
       "text": "Math.Max(0, origin.DistanceTo(victim.Position) - radius - (catalog.FittingType(victim.TypeId)!.Radius ?? 0));"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarStore.cs",
-      "line": 161,
+      "line": 160,
       "kind": "catalog-context",
       "text": "private static Target? ReadTarget(WorldDbContext world, CatalogDbContext catalog, TackleTarget target, int system, long now)"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarStore.cs",
-      "line": 223,
+      "line": 222,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -2488,13 +3634,13 @@
     },
     {
       "path": "src/Eden.World/Economy/EconomicStore.cs",
-      "line": 63,
+      "line": 61,
       "kind": "catalog-context",
-      "text": "CatalogDbContext catalog,"
+      "text": "internal static void Initialize(WorldDbContext world, CatalogDbContext catalog, bool newEconomy, EconomicConfiguration? configuration)"
     },
     {
       "path": "src/Eden.World/Economy/EconomicStore.cs",
-      "line": 105,
+      "line": 103,
       "kind": "catalog-context",
       "text": "internal static void SeedPrices(WorldDbContext world, CatalogDbContext catalog, EconomicConfiguration settings)"
     },
@@ -2920,187 +4066,187 @@
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 56,
+      "line": 57,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 62,
+      "line": 63,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 84,
+      "line": 85,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 101,
+      "line": 102,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 108,
+      "line": 109,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 119,
+      "line": 120,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 126,
+      "line": 127,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 139,
+      "line": 140,
       "kind": "catalog-context",
       "text": "private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 142,
+      "line": 143,
       "kind": "catalog-context",
       "text": "private static bool SupportedProduct(CatalogDbContext catalog, CatalogItemDefinition type)"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 180,
+      "line": 181,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 203,
+      "line": 204,
       "kind": "catalog-context",
       "text": "private static OwnedBlueprint ReadBlueprint(WorldDbContext world, CatalogDbContext catalog, OwnedItem item)"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 228,
+      "line": 229,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 252,
+      "line": 253,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 262,
+      "line": 263,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 272,
+      "line": 273,
       "kind": "catalog-context",
       "text": "private static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 275,
+      "line": 276,
       "kind": "catalog-context",
       "text": "private static IndustryCharacterBonus[] Bonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 315,
+      "line": 316,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 319,
+      "line": 320,
       "kind": "catalog-context",
       "text": "private ManufacturingJob ReadJob(CatalogDbContext catalog, IndustryJob job) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 340,
+      "line": 341,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 354,
+      "line": 355,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 366,
+      "line": 367,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 534,
+      "line": 535,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 30,
+      "line": 31,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 37,
+      "line": 38,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 57,
+      "line": 58,
       "kind": "catalog-context",
       "text": "private static long Value(WorldDbContext world, CatalogDbContext catalog, int typeId)"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 116,
+      "line": 117,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 172,
+      "line": 173,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 189,
+      "line": 190,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 193,
+      "line": 194,
       "kind": "catalog-context",
       "text": "private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 209,
+      "line": 210,
       "kind": "catalog-context",
       "text": "private static Ship ShipAtStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId, long shipId)"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 222,
+      "line": 223,
       "kind": "catalog-context",
       "text": "internal static InsurancePayout? SettleLoss(WorldDbContext world, CatalogDbContext catalog, Ship ship, long now)"
     },
@@ -3892,43 +5038,43 @@
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 57,
+      "line": 56,
       "kind": "catalog-read",
       "text": "int group = item is null ? 0 : catalog.FittingType(item.TypeId)?.GroupId ?? 0;"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 140,
+      "line": 139,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 191,
+      "line": 189,
       "kind": "catalog-context",
       "text": "private static RepairTarget Target(WorldDbContext world, CatalogDbContext catalog, Pilot source, long targetId, long now)"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 211,
+      "line": 209,
       "kind": "catalog-context",
       "text": "private static double Distance(CatalogDbContext catalog, Pilot source, Pilot target)"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 218,
+      "line": 216,
       "kind": "catalog-read",
       "text": "- (catalog.FittingType(source.ActiveShip.TypeId)!.Radius ?? 0)"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 219,
+      "line": 217,
       "kind": "catalog-read",
       "text": "- (catalog.FittingType(target.ActiveShip.TypeId)!.Radius ?? 0)"
     },
     {
       "path": "src/Eden.World/Repair/PilotRemoteRepairStore.cs",
-      "line": 247,
+      "line": 245,
       "kind": "catalog-context",
       "text": "private static void Assist(WorldDbContext world, CatalogDbContext catalog, Pilot source, Pilot target, long now, long end)"
     },
@@ -4120,7 +5266,7 @@
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveCombatLoading.cs",
-      "line": 255,
+      "line": 254,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -4132,25 +5278,25 @@
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 82,
+      "line": 81,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 161,
+      "line": 159,
       "kind": "type-selection",
       "text": "|| !DroneRules.SupportsHull(ship.TypeId)"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 382,
+      "line": 380,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 383,
+      "line": 381,
       "kind": "catalog-read",
       "text": "return catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.SignatureRadius);"
     },

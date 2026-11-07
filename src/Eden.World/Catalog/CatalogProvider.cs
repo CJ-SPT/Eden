@@ -351,6 +351,7 @@ public sealed partial class CatalogProvider
 
     public void PreloadCore()
     {
+        _ = Eden.Gameplay.Content.BuildContentPolicy.Current;
         _ = Items;
         _ = Systems;
         _ = Stations;
@@ -533,7 +534,7 @@ public sealed partial class CatalogProvider
 
         internal bool TryRead(TKey key, out CatalogValue<TValue> value)
         {
-            if (owner._cache.TryGetValue(new CacheKey(dataset, JsonSerializer.Serialize(key)), out CatalogValue<TValue>? cached))
+            if (owner._cache.TryGetValue(new CacheKey(dataset, CatalogKey.Encode(key)), out CatalogValue<TValue>? cached))
             {
                 Interlocked.Increment(ref owner._hits);
                 value = cached!;
@@ -545,7 +546,7 @@ public sealed partial class CatalogProvider
 
         internal CatalogValue<TValue> Read(TKey key, Func<CatalogValue<TValue>> load)
         {
-            CacheKey cacheKey = new(dataset, JsonSerializer.Serialize(key));
+            CacheKey cacheKey = new(dataset, CatalogKey.Encode(key));
             if (owner._cache.TryGetValue(cacheKey, out CatalogValue<TValue>? cached))
             {
                 Interlocked.Increment(ref owner._hits);
@@ -608,7 +609,7 @@ public sealed partial class CatalogProvider
                 () =>
                 {
                     using CatalogDbContext catalog = new(_owner.Identity.Path);
-                    string encoded = JsonSerializer.Serialize(key);
+                    string encoded = CatalogKey.Encode(key);
                     var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);
                     return Decode(record);
                 }
@@ -649,7 +650,7 @@ public sealed partial class CatalogProvider
             {
                 _owner.RequireCurrent();
                 using CatalogDbContext catalog = new(_owner.Identity.Path);
-                var encoded = missing.Select(key => JsonSerializer.Serialize(key)).ToArray();
+                var encoded = missing.Select(key => CatalogKey.Encode(key)).ToArray();
                 Interlocked.Increment(ref _owner._loads);
                 // One collection parameter avoids thousands of scalar SQLite bindings.
                 var rows = catalog
@@ -658,7 +659,7 @@ public sealed partial class CatalogProvider
                     .ToDictionary(record => record.Key);
                 foreach (var key in missing)
                 {
-                    var value = _memo.Read(key, () => Decode(rows.GetValueOrDefault(JsonSerializer.Serialize(key))));
+                    var value = _memo.Read(key, () => Decode(rows.GetValueOrDefault(CatalogKey.Encode(key))));
                     if (value.Found)
                     {
                         result.Add(key, value.Value);
@@ -711,7 +712,7 @@ public sealed partial class CatalogProvider
             if (key is not null)
             {
                 var parsed = JsonSerializer.Deserialize<TKey>(key) ?? throw new InvalidDataException("Missing record key.");
-                string encoded = JsonSerializer.Serialize(parsed);
+                string encoded = CatalogKey.Encode(parsed);
                 query = query.Where(record => record.Key == encoded);
             }
             else

@@ -6,11 +6,10 @@ using Microsoft.Data.Sqlite;
 
 namespace Eden.World.Catalog;
 
-internal sealed class CatalogFittingInputs(bool scoped = false) : IDisposable
+internal sealed class CatalogConnectionInputs(bool scoped = false) : IDisposable
 {
     private SqliteConnection? _connection;
     internal bool IsScoped { get; } = scoped;
-    internal Dictionary<(string Dataset, string Key), SourceRecord?> Sources { get; } = [];
 
     internal SqliteConnection Connection(string path)
     {
@@ -42,13 +41,13 @@ internal sealed class CatalogFittingInputs(bool scoped = false) : IDisposable
     public void Dispose() => _connection?.Dispose();
 }
 
-internal sealed class CatalogFittingReadScope : IPilotOperationScope
+internal sealed class CatalogConnectionScope : IPilotOperationScope
 {
     private static readonly AsyncLocal<Operation?> s_current = new();
 
     public IDisposable Begin() => new Operation();
 
-    internal static CatalogFittingInputs Inputs(string path)
+    internal static CatalogConnectionInputs Inputs(string path)
     {
         if (s_current.Value is not { } operation)
         {
@@ -66,7 +65,7 @@ internal sealed class CatalogFittingReadScope : IPilotOperationScope
     private sealed class Operation : IDisposable
     {
         private readonly Operation? _previous = s_current.Value;
-        internal Dictionary<string, CatalogFittingInputs> Catalogs { get; }
+        internal Dictionary<string, CatalogConnectionInputs> Catalogs { get; }
 
         internal Operation()
         {

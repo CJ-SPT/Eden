@@ -75,7 +75,7 @@ public sealed class CatalogSource<TKey, TValue>(string name) : CatalogSource<TVa
 
     public override Type KeyType => typeof(TKey);
 
-    public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, JsonSerializer.Serialize(key));
+    public TValue Get(CatalogDbContext db, TKey key) => GetEncoded(db, CatalogKey.Encode(key));
 
     protected override void ValidateKey(string encoded)
     {

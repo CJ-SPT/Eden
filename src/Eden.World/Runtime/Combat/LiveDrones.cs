@@ -47,7 +47,6 @@ internal sealed partial class LiveCombatRuntime
             {
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                catalog.Database.OpenConnection();
                 return world
                     .Set<WorldDrone>()
                     .Where(d => d.SystemId == system)
@@ -80,7 +79,6 @@ internal sealed partial class LiveCombatRuntime
             {
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                catalog.Database.OpenConnection();
                 var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
                 var skills = DroneCatalog.Skills(world, catalog, pilotId);
                 var fit = FittingCalculation.Read(world, catalog, pilot);

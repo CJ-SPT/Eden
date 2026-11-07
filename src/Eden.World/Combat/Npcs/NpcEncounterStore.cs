@@ -50,7 +50,6 @@ internal sealed class NpcEncounterStore(
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         long populationStamp = now / TimeSpan.TicksPerSecond;
         if (

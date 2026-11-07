@@ -349,7 +349,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
     internal static void GrantStarterWeapon(WorldDbContext world, long pilotId, int stationId)
     {
         long id = InventoryPersistence.NextId(world);
-        int type = (int)CombatWeaponType.CivilianGatlingRailgun;
+        int type = Eden.Gameplay.Content.BuildContentPolicy.Current.StartingEquipment.WeaponType;
         world.Database.ExecuteSql(
             $"""
             INSERT INTO WorldItem(Id,OwnerId,TypeId,LocationId,FlagId,Quantity)
@@ -365,7 +365,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         world.Database.ExecuteSql(
             $"""
             INSERT INTO WorldItem(Id,OwnerId,TypeId,LocationId,FlagId,Quantity)
-            VALUES ({id},{pilotId},{InventoryDefinitions.CivilianMinerType},{stationId},{(int)InventoryFlag.Hangar},1)
+            VALUES ({id},{pilotId},{Eden.Gameplay.Content.BuildContentPolicy.Current.StartingEquipment.MinerType},
+                {stationId},{(int)InventoryFlag.Hangar},1)
             """
         );
     }

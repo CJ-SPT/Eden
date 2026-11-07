@@ -19,6 +19,7 @@
 | [Formatting](../README.md#formatting) | Pinned formatters, coverage, width exceptions and editor integration. |
 | [Architecture and runtime](architecture.md) | Typed boundaries, initialization, dependency injection, diagnostics and resident checkpoints. |
 | [Typed catalog schemas](../src/Eden.Data/Catalog/CatalogSchema.g.json) | Generated dataset coverage, key/value shapes, source fingerprints and declared relationships for build 3662168. |
+| [Catalog adoption and remaining constants](catalog-adoption.md) | Shared access rules, build policy, compatibility exceptions and architectural checks. |
 | [Catalog migration inventory](catalog-runtime-audit.json) | Reproducible inventory of catalog access and content-specific decisions; regenerate with `tools/catalog/audit_runtime.py`. |
 
 ## Long-term design

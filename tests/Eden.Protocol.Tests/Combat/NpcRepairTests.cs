@@ -162,9 +162,9 @@ public sealed class NpcRepairTests
         Assert.Equal(new NpcRepairCycle(140, 10 * TimeSpan.TicksPerSecond, 0.42), drone.Armor);
         Assert.Null(drone.Shield);
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
-        Assert.Equal(10000, catalog.FindSource("client/dogmaattributes", "636")!.Read<ClientDogmaattributes>().DefaultValue);
-        Assert.Equal(0, catalog.FindSource("client/dogmaattributes", "638")!.Read<ClientDogmaattributes>().DefaultValue);
-        Assert.Equal(1, catalog.FindSource("client/dogmaattributes", "639")!.Read<ClientDogmaattributes>().DefaultValue);
+        Assert.Equal(10000, catalog.Require(CatalogData.Client.Dogmaattributes, 636L).DefaultValue);
+        Assert.Equal(0, catalog.Require(CatalogData.Client.Dogmaattributes, 638L).DefaultValue);
+        Assert.Equal(1, catalog.Require(CatalogData.Client.Dogmaattributes, 639L).DefaultValue);
         foreach (var guard in Enum.GetValues<NpcGuardType>())
         {
             _ = NpcRepairRules.Profile(PilotFittingStore.ReadAttributes(catalog, (int)guard));

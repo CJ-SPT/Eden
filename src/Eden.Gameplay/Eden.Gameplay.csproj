@@ -2,5 +2,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <EmbeddedResource Include="Mail/MailingListCaseFold.txt" />
+    <EmbeddedResource Include="Content/content-support-3662168.json" LogicalName="Eden.Gameplay.ContentSupport.json" />
   </ItemGroup>
 </Project>

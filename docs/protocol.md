@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Completed catalog adoption and access guard, November 7, 2026](protocol/catalog.md#completed-catalog-adoption-and-access-guard-november-7-2026)
+
 - [Local Blazor catalog and configuration editor, November 7, 2026](protocol/catalog.md#local-blazor-catalog-and-configuration-editor-november-7-2026)
 
 - [Versioned world configuration, November 7, 2026](protocol/catalog.md#versioned-world-configuration-november-7-2026)

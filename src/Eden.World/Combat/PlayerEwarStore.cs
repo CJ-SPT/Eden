@@ -66,7 +66,6 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.FittingType(item.TypeId)!.GroupId;

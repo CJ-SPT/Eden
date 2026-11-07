@@ -51,7 +51,6 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var pilot = Pilot(world, pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.FittingType(item.TypeId)?.GroupId ?? 0;
@@ -138,7 +137,6 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         if (cycle.Module.Kind == RemoteRepairKind.Armor)
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
-            catalog.Database.OpenConnection();
             var pilot = Pilot(world, pilotId);
             var item = world.Set<OwnedItem>().Find(moduleId);
             if (

@@ -1,3 +1,5 @@
+using Eden.Gameplay.Content;
+
 namespace Eden.Gameplay.Combat;
 
 // Ordinary published build-3662168 ammunition, repair and weapon-support types.
@@ -37,8 +39,7 @@ public static class NpcLootRules
     public const int AmmunitionChance = 60;
     public const int ModuleChance = 35;
     public const int ModuleChoices = 3;
-    private const int AmmunitionUnitsPerSize = 100;
-    private const int ScrapUnitsPerSize = 5;
+    public const int SizeCount = 3;
 
     public static IReadOnlyList<NpcLootDrop> Roll(
         NpcPirateFaction faction,
@@ -59,53 +60,23 @@ public static class NpcLootRules
             NpcHullClass.Battleship => 2,
             _ => throw new ArgumentOutOfRangeException(nameof(hull)),
         };
-        NpcLootType[] ammunition = faction switch
-        {
-            NpcPirateFaction.Guristas => [NpcLootType.ScourgeLight, NpcLootType.ScourgeHeavy, NpcLootType.ScourgeCruise],
-            NpcPirateFaction.Angels => [NpcLootType.EmpSmall, NpcLootType.EmpMedium, NpcLootType.EmpLarge],
-            NpcPirateFaction.Serpentis => [NpcLootType.AntimatterSmall, NpcLootType.AntimatterMedium, NpcLootType.AntimatterLarge],
-            NpcPirateFaction.Sansha or NpcPirateFaction.BloodRaiders =>
-            [
-                NpcLootType.MultifrequencySmall,
-                NpcLootType.MultifrequencyMedium,
-                NpcLootType.MultifrequencyLarge,
-            ],
-            NpcPirateFaction.RogueDrones => [NpcLootType.MetalScraps, NpcLootType.MetalScraps, NpcLootType.MetalScraps],
-            _ => throw new ArgumentOutOfRangeException(nameof(faction)),
-        };
-        NpcLootType support = faction switch
-        {
-            NpcPirateFaction.Guristas => NpcLootType.BallisticControl,
-            NpcPirateFaction.Angels => NpcLootType.Gyrostabilizer,
-            NpcPirateFaction.Serpentis => NpcLootType.MagneticFieldStabilizer,
-            NpcPirateFaction.Sansha or NpcPirateFaction.BloodRaiders => NpcLootType.HeatSink,
-            NpcPirateFaction.RogueDrones => NpcLootType.CapRecharger,
-            _ => throw new ArgumentOutOfRangeException(nameof(faction)),
-        };
-        bool shield = faction is NpcPirateFaction.Guristas or NpcPirateFaction.Angels;
-        NpcLootType[] repair = shield
-            ? [NpcLootType.SmallShieldBooster, NpcLootType.MediumShieldBooster, NpcLootType.LargeShieldBooster]
-            : [NpcLootType.SmallArmorRepairer, NpcLootType.MediumArmorRepairer, NpcLootType.LargeArmorRepairer];
+        var policy = BuildContentPolicy.Current.Npcs;
+        var content = policy.Loot.GetValueOrDefault(faction) ?? throw new ArgumentOutOfRangeException(nameof(faction));
         List<NpcLootDrop> result = [];
         if (ammunitionRoll < AmmunitionChance)
         {
-            int quantity = faction switch
-            {
-                NpcPirateFaction.Sansha or NpcPirateFaction.BloodRaiders => 1,
-                NpcPirateFaction.RogueDrones => ScrapUnitsPerSize * (size + 1),
-                _ => AmmunitionUnitsPerSize * (size + 1),
-            };
-            result.Add(new((int)ammunition[size], quantity));
+            int quantity = content.SingleAmmunition ? 1 : content.AmmunitionUnitsPerSize * (size + 1);
+            result.Add(new(content.Ammunition[size], quantity));
         }
         if (moduleRoll < ModuleChance)
         {
             var type = moduleChoice switch
             {
-                0 => repair[size],
-                1 => support,
-                _ => NpcLootType.CapRecharger,
+                0 => content.Repair[size],
+                1 => content.Support,
+                _ => policy.FallbackLootModule,
             };
-            result.Add(new((int)type, 1));
+            result.Add(new(type, 1));
         }
         return result;
     }

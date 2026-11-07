@@ -1,3 +1,4 @@
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Ships;
@@ -86,34 +87,16 @@ public static class TechOneHullRules
         hull.Category == InventoryCategory.Ship
         && hull.Published
         && hull.TechLevel == 1
-        && (Enum.IsDefined((TechOneHullType)hull.TypeId) || IsSmall(hull.Class) || IsCombat(hull.Class) || IsUtility(hull.Class));
+        && (
+            BuildContentPolicy.Current.Hulls.SpecialTypes.Contains(hull.TypeId)
+            || IsSmall(hull.Class)
+            || IsCombat(hull.Class)
+            || IsUtility(hull.Class)
+        );
 
-    public static bool IsUtility(HullClass hullClass) =>
-        hullClass
-            is HullClass.Hauler
-                or HullClass.MiningBarge
-                or HullClass.Freighter
-                or HullClass.IndustrialCommand
-                or HullClass.ExpeditionCommand
-                or HullClass.Yacht;
+    public static bool IsUtility(HullClass hullClass) => BuildContentPolicy.Current.Hulls.UtilityClasses.Contains((int)hullClass);
 
-    public static bool IsCombat(HullClass hullClass) =>
-        hullClass
-            is HullClass.Cruiser
-                or HullClass.Battleship
-                or HullClass.CombatBattlecruiser
-                or HullClass.AttackBattlecruiser
-                or HullClass.ForceRecon
-                or HullClass.HeavyInterdictionCruiser;
+    public static bool IsCombat(HullClass hullClass) => BuildContentPolicy.Current.Hulls.CombatClasses.Contains((int)hullClass);
 
-    public static bool IsSmall(HullClass hullClass) =>
-        hullClass
-            is HullClass.Frigate
-                or HullClass.Shuttle
-                or HullClass.Corvette
-                or HullClass.Destroyer
-                or HullClass.CovertOps
-                or HullClass.Interceptor
-                or HullClass.ElectronicAttack
-                or HullClass.PrototypeExploration;
+    public static bool IsSmall(HullClass hullClass) => BuildContentPolicy.Current.Hulls.SmallClasses.Contains((int)hullClass);
 }

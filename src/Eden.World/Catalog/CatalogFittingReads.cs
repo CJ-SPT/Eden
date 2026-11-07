@@ -6,7 +6,7 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
-    private readonly CatalogFittingInputs _fittingInputs = writable ? new() : CatalogFittingReadScope.Inputs(path);
+    private readonly CatalogConnectionInputs _connectionInputs = writable ? new() : CatalogConnectionScope.Inputs(path);
 
     internal CatalogItemDefinition RequireItem(int typeId) =>
         FittingType(typeId) ?? throw new InvalidDataException($"Missing catalog item type {typeId}.");
@@ -54,22 +54,6 @@ public sealed partial class CatalogDbContext
             return new(type.Id, type.GroupId, category, type.Name, type.Mass, type.Radius, type.Capacity);
         }
         return Definitions.Items.GetValueOrDefault(typeId);
-    }
-
-    internal SourceRecord? FindSource(string dataset, string key)
-    {
-        // Read-only operation contexts see immutable catalog inputs. Writable
-        // tooling/fixtures retain fresh reads after edits, including raw SQL.
-        if (writable)
-        {
-            return Set<SourceRecord>().Find(dataset, key);
-        }
-        if (!_fittingInputs.Sources.TryGetValue((dataset, key), out var record))
-        {
-            record = Set<SourceRecord>().Find(dataset, key);
-            _fittingInputs.Sources.Add((dataset, key), record);
-        }
-        return record;
     }
 
     internal IReadOnlyDictionary<DogmaAttributeId, double> FittingAttributes(int typeId)

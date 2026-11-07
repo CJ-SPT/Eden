@@ -56,7 +56,6 @@ public sealed partial class SqliteWorld
         world.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
-        catalog.Database.OpenConnection();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)

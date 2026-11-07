@@ -18,7 +18,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
     internal TValue? Read<TKey, TValue>(CatalogSource<TKey, TValue> source, TKey key)
         where TKey : notnull
         where TValue : class =>
-        writable ? Set<SourceRecord>().Find(source.Name, JsonSerializer.Serialize(key))?.Read<TValue>() : Definitions.Find(source, key);
+        writable ? Set<SourceRecord>().Find(source.Name, CatalogKey.Encode(key))?.Read<TValue>() : Definitions.Find(source, key);
 
     internal TValue Require<TKey, TValue>(CatalogSource<TKey, TValue> source, TKey key)
         where TKey : notnull
@@ -38,7 +38,7 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
             : Definitions.FindMany(source, keys);
 
     internal IEnumerable<KeyValuePair<TKey, TValue>> RecordsInSourceOrder<TKey, TValue>(CatalogSource<TKey, TValue> source)
-        where TKey : notnull => Records(source).OrderBy(record => JsonSerializer.Serialize(record.Key), StringComparer.Ordinal);
+        where TKey : notnull => Records(source).OrderBy(record => CatalogKey.Encode(record.Key), StringComparer.Ordinal);
 
     internal IReadOnlyDictionary<TKey, TValue> Records<TKey, TValue>(CatalogSource<TKey, TValue> source)
         where TKey : notnull =>
@@ -74,11 +74,11 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         options.TracePerformance();
-        if (!writable && _fittingInputs.IsScoped)
+        if (!writable && _connectionInputs.IsScoped)
         {
             // Service operations share one immutable catalog connection. Contexts
             // do not own it; the outer operation releases it after all readers.
-            options.UseSqlite(_fittingInputs.Connection(path), contextOwnsConnection: false);
+            options.UseSqlite(_connectionInputs.Connection(path), contextOwnsConnection: false);
         }
         else
         {

@@ -40,7 +40,6 @@ internal sealed partial class LiveCombatRuntime
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
@@ -253,7 +252,6 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var profile = _simulationProfiles.Read(catalog, npc.TypeId);
         var type = profile.Type;
         var attributes = profile.Attributes;

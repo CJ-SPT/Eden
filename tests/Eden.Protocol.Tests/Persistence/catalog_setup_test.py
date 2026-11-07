@@ -9,6 +9,29 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools/catalog"))
 from build import publish
 from generate_models import Emitter, Shape, generate
+from runtime_policy import scan_code, violations
+
+
+class CatalogAccessPolicyTests(unittest.TestCase):
+    def test_features_use_shared_catalog_boundary(self):
+        self.assertEqual([], violations())
+
+    def test_direct_reads_are_rejected_and_explicit_boundaries_remain_available(self):
+        path = "src/Eden.World/Inventory/Example.cs"
+        for source in (
+            "catalog.Set<ItemType>().Find(1)",
+            "using T = Eden.Data.Catalog.ItemType; catalog.Set<T>().Find(1)",
+            "CatalogDbContext source = new(path); source.Database.OpenConnection();",
+            "using var source = new CatalogDbContext(path); CatalogData.Client.Types.Get(source, 1);",
+            "CatalogDbContext source = new(path); CatalogData.Client.Types\n.Query(source);",
+            "SourceRecord raw;",
+            "catalog.FindSource(dataset, key);",
+            "new SqliteConnection(catalogPath);",
+        ):
+            self.assertTrue(scan_code(path, source), source)
+            self.assertEqual([], scan_code("tests/Fixtures/Example.cs", source))
+        self.assertEqual([], scan_code(path, '// catalog.Set<ItemType>()\nvar text = "SourceRecord";'))
+        self.assertTrue(scan_code("src/Eden.Server/Launcher/LauncherStore.cs", "SourceRecord raw;"))
 
 
 class CatalogPublicationTests(unittest.TestCase):

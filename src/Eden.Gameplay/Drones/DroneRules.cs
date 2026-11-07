@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Drones;
@@ -7,9 +8,6 @@ public static class DroneRules
 {
     public const int CombatDroneGroup = 100;
 
-    // Build 3662168 client/types; both hulls have no drone damage/health bonuses.
-    private const int BrutixHullType = 16229;
-    private const int BrutixNavyIssueHullType = 33151;
     public const int MaximumDrones = 5;
     public const double LightBandwidth = 5;
     public const double MediumBandwidth = 10;
@@ -34,7 +32,7 @@ public static class DroneRules
     // Initial Eden policy; Tranquility's private NPC target-selection AI is not available.
     public const double NpcRetaliationChance = .25;
 
-    public static bool SupportsHull(int typeId) => typeId is BrutixHullType or BrutixNavyIssueHullType;
+    public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);
 
     public static double OwnerAccuracyRoll(double roll) => (roll - NpcRetaliationChance) / (1 - NpcRetaliationChance);
 

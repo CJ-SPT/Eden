@@ -9,6 +9,27 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 
 
+
+## Completed catalog adoption and access guard, November 7, 2026
+
+The final access policy reports zero ordinary catalog bypasses and accounts for all 442 datasets and 4,913,627 records. The coverage report includes 522 generated payload classes, 27 named union types, zero unresolved fields, explicit storage/verification boundaries and 140 classified identifier/selection entries. [Adoption and remaining constants](../catalog-adoption.md) documents each category and the procedure for extending it.
+
+Enabled hull/drone cohorts, manufacturing/insurance sets, starter equipment, NPC guard rosters, special exclusions, regional pirate selection and development loot pools now share Gameplay's immutable build-specific policy. Native identifiers and typed mechanical rules remain named code. Existing cohorts, probabilities and outcomes are preserved. Ordinary features consume shared typed definitions; the retired raw reader and its source-record cache are deleted. The renamed catalog connection scope retains transport reuse without opening warm feature connections. Schema collections are immutable and each field exposes its compatibility restriction.
+
+String keys now match the importer's Unicode, HTML-character and control-escape spelling across direct, bulk and browser access. A focused regression checks these distinctions. A startup regression also proves that newly reconciled belt deadlines use the activated revision while saved deadlines remain unchanged; resource reconciliation now follows activation and clears stale migration tracking first.
+
+**Automated validation:** exact admission, startup-ordering and key-encoding regressions passed during development. Final tool/solution restore, warning-free build (5.38 seconds), 41 focused tests (15.21 seconds wall time), eight catalog Python policy tests (0.615 seconds), nine formatting Python tests (0.016 seconds), the access guard, regenerated coverage report and formatting verification passed. The focused filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogAdoptionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationComponentTests|FullyQualifiedName=Eden.Protocol.Tests.Persistence.WorldConfigurationTests.NewlyReconciledBeltDeadlinesUseTheActivatedPolicyAndSavedDeadlinesRemainUnchanged|FullyQualifiedName=Eden.Protocol.Tests.Persistence.TechOneHullTests.HullRuleRejectsUnpublishedHigherTechAndNonShips|FullyQualifiedName=Eden.Protocol.Tests.Combat.RegionalNpcTests.RegionMappingCoversOrdinarySpaceAndExcludesSpecialRegions|FullyQualifiedName=Eden.Protocol.Tests.Combat.RegionalNpcTests.LootUsesFactionPoolsAndProbabilityBoundaries|FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcGuardTests.EmpireSystemsHaveThreeGateGuardsAndTwoStationGuards|FullyQualifiedName=Eden.Protocol.Tests.Combat.CombatDroneTests.BrutixVariantsLaunchFiveIndividualOwnedDronesWithRealBandwidth|FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcConvoyTests.PinnedCatalogAdmitsAllTwentyFourHaulersAndNoEscortTypes|FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcRepairTests.ProfilesUseSizeSpecificProbabilitiesMultipliersAndPinnedDefaults|FullyQualifiedName=Eden.Protocol.Tests.Combat.RemoteRepairTests.CatalogPaymentAndRepairTimingAreExactAndCompletionsCannotReplay
+```
+
+Coverage includes source order, immutable/shared definitions, negative caching, scoped connections, fixture invalidation, schema display, key identity, enabled/rejected hulls, all regional mappings and loot probability boundaries, four empire rosters, both admitted drone hulls, convoy and repair profiles, remote repair timing, and restart deadline ordering. Earlier milestones contain the full installed-record verification and performance comparisons. The catalog payloads themselves are unchanged in this slice. No optional benchmarks or full .NET suite were run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. The requested catalog/configuration/editor adoption is complete under the automated validation policy; native-client acceptance remains unperformed.
+
 ## Local Blazor catalog and configuration editor, November 7, 2026
 
 Eden.Server now includes a separate loopback-only Blazor administration listener. A local command provisions its administrator independently of game accounts. Cookie authentication, administrator authorization, antiforgery checks, credential-stamp revalidation and local Host/Origin checks protect HTTP and interactive operations. Password rotation revokes both kinds of access. Inherited web-host endpoints cannot add administration listeners. Blazor framework assets are served through the standard static asset pipeline.

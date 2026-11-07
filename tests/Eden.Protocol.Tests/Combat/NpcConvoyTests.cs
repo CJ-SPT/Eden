@@ -85,8 +85,16 @@ public sealed class NpcConvoyTests
                 Assert.Equal(type.Radius, p.Radius);
                 Assert.True(p.Attributes[DogmaAttributeId.StructureHitPoints] > 0);
                 Assert.True(NpcConvoyRules.DurationSeconds(p.Mass, p.Attributes) > 0);
-                using var standing = JsonDocument.Parse(catalog.FindSource("client/spacecomponentsbytype", p.TypeId.ToString())!.Data);
-                Assert.Equal(-11, standing.RootElement.GetProperty("entityStandings").GetProperty("hostileResponseThreshold").GetDouble());
+                var standing = catalog.Require(CatalogData.Client.Spacecomponentsbytype, (long)p.TypeId)["entityStandings"][
+                    "hostileResponseThreshold"
+                ];
+                double threshold = standing switch
+                {
+                    ClientSpacecomponentsbytypeValueValueChoiceLong value => value.Value,
+                    ClientSpacecomponentsbytypeValueValueChoiceDouble value => value.Value,
+                    _ => throw new InvalidDataException("Missing typed standing threshold."),
+                };
+                Assert.Equal(-11, threshold);
             }
         );
         Assert.Equal(200, profiles.Single(p => p.TypeId == 10044).Attributes[DogmaAttributeId.MaxVelocity]);

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Configuration;
@@ -55,7 +56,7 @@ public sealed class AdministrationComponentTests
                     ["wide"] = new("long", false, true),
                     ["none"] = new("string", true, false),
                     ["absent"] = new("string", true, false),
-                }
+                }.ToImmutableDictionary()
             );
             var source = await renderer.RenderComponentAsync<CatalogValue>(
                 ParameterView.FromDictionary(

@@ -7,6 +7,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -141,7 +142,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
 
     private static bool SupportedProduct(CatalogDbContext catalog, CatalogItemDefinition type)
     {
-        if (CatalogContentPolicy.Current.Manufacturing.HullTypes.Contains(type.Id))
+        if (BuildContentPolicy.Current.Manufacturing.HullTypes.Contains(type.Id))
         {
             return HullCatalog.CanAssemble(catalog, type, (int)InventoryCategory.Ship);
         }
@@ -158,7 +159,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             return false;
         }
-        return CatalogContentPolicy.Current.Manufacturing.UtilityTypes.Contains(type.Id)
+        return BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(type.Id)
                 && FittingCatalog.Definition(catalog, type.Id) is not null
             || type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
@@ -180,8 +181,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using CatalogDbContext catalog = new(database.CatalogPath);
         return catalog
             .Definitions.Items.Values.Where(t =>
-                CatalogContentPolicy.Current.Manufacturing.HullTypes.Contains(t.Id)
-                || CatalogContentPolicy.Current.Manufacturing.UtilityTypes.Contains(t.Id)
+                BuildContentPolicy.Current.Manufacturing.HullTypes.Contains(t.Id)
+                || BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(t.Id)
                 || t.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 || t.GroupId == CombatDefinitions.HybridWeaponGroup
                 || t.GroupId == InventoryDefinitions.MiningLaserGroup

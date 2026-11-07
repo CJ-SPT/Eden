@@ -65,7 +65,6 @@ internal sealed class NpcCombatStore(
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var requested = candidates.ToHashSet();
         var pilotIds = requested.Select(c => c.PilotId).ToArray();
         var pilots = world
@@ -200,7 +199,6 @@ internal sealed class NpcCombatStore(
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var aggression = world.Set<NpcAggression>().Find(npcId);
         if (aggression is null || aggression.TargetShipId != shipId)
         {

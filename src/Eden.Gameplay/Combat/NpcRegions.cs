@@ -1,3 +1,5 @@
+using Eden.Gameplay.Content;
+
 namespace Eden.Gameplay.Combat;
 
 // Pinned build 3662168 region IDs. Developer regions and special spaces are
@@ -83,72 +85,5 @@ public enum NpcPirateFaction
 public static class NpcRegions
 {
     public static NpcPirateFaction? Pirates(int regionId) =>
-        (NpcRegion)regionId switch
-        {
-            NpcRegion.TheForge
-            or NpcRegion.ValeOfTheSilent
-            or NpcRegion.Tribute
-            or NpcRegion.Venal
-            or NpcRegion.Lonetrek
-            or NpcRegion.PureBlind
-            or NpcRegion.Geminate
-            or NpcRegion.TheCitadel
-            or NpcRegion.Deklein
-            or NpcRegion.Tenal
-            or NpcRegion.Branch
-            or NpcRegion.BlackRise => NpcPirateFaction.Guristas,
-            NpcRegion.Detorid
-            or NpcRegion.WickedCreek
-            or NpcRegion.Cache
-            or NpcRegion.ScaldingPass
-            or NpcRegion.Insmother
-            or NpcRegion.GreatWildlands
-            or NpcRegion.Curse
-            or NpcRegion.Immensea
-            or NpcRegion.MoldenHeath
-            or NpcRegion.Heimatar
-            or NpcRegion.Impass
-            or NpcRegion.Metropolis
-            or NpcRegion.Feythabolis
-            or NpcRegion.Tenerifis
-            or NpcRegion.Omist => NpcPirateFaction.Angels,
-            NpcRegion.TheBleakLands
-            or NpcRegion.Khanid
-            or NpcRegion.Querious
-            or NpcRegion.Kador
-            or NpcRegion.Aridia
-            or NpcRegion.Delve
-            or NpcRegion.PeriodBasis
-            or NpcRegion.KorAzor
-            or NpcRegion.Genesis => NpcPirateFaction.BloodRaiders,
-            NpcRegion.Derelik
-            or NpcRegion.Catch
-            or NpcRegion.TashMurkon
-            or NpcRegion.Stain
-            or NpcRegion.Devoid
-            or NpcRegion.Esoteria
-            or NpcRegion.Domain
-            or NpcRegion.Providence
-            or NpcRegion.ParagonSoul => NpcPirateFaction.Sansha,
-            NpcRegion.SinqLaison
-            or NpcRegion.Everyshore
-            or NpcRegion.Syndicate
-            or NpcRegion.Solitude
-            or NpcRegion.Fade
-            or NpcRegion.Placid
-            or NpcRegion.CloudRing
-            or NpcRegion.OuterRing
-            or NpcRegion.Fountain
-            or NpcRegion.Essence
-            or NpcRegion.VergeVendor => NpcPirateFaction.Serpentis,
-            NpcRegion.Malpais
-            or NpcRegion.TheSpire
-            or NpcRegion.OuterPassage
-            or NpcRegion.EtheriumReach
-            or NpcRegion.TheKalevalaExpanse
-            or NpcRegion.Oasa
-            or NpcRegion.CobaltEdge
-            or NpcRegion.PerrigenFalls => NpcPirateFaction.RogueDrones,
-            _ => null,
-        };
+        BuildContentPolicy.Current.Npcs.PirateRegions.TryGetValue(regionId, out var faction) ? faction : null;
 }

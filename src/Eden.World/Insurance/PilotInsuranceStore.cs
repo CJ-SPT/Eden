@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -68,7 +69,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
                 // A freely recovered hull must not mint ISK through repeated losses.
                 return 0;
             }
-            if (CatalogContentPolicy.Current.Insurance.MaterialValuedHullTypes.Contains(typeId))
+            if (BuildContentPolicy.Current.Insurance.MaterialValuedHullTypes.Contains(typeId))
             {
                 var blueprints = catalog.Definitions.BlueprintsForProduct(typeId);
                 var recipe = blueprints.Length == 1 ? catalog.Definitions.ManufacturingRecipe(blueprints[0]) : null;

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Content;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 
@@ -41,15 +42,7 @@ public static class NpcGuardRules
     public const double FormationMargin = 6000;
     public const int PatrolLegSeconds = 60;
 
-    public static NpcGuardRoster? Roster(int factionId) =>
-        (NpcEmpireFaction)factionId switch
-        {
-            NpcEmpireFaction.Amarr => new(NpcGuardType.ImperialSergeant, NpcGuardType.ImperialOmen, NpcGuardType.AmarrCustoms),
-            NpcEmpireFaction.Caldari => new(NpcGuardType.CaldariCaptain, NpcGuardType.CaldariMoa, NpcGuardType.CaldariCustoms),
-            NpcEmpireFaction.Gallente => new(NpcGuardType.FederationSergeant, NpcGuardType.FederationThorax, NpcGuardType.GallenteCustoms),
-            NpcEmpireFaction.Minmatar => new(NpcGuardType.RepublicPrivate, NpcGuardType.RepublicRupture, NpcGuardType.MinmatarCustoms),
-            _ => null,
-        };
+    public static NpcGuardRoster? Roster(int factionId) => BuildContentPolicy.Current.Npcs.Guards.GetValueOrDefault(factionId);
 
     public static SpacePosition PatrolDestination(SpacePosition home, long npcId, long now)
     {

@@ -97,7 +97,7 @@ public sealed partial class RemoteRepairTests
         int armor = 0;
         foreach (var type in types)
         {
-            bool abyssal = catalog.FindSource("client/types", PassiveCatalog.Key(type.Id))!.Read<ClientTypes>().MetaGroupID == 15;
+            bool abyssal = catalog.Require(CatalogData.Client.Types, (long)type.Id).MetaGroupID == 15;
             Assert.Equal(!abyssal, RemoteRepairCatalog.Supported(catalog, type.Id, type.GroupId));
             Assert.Equal(!abyssal, FittingCatalog.Definition(catalog, type.Id) is not null);
             if (!abyssal)

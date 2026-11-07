@@ -316,7 +316,6 @@ internal sealed partial class LiveCombatRuntime
             {
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                catalog.Database.OpenConnection();
                 var loaded = missing.ToDictionary(id => id, _ => (AcquisitionShip?)null);
                 var pilots = world
                     .Pilots.Include(p => p.ActiveShip)

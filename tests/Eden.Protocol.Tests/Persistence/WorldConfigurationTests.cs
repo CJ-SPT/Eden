@@ -2,9 +2,11 @@ using System.Text.Json;
 using Eden.Data.World.Configuration;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Mining;
 using Eden.Server.Configuration;
 using Eden.World.Configuration;
 using Eden.World.Runtime;
@@ -17,6 +19,54 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldConfigurationTests
 {
+    [Fact]
+    public void NewlyReconciledBeltDeadlinesUseTheActivatedPolicyAndSavedDeadlinesRemainUnchanged()
+    {
+        using TestWorld fixture = new();
+        TestClock clock = new();
+        WorldDatabase database = new(fixture.Path);
+        WorldConfigurationStore store = new(database, clock);
+        var state = store.Read();
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        long savedDeadline = now + TimeSpan.FromDays(7).Ticks;
+        const int missingBelt = 987654;
+        const int savedBelt = 987655;
+        const int veldsparType = 1230;
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Add(
+                new WorldAsteroid
+                {
+                    Id = 987654,
+                    BeltId = missingBelt,
+                    SystemId = 30000142,
+                    TypeId = veldsparType,
+                }
+            );
+            world.Add(
+                new SavedBeltRenewal
+                {
+                    BeltId = savedBelt,
+                    SystemId = 30000142,
+                    NextRenewal = savedDeadline,
+                }
+            );
+            world.SaveChanges();
+        }
+        store.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with { Resources = new(false, 7) },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database, clock);
+        using WorldDbContext saved = new(fixture.Path);
+        Assert.Equal(ResourceRenewalRules.Next(now, 7), saved.Set<SavedBeltRenewal>().Find(missingBelt)!.NextRenewal);
+        Assert.Equal(savedDeadline, saved.Set<SavedBeltRenewal>().Find(savedBelt)!.NextRenewal);
+    }
+
     [Fact]
     public void RestartPoliciesAffectNewPilotGrantsAndSkillsWithoutChangingExistingPilots()
     {

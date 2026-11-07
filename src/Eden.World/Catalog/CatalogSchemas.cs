@@ -23,7 +23,7 @@ public static class CatalogSchemas
         var report =
             JsonSerializer.Deserialize<CatalogSchemaReport>(stream, JsonSerializerOptions.Web)
             ?? throw new InvalidDataException("Missing catalog schema report.");
-        if (report.DatasetCount != report.Datasets.Count || report.UnresolvedFields != 0)
+        if (report.Datasets.IsDefault || report.DatasetCount != report.Datasets.Length || report.UnresolvedFields != 0)
         {
             throw new InvalidDataException("Incomplete generated catalog schemas.");
         }

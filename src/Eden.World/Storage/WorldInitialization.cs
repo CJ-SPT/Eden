@@ -55,6 +55,12 @@ public static class WorldInitialization
         }
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
         WorldConfigurationStore.Activate(database);
+        world.ChangeTracker.Clear();
+        using (var reconciliation = world.Database.BeginTransaction())
+        {
+            EconomicStore.ReconcileBelts(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            reconciliation.Commit();
+        }
         while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
         {
             // Reconcile overdue catalog belts before admitting connections.

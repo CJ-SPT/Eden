@@ -6,7 +6,7 @@ namespace Eden.World.Catalog;
 
 internal static class CatalogSources
 {
-    internal const int PinnedBuild = 3662168;
+    internal const int PinnedBuild = Eden.Gameplay.Content.BuildContentPolicy.PinnedBuild;
     private static readonly ICatalogSource[] s_sources = typeof(CatalogData)
         .GetNestedTypes()
         .SelectMany(group => group.GetFields())

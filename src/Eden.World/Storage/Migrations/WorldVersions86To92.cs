@@ -27,13 +27,7 @@ internal static class WorldVersions86To92
         PersonalMarketSchema.Upgrade(world);
         NpcSupplySchema.Upgrade(world);
         EconomicSchema.Upgrade(world);
-        EconomicStore.Initialize(
-            world,
-            catalog,
-            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-            economy is { TestingMarket: false },
-            economics
-        );
+        EconomicStore.Initialize(world, catalog, economy is { TestingMarket: false }, economics);
         CrimewatchSchema.Upgrade(world);
         world.Database.ExecuteSqlRaw("PRAGMA user_version=92");
     }
