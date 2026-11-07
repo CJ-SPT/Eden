@@ -24,6 +24,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Player remote tracking and sensor assistance, November 7, 2026](#player-remote-tracking-and-sensor-assistance-november-7-2026)
 
+- [Local ancillary armor and shield repairs, November 7, 2026](#local-ancillary-armor-and-shield-repairs-november-7-2026)
+
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
@@ -56,6 +58,55 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Fitting expansion milestone 20: paid missile firing and shared NPC impacts](#fitting-expansion-milestone-20-paid-missile-firing-and-shared-npc-impacts)
 - [Fitting expansion milestone 21: scripted tracking, guidance and sensor modules](#fitting-expansion-milestone-21-scripted-tracking-guidance-and-sensor-modules)
 - [Fitting expansion milestone 22: tackle and warp navigation](#fitting-expansion-milestone-22-tackle-and-warp-navigation)
+
+## Local ancillary armor and shield repairs, November 7, 2026
+
+Milestone 5's first checkpoint enables all **18 ordinary static local ancillary repairers** in build **3662168**: ten shield boosters (group **1156**) and eight armor repairers (**1199**), including the Xarasier variants and capital-size module profiles. The eight published Abyssal mutation templates remain excluded. The production inventory retains **6,079 entries**, **235 admitted hulls** and **76 drones**; module/rig admissions increase from 3,366 to **3,384**, and charge admissions from 800 to **801**. Exactly these 18 modules and Nanite Repair Paste change. Every repairer retains an overheating gap; paste retains its unfinished overheating-repair consumer. This checkpoint does not close advanced defenses or the full completion program.
+
+Shield effect **4936**, `fueledShieldBoosting`, repairs at cycle start. A loaded cycle consumes one capacitor charge and pays no capacitor; an empty cycle pays the effective capacitor cost for the same repair amount. Charge group comes from catalog attribute **605**, `chargeGroup2`, and charge sizes must match exactly. Small boosters use meaningful size **0**, including Cap Booster 25. Larger boosters cannot load smaller-size charges to extend their burst. Actual charge volume determines magazine capacity: for example a small booster holds seven normal 25s or nine Navy 25s, with the same repair per activation.
+
+Armor effect **5275**, `fueledArmorRepair`, always spends capacitor at cycle start and repairs at cycle end. Paste is type **28668**, group **916**, with volume **0.01**. Required paste is the module's integer `chargeRate`; the catalog's charged armor multiplier **1886** is three. If fewer units remain, all are consumed and only the additional paste bonus scales with that fraction. A medium repairer with base amount 207 and rate four repairs 310.5, 414 or 517.5 with one, two or three paste, and 621 with four. Empty operation repairs its base amount. Catalog fitted-group limits enforce one ancillary armor repairer while allowing ordinary repairers alongside it.
+
+The existing fitting graph supplies earned skill, rig and hull modifiers before payment. Shield Compensation reduces the empty shield capacitor cost; charged cycles remain free of capacitor cost. Armor duration follows its prerequisite repair skills. Real-budget Incursus and Breacher tests verify their trained repair bonuses. Full-profile tests use artificially enlarged Ibis fitting/resource budgets to exercise every static module, including capital sizes; they establish module behavior, not capital hull admission or real-budget capital fits. The module graph retains the nominal armor amount: the pinned tooltip applies its own charged multiplier, so projecting the fueled amount into the graph would count that multiplier twice.
+
+Fuel ownership, stack form, positive quantity, exact compatibility and magazine capacity are checked in the same transaction as capacitor, health or pending repair, and cooldown. A rejected request leaves all of them unchanged. Existing loading/unloading checks reject changes during a paid cycle or reload. Reload uses the catalog's **60,000 ms** deadline. Schema remains **104**: existing owned charge stacks, module cooldowns and paid local-repair rows persist the result without new saved entity fields. Restart retains remaining paste, spent capacitor and the exact paid armor amount/deadline; that amount completes once. Shield repair is already committed at cycle start. Restored pending armor cycles use the native ancillary effect identity and do not invent offline repeats.
+
+Native activation dispatch accepts the two fueled effect names and publishes the actual **4936/5275** effect identities through the ordinary HUD and ship-state prime. Quantity changes use the existing magazine adapter, including zero at depletion; observer graphics reuse `effects.ShieldBoosting` and `effects.ArmorRepair`. A fueled chain finishes its last paid interval and stops when its magazine empties. The client may then request an ordinary cargo reload according to its own auto-reload setting. No server-side auto-reload preference is invented. Explicitly activating an empty module supports its unfueled mode and repeats while payment succeeds. Manual stop finishes the paid interval.
+
+Evidence: the pinned client archive SHA-256 is **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, and catalog fingerprint remains **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**. Inert inspection of `shipmodulebutton.pyj.AutoReload` and `Update` establishes the client-owned setting and inactive-effect/zero-quantity trigger. `clientDogmaLocation.pyj.LoadAmmoTypeToModule` resolves matching cargo stacks and invokes the existing load route. `godma.pyj.GetReloadTimes` reads next activation and reload time; `moduleButtonTooltip.pyj.AddArmorRepairersInfo` applies the charged multiplier when a charge exists. No client Python was executed and no game was launched. Partial-paste tooltip rendering remains unverified.
+
+CCP's [No Brakes balancing record](https://www.eveonline.com/fr/news/view/no-brakes-retribution-1.1-balancing) establishes capacitor use, proportional partial-paste bonuses, reload duration and the armor fitted limit; current amounts come from the pinned catalog rather than that historical balance patch. The open-source EOS [fueled armor](https://github.com/pyfa-org/eos/blob/c2cc80fd3b1951ac44be3702d59e5047cc7fa494/eos/eve_obj/effect/repairs/fueled_armor_repair.py) and [fueled shield](https://github.com/pyfa-org/eos/blob/c2cc80fd3b1951ac44be3702d59e5047cc7fa494/eos/eve_obj/effect/repairs/fueled_shield_boosting.py) calculators at revision **c2cc80fd3b1951ac44be3702d59e5047cc7fa494** support fitting interpretation, not an authoritative server lifecycle. No source was copied. This checkpoint changes no Carbon-owned Blue, transport or Destiny simulation rules; earlier engine references remain applicable.
+
+`tools/Export-AncillaryRepairCatalog.py` opens the catalog read-only, rejects input overwrite and exports all **26 published profiles**, fuel, prerequisite skills and relevant hull/effect definitions into the **219-type** `AncillaryRepairCatalog.json` fixture. Regenerate with:
+
+```powershell
+$catalog = Join-Path $env:LOCALAPPDATA 'Eden\catalog.sqlite'
+python tools/Export-AncillaryRepairCatalog.py --catalog $catalog
+```
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors (1.53 seconds combined). The **448-case affected selection passed** in **154.51 seconds** for the test command, including all **62 new ancillary cases**. After adding explicit unchanged-armor and reopened paid-amount assertions, the seven affected cases passed again (7.73 seconds; build 2.81 seconds). Both Python suites passed (**8 catalog**, **9 formatting** cases, 0.91 seconds combined). Formatting verification checked **1,068 files**, including the 140-column check (14.13 seconds). Documentation checks verified **527 local links and anchors**. Fixture export reproduced byte-for-byte; input overwrite was rejected and source catalog bytes were unchanged (2.70 seconds). Fixture SHA-256: **EB84BAB31954D47E585D72A0F22B4CD41BE86BBE3A3C1B8FEA8DEBAD471903B4**.
+
+Coverage includes all static profiles and mutation exclusions, proportional paste, exact charge sizes and volumes, empty capacitor payment and skills, real-budget hull bonuses, atomic rejection, one-AAR limits, saved paid deadlines and amount, native prime/effects/quantity, cargo reload, depletion/repeats and manual stop. Twelve warmed ancillary-handler frames assert zero SQL commands, opened connections and fitting recalculations for both families; this is a handler check, not a complete session-frame or checkpoint benchmark. Existing ordinary repairs, ammunition, remote repairs/assistance, fitting constraints/snapshots, resident fits and historical migrations passed in the affected selection.
+
+Development started with exact `AncillaryRepairRuleTests.PartialPasteConsumesRemainingFuelAndScalesOnlyTheBonus`, `AncillaryRepairTests.AllStaticTiersConsumeRealFuelAndCommitTheirPublishedRepairAmount` and `AncillaryRepairTests.NativeDepletionFinishesThePaidCycleThenPermitsARealClientReload` filters. Final affected filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Repair.|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.|FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteAssistanceTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentFitTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingCapabilityRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Fixtures.TestWorldSeedTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.DataModelOwnershipTests|FullyQualifiedName=Eden.Protocol.Tests.Hosting.ServerServicesTests.SharesWorldAndGateButIsolatesPilotSessions|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.TackleTests.RestartAndVersionThirtyFourMigration|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.MicrowarpdriveTests.VersionThirtyMigration|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CloneGradeTests.VersionThirtySixMigration|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipStorageTests.VersionThirtySeven|FullyQualifiedName~Eden.Protocol.Tests.Combat.EnergyTierTests.Version31|FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileCombatTests.VersionThirtyThree|FullyQualifiedName~Eden.Protocol.Tests.Combat.ShipSafetyTests.VersionThirtyFiveMigration
+```
+
+Final assertion-only filter:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Repair.AncillaryRepairTests.RejectedArmorActivationsLeaveFuelResourcesHealthAndCooldownUnchanged|FullyQualifiedName=Eden.Protocol.Tests.Repair.AncillaryRepairTests.CheckpointReopenRetainsSpentPasteAndExactlyOnePaidArmorCompletion
+```
+
+An initial build lacked the Gameplay repair namespace import in the audit; it was corrected. The first broader affected run failed the historical version-28 repair migration and was interrupted. Its downgrade fixture retained the newer remote-assistance triggers while removing their active-module table. Shared historical schema teardown now removes remote assistance before older schema changes; the exact failing method passed after correction. No production migration was changed. The interrupted run is not passing validation. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** On a copied save, observe fueled quantity/reload HUD behavior with auto-reload enabled; compare partial-paste tooltip and actual repair; confirm observer repair graphics finish with a manual stop. Automated protocol checks establish emitted content, not native rendering or gameplay feel.
+
+Ancillary remote repairs, mutadaptive remote repairs, reactive hardeners, assault damage controls and signature suppressors remain in milestone 5. Overheating and paste repair remain in milestone 6. The separate NPC neutralizer repair-suppression evidence blocker remains open in milestone 4.
 
 ## T1 and T2 ship rigs, November 6, 2026
 

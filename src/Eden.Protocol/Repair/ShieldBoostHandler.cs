@@ -3,6 +3,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -13,7 +14,15 @@ namespace Eden.Protocol.Repair;
 [Injectable(InjectionType.Scoped)]
 internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoosting boosting) : IModuleEffectSource
 {
-    private sealed record Cycle(long ShipId, ShieldBooster Booster, long Started, long StartTime, long Repeats, bool Stopping = false);
+    private sealed record Cycle(
+        long ShipId,
+        ShieldBooster Booster,
+        long Started,
+        long StartTime,
+        long Repeats,
+        bool Stopping = false,
+        bool FuelDepleted = false
+    );
 
     private readonly Dictionary<long, Cycle> _cycles = [];
 
@@ -24,7 +33,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                 pilot.PilotId,
                 pilot.ShipId,
                 null,
-                DogmaEffect.ShieldBoosting,
+                ShieldBoostWireDefinitions.Effect(cycle.Booster.Ancillary),
                 cycle.StartTime,
                 cycle.Booster.DurationMilliseconds,
                 cycle.Repeats
@@ -56,11 +65,11 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             {
                 continue;
             }
-            if (!cycle.Stopping && cycle.Repeats > 0)
+            if (!cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
             {
                 try
                 {
-                    Start(context, cycle.Booster.ItemId, cycle.Repeats - 1, cycle);
+                    Start(context, cycle.Booster.ItemId, cycle.Repeats - 1, cycle.Booster.Ancillary, cycle);
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException)
@@ -72,12 +81,12 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
         }
     }
 
-    private void Start(PilotCallContext context, long module, long repeats, Cycle? previous = null)
+    private void Start(PilotCallContext context, long module, long repeats, bool ancillary = false, Cycle? previous = null)
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = boosting.Boost(context.Pilot.PilotId, module, now);
-        Cycle cycle = new(context.Pilot.ShipId, result.Booster, started, now, repeats);
+        var result = boosting.Boost(context.Pilot.PilotId, module, now, ancillary);
+        Cycle cycle = new(context.Pilot.ShipId, result.Booster, started, now, repeats, FuelDepleted: result.Magazine is { Quantity: 0 });
         _cycles[module] = cycle;
         if (previous is null)
         {
@@ -95,6 +104,10 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                 Attribute(DogmaAttributeId.ShieldCharge, result.Health.Remaining.Shield),
             ])
         );
+        if (result.Magazine is { } magazine)
+        {
+            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, now);
+        }
 
         ModuleAttributeChange Attribute(DogmaAttributeId attribute, double value) =>
             new(context.Pilot.PilotId, new DogmaItemKey.Item(context.Pilot.ShipId), attribute, now, value);
@@ -123,7 +136,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                     context.Pilot.PilotId,
                     cycle.ShipId,
                     null,
-                    DogmaEffect.ShieldBoosting,
+                    ShieldBoostWireDefinitions.Effect(cycle.Booster.Ancillary),
                     cycle.StartTime,
                     cycle.Booster.DurationMilliseconds,
                     cycle.Repeats
@@ -149,7 +162,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             if (
                 method == "Activate"
                 && args is [long module, var effect, var target, long repeats]
-                && BlueMarshal.Text(effect) == ShieldBoostWireDefinitions.EffectName
+                && ShieldBoostWireDefinitions.Ancillary(BlueMarshal.Text(effect)) is bool ancillary
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -159,16 +172,28 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
                 }
                 if (!_cycles.ContainsKey(module))
                 {
-                    Start(context, module, repeats);
+                    Start(context, module, repeats, ancillary);
+                }
+                else if (_cycles[module].Booster.Ancillary != ancillary)
+                {
+                    return new PilotCallResult.Failure("Use the shield booster's own activation effect.");
                 }
                 return PilotCallResult.None;
             }
-            if (method == "Deactivate" && args is [long item, var name] && BlueMarshal.Text(name) == ShieldBoostWireDefinitions.EffectName)
+            if (
+                method == "Deactivate"
+                && args is [long item, var name]
+                && ShieldBoostWireDefinitions.Ancillary(BlueMarshal.Text(name)) is bool requested
+            )
             {
                 // Shields and capacitor are applied at cycle start; finish the
                 // paid cycle but do not begin another one after a manual stop.
                 if (_cycles.TryGetValue(item, out var cycle))
                 {
+                    if (cycle.Booster.Ancillary != requested)
+                    {
+                        return new PilotCallResult.Failure("Use the shield booster's own activation effect.");
+                    }
                     _cycles[item] = cycle with { Stopping = true };
                 }
                 return PilotCallResult.None;

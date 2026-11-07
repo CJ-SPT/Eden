@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 
@@ -5,16 +6,23 @@ namespace Eden.Gameplay.Repair;
 
 public sealed record LocalRepairer(long ItemId, int TypeId, double DurationMilliseconds, double Amount, double CapacitorNeed);
 
-public sealed record LocalRepairSchedule(long ItemId, int TypeId, long StartedAt, long CompletesAt, RepairLayer Layer = RepairLayer.Armor)
+public sealed record LocalRepairSchedule(
+    long ItemId,
+    int TypeId,
+    long StartedAt,
+    long CompletesAt,
+    RepairLayer Layer = RepairLayer.Armor,
+    bool Ancillary = false
+)
 {
     public double DurationMilliseconds => (CompletesAt - StartedAt) / (double)TimeSpan.TicksPerMillisecond;
 }
 
-public sealed record LocalRepairActivation(LocalRepairSchedule Schedule, double Capacitor);
+public sealed record LocalRepairActivation(LocalRepairSchedule Schedule, double Capacitor, Magazine? Magazine = null);
 
 public interface IPilotLocalRepairing
 {
-    LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor);
+    LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor, bool ancillary = false);
     IReadOnlyList<LocalRepairSchedule> Read(long pilotId, long shipId, long now);
     ShipHealth Complete(long pilotId, long shipId, long now);
 }

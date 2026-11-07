@@ -77,6 +77,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Player remote tracking and sensor assistance, November 7, 2026](protocol/fitting.md#player-remote-tracking-and-sensor-assistance-november-7-2026)
 
+- [Local ancillary armor and shield repairs, November 7, 2026](protocol/fitting.md#local-ancillary-armor-and-shield-repairs-november-7-2026)
+
 - [Cooperative fleet foundation, November 7, 2026](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026)
 
 - [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)

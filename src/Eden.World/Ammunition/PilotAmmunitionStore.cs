@@ -139,6 +139,14 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(RemoteAssistanceCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
+                    AncillaryRepairCatalog.Supported(catalog, module.TypeId, group)
+                    && (
+                        group == AncillaryRepairRules.ArmorGroup
+                            ? InventoryDefinitions.IsLowSlot(module.FlagId)
+                            : InventoryDefinitions.IsMediumSlot(module.FlagId)
+                    )
+                )
+                && !(
                     CapacitorBoosterDefinitions.IsSupported(group, attributes)
                     && InventoryDefinitions.IsMediumSlot(module.FlagId)
                     && FittingCatalog.Definition(catalog, module.TypeId) is not null
@@ -253,7 +261,9 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int moduleGroup = catalog.RequireItem(module.TypeId).GroupId;
             bool compatible =
-                script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
+                AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
+                    ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
+                : script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
                 : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)

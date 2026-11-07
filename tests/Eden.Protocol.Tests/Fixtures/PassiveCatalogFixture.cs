@@ -49,6 +49,9 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadRemoteRepairs(string path) => Load(path, "RemoteRepairCatalog.json", null);
 
+    internal static void LoadAncillaryRepairs(string path, int? hullType = null) =>
+        Load(path, "AncillaryRepairCatalog.json", null, hullType: hullType);
+
     internal static void LoadRemoteAssistance(string path) => Load(path, "RemoteAssistanceCatalog.json", null);
 
     internal static void LoadCapacitorModules(string path, IReadOnlySet<int>? types = null) =>

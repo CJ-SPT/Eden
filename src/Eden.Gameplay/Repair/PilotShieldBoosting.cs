@@ -1,17 +1,25 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Repair;
 
-public sealed record ShieldBooster(long ItemId, int TypeId, double DurationMilliseconds, double ShieldAmount, double CapacitorNeed);
+public sealed record ShieldBooster(
+    long ItemId,
+    int TypeId,
+    double DurationMilliseconds,
+    double ShieldAmount,
+    double CapacitorNeed,
+    bool Ancillary = false
+);
 
-public sealed record ShieldBoost(ShieldBooster Booster, ShipHealth Health, double Capacitor, double Restored);
+public sealed record ShieldBoost(ShieldBooster Booster, ShipHealth Health, double Capacitor, double Restored, Magazine? Magazine = null);
 
 public interface IPilotShieldBoosting
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
-    ShieldBoost Boost(long pilotId, long moduleId, long now);
+    ShieldBoost Boost(long pilotId, long moduleId, long now, bool ancillary = false);
 }
 
 public enum ShieldBoosterType

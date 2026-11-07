@@ -6,6 +6,7 @@ using Eden.Gameplay.Content;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
@@ -368,6 +369,17 @@ internal static class ShipContentAudit
     {
         bool admitted = AmmunitionCatalog.Supported(catalog, type.Id, type.GroupId);
         checks.Add(new(ContentOperation.ChargeLoading, admitted, milestone, "AmmunitionCatalog.Supported; shared with real loading."));
+        if (type.GroupId == AncillaryRepairRules.PasteGroup && admitted)
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.Overheating,
+                    "Ancillary repair fuel is implemented; repair of overheated modules remains unfinished."
+                )
+            );
+        }
         return admitted;
     }
 

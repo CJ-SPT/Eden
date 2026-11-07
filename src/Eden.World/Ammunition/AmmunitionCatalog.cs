@@ -3,6 +3,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Fittings;
+using Eden.World.Repair;
 
 namespace Eden.World.Ammunition;
 
@@ -12,6 +13,7 @@ internal static class AmmunitionCatalog
         TurretChargeCatalog.Supported(catalog, typeId, group)
         || MissileChargeCatalog.Supported(catalog, typeId, group)
         || ScriptCatalog.Supported(catalog, typeId, group)
+        || AncillaryRepairCatalog.PasteSupported(catalog, typeId, group)
         || group == CapacitorBoosterDefinitions.ChargeGroup
             && catalog.FittingAttributes(typeId).GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0;
 }

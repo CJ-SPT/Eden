@@ -48,13 +48,15 @@ internal sealed class ModuleActivationHandler(
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,
-            ShieldBoostWireDefinitions.EffectName => shields.Call(context, service, method, args),
-            ArmorRepairWireDefinitions.EffectName or LocalRepairWireDefinitions.HullEffectName => repairs.Call(
+            ShieldBoostWireDefinitions.EffectName or ShieldBoostWireDefinitions.AncillaryEffectName => shields.Call(
                 context,
                 service,
                 method,
                 args
             ),
+            ArmorRepairWireDefinitions.EffectName
+            or LocalRepairWireDefinitions.HullEffectName
+            or LocalRepairWireDefinitions.AncillaryEffectName => repairs.Call(context, service, method, args),
             CapacitorBoosterHandler.EffectName => capacitorBoosters.Call(context, service, method, args),
             HardenerWireDefinitions.ShieldEffectName or HardenerWireDefinitions.ArmorEffectName => hardeners.Call(
                 context,

@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -13,7 +14,7 @@ namespace Eden.Protocol.Repair;
 [Injectable(InjectionType.Scoped)]
 internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairing repairing) : IModuleEffectSource
 {
-    private sealed record Cycle(long ShipId, LocalRepairSchedule Schedule, long Repeats, bool Stopping = false);
+    private sealed record Cycle(long ShipId, LocalRepairSchedule Schedule, long Repeats, bool Stopping = false, bool FuelDepleted = false);
 
     private readonly Dictionary<long, Cycle> _cycles = [];
     private long _restoredShip;
@@ -74,11 +75,11 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
             }
             var health = repairing.Complete(context.Pilot.PilotId, cycle.ShipId, Now());
             NotifyHealth(context, health, cycle.Schedule.Layer);
-            if (!cycle.Stopping && cycle.Repeats > 0)
+            if (!cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
             {
                 try
                 {
-                    Start(context, cycle.Schedule.ItemId, cycle.Repeats - 1, cycle.Schedule.Layer, cycle);
+                    Start(context, cycle.Schedule.ItemId, cycle.Repeats - 1, cycle.Schedule.Layer, cycle.Schedule.Ancillary, cycle);
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException) { }
@@ -87,10 +88,17 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
         }
     }
 
-    private void Start(PilotCallContext context, long module, long repeats, RepairLayer layer, Cycle? previous = null)
+    private void Start(
+        PilotCallContext context,
+        long module,
+        long repeats,
+        RepairLayer layer,
+        bool ancillary = false,
+        Cycle? previous = null
+    )
     {
-        var result = repairing.Start(context.Pilot.PilotId, module, Now(), layer);
-        Cycle cycle = new(context.Pilot.ShipId, result.Schedule, repeats);
+        var result = repairing.Start(context.Pilot.PilotId, module, Now(), layer, ancillary);
+        Cycle cycle = new(context.Pilot.ShipId, result.Schedule, repeats, FuelDepleted: result.Magazine is { Quantity: 0 });
         _cycles[module] = cycle;
         if (previous is null)
         {
@@ -112,6 +120,10 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
                 ),
             ])
         );
+        if (result.Magazine is { } magazine)
+        {
+            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, Now());
+        }
     }
 
     private void NotifyHealth(PilotCallContext context, ShipHealth health, RepairLayer layer)
@@ -156,7 +168,7 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
             pilot,
             ship,
             null,
-            LocalRepairWireDefinitions.Effect(schedule.Layer),
+            LocalRepairWireDefinitions.Effect(schedule.Layer, schedule.Ancillary),
             schedule.StartedAt,
             schedule.DurationMilliseconds,
             repeats
@@ -185,6 +197,7 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
         {
             return PilotCallResult.Unsupported;
         }
+        bool ancillary = LocalRepairWireDefinitions.Ancillary(BlueMarshal.Text(args[1]));
         context.Flight.Checkpoint();
         Advance(context);
         try
@@ -200,13 +213,16 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
                 {
                     return new PilotCallResult.Failure("Activate the local repairer on your own ship in space.");
                 }
-                if (_cycles.TryGetValue(module, out var running) && running.Schedule.Layer != layer)
+                if (
+                    _cycles.TryGetValue(module, out var running)
+                    && (running.Schedule.Layer != layer || running.Schedule.Ancillary != ancillary)
+                )
                 {
                     return new PilotCallResult.Failure("Use the repairer's own activation effect.");
                 }
                 if (!_cycles.ContainsKey(module))
                 {
-                    Start(context, module, repeats, layer);
+                    Start(context, module, repeats, layer, ancillary);
                 }
                 return PilotCallResult.None;
             }
@@ -218,7 +234,7 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
             {
                 if (_cycles.TryGetValue(moduleId, out var cycle))
                 {
-                    if (cycle.Schedule.Layer != layer)
+                    if (cycle.Schedule.Layer != layer || cycle.Schedule.Ancillary != ancillary)
                     {
                         return new PilotCallResult.Failure("Use the repairer's own activation effect.");
                     }

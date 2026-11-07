@@ -49,7 +49,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            RemoteAssistanceRules.Effect(groupId) is { } assistance
+            AncillaryRepairRules.Kind(groupId) is { } ancillary
+                && effects.Contains(AncillaryRepairRules.Effect(ancillary))
+                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+            || RemoteAssistanceRules.Effect(groupId) is { } assistance
                 && effects.Contains(assistance)
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
             || CapacitorWarfareRules.Effect(groupId) is { } capacitor

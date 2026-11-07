@@ -3,6 +3,7 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ChargedArmorMultiplier = 1886,
     RemoteAssistanceImpedance = 2135,
     DisallowAgainstEwImmuneTarget = 1798,
     RemoteRepairImpedance = 2116,

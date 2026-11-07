@@ -128,6 +128,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (AncillaryRepairRules.Kind(type.GroupId) is not null && !AncillaryRepairCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         var attributes = catalog.FittingAttributes(typeId);
         return ModuleFittingRules.Define(
             typeId,

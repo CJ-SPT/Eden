@@ -120,6 +120,8 @@ public enum DogmaEffect
     EnergyNeutralizer = 6187,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,
+    AncillaryShieldBoosting = 4936,
+    AncillaryArmorRepair = 5275,
     MissileLaunching = 9,
     LaserFired = 10,
     UseMissiles = 101,

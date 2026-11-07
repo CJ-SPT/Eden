@@ -36,7 +36,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         InventoryItem module
     ) => PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module);
 
-    public ShieldBoost Boost(long pilotId, long moduleId, long now)
+    public ShieldBoost Boost(long pilotId, long moduleId, long now, bool ancillary = false)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -51,7 +51,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
-            || catalog.RequireItem(module.TypeId).GroupId != ShieldBoostDefinitions.Group
+            || catalog.RequireItem(module.TypeId).GroupId != (ancillary ? AncillaryRepairRules.ShieldGroup : ShieldBoostDefinitions.Group)
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
@@ -77,6 +77,19 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         {
             throw new InvalidDataException("A destroyed ship cannot boost its shields.");
         }
+        var fuel = ancillary
+            ? AncillaryFuelPersistence.Consume(
+                world,
+                catalog,
+                pilotId,
+                module,
+                AncillaryRepairRules.Define(AncillaryRepairKind.Shield, attributes)
+            )
+            : null;
+        if (fuel is not null)
+        {
+            booster = booster with { ShieldAmount = fuel.Payment.Amount, CapacitorNeed = fuel.Payment.CapacitorNeed, Ancillary = true };
+        }
         double shield = ShieldBoostRules.RestoredShield(health, booster);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, booster.CapacitorNeed, now);
         var saved =
@@ -96,7 +109,8 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
                 Remaining = health.Remaining with { Shield = shield },
             },
             capacitor,
-            shield - health.Remaining.Shield
+            shield - health.Remaining.Shield,
+            fuel?.Magazine
         );
     }
 }

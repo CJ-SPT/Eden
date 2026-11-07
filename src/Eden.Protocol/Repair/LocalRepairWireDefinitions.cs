@@ -7,17 +7,22 @@ namespace Eden.Protocol.Repair;
 internal static class LocalRepairWireDefinitions
 {
     public const string HullEffectName = "structureRepair";
+    public const string AncillaryEffectName = "fueledArmorRepair";
     private const string HullEffectGraphic = "effects.StructureRepair";
 
     internal static RepairLayer? Layer(string? effect) =>
         effect switch
         {
             ArmorRepairWireDefinitions.EffectName => RepairLayer.Armor,
+            AncillaryEffectName => RepairLayer.Armor,
             HullEffectName => RepairLayer.Hull,
             _ => null,
         };
 
-    internal static DogmaEffect Effect(RepairLayer layer) => LocalRepairDefinitions.Profile(layer).Effect;
+    internal static bool Ancillary(string? effect) => effect == AncillaryEffectName;
+
+    internal static DogmaEffect Effect(RepairLayer layer, bool ancillary = false) =>
+        ancillary && layer == RepairLayer.Armor ? DogmaEffect.AncillaryArmorRepair : LocalRepairDefinitions.Profile(layer).Effect;
 
     internal static DogmaAttributeId DamageAttribute(RepairLayer layer) =>
         layer switch

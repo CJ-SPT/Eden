@@ -24,18 +24,21 @@ internal sealed class TestWorld : IDisposable
     public IReadOnlyList<StaticSpaceObject> Objects => Services.GetRequiredService<ISystemObjects>().Load(30000142);
 
     // Remove newer fields before replaying a historical schema version.
-    internal const string DropShipStorageSchema = """
-        DROP INDEX IX_WorldShip_OwnerId_StoredInId;
-        ALTER TABLE WorldShip DROP COLUMN StoredInId;
-        ALTER TABLE WorldShip DROP COLUMN StorageFlagId;
-        ALTER TABLE WorldShipLoss DROP COLUMN StoredShipsJson;
-        """;
+    internal const string DropShipStorageSchema =
+        DropRemoteAssistanceSchema
+        + """
+            DROP INDEX IX_WorldShip_OwnerId_StoredInId;
+            ALTER TABLE WorldShip DROP COLUMN StoredInId;
+            ALTER TABLE WorldShip DROP COLUMN StorageFlagId;
+            ALTER TABLE WorldShipLoss DROP COLUMN StoredShipsJson;
+            """;
     internal const string DropCloneGradeSchema = DropShipStorageSchema + "ALTER TABLE WorldAccount DROP COLUMN CloneGrade; ";
     internal const string DropSafetySchema = DropCloneGradeSchema + "ALTER TABLE WorldPilot DROP COLUMN SafetyLevel; ";
 
     internal const string DropRemoteAssistanceSchema = """
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Item;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Active;
+        DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Marker;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Position;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Selection;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Owner;
@@ -45,8 +48,7 @@ internal sealed class TestWorld : IDisposable
 
     // Remove the newer live-module table so version 31 can rename the historical table.
     internal const string DropTestingMarketSchema =
-        DropRemoteAssistanceSchema
-        + DropSafetySchema
+        DropSafetySchema
         + """
             DROP TABLE WorldMissile;
             DROP TABLE WorldTackle;

@@ -19,8 +19,12 @@ namespace Eden.World.Repair;
 [Injectable]
 internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLocalRepairing
 {
-    public LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor)
+    public LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor, bool ancillary = false)
     {
+        if (ancillary && layer != RepairLayer.Armor)
+        {
+            throw new InvalidDataException("Ancillary local repairs apply to armor or shields, not hull.");
+        }
         var profile = LocalRepairDefinitions.Profile(layer);
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -39,7 +43,7 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
                     ? InventoryDefinitions.IsLowSlot(module.FlagId)
                     : InventoryDefinitions.IsMediumSlot(module.FlagId)
             )
-            || catalog.RequireItem(module.TypeId).GroupId != profile.GroupId
+            || catalog.RequireItem(module.TypeId).GroupId != (ancillary ? AncillaryRepairRules.ArmorGroup : profile.GroupId)
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
@@ -72,6 +76,19 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
         {
             throw new InvalidDataException("A destroyed ship cannot run a repairer.");
         }
+        var fuel = ancillary
+            ? AncillaryFuelPersistence.Consume(
+                world,
+                catalog,
+                pilotId,
+                module,
+                AncillaryRepairRules.Define(AncillaryRepairKind.Armor, attributes)
+            )
+            : null;
+        if (fuel is not null)
+        {
+            repairer = repairer with { Amount = fuel.Payment.Amount, CapacitorNeed = fuel.Payment.CapacitorNeed };
+        }
         long completes = LocalRepairRules.CompletesAt(now, repairer);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, repairer.CapacitorNeed, now);
         if (world.Set<ShipHealthState>().Find(pilot.ActiveShipId) is null)
@@ -101,13 +118,14 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
         cooldown.ReadyAt = completes;
         world.SaveChanges();
         transaction.Commit();
-        return new(new(moduleId, module.TypeId, now, completes, layer), capacitor);
+        return new(new(moduleId, module.TypeId, now, completes, layer, ancillary), capacitor, fuel?.Magazine);
     }
 
     public IReadOnlyList<LocalRepairSchedule> Read(long pilotId, long shipId, long now)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
         var schedules = (
             from repair in world.Set<PendingLocalRepair>()
             join item in world.Set<OwnedItem>() on repair.ModuleId equals item.Id
@@ -131,7 +149,9 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
                 && repair.CompletesAt > now
             select new LocalRepairSchedule(item.Id, item.TypeId, repair.StartedAt, repair.CompletesAt, repair.Layer)
         ).ToArray();
-        return schedules;
+        return schedules
+            .Select(s => s with { Ancillary = catalog.FittingType(s.TypeId)?.GroupId == AncillaryRepairRules.ArmorGroup })
+            .ToArray();
     }
 
     public ShipHealth Complete(long pilotId, long shipId, long now)
