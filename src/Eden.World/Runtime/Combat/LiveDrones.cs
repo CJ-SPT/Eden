@@ -386,11 +386,10 @@ internal sealed partial class LiveCombatRuntime
         return signature;
     }
 
-    private void ProjectDrones(WorldDbContext world)
+    internal static void ProjectDrones(WorldDbContext world, IReadOnlyList<LiveDrone> drones)
     {
-        foreach (long id in _dirtyDrones)
+        foreach (var drone in drones)
         {
-            var drone = _liveDrones[id];
             var contact = drone.Contact;
             world.Database.ExecuteSql(
                 $"""
@@ -400,7 +399,7 @@ internal sealed partial class LiveCombatRuntime
                     SpeedLimit={contact.SpeedLimit},Orbiting={contact.Orbiting},Shield={contact.Health.Remaining.Shield},
                     ArmorDamage={drone.ArmorDamage},StructureDamage={drone.StructureDamage},UpdatedAt={drone.UpdatedAt},
                     ReadyAt={drone.ReadyAt},CommandedAt={drone.CommandedAt},ShotAt={contact.ShotAt},ShotTargetId={contact.ShotTargetId}
-                WHERE ItemId={id}
+                WHERE ItemId={contact.Id}
                 """
             );
         }

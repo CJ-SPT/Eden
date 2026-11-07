@@ -82,7 +82,7 @@ internal sealed partial class LiveCombatRuntime
         ProjectContributions(world, after.ShipId, before.Contributions, after.Contributions);
     }
 
-    private static void ProjectNpc(WorldDbContext world, LiveCombatNpc before, LiveCombatNpc after)
+    internal static void ProjectNpc(WorldDbContext world, LiveCombatNpc before, LiveCombatNpc after)
     {
         if (
             before.Health != after.Health

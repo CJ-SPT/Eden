@@ -70,7 +70,9 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
 
     private CrimewatchSnapshot ReadSql(long pilotId, int systemId)
     {
-        using WorldDbContext world = new(database.Path);
+        // This typed snapshot merges the current resident NPC timer in Read().
+        // Direct SQL crimewatch callers still require normal projection.
+        using WorldDbContext world = new(database.Path) { ReadsResidentNpcTimer = true };
         // The resident owner serializes this complete read snapshot. File-backed
         // worlds retain their SQL transaction; mutations use the normal bridge.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();

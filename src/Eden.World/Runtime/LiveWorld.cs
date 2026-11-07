@@ -17,11 +17,13 @@ internal sealed record WorldCheckpoint(
     TimeSpan Write,
     long Bytes,
     int? Commands = null,
-    int? Connections = null
+    int? Connections = null,
+    TimeSpan Projection = default
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
-// Checkpoints copy it to a second RAM image before doing any filesystem work.
+// Checkpoints copy the SQL image and capture immutable combat state under the owner.
+// Projection and filesystem work use only the detached image outside that owner.
 internal sealed class LiveWorld : IDisposable
 {
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
@@ -276,46 +278,70 @@ internal sealed class LiveWorld : IDisposable
         }
     }
 
+    internal WorldSnapshot? CaptureSnapshot()
+    {
+        long started = Stopwatch.GetTimestamp();
+        lock (_gate)
+        {
+            var wait = Stopwatch.GetElapsedTime(started);
+            started = Stopwatch.GetTimestamp();
+            if (_disposed)
+            {
+                return null;
+            }
+            if (SqlConnections != 0)
+            {
+                throw new InvalidOperationException("Complete world connections before capturing a checkpoint.");
+            }
+            long generation = ObserveGeneration();
+            if (generation == _savedGeneration)
+            {
+                return null;
+            }
+            var combat = Combat?.CaptureCheckpoint();
+            SqliteConnection database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
+            try
+            {
+                database.Open();
+                _memory.BackupDatabase(database);
+                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started));
+            }
+            catch
+            {
+                database.Dispose();
+                throw;
+            }
+        }
+    }
+
     private Exception? Save()
     {
         using var metrics = SessionPerformance.Begin("checkpoint", message => Report(message, trace: true), force: MeasureCheckpoints);
-        SqliteConnection? snapshot = null;
         try
         {
-            long started = Stopwatch.GetTimestamp();
-            long generation;
-            TimeSpan wait;
-            TimeSpan capture;
-            lock (_gate)
+            using var snapshot = CaptureSnapshot();
+            if (snapshot is null)
             {
-                wait = Stopwatch.GetElapsedTime(started);
-                started = Stopwatch.GetTimestamp();
-                Combat?.Flush();
-                if (_disposed || (generation = ObserveGeneration()) == _savedGeneration)
-                {
-                    return null;
-                }
-                snapshot = new("Data Source=:memory:;Pooling=False");
-                snapshot.Open();
-                _memory.BackupDatabase(snapshot);
-                capture = Stopwatch.GetElapsedTime(started);
+                return null;
             }
-            started = Stopwatch.GetTimestamp();
-            _persist(snapshot, _path);
+            var projection = snapshot.Project();
+            long started = Stopwatch.GetTimestamp();
+            _persist(snapshot.Database, _path);
             TimeSpan write = Stopwatch.GetElapsedTime(started);
             WorldCheckpoint completed = new(
-                generation,
+                snapshot.Generation,
                 _clock.GetUtcNow(),
-                wait,
-                capture,
+                snapshot.Wait,
+                snapshot.Capture,
                 write,
                 new FileInfo(_path).Length,
                 metrics?.Commands,
-                metrics?.Connections
+                metrics?.Connections,
+                projection
             );
             lock (_gate)
             {
-                _savedGeneration = generation;
+                _savedGeneration = snapshot.Generation;
                 Volatile.Write(ref _lastCheckpoint, completed);
                 Volatile.Write(ref _lastSaveFailure, null);
                 _checkpoints.Enqueue(completed);
@@ -327,7 +353,8 @@ internal sealed class LiveWorld : IDisposable
             Report(
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"World checkpoint {generation}: wait={wait.TotalMilliseconds:F2} ms, capture={capture.TotalMilliseconds:F2} ms, "
+                    $"World checkpoint {completed.Generation}: wait={completed.Wait.TotalMilliseconds:F2} ms, "
+                        + $"capture={completed.Capture.TotalMilliseconds:F2} ms, project={projection.TotalMilliseconds:F2} ms, "
                         + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}."
                 )
             );
@@ -338,10 +365,6 @@ internal sealed class LiveWorld : IDisposable
             Volatile.Write(ref _lastSaveFailure, exception);
             Report($"World checkpoint failed; resident changes remain pending: {exception.Message}", failure: true);
             return exception;
-        }
-        finally
-        {
-            snapshot?.Dispose();
         }
     }
 

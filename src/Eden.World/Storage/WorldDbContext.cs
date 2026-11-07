@@ -24,6 +24,7 @@ using Eden.World.Redemption;
 using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Skills;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Storage;
@@ -34,11 +35,30 @@ public sealed partial class WorldDbContext(string path) : DbContext
     public DbSet<Ship> Ships => Set<Ship>();
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
+    internal bool ReadsResidentNpcTimer { get; init; }
+
+    private readonly SqliteConnection? _snapshot;
+
+    internal WorldDbContext(SqliteConnection snapshot)
+        : this(string.Empty)
+    {
+        _snapshot = snapshot;
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        if (_snapshot is not null)
+        {
+            // Detached checkpoint projection uses the same model and SQLite rules,
+            // without consulting or invalidating the advancing resident world.
+            options.TracePerformance().UseSqlite(_snapshot, contextOwnsConnection: false);
+            return;
+        }
         options
             .AddInterceptors(new FitTransactions(this), new CombatPersistenceBridge(path), new CombatTransactionBridge(path))
             .TracePerformance()
             .UseSqlite(WorldConnections.Create(path), contextOwnsConnection: true);
+    }
 
     protected override void OnModelCreating(ModelBuilder model)
     {

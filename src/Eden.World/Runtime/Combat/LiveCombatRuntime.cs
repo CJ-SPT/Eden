@@ -332,7 +332,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         }
     }
 
-    internal void BeforeSql(string sql)
+    internal void BeforeSql(string sql, bool readsResidentNpcTimer = false)
     {
         if (
             _internal != 0
@@ -354,7 +354,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             "WorldCombatDamage",
             "WorldDrone",
         ];
-        if (!read || combatTables.Any(table => sql.Contains(table, StringComparison.Ordinal)))
+        if (
+            !read
+            || combatTables.Any(table => sql.Contains(table, StringComparison.Ordinal))
+            || !readsResidentNpcTimer && sql.Contains("WorldCrimewatch", StringComparison.Ordinal)
+        )
         {
             Flush();
         }
@@ -369,47 +373,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             return;
         }
-        using var phase = SessionPerformance.Phase("combat.project");
         _internal++;
         try
         {
             using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
-            foreach (long id in _dirtyPositions)
-            {
-                var position = _positions[id];
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldPosition(ShipId,SystemId,X,Y,Z)
-                    VALUES({id},{position.System},{position.Position.X},{position.Position.Y},{position.Position.Z})
-                    ON CONFLICT(ShipId) DO UPDATE SET X=excluded.X,Y=excluded.Y,Z=excluded.Z
-                    """
-                );
-            }
-            ProjectDrones(world);
-            foreach (long id in _dirtyShips)
-            {
-                ProjectShip(world, _savedShips[id], _ships[id]);
-            }
-            foreach (long id in _dirtyNpcs)
-            {
-                ProjectNpc(world, _savedNpcs[id], _npcs[id]);
-            }
-            foreach (long id in _dirtyAggressions)
-            {
-                var aggression = _aggressions![id];
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldNpcAggression(NpcId,TargetShipId,ReadyAt,MissileReadyAt,LastShotAt,LastTargetId)
-                    VALUES({id},{aggression.ShipId},{aggression.ReadyAt},{aggression.MissileReadyAt},
-                        {aggression.LastShotAt},{aggression.LastTargetId})
-                    ON CONFLICT(NpcId) DO UPDATE SET TargetShipId=excluded.TargetShipId,ReadyAt=excluded.ReadyAt,
-                        MissileReadyAt=excluded.MissileReadyAt,LastShotAt=excluded.LastShotAt,LastTargetId=excluded.LastTargetId
-                    """
-                );
-            }
-            world.SaveChanges();
-            transaction.Commit();
+            CaptureCheckpoint().Apply(world);
             foreach (long id in _dirtyShips)
             {
                 _savedShips[id] = _ships[id];

@@ -11,7 +11,7 @@ public sealed partial class WorldDbContext
 {
     private readonly Dictionary<FitCacheKey, FitCacheEntry> _pendingFits = [];
     private Guid _fitTransaction;
-    private readonly ResidentFitCache? _residentFits = ResidentFitCache.Find(path);
+    private readonly ResidentFitCache? _residentFits = string.IsNullOrEmpty(path) ? null : ResidentFitCache.Find(path);
 
     internal string? FitRevision(long pilotId)
     {

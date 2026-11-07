@@ -107,7 +107,7 @@ The live host loads the immutable NPC/agent directory before admitting clients. 
 
 ### Resident world and background saves
 
-The server runs an authoritative world in memory and checkpoints committed state to disk every 15 seconds. Drone flight, shared observer contacts and nonfatal direct combat use resident objects; see the [drone performance record](docs/protocol/performance.md#resident-drone-flight-and-combat-november-6-2026). Graceful shutdown flushes pending changes. Stop the host before editing, backing up or restoring its save; a crash can lose progress since the last completed checkpoint. See [resident state and checkpoint behavior](docs/architecture.md#resident-world-and-background-saves).
+The server runs an authoritative world in memory and checkpoints committed state to disk every 15 seconds. Drone flight, shared observer contacts and nonfatal direct combat use resident objects; see the [drone performance record](docs/protocol/performance.md#resident-drone-flight-and-combat-november-6-2026). Checkpoint SQL projection now runs on a detached image outside the world owner; see the [checkpoint pause comparison](docs/protocol/performance.md#detached-checkpoint-projection-november-7-2026). Graceful shutdown flushes pending changes. Stop the host before editing, backing up or restoring its save; a crash can lose progress since the last completed checkpoint. See [resident state and checkpoint behavior](docs/architecture.md#resident-world-and-background-saves).
 
 ## License
 

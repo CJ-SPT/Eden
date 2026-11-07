@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Eden.World.Runtime.Combat;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Eden.World.Runtime;
@@ -12,7 +13,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
     {
         if (data.Context?.Database.CurrentTransaction is null)
         {
-            LiveCombatRuntime.Find(path)?.BeforeSql(command.CommandText);
+            LiveCombatRuntime.Find(path)?.BeforeSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
         }
     }
 

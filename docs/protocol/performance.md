@@ -6,6 +6,42 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Detached checkpoint projection, November 7, 2026
+
+Checkpoints now capture the resident relational image and immutable combat records from the same generation under the world owner. NPC/ship health, ammunition, capacitor, damage attribution, movement, drones and weapon deadlines are then projected into that detached image outside the owner. SQLite constraints, triggers and related projection writes remain in one transaction. Durable file writing and atomic replacement retain the existing path and previous-save behavior. The saved schema and 15-second schedule are unchanged.
+
+Resident dirty state remains pending for synchronization with ordinary SQL transactions, cache eviction and ownership/destruction boundaries. A checkpoint never acknowledges those live SQL projections on behalf of a newer generation. Direct SQL reads of crimewatch state now synchronize resident NPC timers, like the other mutable combat reads. Typed warmed crimewatch reads retain their SQL-free overlay. Capturing fails rather than copying an open resident transaction.
+
+Diagnostics split `Capture` (under owner), `Projection` (detached SQL) and `Write` (durable file installation). Total checkpoint work still exists; the change moves SQL preparation and execution off the world lock. Generation-based flushing still waits for an adequate completed save, and failed projections/installations retain resident changes for retry.
+
+A deterministic regression captures dirty combat with zero EF commands/opens/fitting calculations, blocks the detached SQLite engine inside projection, and advances live shots and a SQL mutation concurrently. The detached image retains its original ammunition, health and pilot state; a later reopened checkpoint contains the latest state. Another regression aborts projection mid-transaction, verifies ammunition rollback, retries and reopens. Existing coverage checks timers, shutdown, failed file installation, previous-save recovery, ownership transitions and drone state.
+
+Matched Release replays compare the clean `aa3aa3e` baseline with this milestone, using thirty measured frames, 4,000 fighting NPCs, unchanged inputs and disabled tiered compilation. Each capture summary contains the last three checkpoints (two periodic samples and the explicit final flush), excluding the startup checkpoint. The small checkpoint sample count limits tail estimates. Full-frame distributions use all thirty frames.
+
+| Players / NPCs | Baseline owner capture median / p95 ms | Detached owner capture median / p95 ms | Detached SQL projection median / p95 ms | Detached file writing median / p95 ms |
+| --- | --- | --- | --- | --- |
+| 1 / 4,000 | 181.77 / 211.42 | 2.10 / 2.13 | 239.62 / 445.35 | 19.83 / 24.76 |
+| 10 / 4,000 | 226.44 / 232.94 | 1.79 / 3.83 | 362.64 / 422.29 | 21.90 / 25.70 |
+
+The checkpoint SQL command count remains approximately 12,000 at this population. Those statements now execute outside the owner against the already-open private image, so they no longer require an EF connection open to the live world. Raw RAM-copy and file-backup connections remain beyond EF counters. The checkpoint still copies the complete relational image under the owner, so capture cost can grow with saved-world size.
+
+| Players / NPCs | Baseline full-frame median / p95 ms | Detached full-frame median / p95 ms | Baseline / detached mean SQL commands |
+| --- | --- | --- | --- |
+| 1 / 4,000 | 102.10 / 272.58 | 146.69 / 329.14 | 1.40 / 1.00 |
+| 10 / 4,000 | 656.68 / 1102.74 | 685.68 / 1140.54 | 14.07 / 10.00 |
+
+These runs establish substantially shorter owner pauses; they do not establish a complete-frame speedup. Both full-frame comparisons regressed, and other desktop workloads were active during measurement. Detached projection still consumes CPU, allocates and can overlap a frame. The ten-player replay still exceeds the one-second p95 budget. Per-player monitoring and scene/output work is addressed by the next milestone.
+
+The additional 100-player / one-NPC replay records 166.24 / 233.99 ms median / p95, 100 commands and 100 EF opens per frame, with zero fits. This is the checkpoint-only baseline for subsequent player-frame optimization. Each of the three final replays retained thirty samples, passed the no-projection assertion for warmed frames and verified zero SQL/opens/fits in isolated warmed simulation and observer probes. Reports are in ignored `artifacts/checkpoint-optimization/{baseline,detached-final}`. The failed multi-player development replay in `detached` is excluded; its cold-crimewatch projection feedback loop is fixed and covered by a dedicated regression.
+
+**Automated validation.** Tool and solution restore, Debug solution build and Release replay build passed with zero warnings/errors. The final affected run passed 308 tests in 140 seconds with two workers. Both Python suites passed (3 catalog, 9 formatting cases); formatting checked 918 files and the 140-column limit. Exact new regressions cover detached projection concurrency, transactional rollback/retry and cold crimewatch reads. The initial snapshot context used an empty path that reached the fitting-cache lookup; detached contexts now explicitly bypass that cache. The expanded run also exposed the crimewatch read-boundary gap and the multi-player replay exposed its cold-read feedback loop; both are fixed in the final passing runs. One development assertion reused a tracked entity across external projection and was corrected to read untracked state. No full .NET suite was requested or run.
+
+The final filter was `FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~ResidentCombatMonitoringTests|FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~DroneRecoveryTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~InteractionHistoryPersistenceTests|FullyQualifiedName~CrimewatchTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~InventoryOwnershipTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this persistence milestone.
+
 ## Indexed NPC scene updates, November 6, 2026
 
 After collision pruning and resident monitoring, the 4,000-NPC replay still spent 204.54 ms median in `update.npcCombat`. The protocol shot path scanned visible NPCs for each aggressor, searched again for its prior weapon, and copied the complete NPC contact array for every weapon and health notification. Incoming damage to the player copied that NPC array even though no NPC health changed.
