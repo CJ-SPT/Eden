@@ -8,6 +8,17 @@ internal sealed class PilotGate(LauncherOptions? options = null)
 {
     private readonly HashSet<long> _accounts = [];
 
+    internal int ActiveSessions
+    {
+        get
+        {
+            lock (_accounts)
+            {
+                return _accounts.Count;
+            }
+        }
+    }
+
     public bool TryEnter(long accountId)
     {
         lock (_accounts)

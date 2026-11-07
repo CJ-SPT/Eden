@@ -7,6 +7,7 @@ using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration.Components;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
@@ -61,6 +62,13 @@ internal static class AdministrationHost
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();
+        builder.Services.AddSingleton(
+            new ServerPerformanceMonitor(
+                TimeProvider.System,
+                worldServices.GetRequiredService<PilotGate>(),
+                worldServices.GetService<LiveWorld>()
+            )
+        );
         var protection = builder
             .Services.AddDataProtection()
             .SetApplicationName("Eden.Administration." + administrators.Realm)
@@ -226,6 +234,7 @@ internal static class AdministrationHost
             "/antiforgery",
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
+        api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
         api.MapGet("/configuration", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Read(user));
         api.MapGet(
             "/revisions",

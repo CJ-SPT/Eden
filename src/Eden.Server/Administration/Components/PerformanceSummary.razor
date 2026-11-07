@@ -1,0 +1,75 @@
+@using System.Globalization
+<div class="toolbar muted">
+    <span>Sampled @Snapshot.SampledAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture)</span>
+    <span>Uptime @Snapshot.Resources.Uptime.ToString(@"d\.hh\:mm\:ss", CultureInfo.InvariantCulture)</span>
+</div>
+<div class="grid performance-grid">
+    <section class="card">
+        <h2>CPU</h2>
+        <p class="metric">@(Snapshot.CpuPercent is { } cpu ? $"{cpu:F1}%" : "Collecting…")</p>
+        <p class="muted">Process usage across @Snapshot.Resources.ProcessorCount available processors. First reading needs two samples.</p>
+    </section>
+    <section class="card">
+        <h2>Memory in RAM</h2>
+        <p class="metric">@Memory(Snapshot.Resources.WorkingSetBytes)</p>
+        <p class="muted">Working set · private memory @Memory(Snapshot.Resources.PrivateMemoryBytes)</p>
+    </section>
+    <section class="card">
+        <h2>Connected accounts</h2>
+        <p class="metric">@Snapshot.ActiveSessions</p>
+        <p class="muted">Authenticated game connections, including accounts at character selection.</p>
+    </section>
+    <section class="card">
+        <h2>Managed memory</h2>
+        <p class="metric">@Memory(Snapshot.Resources.ManagedMemoryBytes)</p>
+        <p class="muted">Allocation rate @(Snapshot.AllocatedBytesPerSecond is { } rate ? $"{Memory(rate)}/s" : "collecting…")</p>
+    </section>
+</div>
+<section class="card">
+    <h2>Runtime activity</h2>
+    <dl class="readings">
+        <div><dt>Process threads</dt><dd>@Snapshot.Resources.ProcessThreads</dd></div>
+        <div><dt>Thread pool threads</dt><dd>@Snapshot.Resources.ThreadPoolThreads</dd></div>
+        <div><dt>Queued thread pool work</dt><dd>@Snapshot.Resources.PendingWorkItems</dd></div>
+        <div><dt>Gen 0 / 1 / 2 collections</dt><dd>@Snapshot.Resources.Gen0Collections / @Snapshot.Resources.Gen1Collections / @Snapshot.Resources.Gen2Collections</dd></div>
+    </dl>
+    <p class="muted">Collection counts are cumulative since process start. Memory sampling does not force garbage collection.</p>
+</section>
+<section class="card">
+    <h2>World checkpoint</h2>
+    @if (!Snapshot.ResidentWorld)
+    {
+        <p class="muted">Resident checkpoint diagnostics are unavailable for this host.</p>
+    }
+    else
+    {
+        @if (Snapshot.CheckpointFailed)
+        {
+            <p class="error" role="alert">The last checkpoint failed. Resident changes remain pending; check the server logs.</p>
+        }
+        @if (Snapshot.LastCheckpoint is { } checkpoint)
+        {
+            <p class="muted">Last successful save @checkpoint.CompletedAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture) · generation @checkpoint.Generation</p>
+            <dl class="readings">
+                <div><dt>Owner wait</dt><dd>@Milliseconds(checkpoint.Wait)</dd></div>
+                <div><dt>Capture under owner</dt><dd>@Milliseconds(checkpoint.Capture)</dd></div>
+                <div><dt>Projection outside owner</dt><dd>@Milliseconds(checkpoint.Projection)</dd></div>
+                <div><dt>File write</dt><dd>@Milliseconds(checkpoint.Write)</dd></div>
+                <div><dt>Saved file size</dt><dd>@Memory(checkpoint.Bytes)</dd></div>
+            </dl>
+        }
+        else
+        {
+            <p class="muted">No checkpoint has completed since this server started.</p>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public ServerPerformanceSnapshot Snapshot { get; set; } = null!;
+
+    private static string Memory(double bytes) => $"{bytes / (1024 * 1024):N1} MiB";
+
+    private static string Milliseconds(TimeSpan elapsed) => $"{elapsed.TotalMilliseconds:N2} ms";
+}

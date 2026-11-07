@@ -22,7 +22,8 @@ internal sealed class AdministrationOperations(
     IAuthorizationService authorization,
     IWorldConfiguration configuration,
     CatalogBrowser browser,
-    CatalogProvider catalog
+    CatalogProvider catalog,
+    ServerPerformanceMonitor performance
 )
 {
     private async Task Authorize(ClaimsPrincipal user)
@@ -37,6 +38,12 @@ internal sealed class AdministrationOperations(
     {
         await Authorize(user);
         return configuration.Read();
+    }
+
+    internal async Task<ServerPerformanceSnapshot> Performance(ClaimsPrincipal user)
+    {
+        await Authorize(user);
+        return performance.Read();
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

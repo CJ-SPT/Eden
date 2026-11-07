@@ -39,9 +39,33 @@ Settings contains typed forms for all six policy groups and supported economic o
 
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 
+The editor uses a dark theme throughout settings, catalog browsing, revision history and sign-in, including native form controls, validation messages and keyboard focus indicators.
+
+**Performance** shows live diagnostics for the Eden server process: uptime, CPU usage, working set and private memory, managed memory and allocation rate, authenticated game connections, process/thread-pool threads, queued work and cumulative garbage collections. Connected accounts include character selection; they exclude pending logins and web administrator sessions. CPU usage is normalized across the processors available to the process. CPU and allocation rates need two samples and cover the actual elapsed interval between samples. These are server-process measurements rather than total machine usage or simulation-frame latency.
+
+The page refreshes every two seconds while open. A shared, demand-driven cache limits resource sampling to once per two seconds across all administrator viewers. Navigating away disposes that page's refresh loop. The first sample displays collecting indicators for rates. Each refresh checks the current administrator credentials; password rotation stops existing interactive access. The same read-only snapshot is available at authenticated `GET /api/admin/performance` under the existing loopback and administrator policy.
+
+Resident hosts also report the last successful checkpoint's generation, completion time, file size and separate owner wait, capture, projection and file-write durations. Failed saves display an alert while retaining the previous successful report. Before the first save, the page says no checkpoint has completed; hosts without a resident world show diagnostics as unavailable. Reading these reports does not acquire world ownership, open SQLite connections, project simulation state, trigger saves or force garbage collection. No historical samples are stored.
+
 Authentication uses a separate ASP.NET Core cookie scheme and administrator role. HTTP and interactive operations enforce authorization and the current credential stamp. Forms and writes require antiforgery validation. Password rotation revokes existing HTTP sessions and interactive operation access. Passwords are hashed in a separate `<world>.administrators.json` credential file. Authentication keys live in `<world>.admin-keys` and use the current Windows user's key protection on Windows. These runtime files are excluded from version control. The local password command can rotate credentials while the server runs.
 
 The editor uses Blazor server interaction, following [ASP.NET Core Blazor security](https://learn.microsoft.com/en-us/aspnet/core/blazor/security/?view=aspnetcore-10.0) and [cookie authentication](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0). It delegates to the same configuration validation and persistence operations as local commands. Installed catalog files and gameplay rules remain outside its ownership.
+
+### Performance panel and dark theme validation — November 7, 2026
+
+**Automated validation:** The initial development run used `tools/Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Administration.ServerPerformanceTests.SharedSamplesNormalizeCpuCacheReadersAndTrackAccountRelease'` (one test passed). Stable milestone validation restored tools and the solution, built with zero warnings/errors, passed 23 focused tests, passed both Python policy suites (8 catalog and 9 formatting tests), and passed `tools/Format.ps1 -Check`. The final sequence took 27.40 seconds: build 5.59 seconds, focused tests 5.64 seconds, Python checks 0.97 seconds, formatting verification 14.43 seconds, plus restore time. The full .NET suite was not requested or run.
+
+The final test filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ConnectionLimitTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ConnectionOwnershipTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests
+```
+
+Coverage includes shared/monotonic rate sampling, account admission/release, no SQL or fitting work from diagnostic reads, checkpoint failure/recovery, HTTP authorization and credential revocation, and rendered component content. Automated HTML checks establish dark-theme declarations across editor routes; browser appearance and interactive timer behavior remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restarting the server, open Performance and confirm periodic updates; inspect settings, catalog, revisions and sign-in for dark-theme appearance and keyboard focus.
 
 ## Local commands
 

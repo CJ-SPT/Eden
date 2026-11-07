@@ -76,6 +76,59 @@ public sealed class AdministrationComponentTests
     }
 
     [Fact]
+    public async Task PerformanceSummaryDistinguishesWarmupUnavailableCheckpointsAndFailedSaves()
+    {
+        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using HtmlRenderer renderer = new(services, services.GetRequiredService<ILoggerFactory>());
+        ServerResourceSample resources = new(TimeSpan.FromMinutes(5), TimeSpan.Zero, 4, 4096, 2048, 1024, 0, 3, 2, 1, 10, 4, 2);
+        ServerPerformanceSnapshot initial = new(DateTimeOffset.UtcNow, resources, null, null, 2, false, null, false);
+        await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            async Task<string> Render(ServerPerformanceSnapshot snapshot)
+            {
+                var component = await renderer.RenderComponentAsync<PerformanceSummary>(
+                    ParameterView.FromDictionary(new Dictionary<string, object?> { [nameof(PerformanceSummary.Snapshot)] = snapshot })
+                );
+                return component.ToHtmlString();
+            }
+            string warmup = await Render(initial);
+            Assert.Contains("Collecting", warmup);
+            Assert.Contains("unavailable for this host", warmup);
+            Assert.DoesNotContain("No checkpoint has completed", warmup);
+            string waiting = await Render(initial with { ResidentWorld = true });
+            Assert.Contains("No checkpoint has completed", waiting);
+            ServerCheckpointPerformance checkpoint = new(
+                42,
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromMilliseconds(1),
+                TimeSpan.FromMilliseconds(2),
+                TimeSpan.FromMilliseconds(3),
+                TimeSpan.FromMilliseconds(4),
+                1024 * 1024
+            );
+            string failed = await Render(
+                initial with
+                {
+                    ResidentWorld = true,
+                    CpuPercent = 25,
+                    AllocatedBytesPerSecond = 1024 * 1024,
+                    LastCheckpoint = checkpoint,
+                    CheckpointFailed = true,
+                }
+            );
+            Assert.Contains("25.0%", failed);
+            Assert.Contains("1.0 MiB/s", failed);
+            Assert.Contains("last checkpoint failed", failed);
+            Assert.Contains("generation 42", failed);
+            Assert.Contains("Projection outside owner", failed);
+            Assert.Contains("3.00 ms", failed);
+            Assert.Contains("File write", failed);
+            Assert.Contains("4.00 ms", failed);
+            Assert.DoesNotContain("unavailable for this host", failed);
+        });
+    }
+
+    [Fact]
     public void EveryDatasetHasTypedBrowsingWithSearchKeyPagingAndDeclaredRelationships()
     {
         using TestWorld world = new();

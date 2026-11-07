@@ -110,6 +110,38 @@ public sealed class AdministrationTests
     }
 
     [Fact]
+    public async Task PerformanceRequiresAdministratorAndServesLiveProcessDiagnosticsInDarkEditor()
+    {
+        await using var fixture = await Fixture.Start();
+        using var denied = await fixture.Client.GetAsync("/api/admin/performance");
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+        using var pageDenied = await fixture.Client.GetAsync("/performance");
+        Assert.Equal(HttpStatusCode.Redirect, pageDenied.StatusCode);
+        await fixture.SignIn();
+        using var response = await fixture.Client.GetAsync("/api/admin/performance");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl!.NoStore);
+        var snapshot = (await response.Content.ReadFromJsonAsync<ServerPerformanceSnapshot>())!;
+        Assert.True(snapshot.Resources.WorkingSetBytes > 0);
+        Assert.True(snapshot.Resources.ProcessorCount > 0);
+        Assert.True(snapshot.Resources.Uptime > TimeSpan.Zero);
+        Assert.True(snapshot.Resources.ProcessThreads > 0);
+        Assert.Equal(0, snapshot.ActiveSessions);
+        Assert.False(snapshot.ResidentWorld);
+        Assert.Null(snapshot.LastCheckpoint);
+        string html = await fixture.Client.GetStringAsync("/performance");
+        Assert.Contains("Server performance", html);
+        Assert.Contains("Memory in RAM", html);
+        Assert.Contains("color-scheme: dark", html);
+        Assert.Contains("--background: #0d141e", html);
+        Assert.Contains("href=\"/performance\"", html);
+        foreach (string page in new[] { "/", "/catalog", "/revisions", "/login" })
+        {
+            Assert.Contains("color-scheme: dark", await fixture.Client.GetStringAsync(page));
+        }
+    }
+
+    [Fact]
     public async Task BrowsingValidationSavingComparisonAndRestoreRetainPendingRestart()
     {
         await using var fixture = await Fixture.Start();
@@ -175,10 +207,14 @@ public sealed class AdministrationTests
             new ClaimsIdentity([new(ClaimTypes.Name, "Corey"), new(ClaimTypes.Role, "Administrator")], "game")
         );
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Read(gameAccount));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Performance(gameAccount));
         fixture.Accounts.SetPassword("Corey", "replacement administrator password");
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Read(principal));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Performance(principal));
         using var revoked = await fixture.Client.GetAsync("/api/admin/configuration");
         Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
+        using var performanceRevoked = await fixture.Client.GetAsync("/api/admin/performance");
+        Assert.Equal(HttpStatusCode.Unauthorized, performanceRevoked.StatusCode);
         Assert.Null(fixture.Accounts.Authenticate("Corey", Password));
     }
 }
