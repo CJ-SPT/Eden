@@ -6,8 +6,8 @@ public sealed record NewCharacter(
     int BloodlineId,
     int GenderId,
     int AncestryId,
-    byte[] Appearance,
-    byte[] Portrait,
+    byte[]? Appearance,
+    byte[]? Portrait,
     int SchoolId
 );
 

@@ -64,6 +64,15 @@ internal static class Program
         {
             throw new InvalidDataException("--economy-world requires a new world path.");
         }
+        int? capsuleerSeed = null;
+        if (args.Contains("--capsuleer-seed"))
+        {
+            if (!economyWorld || !int.TryParse(Value("--capsuleer-seed"), out int seed))
+            {
+                throw new InvalidDataException("--capsuleer-seed requires a new --economy-world and a whole-number seed.");
+            }
+            capsuleerSeed = seed;
+        }
         int npcStock = Eden.Gameplay.Market.NpcSupplyRules.Stock;
         Eden.Gameplay.Economy.EconomicConfiguration? economicConfiguration = null;
         if (Value("--economy-config") is { } economicPath)
@@ -119,7 +128,7 @@ internal static class Program
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
         WorldInitialization.Initialize(
             new WorldDatabase(worldPath),
-            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
+            economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock, capsuleerSeed) : null,
             economics: economicConfiguration
         );
         var accounts = services.GetRequiredService<LauncherStore>();
@@ -148,6 +157,7 @@ internal static class Program
         }
         services.GetRequiredService<LauncherMaintenance>().Start();
         services.GetRequiredService<MarketMaintenance>().Start();
+        services.GetRequiredService<CapsuleerMaintenance>().Start();
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
         await using var api = LauncherApi.Create(
             options,

@@ -26,6 +26,14 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        long pilotId = Create(world, catalog, clock, accountId, character);
+        transaction.Commit();
+        return pilotId;
+    }
+
+    internal static long Create(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock, long accountId, NewCharacter character)
+    {
         if (
             ValidateName(world, character.Name) != CharacterNameResult.Available
             || world.Pilots.Count(p =>
@@ -36,7 +44,6 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             throw new InvalidDataException("Name unavailable or all character slots occupied.");
         }
 
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var school = Record<ClientSchools>("schools", character.SchoolId);
         var race = Record<ClientRaces>("races", character.RaceId);
         var bloodline = Record<ClientBloodlines>("bloodlines", character.BloodlineId);
@@ -98,7 +105,6 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         TestingWalletFunding.Grant(world, pilotId, created);
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
         world.SaveChanges();
-        transaction.Commit();
         return pilotId;
 
         T? Record<T>(string source, int id)

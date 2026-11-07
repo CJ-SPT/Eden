@@ -69,6 +69,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldPlayerEwar>().HasOne<Pilot>().WithMany().HasForeignKey(e => e.PilotId);
         model.Entity<WorldPlayerEwar>().HasOne<Ship>().WithMany().HasForeignKey(e => e.SourceShipId);
         model.Entity<WorldPlayerEwar>().HasIndex(e => new { e.TargetId, e.TargetKind });
+        Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);
         EconomicSchema.Configure(model);
         CrimewatchSchema.Configure(model);
         DroneSchema.Configure(model);

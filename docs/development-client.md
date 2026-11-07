@@ -771,6 +771,8 @@ The command rejects an existing world file. Subsequent launches use the same `--
 Personal orders require the owner to be docked at the order's NPC station, station range, minimum volume one, and a supported duration (1, 3, 7, 14, 30 or 90 days). Listed goods leave usable inventory; buy orders reserve their full purchase value. Cancelling or expiring returns only the unsold goods or unspent escrow. Broker fees are not refunded. Price modification requires five minutes, charges a relist fee and adjusts buy escrow. Native presentation remains unverified; see the [protocol record](protocol/industry.md#persistent-personal-market-orders-november-6-2026).
 
 
+To populate a new economy world with one persistent miner, add `--capsuleer-seed 42` alongside `--economy-world`. Choose any signed 32-bit integer. The miner starts in an Ibis at the Kisogo school station, fits its civilian laser and makes belt trips while at least one human has a selected pilot. Subsequent launches use the saved world path alone. The pilot's name, school, career, possessions and work survive a checkpoint and reopen. Worlds created without the option have no autonomous capsuleers. See the [miner implementation record](protocol/capsuleers.md#persistent-kisogo-miner).
+
 To override economic inputs at creation, edit a copy of [economy-settings.example.json](economy-settings.example.json), then add `--economy-config 'E:\EdenWorlds\economy-settings.json'` to the first-launch command above. This option requires a new `--economy-world`. Unknown fields, duplicate/nonpositive material prices, unknown types/systems, invalid rates and invalid UTC hours reject. Subsequent launches omit the creation options and use the saved values.
 
 | Setting | Meaning and default |

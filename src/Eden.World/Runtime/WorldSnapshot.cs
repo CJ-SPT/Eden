@@ -5,8 +5,14 @@ using Microsoft.Data.Sqlite;
 
 namespace Eden.World.Runtime;
 
-internal sealed class WorldSnapshot(SqliteConnection database, CombatCheckpoint? combat, long generation, TimeSpan wait, TimeSpan capture)
-    : IDisposable
+internal sealed class WorldSnapshot(
+    SqliteConnection database,
+    CombatCheckpoint? combat,
+    long generation,
+    TimeSpan wait,
+    TimeSpan capture,
+    Eden.World.Capsuleers.MinerCheckpoint? miner = null
+) : IDisposable
 {
     internal SqliteConnection Database => database;
     internal long Generation => generation;
@@ -20,6 +26,11 @@ internal sealed class WorldSnapshot(SqliteConnection database, CombatCheckpoint?
         {
             using WorldDbContext world = new(database);
             combat.Apply(world);
+        }
+        if (miner is not null)
+        {
+            using WorldDbContext world = new(database);
+            miner.Apply(world);
         }
         return Stopwatch.GetElapsedTime(started);
     }

@@ -6,6 +6,8 @@
 
 Station-local personal orders, escrow, institutional blueprint and skillbook supply, the Merlin/Venture/Badger production cohort, belt renewal and economic charges are implemented. Earlier production replays use established skills, starting capital and controlled travel. The next proof starts with new pilots and follows their first earned ISK, transported inputs and real demand. See the [starter production evidence](protocol/industry.md#tech-i-starter-production-chain-november-6-2026) and [economic lifecycle evidence](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026).
 
+The first opt-in miner now exercises school creation, Local, flight, mining, and station inventory. It retains its paid cycle and warp progress across a checkpoint and restart. Its wallet starts empty. See the [implementation record](protocol/capsuleers.md#persistent-kisogo-miner).
+
 The [community milestones](#5-build-toward-the-vision-in-playable-stages) are the current implementation order. The [November 6 audit](#6-core-gameplay-audit-and-implementation-priorities) preserves the earlier assessment. Since that audit, Eden has also implemented [cooperative fleets](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026) and [corporation offices and shared hangars](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026).
 
 ## 1. The experience we are building
