@@ -297,6 +297,7 @@ public sealed class PilotMissileTests
         await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => Store(f).Advance(SystemId, f.Clock.Now))));
         Assert.True(Assert.Single(Store(f).TakeImpacts(f.PilotId)).Destroyed);
         long capsule = f.Db.Store.FindPilot(1000002)!.ShipId;
+        live.Dispose();
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         Assert.Equal(capsule, f.Db.Store.FindPilot(1000002)!.ShipId);
         using WorldDbContext saved = new(f.Db.Path);

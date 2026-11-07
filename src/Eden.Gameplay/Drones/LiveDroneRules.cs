@@ -18,6 +18,8 @@ public sealed record LiveDroneStep(LiveDrone Drone, bool Recall, DamageVector? D
 
 public sealed record LiveDroneImpact(LiveCombatNpc Target, double Applied);
 
+public sealed record DroneTarget(long Id, SpacePosition Position, SpacePosition Velocity, double Radius, double SignatureRadius);
+
 public static class LiveDroneRules
 {
     public static LiveDrone Release(LiveDrone drone) =>
@@ -36,7 +38,17 @@ public static class LiveDroneRules
             },
         };
 
-    public static LiveDroneStep Advance(LiveDrone drone, LiveCombatShip ship, LiveCombatNpc? npc, long now, int stamp, double roll)
+    public static LiveDroneStep Advance(LiveDrone drone, LiveCombatShip ship, LiveCombatNpc? npc, long now, int stamp, double roll) =>
+        AdvanceTarget(
+            drone,
+            ship,
+            npc is null ? null : new(npc.Id, npc.Position, npc.Velocity, npc.Radius, npc.SignatureRadius),
+            now,
+            stamp,
+            roll
+        );
+
+    public static LiveDroneStep AdvanceTarget(LiveDrone drone, LiveCombatShip ship, DroneTarget? enemy, long now, int stamp, double roll)
     {
         if (now <= drone.UpdatedAt)
         {
@@ -44,12 +56,12 @@ public static class LiveDroneRules
         }
         var contact = drone.Contact;
         var profile = contact.Profile;
-        if (npc is null && contact.Activity == DroneActivity.Fighting)
+        if (enemy is null && contact.Activity == DroneActivity.Fighting)
         {
             contact = contact with { Activity = DroneActivity.Idle, TargetId = ship.ShipId };
         }
-        var target = npc?.Position ?? ship.Position!;
-        float radius = (float)(npc?.Radius ?? ship.Radius);
+        var target = enemy?.Position ?? ship.Position!;
+        float radius = (float)(enemy?.Radius ?? ship.Radius);
         double distance = contact.Position.DistanceTo(target) - radius - profile.Radius;
         if (contact.Activity == DroneActivity.Returning && distance <= profile.OrbitRange + DroneRules.LaunchOffset)
         {
@@ -82,19 +94,19 @@ public static class LiveDroneRules
         };
         var next = drone with { Contact = contact, UpdatedAt = now };
         if (
-            npc is null
+            enemy is null
             || drone.ReadyAt > now
             || contact.Position.DistanceTo(target) - radius - profile.Radius > profile.Optimal + profile.Falloff * 2
         )
         {
             return new(next, false);
         }
-        var damage = DroneRules.Shot(contact, target, npc.Velocity, npc.SignatureRadius, roll);
+        var damage = DroneRules.Shot(contact, target, enemy.Velocity, enemy.SignatureRadius, roll);
         return new(
             next with
             {
                 ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond)),
-                Contact = contact with { ShotAt = now, ShotTargetId = npc.Id },
+                Contact = contact with { ShotAt = now, ShotTargetId = enemy.Id },
             },
             false,
             damage

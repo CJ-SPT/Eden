@@ -129,11 +129,11 @@ internal sealed class DroneHandler(
                 ids = ReadIds(args[0]);
                 if (order == DroneOrder.Engage)
                 {
-                    target = args[1] as long? ?? throw new InvalidDataException("Choose a locked NPC target.");
+                    target = args[1] as long? ?? throw new InvalidDataException("Choose a locked ship target.");
                 }
             }
             targeting.Advance(context);
-            var locks = context.Flight.VisibleNpcs.Where(n => targeting.IsLocked(n.Id)).Select(n => n.Id).ToHashSet();
+            HashSet<long> locks = target is long selected && targeting.IsLocked(selected) ? [selected] : [];
             drones.Order(context.Pilot.PilotId, ids, order, target, locks, now);
             context.Flight.RefreshDrones();
             DroneWire.NotifyControl(context, drones.Control(context.Pilot.PilotId), now);

@@ -20,7 +20,10 @@ internal sealed record CombatCheckpoint(
     IReadOnlyList<CombatNpcChange> Npcs,
     IReadOnlyList<CombatPosition> Positions,
     IReadOnlyList<LiveDrone> Drones,
-    IReadOnlyList<LiveAggression> Aggressions
+    IReadOnlyList<LiveAggression> Aggressions,
+    IReadOnlyList<DronePilotTimers> DroneTimers,
+    IReadOnlyList<DronePilotEngagement> DroneEngagements,
+    IReadOnlyList<DronePilotHostility> DroneHostilities
 )
 {
     internal void Apply(WorldDbContext world)
@@ -38,6 +41,7 @@ internal sealed record CombatCheckpoint(
             );
         }
         LiveCombatRuntime.ProjectDrones(world, Drones);
+        LiveCombatRuntime.ProjectDronePlayers(world, DroneTimers, DroneEngagements, DroneHostilities);
         foreach (var ship in Ships)
         {
             LiveCombatRuntime.ProjectShip(world, ship.Before, ship.After);
@@ -71,6 +75,9 @@ internal sealed partial class LiveCombatRuntime
             _dirtyNpcs.Select(id => new CombatNpcChange(_savedNpcs[id], _npcs[id])).ToArray(),
             _dirtyPositions.Select(id => new CombatPosition(id, _positions[id].System, _positions[id].Position)).ToArray(),
             _dirtyDrones.Select(id => _liveDrones[id]).ToArray(),
-            _dirtyAggressions.Select(id => _aggressions![id]).ToArray()
+            _dirtyAggressions.Select(id => _aggressions![id]).ToArray(),
+            _droneTimers.Values.ToArray(),
+            _droneEngagements.Values.ToArray(),
+            _droneHostilities.Values.ToArray()
         );
 }

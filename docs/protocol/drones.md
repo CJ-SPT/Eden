@@ -4,6 +4,40 @@
 
 Drone motion, observer reads and nonfatal direct combat use shared resident state. See the [performance measurements and checkpoint boundaries](performance.md#resident-drone-flight-and-combat-november-6-2026).
 
+## Drone combat against pilot ships, November 7, 2026
+
+The existing 41 light/medium combat-drone profiles on Brutix and Brutix Navy Issue now accept locked pilot ships as well as NPCs. Manual engagement checks current ownership/controller, system, authoritative target presence, lock and control range before changing any selected drone. Capsules, destroyed controllers, missing/expired contacts and rejected safety checks leave the entire selection and aggression state unchanged. Ongoing pursuit retains the existing lock/control-range policy, but cancels attacks when the target docks, warps, changes systems, disappears, dies or becomes illegal under current safety/engagement rights. Capsule destruction remains unsupported.
+
+Accepted pilot attack orders begin shared Crimewatch aggression immediately. Each paid drone cycle rechecks legality and extends weapons/PvP, applicable flags, limited engagements and logout presence. Aggressive idle drones can defend against a new actual pilot aggressor within control range; passive mode waits for orders. Focus fire shares the existing stable candidate order with NPC aggressors. Schema **100** adds `WorldPilotHostility.LastAttackAt`, recorded by the shared offensive-action primitive. Existing rows retain expiry and receive timestamp zero, so migration cannot fabricate a new attack after the owner's last explicit drone order.
+
+Drone shots use the target's fitted resistances, capacities, signature and authoritative velocity with the shared tracking/damage rules. Pilot hits publish the existing incoming damage signal and native health updates; outgoing combat text and drone effects retain their existing carriers. Destruction uses the same atomic capsule escape, wreck, insurance and participant-history settlement as pilot turrets/missiles. Several drones or concurrent callbacks cannot duplicate one loss. Pilot kills produce no NPC bounties, pirate standings or NPC security rewards.
+
+Ordinary motion, nonfatal damage, contribution history and aggression updates run on resident immutable state under the world owner. Warmed owner/controller, observer and Crimewatch reads do not need SQL, connection opens or fitting calculations. Pending timers, hostility, engagements, health and drone deadlines are captured with the same detached checkpoint generation. SQL mutation boundaries project them before use; failed lethal settlement and failed detached projection preserve the previous paid state for retry. Restart retains damage/deadlines and releases control without replaying offline combat.
+
+Sources rechecked: stock build **3662168** `eve/client/script/ui/services/menuSvcExtras/droneFunctions.pyj`, archive SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**. `EngageTarget` passes `droneIDs, targetID` to `entity.CmdEngage` and consumes its empty success dictionary through `HandleMultipleCallError`; the same adapter requests the required safety level before issuing offensive orders. Carbon Destiny **27ee40b38a563d29054b32f64c3ebc87fabaec1f**, [Ballpark.cpp EvolveFollow/EvolveOldStyleOrbit](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp), was consulted again for target-relative motion. Existing Follow/Orbit carriers remain in use; no new Destiny encoding is introduced. Automated protocol assertions establish emitted values, not native rendering or gameplay feel.
+
+**Automated validation:** Tool/solution restores and solution build passed with zero warnings/errors. The final combined affected run passed **323 cases**, zero failed or skipped, in **119.99 seconds** command time; restores/build plus that run took **122.66 seconds**. Both Python policy suites passed (**8 catalog/setup + 9 formatting-policy cases**). Final Python policy/formatting verification took **16.29 seconds**; formatting and **472 local documentation links** passed. No full .NET suite was requested or run.
+
+An earlier combined batch passed 319 cases and exposed three existing startup/reopen failures. All three reproduced on unchanged baseline `c31f098`. Their tests now initialize before opening a resident host or stop/flush the owner before restart reconciliation, preserving loss/insurance/history assertions. The exact correction filter passed all four cases, including the previously passing file-backed turret variant, before the final combined run. The final source also keeps target policy caches independent of ordinary coordinate updates and resolves current location from resident motion; the final 323-case result includes that change. Earlier failed runs are development evidence, not final passes.
+
+The 39 pilot-drone cases cover actual fitted damage, lock/range/ownership/safety rejections, capsule exclusion, automatic defense/passive mode, live rights changes, target departure, victim notifications, shared fatal settlement, concurrent callbacks, transaction rollback, schema migration, exact logoff expiry, restart and detached-checkpoint generation/rollback/retry. Warmed owner/observer/Crimewatch loops assert zero SQL commands, connections and fitting calculations. The pure rules check also asserts tracking/velocity application, distance, paid cooldowns and duplicate callbacks.
+
+Combined affected filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotDroneTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.CombatDroneTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentDroneTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveDroneRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.DroneRecoveryTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.DroneSynchronizationTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotTurretTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotMissileTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentCombatMonitoringTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.CombatContributionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests
+```
+
+Startup correction filter:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.LiveWorldTests.ProductionProviderUsesInitializedWorldInMemoryAndFlushesOnShutdown|FullyQualifiedName=Eden.Protocol.Tests.Combat.PilotTurretTests.FatalShotSettlesOneLossCapsuleWreckInsuranceAndBothHistoriesAcrossReopen|FullyQualifiedName=Eden.Protocol.Tests.Combat.PilotMissileTests.CompetingFatalImpactsSettleOnePersistentLossAndInsurancePayment
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** With two pilots, compare Engage/Recall, incoming combat text and drone effects; repeat an allowed fight through hull loss to inspect capsule escape and wreck presentation.
+
 ## Space cleanup after drone scoop and recall, November 6, 2026
 
 The maintainer's screenshot shows five Hammerhead II drones in the bay and five stationary overview/model contacts. Attempts to lock those contacts fail because the authoritative objects have already left space. The maintainer also reproduced this after ordinary Return to Drone Bay.

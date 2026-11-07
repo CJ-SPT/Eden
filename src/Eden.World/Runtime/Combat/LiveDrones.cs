@@ -1,4 +1,5 @@
 using Eden.Data.World.Drones;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -109,7 +110,14 @@ internal sealed partial class LiveCombatRuntime
         return inputs;
     }
 
-    internal DroneUpdate? AdvanceDrones(long pilotId, long now, int stamp, Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle)
+    internal DroneUpdate? AdvanceDrones(
+        long pilotId,
+        long now,
+        int stamp,
+        IPilotCombatPresence presence,
+        IPilotDamageEvents damageEvents,
+        Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle
+    )
     {
         using var ownership = owner.Enter();
         if (!CanRun)
@@ -140,6 +148,8 @@ internal sealed partial class LiveCombatRuntime
         var inputs = DroneInputs(pilotId, drones);
         List<LiveDrone> staged = [];
         Dictionary<long, LiveCombatNpc> targets = [];
+        Dictionary<long, LiveCombatShip> pilotTargets = [];
+        List<DronePlayerShot> pilotShots = [];
         List<DroneHit> hits = [];
         Dictionary<long, double> rolls = [];
         DroneUpdate Settle()
@@ -159,6 +169,7 @@ internal sealed partial class LiveCombatRuntime
                 || !DroneRules.SupportsHull(ship.TypeId)
                 || contact.ShipId != ship.ShipId
                 || contact.SystemId != ship.SystemId
+                || ship.Health.At(now).Destroyed
                 || position.DistanceTo(contact.Position) > DroneRules.ShutdownDistance
                 || !inputs.Qualified.Contains(contact.Profile.TypeId)
                 || count >= inputs.Count
@@ -189,20 +200,23 @@ internal sealed partial class LiveCombatRuntime
                         && n.Navigation != NpcNavigationState.Warping
                         && position.DistanceTo(n.Position) <= inputs.Range
                     )
-                    .OrderBy(n => n.Id)
+                    .Select(n => n.Id)
+                    .Concat(DroneAutomaticTargets(ship, presence, drone.CommandedAt, inputs.Range, now))
+                    .Order()
                     .ToArray();
                 if (candidates.Length != 0)
                 {
                     contact = contact with
                     {
                         Activity = DroneActivity.Fighting,
-                        TargetId = candidates[inputs.Settings.FocusFire ? 0 : (int)(contact.Id % candidates.Length)].Id,
+                        TargetId = candidates[inputs.Settings.FocusFire ? 0 : (int)(contact.Id % candidates.Length)],
                     };
                     drone = drone with { Contact = contact };
                 }
             }
+            var player = contact.Activity == DroneActivity.Fighting ? DronePlayerFor(contact.TargetId) : null;
             var npc =
-                contact.Activity == DroneActivity.Fighting
+                contact.Activity == DroneActivity.Fighting && player is null
                     ? targets.GetValueOrDefault(contact.TargetId) ?? Npc(contact.TargetId, now)
                     : null;
             if (
@@ -224,14 +238,69 @@ internal sealed partial class LiveCombatRuntime
             }
             double roll = Draw();
             rolls[contact.Id] = roll;
-            var step = LiveDroneRules.Advance(drone, ship, npc, now, stamp, roll);
+            var source = player is null ? null : DronePlayerFor(ship.ShipId);
+            var playerContact = player is null ? null : DronePresence(player, presence, ship.SystemId, now);
+            var decision =
+                source is null || player is null || player.PilotId == pilotId ? null : DroneLegality(source, player, ship.SystemId, now);
+            var playerShip =
+                playerContact is null || decision is null
+                    ? null
+                    : pilotTargets.GetValueOrDefault(player!.PilotId) ?? Ship(player!.PilotId, now).SettleRepairs(now);
+            if (playerShip?.Health.At(now).Destroyed == true)
+            {
+                playerShip = null;
+            }
+            DroneTarget? target =
+                npc is not null ? new(npc.Id, npc.Position, npc.Velocity, npc.Radius, npc.SignatureRadius)
+                : playerShip is not null
+                    ? new(playerShip.ShipId, playerContact!.Position, playerContact.Velocity, playerShip.Radius, playerShip.SignatureRadius)
+                : null;
+            var step = LiveDroneRules.AdvanceTarget(drone, ship, target, now, stamp, roll);
             if (step.Recall)
             {
                 return Settle();
             }
             staged.Add(step.Drone);
             released |= step.Drone.Contact.ShipId == 0;
-            if (step.Damage is not { } damage || npc is null)
+            if (step.Damage is not { } damage)
+            {
+                continue;
+            }
+            if (playerShip is not null)
+            {
+                var applied = CombatDamage.Apply(playerShip.Health.At(now), playerShip.Health.Defense, damage);
+                if (applied.Remaining.Destroyed)
+                {
+                    return Settle();
+                }
+                CombatParty party = new(ship.ShipId, ship.PilotId, ship.CorporationId, null, ship.TypeId, contact.Profile.TypeId, null, 0);
+                var health = playerShip.Health with
+                {
+                    Remaining = applied.Remaining,
+                    UpdatedAt = Math.Max(now, playerShip.Health.UpdatedAt),
+                    Revision = playerShip.Health.Revision + 1,
+                    ArmorDamage = playerShip.Health.Defense.Armor - applied.Remaining.Armor,
+                    StructureDamage = playerShip.Health.Defense.Structure - applied.Remaining.Structure,
+                };
+                pilotTargets[playerShip.PilotId] = playerShip with
+                {
+                    Health = health,
+                    Contributions = InteractionHistoryRules.AddDamage(playerShip.Contributions, party, applied.Applied),
+                };
+                DroneHit hit = new(
+                    contact.Id,
+                    contact.Profile.TypeId,
+                    playerShip.ShipId,
+                    applied.Applied,
+                    damage,
+                    new(playerShip.ShipId, health.Defense, health.Remaining),
+                    damage.Total / contact.Profile.Damage.Total
+                );
+                hits.Add(hit);
+                pilotShots.Add(new(source!, player!, decision!, step.Drone.ReadyAt, hit));
+                continue;
+            }
+            if (npc is null)
             {
                 continue;
             }
@@ -265,6 +334,15 @@ internal sealed partial class LiveCombatRuntime
             _npcs[target.Id] = RepairNpc(target, now);
             _dirtyNpcs.Add(target.Id);
         }
+        foreach (var target in pilotTargets.Values)
+        {
+            _ships[target.PilotId] = target;
+            _dirtyShips.Add(target.PilotId);
+        }
+        foreach (var shot in pilotShots)
+        {
+            RecordDroneAttack(shot.Source, shot.Victim, ship.SystemId, shot.Decision, now, shot.End);
+        }
         foreach (var drone in staged)
         {
             if (_liveDrones[drone.Contact.Id] != drone)
@@ -273,7 +351,7 @@ internal sealed partial class LiveCombatRuntime
                 _dirtyDrones.Add(drone.Contact.Id);
             }
         }
-        if (hits.Count != 0)
+        if (hits.Any(h => targets.ContainsKey(h.TargetId)))
         {
             _ships[pilotId] = ship;
             _dirtyShips.Add(pilotId);
@@ -292,8 +370,29 @@ internal sealed partial class LiveCombatRuntime
         {
             owner.ObjectsChanged();
         }
+        foreach (var shot in pilotShots)
+        {
+            var hit = shot.Hit;
+            damageEvents.Publish(
+                new(
+                    shot.Victim.PilotId,
+                    pilotId,
+                    ship.ShipId,
+                    hit.Health,
+                    hit.Damage,
+                    hit.Applied,
+                    hit.Quality,
+                    hit.TypeId,
+                    false,
+                    null,
+                    null
+                )
+            );
+        }
         return new([], hits, released);
     }
+
+    private sealed record DronePlayerShot(DronePlayer Source, DronePlayer Victim, AggressionDecision Decision, long End, DroneHit Hit);
 
     private bool FireAtDrone(
         LiveCombatShip ship,

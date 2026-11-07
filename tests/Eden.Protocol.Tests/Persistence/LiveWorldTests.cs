@@ -325,7 +325,7 @@ public sealed class LiveWorldTests
     }
 
     [Fact]
-    public void ProductionProviderInitializesNewWorldInMemoryAndFlushesOnShutdown()
+    public void ProductionProviderUsesInitializedWorldInMemoryAndFlushesOnShutdown()
     {
         using TestWorld catalogSource = new();
         string directory = TestDirectory.Create("eden-resident-startup-").FullName;
@@ -333,13 +333,14 @@ public sealed class LiveWorldTests
         File.Copy(new WorldDatabase(catalogSource.Path).CatalogPath, database.CatalogPath);
         try
         {
+            // Reconciliation precedes the resident owner, as in production startup.
+            WorldInitialization.Initialize(database);
             using (var host = ServerServices.Build(database, liveWorld: true))
             {
-                WorldInitialization.Initialize(database);
                 var store = host.GetRequiredService<SqliteWorld>();
                 var pilot = store.FindPilot(1000001)!;
                 store.SetPosition(pilot.ShipId, new SpacePosition(1000, 2000, 3000), 30000142);
-                Assert.Equal(0, DiskValue(database.Path, "SELECT COUNT(*) FROM sqlite_master WHERE name='WorldPilot'"));
+                Assert.Equal(0, DiskValue(database.Path, $"SELECT COUNT(*) FROM WorldPosition WHERE ShipId={pilot.ShipId}"));
                 Assert.NotNull(LiveWorld.Find(database.Path));
             }
             Assert.Null(LiveWorld.Find(database.Path));

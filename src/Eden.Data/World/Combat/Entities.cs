@@ -129,6 +129,7 @@ public sealed class SavedPilotHostility
     public long SourceShipId { get; set; }
     public long TargetShipId { get; set; }
     public long ExpiresAt { get; set; }
+    public long LastAttackAt { get; set; }
 }
 
 public sealed class SavedSecurityStatus

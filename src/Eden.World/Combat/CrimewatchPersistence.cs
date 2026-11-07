@@ -69,6 +69,7 @@ internal static class CrimewatchPersistence
             world.Set<SavedPilotHostility>().Find(sourceShip, victimShip)
             ?? world.Add(new SavedPilotHostility { SourceShipId = sourceShip, TargetShipId = victimShip }).Entity;
         hostility.ExpiresAt = Math.Max(hostility.ExpiresAt, checked(end + CrimewatchRules.PvpDuration.Ticks));
+        hostility.LastAttackAt = Math.Max(hostility.LastAttackAt, now);
         if (decision.Engagement)
         {
             var engagement =

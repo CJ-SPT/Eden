@@ -12,7 +12,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 99;
+    internal const int CurrentVersion = 100;
 
     public static void Open(
         WorldDbContext world,
@@ -72,7 +72,16 @@ internal static class WorldMigration
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
         WorldConfigurationStore.Seed(world, catalog, clock);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=99");
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")
+                .Contains("LastAttackAt")
+        )
+        {
+            // Existing hostility retains its expiry without inventing a recent attack.
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN LastAttackAt INTEGER NOT NULL DEFAULT 0");
+        }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=100");
         history.Commit();
     }
 }
