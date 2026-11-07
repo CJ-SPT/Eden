@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Docking;
@@ -11,12 +12,18 @@ namespace Eden.World.Catalog;
 [Injectable]
 internal sealed class SystemObjects(WorldDatabase database, IAsteroidField asteroids) : ISystemObjects
 {
-    internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId) =>
-        catalog
-            .Set<SolarSystem>()
-            .Where(s => s.Id == systemId)
-            .Select(s => new FlightSystem(s.Id, s.ConstellationId, s.Constellation.RegionId))
-            .Single();
+    private const long ObjectEstimatedBytes = 192;
+    private static readonly CatalogDefinition<ImmutableArray<StaticSpaceObject>> s_objects = new(
+        "system-static-objects",
+        LoadStatic,
+        Estimate: objects => 256 + objects.Length * ObjectEstimatedBytes
+    );
+
+    internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId)
+    {
+        var system = catalog.RequireSystem(systemId);
+        return new(system.Id, system.ConstellationId, system.RegionId);
+    }
 
     public FlightSystem GetSystem(int systemId)
     {
@@ -27,68 +34,53 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
     public IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var gates = catalog
-            .Set<Stargate>()
-            .Where(g => g.SolarSystemId == systemId)
-            .Select(g => new
-            {
-                g.Id,
-                g.DestinationId,
-                g.Destination.SolarSystemId,
-            })
-            .ToDictionary(g => g.Id);
-        var celestials =
-            from body in catalog.Set<Celestial>()
-            join type in catalog.Set<ItemType>() on body.TypeId equals type.Id
-            where body.SolarSystemId == systemId
-            orderby body.Id
-            select new
-            {
-                Body = body,
-                type.Group.CategoryId,
-                Radius = body.Radius ?? type.Radius ?? 0,
-            };
-        var objects = new List<StaticSpaceObject>();
-        foreach (var row in celestials)
+        return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId)];
+    }
+
+    private static ImmutableArray<StaticSpaceObject> LoadStatic(CatalogDbContext catalog, int systemId)
+    {
+        var gates = catalog.Definitions.GatesInSystem(systemId).ToDictionary(gate => gate.Id);
+        List<StaticSpaceObject> objects = [];
+        foreach (var body in catalog.CelestialsInSystem(systemId))
         {
-            var body = row.Body;
+            if (catalog.FittingType(body.TypeId) is not { } type)
+            {
+                continue;
+            }
             gates.TryGetValue(body.Id, out var gate);
             objects.Add(
                 new(
                     body.Id,
                     body.TypeId,
                     body.GroupId,
-                    row.CategoryId,
+                    type.CategoryId,
                     1,
                     new(body.X, body.Y, body.Z),
-                    (float)row.Radius,
+                    (float)(body.Radius ?? type.Radius ?? 0),
                     gate?.DestinationId,
-                    gate?.SolarSystemId
+                    gate?.DestinationSystemId
                 )
             );
         }
-        objects.AddRange(
-            catalog
-                .Set<Station>()
-                .Where(s => s.SolarSystemId == systemId)
-                .OrderBy(s => s.Id)
-                .Select(s => new StaticSpaceObject(
-                    s.Id,
-                    s.TypeId,
-                    s.Type.GroupId,
-                    s.Type.Group.CategoryId,
-                    s.OwnerId,
-                    new SpacePosition(s.X, s.Y, s.Z),
-                    (float)(s.Type.Radius ?? 0),
-                    null,
-                    null
-                ))
-        );
-        // The client keeps secondary suns and disrupted gates in system content, outside mapObjects.db.
-        var content = catalog
-            .Set<SourceRecord>()
-            .Find("client/solarsystemcontent", systemId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientSolarsystemcontent>();
+        foreach (var station in catalog.Definitions.StationsInSystem(systemId))
+        {
+            if (catalog.FittingType(station.TypeId) is { } type)
+            {
+                objects.Add(
+                    new(
+                        station.Id,
+                        station.TypeId,
+                        type.GroupId,
+                        type.CategoryId,
+                        station.OwnerId,
+                        new(station.X, station.Y, station.Z),
+                        (float)(type.Radius ?? 0)
+                    )
+                );
+            }
+        }
+        // Secondary suns and disrupted gates are outside the mapObjects projection.
+        var content = catalog.Read(CatalogData.Client.Solarsystemcontent, (long)systemId);
         if (content?.SecondarySun is { } sun)
         {
             AddSystemObject(checked((int)sun.ItemID!.Value), sun.TypeID, sun.Position);
@@ -100,8 +92,7 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
                 AddSystemObject(int.Parse(key, CultureInfo.InvariantCulture), gate.TypeID, gate.Position);
             }
         }
-        objects.AddRange(asteroids.List(systemId));
-        return objects;
+        return objects.ToImmutableArray();
 
         void AddSystemObject(int id, long? typeId, ClientConstellationsCenter? point)
         {
@@ -109,17 +100,7 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
             {
                 throw new InvalidDataException($"Incomplete static object {id} in system {systemId}.");
             }
-            var type = catalog
-                .Set<ItemType>()
-                .Where(t => t.Id == typeId)
-                .Select(t => new
-                {
-                    t.Id,
-                    t.GroupId,
-                    t.Group.CategoryId,
-                    t.Radius,
-                })
-                .Single();
+            var type = catalog.FittingType(typeId.Value) ?? throw new InvalidDataException($"Missing static object type {typeId}.");
             objects.Add(new(id, type.Id, type.GroupId, type.CategoryId, 1, new(x, y, z), (float)(type.Radius ?? 0)));
         }
     }

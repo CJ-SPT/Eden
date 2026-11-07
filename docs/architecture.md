@@ -47,6 +47,8 @@ Fitting, inventory and skill consumers use typed catalog adapters rather than de
 
 Combat, repair, propulsion, mining and drone readers also use typed shared catalog inputs. Canonical support decisions and immutable NPC hull/spawn/convoy/mining definitions share the same bounded cache; source generations invalidate them together. Spawn pools index faction/hull membership. A pinned NPC-corporation identity/name index avoids repeated catalog existence/name queries. NPC profiles contain immutable item metadata rather than EF entity graphs. Pilot-dependent fitted attributes and all mutable NPC activity remain owned by the existing world runtime and transactions.
 
+Geography uses immutable station/system/gate indexes and bounded lazy celestial lookups/system pages. The latter share cached record instances and negative results. Static scene and undock definitions are source-scoped; asteroid state remains world-owned. Bookmark and translocation readers consume these snapshots rather than relational catalog entities.
+
 ### Database model extraction — November 7, 2026
 
 The first catalog/configuration milestone moves all 146 mapped catalog/world entity types, the catalog-entry projection, the 506 generated catalog payload classes and the launcher credential projection into `Eden.Data`. Feature namespaces now use `Eden.Data.*`. Existing domain values still belong to Gameplay. `CatalogData` registrations, database contexts and EF configuration remain in World. Regeneration writes payload declarations to `src/Eden.Data/Catalog/CatalogModels.g.cs`; use `--models-output` to select a different output when testing the generator. The installed catalog and world files are not modified by this extraction.

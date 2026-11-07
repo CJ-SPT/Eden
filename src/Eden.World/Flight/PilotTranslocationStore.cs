@@ -19,13 +19,13 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
     public TranslocationTarget Resolve(int targetId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (catalog.Set<Station>().Find(targetId) is { } station)
+        if (catalog.FindStation(targetId) is { } station)
         {
             return new(targetId, SystemObjects.FindSystem(catalog, station.SolarSystemId), station.Id, SpacePosition.Zero, 0);
         }
-        if (catalog.Set<Celestial>().Find(targetId) is { } body)
+        if (catalog.FindCelestial(targetId) is { } body)
         {
-            var type = catalog.Set<ItemType>().Find(body.TypeId) ?? throw new InvalidDataException("Unknown destination type.");
+            var type = catalog.FittingType(body.TypeId) ?? throw new InvalidDataException("Unknown destination type.");
             return new(
                 targetId,
                 SystemObjects.FindSystem(catalog, body.SolarSystemId),
@@ -34,7 +34,7 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
                 body.Radius ?? type.Radius ?? 0
             );
         }
-        if (catalog.Set<SolarSystem>().Find(targetId) is not null)
+        if (catalog.FindSystem(targetId) is not null)
         {
             var star = objects.Load(targetId).FirstOrDefault(body => body.GroupId == StarGroup);
             return new(
@@ -82,7 +82,7 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
             }
             else
             {
-                double radius = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId).Radius ?? 0;
+                double radius = catalog.RequireItem(ship.TypeId).Radius ?? 0;
                 var point = TranslocationRules.Arrival(target, radius, destinationObjects);
                 ship.Position ??= world.Positions.Add(new FlightPosition { ShipId = ship.Id }).Entity;
                 ship.Position.SystemId = target.System.Id;

@@ -1,4 +1,4 @@
-using System.Globalization;
+using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -7,19 +7,28 @@ namespace Eden.World.Catalog;
 
 internal static class StationUndockCatalog
 {
-    public static IReadOnlyList<StationUndockPoint> Read(CatalogDbContext catalog, int stationTypeId)
+    private static readonly CatalogDefinition<ImmutableArray<StationUndockPoint>> s_points = new(
+        "station-undock-points",
+        Load,
+        Estimate: points => 256 + points.Length * 128L
+    );
+
+    public static IReadOnlyList<StationUndockPoint> Read(CatalogDbContext catalog, int stationTypeId) =>
+        catalog.Definition(s_points, stationTypeId);
+
+    private static ImmutableArray<StationUndockPoint> Load(CatalogDbContext catalog, int stationTypeId)
     {
-        var type = catalog.Set<SourceRecord>().Find("client/types", Key(stationTypeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)stationTypeId);
         if (type?.GraphicID is not { } graphicId)
         {
             return [];
         }
-        var graphic = catalog.Set<SourceRecord>().Find("client/graphicids", Key(graphicId))?.Read<ClientGraphicids>();
+        var graphic = catalog.Read(CatalogData.Client.Graphicids, graphicId);
         if (graphic?.GraphicLocationID is not { } locationId)
         {
             return [];
         }
-        var locations = catalog.Set<SourceRecord>().Find("client/graphiclocations", Key(locationId))?.Read<ClientGraphiclocations>();
+        var locations = catalog.Read(CatalogData.Client.Graphiclocations, locationId);
         List<StationUndockPoint> points = [];
         foreach (var locator in locations?.DirectionalLocators ?? [])
         {
@@ -44,10 +53,8 @@ internal static class StationUndockCatalog
             }
             points.Add(new(category.Value, position, direction.Unit));
         }
-        return points;
+        return points.ToImmutableArray();
     }
-
-    private static string Key(long id) => id.ToString(CultureInfo.InvariantCulture);
 
     private static SpacePosition Position(double? sourceX, double? sourceY, double? sourceZ) =>
         sourceX is double x && sourceY is double y && sourceZ is double z && double.IsFinite(x) && double.IsFinite(y) && double.IsFinite(z)

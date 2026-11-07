@@ -26,7 +26,7 @@ public sealed record CatalogIdentity(string Path, int Build, string SourceFinger
 public sealed record CatalogCacheStatistics(long Loads, long Hits, int Entries, long EstimatedBytes, long PinnedRecords, TimeSpan Startup);
 
 /// <summary>One immutable catalog generation shared by all readers of a source file.</summary>
-public sealed class CatalogProvider
+public sealed partial class CatalogProvider
 {
     private static readonly object s_gate = new();
     private static readonly Dictionary<string, Registration> s_catalogs = new(StringComparer.OrdinalIgnoreCase);
@@ -161,6 +161,22 @@ public sealed class CatalogProvider
         _systems = new(LoadSystems);
         _stations = new(LoadStations);
         _corporations = new(LoadCorporations);
+        _regions = new(LoadRegions);
+        _constellations = new(LoadConstellations);
+        _gates = new(LoadGates);
+        _stationNames = new(LoadStationNames);
+        _celestials = new(this, "projection/celestials");
+        _systemCelestials = new(this, "projection/system-celestials");
+        _systemStations = new(() =>
+            Stations
+                .Values.GroupBy(station => station.SolarSystemId)
+                .ToFrozenDictionary(group => group.Key, group => group.OrderBy(station => station.Id).ToImmutableArray())
+        );
+        _systemGates = new(() =>
+            Gates
+                .Values.GroupBy(gate => gate.SolarSystemId)
+                .ToFrozenDictionary(group => group.Key, group => group.OrderBy(gate => gate.Id).ToImmutableArray())
+        );
         _groups = new(() =>
             Items
                 .Values.GroupBy(item => item.GroupId)
@@ -457,7 +473,8 @@ public sealed class CatalogProvider
                 station.OrbitId,
                 station.X,
                 station.Y,
-                station.Z
+                station.Z,
+                station.SolarSystem.Constellation.RegionId
             ))
             .AsEnumerable()
             .ToFrozenDictionary(station => station.Id);

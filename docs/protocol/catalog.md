@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Typed geography access, November 7, 2026](#typed-geography-access-november-7-2026)
 - [Combat and simulation catalog adoption, November 7, 2026](#combat-and-simulation-catalog-adoption-november-7-2026)
 - [Fitting, inventory and skill catalog adoption, November 7, 2026](#fitting-inventory-and-skill-catalog-adoption-november-7-2026)
 - [Industry and economic catalog adoption, November 7, 2026](#industry-and-economic-catalog-adoption-november-7-2026)
@@ -15,6 +16,18 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Typed geography access, November 7, 2026
+
+Shared immutable geography access now covers systems, station/region membership, gates and destination systems, constellation/region identity, station names and celestial records. Celestials load by ID or system through the bounded cache; the complete location table is not preloaded. Individual lookups and system pages share record instances, including cached absences. Writable fixture invalidation retires both paths together while earlier snapshots remain unchanged.
+
+Static scene construction, bookmark destination resolution, GM translocation and station undock metadata use typed shared inputs. Static scene definitions and locator profiles are cached per source generation. World-specific asteroid state is appended through its existing world reader, preserving depletion and renewal ownership. Coordinates, radius fallback, gate destinations, native location types, missing-location rejection and restart persistence retain their existing behavior. Remaining reference consumers migrate in subsequent slices; this is not a claim that all feature adoption is finished.
+
+**Automated validation:** the exact `CatalogGeographyTests.GeographySnapshotsShareIdentityAndCacheMissingLocationsAcrossOperations` regression passed. Final tool/solution restore, warning-free build (2.75 seconds), 17 focused tests (9.42 seconds including runner overhead), six catalog Python tests (0.283 seconds), nine formatting policy tests (0.018 seconds) and formatting verification passed. The filter was `FullyQualifiedName~CatalogGeographyTests|FullyQualifiedName=Eden.Protocol.Tests.Persistence.PilotBookmarksTests.StaticMapDestinationsRetainTheirNativeTypeAndLocation|FullyQualifiedName=Eden.Protocol.Tests.Flight.TranslocationTests.CatalogDestinationsMoveTheSameHullAndPreserveContentsWalletHomeAndRestartState|FullyQualifiedName=Eden.Protocol.Tests.Flight.StationUndockTests.AirUndockSnapshotAndImmediateWarpKeepTheNativeLaunchMotionAndPersistArrival`. Coverage includes shared/absent location snapshots, fixture invalidation, native bookmark type identity, translocation persistence and undock motion. Optional benchmarks, broad cohort sweeps and the full .NET suite were not run, following the revised instruction to keep validation focused.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this access migration.
 
 ## Combat and simulation catalog adoption, November 7, 2026
 

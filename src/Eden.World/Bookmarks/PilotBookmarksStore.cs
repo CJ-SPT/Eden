@@ -209,23 +209,23 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         BookmarkTarget target;
-        if (catalog.Set<Station>().Find(checked((int)itemId)) is { } station)
+        if (catalog.FindStation(itemId) is { } station)
         {
             target = new(itemId, station.TypeId, station.SolarSystemId, new(station.X, station.Y, station.Z));
         }
-        else if (catalog.Set<Celestial>().Find(checked((int)itemId)) is { } body)
+        else if (catalog.FindCelestial(itemId) is { } body)
         {
             target = new(itemId, body.TypeId, body.SolarSystemId, new(body.X, body.Y, body.Z));
         }
-        else if (catalog.Set<SolarSystem>().Find(checked((int)itemId)) is not null)
+        else if (catalog.FindSystem((int)itemId) is not null)
         {
             target = new(itemId, BookmarkRules.SolarSystemTypeId, checked((int)itemId), new(0, 0, 0));
         }
-        else if (catalog.Set<Constellation>().Find((int)itemId) is not null)
+        else if (catalog.Definitions.Constellations.ContainsKey((int)itemId))
         {
             target = new(itemId, BookmarkRules.ConstellationTypeId, (int)itemId, new(0, 0, 0));
         }
-        else if (catalog.Set<Region>().Find((int)itemId) is not null)
+        else if (catalog.Definitions.Regions.ContainsKey((int)itemId))
         {
             target = new(itemId, BookmarkRules.RegionTypeId, (int)itemId, new(0, 0, 0));
         }

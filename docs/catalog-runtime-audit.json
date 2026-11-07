@@ -2,8 +2,8 @@
   "build": 3662168,
   "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
   "counts": {
-    "catalog-read": 204,
-    "catalog-context": 445,
+    "catalog-read": 196,
+    "catalog-context": 454,
     "content-identifier": 134,
     "type-selection": 8
   },
@@ -801,36 +801,6 @@
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
-      "path": "src/Eden.World/Bookmarks/PilotBookmarksStore.cs",
-      "line": 212,
-      "kind": "catalog-read",
-      "text": "if (catalog.Set<Station>().Find(checked((int)itemId)) is { } station)"
-    },
-    {
-      "path": "src/Eden.World/Bookmarks/PilotBookmarksStore.cs",
-      "line": 216,
-      "kind": "catalog-read",
-      "text": "else if (catalog.Set<Celestial>().Find(checked((int)itemId)) is { } body)"
-    },
-    {
-      "path": "src/Eden.World/Bookmarks/PilotBookmarksStore.cs",
-      "line": 220,
-      "kind": "catalog-read",
-      "text": "else if (catalog.Set<SolarSystem>().Find(checked((int)itemId)) is not null)"
-    },
-    {
-      "path": "src/Eden.World/Bookmarks/PilotBookmarksStore.cs",
-      "line": 224,
-      "kind": "catalog-read",
-      "text": "else if (catalog.Set<Constellation>().Find((int)itemId) is not null)"
-    },
-    {
-      "path": "src/Eden.World/Bookmarks/PilotBookmarksStore.cs",
-      "line": 228,
-      "kind": "catalog-read",
-      "text": "else if (catalog.Set<Region>().Find((int)itemId) is not null)"
-    },
-    {
       "path": "src/Eden.World/Catalog/CatalogDbContext.cs",
       "line": 11,
       "kind": "catalog-context",
@@ -849,6 +819,12 @@
       "text": "public sealed partial class CatalogDbContext"
     },
     {
+      "path": "src/Eden.World/Catalog/CatalogGeographyReads.cs",
+      "line": 7,
+      "kind": "catalog-context",
+      "text": "public sealed partial class CatalogDbContext"
+    },
+    {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
       "line": 139,
       "kind": "catalog-context",
@@ -862,75 +838,129 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 314,
+      "line": 330,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 382,
+      "line": 398,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 407,
+      "line": 423,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 409,
+      "line": 425,
       "kind": "catalog-read",
       "text": "var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 433,
+      "line": 449,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 447,
+      "line": 463,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 492,
+      "line": 509,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 569,
+      "line": 586,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 571,
+      "line": 588,
       "kind": "catalog-read",
       "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 590,
+      "line": 607,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 591,
+      "line": 608,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 616,
+      "line": 633,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 36,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 37,
+      "kind": "catalog-read",
+      "text": "var value = CelestialRows(catalog.Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault();"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 50,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 52,
+      "kind": "catalog-read",
+      "text": "catalog.Set<Celestial>().Where(body => body.SolarSystemId == systemId).OrderBy(body => body.Id)"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 78,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 80,
+      "kind": "catalog-read",
+      "text": "var rows = catalog.Set<Region>().ToFrozenDictionary(region => region.Id, region => region.Name);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 88,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 102,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 116,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogSource.cs",
@@ -1018,57 +1048,57 @@
     },
     {
       "path": "src/Eden.World/Catalog/StationUndockCatalog.cs",
-      "line": 10,
+      "line": 16,
       "kind": "catalog-context",
-      "text": "public static IReadOnlyList<StationUndockPoint> Read(CatalogDbContext catalog, int stationTypeId)"
+      "text": "public static IReadOnlyList<StationUndockPoint> Read(CatalogDbContext catalog, int stationTypeId) =>"
     },
     {
       "path": "src/Eden.World/Catalog/StationUndockCatalog.cs",
-      "line": 12,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<SourceRecord>().Find(\"client/types\", Key(stationTypeId))?.Read<ClientTypes>();"
+      "line": 19,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<StationUndockPoint> Load(CatalogDbContext catalog, int stationTypeId)"
     },
     {
-      "path": "src/Eden.World/Catalog/StationUndockCatalog.cs",
-      "line": 17,
-      "kind": "catalog-read",
-      "text": "var graphic = catalog.Set<SourceRecord>().Find(\"client/graphicids\", Key(graphicId))?.Read<ClientGraphicids>();"
-    },
-    {
-      "path": "src/Eden.World/Catalog/StationUndockCatalog.cs",
+      "path": "src/Eden.World/Catalog/SystemObjects.cs",
       "line": 22,
-      "kind": "catalog-read",
-      "text": "var locations = catalog.Set<SourceRecord>().Find(\"client/graphiclocations\", Key(locationId))?.Read<ClientGraphiclocations>();"
-    },
-    {
-      "path": "src/Eden.World/Catalog/SystemObjects.cs",
-      "line": 14,
       "kind": "catalog-context",
-      "text": "internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId) =>"
+      "text": "internal static FlightSystem FindSystem(CatalogDbContext catalog, int systemId)"
     },
     {
       "path": "src/Eden.World/Catalog/SystemObjects.cs",
-      "line": 23,
+      "line": 30,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Catalog/SystemObjects.cs",
-      "line": 29,
+      "line": 36,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Catalog/SystemObjects.cs",
-      "line": 41,
-      "kind": "catalog-read",
-      "text": "from body in catalog.Set<Celestial>()"
+      "line": 40,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<StaticSpaceObject> LoadStatic(CatalogDbContext catalog, int systemId)"
     },
     {
       "path": "src/Eden.World/Catalog/SystemObjects.cs",
-      "line": 42,
+      "line": 46,
       "kind": "catalog-read",
-      "text": "join type in catalog.Set<ItemType>() on body.TypeId equals type.Id"
+      "text": "if (catalog.FittingType(body.TypeId) is not { } type)"
+    },
+    {
+      "path": "src/Eden.World/Catalog/SystemObjects.cs",
+      "line": 67,
+      "kind": "catalog-read",
+      "text": "if (catalog.FittingType(station.TypeId) is { } type)"
+    },
+    {
+      "path": "src/Eden.World/Catalog/SystemObjects.cs",
+      "line": 103,
+      "kind": "catalog-read",
+      "text": "var type = catalog.FittingType(typeId.Value) ?? throw new InvalidDataException($\"Missing static object type {typeId}.\");"
     },
     {
       "path": "src/Eden.World/Characters/CharacterCreation.cs",
@@ -3076,39 +3106,15 @@
     },
     {
       "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
-      "line": 22,
-      "kind": "catalog-read",
-      "text": "if (catalog.Set<Station>().Find(targetId) is { } station)"
-    },
-    {
-      "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
-      "line": 26,
-      "kind": "catalog-read",
-      "text": "if (catalog.Set<Celestial>().Find(targetId) is { } body)"
-    },
-    {
-      "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
       "line": 28,
       "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Find(body.TypeId) ?? throw new InvalidDataException(\"Unknown destination type.\");"
-    },
-    {
-      "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
-      "line": 37,
-      "kind": "catalog-read",
-      "text": "if (catalog.Set<SolarSystem>().Find(targetId) is not null)"
+      "text": "var type = catalog.FittingType(body.TypeId) ?? throw new InvalidDataException(\"Unknown destination type.\");"
     },
     {
       "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
       "line": 61,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Flight/PilotTranslocationStore.cs",
-      "line": 85,
-      "kind": "catalog-read",
-      "text": "double radius = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId).Radius ?? 0;"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
