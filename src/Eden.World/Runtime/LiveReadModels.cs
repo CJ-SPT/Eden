@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Market;
@@ -53,6 +54,25 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry);
 
     private readonly ResidentSnapshot<int, WreckView> _wrecks = new("resident.wrecks", "WorldWreck", "WorldItemMembership", "WorldShip");
+
+    private readonly ResidentSnapshot<int, IReadOnlyList<DroneContact>> _drones = new(
+        "resident.drones",
+        "WorldDrone",
+        "WorldItem",
+        "WorldFitRevision",
+        "WorldPilot",
+        "WorldShip"
+    );
+    private readonly ResidentSnapshot<int, IReadOnlySet<(long Pilot, long Ship)>> _droneControllers = new(
+        "resident.droneControllers",
+        "WorldDrone"
+    );
+
+    internal IReadOnlyList<DroneContact> Drones(int system, Func<IReadOnlyList<DroneContact>> load) =>
+        Read(_drones, system, () => Array.AsReadOnly(load().ToArray()));
+
+    internal IReadOnlySet<(long Pilot, long Ship)> DroneControllers(Func<IReadOnlySet<(long Pilot, long Ship)>> load) =>
+        Read(_droneControllers, 0, load);
 
     internal static LiveReadModels? Find(string path) => LiveWorld.Find(path)?.Reads;
 
@@ -171,6 +191,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Observe(changes);
         _asteroids.Observe(changes);
         _wrecks.Observe(changes);
+        _drones.Observe(changes);
+        _droneControllers.Observe(changes);
         _crimewatch.Observe(changes);
         _loggedOff.Observe(changes);
         ObserveSpace(changes);
@@ -188,6 +210,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Clear();
         _asteroids.Clear();
         _wrecks.Clear();
+        _drones.Clear();
+        _droneControllers.Clear();
         _crimewatch.Clear();
         _loggedOff.Clear();
         ClearSpace();

@@ -139,6 +139,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             || _acquisitionShips.Count >= RetainedShips
             || _contacts.Count >= RetainedSystems
             || _guardGroups.Count >= RetainedNpcs
+            || _droneSystems.Count >= RetainedSystems
+            || _dronePilots.Count >= RetainedShips
+            || _liveDrones.Count >= RetainedItems
             || _itemPilots.Count >= RetainedItems
         )
         {
@@ -331,7 +334,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void BeforeSql(string sql)
     {
-        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count == 0)
+        if (
+            _internal != 0
+            || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count + _dirtyDrones.Count == 0
+        )
         {
             return;
         }
@@ -346,6 +352,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             "WorldArmorRepair",
             "WorldNpc",
             "WorldCombatDamage",
+            "WorldDrone",
         ];
         if (!read || combatTables.Any(table => sql.Contains(table, StringComparison.Ordinal)))
         {
@@ -355,7 +362,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void Flush()
     {
-        if (_internal != 0 || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count == 0)
+        if (
+            _internal != 0
+            || _dirtyShips.Count + _dirtyNpcs.Count + _dirtyAggressions.Count + _dirtyPositions.Count + _dirtyDrones.Count == 0
+        )
         {
             return;
         }
@@ -376,6 +386,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     """
                 );
             }
+            ProjectDrones(world);
             foreach (long id in _dirtyShips)
             {
                 ProjectShip(world, _savedShips[id], _ships[id]);
@@ -411,6 +422,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             {
                 _savedPositions[id] = _positions[id];
             }
+            _dirtyDrones.Clear();
             _dirtyPositions.Clear();
             _dirtyShips.Clear();
             _dirtyNpcs.Clear();
@@ -427,6 +439,14 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         if (_internal != 0)
         {
             return;
+        }
+        if (
+            changes.Any(c =>
+                c.Table is "WorldDrone" or "WorldDroneSettings" or "WorldFitRevision" or "WorldPilot" or "WorldShip" or "WorldItem"
+            )
+        )
+        {
+            ClearDrones();
         }
         foreach (var change in changes)
         {
@@ -525,6 +545,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
     internal void Clear()
     {
         Flush();
+        ClearDrones();
         _ships.Clear();
         _savedShips.Clear();
         _npcs.Clear();

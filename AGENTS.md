@@ -34,6 +34,14 @@
 - Keep flexible Python values (`object`, heterogeneous arrays, and dictionaries) inside explicit wire adapters and the low-level Blue codec, or at genuinely dynamic boundaries such as appearance data. Preserve tuple/list distinctions, None, field order, native class forms, and numeric wire representations with explicit conversion; do not use reflection-based serialization or hide untyped data inside a generic result wrapper.
 - Implement outbound model conversion through `BlueModel.ToBlue()` (`IBlueWritable`). Parse variable service arguments at the dispatch boundary before calling typed operations. Queue named `PilotNotification` and `DestinyCommand` records; preserve the before-flight notification queue. Use `BlueRead` for inert wire validation and `BlueRows` for shared native row descriptors. The [remaining-object audit](docs/protocol/architecture.md#named-protocol-models-final-audit) explains the intentional dynamic boundaries.
 
+## Simulation performance
+
+- Keep ordinary movement, target acquisition, resource updates and nonfatal combat on typed resident state under the existing world owner. Use SQL for initial loading, checkpoint projection and atomic inventory/destruction/ownership transitions. Account for projection and checkpoint capture separately from tick timing.
+- Share current system contacts and immutable catalog profiles across sessions. Observer reads must not rebuild fits, reload skills or open database connections once warmed. Read each simulation input once per relevant change, with explicit invalidation for catalog, skill, fitting, settings and membership changes.
+- Add a cheap ownership or membership lookup when a handler needs only existence. Advance authoritative state before publishing observer contacts. Preserve immediate visibility of committed commands, including repeated reads within the same tick.
+- Integrate resident changes with checkpoints and SQL boundaries. Project dirty state before a transaction reads or changes it, publish only committed changes, preserve state after rollback and serialize concurrent commands with the existing world owner. Keep saved deadlines so duplicate or late callbacks cannot replay combat.
+- For simulation performance changes, use deterministic warmed tests that assert SQL command, connection and fitting-calculation counts alongside outcomes. Exercise owners and observers, empty systems and populated fleets. Measure complete session frames and checkpoint cost separately, using the same workload for baseline and optimized comparisons.
+
 ## Testing
 
 Agents perform **automated testing only**. Do not launch the game, use Computer Use, or conduct interactive gameplay acceptance unless the user explicitly requests it. Do not replace client testing with an extended manual server-testing session. The [Windows client guide](docs/development-client.md) contains optional maintainer procedures and historical observations, not required agent acceptance.

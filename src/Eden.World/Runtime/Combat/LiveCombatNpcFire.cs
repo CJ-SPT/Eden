@@ -10,9 +10,9 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private HashSet<long>? _droneControllers;
+    private Dictionary<long, long>? _droneControllers;
 
-    private HashSet<long> DroneControllers() =>
+    private Dictionary<long, long> DroneControllers() =>
         _droneControllers ??= Loading(() =>
         {
             using WorldDbContext world = new(database.Path);
@@ -20,8 +20,9 @@ internal sealed partial class LiveCombatRuntime
                 .Set<WorldDrone>()
                 .AsNoTracking()
                 .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
-                .Select(d => d.ControllerShipId)
-                .ToHashSet();
+                .Select(d => new { d.ControllerShipId, d.PilotId })
+                .Distinct()
+                .ToDictionary(d => d.ControllerShipId, d => d.PilotId);
         });
 
     internal void WarmDrones()
@@ -57,11 +58,6 @@ internal sealed partial class LiveCombatRuntime
         shot = null;
         if (!CanRun)
         {
-            return false;
-        }
-        if (DroneControllers().Contains(shipId))
-        {
-            // Drone retaliation shares the SQL transaction with drone layer state and loss.
             return false;
         }
         Trim();
@@ -100,6 +96,17 @@ internal sealed partial class LiveCombatRuntime
         if (ship.Position.DistanceTo(npc.Home) > leash || npc.Position.DistanceTo(npc.Home) > leash)
         {
             return false;
+        }
+        if (now >= aggression.ReadyAt && NpcPopulationRules.HasDirectWeapon(attributes) && DroneControllers().ContainsKey(shipId))
+        {
+            if (!FireAtDrone(ship, npc, aggression, now, ref roll, out shot))
+            {
+                return false;
+            }
+            if (shot is not null)
+            {
+                return true;
+            }
         }
         if (
             !NpcPopulationRules.HasDirectWeapon(attributes)

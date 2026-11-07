@@ -2,6 +2,8 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+Drone motion, observer reads and nonfatal direct combat use shared resident state. See the [performance measurements and checkpoint boundaries](performance.md#resident-drone-flight-and-combat-november-6-2026).
+
 ## Space cleanup after drone scoop and recall, November 6, 2026
 
 The maintainer's screenshot shows five Hammerhead II drones in the bay and five stationary overview/model contacts. Attempts to lock those contacts fail because the authoritative objects have already left space. The maintainer also reproduced this after ordinary Return to Drone Bay.

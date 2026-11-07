@@ -13,6 +13,8 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Combat;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -359,7 +361,29 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
         );
     }
 
-    public IReadOnlyList<DroneContact> List(int systemId, long now)
+    public bool HasControlled(long pilotId, long shipId) => ListControllers().Contains((pilotId, shipId));
+
+    private IReadOnlySet<(long Pilot, long Ship)> ListControllers() =>
+        LiveReadModels.Find(database.Path)?.DroneControllers(ReadControllers) ?? ReadControllers();
+
+    private IReadOnlySet<(long Pilot, long Ship)> ReadControllers()
+    {
+        using WorldDbContext world = new(database.Path);
+        return world
+            .Set<WorldDrone>()
+            .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
+            .Select(d => new { d.PilotId, d.ControllerShipId })
+            .AsEnumerable()
+            .Select(d => (d.PilotId, d.ControllerShipId))
+            .ToHashSet();
+    }
+
+    public IReadOnlyList<DroneContact> List(int systemId, long now) =>
+        LiveCombatRuntime.Find(database.Path)?.Drones(systemId, now)
+        ?? LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId))
+        ?? ReadContacts(systemId);
+
+    private IReadOnlyList<DroneContact> ReadContacts(int systemId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -400,7 +424,11 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
         );
     }
 
-    public DroneUpdate Advance(long pilotId, long now, int stamp)
+    public DroneUpdate Advance(long pilotId, long now, int stamp) =>
+        LiveCombatRuntime.Find(database.Path)?.AdvanceDrones(pilotId, now, stamp, rolls => AdvanceSql(pilotId, now, stamp, rolls))
+        ?? AdvanceSql(pilotId, now, stamp);
+
+    private DroneUpdate AdvanceSql(long pilotId, long now, int stamp, IReadOnlyDictionary<long, double>? rolls = null)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -574,7 +602,9 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
                 target,
                 NpcMotion.Velocity(npc),
                 attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-                RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution
+                rolls is not null && rolls.TryGetValue(drone.ItemId, out double roll)
+                    ? roll
+                    : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution
             );
             var result = NpcDamagePersistence.Apply(world, catalog, npc, pilot, ship.Id, attributes, damage, now, profile.TypeId);
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
