@@ -67,9 +67,8 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     private static LearningImplant Profile(CatalogDbContext catalog, InventoryItem item)
     {
-        string key = item.TypeId.ToString(CultureInfo.InvariantCulture);
-        var type = catalog.Set<SourceRecord>().Find("client/types", key)?.Read<ClientTypes>();
-        var effects = catalog.Set<SourceRecord>().Find("client/typedogma", key)?.Read<ClientTypedogma>().DogmaEffects;
+        var type = catalog.Read(CatalogData.Client.Types, (long)item.TypeId);
+        var effects = catalog.Read(CatalogData.Client.Typedogma, (long)item.TypeId)?.DogmaEffects;
         if (
             item.CategoryId != (int)InventoryCategory.Implant
             || item.GroupId != ImplantRules.LearningGroup
@@ -80,11 +79,8 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         {
             throw new InvalidDataException("Only published learning implants are supported. Hardwiring and set effects are unavailable.");
         }
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.ItemTypeId == item.TypeId)
-            .ToDictionary(a => a.AttributeId, a => a.Value);
-        double slot = attributes.GetValueOrDefault((int)DogmaAttributeId.ImplantSlot);
+        var attributes = catalog.FittingAttributes(item.TypeId);
+        double slot = attributes.GetValueOrDefault(DogmaAttributeId.ImplantSlot);
         if (slot is < 1 or > 5 || slot != Math.Truncate(slot))
         {
             throw new InvalidDataException("Invalid learning implant slot.");
@@ -97,12 +93,12 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             (DogmaAttributeId.PerceptionBonus, DogmaAttributeId.Perception),
             (DogmaAttributeId.WillpowerBonus, DogmaAttributeId.Willpower),
         ];
-        var nonzero = bonuses.Where(a => attributes.GetValueOrDefault((int)a.BonusAttribute) != 0).ToArray();
+        var nonzero = bonuses.Where(a => attributes.GetValueOrDefault(a.BonusAttribute) != 0).ToArray();
         if (nonzero.Length != 1)
         {
             throw new InvalidDataException("Invalid learning implant bonuses.");
         }
-        double bonus = attributes[(int)nonzero[0].BonusAttribute];
+        double bonus = attributes[nonzero[0].BonusAttribute];
         if (!double.IsFinite(bonus) || bonus != Math.Truncate(bonus) || bonus is < 1 or > ImplantRules.MaximumLearningBonus)
         {
             throw new InvalidDataException("Invalid learning implant bonus.");
@@ -112,23 +108,23 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     internal static void Requirements(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int typeId)
     {
-        var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == typeId).ToDictionary(a => a.AttributeId, a => a.Value);
+        var attributes = catalog.FittingAttributes(typeId);
         var alpha =
             pilot.Account.CloneGrade == AccountCloneGrade.Alpha
-                ? CatalogData
-                    .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
+                ? catalog
+                    .Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
                     .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         List<TrainingTarget> requirements = [];
         Dictionary<int, int> levels = [];
         foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
         {
-            double skill = attributes.GetValueOrDefault((int)skillAttribute);
+            double skill = attributes.GetValueOrDefault(skillAttribute);
             if (skill == 0)
             {
                 continue;
             }
-            double required = attributes.GetValueOrDefault((int)levelAttribute);
+            double required = attributes.GetValueOrDefault(levelAttribute);
             if (
                 skill is < 1 or > int.MaxValue
                 || skill != Math.Truncate(skill)

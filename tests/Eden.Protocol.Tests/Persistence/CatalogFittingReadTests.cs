@@ -3,6 +3,7 @@ using Eden.Data.World.Skills;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +14,83 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class CatalogFittingReadTests
 {
     [Fact]
+    public void SharedEffectsPreserveSourceOrderAndRemoveRepeatedIds()
+    {
+        using TestWorld db = new();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        using (CatalogDbContext fixture = new(path, writable: true))
+        {
+            fixture
+                .Set<SourceRecord>()
+                .AsTracking()
+                .Single(record => record.Dataset == "client/typedogma" && record.Key == "3651")
+                .Data = """
+                {"dogmaEffects":[{"effectID":67},{"effectID":42},{"effectID":12},{"effectID":16},{"effectID":42}]}
+                """;
+            fixture.SaveChanges();
+        }
+        using CatalogDbContext catalog = new(path);
+        Assert.Equal(new long?[] { 67, 42, 12, 16 }, PassiveCatalog.Effects(catalog, 3651).Select(effect => effect.EffectID));
+    }
+
+    [Fact]
+    public void StaticFittingDefinitionsAndMissingProfilesRemainSharedAcrossOperations()
+    {
+        using TestWorld db = new();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        CatalogReadScope scopes = new();
+        using CatalogDbContext first = new(path);
+        var module = FittingCatalog.Definition(first, 3651);
+        Assert.NotNull(module);
+        var effects = FittingCatalog.Effects(first, 3651);
+        var modifiers = PassiveCatalog.Modifiers(first, 3651);
+        Assert.Null(FittingCatalog.Definition(first, int.MaxValue));
+        using var metrics = SessionPerformance.Begin("shared-fitting-definitions", _ => { }, force: true)!;
+        for (int operation = 0; operation < 3; operation++)
+        {
+            using var scope = scopes.Begin();
+            using CatalogDbContext next = new(path);
+            Assert.Same(module, FittingCatalog.Definition(next, 3651));
+            Assert.Same(effects, FittingCatalog.Effects(next, 3651));
+            Assert.Equal(modifiers, PassiveCatalog.Modifiers(next, 3651));
+            Assert.Null(FittingCatalog.Definition(next, int.MaxValue));
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
+    public void WritableFixtureBypassesDerivedCachesAndInvalidatesTheNextGeneration()
+    {
+        using TestWorld db = new();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        using CatalogDbContext original = new(path);
+        var before = FittingCatalog.Definition(original, 3651);
+        Assert.NotNull(before);
+        long generation = original.Definitions.Identity.Generation;
+        using (CatalogDbContext fixture = new(path, writable: true))
+        {
+            fixture.Set<SourceRecord>().AsTracking().Single(record => record.Dataset == "client/typedogma" && record.Key == "3651").Data =
+                "{\"dogmaEffects\":[]}";
+            fixture.SaveChanges();
+            Assert.Null(FittingCatalog.Definition(fixture, 3651));
+            Assert.Empty(FittingCatalog.Effects(fixture, 3651));
+        }
+        using CatalogDbContext reopened = new(path);
+        Assert.NotEqual(generation, reopened.Definitions.Identity.Generation);
+        Assert.Null(FittingCatalog.Definition(reopened, 3651));
+        Assert.Empty(FittingCatalog.Effects(reopened, 3651));
+        Assert.NotNull(before);
+    }
+
+    [Fact]
     public async Task HostOperationSharesFittingInputsAndOneConnectionAcrossAwaitAndNestedScopes()
     {
         using TestWorld db = new();
         string path = new WorldDatabase(db.Path).CatalogPath;
         var scopes = db.Services.GetRequiredService<IPilotOperationScope>();
+        CatalogProvider.Open(path).Attributes(601);
         using var metrics = SessionPerformance.Begin("operation", _ => { }, force: true)!;
         using (scopes.Begin())
         {
@@ -34,7 +107,7 @@ public sealed class CatalogFittingReadTests
             }
             using CatalogDbContext last = new(path);
             Assert.NotNull(last.Set<ItemType>().Find(601));
-            Assert.Equal(3, metrics.Commands);
+            Assert.Equal(2, metrics.Commands);
             Assert.Equal(1, metrics.Connections);
         }
         using (scopes.Begin())
@@ -42,8 +115,8 @@ public sealed class CatalogFittingReadTests
         {
             Assert.NotEmpty(next.FittingAttributes(601));
         }
-        Assert.Equal(4, metrics.Commands);
-        Assert.Equal(2, metrics.Connections);
+        Assert.Equal(2, metrics.Commands);
+        Assert.Equal(1, metrics.Connections);
     }
 
     [Fact]
@@ -77,11 +150,14 @@ public sealed class CatalogFittingReadTests
     }
 
     [Fact]
-    public async Task TickScopeSharesOnlyCatalogInputsAcrossContextsAndExpiresAtTheNextOperation()
+    public async Task TickScopeRetainsTypedDefinitionsWhileLegacySourcesExpireAtTheNextOperation()
     {
         using TestWorld db = new();
         string path = new WorldDatabase(db.Path).CatalogPath;
         CatalogFittingReadScope scopes = new();
+        var shared = CatalogProvider.Open(path);
+        shared.Attributes(601);
+        Assert.NotEmpty(shared.Items);
         using var metrics = SessionPerformance.Begin("operation", _ => { }, force: true)!;
         using (scopes.Begin())
         {
@@ -96,7 +172,7 @@ public sealed class CatalogFittingReadTests
             Assert.Null(second.FindSource("missing", "key"));
             Assert.NotEmpty(second.FittingAttributes(601));
             Assert.NotNull(second.FittingType(601));
-            Assert.Equal(3, metrics.Commands);
+            Assert.Equal(1, metrics.Commands);
         }
         using (scopes.Begin())
         {
@@ -105,7 +181,7 @@ public sealed class CatalogFittingReadTests
             Assert.NotEmpty(next.FittingAttributes(601));
             Assert.NotNull(next.FittingType(601));
         }
-        Assert.Equal(6, metrics.Commands);
+        Assert.Equal(2, metrics.Commands);
     }
 
     [Fact]
@@ -113,15 +189,15 @@ public sealed class CatalogFittingReadTests
     {
         using TestWorld db = new();
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
+        var first = catalog.FittingAttributes(601);
         using var metrics = SessionPerformance.Begin("catalog", _ => { }, force: true)!;
         Assert.Null(catalog.FindSource("missing", "key"));
         Assert.Null(catalog.FindSource("missing", "key"));
-        var first = catalog.FittingAttributes(601);
         var modified = first.ToDictionary();
         var key = first.Keys.First();
         modified[key]++;
         Assert.Equal(first[key], catalog.FittingAttributes(601)[key]);
-        Assert.Equal(2, metrics.Commands);
+        Assert.Equal(1, metrics.Commands);
     }
 
     [Fact]

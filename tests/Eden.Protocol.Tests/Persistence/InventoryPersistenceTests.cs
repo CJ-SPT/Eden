@@ -12,10 +12,10 @@ public sealed class InventoryPersistenceTests
     public void TransactionPrimitivesSeeUnsavedOutputsAndPreserveIdentityAndCheckedQuantities()
     {
         using TestWorld db = new();
+        var pilot = db.Store.FindPilot(1000001)!;
         using WorldDbContext world = new(db.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
-        var pilot = db.Store.FindPilot(1000001)!;
         var first = InventoryPersistence.MergeOutput(
             world,
             catalog,

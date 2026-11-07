@@ -199,16 +199,7 @@ internal sealed class PilotInteractionHistoryStore(WorldDatabase database) : IPi
         int faction = mining ? npc.CorporationId : npc.FactionId;
         if (faction == 0)
         {
-            faction = checked(
-                (int)(
-                    catalog
-                        .Set<SourceRecord>()
-                        .Find("client/npccorporations", npc.CorporationId.ToString(System.Globalization.CultureInfo.InvariantCulture))
-                        ?.Read<ClientNpccorporations>()
-                        .FactionID
-                    ?? 0
-                )
-            );
+            faction = checked((int)(catalog.Read(CatalogData.Client.Npccorporations, (long)npc.CorporationId)?.FactionID ?? 0));
         }
         if (faction == 0 || fraction == 0)
         {

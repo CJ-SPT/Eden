@@ -42,7 +42,7 @@ internal static class HullSupportAudit
         int count = 0;
         foreach (var type in catalog.Set<ItemType>().Include(t => t.Group).Where(t => t.Group.CategoryId == (int)InventoryCategory.Ship))
         {
-            var source = catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(type.Id))?.Read<ClientTypes>();
+            var source = catalog.Read(CatalogData.Client.Types, (long)type.Id);
             if (source is not { Published: 1, TechLevel: 1 })
             {
                 continue;

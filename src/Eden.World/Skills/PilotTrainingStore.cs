@@ -133,7 +133,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 world.Set<PilotSkill>().Find(pilotId, row.TypeId)!.Points = row.EndPoints;
                 changed.Add(row.TypeId);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                double rank = catalog.Set<TypeAttribute>().Find(row.TypeId, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 1;
+                double rank = catalog.FittingAttributes(row.TypeId).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
                 long threshold = TrainedSkill.PointsForLevel(rank, row.Level);
                 if (row.EndPoints < threshold)
                 {
@@ -316,30 +316,14 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
     {
         var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var owned = points.Keys.ToArray();
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a =>
-                owned.Contains(a.ItemTypeId)
-                && (
-                    a.AttributeId == (int)DogmaAttributeId.PrimaryAttribute
-                    || a.AttributeId == (int)DogmaAttributeId.SecondaryAttribute
-                    || a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant
-                )
-            )
-            .AsEnumerable()
-            .GroupBy(a => a.ItemTypeId)
-            .ToDictionary(g => g.Key, g => g.ToDictionary(a => a.AttributeId, a => a.Value));
         int race = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.RaceId).Single();
-        var alpha = CatalogData
-            .Client.Clonegrades.Get(catalog, race.ToString(CultureInfo.InvariantCulture))
+        var alpha = catalog
+            .Require(CatalogData.Client.Clonegrades, race.ToString(CultureInfo.InvariantCulture))
             .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
-        var types = targets.Select(t => t.TypeId.ToString(CultureInfo.InvariantCulture)).Distinct().ToArray();
-        var prerequisites = CatalogData
-            .Client.Requiredskillsfortypes.Query(catalog)
-            .Where(r => types.Contains(r.Key))
-            .AsEnumerable()
-            .ToDictionary(r => int.Parse(r.Key, CultureInfo.InvariantCulture), r => r.Value);
+        var prerequisites = targets
+            .Select(t => t.TypeId)
+            .Distinct()
+            .ToDictionary(type => type, type => catalog.Read(CatalogData.Client.Requiredskillsfortypes, (long)type));
         var basis = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
         var boosters = PilotBoosterStore.Active(world, pilotId, now).Where(b => b.Bonus > 0).ToArray();
         int bonus = boosters.Sum(b => b.Bonus);
@@ -347,13 +331,13 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             p => p.Key,
             p =>
             {
-                var dogma = attributes.GetValueOrDefault(p.Key, []);
+                var dogma = catalog.FittingAttributes(p.Key);
                 var required = prerequisites.GetValueOrDefault(p.Key);
-                var primary = (DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.PrimaryAttribute);
-                var secondary = (DogmaAttributeId)dogma.GetValueOrDefault((int)DogmaAttributeId.SecondaryAttribute);
+                var primary = (DogmaAttributeId)dogma.GetValueOrDefault(DogmaAttributeId.PrimaryAttribute);
+                var secondary = (DogmaAttributeId)dogma.GetValueOrDefault(DogmaAttributeId.SecondaryAttribute);
                 return new TrainingSkill(
                     p.Value,
-                    dogma.GetValueOrDefault((int)DogmaAttributeId.SkillTimeConstant, 1),
+                    dogma.GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1),
                     basis.GetValueOrDefault(primary) + bonus,
                     basis.GetValueOrDefault(secondary) + bonus,
                     checked((int)alpha.GetValueOrDefault(p.Key)),

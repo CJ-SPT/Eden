@@ -1,4 +1,3 @@
-using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
@@ -39,9 +38,9 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         }
 
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var school = Record<ClientSchools>("schools", character.SchoolId);
-        var race = Record<ClientRaces>("races", character.RaceId);
-        var bloodline = Record<ClientBloodlines>("bloodlines", character.BloodlineId);
+        var school = catalog.Read(CatalogData.Client.Schools, (long)character.SchoolId);
+        var race = catalog.Read(CatalogData.Client.Races, (long)character.RaceId);
+        var bloodline = catalog.Read(CatalogData.Client.Bloodlines, (long)character.BloodlineId);
         var stations = school?.StartingStations ?? [];
         long hull = race?.ShipTypeID ?? 0;
         long corp = school?.CorporationID ?? 0;
@@ -55,15 +54,14 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
                 stations,
                 character.AncestryId == CharacterRules.UnspecifiedAncestry
                     ? null
-                    : Record<ClientAncestries>("ancestries", character.AncestryId)?.BloodlineID
+                    : catalog.Read(CatalogData.Client.Ancestries, (long)character.AncestryId)?.BloodlineID
             )
         );
         var candidates = catalog.Set<Station>().Where(s => stations.Contains(s.Id));
         if (school!.IsStarterSpaceSchool != 1 || stations.Length != 1)
         {
-            var systems = CatalogData
-                .Client.Schoolmap.Query(catalog)
-                .AsEnumerable()
+            var systems = catalog
+                .Records(CatalogData.Client.Schoolmap)
                 .Where(e => e.Value.SchoolID == character.SchoolId)
                 .Select(e => e.Value.SolarSystemID)
                 .Distinct()
@@ -78,7 +76,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         {
             throw new InvalidDataException("Missing or ambiguous school station or corporation.");
         }
-        string shipName = catalog.Set<ItemType>().Single(t => t.Id == hull).Name;
+        string shipName = catalog.FittingType(checked((int)hull))?.Name ?? throw new InvalidDataException("Unknown starter hull.");
         long pilotId = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
         long shipId = InventoryPersistence.NextId(world);
         long created = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -102,9 +100,6 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         world.SaveChanges();
         transaction.Commit();
         return pilotId;
-
-        T? Record<T>(string source, int id)
-            where T : class => catalog.Set<SourceRecord>().Find("client/" + source, id.ToString(CultureInfo.InvariantCulture))?.Read<T>();
     }
 
     public byte[]? ReadAppearance(long characterId, bool portrait)

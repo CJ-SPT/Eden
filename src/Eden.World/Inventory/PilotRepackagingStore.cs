@@ -44,13 +44,13 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                 {
                     throw new InvalidDataException("This ship is unavailable in your station hangar.");
                 }
-                var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == ship.TypeId);
+                var type = catalog.FittingType(ship.TypeId) ?? throw new InvalidDataException("Unknown ship type.");
                 var before = PilotFleetStore.Read(catalog, ship);
                 var health = world.Set<ShipHealthState>().Find(ship.Id);
                 RepackagingRules.Check(
                     new(
                         before,
-                        ship.TypeId != FleetDefinitions.CapsuleType && HullCatalog.CanAssemble(catalog, type, type.Group.CategoryId),
+                        ship.TypeId != FleetDefinitions.CapsuleType && HullCatalog.CanAssemble(catalog, type, type.CategoryId),
                         world.Pilots.Any(p => p.ActiveShipId == ship.Id),
                         world.Set<OwnedItem>().Any(i => i.LocationId == ship.Id) || world.Ships.Any(s => s.StoredInId == ship.Id),
                         false,
@@ -89,7 +89,7 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                         : before.CategoryId == (int)InventoryCategory.Ship
                             && HullCatalog.CanAssemble(
                                 catalog,
-                                catalog.Set<ItemType>().Single(t => t.Id == item.TypeId),
+                                catalog.FittingType(item.TypeId) ?? throw new InvalidDataException("Unknown ship type."),
                                 before.CategoryId
                             );
                 RepackagingRules.Check(

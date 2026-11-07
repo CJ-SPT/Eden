@@ -31,6 +31,8 @@ namespace Eden.World.Fittings;
 
 internal sealed record FittingLocation(OwnedItem Item, int GroupId, IReadOnlySet<int> RequiredSkills);
 
+internal sealed record FittingAttributeCatalogEntry(DogmaAttributeId Id, ClientDogmaattributes? Definition);
+
 internal sealed record FittingCalculation(
     DogmaGraph Graph,
     long ShipId,
@@ -53,12 +55,6 @@ internal sealed record FittingCalculation(
     {
         string? revision = ownerTypeId is null ? world.FitRevision(pilot.Id) : null;
         SessionPerformance.FittingCalculated();
-        // A fitting graph reads many static rows. Keep this nonpooled connection
-        // open for its owning context instead of reopening SQLite for every query.
-        if (catalog.Database.GetDbConnection().State != ConnectionState.Open)
-        {
-            catalog.Database.OpenConnection();
-        }
         ship ??= pilot.ActiveShip;
         var hull = catalog.FittingType(ship.TypeId)!;
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
@@ -400,14 +396,9 @@ internal sealed record FittingCalculation(
         Dictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions = [];
         while (requested.Count > 0)
         {
-            var keys = requested.Select(id => PassiveCatalog.Key((int)id)).ToArray();
-            var rows = catalog
-                .Set<SourceRecord>()
-                .Where(r => r.Dataset == "client/dogmaattributes" && keys.Contains(r.Key))
-                .AsEnumerable()
-                .Select(r =>
-                    (Id: (DogmaAttributeId)int.Parse(r.Key, CultureInfo.InvariantCulture), Definition: r.Read<ClientDogmaattributes>())
-                )
+            var rows = requested
+                .Select(id => new FittingAttributeCatalogEntry(id, catalog.Read(CatalogData.Client.Dogmaattributes, (long)id)))
+                .Where(entry => entry.Definition is not null)
                 .ToArray();
             foreach (var id in requested)
             {
@@ -416,7 +407,7 @@ internal sealed record FittingCalculation(
             requested.Clear();
             foreach (var row in rows)
             {
-                var a = row.Definition;
+                var a = row.Definition!;
                 var id = row.Id;
                 var definition = new DogmaAttributeDefinition(
                     id,

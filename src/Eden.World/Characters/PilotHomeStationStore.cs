@@ -35,18 +35,8 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 
     private static int? SchoolHeadquarters(CatalogDbContext catalog, Pilot pilot)
     {
-        long? corporation = catalog
-            .Set<SourceRecord>()
-            .Find("client/schools", pilot.SchoolId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientSchools>()
-            .CorporationID;
-        long? station = corporation is long id
-            ? catalog
-                .Set<SourceRecord>()
-                .Find("client/npccorporations", id.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientNpccorporations>()
-                .StationID
-            : null;
+        long? corporation = catalog.Read(CatalogData.Client.Schools, (long)pilot.SchoolId)?.CorporationID;
+        long? station = corporation is long id ? catalog.Read(CatalogData.Client.Npccorporations, (long)id)?.StationID : null;
         return station is > 0 and <= int.MaxValue ? (int)station : null;
     }
 
@@ -159,11 +149,14 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         {
             throw new InvalidDataException("Your active capsule changed before the transfer.");
         }
-        var type = catalog.Set<ItemType>().Find(old.TypeId) ?? throw new InvalidDataException("Unknown active capsule.");
+        var type = catalog.FittingType(old.TypeId) ?? throw new InvalidDataException("Unknown active capsule.");
         HomeStationRules.CheckSelfDestruct(old.Position is null, type.GroupId == FleetDefinitions.CapsuleGroup, old.StationId == home.Id);
         var capsuleType =
-            catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
-            ?? throw new InvalidDataException("The catalog has no replacement capsule.");
+            (
+                catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } replacement
+                    ? replacement
+                    : null
+            ) ?? throw new InvalidDataException("The catalog has no replacement capsule.");
         var previous = PilotFleetStore.Read(catalog, old);
         var capsule = world
             .Add(
@@ -228,10 +221,7 @@ internal sealed class NpcCorporationDirectory(WorldDatabase database) : INpcCorp
     {
         int id = corporation.Id;
         var data =
-            catalog
-                .Set<SourceRecord>()
-                .Find("client/npccorporations", id.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientNpccorporations>()
+            catalog.Read(CatalogData.Client.Npccorporations, (long)id)
             ?? throw new InvalidDataException("Missing NPC corporation metadata.");
         return new(
             id,

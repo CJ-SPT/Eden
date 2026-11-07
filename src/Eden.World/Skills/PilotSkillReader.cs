@@ -47,10 +47,7 @@ internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillRead
 
     internal static void CheckRequirements(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId)
     {
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.ItemTypeId == typeId)
-            .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        var attributes = catalog.FittingAttributes(typeId);
         foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
         {
             int skill = checked((int)attributes.GetValueOrDefault(skillAttribute));
@@ -68,10 +65,7 @@ internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillRead
         using CatalogDbContext catalog = new(database.CatalogPath);
         var types = points.Keys.ToArray();
         // Dogma attribute 275 is the skill's training time multiplier.
-        var ranks = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant && types.Contains(a.ItemTypeId))
-            .ToDictionary(a => a.ItemTypeId, a => a.Value);
+        var ranks = types.ToDictionary(type => type, type => catalog.FittingAttributes(type)[DogmaAttributeId.SkillTimeConstant]);
         return points.Select(p => new TrainedSkill(p.Key, p.Value, ranks[p.Key])).ToArray();
     }
 }

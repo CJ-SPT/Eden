@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -9,6 +10,9 @@ namespace Eden.World.Fittings;
 
 internal static class HullCatalog
 {
+    private static readonly CatalogDefinition<ImmutableArray<PassiveModifier>> s_modifiers = new("hull-modifiers", LoadModifiers);
+    private static readonly CatalogDefinition<ImmutableHashSet<int>> s_skills = new("hull-bonus-skills", LoadSkills);
+
     internal static bool CanAssemble(CatalogDbContext catalog, ItemType type, int category) =>
         CanAssemble(catalog, type.Id, type.GroupId, category);
 
@@ -17,7 +21,7 @@ internal static class HullCatalog
 
     private static bool CanAssemble(CatalogDbContext catalog, int typeId, int groupId, int category)
     {
-        var definition = catalog.Definitions.Find(CatalogData.Client.Types, (long)typeId);
+        var definition = catalog.Read(CatalogData.Client.Types, (long)typeId);
         // Existing Venture saves and the historical fixtures precede techLevel metadata.
         int techLevel = checked((int)(definition?.TechLevel ?? (typeId == (int)StarterShipType.Venture ? 1 : 0)));
         return TechOneHullRules.CanAssemble(
@@ -26,12 +30,14 @@ internal static class HullCatalog
     }
 
     internal static bool UsesCatalogBonuses(CatalogDbContext catalog, int typeId) =>
-        catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>().TechLevel == 1
-        && catalog.Set<ItemType>().Find(typeId) is { } type
-        && catalog.Set<ItemGroup>().Find(type.GroupId) is { } group
-        && CanAssemble(catalog, type, group.CategoryId);
+        catalog.Read(CatalogData.Client.Types, (long)typeId)?.TechLevel == 1
+        && catalog.FittingType(typeId) is { } type
+        && CanAssemble(catalog, type, type.CategoryId);
 
-    internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId)
+    internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>
+        catalog.Definition(s_modifiers, typeId);
+
+    private static ImmutableArray<PassiveModifier> LoadModifiers(CatalogDbContext catalog, int typeId)
     {
         if (!UsesCatalogBonuses(catalog, typeId))
         {
@@ -61,7 +67,7 @@ internal static class HullCatalog
                 );
             }
         }
-        return modifiers;
+        return modifiers.ToImmutableArray();
     }
 
     internal static IReadOnlyList<HullEffectCapability> Capabilities(CatalogDbContext catalog, int typeId) =>
@@ -105,17 +111,19 @@ internal static class HullCatalog
         return HullBonusRules.Capability(new(domain.Value, selector.Value, selection, (DogmaAttributeId)(source.ModifiedAttributeID ?? 0)));
     }
 
-    internal static IReadOnlySet<int> Skills(CatalogDbContext catalog, int typeId)
+    internal static IReadOnlySet<int> Skills(CatalogDbContext catalog, int typeId) => catalog.Definition(s_skills, typeId);
+
+    private static ImmutableHashSet<int> LoadSkills(CatalogDbContext catalog, int typeId)
     {
         if (!UsesCatalogBonuses(catalog, typeId))
         {
-            return new HashSet<int>();
+            return [];
         }
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         return InventoryDefinitions
             .RequiredSkills.Select(pair => attributes.GetValueOrDefault(pair.Skill))
             .Where(value => value > 0)
             .Select(value => checked((int)value))
-            .ToHashSet();
+            .ToImmutableHashSet();
     }
 }

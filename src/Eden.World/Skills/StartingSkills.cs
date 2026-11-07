@@ -13,15 +13,12 @@ internal static class StartingSkills
     internal static void Grant(WorldDbContext world, CatalogDbContext catalog, long pilotId, int raceId)
     {
         var levels =
-            CatalogData.Client.Races.Get(catalog, raceId).Skills
+            catalog.Require(CatalogData.Client.Races, (long)raceId).Skills
             ?? throw new InvalidDataException($"Missing starting skills for race {raceId}.");
         foreach (var (key, level) in levels)
         {
             int typeId = int.Parse(key, CultureInfo.InvariantCulture);
-            double rank = catalog
-                .Set<TypeAttribute>()
-                .Single(a => a.ItemTypeId == typeId && a.AttributeId == (int)DogmaAttributeId.SkillTimeConstant)
-                .Value;
+            double rank = catalog.FittingAttributes(typeId)[DogmaAttributeId.SkillTimeConstant];
             long points = TrainedSkill.PointsForLevel(rank, checked((int)level));
             world.Database.ExecuteSql(
                 $"""

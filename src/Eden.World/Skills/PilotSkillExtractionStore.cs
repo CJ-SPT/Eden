@@ -126,9 +126,8 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
             {
                 return;
             }
-            string key = type.ToString(CultureInfo.InvariantCulture);
-            var required = catalog.Set<SourceRecord>().Find("client/requiredskillsfortypes", key)?.Read<Dictionary<string, long>>();
-            var attributes = catalog.Set<TypeAttribute>().Where(a => a.ItemTypeId == type).ToDictionary(a => a.AttributeId, a => a.Value);
+            var required = catalog.Read(CatalogData.Client.Requiredskillsfortypes, (long)type);
+            var attributes = catalog.FittingAttributes(type);
             Dictionary<int, int> levels = [];
             if (required is not null)
             {
@@ -139,12 +138,12 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
             }
             foreach (var (skill, level) in InventoryDefinitions.RequiredSkills)
             {
-                double id = attributes.GetValueOrDefault((int)skill);
+                double id = attributes.GetValueOrDefault(skill);
                 if (id == 0)
                 {
                     continue;
                 }
-                double value = attributes.GetValueOrDefault((int)level);
+                double value = attributes.GetValueOrDefault(level);
                 if (
                     !double.IsFinite(id)
                     || id is < 1 or > int.MaxValue
@@ -177,7 +176,7 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
         {
             throw new InvalidSkillExtraction("SkillExtractorNotDockedInStation");
         }
-        if (catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
+        if (catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidSkillExtraction("You must be in a capsule to extract skill points.");
         }
@@ -192,22 +191,14 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
             item.TypeId != SkillExtractionRules.ExtractorType
             || item.Quantity < 1
             || item.Singleton
-            || catalog
-                .Set<SourceRecord>()
-                .Find("client/types", item.TypeId.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientTypes>()
-                .Published != 1
+            || catalog.Read(CatalogData.Client.Types, (long)item.TypeId)?.Published != 1
         )
         {
             throw new InvalidSkillExtraction("Select a published skill extractor.");
         }
         if (
-            catalog.Set<ItemType>().Find((int)SkillInjectorType.Large)?.GroupId != SkillInjectorRules.Group
-            || catalog
-                .Set<SourceRecord>()
-                .Find("client/types", ((int)SkillInjectorType.Large).ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientTypes>()
-                .Published != 1
+            catalog.FittingType((int)SkillInjectorType.Large)?.GroupId != SkillInjectorRules.Group
+            || catalog.Read(CatalogData.Client.Types, (long)SkillInjectorType.Large)?.Published != 1
         )
         {
             throw new InvalidDataException("The large skill injector catalog profile is unavailable.");

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
@@ -10,6 +11,8 @@ namespace Eden.World.Fittings;
 
 internal static class PassiveCatalog
 {
+    private static readonly CatalogDefinition<ImmutableArray<ClientDogmaeffects>> s_effects = new("passive-effects", LoadEffects);
+    private static readonly CatalogDefinition<ImmutableArray<PassiveModifier>> s_modifiers = new("passive-modifiers", LoadModifiers);
     private const int AbyssalMetaGroup = 15;
     private const int SkillLevelEffect = 132;
 
@@ -20,7 +23,7 @@ internal static class PassiveCatalog
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (type?.Published != 1 || type.MetaGroupID == AbyssalMetaGroup || InventoryDefinitions.RequiresSpecificShip(attributes))
         {
@@ -39,14 +42,22 @@ internal static class PassiveCatalog
     }
 
     internal static IReadOnlyList<ClientDogmaeffects> Effects(CatalogDbContext catalog, int typeId) =>
-        FittingCatalog
-            .Effects(catalog, typeId)
-            .Select(id => catalog.FindSource("client/dogmaeffects", Key((int)id))?.Read<ClientDogmaeffects>())
+        catalog.Definition(s_effects, typeId);
+
+    private static ImmutableArray<ClientDogmaeffects> LoadEffects(CatalogDbContext catalog, int typeId) =>
+        // Preserve the original insertion order: assignment modifiers are ordered.
+        (catalog.Read(CatalogData.Client.Typedogma, (long)typeId)?.DogmaEffects ?? [])
+            .Select(effect => checked((int)effect.EffectID!.Value))
+            .Distinct()
+            .Select(id => catalog.Read(CatalogData.Client.Dogmaeffects, (long)id))
             .Where(e => e is not null)
             .Cast<ClientDogmaeffects>()
-            .ToArray();
+            .ToImmutableArray();
 
     internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>
+        catalog.Definition(s_modifiers, typeId);
+
+    private static ImmutableArray<PassiveModifier> LoadModifiers(CatalogDbContext catalog, int typeId) =>
         Effects(catalog, typeId)
             .Where(e =>
                 e.EffectID != SkillLevelEffect && e.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online
@@ -57,7 +68,7 @@ internal static class PassiveCatalog
                     Parse(m, e.EffectCategory!.Value) ?? throw new InvalidDataException($"Unsupported passive modifier on type {typeId}.")
                 )
             )
-            .ToArray();
+            .ToImmutableArray();
 
     internal static PassiveModifier? Parse(ClientDogmaeffectsModifierInfoItem modifier, long phase, bool rig = false)
     {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
@@ -13,6 +14,27 @@ public sealed partial class CatalogDbContext(string path, bool writable = false)
         writable
             ? throw new InvalidOperationException("Use direct writable catalog reads while editing a fixture or import.")
             : CatalogProvider.Open(path);
+
+    internal TValue? Read<TKey, TValue>(CatalogSource<TKey, TValue> source, TKey key)
+        where TKey : notnull
+        where TValue : class =>
+        writable ? Set<SourceRecord>().Find(source.Name, JsonSerializer.Serialize(key))?.Read<TValue>() : Definitions.Find(source, key);
+
+    internal TValue Require<TKey, TValue>(CatalogSource<TKey, TValue> source, TKey key)
+        where TKey : notnull
+        where TValue : class => Read(source, key) ?? throw new InvalidDataException($"Missing {source.Name} record {key}.");
+
+    internal T Definition<T>(CatalogDefinition<T> definition, int typeId) =>
+        writable ? definition.Load(this, typeId) : Definitions.Definition(definition, typeId);
+
+    internal IReadOnlyDictionary<TKey, TValue> Records<TKey, TValue>(CatalogSource<TKey, TValue> source)
+        where TKey : notnull =>
+        writable
+            ? Set<SourceRecord>()
+                .Where(record => record.Dataset == source.Name)
+                .AsEnumerable()
+                .ToDictionary(record => JsonSerializer.Deserialize<TKey>(record.Key)!, record => record.Read<TValue>())
+            : Definitions.Pin(source);
 
     public override void Dispose()
     {

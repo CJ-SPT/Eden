@@ -117,7 +117,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
-        HashSet<DogmaEffect> effects = module is null ? [] : FittingCatalog.Effects(catalog, module.TypeId);
+        IReadOnlySet<DogmaEffect> effects = module is null ? new HashSet<DogmaEffect>() : FittingCatalog.Effects(catalog, module.TypeId);
         var activation = effects.Contains(DogmaEffect.Microwarpdrive) ? DogmaEffect.Microwarpdrive : DogmaEffect.Afterburner;
         if (
             pilot.ActiveShip.Position is null

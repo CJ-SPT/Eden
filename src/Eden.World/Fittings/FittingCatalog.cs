@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
@@ -17,7 +18,13 @@ namespace Eden.World.Fittings;
 
 internal static class FittingCatalog
 {
-    internal static ModuleFittingDefinition? Definition(CatalogDbContext catalog, int typeId)
+    private static readonly CatalogDefinition<ModuleFittingDefinition?> s_definition = new("module-fitting", LoadDefinition, 256);
+    private static readonly CatalogDefinition<ImmutableHashSet<DogmaEffect>> s_effects = new("module-effects", LoadEffects);
+    private static readonly CatalogDefinition<DogmaEffect?> s_defaultEffect = new("default-effect", LoadDefaultEffect, 256);
+
+    internal static ModuleFittingDefinition? Definition(CatalogDbContext catalog, int typeId) => catalog.Definition(s_definition, typeId);
+
+    private static ModuleFittingDefinition? LoadDefinition(CatalogDbContext catalog, int typeId)
     {
         var type = catalog.FittingType(typeId);
         if (type is null)
@@ -113,10 +120,7 @@ internal static class FittingCatalog
         {
             return null;
         }
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.ItemTypeId == typeId)
-            .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        var attributes = catalog.FittingAttributes(typeId);
         return ModuleFittingRules.Define(
             typeId,
             type.GroupId,
@@ -126,23 +130,20 @@ internal static class FittingCatalog
         );
     }
 
-    internal static HashSet<DogmaEffect> Effects(CatalogDbContext catalog, int typeId) =>
-        catalog
-            .FindSource("client/typedogma", typeId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientTypedogma>()
-            .DogmaEffects?.Select(e => (DogmaEffect)checked((int)e.EffectID!.Value))
-            .ToHashSet()
-        ?? [];
+    internal static ImmutableHashSet<DogmaEffect> Effects(CatalogDbContext catalog, int typeId) => catalog.Definition(s_effects, typeId);
 
-    internal static DogmaEffect? DefaultEffect(CatalogDbContext catalog, int typeId)
+    private static ImmutableHashSet<DogmaEffect> LoadEffects(CatalogDbContext catalog, int typeId) =>
+        catalog
+            .Read(CatalogData.Client.Typedogma, (long)typeId)
+            ?.DogmaEffects?.Select(e => (DogmaEffect)checked((int)e.EffectID!.Value))
+            .ToImmutableHashSet()
+        ?? ImmutableHashSet<DogmaEffect>.Empty;
+
+    internal static DogmaEffect? DefaultEffect(CatalogDbContext catalog, int typeId) => catalog.Definition(s_defaultEffect, typeId);
+
+    private static DogmaEffect? LoadDefaultEffect(CatalogDbContext catalog, int typeId)
     {
-        var effects =
-            catalog
-                .FindSource("client/typedogma", PassiveCatalog.Key(typeId))
-                ?.Read<ClientTypedogma>()
-                .DogmaEffects?.Where(e => e.IsDefault == 1)
-                .ToArray()
-            ?? [];
+        var effects = catalog.Read(CatalogData.Client.Typedogma, (long)typeId)?.DogmaEffects?.Where(e => e.IsDefault == 1).ToArray() ?? [];
         return effects is [{ EffectID: long effect }] ? (DogmaEffect)checked((int)effect) : null;
     }
 }

@@ -36,10 +36,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         var attributes = Attributes(catalog, typeId);
         if (
             !attributes.ContainsKey(DogmaAttributeId.SignatureRadius)
-            && catalog
-                .FindSource("client/dogmaattributes", ((int)DogmaAttributeId.SignatureRadius).ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientDogmaattributes>()
-                .DefaultValue
+            && catalog.Read(CatalogData.Client.Dogmaattributes, (long)(((int)DogmaAttributeId.SignatureRadius)))?.DefaultValue
                 is double signature
         )
         {
@@ -181,7 +178,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         double calibrationUsed = rack.Where(i => InventoryDefinitions.IsRigSlot(i.FlagId))
             .Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.CalibrationCost));
         var equipment = rack.Select(i =>
-                (i.TypeId, GroupId: catalog.Set<ItemType>().Find(i.TypeId)!.GroupId, Effects: FittingCatalog.Effects(catalog, i.TypeId))
+                (i.TypeId, GroupId: catalog.FittingType(i.TypeId)!.GroupId, Effects: FittingCatalog.Effects(catalog, i.TypeId))
             )
             .ToList();
         long nextId = InventoryPersistence.NextId(world);
@@ -249,7 +246,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 RigRules.CheckFit(hull, rigAttributes, calibrationUsed);
                 calibrationUsed += rigAttributes.GetValueOrDefault(DogmaAttributeId.CalibrationCost);
             }
-            int group = catalog.Set<ItemType>().Find(item.TypeId)!.GroupId;
+            int group = catalog.FittingType(item.TypeId)!.GroupId;
             if (
                 (
                     definition.Turret
@@ -448,9 +445,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
 
     internal static void CheckHull(CatalogDbContext catalog, int moduleType, int hullType)
     {
-        if (
-            !InventoryDefinitions.CanFitShip(ReadAttributes(catalog, moduleType), hullType, catalog.Set<ItemType>().Find(hullType)!.GroupId)
-        )
+        if (!InventoryDefinitions.CanFitShip(ReadAttributes(catalog, moduleType), hullType, catalog.FittingType(hullType)!.GroupId))
         {
             throw new InvalidDataException("This module is restricted to a different ship type or class.");
         }

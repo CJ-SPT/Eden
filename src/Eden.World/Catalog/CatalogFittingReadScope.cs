@@ -11,8 +11,6 @@ internal sealed class CatalogFittingInputs(bool scoped = false) : IDisposable
     private SqliteConnection? _connection;
     internal bool IsScoped { get; } = scoped;
     internal Dictionary<(string Dataset, string Key), SourceRecord?> Sources { get; } = [];
-    internal Dictionary<int, ItemType?> Types { get; } = [];
-    internal Dictionary<int, IReadOnlyDictionary<DogmaAttributeId, double>> Attributes { get; } = [];
 
     internal SqliteConnection Connection(string path)
     {

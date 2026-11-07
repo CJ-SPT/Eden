@@ -8,11 +8,41 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Fitting, inventory and skill catalog adoption, November 7, 2026](#fitting-inventory-and-skill-catalog-adoption-november-7-2026)
 - [Industry and economic catalog adoption, November 7, 2026](#industry-and-economic-catalog-adoption-november-7-2026)
 - [Shared catalog provider, November 7, 2026](#shared-catalog-provider-november-7-2026)
 - [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Fitting, inventory and skill catalog adoption, November 7, 2026
+
+Fitting, inventory and skill operations now obtain typed catalog inputs through the shared provider. Module eligibility, default effects, effect sets, passive/hull/rig/script modifiers and hull bonus skills have immutable derived definitions in the same bounded cache as lazy source records. Missing module definitions are cached too. Effect-definition lists retain source insertion order after repeated-ID removal, preserving assignment-modifier evaluation order. The old operation-local item/attribute dictionaries are removed. Generated keys replace string-encoded source lookups, and the provider owns source decoding. Small achievement and school-map datasets use typed indexed snapshots. Existing hull/item eligibility checks, unsupported-effect rejections, packaged volumes, training calculations and native replies remain in their existing rule owners.
+
+Writable fixtures and import contexts use typed uncached reads; disposal invalidates the shared generation and existing resident fit caches. Tests cover a warmed fitting profile changing after a source edit. Personal fitted graphs remain keyed by committed world revisions, including pending/rolled-back isolation and cooldown freshness. The per-operation connection remains for reference/combat readers that have not yet migrated. World transactions, checkpoints and saved model mappings are unchanged. Native effect operations and build-specific support checks remain explicit rules; typing a source record does not enable it.
+
+Matched Debug replays use the preceding verified `eefa183` adoption binaries and this milestone's final code, disabled tiered compilation and thirty measured frames. Reports are in ignored `artifacts/catalog-fitting/performance/{baseline,shared-fitting}`. Both builds retain zero commands, connection opens and fitting rebuilds in every warmed full frame and the isolated warmed probes; checkpoint reopen and no-frame-projection assertions pass. Fixture setup includes EF startup and world preparation, not just catalog loading.
+
+| Workload | Fixture setup ms, baseline / shared | Frame median ms, baseline / shared | Frame p95 ms, baseline / shared | Process working set MiB, baseline / shared |
+| --- | ---: | ---: | ---: | ---: |
+| One player, empty system | 6,144.66 / 6,284.29 | 0.5014 / 0.4365 | 3.4479 / 0.6170 | 220.19 / 222.07 |
+| Two players, eight idle NPCs | 6,322.79 / 6,388.23 | 1.0889 / 1.1014 | 1.6477 / 2.0497 | 221.09 / 222.53 |
+| Ten players, one fighting NPC | 7,418.84 / 7,526.14 | 8.6422 / 8.7019 | 10.7627 / 10.5879 | 222.59 / 222.53 |
+
+Median checkpoint capture / detached projection / file-writing times (ms) were 3.504 / 2.096 / 16.265 versus 3.630 / 1.897 / 13.181 for the empty case (one sample each); 0.514 / 2.834 / 11.840 versus 0.655 / 3.067 / 13.212 for the eight-NPC case (three samples each); and 0.660 / 6.175 / 13.210 versus 0.511 / 6.016 / 12.293 for the ten-player case (four samples each). Small checkpoint samples, synthetic fixtures and ordinary timing noise limit these comparisons. Working set is not a retained-heap measurement, and these runs do not establish full installed-catalog memory or native-client behavior. No overall frame-speed improvement is claimed.
+
+**Automated validation:** exact methods covered shared and missing fitting definitions, writable invalidation, preserved effect order and inventory transaction primitives. Tool/solution restore and a warning-free build passed. The broad affected run passed 1,786 tests in 18 minutes 40 seconds (1,122.83 seconds including runner overhead; build 5.77 seconds), using the filter below. It covers the adoption code before the final source-order correction. After that correction, another tool/solution restore, warning-free build (11.37 seconds) and 72 immediate-dependency tests passed in 41.53 seconds, using `FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~ShipRigTests|FullyQualifiedName~SupportModuleTests`. The new ordering regression first reproduced the reordered IDs and then passed with the fix. Six catalog Python tests (0.269 seconds), nine formatting policy tests (0.019 seconds), formatting verification and all six matched session/checkpoint replays passed. The full .NET suite was not run.
+
+The first broad run was stopped after an inventory fixture attempted a pilot lookup inside its already-open write transaction. The identical exact test reproduced the lock in the previous verified build. Reading the pilot before that transaction corrects the test arrangement; all existing inventory assertions are unchanged and pass. The interrupted run is not counted as completed validation.
+
+Broad affected filter:
+
+`FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~ModuleFittingTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~PassiveTierTests|FullyQualifiedName~ShipRigTests|FullyQualifiedName~RigRulesTests|FullyQualifiedName~SavedFittingsTests|FullyQualifiedName~HullHoldTests|FullyQualifiedName~TechOneHullTests|FullyQualifiedName~SmallHull|FullyQualifiedName~CombatHull|FullyQualifiedName~UtilityHull|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InventoryStackSplitTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~ShipInventoryRulesTests|FullyQualifiedName~ProductionInventoryTests|FullyQualifiedName~PilotTrainingTests|FullyQualifiedName~TrainingRulesTests|FullyQualifiedName~PilotSkillBookTests|FullyQualifiedName~SkillInjector|FullyQualifiedName~SkillExtraction|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~Implant|FullyQualifiedName~Booster|FullyQualifiedName~JumpClone|FullyQualifiedName~HomeStation|FullyQualifiedName~TaskTracking|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~CharacterSheetTests|FullyQualifiedName~FittingSnapshotTests|FullyQualifiedName~SlowCallReplayTests|FullyQualifiedName~SupportModuleTests|FullyQualifiedName~PropulsionTests|FullyQualifiedName~RemoteRepairTests|FullyQualifiedName~Hosting`
+
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this catalog-access migration. Combat/reference adoption, configuration revisions and local administration remain subsequent milestones.
 
 ## Industry and economic catalog adoption, November 7, 2026
 

@@ -51,11 +51,9 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
 
     private static CharacterBoosterProfile Profile(CatalogDbContext catalog, InventoryItem item)
     {
-        string key = item.TypeId.ToString(CultureInfo.InvariantCulture);
-        var published = catalog.Set<SourceRecord>().Find("client/types", key)?.Read<ClientTypes>().Published;
-        var effects = catalog.Set<SourceRecord>().Find("client/typedogma", key)?.Read<ClientTypedogma>().DogmaEffects;
-        double useAttribute =
-            catalog.Set<TypeAttribute>().Find(item.TypeId, (int)DogmaAttributeId.NonDiminishingSkillInjectorUses)?.Value ?? 0;
+        var published = catalog.Read(CatalogData.Client.Types, (long)item.TypeId)?.Published;
+        var effects = catalog.Read(CatalogData.Client.Typedogma, (long)item.TypeId)?.DogmaEffects;
+        double useAttribute = catalog.FittingAttributes(item.TypeId).GetValueOrDefault(DogmaAttributeId.NonDiminishingSkillInjectorUses, 0);
         bool augmentor = useAttribute > 0 && effects is { Length: 0 };
         // Pure learning effects or the catalog's dedicated injection-use booster.
         if (
@@ -70,10 +68,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
                 "Only published learning or injection boosters are supported. Combat booster effects are unavailable."
             );
         }
-        var attributes = catalog
-            .Set<TypeAttribute>()
-            .Where(a => a.ItemTypeId == item.TypeId)
-            .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value);
+        var attributes = catalog.FittingAttributes(item.TypeId);
         double Value(DogmaAttributeId id) => attributes.GetValueOrDefault(id);
         int Integer(DogmaAttributeId id)
         {
@@ -136,7 +131,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
         int level = PilotSkillReader.Level(world, catalog, pilot.Id, BoosterRules.BiologySkill);
         if (pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
         {
-            var alpha = CatalogData.Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture)).Skills!;
+            var alpha = catalog.Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture)).Skills!;
             level = Math.Min(level, checked((int)(alpha.Value.SingleOrDefault(s => s.TypeID == BoosterRules.BiologySkill)?.Level ?? 0)));
         }
         return level;

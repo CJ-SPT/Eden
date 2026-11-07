@@ -1,4 +1,3 @@
-using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
@@ -49,10 +48,8 @@ internal sealed class PilotTaskTrackingStore(WorldDatabase database, TimeProvide
         }
         var definitions = Definitions(catalog);
         var clientEvents = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/achievementevents")
-            .AsEnumerable()
-            .Select(record => record.Read<ClientAchievementevents>().Name)
+            .Records(CatalogData.Client.Achievementevents)
+            .Values.Select(record => record.Name)
             .Where(name => name?.StartsWith("client_", StringComparison.Ordinal) == true)
             .ToHashSet(StringComparer.Ordinal);
         foreach (var counter in counters)
@@ -110,22 +107,15 @@ internal sealed class PilotTaskTrackingStore(WorldDatabase database, TimeProvide
     private static IReadOnlyList<TaskDefinition> Definitions(CatalogDbContext catalog)
     {
         var events = catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/achievementevents")
-            .AsEnumerable()
-            .ToDictionary(
-                record => long.Parse(record.Key, CultureInfo.InvariantCulture),
-                record => record.Read<ClientAchievementevents>().Name ?? ""
-            );
+            .Records(CatalogData.Client.Achievementevents)
+            .ToDictionary(record => record.Key, record => record.Value.Name ?? "");
         return catalog
-            .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/achievements")
-            .AsEnumerable()
+            .Records(CatalogData.Client.Achievements)
             .Select(record =>
             {
-                var definition = record.Read<ClientAchievements>();
+                var definition = record.Value;
                 return new TaskDefinition(
-                    long.Parse(record.Key, CultureInfo.InvariantCulture),
+                    record.Key,
                     definition.IsClientAchievement == true,
                     definition.IsEnabled == true,
                     definition

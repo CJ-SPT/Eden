@@ -8,18 +8,19 @@ public sealed partial class CatalogDbContext
 {
     private readonly CatalogFittingInputs _fittingInputs = writable ? new() : CatalogFittingReadScope.Inputs(path);
 
-    internal ItemType? FittingType(int typeId)
+    internal CatalogItemDefinition? FittingType(int typeId)
     {
         if (writable)
         {
-            return Set<ItemType>().Find(typeId);
+            var type = Set<ItemType>().Find(typeId);
+            if (type is null)
+            {
+                return null;
+            }
+            int category = Set<ItemGroup>().Find(type.GroupId)?.CategoryId ?? 0;
+            return new(type.Id, type.GroupId, category, type.Name, type.Mass, type.Radius, type.Capacity);
         }
-        if (!_fittingInputs.Types.TryGetValue(typeId, out var type))
-        {
-            type = Set<ItemType>().Find(typeId);
-            _fittingInputs.Types.Add(typeId, type);
-        }
-        return type;
+        return Definitions.Items.GetValueOrDefault(typeId);
     }
 
     internal SourceRecord? FindSource(string dataset, string key)
@@ -40,18 +41,14 @@ public sealed partial class CatalogDbContext
 
     internal IReadOnlyDictionary<DogmaAttributeId, double> FittingAttributes(int typeId)
     {
-        if (!writable && _fittingInputs.Attributes.TryGetValue(typeId, out var attributes))
+        if (!writable)
         {
-            return attributes;
+            return Definitions.Attributes(typeId);
         }
         var loaded = Set<TypeAttribute>()
             .Where(a => a.ItemTypeId == typeId)
             .ToDictionary(a => (DogmaAttributeId)a.AttributeId, a => a.Value)
             .ToFrozenDictionary();
-        if (!writable)
-        {
-            _fittingInputs.Attributes.Add(typeId, loaded);
-        }
         return loaded;
     }
 }

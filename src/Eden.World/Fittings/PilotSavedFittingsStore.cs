@@ -31,17 +31,13 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
     {
         SavedFittingRules.Check(plan);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var category = catalog
-            .Set<ItemType>()
-            .Where(t => t.Id == plan.ShipTypeId)
-            .Select(t => (InventoryCategory?)t.Group.CategoryId)
-            .SingleOrDefault();
+        var category = catalog.FittingType(plan.ShipTypeId) is { } hull ? (InventoryCategory?)hull.CategoryId : null;
         if (category is not (InventoryCategory.Ship or InventoryCategory.Structure))
         {
             throw new InvalidDataException("A saved fitting must describe a catalog ship or structure.");
         }
         var types = plan.Items.Select(i => i.TypeId).Distinct().ToArray();
-        if (catalog.Set<ItemType>().Count(t => types.Contains(t.Id)) != types.Length)
+        if (types.Any(type => catalog.FittingType(type) is null))
         {
             throw new InvalidDataException("A fitting entry refers to an unknown catalog type.");
         }

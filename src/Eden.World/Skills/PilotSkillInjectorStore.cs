@@ -74,9 +74,8 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     private static SkillInjectorProfile Profile(CatalogDbContext catalog, int id)
     {
-        string key = id.ToString(CultureInfo.InvariantCulture);
-        var type = catalog.Set<ItemType>().Find(id);
-        var published = catalog.Set<SourceRecord>().Find("client/types", key)?.Read<ClientTypes>().Published;
+        var type = catalog.FittingType(id);
+        var published = catalog.Read(CatalogData.Client.Types, (long)id)?.Published;
         if (type?.GroupId != SkillInjectorRules.Group || published != 1)
         {
             throw new InvalidSkillInjection("IncorrectServiceItemType");
@@ -92,7 +91,7 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
         }
         long Attribute(DogmaAttributeId attribute, bool required)
         {
-            double value = catalog.Set<TypeAttribute>().Find(id, (int)attribute)?.Value ?? 0;
+            double value = catalog.FittingAttributes(id).GetValueOrDefault(attribute, 0);
             if (!double.IsFinite(value) || value < (required ? 1 : 0) || value >= long.MaxValue || value != Math.Truncate(value))
             {
                 throw new InvalidSkillInjection("IncorrectServiceItemType");

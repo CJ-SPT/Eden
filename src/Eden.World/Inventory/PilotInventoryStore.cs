@@ -292,7 +292,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
 
     internal static InventoryItem Read(CatalogDbContext catalog, OwnedItem item)
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
+        var type = catalog.FittingType(item.TypeId) ?? throw new InvalidDataException("Unknown inventory type.");
         return new(
             item.Id,
             item.TypeId,
@@ -301,7 +301,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             item.FlagId,
             item.Quantity,
             type.GroupId,
-            type.Group.CategoryId,
+            type.CategoryId,
             item.VolumeOverride ?? Volume(catalog, item.TypeId, item.Singleton, type),
             item.Singleton,
             item.Online,
@@ -319,14 +319,14 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
     internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId)
     {
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId).ToDictionary();
-        attributes[DogmaAttributeId.CargoCapacity] = catalog.Set<ItemType>().Find(typeId)?.Capacity ?? 0;
+        attributes[DogmaAttributeId.CargoCapacity] = catalog.FittingType(typeId)?.Capacity ?? 0;
         return ShipHoldRules.Capacity(flagId, attributes);
     }
 
-    internal static double Volume(CatalogDbContext catalog, int typeId, bool singleton = false, ItemType? type = null)
+    internal static double Volume(CatalogDbContext catalog, int typeId, bool singleton = false, CatalogItemDefinition? type = null)
     {
         double volume =
-            catalog.Set<SourceRecord>().Find("client/types", typeId.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>().Volume
+            catalog.Read(CatalogData.Client.Types, (long)typeId)?.Volume
             ?? throw new InvalidDataException($"Missing volume for item type {typeId}.");
         if (!double.IsFinite(volume) || volume < 0)
         {
@@ -336,10 +336,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         {
             return volume;
         }
-        type ??= catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
-        return type.Group.CategoryId == (int)InventoryCategory.Ship
-            ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume)
-            : volume;
+        type ??= catalog.FittingType(typeId) ?? throw new InvalidDataException("Unknown inventory type.");
+        return type.CategoryId == (int)InventoryCategory.Ship ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume) : volume;
     }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)

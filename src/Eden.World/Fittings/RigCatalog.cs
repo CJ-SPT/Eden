@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -7,13 +8,15 @@ namespace Eden.World.Fittings;
 
 internal static class RigCatalog
 {
+    private static readonly CatalogDefinition<ImmutableArray<PassiveModifier>> s_modifiers = new("rig-modifiers", LoadModifiers);
+
     internal static bool Supported(CatalogDbContext catalog, int typeId, int groupId)
     {
         if (!RigRules.Groups.Contains(groupId))
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = catalog.FittingAttributes(typeId);
         if (
             type?.Published != 1
@@ -35,6 +38,9 @@ internal static class RigCatalog
     }
 
     internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>
+        catalog.Definition(s_modifiers, typeId);
+
+    private static ImmutableArray<PassiveModifier> LoadModifiers(CatalogDbContext catalog, int typeId) =>
         PassiveCatalog
             .Effects(catalog, typeId)
             .SelectMany(e =>
@@ -43,5 +49,5 @@ internal static class RigCatalog
                     ?? throw new InvalidDataException($"Unsupported rig modifier on type {typeId}.")
                 )
             )
-            .ToArray();
+            .ToImmutableArray();
 }

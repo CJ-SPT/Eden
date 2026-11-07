@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -8,6 +9,7 @@ namespace Eden.World.Fittings;
 
 internal static class ScriptCatalog
 {
+    private static readonly CatalogDefinition<ImmutableArray<ScriptModifier>> s_modifiers = new("script-modifiers", LoadModifiers);
     private const int AbyssalMetaGroup = 15;
 
     private enum ScriptEffect
@@ -66,7 +68,7 @@ internal static class ScriptCatalog
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         var effects = PassiveCatalog.Effects(catalog, typeId);
         return type?.Published == 1
@@ -93,6 +95,9 @@ internal static class ScriptCatalog
     }
 
     internal static IReadOnlyList<ScriptModifier> Modifiers(CatalogDbContext catalog, int typeId) =>
+        catalog.Definition(s_modifiers, typeId);
+
+    private static ImmutableArray<ScriptModifier> LoadModifiers(CatalogDbContext catalog, int typeId) =>
         PassiveCatalog
             .Effects(catalog, typeId)
             .SelectMany(e => e.ModifierInfo ?? [])
@@ -101,5 +106,5 @@ internal static class ScriptCatalog
                 (DogmaAttributeId)checked((int)m.ModifyingAttributeID!.Value),
                 (DogmaOperation)m.Operation!.Value
             ))
-            .ToArray();
+            .ToImmutableArray();
 }

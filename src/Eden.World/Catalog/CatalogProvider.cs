@@ -33,6 +33,7 @@ public sealed class CatalogProvider
     private static long s_generation;
     private readonly MemoryCache _cache;
     private readonly ConcurrentDictionary<string, ICatalogTable> _tables = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<(string Name, Type Type), ICatalogDefinitionMemo> _definitions = new();
     private readonly CatalogCacheOptions _options;
     private readonly FileStamp _stamp;
     private readonly Lazy<FrozenDictionary<int, CatalogItemDefinition>> _items;
@@ -275,6 +276,14 @@ public sealed class CatalogProvider
         where TKey : notnull
         where TValue : class => TryGet(source, key, out var value) ? value : null;
 
+    internal T Definition<T>(CatalogDefinition<T> definition, int typeId)
+    {
+        var memo =
+            (CatalogDefinitionMemo<T>)
+                _definitions.GetOrAdd((definition.Name, typeof(T)), _ => new CatalogDefinitionMemo<T>(this, definition));
+        return memo.Read(typeId);
+    }
+
     public ClientBlueprintsActivitiesManufacturing? ManufacturingRecipe(int blueprintTypeId) =>
         // Unlike SDE blueprint keys, client-cache blueprint keys are JSON strings.
         Find(CatalogData.Client.Blueprints, blueprintTypeId.ToString(CultureInfo.InvariantCulture))?.Activities?.Manufacturing;
@@ -453,6 +462,25 @@ public sealed class CatalogProvider
     }
 
     private interface ICatalogTable;
+
+    private interface ICatalogDefinitionMemo;
+
+    private sealed class CatalogDefinitionMemo<T>(CatalogProvider owner, CatalogDefinition<T> definition) : ICatalogDefinitionMemo
+    {
+        private readonly CatalogMemo<int, T> _memo = new(owner, "definition/" + definition.Name + "/" + typeof(T).FullName);
+
+        internal T Read(int typeId) =>
+            _memo
+                .Read(
+                    typeId,
+                    () =>
+                    {
+                        using CatalogDbContext catalog = new(owner.Identity.Path);
+                        return new(true, definition.Load(catalog, typeId), definition.EstimatedBytes);
+                    }
+                )
+                .Value;
+    }
 
     private sealed class CatalogMemo<TKey, TValue>(CatalogProvider owner, string dataset)
         where TKey : notnull

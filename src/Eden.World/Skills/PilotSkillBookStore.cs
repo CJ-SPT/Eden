@@ -49,11 +49,8 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
         foreach (var item in items)
         {
             var previous = PilotInventoryStore.Read(catalog, item);
-            var type = catalog
-                .Set<SourceRecord>()
-                .Find("client/types", item.TypeId.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientTypes>();
-            double rank = catalog.Set<TypeAttribute>().Find(item.TypeId, (int)DogmaAttributeId.SkillTimeConstant)?.Value ?? 0;
+            var type = catalog.Read(CatalogData.Client.Types, (long)item.TypeId);
+            double rank = catalog.FittingAttributes(item.TypeId).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 0);
             if (
                 previous.CategoryId != (int)InventoryCategory.Skill
                 || type?.Published != 1

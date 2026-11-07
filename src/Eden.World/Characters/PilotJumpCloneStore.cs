@@ -68,8 +68,8 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         }
         var alpha =
             pilot.Account.CloneGrade == AccountCloneGrade.Alpha
-                ? CatalogData
-                    .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
+                ? catalog
+                    .Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
                     .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         int Level(InfomorphSkill skill)
@@ -229,7 +229,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         var pilot = Pilot(world, pilotId);
         var source = CurrentStation(catalog, pilot, facility: false);
         var old = pilot.ActiveShip;
-        if (old.Id != expectedShipId || catalog.Set<ItemType>().Find(old.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
+        if (old.Id != expectedShipId || catalog.FittingType(old.TypeId)?.GroupId != FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Leave your ship and jump from your current capsule.");
         }
@@ -245,8 +245,11 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         JumpCloneRules.CheckTimer(source.Id == stationId, timer?.Time, Skills(world, catalog, pilot), now);
         var payment = Pay(world, pilot, source, JumpClonePaymentKind.Activation, quotedCents, now);
         var type =
-            catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
-            ?? throw new InvalidDataException("The catalog has no replacement capsule.");
+            (
+                catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } replacement
+                    ? replacement
+                    : null
+            ) ?? throw new InvalidDataException("The catalog has no replacement capsule.");
         var previous = PilotFleetStore.Read(catalog, old);
         var capsule = world
             .Add(
