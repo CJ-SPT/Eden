@@ -1,8 +1,8 @@
 using System.Collections.Frozen;
-using Eden.Data.Combat;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Fittings;
-using Eden.Data.Propulsion;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Propulsion;
 using Eden.World.Combat;

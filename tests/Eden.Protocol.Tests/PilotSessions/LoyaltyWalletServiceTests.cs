@@ -1,4 +1,4 @@
-using Eden.Data.Market;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;

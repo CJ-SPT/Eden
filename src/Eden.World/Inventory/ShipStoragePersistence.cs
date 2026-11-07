@@ -1,7 +1,7 @@
-using Eden.Data.Combat;
-using Eden.Data.Corporations;
-using Eden.Data.Inventory;
-using Eden.Data.Loot;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Loot;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.World.Combat;

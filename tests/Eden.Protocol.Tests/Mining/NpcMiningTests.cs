@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Inventory;
-using Eden.Data.Loot;
-using Eden.Data.Mining;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Loot;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;

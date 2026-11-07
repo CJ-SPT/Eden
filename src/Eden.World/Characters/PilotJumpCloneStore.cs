@@ -1,9 +1,9 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
@@ -70,7 +70,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             pilot.Account.CloneGrade == AccountCloneGrade.Alpha
                 ? CatalogData
                     .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
-                    .Skills!.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
+                    .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         int Level(InfomorphSkill skill)
         {

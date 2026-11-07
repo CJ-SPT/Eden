@@ -1,4 +1,4 @@
-using Eden.Data.Corporations;
+using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.PilotSessions;

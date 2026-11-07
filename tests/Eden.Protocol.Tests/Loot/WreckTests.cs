@@ -1,8 +1,8 @@
-using Eden.Data.Combat;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Inventory;
-using Eden.Data.Loot;
-using Eden.Data.Market;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Loot;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

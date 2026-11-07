@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Inventory;
-using Eden.Data.Redemption;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Redemption;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;

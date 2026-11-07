@@ -1,4 +1,4 @@
-using Eden.Data.Combat.Npcs;
+using Eden.Data.World.Combat.Npcs;
 using Eden.World.Combat.Npcs;
 using Eden.World.Mining;
 using Eden.World.Storage;

@@ -154,7 +154,7 @@ internal static class WeaponCatalog
             .Effects(catalog, typeId)
             .Where(e => e.EffectID is HullResistanceOverride or ShieldArmorResistanceOverride)
             .SelectMany(e =>
-                e.ModifierInfo!.Select(m => new PassiveModifier(
+                e.ModifierInfo!.Value.Select(m => new PassiveModifier(
                     ModifierDomain.Ship,
                     ModifierSelector.Item,
                     null,

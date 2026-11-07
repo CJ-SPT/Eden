@@ -1,4 +1,4 @@
-using Eden.Data.Mail;
+using Eden.Data.World.Mail;
 using Eden.Gameplay.Mail;
 using Eden.World.Mail;
 using Eden.World.Storage;

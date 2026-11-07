@@ -81,7 +81,7 @@ internal static class TackleCatalog
                 && effects.All(e =>
                     e.EffectID is (int)DogmaEffect.LowPower or (int)DogmaEffect.Online
                     || (e.ModifierInfo ?? []).Length > 0
-                        && e.ModifierInfo!.All(m => PassiveCatalog.Parse(m, e.EffectCategory!.Value) is not null)
+                        && e.ModifierInfo!.Value.All(m => PassiveCatalog.Parse(m, e.EffectCategory!.Value) is not null)
                 );
         }
         if (

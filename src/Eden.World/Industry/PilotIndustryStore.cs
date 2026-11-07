@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Industry;
-using Eden.Data.Inventory;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Industry;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;

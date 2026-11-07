@@ -1,6 +1,6 @@
 using System.Xml.Linq;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Gameplay.Characters;
 using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;

@@ -1,4 +1,4 @@
-using Eden.Data.Inventory;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Market;
 using Eden.World.Inventory;

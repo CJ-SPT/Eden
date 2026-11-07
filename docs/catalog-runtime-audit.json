@@ -3394,49 +3394,49 @@
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 92,
+      "line": 95,
       "kind": "catalog-read",
       "text": "var source = catalog.Set<SourceRecord>().Find(\"client/types\", typeId.ToString(CultureInfo.InvariantCulture));"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 121,
+      "line": 124,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 177,
+      "line": 180,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 194,
+      "line": 197,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 198,
+      "line": 201,
       "kind": "catalog-context",
       "text": "private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 207,
+      "line": 210,
       "kind": "catalog-read",
       "text": "var station = catalog.Set<Station>().Find(stationId) ?? throw new InvalidDataException(\"Unknown station.\");"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 214,
+      "line": 217,
       "kind": "catalog-context",
       "text": "private static Ship ShipAtStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId, long shipId)"
     },
     {
       "path": "src/Eden.World/Insurance/PilotInsuranceStore.cs",
-      "line": 227,
+      "line": 230,
       "kind": "catalog-context",
       "text": "internal static InsurancePayout? SettleLoss(WorldDbContext world, CatalogDbContext catalog, Ship ship, long now)"
     },
@@ -4708,31 +4708,31 @@
     },
     {
       "path": "src/Eden.World/Reprocessing/PilotReprocessingStore.cs",
-      "line": 160,
+      "line": 162,
       "kind": "catalog-context",
       "text": "private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int stationId, SdeNpcStations station)"
     },
     {
       "path": "src/Eden.World/Reprocessing/PilotReprocessingStore.cs",
-      "line": 162,
+      "line": 164,
       "kind": "catalog-read",
       "text": "long owner = catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId;"
     },
     {
       "path": "src/Eden.World/Reprocessing/PilotReprocessingStore.cs",
-      "line": 171,
+      "line": 173,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Reprocessing/PilotReprocessingStore.cs",
-      "line": 200,
+      "line": 202,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Reprocessing/PilotReprocessingStore.cs",
-      "line": 251,
+      "line": 253,
       "kind": "catalog-read",
       "text": "catalog.Set<Station>().Single(s => s.Id == stationId).OwnerId,"
     },

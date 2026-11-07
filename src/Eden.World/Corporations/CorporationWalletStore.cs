@@ -1,6 +1,6 @@
-using Eden.Data.Characters;
-using Eden.Data.Corporations;
-using Eden.Data.Market;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;

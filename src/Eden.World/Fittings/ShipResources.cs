@@ -1,4 +1,4 @@
-using Eden.Data.Fittings;
+using Eden.Data.World.Fittings;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;

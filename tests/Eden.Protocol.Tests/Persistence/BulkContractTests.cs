@@ -1,9 +1,9 @@
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Contracts;
-using Eden.Data.Inventory;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Contracts;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;

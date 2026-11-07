@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Inventory;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Contracts;

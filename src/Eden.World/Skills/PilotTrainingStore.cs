@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
@@ -333,7 +333,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         int race = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.RaceId).Single();
         var alpha = CatalogData
             .Client.Clonegrades.Get(catalog, race.ToString(CultureInfo.InvariantCulture))
-            .Skills!.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
+            .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
         var types = targets.Select(t => t.TypeId.ToString(CultureInfo.InvariantCulture)).Distinct().ToArray();
         var prerequisites = CatalogData
             .Client.Requiredskillsfortypes.Query(catalog)

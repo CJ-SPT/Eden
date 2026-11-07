@@ -1,4 +1,4 @@
-using Eden.Data.Skills;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Skills;

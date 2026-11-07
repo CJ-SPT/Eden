@@ -1,7 +1,7 @@
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Inventory;
-using Eden.Data.Redemption;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Redemption;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;

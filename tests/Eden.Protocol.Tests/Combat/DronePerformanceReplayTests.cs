@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Combat.Npcs;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Mining;

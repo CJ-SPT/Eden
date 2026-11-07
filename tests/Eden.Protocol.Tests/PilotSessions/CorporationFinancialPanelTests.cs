@@ -1,7 +1,7 @@
 using System.Collections;
 using Eden.Data.Catalog;
-using Eden.Data.Corporations;
-using Eden.Data.Inventory;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Corporations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;

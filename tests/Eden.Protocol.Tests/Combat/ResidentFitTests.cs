@@ -1,7 +1,7 @@
 using Eden.Data.Catalog;
-using Eden.Data.Fittings;
-using Eden.Data.Inventory;
-using Eden.Data.Propulsion;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;

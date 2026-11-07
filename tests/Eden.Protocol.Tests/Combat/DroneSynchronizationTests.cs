@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Drones;
-using Eden.Data.Inventory;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

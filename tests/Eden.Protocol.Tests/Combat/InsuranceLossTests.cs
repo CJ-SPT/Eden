@@ -1,9 +1,9 @@
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Insurance;
-using Eden.Data.Inventory;
-using Eden.Data.Loot;
-using Eden.Data.Market;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Insurance;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Loot;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Market;

@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Authentication;

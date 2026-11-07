@@ -465,7 +465,7 @@
       "sha256": "74f806cf931de135e2ef4fe1ad2edd2795948bafb4438b815320fb2f8990f520",
       "records": 40928,
       "keyType": "long",
-      "valueType": "Dictionary<string, long>",
+      "valueType": "ImmutableDictionary<string, long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -489,7 +489,7 @@
       "sha256": "ff18a434a63f23b8fed0b7ca473c50c51ac8ea5a5c0c6b966caf20721b225445",
       "records": 1221,
       "keyType": "long",
-      "valueType": "Dictionary<string, Dictionary<string, long>>",
+      "valueType": "ImmutableDictionary<string, ImmutableDictionary<string, long>>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -518,7 +518,7 @@
       "sha256": "bde1facdba461a0f0c5753c948dd36a1d9e4e29bc3115bfa4369a94fff16dd7f",
       "records": 3974,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -1823,7 +1823,7 @@
       "sha256": "23939e426aa758e4ee54ea31ede08270c92b350cb75d7a0c1aabcb3e3ef04370",
       "records": 1715,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -4227,7 +4227,7 @@
       "sha256": "b8826871df0c8fac0c561a1279466bb818b57c46bc709edd9b97cd034eea4000",
       "records": 56,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -5584,7 +5584,7 @@
       "sha256": "83f9a60a288ab79aca1ca3ae61509abc0eb2584797c3475589f1943ac2ddee83",
       "records": 1,
       "keyType": "string",
-      "valueType": "ClientEffectsequencesItem[]",
+      "valueType": "ImmutableArray<ClientEffectsequencesItem>",
       "keySchema": {
         "kind": "string",
         "allowsNull": false,
@@ -7435,7 +7435,7 @@
       "sha256": "b4ffbae5ab32793a4e06c98a115239da0853d5bc15fdbb290be15b33e2a2ec06",
       "records": 83,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -8757,7 +8757,7 @@
       "sha256": "9852f7d2f0304111bda8a05e141d92c9a6866ca6a37e085e40a73d145074c4af",
       "records": 21,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -9443,7 +9443,7 @@
       "sha256": "99bf29ecf83f15bada7e11ff7e65e256811707896aa58e22b2a122fc0bde4eb5",
       "records": 5,
       "keyType": "string",
-      "valueType": "Dictionary<string, ClientInfobubblesValue>",
+      "valueType": "ImmutableDictionary<string, ClientInfobubblesValue>",
       "keySchema": {
         "kind": "string",
         "allowsNull": false,
@@ -11040,7 +11040,7 @@
       "sha256": "0ceabdca409c440441a490ab88e0b9b842f16950277d72f7e6feec982318c5ff",
       "records": 1,
       "keyType": "string",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "string",
         "allowsNull": false,
@@ -15083,7 +15083,7 @@
       "sha256": "7056a4b5c22e7956e042184eee3d8b60af0e7d862a8008da76a6aa7b076e2d75",
       "records": 1120,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -16603,7 +16603,7 @@
       "sha256": "3fa059daa7a912ffcf793cf318373d063f1e3642fab9e2012a0dbc63db4fec33",
       "records": 9575,
       "keyType": "long",
-      "valueType": "Dictionary<string, long>",
+      "valueType": "ImmutableDictionary<string, long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -16627,7 +16627,7 @@
       "sha256": "ef497ff4cc8a2729d2bbaaad1009d4be697a6b47fdd39577fa7b184073c96db3",
       "records": 421,
       "keyType": "long",
-      "valueType": "Dictionary<string, Dictionary<string, Dictionary<string, long[]>>>",
+      "valueType": "ImmutableDictionary<string, ImmutableDictionary<string, ImmutableDictionary<string, ImmutableArray<long>>>>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -17278,7 +17278,7 @@
       "sha256": "fe8e6fe792c40fdd170f97d54d6885792b83b4aeb56bd96c2f0b74a63eeb2b95",
       "records": 3,
       "keyType": "long",
-      "valueType": "Dictionary<string, long>",
+      "valueType": "ImmutableDictionary<string, long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -17477,7 +17477,7 @@
       "sha256": "b7292e05647aad772b9684d85c0701aba3befcd6a75c77475a8705c37d6004ef",
       "records": 49,
       "keyType": "long",
-      "valueType": "Dictionary<string, long>",
+      "valueType": "ImmutableDictionary<string, long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -19289,7 +19289,7 @@
       "sha256": "c69848594e6846f98d2345f449a78d1d0ab654f2bf69cc48a5ea07c76755e5e9",
       "records": 11238,
       "keyType": "long",
-      "valueType": "Dictionary<string, Dictionary<string, ClientSpacecomponentsbytypeValueValueChoice>>",
+      "valueType": "ImmutableDictionary<string, ImmutableDictionary<string, ClientSpacecomponentsbytypeValueValueChoice>>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22056,7 +22056,7 @@
       "sha256": "1cc162c881cd82c6c2dfec48a4b0ceff546e92e0a40754a50590d96873474523",
       "records": 6421,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22080,7 +22080,7 @@
       "sha256": "84cee0a1a06f75229494f2e54e86a13d4ac8e783b171e79912f2a73e880a18c1",
       "records": 4572,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22104,7 +22104,7 @@
       "sha256": "db0a3baf368e151087078f15cebe71f82e8ee17bc89ae4d6029ced56f1b724cf",
       "records": 5982,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22128,7 +22128,7 @@
       "sha256": "6d459964eafacfedb417fae6c65cbb46c0e54195fbcac1b075817c0242ecfbb9",
       "records": 5322,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22152,7 +22152,7 @@
       "sha256": "630abbef8c9a546e17bbf408784df6d3cdebc44ec810007e8af57ac4ac11a0a1",
       "records": 5043,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22176,7 +22176,7 @@
       "sha256": "9eb8e8b79547a14d3d5222bd38094c222fd81e66911172650d508a9854935071",
       "records": 4228,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22200,7 +22200,7 @@
       "sha256": "04780e403dc0e5def59fe6409cc8a586938d3dc8e605f1646da4812a1baa7e5e",
       "records": 2492,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22224,7 +22224,7 @@
       "sha256": "f1111b53443d2388f6734d77ebb97960d0ae04453d4abc4bce7f1cd3cc0e4e9c",
       "records": 4153,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22248,7 +22248,7 @@
       "sha256": "c6bda6f7cb05989b0a8a2af2bdb35898b46b9e8092eb865e546a21eff3b0c549",
       "records": 5931,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22272,7 +22272,7 @@
       "sha256": "b48cc45e6ed90f66a95132519a60bf301a436f8648c7c1a4a2ee950ba62a5eb7",
       "records": 3208,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22296,7 +22296,7 @@
       "sha256": "7cecc6825dbfe3e311324b7ed8940765a97b9e980e428510560e430509395958",
       "records": 4978,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22320,7 +22320,7 @@
       "sha256": "1edd57f9fe97d6bd329818ceb9b4e5bf61729cad47e00145153e93925fe20a44",
       "records": 2761,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22344,7 +22344,7 @@
       "sha256": "9cf3e43543e9d646b0fc941cae40733d9ac3c08197a2583e26bdbd168195d3e4",
       "records": 5310,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22368,7 +22368,7 @@
       "sha256": "367b88a26ff08ba190a0a917953f18849cf39bc647e069a0b9fe5f9949cb8017",
       "records": 5640,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22392,7 +22392,7 @@
       "sha256": "84ee10740e4264f104e64b73dad470cfeb4b710db6c5788cb820169277beb9b7",
       "records": 5081,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22416,7 +22416,7 @@
       "sha256": "592e3d84dbf03fc60cd552749fac80dd040664526a9acd0a4dae4458159ef691",
       "records": 4982,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22440,7 +22440,7 @@
       "sha256": "90d2ff763f57d507668073f59a57662defe8d877dec21207702ec4c7c6ced1be",
       "records": 3958,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22464,7 +22464,7 @@
       "sha256": "47d5882fe65249e3e88e9deb883386b5125cbf252b885c0090a35e2f9bccae92",
       "records": 3883,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22488,7 +22488,7 @@
       "sha256": "b8d1e1a0bb1453e7d1762def859888ad1d524bd4f08a55c4c8a50e0b10207cea",
       "records": 2269,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22512,7 +22512,7 @@
       "sha256": "5008d38093ebe7ddb6d7cf62b3944d7fbe4fb2aefb782fff6f7d00f9e7dc289a",
       "records": 5427,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22536,7 +22536,7 @@
       "sha256": "ceb9fadf253725ef23ae622030ea29e96691837da861d547f0a88060f05892f2",
       "records": 4889,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22560,7 +22560,7 @@
       "sha256": "2f6a32a071aa32c5b81ac47d72586b8f4eddec8496eeedefe2f42b7e42f78f6b",
       "records": 6777,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22584,7 +22584,7 @@
       "sha256": "d53abedd0838a746a459630e6c09bc48b01ef70deaaacb0b5bb070d7fb09a072",
       "records": 4433,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22608,7 +22608,7 @@
       "sha256": "983b61216e6716fc69b37dfbbde5ea302c60ae8f4bf1c8329836c32353cd3ba1",
       "records": 4298,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22632,7 +22632,7 @@
       "sha256": "52bd20e83bc84851b685d8a7eb99b00f10d1c61fcfaa0d3fae863ea3392d6576",
       "records": 5068,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22656,7 +22656,7 @@
       "sha256": "d65933d4500c9332598026886222c1d1753d10203f815f9e5f9544456aadf364",
       "records": 1960,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22680,7 +22680,7 @@
       "sha256": "5aa97d610e5ac46c7a827bf14dbc7599bcf05099fb5517da5c8495b355feb122",
       "records": 4307,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22704,7 +22704,7 @@
       "sha256": "3592c0ab5e440530c2f1c0e7e038b1f6d40c2fde44ded6adf6636727da69c000",
       "records": 4459,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22728,7 +22728,7 @@
       "sha256": "e0a86aa3f89d8c416b494d291cf65dabf84f8f73559b64dbdbbd8f24a49f0b6e",
       "records": 2749,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22752,7 +22752,7 @@
       "sha256": "104f3b7fde74991f8346322800be6b0c03304e72450e8a09c36361fffe6c1854",
       "records": 5030,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22776,7 +22776,7 @@
       "sha256": "37fad77adda4c1b464ade1d53ed9687090d43096e6a7f35df6617970f290c314",
       "records": 4267,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22800,7 +22800,7 @@
       "sha256": "275433ea6d24b3b0fe39a35fda4a3e3f8bbd448a307dfa7babfea93ef3152f6f",
       "records": 3630,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22824,7 +22824,7 @@
       "sha256": "f911fb8d2a500d9fe4639ef50fb11f8089ab85278cb97739a032eae727f6d8f3",
       "records": 3610,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22848,7 +22848,7 @@
       "sha256": "2633a53a61aff396644a651a30d44683e1c308788d280494cd8ac5052822e18c",
       "records": 2716,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22872,7 +22872,7 @@
       "sha256": "4b290a603c6954120e64f221e09b4cb11879fecba05b5094cf8aeb74742c564d",
       "records": 3012,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22896,7 +22896,7 @@
       "sha256": "f3d85d9e41a0359909eb58c04a8d2da1adacb906306740036f2635f80e4b619c",
       "records": 1761,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22920,7 +22920,7 @@
       "sha256": "73ec9855bdb09d14d1bfce2f36f9219b59bafd2d6fcbb9ee156d59318dbc28ac",
       "records": 4191,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22944,7 +22944,7 @@
       "sha256": "a7272f19a9829162b4eb714cf91f68e9a253da98cf35be731be72b8cf581c12c",
       "records": 4518,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22968,7 +22968,7 @@
       "sha256": "4b8851d5974970840e81fdf1866357114093f237cc6d5561fc76bc44ad0ad72e",
       "records": 5472,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -22992,7 +22992,7 @@
       "sha256": "a02bded5bf02f6c4f4539b5de63e944314c3791a0c923986f187b272340cdaef",
       "records": 8177,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23016,7 +23016,7 @@
       "sha256": "7b0e051ab3bd69c8242e02058146706e38cdf6086ce1295200c392b4d29d1233",
       "records": 10172,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23040,7 +23040,7 @@
       "sha256": "ed512782191e5003939f1aed682cb67c4ee265574747bb3cc010f17b37b0f11a",
       "records": 2209,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23064,7 +23064,7 @@
       "sha256": "6838215bba620b1ac49723eceec646029d66cc8aa1cc862c1d2d231f73d5ac43",
       "records": 3050,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23088,7 +23088,7 @@
       "sha256": "1afecdeca0afe3a39b2f5b014588e13d6a68233475ba67387da5cc76fc7415b6",
       "records": 1337,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23112,7 +23112,7 @@
       "sha256": "e218607852e342b26b86e180fec56072f54e1fa77c01ea13e4fa4e2be17da666",
       "records": 4430,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23136,7 +23136,7 @@
       "sha256": "d6037ab4e3fe24e58233aa15966bac27ffc9b7e1d99a05f0d6170628932d35ef",
       "records": 3404,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23160,7 +23160,7 @@
       "sha256": "0cef465ecb05dbfe024c2e3e32bd825adc878c006f8e0590c48489aaa5024d9b",
       "records": 4466,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23184,7 +23184,7 @@
       "sha256": "1b377f5b52791343c83b0350ff7ce52226363d4b416b576e7d756c3b2a997470",
       "records": 5038,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23208,7 +23208,7 @@
       "sha256": "b67d3a43813a0d4ea1777ba9ec16134275e4ae1deec98a1fdb3be0289feaaa17",
       "records": 2118,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23232,7 +23232,7 @@
       "sha256": "81734b4cf75a403bf182533bd6396d6b6b4026c6b758591817374c254f1dafc5",
       "records": 4512,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23256,7 +23256,7 @@
       "sha256": "65029176993a45ccd024eb33d7a5e7807728fc5f7cb109b9e54a294ee9167a10",
       "records": 3350,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23280,7 +23280,7 @@
       "sha256": "316f61dfb5bffb2b178e75f3b92cc42c8de642d9a5d451d43adcb199d4694cb2",
       "records": 4122,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23304,7 +23304,7 @@
       "sha256": "a3c0da38c6d50f573ee0db96d6579b23c3bdd761a1976c5b31d40bfce95fd6d1",
       "records": 4527,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23328,7 +23328,7 @@
       "sha256": "5bd921e7009421ace531634e04844eca564a94851171876c4942ad4abcfd9831",
       "records": 4732,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23352,7 +23352,7 @@
       "sha256": "4a9c6331ee8784e454cd688737f28e8be00368ee9c7f660761f5fad53a757f5d",
       "records": 2895,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23376,7 +23376,7 @@
       "sha256": "273732aecdb5969f7eab6fed11fbaa4a0d8069865646ddbe60cf933f1fba4429",
       "records": 5834,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23400,7 +23400,7 @@
       "sha256": "bc198464bfd5a644c6af43d23409b78670b2ff705bb06d16477dc06fde0d46cd",
       "records": 2244,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23424,7 +23424,7 @@
       "sha256": "aa926748f47a190de783bc95a65b7aa021e53d77650312ee9762c5e337cfa5e6",
       "records": 5149,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23448,7 +23448,7 @@
       "sha256": "8469b39defbbd702e058990e47e1a00d428c9b31ca423453525bcc156eb3020b",
       "records": 4473,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23472,7 +23472,7 @@
       "sha256": "b13f3b57462f8c942487241d584034fac774db1bf969d561e894a231ca68283d",
       "records": 2283,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23496,7 +23496,7 @@
       "sha256": "9e5fc8034ce6cc4d30f065f580a3bd25f9eeba46028dbde3e0b665c322a35255",
       "records": 1969,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23520,7 +23520,7 @@
       "sha256": "9d69a087b1e7867d96ea13a2af977e053f51df9039209203fa87a218b57b1482",
       "records": 3505,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23544,7 +23544,7 @@
       "sha256": "7f6f1e881f91745099d6c3609b10786e562ddbf188c4e6df14cbd1c1c123c507",
       "records": 2902,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23568,7 +23568,7 @@
       "sha256": "0e8d32c5b0274cbe43dd054883b341dac1759482a76d5f90dc176cbb9217c6a5",
       "records": 5249,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23592,7 +23592,7 @@
       "sha256": "5039af4e3055206681812c419e147726ffbe7fe16faf17acdaf7bef69d757166",
       "records": 5187,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23616,7 +23616,7 @@
       "sha256": "60a14d09cd7eb95e1ce66bae26a808690422ba6ee651ca12198bcaf076d44496",
       "records": 2410,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23640,7 +23640,7 @@
       "sha256": "9097a118b73c1cdb671f9fc444dfe9f301d663c6e7b61c16b62a992840c65a02",
       "records": 2291,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23664,7 +23664,7 @@
       "sha256": "987179f60ea90da41e291978f3ae633d59edc3c43cb175932f207ab600b68afd",
       "records": 7208,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23688,7 +23688,7 @@
       "sha256": "9a3727a501592a87d3b7c29963fd450fef355080e0953b19744086b8fc96fad4",
       "records": 7900,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23712,7 +23712,7 @@
       "sha256": "cde85b614bc1f8ea1a0d070bc2864bec397b0c0f2e55291968053da6ee3ad5f8",
       "records": 3005,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23736,7 +23736,7 @@
       "sha256": "99a9267911041ae900771597cc5653bf15944391d3b20a89c5ad4ccac66fd88c",
       "records": 5308,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23760,7 +23760,7 @@
       "sha256": "de15025e7ab47495359541d6c7003e7f8a63db82da2e0de5d2e66eed1b08c476",
       "records": 5466,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23784,7 +23784,7 @@
       "sha256": "0b3d09eba8edeb8a5eab9208e511da19a7f3dfd68d82ec744f079c0274e072fe",
       "records": 7195,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23808,7 +23808,7 @@
       "sha256": "b4e8fb49e735a96f97d6508998c7cd574c98e61ac04370e48d2291a1b1490664",
       "records": 2851,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23832,7 +23832,7 @@
       "sha256": "c8e6d91f37542b37242413e6426c89b425f8f4ba2fab088d95cc36e9ad2c703d",
       "records": 6780,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23856,7 +23856,7 @@
       "sha256": "c0d70e2e3cab4e7da205a6da4c37ad5beb7a5df9963d6384b255285586d80d71",
       "records": 2940,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23880,7 +23880,7 @@
       "sha256": "9bcbf244272cf4e7bc7ea400838768dca805732e37ca07341947f7cf1d8ddb34",
       "records": 2468,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23904,7 +23904,7 @@
       "sha256": "193c85782962647e7f6baf1ee98e7f2e650a7c736b622e3a8d8009904357632b",
       "records": 4274,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23928,7 +23928,7 @@
       "sha256": "e8bf03d6dac480bbcc417b8d313835bd9da7e4440c7d5c5d69c34e4d3bba5d66",
       "records": 5398,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23952,7 +23952,7 @@
       "sha256": "f4cf5b01b72f3f73588f1ec9528f47bf8ff6714eeed407ff42740e3c06e3be0a",
       "records": 2225,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -23976,7 +23976,7 @@
       "sha256": "7aaa16ddbeb4431ecbc51192811f0e741163ad28a4c2657c506802339078b791",
       "records": 4862,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24000,7 +24000,7 @@
       "sha256": "3c2e6ac240a83f49a81b2303b937c30295091e22096a4b668d6a525bbbd7bc0f",
       "records": 3062,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24024,7 +24024,7 @@
       "sha256": "9d35f3687af493f1c46c8f659830c9fe0dac1e4218db54d6b7ccfb612166d03e",
       "records": 2969,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24048,7 +24048,7 @@
       "sha256": "f4add932b058dddd0dd12645326c7dbbd1156014507ee521935296eaab0e748f",
       "records": 1465,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24072,7 +24072,7 @@
       "sha256": "624e3a6cd4f9081bf28fb1b1c1f8bc9727e7a70988d2078ab85aaf2913e35a42",
       "records": 2221,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24096,7 +24096,7 @@
       "sha256": "7796f1b792dcf0a9720fa3844d1380152ce8099cc498fb6785e8027cb7a8400e",
       "records": 4690,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24120,7 +24120,7 @@
       "sha256": "0148e3b7228041570ed97e48123dd1f132730931985b658f15035043cfe1a058",
       "records": 2526,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24144,7 +24144,7 @@
       "sha256": "814b0357767a4101b71d05f27c25c43b65e19b6e0ebc4a9b34127d334ce97b4b",
       "records": 5785,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24168,7 +24168,7 @@
       "sha256": "20091522a30dc400a679a942ee0620afa1316386ecf8bc7ed11360c635f2a009",
       "records": 4313,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24192,7 +24192,7 @@
       "sha256": "2c6a6fffd8fa12175932bdff8b0d88310096e9c0f26d110d387eac58b961891a",
       "records": 1436,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24216,7 +24216,7 @@
       "sha256": "8ba959e42fda24ad284aa0bb1500bc88954960de2e808f99bc0d0c28173e9763",
       "records": 4584,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24240,7 +24240,7 @@
       "sha256": "06a937f0070a616347ab48e666e9a9c5ec96fb883899c1b251232275c2411ea3",
       "records": 5282,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24264,7 +24264,7 @@
       "sha256": "f89087061b308021b9f7692389a6dccf983cd67c6ac6a867cf7e052d0a29036a",
       "records": 3701,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24288,7 +24288,7 @@
       "sha256": "c8e3d1c2f87c99f32c71bc3d7ed7df1ecae1169b1f503c216dec97c9c4d3136e",
       "records": 3787,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24312,7 +24312,7 @@
       "sha256": "ee7eb213e0c1332160be27b04cc5f8ab52a509ed4c1c0f09ae4388e4032cac96",
       "records": 4963,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24336,7 +24336,7 @@
       "sha256": "0f5befd24fdbd34f0a086540620a71c43bf63ef2d57c0ee2e0bf6f1b4a8f17a8",
       "records": 4347,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,
@@ -24360,7 +24360,7 @@
       "sha256": "c12d0cf065c1cf18682ae6b4247c896dc40ae072c8189b4197f883dc03406dcf",
       "records": 5589,
       "keyType": "long",
-      "valueType": "long[]",
+      "valueType": "ImmutableArray<long>",
       "keySchema": {
         "kind": "long",
         "allowsNull": false,

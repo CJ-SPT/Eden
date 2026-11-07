@@ -1,7 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Inventory;
-using Eden.Data.Skills;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;

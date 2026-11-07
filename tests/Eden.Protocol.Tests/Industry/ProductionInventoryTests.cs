@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Inventory;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;

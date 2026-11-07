@@ -1,5 +1,5 @@
 using System.Globalization;
-using Eden.Data.Inventory;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;

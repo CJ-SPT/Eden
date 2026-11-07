@@ -1,7 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Inventory;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
@@ -130,7 +130,9 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 checked((int)definition.PortionSize.Value),
                 stationEfficiency,
                 skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
-                materials.Materials.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0)).ToArray()
+                materials
+                    .Materials.Value.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0))
+                    .ToArray()
             )
         );
         if (!EconomicStore.Enabled(world))

@@ -1,7 +1,7 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Inventory;
-using Eden.Data.Skills;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;

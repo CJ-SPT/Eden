@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Skills;
+using Eden.Data.World.Skills;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Skills;

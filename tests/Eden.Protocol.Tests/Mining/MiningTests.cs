@@ -1,7 +1,7 @@
 using Eden.Data.Catalog;
-using Eden.Data.Inventory;
-using Eden.Data.Mining;
-using Eden.Data.Skills;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Mining;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Contracts;

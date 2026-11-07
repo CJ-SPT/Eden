@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat.Npcs;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;

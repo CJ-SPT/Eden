@@ -1,6 +1,6 @@
-using Eden.Data.Characters;
-using Eden.Data.Market;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;

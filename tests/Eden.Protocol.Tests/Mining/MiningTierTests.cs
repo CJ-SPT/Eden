@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Mining;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;

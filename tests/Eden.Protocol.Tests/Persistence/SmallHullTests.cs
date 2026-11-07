@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Market;
-using Eden.Data.Skills;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;

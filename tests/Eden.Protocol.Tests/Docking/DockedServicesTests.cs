@@ -1,4 +1,4 @@
-using Eden.Data.Inventory;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;

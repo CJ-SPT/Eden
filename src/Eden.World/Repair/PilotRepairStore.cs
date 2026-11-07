@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Market;
-using Eden.Data.Repair;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Market;
+using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;

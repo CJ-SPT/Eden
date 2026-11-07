@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Flight;
 using Eden.Server;
 using Eden.Server.Launcher;

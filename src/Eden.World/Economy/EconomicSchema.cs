@@ -1,5 +1,5 @@
-using Eden.Data.Economy;
-using Eden.Data.Industry;
+using Eden.Data.World.Economy;
+using Eden.Data.World.Industry;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Market;
 using Eden.World.Industry;

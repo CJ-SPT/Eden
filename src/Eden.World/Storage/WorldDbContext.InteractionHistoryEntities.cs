@@ -1,4 +1,4 @@
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.World.Characters;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,5 +1,5 @@
-using Eden.Data.Inventory;
-using Eden.Data.Redemption;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Redemption;
 using Eden.World.Inventory;
 using Eden.World.Redemption;
 using Eden.World.Storage;

@@ -1,5 +1,5 @@
-using Eden.Data.Characters;
-using Eden.Data.Market;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Market;
 using Eden.World.Characters;
 using Eden.World.Storage;

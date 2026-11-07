@@ -48,7 +48,7 @@ internal static class HardenerCatalog
                 || (
                     e.EffectID == (int)active
                     && e.ModifierInfo is { Length: 4 }
-                    && e.ModifierInfo.All(m => PassiveCatalog.Parse(m, (int)PassiveEffectPhase.Active) is not null)
+                    && e.ModifierInfo.Value.All(m => PassiveCatalog.Parse(m, (int)PassiveEffectPhase.Active) is not null)
                 )
             );
     }

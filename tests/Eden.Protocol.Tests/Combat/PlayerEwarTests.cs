@@ -1,9 +1,9 @@
 using System.Text.Json.Nodes;
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Fittings;
-using Eden.Data.Inventory;
-using Eden.Data.Skills;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -311,12 +311,18 @@ public sealed partial class PlayerEwarTests
                 item.OwnerId = f.Db.Store.FindPilot(1000002)!.PilotId;
                 item.LocationId = Wing(f);
             }
-            foreach (var skill in world.Set<Eden.Data.Skills.PilotSkill>().Where(s => s.PilotId == f.PilotId).ToArray())
+            foreach (var skill in world.Set<Eden.Data.World.Skills.PilotSkill>().Where(s => s.PilotId == f.PilotId).ToArray())
             {
                 var copy =
-                    world.Set<Eden.Data.Skills.PilotSkill>().Find(f.Db.Store.FindPilot(1000002)!.PilotId, skill.TypeId)
+                    world.Set<Eden.Data.World.Skills.PilotSkill>().Find(f.Db.Store.FindPilot(1000002)!.PilotId, skill.TypeId)
                     ?? world
-                        .Add(new Eden.Data.Skills.PilotSkill { PilotId = f.Db.Store.FindPilot(1000002)!.PilotId, TypeId = skill.TypeId })
+                        .Add(
+                            new Eden.Data.World.Skills.PilotSkill
+                            {
+                                PilotId = f.Db.Store.FindPilot(1000002)!.PilotId,
+                                TypeId = skill.TypeId,
+                            }
+                        )
                         .Entity;
                 copy.Points = skill.Points;
             }
@@ -482,7 +488,7 @@ public sealed partial class PlayerEwarTests
                     world.Set<OwnedItem>().Find(module)!.OwnerId = f.Db.Store.FindPilot(1000002)!.PilotId;
                     break;
                 case "skill":
-                    world.Set<Eden.Data.Skills.PilotSkill>().Find(f.PilotId, 3433)!.Points = 0;
+                    world.Set<Eden.Data.World.Skills.PilotSkill>().Find(f.PilotId, 3433)!.Points = 0;
                     break;
                 case "capacitor":
                     world.Add(

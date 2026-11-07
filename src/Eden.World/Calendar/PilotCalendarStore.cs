@@ -1,5 +1,5 @@
-using Eden.Data.Calendar;
-using Eden.Data.Characters;
+using Eden.Data.World.Calendar;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Calendar;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;

@@ -1,4 +1,4 @@
-using Eden.Data.Skills;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Skills;
 using Eden.World.Runtime;
 using Eden.World.Storage;

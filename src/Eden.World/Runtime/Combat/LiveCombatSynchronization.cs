@@ -1,5 +1,5 @@
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Docking;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Docking;
 using Eden.Gameplay.Flight;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;

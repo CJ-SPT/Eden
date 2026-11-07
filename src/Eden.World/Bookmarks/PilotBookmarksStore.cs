@@ -1,5 +1,5 @@
-using Eden.Data.Bookmarks;
 using Eden.Data.Catalog;
+using Eden.Data.World.Bookmarks;
 using Eden.Gameplay.Bookmarks;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

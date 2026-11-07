@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Corporations;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

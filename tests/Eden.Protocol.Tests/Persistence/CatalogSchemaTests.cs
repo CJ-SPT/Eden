@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.World.Catalog;
@@ -72,6 +73,17 @@ public sealed class CatalogSchemaTests
         {
             AssertTyped(property.PropertyType);
         }
+    }
+
+    [Fact]
+    public void ParsedCatalogCollectionsCannotBeMutatedThroughAnotherReference()
+    {
+        var dogma = JsonSerializer.Deserialize<ClientTypedogma>("{\"dogmaEffects\":[{\"effectID\":12}]}")!;
+        var effects = dogma.DogmaEffects!.Value;
+        var modified = effects.SetItem(0, new ClientTypedogmaDogmaEffectsItem { EffectID = 16 });
+        Assert.Equal(12, dogma.DogmaEffects.Value[0].EffectID);
+        Assert.Equal(16, modified[0].EffectID);
+        Assert.Equal(typeof(ImmutableArray<ClientTypedogmaDogmaEffectsItem>), effects.GetType());
     }
 
     private static void AssertTyped(Type type)

@@ -2,7 +2,7 @@
 
 ## Project organization
 
-- Put catalog payloads and saved database entity models in [Eden.Data](src/Eden.Data/), organized by feature. Data may reference Gameplay and EF Core metadata abstractions, but never World, Protocol, Server or Infrastructure. Keep contexts, mappings, migrations, queries and transactions in World; keep host authentication operations in Server.
+- Put catalog payloads and saved database entity models in [Eden.Data](src/Eden.Data/). Keep catalog models under `Eden.Data.Catalog` and saved-world models under `Eden.Data.World`, organized by feature. Data may reference Gameplay and EF Core metadata abstractions, but never World, Protocol, Server or Infrastructure. Keep contexts, mappings, migrations, queries and transactions in World; keep host authentication operations in Server.
 - Put typed gameplay rules, state, commands, and persistence interfaces in [Eden.Gameplay](src/Eden.Gameplay/). Gameplay must build without Protocol, Server, EF Core, protobuf, or a DI container.
 - Put wire formats and client protocol behavior in [Eden.Protocol](src/Eden.Protocol/). Put authoritative state, catalog access and SQLite persistence in [Eden.World](src/Eden.World/). Keep startup, listeners and background scheduling in [Eden.Server](src/Eden.Server/).
 - Put shared registration metadata, operation scopes, logging and diagnostics in [Eden.Infrastructure](src/Eden.Infrastructure/). It depends only on .NET. World and Protocol each reference Gameplay and Infrastructure, never each other; Server composes them. Build checks enforce this dependency graph.

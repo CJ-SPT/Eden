@@ -1,4 +1,4 @@
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;

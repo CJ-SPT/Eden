@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;

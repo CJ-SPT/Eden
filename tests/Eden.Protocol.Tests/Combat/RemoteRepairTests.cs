@@ -1,9 +1,9 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Fittings;
-using Eden.Data.Inventory;
-using Eden.Data.Repair;
-using Eden.Data.Skills;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Repair;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -241,13 +241,14 @@ public sealed partial class RemoteRepairTests
             switch (rejection)
             {
                 case "owner":
-                    world.Set<Eden.Data.Inventory.OwnedItem>().Find(module)!.OwnerId = f.Db.Store.FindPilot(1000002)!.PilotId;
+                    world.Set<Eden.Data.World.Inventory.OwnedItem>().Find(module)!.OwnerId = f.Db.Store.FindPilot(1000002)!.PilotId;
                     break;
                 case "offline":
-                    world.Set<Eden.Data.Inventory.OwnedItem>().Find(module)!.Online = false;
+                    world.Set<Eden.Data.World.Inventory.OwnedItem>().Find(module)!.Online = false;
                     break;
                 case "skill":
-                    world.Set<Eden.Data.Skills.PilotSkill>().Find(f.PilotId, (int)RemoteRepairSkill.ShieldEmissionSystems)!.Points = 0;
+                    world.Set<Eden.Data.World.Skills.PilotSkill>().Find(f.PilotId, (int)RemoteRepairSkill.ShieldEmissionSystems)!.Points =
+                        0;
                     break;
                 case "capacitor":
                     world.Add(

@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Eden.Data.Corporations;
-using Eden.Data.Inventory;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;

@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;

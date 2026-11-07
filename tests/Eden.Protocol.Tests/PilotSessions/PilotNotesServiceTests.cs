@@ -1,5 +1,5 @@
 using System.Text;
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;

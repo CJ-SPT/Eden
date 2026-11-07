@@ -1,6 +1,6 @@
-using Eden.Data.Characters;
-using Eden.Data.Inventory;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;

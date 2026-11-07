@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using Eden.Data.Catalog;
-using Eden.Data.Insurance;
-using Eden.Data.Market;
+using Eden.Data.World.Insurance;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Market;
 using Eden.Server;

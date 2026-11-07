@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Inventory;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;

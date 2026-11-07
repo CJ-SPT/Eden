@@ -1,7 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Mail;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Mail;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

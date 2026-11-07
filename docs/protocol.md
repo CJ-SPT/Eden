@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Immutable catalog collections and world namespaces, November 7, 2026](protocol/catalog.md#immutable-catalog-collections-and-world-namespaces-november-7-2026)
+
 - [Complete typed catalog schemas, November 7, 2026](protocol/catalog.md#complete-typed-catalog-schemas-november-7-2026)
 
 - [Player remote shield and armor repairs, November 7, 2026](protocol/fitting.md#player-remote-shield-and-armor-repairs-november-7-2026)

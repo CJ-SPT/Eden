@@ -69,7 +69,7 @@ internal static class PlayerEwarCatalog
                 e.EffectID == (int)overload
                 && e.EffectCategory == OverloadCategory
                 && e.ModifierInfo is { Length: > 0 }
-                && e.ModifierInfo.All(m =>
+                && e.ModifierInfo.Value.All(m =>
                     m.Domain == "itemID"
                     && m.Func == "ItemModifier"
                     && m.Operation == (int)DogmaOperation.PostPercent

@@ -1,4 +1,4 @@
-using Eden.Data.Bookmarks;
+using Eden.Data.World.Bookmarks;
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;

@@ -79,7 +79,7 @@ internal static class ScriptCatalog
             && effects.All(e =>
                 e.EffectCategory == (int)PassiveEffectPhase.Fitted
                 && e.ModifierInfo is { Length: > 0 }
-                && e.ModifierInfo.All(m =>
+                && e.ModifierInfo.Value.All(m =>
                     m.Domain == "otherID"
                     && m.Func == "ItemModifier"
                     && m.Operation == (int)DogmaOperation.PostPercent

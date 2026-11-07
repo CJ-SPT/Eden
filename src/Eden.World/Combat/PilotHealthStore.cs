@@ -1,5 +1,5 @@
-using Eden.Data.Combat;
-using Eden.Data.Repair;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;

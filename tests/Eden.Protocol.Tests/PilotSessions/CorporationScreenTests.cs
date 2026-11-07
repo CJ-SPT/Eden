@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Corporations;
+using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;

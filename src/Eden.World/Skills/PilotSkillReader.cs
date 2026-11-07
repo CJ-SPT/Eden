@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Skills;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;

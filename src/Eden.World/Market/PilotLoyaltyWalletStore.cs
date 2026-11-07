@@ -1,5 +1,5 @@
-using Eden.Data.Market;
-using Eden.Data.Redemption;
+using Eden.Data.World.Market;
+using Eden.Data.World.Redemption;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;

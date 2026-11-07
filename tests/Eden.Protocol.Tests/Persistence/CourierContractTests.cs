@@ -1,8 +1,8 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Contracts;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Contracts;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;

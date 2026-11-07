@@ -1,4 +1,4 @@
-using Eden.Data.Combat.Npcs;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;

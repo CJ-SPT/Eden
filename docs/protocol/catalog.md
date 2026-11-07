@@ -8,8 +8,19 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Immutable catalog collections and world namespaces, November 7, 2026](#immutable-catalog-collections-and-world-namespaces-november-7-2026)
 - [Complete typed catalog schemas, November 7, 2026](#complete-typed-catalog-schemas-november-7-2026)
 - [Build 3662168 game catalog](#build-3662168-game-catalog)
+
+## Immutable catalog collections and world namespaces, November 7, 2026
+
+Catalog payload arrays and maps now use immutable collections, including nested values and union alternatives. Nullable collection consumers explicitly unwrap validated present values; the existing rejection and missing-value behavior is retained. This prepares definitions for shared caching without allowing one caller to mutate another caller's inputs. Catalog payloads remain under `Eden.Data.Catalog`; all saved-world models and the launcher credential projection are grouped under `Eden.Data.World.<Feature>` and `src/Eden.Data/World`.
+
+**Automated validation:** the exact `CatalogSchemaTests.ParsedCatalogCollectionsCannotBeMutatedThroughAnotherReference` method passed. Tool/solution restore, warning-free build (2.94 seconds), 435 affected tests (94.79 seconds plus 1.11 seconds build), six catalog Python tests, nine formatting policy tests and formatting verification passed. The focused filter was `FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogSchemaTests|FullyQualifiedName~Eden.Protocol.Tests.Fixtures.TestCatalogTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.StationUndockTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ImplantTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.JumpCloneTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotTrainingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.BoosterTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ContractTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~Eden.Protocol.Tests.Reprocessing.ReprocessingTests|FullyQualifiedName~Eden.Protocol.Tests.Repair.HardenerTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.PropulsionTests`. Full-catalog key/payload verification passed in 17.03 seconds, and the 146 persisted entity mappings still match the original baseline after accounting for CLR namespace changes. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for model organization and collection immutability. Shared runtime caching remains the next catalog milestone.
 
 ## Complete typed catalog schemas, November 7, 2026
 

@@ -1,12 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Combat;
-using Eden.Data.Contracts;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
-using Eden.Data.Skills;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Contracts;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
@@ -63,7 +63,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             trained && pilot.Account.CloneGrade == AccountCloneGrade.Alpha
                 ? CatalogData
                     .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
-                    .Skills!.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
+                    .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         int Level(ContractSkill skill)
         {

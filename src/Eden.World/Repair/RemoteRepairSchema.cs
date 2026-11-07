@@ -1,4 +1,4 @@
-using Eden.Data.Repair;
+using Eden.Data.World.Repair;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 

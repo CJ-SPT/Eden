@@ -41,7 +41,7 @@ internal static class MicrowarpdriveCatalog
                     e.EffectID == (int)DogmaEffect.CapacitorCapacityMultiply
                     && e.EffectCategory == (int)PassiveEffectPhase.Online
                     && e.ModifierInfo is { Length: 1 }
-                    && PassiveCatalog.Parse(e.ModifierInfo[0], e.EffectCategory.Value)
+                    && PassiveCatalog.Parse(e.ModifierInfo.Value[0], e.EffectCategory.Value)
                         is {
                             Domain: ModifierDomain.Ship,
                             Selector: ModifierSelector.Item,

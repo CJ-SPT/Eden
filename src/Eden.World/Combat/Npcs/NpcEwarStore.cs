@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Combat.Npcs;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;

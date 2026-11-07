@@ -41,6 +41,8 @@ Use the root EditorConfig and shared build properties for new projects. Follow [
 
 Eden.Data owns database models: generated catalog payloads, relational catalog projections, saved world entities and authentication row projections. It references Gameplay for typed domain values and EF Core abstractions for mapping attributes. World owns the contexts, schema configuration, migrations, queries and transactions; Server owns authentication operations. Protocol continues to depend only on Gameplay and Infrastructure. Database model extraction preserves existing table names, columns, keys and relationships and does not advance the world schema version.
 
+Catalog models use `Eden.Data.Catalog`. Saved-world models use `Eden.Data.World` and feature namespaces such as `Eden.Data.World.Inventory`; their files live under `src/Eden.Data/World`. The launcher credential row projection also belongs under the World group because authentication records are saved alongside world accounts.
+
 ### Database model extraction — November 7, 2026
 
 The first catalog/configuration milestone moves all 146 mapped catalog/world entity types, the catalog-entry projection, the 506 generated catalog payload classes and the launcher credential projection into `Eden.Data`. Feature namespaces now use `Eden.Data.*`. Existing domain values still belong to Gameplay. `CatalogData` registrations, database contexts and EF configuration remain in World. Regeneration writes payload declarations to `src/Eden.Data/Catalog/CatalogModels.g.cs`; use `--models-output` to select a different output when testing the generator. The installed catalog and world files are not modified by this extraction.
@@ -54,6 +56,8 @@ The first catalog/configuration milestone moves all 146 mapped catalog/world ent
 Eden.Gameplay owns rules and feature models. Eden.Protocol references Gameplay to translate client requests and results. Eden.World implements catalog and SQLite operations. Eden.Server composes the host and both adapters. Gameplay references neither adapter assembly. Combat health, fitting and module modifiers, targeting, mining yield, propulsion, skill planning, character rules and feature persistence contracts use this boundary. Client effect names and notification construction stay in Protocol. Ship health becomes a native damage-state value only in the Protocol adapter. Database transactions remain owned by World.
 
 Manufacturing illustrates the persistence boundary. The World store loads the recipe, skills, active jobs and materials inside its existing transaction. Gameplay calculates a typed manufacturing plan and validates the client quote. World then consumes materials, reserves the blueprint and saves the job in that transaction. Protocol builds the native reply and queues inventory notifications from the resulting changes. Pure calculations can be tested without a database, and storage tests verify transactional behavior.
+
+Generated catalog arrays and maps use `ImmutableArray` and `ImmutableDictionary`. Sharing a definition therefore does not allow a caller to alter its collections for another reader. This applies to nested values and heterogeneous-value variants as well as dataset roots. `CatalogAbsent` retains its pinned-empty validation. Saved-world EF entities remain mutable transaction-owned models under `Eden.Data.World`; they are not catalog definitions or a replacement for the existing resident world owner.
 
 ### Flight coordination
 

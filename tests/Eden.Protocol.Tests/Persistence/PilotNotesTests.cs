@@ -1,4 +1,4 @@
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Skills;
 using Eden.Server;

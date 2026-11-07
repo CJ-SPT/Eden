@@ -1,6 +1,6 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

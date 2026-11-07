@@ -1,5 +1,5 @@
-using Eden.Data.Characters;
-using Eden.Data.Mail;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Mail;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;

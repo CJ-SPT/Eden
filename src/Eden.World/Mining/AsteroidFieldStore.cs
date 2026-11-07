@@ -1,7 +1,7 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Economy;
-using Eden.Data.Mining;
+using Eden.Data.World.Economy;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;

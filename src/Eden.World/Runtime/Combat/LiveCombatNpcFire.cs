@@ -1,4 +1,4 @@
-using Eden.Data.Drones;
+using Eden.Data.World.Drones;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;

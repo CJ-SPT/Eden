@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Fittings;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;

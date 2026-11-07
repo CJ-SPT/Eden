@@ -1,6 +1,6 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -31,7 +31,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         Perception = 310,
     }
 
-    internal static bool IsLearningEffects(ClientTypedogmaDogmaEffectsItem[] effects) =>
+    internal static bool IsLearningEffects(IEnumerable<ClientTypedogmaDogmaEffectsItem> effects) =>
         effects.Select(e => e.EffectID).ToHashSet().SetEquals(Enum.GetValues<LearningEffect>().Select(e => (long?)e));
 
     internal static ImplantSnapshot Read(WorldDbContext world, long pilotId)
@@ -75,7 +75,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             || item.GroupId != ImplantRules.LearningGroup
             || type?.Published != 1
             || effects is null
-            || !IsLearningEffects(effects)
+            || !IsLearningEffects(effects.Value)
         )
         {
             throw new InvalidDataException("Only published learning implants are supported. Hardwiring and set effects are unavailable.");
@@ -117,7 +117,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             pilot.Account.CloneGrade == AccountCloneGrade.Alpha
                 ? CatalogData
                     .Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture))
-                    .Skills!.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
+                    .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value)
                 : null;
         List<TrainingTarget> requirements = [];
         Dictionary<int, int> levels = [];

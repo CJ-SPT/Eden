@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Inventory;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;

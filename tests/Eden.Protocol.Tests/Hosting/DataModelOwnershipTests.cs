@@ -1,4 +1,4 @@
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,10 @@ public sealed class DataModelOwnershipTests
             var entities = context.Model.GetEntityTypes().ToArray();
             Assert.NotEmpty(entities);
             Assert.All(entities, entity => Assert.Same(data, entity.ClrType.Assembly));
+            Assert.All(
+                entities,
+                entity => Assert.StartsWith(context is WorldDbContext ? "Eden.Data.World." : "Eden.Data.Catalog", entity.ClrType.Namespace)
+            );
         }
     }
 

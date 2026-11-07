@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
-using Eden.Data.Market;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;

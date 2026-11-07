@@ -1,5 +1,5 @@
 using Eden.Data.Catalog;
-using Eden.Data.Docking;
+using Eden.Data.World.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;

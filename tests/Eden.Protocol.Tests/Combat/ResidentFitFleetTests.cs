@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Eden.Data.Catalog;
-using Eden.Data.Combat.Npcs;
-using Eden.Data.Skills;
+using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;

@@ -1,7 +1,7 @@
-using Eden.Data.Characters;
-using Eden.Data.Contracts;
-using Eden.Data.Corporations;
-using Eden.Data.Insurance;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Contracts;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Insurance;
 using Eden.World.Characters;
 using Eden.World.Contracts;
 using Eden.World.Corporations;

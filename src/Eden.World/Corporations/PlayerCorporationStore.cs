@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Corporations;
-using Eden.Data.Market;
-using Eden.Data.Skills;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;

@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
-using Eden.Data.Insurance;
-using Eden.Data.Inventory;
-using Eden.Data.Market;
+using Eden.Data.World.Insurance;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -83,7 +83,10 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
                 {
                     return 0;
                 }
-                var materials = recipe.Materials.ToDictionary(m => checked((int)m.TypeID!.Value), m => checked((int)m.Quantity!.Value));
+                var materials = recipe.Materials.Value.ToDictionary(
+                    m => checked((int)m.TypeID!.Value),
+                    m => checked((int)m.Quantity!.Value)
+                );
                 return checked(
                     (long)Math.Round(EconomicRules.Value(materials, EconomicStore.Prices(world)) * 100, 0, MidpointRounding.ToEven)
                 );

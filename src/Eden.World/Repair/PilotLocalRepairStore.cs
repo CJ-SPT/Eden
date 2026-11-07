@@ -1,7 +1,7 @@
 using Eden.Data.Catalog;
-using Eden.Data.Combat;
-using Eden.Data.Inventory;
-using Eden.Data.Repair;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;

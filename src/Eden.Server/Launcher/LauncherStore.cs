@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using Eden.Data.Launcher;
+using Eden.Data.World.Launcher;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;

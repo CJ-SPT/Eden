@@ -1,6 +1,6 @@
 using System.Globalization;
 using Eden.Data.Catalog;
-using Eden.Data.Characters;
+using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -63,7 +63,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
             || item.CategoryId != (int)InventoryCategory.Implant
             || published != 1
             || effects is null
-            || (!augmentor && (useAttribute != 0 || !PilotImplantStore.IsLearningEffects(effects)))
+            || (!augmentor && (useAttribute != 0 || !PilotImplantStore.IsLearningEffects(effects.Value)))
         )
         {
             throw new InvalidDataException(
@@ -137,7 +137,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
         if (pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
         {
             var alpha = CatalogData.Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture)).Skills!;
-            level = Math.Min(level, checked((int)(alpha.SingleOrDefault(s => s.TypeID == BoosterRules.BiologySkill)?.Level ?? 0)));
+            level = Math.Min(level, checked((int)(alpha.Value.SingleOrDefault(s => s.TypeID == BoosterRules.BiologySkill)?.Level ?? 0)));
         }
         return level;
     }

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Eden.Data.Combat;
+using Eden.Data.World.Combat;
 using Eden.Gameplay.Combat;
 using Eden.World.Combat;
 using Eden.World.Storage;

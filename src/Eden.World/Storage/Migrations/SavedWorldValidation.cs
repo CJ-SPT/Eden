@@ -1,6 +1,6 @@
 using Eden.Data.Catalog;
-using Eden.Data.Corporations;
-using Eden.Data.Skills;
+using Eden.Data.World.Corporations;
+using Eden.Data.World.Skills;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Inventory;
