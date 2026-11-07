@@ -4,7 +4,15 @@ using Eden.Gameplay.Targeting;
 
 namespace Eden.Gameplay.Inventory;
 
-public sealed record FittedResourceUsage(int FlagId, bool Online, double Cpu, double Power, bool Turret, bool Launcher);
+public sealed record FittedResourceUsage(
+    int FlagId,
+    bool Online,
+    double Cpu,
+    double Power,
+    bool Turret,
+    bool Launcher,
+    double Calibration = 0
+);
 
 public sealed record RookieResistanceModifier(DogmaAttributeId Bonus, DogmaAttributeId Resonance);
 
@@ -65,6 +73,11 @@ public static class FittingRules
         );
         attributes[DogmaAttributeId.CpuLoad] = modules.Where(m => m.Online).Sum(m => m.Cpu);
         attributes[DogmaAttributeId.PowerLoad] = modules.Where(m => m.Online).Sum(m => m.Power);
+        attributes[DogmaAttributeId.CalibrationLoad] = modules.Sum(m => m.Calibration);
+        attributes[DogmaAttributeId.RigSlotsLeft] = Math.Max(
+            0,
+            attributes.GetValueOrDefault(DogmaAttributeId.RigSlotsLeft) - modules.Count(m => InventoryDefinitions.IsRigSlot(m.FlagId))
+        );
         attributes[DogmaAttributeId.TurretSlotsLeft] = Math.Max(
             0,
             attributes.GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft) - modules.Count(m => m.Turret)

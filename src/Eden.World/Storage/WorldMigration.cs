@@ -1,4 +1,5 @@
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 94;
+    internal const int CurrentVersion = 95;
 
     public static void Open(
         WorldDbContext world,
@@ -55,6 +56,11 @@ internal static class WorldMigration
             """
         );
         WorldVersion94.Apply(world, version);
+        if (version < 95)
+        {
+            RigFittingSchema.Upgrade(world);
+        }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=95");
         history.Commit();
     }
 }

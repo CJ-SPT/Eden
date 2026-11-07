@@ -12,6 +12,7 @@ public enum ModuleRack
     Low,
     Medium,
     High,
+    Rig,
 }
 
 public sealed record ModuleFittingDefinition(ModuleRack Rack, bool Turret, bool Launcher, int MaximumGroup, int MaximumType)
@@ -22,6 +23,7 @@ public sealed record ModuleFittingDefinition(ModuleRack Rack, bool Turret, bool 
             {
                 ModuleRack.Low => InventoryFlag.LowSlot0,
                 ModuleRack.Medium => InventoryFlag.MediumSlot0,
+                ModuleRack.Rig => InventoryFlag.RigSlot0,
                 _ => InventoryFlag.HighSlot0,
             }
         );
@@ -31,6 +33,7 @@ public sealed record ModuleFittingDefinition(ModuleRack Rack, bool Turret, bool 
         {
             ModuleRack.Low => DogmaAttributeId.LowSlots,
             ModuleRack.Medium => DogmaAttributeId.MediumSlots,
+            ModuleRack.Rig => DogmaAttributeId.RigSlotsLeft,
             _ => DogmaAttributeId.HighSlots,
         };
 }

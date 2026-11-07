@@ -373,4 +373,12 @@ public enum DogmaAttributeId
     DroneBandwidthLoad = 1273,
     DroneIsAggressive = 1275,
     DroneFocusFire = 1297,
+    CalibrationCapacity = 1132,
+    RigSlots = 1137,
+    RigDrawback = 1138,
+    RigDrawbackBonus = 1139,
+    CalibrationLoad = 1152,
+    CalibrationCost = 1153,
+    RigSlotsLeft = 1154,
+    RigSize = 1547,
 }

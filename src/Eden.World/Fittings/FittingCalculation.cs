@@ -32,7 +32,15 @@ internal sealed record FittingCalculation(
     IReadOnlyDictionary<int, int> SkillLevels
 )
 {
-    internal static FittingCalculation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship? ship = null)
+    internal const long OwnerTargetId = long.MinValue;
+
+    internal static FittingCalculation Read(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        Ship? ship = null,
+        int? ownerTypeId = null
+    )
     {
         SessionPerformance.FittingCalculated();
         // A fitting graph reads many static rows. Keep this nonpooled connection
@@ -51,8 +59,10 @@ internal sealed record FittingCalculation(
             .Where(i =>
                 i.OwnerId == pilot.Id
                 && i.LocationId == ship.Id
-                && i.FlagId >= (int)InventoryFlag.LowSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
+                && (
+                    (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                    || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
+                )
             )
             .ToArray();
         var moduleAttributes = items
@@ -91,10 +101,35 @@ internal sealed record FittingCalculation(
         List<DogmaNode> nodes =
         [
             new(ship.Id, hullAttributes),
-            new(pilot.Id, new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.MissileDamageMultiplier] = 1 }),
+            new(
+                pilot.Id,
+                new Dictionary<DogmaAttributeId, double>
+                {
+                    [DogmaAttributeId.MissileDamageMultiplier] = 1,
+                    [DogmaAttributeId.DroneControlDistance] = 0,
+                }
+            ),
         ];
         nodes.AddRange(loaded.Select(i => new DogmaNode(i.Id, chargeAttributes[i.TypeId])));
         nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
+        FittingLocation[] ownerTargets = locations;
+        if (ownerTypeId is int ownerType)
+        {
+            var ownerAttributes = PilotFittingStore.ReadAttributes(catalog, ownerType);
+            nodes.Add(new(OwnerTargetId, ownerAttributes));
+            ownerTargets =
+            [
+                .. locations,
+                new(
+                    new OwnedItem { Id = OwnerTargetId, TypeId = ownerType },
+                    catalog.FittingType(ownerType)!.GroupId,
+                    InventoryDefinitions
+                        .RequiredSkills.Select(p => checked((int)ownerAttributes.GetValueOrDefault(p.Skill)))
+                        .Where(id => id > 0)
+                        .ToHashSet()
+                ),
+            ];
+        }
         List<DogmaModifier> modifiers = [];
         foreach (var charge in charges.Where(c => SupportModuleDefinitions.IsScript(c.GroupId)))
         {
@@ -201,6 +236,18 @@ internal sealed record FittingCalculation(
         }
         foreach (var module in modules)
         {
+            if (InventoryDefinitions.IsRigSlot(module.Item.FlagId))
+            {
+                if (!RigCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+                {
+                    throw new InvalidDataException("Unsupported fitted ship rig.");
+                }
+                foreach (var modifier in RigCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, false);
+                }
+                continue;
+            }
             if (
                 module.Item.Online
                 && module.GroupId == TackleDefinitions.WarpCoreStabilizerGroup
@@ -275,7 +322,12 @@ internal sealed record FittingCalculation(
         // MiningRules owns work-skill yield. Astrogeology is also a direct barge
         // prerequisite and must not enter the hull graph as a second multiplier.
         var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
-        var relevantSkills = PassiveModules.Skills.Concat(MissileDefinitions.Skills).Concat(hullSkills).Distinct().ToArray();
+        var relevantSkills = PassiveModules
+            .Skills.Concat(MissileDefinitions.Skills)
+            .Concat(hullSkills)
+            .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
+            .Distinct()
+            .ToArray();
         var trained = world
             .Set<PilotSkill>()
             .Where(s => s.PilotId == pilot.Id && relevantSkills.Contains(s.TypeId))
@@ -362,7 +414,10 @@ internal sealed record FittingCalculation(
             IEnumerable<long> targets = modifier.Selector switch
             {
                 ModifierSelector.Group => locations.Where(m => m.GroupId == modifier.SelectionId).Select(m => m.Item.Id),
-                ModifierSelector.RequiredSkill or ModifierSelector.OwnerRequiredSkill => locations
+                ModifierSelector.RequiredSkill => locations
+                    .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))
+                    .Select(m => m.Item.Id),
+                ModifierSelector.OwnerRequiredSkill => ownerTargets
                     .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))
                     .Select(m => m.Item.Id),
                 _ =>

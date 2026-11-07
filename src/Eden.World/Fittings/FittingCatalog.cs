@@ -22,6 +22,19 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (RigRules.Groups.Contains(type.GroupId))
+        {
+            var rigAttributes = catalog.FittingAttributes(typeId);
+            return RigCatalog.Supported(catalog, typeId, type.GroupId)
+                ? new(
+                    ModuleRack.Rig,
+                    false,
+                    false,
+                    checked((int)rigAttributes.GetValueOrDefault(DogmaAttributeId.MaxGroupFitted)),
+                    checked((int)rigAttributes.GetValueOrDefault(DogmaAttributeId.MaxTypeFitted))
+                )
+                : null;
+        }
         if (
             type.GroupId
                 is TackleDefinitions.WebifierGroup

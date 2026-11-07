@@ -85,6 +85,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
                     sourceId == ship.Id
                         ? holdFlags.Contains(i.FlagId)
                             || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                            || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
                         : i.FlagId == (int)InventoryFlag.Hangar
                 )
             )
@@ -162,7 +163,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             }
             double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, flagId);
             double added = items
-                .Where(i => i.LocationId != ship.Id || i.FlagId != flagId)
+                .Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && (i.LocationId != ship.Id || i.FlagId != flagId))
                 .Sum(i => hold.RequiredCapacity(Read(catalog, i), quantity ?? i.Quantity));
             added += magazines.Sum(i => hold.RequiredCapacity(Read(catalog, i), i.Quantity));
             added += storedShips
@@ -197,6 +198,12 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         foreach (var item in items)
         {
             var previous = Read(catalog, item);
+            if (InventoryDefinitions.IsRigSlot(item.FlagId))
+            {
+                world.Remove(item);
+                changes.Add(new(previous with { Quantity = 0, Online = false }, previous));
+                continue;
+            }
             int moved = quantity ?? item.Quantity;
             if (moved < item.Quantity)
             {

@@ -41,7 +41,7 @@ internal static class ShipLossPersistence
         var storedManifests = storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)).ToArray();
         string storedManifest = JsonSerializer.Serialize(storedManifests);
         string manifest = JsonSerializer.Serialize(items);
-        var survivors = items.Where(_ => lootRoll.Survives()).Select(i => i.Id).ToHashSet();
+        var survivors = items.Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && lootRoll.Survives()).Select(i => i.Id).ToHashSet();
         foreach (var stored in storedShips)
         {
             if (lootRoll.Survives())

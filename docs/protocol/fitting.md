@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
 - [Shield boosters and physical skillbooks, November 2, 2026](#shield-boosters-and-physical-skillbooks-november-2-2026)
@@ -39,6 +40,62 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Fitting expansion milestone 20: paid missile firing and shared NPC impacts](#fitting-expansion-milestone-20-paid-missile-firing-and-shared-npc-impacts)
 - [Fitting expansion milestone 21: scripted tracking, guidance and sensor modules](#fitting-expansion-milestone-21-scripted-tracking-guidance-and-sensor-modules)
 - [Fitting expansion milestone 22: tackle and warp navigation](#fitting-expansion-milestone-22-tackle-and-warp-navigation)
+
+## T1 and T2 ship rigs, November 6, 2026
+
+Ship fitting now admits all **642 published Tech I/II ship rigs** in the pinned build **3662168**, across 14 groups and small, medium, large and capital sizes. Admission requires the rig-slot effect, complete fitted-effect metadata, a valid size/calibration cost and an ordinary T1/T2 profile. Structure rigs, unpublished types and other technology tiers are excluded. Some stock T1 records omit `metaGroupID`; their explicit `techLevel` still identifies them. The reproducible [rig exporter](../../tools/Export-RigCatalog.py) reads only the catalog and supplies the embedded test fixture, including prerequisite skills, attribute definitions and effect records.
+
+Fitting uses the existing bound ship inventory `Add`/`MultiAdd` routes with automatic allocation or rig flags **92–94**. It requires the selected pilot's docked active ship, owned equipment from its cargo/current hangar, an available hull rig slot, matching `rigSize`, sufficient `upgradeCapacity` calibration, and any catalog hull/group/type allowances. Corvettes have no rig allowance. Fitting one unit from a stack creates an assembled singleton; a failed batch rolls back every unit, slot and calibration change. Rig slots consume neither ordinary rack slots nor turret/launcher hardpoints. `upgradeLoad` reports the sum of installed calibration costs; `upgradeSlotsLeft` reports remaining slots. Rigs cannot be switched online/offline or moved between fitted slots to recover their item.
+
+All rig effects apply while fitted, independently of online state. The existing typed attribute graph evaluates bonuses, drawbacks, native stacking flags and stacking penalties alongside other fittings. It handles hull attributes, group/required-skill equipment modifiers, missile character/warhead modifiers, and drone owner modifiers. Armor rigs in this build increase **inertia**, through attribute 70, rather than directly reducing maximum speed. Shield rigs can increase signature; weapon rigs can increase turret power or launcher CPU; drone rigs can reduce CPU output. The exact catalog determines each individual profile. Jury Rigging has no drawback reduction; the nine specialist rigging skills apply their catalog group reductions through `rigDrawbackBonus` and `drawback`, normally reducing a 10% drawback to 5% at level V. They also appear in native brain replies. The rig types have no fitting skill prerequisites in this catalog; installing a rig does not require inventing a legacy skill gate.
+
+Drone rigs feed the existing light/medium combat-drone profiles and actual command/control ranges. Their speed, optimal range and durability bonuses reach simulation as well as item readouts; pilot drone skills remain applied once by the existing drone rules. Cached owner profiles use the same fitting revision invalidation as other equipment. Bonuses targeting unavailable equipment or systems remain attribute modifiers: fitting a salvage, scanning, remote-repair, command or utility-drone rig does not introduce those separate gameplay systems. The currently supported hull and drone families retain their existing limits. This milestone adds no rig manufacturing recipes or economic supply changes.
+
+Inert inspection of stock `eve/client/script/ui/shared/fitting/fittingSlotController.pyj`, `Unfit`, confirms the client displays **RigUnFittingInfo** and then calls its bound ship inventory's **`DestroyFitting(itemID)`**. The selected-pilot handler validates ownership, active hull, docked state and the installed rig flag. It atomically deletes the rig, updates calibration/resources and sends the existing junk-location `OnItemChange` plus ship/module attribute notifications. Ordinary cargo/hangar move requests also destroy installed rigs, closing a recovery bypass. Resource reconciliation preserves health/capacitor semantics and offlines equipment when needed; removal of cargo expansion is rejected atomically if the remaining cargo cannot fit. Fitted rigs are always destroyed during ship-loss settlement, whereas unfitted cargo rigs retain ordinary loot rolls. Persistence uses existing item/skill rows; **world version 95** adds rig-slot fitting-revision triggers so committed changes invalidate resident ship and owner-profile caches. Repackaging continues to require fittings to be removed first; destructive repackage retries and special rig-preserving hull exceptions are outside the supported hull scope.
+
+Sources: exact-build type, dogma, effect and skill catalog records; inert code-object inspection of the unchanged client archive, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Consulted [Carbon Blue Marshal.cpp, revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp); existing dictionaries, primitive values and inventory/attribute notifications require no codec or Destiny format changes. Gameplay rig behavior comes from the pinned catalog/client rather than Carbon's lower-level transport code.
+
+**Automated validation:** the exact typed method `RigRulesTests.SizeAndCalibrationMustFitExactly` first passed **13 cases** through `tools/Test-Feature.ps1`. The broader affected filter below passed **706 tests** in **207.12 s**, with tool/solution restore, a zero-warning solution build, both Python policy suites (**3 + 9 cases**) and formatting verification passing in **225.88 s** overall. That build preceded the concurrent main-branch biomass migration (version 94). After integrating `2d5bbd6` and assigning rigs version 95, the final affected filter passed **84 tests** in **17.90 s**; all restore/build/policy/format gates passed again in **33.88 s**. The final filter covers the 32 rig cases, version-94 upgrade/reopen, general migrations/initialization, character deletion, inventory ownership and resident fitting caches. No full .NET suite or live client acceptance was run.
+
+<details>
+<summary>Broader affected filter (706 cases)</summary>
+
+```powershell
+$rigClasses = @(
+    'Persistence.ShipRigTests', 'Persistence.RigRulesTests', 'Persistence.DogmaGraphTests',
+    'Persistence.PilotFittingTests', 'Persistence.ModuleFittingTests', 'Persistence.PassiveFittingTests',
+    'Persistence.EquipmentBonusTests', 'Persistence.CatalogFittingReadTests', 'Persistence.PilotInventoryTests',
+    'Persistence.InventoryOwnershipTests', 'Persistence.InventoryPersistenceTests', 'Persistence.ShipInventoryRulesTests',
+    'Persistence.ShipStorageTests', 'Persistence.WorldMigrationTests', 'Persistence.WorldInitializationTests',
+    'Docking.TypedInventoryTests', 'Fittings.SavedFittingsTests', 'Combat.MissileFittingTests',
+    'Combat.PilotMissileTests', 'Combat.CombatDroneTests', 'Combat.DroneRecoveryTests',
+    'Combat.DroneSynchronizationTests', 'Combat.ResidentFitTests', 'Combat.ResidentFitFleetTests',
+    'Combat.InsuranceLossTests', 'Propulsion.PropulsionTests'
+)
+$rigFilter = ($rigClasses | ForEach-Object { 'FullyQualifiedName~Eden.Protocol.Tests.' + $_ }) -join '|'
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter $rigFilter
+```
+
+</details>
+
+<details>
+<summary>Final integration filter (84 cases)</summary>
+
+```powershell
+$rigClasses = @(
+    'Persistence.RigRulesTests', 'Persistence.ShipRigTests', 'Persistence.WorldMigrationTests',
+    'Persistence.WorldInitializationTests', 'Persistence.CharacterDeletionTests', 'Persistence.InventoryOwnershipTests',
+    'Combat.ResidentFitTests'
+)
+$rigFilter = ($rigClasses | ForEach-Object { 'FullyQualifiedName~Eden.Protocol.Tests.' + $_ }) -join '|'
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter $rigFilter
+```
+
+</details>
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering, confirmation input and fitting-panel presentation remain unverified.
+
+**Optional maintainer checks:** fit one matching-size T1/T2 pair and inspect calibration/bonuses; remove a rig through its confirmation and verify it disappears; reconnect with a fitted rig and inspect its retained effects.
 
 ## Personal saved fitting plans (November 6, 2026)
 

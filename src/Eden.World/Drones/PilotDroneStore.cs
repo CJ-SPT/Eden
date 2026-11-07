@@ -71,7 +71,7 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
             .Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
         return new(
             Math.Min(DroneRules.MaximumDrones, skills.GetValueOrDefault(DroneSkill.Drones)),
-            (int)DroneRules.ControlRange(skills),
+            (int)DroneCatalog.ControlRange(world, catalog, pilotId),
             bandwidth,
             Settings(world, pilotId)
         );
@@ -246,7 +246,7 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
         var pilot = InSpace(world, pilotId);
         var position = pilot.ActiveShip.Position!;
         int systemId = CurrentSystem(catalog, pilot);
-        double range = DroneRules.ControlRange(DroneCatalog.Skills(world, catalog, pilotId));
+        double range = DroneCatalog.ControlRange(world, catalog, pilotId);
         double droneRange = order == DroneOrder.Reconnect ? NpcEncounterDefinitions.VisibilityRange : DroneRules.ShutdownDistance;
         var selected = drones.Select(id => world.Set<WorldDrone>().Find(id)).ToArray();
         if (
@@ -325,7 +325,13 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
 
     internal static DroneContact Contact(WorldDbContext world, CatalogDbContext catalog, WorldDrone drone)
     {
-        var profile = DroneCatalog.Skilled(world, catalog, drone.PilotId, world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId);
+        var profile = DroneCatalog.Skilled(
+            world,
+            catalog,
+            drone.PilotId,
+            world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId,
+            drone.ControllerShipId
+        );
         return new(
             drone.ItemId,
             drone.PilotId,
@@ -409,7 +415,9 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
         var settings = Settings(world, pilotId);
         var skills = DroneCatalog.Skills(world, catalog, pilotId);
         int allowedCount = Math.Min(DroneRules.MaximumDrones, skills.GetValueOrDefault(DroneSkill.Drones));
-        double allowedBandwidth = FittingCalculation.Read(world, catalog, pilot).Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
+        double allowedBandwidth = fitting.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
+        double controlRange = DroneRules.ControlRange(skills) + fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;
@@ -458,7 +466,6 @@ internal sealed partial class PilotDroneStore(WorldDatabase database, SecuritySt
             }
             // One bounded step per observed interval. Offline/late callbacks never replay combat.
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
-            double controlRange = DroneRules.ControlRange(skills);
             if (drone.Activity == DroneActivity.Idle && settings.Aggressive)
             {
                 var attacking = world

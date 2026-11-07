@@ -48,6 +48,7 @@ public enum InventoryFlag
     DroneBay = 87,
     ShipMaintenanceBay = 90,
     RigSlot0 = 92,
+    RigSlot1 = 93,
     RigSlot2 = 94,
     SubsystemSlot0 = 125,
     SubsystemSlot3 = 128,
@@ -120,6 +121,7 @@ public enum DogmaEffect
     HighPower = 12,
     MediumPower = 13,
     Online = 16,
+    RigSlot = 2663,
     StructureRepair = 26,
     ArmorRepair = 27,
     CapacitorBoosting = 48,
@@ -219,7 +221,9 @@ public static class InventoryDefinitions
 
     public static bool IsMediumSlot(int flag) => flag is >= (int)InventoryFlag.MediumSlot0 and <= (int)InventoryFlag.MediumSlot7;
 
-    public static bool IsFittedSlot(int flag) => IsLowSlot(flag) || IsHighSlot(flag) || IsMediumSlot(flag);
+    public static bool IsRigSlot(int flag) => flag is >= (int)InventoryFlag.RigSlot0 and <= (int)InventoryFlag.RigSlot2;
+
+    public static bool IsFittedSlot(int flag) => IsLowSlot(flag) || IsHighSlot(flag) || IsMediumSlot(flag) || IsRigSlot(flag);
 
     public static readonly (DogmaAttributeId Skill, DogmaAttributeId Level)[] RequiredSkills =
     [

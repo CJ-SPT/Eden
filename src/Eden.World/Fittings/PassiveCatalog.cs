@@ -58,7 +58,7 @@ internal static class PassiveCatalog
             )
             .ToArray();
 
-    internal static PassiveModifier? Parse(ClientDogmaeffectsModifierInfoItem modifier, long phase)
+    internal static PassiveModifier? Parse(ClientDogmaeffectsModifierInfoItem modifier, long phase, bool rig = false)
     {
         ModifierDomain? domain = modifier.Domain switch
         {
@@ -80,7 +80,7 @@ internal static class PassiveCatalog
             || selector is null
             || modifier.ModifiedAttributeID is null
             || modifier.ModifyingAttributeID is null
-            || modifier.Operation is not (0 or 2 or 4 or 6)
+            || (modifier.Operation is not (0 or 2 or 4 or 6) && !(rig && modifier.Operation == (int)DogmaOperation.PostAssignment))
         )
         {
             return null;
@@ -88,7 +88,11 @@ internal static class PassiveCatalog
         int? selection = selector == ModifierSelector.Group ? (int?)modifier.GroupID : (int?)modifier.SkillTypeID;
         if (
             selector == ModifierSelector.OwnerRequiredSkill
-            && (domain != ModifierDomain.Character || selection is not int ownerSkill || !MissileDefinitions.SupportsOwnerSkill(ownerSkill))
+            && (
+                domain != ModifierDomain.Character
+                || selection is not int ownerSkill
+                || (!rig && !MissileDefinitions.SupportsOwnerSkill(ownerSkill))
+            )
         )
         {
             return null;

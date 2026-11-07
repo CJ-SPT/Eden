@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Fittings;
 
 [Injectable]
-internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting
+internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting, IPilotRigRemoval
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {
@@ -81,7 +81,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 calculation.Graph.Read(m.Id, DogmaAttributeId.Cpu),
                 calculation.Graph.Read(m.Id, DogmaAttributeId.Power),
                 FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.TurretFitted),
-                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted)
+                FittingCatalog.Effects(catalog, m.TypeId).Contains(DogmaEffect.LauncherFitted),
+                InventoryDefinitions.IsRigSlot(m.FlagId) ? calculation.Graph.Read(m.Id, DogmaAttributeId.CalibrationCost) : 0
             ))
             .ToArray();
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
@@ -162,9 +163,17 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         var hull = Attributes(catalog, ship.TypeId);
         var rack = world
             .Set<OwnedItem>()
-            .Where(i => i.LocationId == ship.Id && i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+            .Where(i =>
+                i.LocationId == ship.Id
+                && (
+                    (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
+                    || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
+                )
+            )
             .ToArray();
         var occupied = rack.Select(i => i.FlagId).ToHashSet();
+        double calibrationUsed = rack.Where(i => InventoryDefinitions.IsRigSlot(i.FlagId))
+            .Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.CalibrationCost));
         var equipment = rack.Select(i =>
                 (i.TypeId, GroupId: catalog.Set<ItemType>().Find(i.TypeId)!.GroupId, Effects: FittingCatalog.Effects(catalog, i.TypeId))
             )
@@ -228,6 +237,12 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 throw new InvalidDataException("No compatible module slot is available.");
             }
             var definition = FittingCatalog.Definition(catalog, item.TypeId)!;
+            if (definition.Rack == ModuleRack.Rig)
+            {
+                var rigAttributes = Attributes(catalog, item.TypeId);
+                RigRules.CheckFit(hull, rigAttributes, calibrationUsed);
+                calibrationUsed += rigAttributes.GetValueOrDefault(DogmaAttributeId.CalibrationCost);
+            }
             int group = catalog.Set<ItemType>().Find(item.TypeId)!.GroupId;
             if (
                 (
@@ -301,6 +316,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         )
         {
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Fitted);
+            if (InventoryDefinitions.IsRigSlot(change.Item.FlagId))
+            {
+                continue;
+            }
             string rackEvent =
                 InventoryDefinitions.IsHighSlot(change.Item.FlagId) ? TaskEvents.FittedHigh
                 : InventoryDefinitions.IsMediumSlot(change.Item.FlagId) ? TaskEvents.FittedMedium
@@ -319,9 +338,41 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
             CheckHull(catalog, typeId, ship.TypeId);
             int first = definition.FirstFlag;
-            int slots = Math.Clamp(checked((int)hull.GetValueOrDefault(definition.SlotAttribute)), 0, InventoryDefinitions.SlotsPerRack);
+            int slots = Math.Clamp(
+                checked((int)hull.GetValueOrDefault(definition.SlotAttribute)),
+                0,
+                definition.Rack == ModuleRack.Rig ? RigRules.MaximumSlots : InventoryDefinitions.SlotsPerRack
+            );
             return (first, slots);
         }
+    }
+
+    public IReadOnlyList<InventoryChange> DestroyRig(long pilotId, long shipId, long itemId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var item = world.Set<OwnedItem>().Find(itemId);
+        if (
+            shipId != pilot.ActiveShipId
+            || pilot.ActiveShip.Position is not null
+            || item is null
+            || item.OwnerId != pilotId
+            || item.LocationId != shipId
+            || !InventoryDefinitions.IsRigSlot(item.FlagId)
+        )
+        {
+            throw new InvalidDataException("Remove an owned rig from your docked active ship.");
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
+        var previous = PilotInventoryStore.Read(catalog, item);
+        world.Remove(item);
+        world.SaveChanges();
+        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
+        transaction.Commit();
+        return new[] { new InventoryChange(previous with { Quantity = 0, Online = false }, previous) }.Concat(cascaded).ToArray();
     }
 
     public IReadOnlyList<InventoryChange> SetOnline(long pilotId, long shipId, long itemId, bool online)
