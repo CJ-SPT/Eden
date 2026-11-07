@@ -22,6 +22,13 @@ public sealed class ChatWorld(long roomSeed = 0)
 
     public ChatPilot? ConnectedPilot(Guid connection) => _connections.TryGetValue(connection, out var session) ? Pilot(session) : null;
 
+    public IReadOnlyList<ChatDelivery> UpdateFleet(Guid connection, long? fleet)
+    {
+        return _connections.TryGetValue(connection, out var session) && Pilot(session) is { } pilot
+            ? Update(session, pilot with { FleetId = fleet })
+            : [];
+    }
+
     public IReadOnlyList<ChatDelivery> Update(Guid session, ChatPilot? pilot)
     {
         List<ChatDelivery> events = [];
@@ -88,7 +95,12 @@ public sealed class ChatWorld(long roomSeed = 0)
     public IReadOnlyList<ChatRoom> SystemChannels(Guid session)
     {
         var pilot = Pilot(session) ?? throw new InvalidDataException("Select a pilot before joining chat.");
-        return [new(pilot.LocalKind, pilot.SystemId), new(ChatRoomKind.Corporation, pilot.CorporationId)];
+        List<ChatRoom> rooms = [new(pilot.LocalKind, pilot.SystemId), new(ChatRoomKind.Corporation, pilot.CorporationId)];
+        if (pilot.FleetId is { } fleet)
+        {
+            rooms.Add(new(ChatRoomKind.Fleet, fleet));
+        }
+        return rooms;
     }
 
     public ChatRoom CreatePrivate(Guid session, long target)
@@ -156,6 +168,7 @@ public sealed class ChatWorld(long roomSeed = 0)
             ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian => room.Id == pilot.SystemId
                 && room.Kind == pilot.LocalKind,
             ChatRoomKind.Corporation => room.Id == pilot.CorporationId,
+            ChatRoomKind.Fleet => room.Id == pilot.FleetId,
             ChatRoomKind.Private => _privateAccess.TryGetValue(room, out var allowed) && allowed.Contains(pilot.Id),
             ChatRoomKind.Player => _rooms.ContainsKey(room),
             _ => false,
@@ -372,7 +385,13 @@ public sealed class ChatWorld(long roomSeed = 0)
         {
             throw new InvalidDataException("This channel is unavailable.");
         }
-        return _rooms.GetValueOrDefault(room) ?? new(room, room.Kind == ChatRoomKind.Corporation ? "Corporation" : "Local");
+        return _rooms.GetValueOrDefault(room)
+            ?? new(
+                room,
+                room.Kind == ChatRoomKind.Corporation ? "Corporation"
+                    : room.Kind == ChatRoomKind.Fleet ? "Fleet"
+                    : "Local"
+            );
     }
 
     public IReadOnlyList<ChatRoomInfo> PublicRooms() => _rooms.Values.Where(r => r.Room.Kind == ChatRoomKind.Player).ToArray();

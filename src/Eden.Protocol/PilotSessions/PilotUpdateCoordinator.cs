@@ -10,6 +10,7 @@ using Eden.Protocol.Contracts;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
+using Eden.Protocol.Fleets;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Mail;
 using Eden.Protocol.Market;
@@ -63,12 +64,14 @@ internal sealed class PilotUpdateCoordinator(
     DroneHandler drones,
     PersonalMarketMonitor personalMarket,
     CrimewatchHandler crimewatch,
-    PilotDamageMonitor playerDamage
+    PilotDamageMonitor playerDamage,
+    CooperativeFleetHandler fleets
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
         corporations.IsMonitoring
+        || fleets.IsMonitoring
         || industry.IsMonitoring
         || guests.IsDocked
         || calendar.IsMonitoring
@@ -91,6 +94,7 @@ internal sealed class PilotUpdateCoordinator(
         crimewatch.Enter(context);
         corporations.Enter(context);
         corporationWallet.Enter(context);
+        fleets.Advance(context);
         chat.Advance(context);
         guests.Advance(context);
         calendar.Enter(context);
@@ -117,6 +121,7 @@ internal sealed class PilotUpdateCoordinator(
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
         chat.Dispose();
+        fleets.Dispose();
         PrepareTranslocation(context);
     }
 
@@ -212,6 +217,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             corporations.Advance(context);
             corporationWallet.Advance(context);
+            fleets.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
             online.Advance(context);

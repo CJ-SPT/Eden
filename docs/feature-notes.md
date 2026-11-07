@@ -10,6 +10,7 @@ Counts, schema versions, example pilots, fixture populations and native observat
 
 - [Accounts, profiles and skills](#accounts-profiles-and-skills)
 - [Chat, mail and social features](#chat-mail-and-social-features)
+- [Cooperative fleets](#cooperative-fleets)
 - [Player corporations](#player-corporations)
 - [Travel and navigation](#travel-and-navigation)
 - [Inventory, ships and holds](#inventory-ships-and-holds)
@@ -80,6 +81,10 @@ Personal calendar events now support saved invitations, details, replies, edits,
 Personal contacts support add/edit/delete, standings, blocking and labels for local Eden pilots, including offline pilots. Values survive restarts. Watchlists show online state and receive login/logoff updates without docking flicker. NPC agents can be saved through their native address-book action. Optional add/edit messages reach the recipient's saved notification inbox. Corporation/alliance contacts remain pending. Native contact-window presentation is unverified; see the [personal contact implementation notes](protocol/social.md#personal-contacts-and-online-status).
 
 Station Guests lists all connected pilots docked at that station, with live arrival/departure updates for login, docking, undocking, logoff and disconnect. Offline pilots and pilots elsewhere are excluded. Native presentation of this fix remains unverified; see the [station guest protocol notes](protocol/social.md#station-guests-november-4-2026).
+
+## Cooperative fleets
+
+Pilots can create a fleet, invite other online pilots, manage wings/squads and command positions, transfer boss authority, broadcast, and chat in the fleet channel. Ordinary members can opt out of fleet warp. Commanders can issue point fleet warps to supported system objects, bookmarks or same-system fleet members; recipients retain their normal alignment, tackle and travel restrictions. Native fleet location reads require current membership. Fleet/session events are ordered and isolated between groups, and stale references fail after departure. The groups are transient: disconnecting removes membership, the last member ends the fleet, and host restart clears it. Fleet finder, reconnect grace, stored setups, watchlist damage, composition/leadership reporting, command bonuses, geometric formations and reward/loot sharing remain deferred. See the [fleet implementation record](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026); native rendering and travel feel are unverified.
 
 ## Player corporations
 

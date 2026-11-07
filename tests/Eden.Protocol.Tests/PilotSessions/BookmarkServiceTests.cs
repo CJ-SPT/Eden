@@ -192,7 +192,7 @@ public sealed class BookmarkServiceTests
     [InlineData("False")]
     [InlineData(0d)]
     [InlineData(-1L)]
-    public void FleetAndMalformedBookmarkWarpOptionsLeaveFlightAndBookmarksUnchanged(object? fleet)
+    public void UnaffiliatedAndMalformedFleetBookmarkWarpOptionsLeaveFlightAndBookmarksUnchanged(object? fleet)
     {
         using Fixture fixture = new();
         fixture.Select(true);
@@ -205,7 +205,10 @@ public sealed class BookmarkServiceTests
             new() { ["minRange"] = 10_000d, ["fleet"] = fleet }
         );
         var failure = Assert.IsType<PilotCallResult.Failure>(result);
-        Assert.Equal(fleet is true or 1L ? "Fleet bookmark warp is not supported." : "Invalid bookmark warp fleet flag.", failure.Message);
+        Assert.Equal(
+            fleet is true or 1L ? "Join a fleet before commanding fleet warp." : "Invalid bookmark warp fleet flag.",
+            failure.Message
+        );
         Assert.Equal(Fixture.Start, fixture.Context.Pilot.Position);
         Assert.Equal(Fixture.Start, fixture.Db.Store.FindPilot(1000001)!.Position);
         Assert.False(fixture.Context.Flight.Moving);

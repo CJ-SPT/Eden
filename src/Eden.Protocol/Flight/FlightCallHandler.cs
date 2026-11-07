@@ -1,12 +1,14 @@
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Fleets;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
 
 [Injectable]
-internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks bookmarks) : ISelectedPilotCallHandler
+internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks bookmarks, CooperativeFleetHandler fleets)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -16,6 +18,10 @@ internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks 
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "beyonce" && method == "GetFleetLocationAndInfo")
+        {
+            return fleets.Locations(context, args, keywords);
+        }
         var request = FlightRequestWire.Read(service, method, args, keywords);
         if (request.Command is not { } command)
         {
@@ -25,22 +31,29 @@ internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks 
             }
             return PilotCallResult.Unsupported;
         }
+        if (command is FlightCommand.WarpToFleetMember memberWarp)
+        {
+            try
+            {
+                command = fleets.MemberWarp(context, memberWarp);
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
         if (command is FlightCommand.WarpToBookmark warp)
         {
             try
             {
-                if (keywords?.Keys.Any(key => key is not ("minRange" or "fleet")) == true)
+                if (keywords?.Keys.Any(key => key is not ("minRange" or "fleet" or "fleetFormationSettings")) == true)
                 {
                     throw new InvalidDataException("Unexpected bookmark warp arguments.");
                 }
                 // Build 3662168's WarpToBookmark always forwards fleet=False for personal warps.
                 if (keywords?.TryGetValue("fleet", out var fleet) == true)
                 {
-                    if (fleet is true or 1L)
-                    {
-                        throw new InvalidDataException("Fleet bookmark warp is not supported.");
-                    }
-                    if (fleet is not (false or 0L))
+                    if (fleet is not (false or 0L or true or 1L))
                     {
                         throw new InvalidDataException("Invalid bookmark warp fleet flag.");
                     }
@@ -69,6 +82,21 @@ internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks 
             {
                 return new PilotCallResult.Failure(error.Message);
             }
+        }
+        if (command is FlightCommand.WarpTo or FlightCommand.WarpToPoint)
+        {
+            if (keywords?.GetValueOrDefault("fleet") is true or 1L)
+            {
+                return fleets.Warp(context, command, keywords?.GetValueOrDefault("fleetFormationSettings"));
+            }
+            if (keywords?.GetValueOrDefault("fleet") is not (null or false or 0L))
+            {
+                return new PilotCallResult.Failure("Invalid fleet warp flag.");
+            }
+        }
+        if (command is not FlightCommand.RefreshState)
+        {
+            fleets.CancelWarpOrders(context.Pilot.PilotId);
         }
         return command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
     }

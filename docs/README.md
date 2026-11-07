@@ -30,6 +30,7 @@
 | --- | --- |
 | [Feature implementation notes](feature-notes.md) | Detailed coverage, restrictions and examples grouped by feature. The [README status](../README.md#current-status) is the short overview. |
 | [Protocol records by topic](protocol.md) | Native call/reply findings, source revisions, milestone validation and historical client observations. |
+| [Cooperative fleets](protocol/fleets.md) | Fleet creation/invites, leadership, broadcasts, fleet chat, coordinated travel and current limits. |
 | [Corporation roadmap](corporations.md) | Published standalone corporation milestones and remaining scope. |
 | [Corporation inventory ownership](inventory-ownership.md) | Storage ownership, migration guarantees and the office/asset boundary. |
 | [Client RPC route inventory](client-routes/README.md) | Generated handler candidates, compatibility routes, call sites and repeatable auditing. |

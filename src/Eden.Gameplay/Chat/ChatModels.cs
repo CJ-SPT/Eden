@@ -8,6 +8,7 @@ public enum ChatRoomKind
     Corporation,
     Private,
     Player,
+    Fleet,
 }
 
 public sealed record ChatRoom(ChatRoomKind Kind, long Id);
@@ -19,7 +20,8 @@ public sealed record ChatPilot(
     int SystemId,
     long Roles,
     int GenderId = 0,
-    ChatRoomKind LocalKind = ChatRoomKind.Local
+    ChatRoomKind LocalKind = ChatRoomKind.Local,
+    long? FleetId = null
 );
 
 public sealed record ChatRoomInfo(ChatRoom Room, string Name, long? OwnerId = null);

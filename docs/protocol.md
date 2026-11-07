@@ -15,6 +15,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Navigation and travel](protocol/navigation.md) | Maps, bookmarks, undocking, warp, gates, orbiting and ship collisions. |
 | [Characters and skills](protocol/characters.md) | Profiles, settings, training, clones, implants, redemption and interaction history. |
 | [Chat, mail and contacts](protocol/social.md) | Native chat, certificate trust, contacts, guests, calendars and notifications. |
+| [Cooperative fleets](protocol/fleets.md) | Membership, hierarchy, session identity, broadcasts, chat and point fleet travel. |
 | [Corporations](protocol/corporations.md) | Creation, membership, administration, roles, wallets, ownership and shares. |
 | [Personal contracts](protocol/contracts.md) | Wizard compatibility, item exchange, courier contracts, auctions and bulk offers. |
 | [Inventory and ship ownership](protocol/inventory.md) | Stacks, personal holds, assembled ships, insurance, dirt and recovery hulls. |
@@ -28,6 +29,8 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Compatibility and route audits](protocol/compatibility.md) | RPC inventory, placeholder routes, localization settings and native rejection dialogs. |
 
 ## Record index
+
+- [Cooperative fleet foundation, November 7, 2026](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026)
 
 - [Corporation offices and shared storage, November 6, 2026](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026)
 

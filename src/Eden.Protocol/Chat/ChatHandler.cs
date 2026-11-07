@@ -23,7 +23,8 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
                 selected.SystemId,
                 context.Roles,
                 selected.Profile.GenderId,
-                ChatRules.LocalKind(selected.SystemId, selected.RegionId)
+                ChatRules.LocalKind(selected.SystemId, selected.RegionId),
+                selected.Identity.Fleet?.FleetId
             );
         if (_pilot != pilot)
         {

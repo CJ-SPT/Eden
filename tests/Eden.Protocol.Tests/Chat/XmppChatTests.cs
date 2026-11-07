@@ -390,7 +390,8 @@ public sealed class XmppChatTests
     internal sealed class NativeClient : IAsyncDisposable
     {
         private readonly TcpClient _client = new();
-        private readonly CancellationTokenSource _timeout = new(TimeSpan.FromSeconds(15));
+        private static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(15);
+        private readonly CancellationTokenSource _timeout = new(OperationTimeout);
         private SslStream _stream = null!;
         private XmppStreamReader _reader = null!;
         private long _pilot;
@@ -438,6 +439,9 @@ public sealed class XmppChatTests
                 Assert.Equal(pilot + "@eden.chat/eveclient", (string?)available.Attribute("from"));
                 Assert.Equal(pilot + "@eden.chat/eveclient", (string?)available.Attribute("to"));
                 Assert.Null(available.Attribute("type"));
+                // Keep the handshake bounded, then apply the same deadline per IO operation.
+                // A multi-leg simulated trip can legitimately outlive one connection-wide budget.
+                client._timeout.CancelAfter(Timeout.InfiniteTimeSpan);
                 return client;
             }
             catch
@@ -481,9 +485,19 @@ public sealed class XmppChatTests
                 )
             );
 
-        public async Task SendAsync(string text) => await _stream.WriteAsync(Encoding.UTF8.GetBytes(text), _timeout.Token);
+        public async Task SendAsync(string text)
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_timeout.Token);
+            deadline.CancelAfter(OperationTimeout);
+            await _stream.WriteAsync(Encoding.UTF8.GetBytes(text), deadline.Token);
+        }
 
-        public async Task<XElement> ReadAsync() => await _reader.ReadAsync(_timeout.Token) ?? throw new IOException("Chat stream ended.");
+        public async Task<XElement> ReadAsync()
+        {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_timeout.Token);
+            deadline.CancelAfter(OperationTimeout);
+            return await _reader.ReadAsync(deadline.Token) ?? throw new IOException("Chat stream ended.");
+        }
 
         public async Task<IReadOnlyList<XElement>> UntilAsync(Func<XElement, bool> predicate)
         {

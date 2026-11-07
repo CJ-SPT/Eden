@@ -16,6 +16,11 @@ internal static class PilotSessionWire
         var rights = CorporationRoleRules.ForSession(pilot.Identity.CorporationAccess?.Roles ?? new(pilot.Identity.CorporationRoles));
         return new()
         {
+            ["fleetid"] = pilot.Identity.Fleet?.FleetId,
+            ["wingid"] = pilot.Identity.Fleet is { WingId: > 0 } fleetWing ? fleetWing.WingId : null,
+            ["squadid"] = pilot.Identity.Fleet is { SquadId: > 0 } fleetSquad ? fleetSquad.SquadId : null,
+            ["fleetrole"] = pilot.Identity.Fleet is { } fleetRole ? (int)fleetRole.Role : null,
+            ["fleetbooster"] = null,
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
             ["corprole"] = rights.Has(CorporationRole.Director) ? rights.Roles : pilot.Identity.CorporationRoles,

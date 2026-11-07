@@ -96,6 +96,8 @@ internal sealed class PilotCallContext(
 
     private readonly PilotBindings _bindings = new(sessionId);
 
+    public void ReleaseFleetReferences(long? keepFleet = null) => _bindings.ReleaseFleetReferences(keepFleet);
+
     public void ReleaseCorporationReferences() => _bindings.ReleaseCorporationReferences();
 
     public void ReleaseLocationReferences()
