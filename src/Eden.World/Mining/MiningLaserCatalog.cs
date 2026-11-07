@@ -13,9 +13,13 @@ internal static class MiningLaserCatalog
     private const int LaserEffectCount = 4;
     private const int StripMinerEffectCount = 3;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(MiningLaserCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
             !InventoryDefinitions.IsOreMiningGroup(group)

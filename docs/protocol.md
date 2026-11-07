@@ -32,6 +32,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Bound dogma and ship-call latency, November 7, 2026](protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026)
 
+- [Combat and simulation catalog adoption, November 7, 2026](protocol/catalog.md#combat-and-simulation-catalog-adoption-november-7-2026)
 - [Fitting, inventory and skill catalog adoption, November 7, 2026](protocol/catalog.md#fitting-inventory-and-skill-catalog-adoption-november-7-2026)
 - [Industry and economic catalog adoption, November 7, 2026](protocol/catalog.md#industry-and-economic-catalog-adoption-november-7-2026)
 
@@ -60,6 +61,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Project boundaries and feature layout, November 6, 2026](protocol/architecture.md#project-boundaries-and-feature-layout-november-6-2026)
 
+- [Offline missile contact reads, November 7, 2026](protocol/combat.md#offline-missile-contact-reads-november-7-2026)
 - [Pilot missile combat and automatic retaliation, November 6, 2026](protocol/combat.md#pilot-missile-combat-and-automatic-retaliation-november-6-2026)
 
 - [Pilot turret combat and loss settlement, November 6, 2026](protocol/combat.md#pilot-turret-combat-and-loss-settlement-november-6-2026)

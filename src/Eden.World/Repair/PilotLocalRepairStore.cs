@@ -39,7 +39,7 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
                     ? InventoryDefinitions.IsLowSlot(module.FlagId)
                     : InventoryDefinitions.IsMediumSlot(module.FlagId)
             )
-            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != profile.GroupId
+            || catalog.RequireItem(module.TypeId).GroupId != profile.GroupId
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {

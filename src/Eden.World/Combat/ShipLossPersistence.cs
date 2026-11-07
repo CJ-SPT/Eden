@@ -56,8 +56,11 @@ internal static class ShipLossPersistence
             }
         }
         var capsuleType =
-            catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)
-            ?? throw new InvalidDataException("The catalog has no supported capsule.");
+            (
+                catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } replacement
+                    ? replacement
+                    : null
+            ) ?? throw new InvalidDataException("The catalog has no supported capsule.");
         var capsule = world
             .Ships.Add(
                 new()

@@ -1,4 +1,5 @@
-using System.Collections.ObjectModel;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
@@ -27,23 +28,49 @@ internal sealed record NpcSpawnProfile(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes
 );
 
+internal readonly record struct NpcSpawnPoolKey(NpcPirateFaction Faction, NpcHullClass Hull);
+
+internal sealed record NpcSpawnDefinitions(
+    ImmutableArray<NpcSpawnProfile> Profiles,
+    FrozenDictionary<NpcSpawnPoolKey, ImmutableArray<NpcSpawnProfile>> Pools
+);
+
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcSpawnCatalog(WorldDatabase database)
 {
-    private readonly Lazy<IReadOnlyList<NpcSpawnProfile>> _profiles = new(() => Load(database));
+    private static readonly CatalogDefinition<NpcSpawnDefinitions> s_profiles = new(
+        "npc-spawn-profiles",
+        (catalog, _) => Index(Load(catalog)),
+        Estimate: values => 128 + values.Profiles.Length * 8192L
+    );
 
-    internal IReadOnlyList<NpcSpawnProfile> Profiles => _profiles.Value;
+    private NpcSpawnDefinitions Definitions
+    {
+        get
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            return catalog.Definition(s_profiles, 0);
+        }
+    }
+
+    internal IReadOnlyList<NpcSpawnProfile> Profiles => Definitions.Profiles;
 
     internal IReadOnlyList<NpcSpawnProfile> Pool(NpcPirateFaction faction, NpcHullClass hull) =>
-        Profiles.Where(p => p.Faction == faction && p.Hull == hull).OrderBy(p => p.TypeId).ToArray();
+        Definitions.Pools.GetValueOrDefault(new(faction, hull), []);
 
-    private static IReadOnlyList<NpcSpawnProfile> Load(WorldDatabase database)
+    private static NpcSpawnDefinitions Index(ImmutableArray<NpcSpawnProfile> profiles) =>
+        new(
+            profiles,
+            profiles
+                .GroupBy(profile => new NpcSpawnPoolKey(profile.Faction, profile.Hull))
+                .ToFrozenDictionary(group => group.Key, group => group.OrderBy(profile => profile.TypeId).ToImmutableArray())
+        );
+
+    private static ImmutableArray<NpcSpawnProfile> Load(CatalogDbContext catalog)
     {
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        catalog.Database.OpenConnection();
         var groups = NpcPirateGroups.All.ToDictionary(g => g.GroupId);
         int[] groupIds = groups.Keys.ToArray();
-        var types = catalog.Set<ItemType>().Where(t => groupIds.Contains(t.GroupId)).OrderBy(t => t.Id).ToArray();
+        var types = groupIds.SelectMany(group => catalog.Definitions.TypesInGroup(group)).Select(catalog.RequireItem).OrderBy(t => t.Id);
         List<NpcSpawnProfile> profiles = [];
         foreach (var type in types)
         {
@@ -55,10 +82,8 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
             {
                 var group = groups[type.GroupId];
                 var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
-                var definition = catalog.FindSource("client/types", type.Id.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
-                var faction = catalog
-                    .FindSource("client/factions", ((int)group.Faction).ToString(CultureInfo.InvariantCulture))
-                    ?.Read<ClientFactions>();
+                var definition = catalog.Read(CatalogData.Client.Types, (long)type.Id);
+                var faction = catalog.Read(CatalogData.Client.Factions, (long)(((int)group.Faction)));
                 int corporation = checked((int)(faction?.CorporationID ?? 0));
                 int wreck = checked((int)(definition?.WreckTypeID ?? 0));
                 if (
@@ -75,8 +100,8 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
                     || attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange) < 0
                     || attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackDelayMinimum) < 0
                     || corporation <= 0
-                    || !catalog.Set<NpcCorporation>().Any(c => c.Id == corporation)
-                    || !catalog.Set<ItemType>().Any(t => t.Id == wreck && t.GroupId == Eden.Gameplay.Loot.WreckDefinitions.Group)
+                    || catalog.NpcCorporationName(corporation) is null
+                    || catalog.FittingType(wreck)?.GroupId != Eden.Gameplay.Loot.WreckDefinitions.Group
                 )
                 {
                     throw new InvalidDataException("Incomplete NPC identity, movement, health or wreck definition.");
@@ -124,7 +149,7 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
                         type.Radius.Value,
                         wreck,
                         missileRange,
-                        new ReadOnlyDictionary<DogmaAttributeId, double>(attributes.ToDictionary())
+                        attributes.ToImmutableDictionary()
                     )
                 );
             }
@@ -133,6 +158,6 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
                 ServerLog.Console.Warning($"NPC population skips type {type.Id}: {error.Message}");
             }
         }
-        return profiles.AsReadOnly();
+        return profiles.ToImmutableArray();
     }
 }

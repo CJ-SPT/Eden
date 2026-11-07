@@ -238,7 +238,7 @@ public sealed class NpcPursuitTests
     {
         using NpcCombatTests.Fixture f = new();
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
-        var type = catalog.Set<ItemType>().Single(t => t.Id == f.Npc.TypeId);
+        var type = catalog.RequireItem(f.Npc.TypeId);
         var attributes = catalog
             .Set<TypeAttribute>()
             .Where(a => a.ItemTypeId == type.Id)

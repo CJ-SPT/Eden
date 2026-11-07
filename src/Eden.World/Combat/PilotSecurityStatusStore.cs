@@ -93,15 +93,13 @@ internal sealed class PilotSecurityStatusStore(WorldDatabase database, TimeProvi
             var account = world.Set<Account>().Find(pilot.AccountId)!;
             if (account.CloneGrade == AccountCloneGrade.Alpha)
             {
-                var alpha = CatalogData.Client.Clonegrades.Get(catalog, pilot.RaceId.ToString(CultureInfo.InvariantCulture));
+                var alpha = catalog.Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture));
                 int cap = checked((int)(alpha.Skills?.SingleOrDefault(s => s.TypeID == (int)SecuritySkill.FastTalk)?.Level ?? 0));
                 level = Math.Min(level, cap);
             }
         }
         double mutator =
-            level == 0
-                ? 0
-                : catalog.Set<TypeAttribute>().Find((int)SecuritySkill.FastTalk, (int)DogmaAttributeId.FastTalkMutator)?.Value ?? 0;
+            level == 0 ? 0 : catalog.FittingAttributes((int)SecuritySkill.FastTalk).GetValueOrDefault(DogmaAttributeId.FastTalkMutator, 0);
         var reward = SecurityStatusRules.Reward(
             bonus,
             attributes.GetValueOrDefault(DogmaAttributeId.EntitySecurityMaxGain),

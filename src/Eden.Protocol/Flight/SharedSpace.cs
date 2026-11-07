@@ -355,21 +355,33 @@ internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null) : IPilotC
         }
     }
 
+    public PilotCombatPresence? FindOnline(int systemId, long shipId)
+    {
+        lock (MotionLock)
+        {
+            if (!_ships.TryGetValue(shipId, out var ship))
+            {
+                return null;
+            }
+            return
+                ship.Pilot.SystemId == systemId
+                && ship.Pilot.Position is { } position
+                && ship.Warp is null
+                && ship.DepartureGate is null
+                && !ship.Arriving
+                && ship.Health?.Remaining.Destroyed != true
+                ? new(shipId, position, ship.Velocity)
+                : null;
+        }
+    }
+
     public PilotCombatPresence? Find(int systemId, long shipId)
     {
         lock (MotionLock)
         {
-            if (_ships.TryGetValue(shipId, out var ship))
+            if (_ships.ContainsKey(shipId))
             {
-                return
-                    ship.Pilot.SystemId == systemId
-                    && ship.Pilot.Position is { } position
-                    && ship.Warp is null
-                    && ship.DepartureGate is null
-                    && !ship.Arriving
-                    && ship.Health?.Remaining.Destroyed != true
-                    ? new(shipId, position, ship.Velocity)
-                    : null;
+                return FindOnline(systemId, shipId);
             }
             return crimewatch?.LoggedOff(systemId).FirstOrDefault(p => p.Pilot.ShipId == shipId)?.Pilot.Position is { } offline
                 ? new(shipId, offline, SpacePosition.Zero)

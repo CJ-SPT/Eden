@@ -86,10 +86,7 @@ internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeed
         {
             return;
         }
-        var definition = catalog
-            .Set<SourceRecord>()
-            .Find("client/systems", systemId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientSystems>();
+        var definition = catalog.Read(CatalogData.Client.Systems, (long)systemId);
         if (definition?.SecurityStatus is not double security)
         {
             Report($"system {systemId} has no pinned security metadata; no population was substituted.");

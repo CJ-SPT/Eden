@@ -26,7 +26,7 @@ internal sealed class PilotSupportModuleStore(WorldDatabase database) : IPilotSu
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
-        int group = module is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
+        int group = module is null ? 0 : catalog.RequireItem(module.TypeId).GroupId;
         if (
             pilot.ActiveShip.Position is null
             || module is null
@@ -44,7 +44,7 @@ internal sealed class PilotSupportModuleStore(WorldDatabase database) : IPilotSu
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } loaded)
         {
-            int chargeGroup = catalog.Set<ItemType>().Single(t => t.Id == loaded.TypeId).GroupId;
+            int chargeGroup = catalog.RequireItem(loaded.TypeId).GroupId;
             if (
                 loaded.OwnerId != pilotId
                 || loaded.Quantity != 1

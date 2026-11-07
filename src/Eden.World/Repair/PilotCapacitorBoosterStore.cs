@@ -36,7 +36,7 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
-            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != CapacitorBoosterDefinitions.Group
+            || catalog.RequireItem(module.TypeId).GroupId != CapacitorBoosterDefinitions.Group
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {
@@ -48,7 +48,7 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
             loaded is null
             || loaded.OwnerId != pilotId
             || loaded.Quantity <= 0
-            || catalog.Set<ItemType>().Single(t => t.Id == loaded.TypeId).GroupId != CapacitorBoosterDefinitions.ChargeGroup
+            || catalog.RequireItem(loaded.TypeId).GroupId != CapacitorBoosterDefinitions.ChargeGroup
         )
         {
             throw new InvalidDataException("Load a compatible capacitor booster charge first.");

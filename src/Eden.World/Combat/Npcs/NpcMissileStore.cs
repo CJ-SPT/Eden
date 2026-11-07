@@ -60,8 +60,8 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         {
             return false;
         }
-        var source = catalog.Set<ItemType>().Find(npc.TypeId)!;
-        var hull = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!;
+        var source = catalog.FittingType(npc.TypeId)!;
+        var hull = catalog.FittingType(pilot.ActiveShip.TypeId)!;
         var flight = MissileFlightRules.Launch(
             drive,
             new(
@@ -87,7 +87,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 // the stable native launch identity, retained in the wire contact.
                 ModuleId = npc.Id,
                 ChargeTypeId = chargeId,
-                GroupId = catalog.Set<ItemType>().Find(chargeId)!.GroupId,
+                GroupId = catalog.FittingType(chargeId)!.GroupId,
                 SystemId = npc.SystemId,
                 TargetId = pilot.ActiveShipId,
                 TargetRadius = (float)(hull.Radius ?? 0),
@@ -145,7 +145,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 || npc.RetiredAt.HasValue
                 || aggression?.TargetShipId != shipId
                 || now > row.ExpiresAt + TimeSpan.TicksPerSecond
-                || catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup
+                || catalog.FittingType(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup
             )
             {
                 row.Status = MissileFlightStatus.Expired;

@@ -179,7 +179,7 @@ internal sealed class PilotCombatStore(
             if (
                 victim?.ActiveShip.Position is not { } saved
                 || victim.Id == pilotId
-                || catalog.Set<ItemType>().Single(t => t.Id == victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
+                || catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
                 || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
                 || !double.IsFinite(playerTarget.Velocity.DistanceTo(SpacePosition.Zero))
             )
@@ -349,7 +349,7 @@ internal sealed class PilotCombatStore(
         bool ammoFed =
             module is not null
             && CombatDefinitions.IsSupportedAmmoTurret(
-                catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId,
+                catalog.RequireItem(module.TypeId).GroupId,
                 PilotFittingStore.ReadAttributes(catalog, module.TypeId)
             );
         if (
@@ -366,15 +366,15 @@ internal sealed class PilotCombatStore(
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked ship while in space.");
         }
-        bool energy = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;
+        bool energy = catalog.RequireItem(module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;
         if (activation is not null && activation != (ammoFed && !energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser))
         {
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;
-        var targetType = catalog.Set<ItemType>().Single(t => t.Id == target.TypeId);
-        var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
+        var targetType = catalog.RequireItem(target.TypeId);
+        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var separation = target.Position - new SpacePosition(position.X, position.Y, position.Z);
         double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (targetType.Radius ?? 0));
         string? revision = world.FitRevision(pilotId);
@@ -418,14 +418,10 @@ internal sealed class PilotCombatStore(
                 || loadedAmmo!.Quantity < rounds
                 || !AmmunitionDefinitions.CompatibleTurretCharge(
                     attributes,
-                    catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo!.TypeId).GroupId,
+                    catalog.RequireItem(loadedAmmo!.TypeId).GroupId,
                     damageAttributes
                 )
-                || !TurretChargeCatalog.Supported(
-                    catalog,
-                    loadedAmmo!.TypeId,
-                    catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId
-                )
+                || !TurretChargeCatalog.Supported(catalog, loadedAmmo!.TypeId, catalog.RequireItem(loadedAmmo.TypeId).GroupId)
             )
         )
         {

@@ -1,5 +1,4 @@
-using System.Collections.Concurrent;
-using System.Collections.Frozen;
+using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -11,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat.Npcs;
 
 internal sealed record NpcHullProfile(
-    ItemType Type,
+    CatalogItemDefinition Type,
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     HullDefense Defense,
     IReadOnlyList<NpcEwarAbility> ElectronicWarfare
@@ -19,21 +18,21 @@ internal sealed record NpcHullProfile(
 
 public sealed class NpcProfileCatalog(bool cache = true)
 {
-    private readonly ConcurrentDictionary<int, NpcHullProfile> _profiles = new();
+    private static readonly CatalogDefinition<NpcHullProfile> s_profile = new("npc-hull", Load, 8192);
 
     internal NpcHullProfile Read(CatalogDbContext catalog, int typeId) =>
-        cache ? _profiles.GetOrAdd(typeId, id => Load(catalog, id)) : Load(catalog, typeId);
+        cache ? catalog.Definition(s_profile, typeId) : Load(catalog, typeId);
 
     private static NpcHullProfile Load(CatalogDbContext catalog, int typeId)
     {
-        var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);
+        var type = catalog.RequireItem(typeId);
         var source = PilotFittingStore.ReadAttributes(catalog, typeId);
-        var attributes = (NpcMiningRules.Types.Contains(typeId) ? NpcMiningRules.CombatAttributes(source) : source).ToFrozenDictionary();
+        var attributes = (NpcMiningRules.Types.Contains(typeId) ? NpcMiningRules.CombatAttributes(source) : source).ToImmutableDictionary();
         return new(
             type,
             attributes,
             ShipHealth.DefenseFrom(attributes),
-            NpcEwarRules.Profile(FittingCatalog.Effects(catalog, typeId), attributes)
+            NpcEwarRules.Profile(FittingCatalog.Effects(catalog, typeId), attributes).ToImmutableArray()
         );
     }
 }

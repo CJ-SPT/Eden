@@ -27,7 +27,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
-        int group = module is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;
+        int group = module is null ? 0 : catalog.RequireItem(module.TypeId).GroupId;
         bool correctSlot =
             group == HardenerDefinitions.ShieldGroup
                 ? module is not null && InventoryDefinitions.IsMediumSlot(module.FlagId)

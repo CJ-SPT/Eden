@@ -101,14 +101,14 @@ internal sealed partial class PilotMissileStore(
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
-            || !MissileLauncherCatalog.Supported(catalog, module.TypeId, catalog.Set<ItemType>().Find(module.TypeId)!.GroupId)
+            || !MissileLauncherCatalog.Supported(catalog, module.TypeId, catalog.FittingType(module.TypeId)!.GroupId)
         )
         {
             throw new InvalidDataException("Use an online fitted missile launcher while in space.");
         }
         var loaded =
             PilotAmmunitionStore.Contents(world, module.Id) ?? throw new InvalidDataException("Load missiles before firing the launcher.");
-        var chargeType = catalog.Set<ItemType>().Find(loaded.TypeId)!;
+        var chargeType = catalog.FittingType(loaded.TypeId)!;
         if (loaded.OwnerId != pilotId || !MissileChargeCatalog.Supported(catalog, loaded.TypeId, chargeType.GroupId))
         {
             throw new InvalidDataException("Load supported missile ammunition.");
@@ -171,9 +171,10 @@ internal sealed partial class PilotMissileStore(
                 .Where(h => h.TargetShipId == pilot.ActiveShipId && h.ExpiresAt > now)
                 .Select(h => h.SourceShipId)
                 .ToArray()
-                .Select(id => presence.Find(systemId, id))
+                .Select(id => AutomaticVictim(world, catalog, pilot, id, systemId, now))
+                .OfType<Pilot>()
+                .Select(victim => FindContact(world, victim, systemId, now))
                 .OfType<PilotCombatPresence>()
-                .Where(p => EligibleAutomaticTarget(world, catalog, pilot, p.ShipId, systemId, now))
                 .Select(p => new MissileAggressor(p.ShipId, p.Position));
             targetId = MissileRules.AcquireAggressor(origin, maximumRange, candidates.Concat(pilotAggressors).ToArray());
         }
@@ -185,7 +186,7 @@ internal sealed partial class PilotMissileStore(
         Pilot? victim = null;
         AggressionDecision? aggression = null;
         MissileTarget target;
-        ItemType targetType;
+        CatalogItemDefinition targetType;
         if (npc is not null)
         {
             if (
@@ -197,22 +198,22 @@ internal sealed partial class PilotMissileStore(
             {
                 throw new InvalidDataException("The NPC is unavailable.");
             }
-            targetType = catalog.Set<ItemType>().Find(npc.TypeId)!;
+            targetType = catalog.FittingType(npc.TypeId)!;
             target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
         }
         else
         {
             victim = targetId is long shipId ? FindVictim(world, catalog, systemId, shipId, now) : null;
-            var contact = targetId is long targetShip ? presence.Find(systemId, targetShip) : null;
+            var contact = victim is not null ? FindContact(world, victim, systemId, now) : null;
             if (victim is null || victim.Id == pilotId || contact is null)
             {
                 throw new InvalidDataException("No eligible attacking ship is available, or the target is unavailable.");
             }
             aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, systemId, now);
-            targetType = catalog.Set<ItemType>().Find(victim.ActiveShip.TypeId)!;
+            targetType = catalog.FittingType(victim.ActiveShip.TypeId)!;
             target = new(contact.Position, contact.Velocity, (float)(targetType.Radius ?? 0));
         }
-        var sourceType = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!;
+        var sourceType = catalog.FittingType(pilot.ActiveShip.TypeId)!;
         double distance = Math.Max(0, origin.DistanceTo(target.Position) - (sourceType.Radius ?? 0) - (targetType.Radius ?? 0));
         if (distance > maximumRange || distance > NpcEncounterDefinitions.VisibilityRange)
         {
@@ -357,8 +358,8 @@ internal sealed partial class PilotMissileStore(
                 }
                 if (
                     row.TargetKind == MissileTargetKind.Pilot
-                    && FindVictim(world, catalog, systemId, row.TargetId, now) is not null
-                    && presence.Find(systemId, row.TargetId) is { } contact
+                    && FindVictim(world, catalog, systemId, row.TargetId, now) is { } victim
+                    && FindContact(world, victim, systemId, now) is { } contact
                 )
                 {
                     // The contact is current. Reconstruct this step's start for the existing flight integrator.
@@ -388,7 +389,7 @@ internal sealed partial class PilotMissileStore(
                 if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
                 {
                     var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
-                    if (victim is not null && presence.Find(systemId, row.TargetId) is { } contact)
+                    if (victim is not null && FindContact(world, victim, systemId, now) is { } contact)
                     {
                         pilotImpacts.Add(ApplyPilotImpact(world, catalog, row, payload, victim, contact, time));
                     }

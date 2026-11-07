@@ -19,7 +19,11 @@ internal static class WeaponCatalog
     private const int BarrageFalloffDerivation = 254;
     private const int LegacyBarrage = 263;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(WeaponCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (MissileDefinitions.LauncherGroups.Contains(group))
         {
@@ -33,7 +37,7 @@ internal static class WeaponCatalog
             return false;
         }
         var firingEffect = group == CombatDefinitions.EnergyWeaponGroup ? DogmaEffect.LaserFired : DogmaEffect.ProjectileFired;
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup

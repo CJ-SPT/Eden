@@ -1,4 +1,5 @@
-using System.Collections.ObjectModel;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat.Npcs;
@@ -30,12 +31,19 @@ internal sealed record NpcGuardProfile(
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcGuardSeeder
 {
-    private readonly Dictionary<int, NpcGuardProfile?> _profiles = [];
+    private static readonly FrozenDictionary<NpcEmpireFaction, CatalogDefinition<NpcGuardProfile?>> s_profiles =
+        Enum.GetValues<NpcEmpireFaction>()
+            .ToFrozenDictionary(
+                faction => faction,
+                faction => new CatalogDefinition<NpcGuardProfile?>(
+                    "npc-guard/" + faction,
+                    (catalog, typeId) => LoadProfile(catalog, typeId, (int)faction),
+                    8192
+                )
+            );
     private readonly HashSet<string> _diagnostics = [];
 
     public NpcGuardSeeder() { }
-
-    internal NpcGuardProfile? Cached(int typeId) => _profiles.GetValueOrDefault(typeId);
 
     private void Report(string message)
     {
@@ -45,17 +53,18 @@ internal sealed class NpcGuardSeeder
         }
     }
 
-    private NpcGuardProfile? Profile(CatalogDbContext catalog, int typeId, int factionId)
+    private static NpcGuardProfile? Profile(CatalogDbContext catalog, int typeId, int factionId) =>
+        catalog.Definition(s_profiles[(NpcEmpireFaction)factionId], typeId);
+
+    private static void ReportDefinition(string message) => ServerLog.Console.Warning("NPC guards: " + message);
+
+    private static NpcGuardProfile? LoadProfile(CatalogDbContext catalog, int typeId, int factionId)
     {
-        if (_profiles.TryGetValue(typeId, out var cached))
-        {
-            return cached;
-        }
-        var type = catalog.Set<ItemType>().Find(typeId);
-        var faction = catalog.Set<SourceRecord>().Find("client/factions", Key(factionId))?.Read<ClientFactions>();
+        var type = catalog.FittingType(typeId);
+        var faction = catalog.Read(CatalogData.Client.Factions, (long)factionId);
         int corporation = checked((int)(faction?.CorporationID ?? 0));
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
-        var definition = catalog.Set<SourceRecord>().Find("client/types", Key(typeId))?.Read<ClientTypes>();
+        var definition = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Mass is not > 0
             || type.Radius is not > 0
@@ -63,7 +72,7 @@ internal sealed class NpcGuardSeeder
             || !double.IsFinite(type.Radius.Value)
             || definition is null
             || corporation <= 0
-            || !catalog.Set<NpcCorporation>().Any(c => c.Id == corporation)
+            || catalog.NpcCorporationName(corporation) is null
             || attributes.Values.Any(a => !double.IsFinite(a))
             || attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints) <= 0
             || attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange) <= 0
@@ -74,8 +83,7 @@ internal sealed class NpcGuardSeeder
             || !NpcPopulationRules.HasDirectWeapon(attributes)
         )
         {
-            Report($"type {typeId} has no valid catalog guard profile; no substitute was used.");
-            _profiles[typeId] = null;
+            ReportDefinition($"type {typeId} has no valid catalog guard profile; no substitute was used.");
             return null;
         }
         try
@@ -95,17 +103,15 @@ internal sealed class NpcGuardSeeder
         }
         catch (InvalidDataException error)
         {
-            Report($"type {typeId}: {error.Message}");
-            _profiles[typeId] = null;
+            ReportDefinition($"type {typeId}: {error.Message}");
             return null;
         }
         if (
             definition.WreckTypeID is long wreckType
-            && !catalog.Set<ItemType>().Any(t => t.Id == wreckType && t.GroupId == Eden.Gameplay.Loot.WreckDefinitions.Group)
+            && catalog.FittingType(wreckType)?.GroupId != Eden.Gameplay.Loot.WreckDefinitions.Group
         )
         {
-            Report($"type {typeId} has an invalid wreck link.");
-            _profiles[typeId] = null;
+            ReportDefinition($"type {typeId} has an invalid wreck link.");
             return null;
         }
         var result = new NpcGuardProfile(
@@ -115,10 +121,26 @@ internal sealed class NpcGuardSeeder
             corporation,
             type.Mass.Value,
             type.Radius.Value,
-            new ReadOnlyDictionary<DogmaAttributeId, double>(attributes.ToDictionary())
+            attributes.ToImmutableDictionary()
         );
-        _profiles[typeId] = result;
         return result;
+    }
+
+    internal static List<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId)
+    {
+        List<NpcGuardObstacle> obstacles = [];
+        var bodies = catalog
+            .Set<Celestial>()
+            .Where(body => body.SolarSystemId == systemId && body.GroupId != AsteroidDefinitions.BeltGroup)
+            .ToArray();
+        foreach (var body in bodies)
+        {
+            if (catalog.FittingType(body.TypeId) is { } type)
+            {
+                obstacles.Add(new(new(body.X, body.Y, body.Z), body.Radius ?? type.Radius ?? 0));
+            }
+        }
+        return obstacles;
     }
 
     internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)
@@ -127,14 +149,15 @@ internal sealed class NpcGuardSeeder
         {
             return;
         }
-        var obstacles = (
-            from celestial in catalog.Set<Celestial>()
-            join type in catalog.Set<ItemType>() on celestial.TypeId equals type.Id
-            where celestial.SolarSystemId == systemId && celestial.GroupId != AsteroidDefinitions.BeltGroup
-            select new NpcGuardObstacle(new(celestial.X, celestial.Y, celestial.Z), celestial.Radius ?? type.Radius ?? 0)
-        ).ToList();
-        var stations = catalog.Set<Station>().Include(s => s.Type).Where(s => s.SolarSystemId == systemId).OrderBy(s => s.Id).ToArray();
-        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), s.Type.Radius ?? 0)));
+        var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
+        var stations = catalog
+            .Set<Station>()
+            .Where(s => s.SolarSystemId == systemId)
+            .OrderBy(s => s.Id)
+            .ToArray()
+            .Where(station => catalog.FittingType(station.TypeId) is not null)
+            .ToArray();
+        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
         foreach (var gate in catalog.Set<Stargate>().Where(g => g.SolarSystemId == systemId).OrderBy(g => g.Id).ToArray())
         {
             var body = catalog.Set<Celestial>().Find(gate.Id);
@@ -143,7 +166,7 @@ internal sealed class NpcGuardSeeder
                 Report($"gate {gate.Id} has no catalog position.");
                 continue;
             }
-            double radius = body.Radius ?? catalog.Set<ItemType>().Find(body.TypeId)?.Radius ?? 0;
+            double radius = body.Radius ?? catalog.FittingType(body.TypeId)?.Radius ?? 0;
             SeedAnchor(
                 world,
                 catalog,
@@ -160,10 +183,8 @@ internal sealed class NpcGuardSeeder
         }
         foreach (var station in stations)
         {
-            var owner = catalog.Set<SourceRecord>().Find("client/npccorporations", Key(station.OwnerId))?.Read<ClientNpccorporations>();
-            long? ownerFaction =
-                owner?.FactionID
-                ?? catalog.Set<SourceRecord>().Find("sde/npcCorporations", Key(station.OwnerId))?.Read<SdeNpcCorporations>().FactionID;
+            var owner = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
+            long? ownerFaction = owner?.FactionID ?? catalog.Read(CatalogData.Sde.NpcCorporations, (long)station.OwnerId)?.FactionID;
             if (ownerFaction is long empire && NpcGuardRules.Roster(checked((int)empire)) is not null)
             {
                 SeedAnchor(
@@ -174,7 +195,7 @@ internal sealed class NpcGuardSeeder
                     NpcAnchorKind.Station,
                     checked((int)empire),
                     new(station.X, station.Y, station.Z),
-                    station.Type.Radius ?? 0,
+                    catalog.FittingType(station.TypeId)?.Radius ?? 0,
                     StationUndockCatalog.Read(catalog, station.TypeId),
                     obstacles,
                     now
@@ -272,6 +293,4 @@ internal sealed class NpcGuardSeeder
             );
         }
     }
-
-    private static string Key(long id) => id.ToString(CultureInfo.InvariantCulture);
 }

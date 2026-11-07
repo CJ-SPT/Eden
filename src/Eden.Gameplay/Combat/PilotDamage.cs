@@ -12,6 +12,8 @@ public sealed record PilotCombatPresence(long ShipId, SpacePosition Position, Sp
 public interface IPilotCombatPresence
 {
     PilotCombatPresence? Find(int systemId, long shipId);
+
+    PilotCombatPresence? FindOnline(int systemId, long shipId) => Find(systemId, shipId);
 }
 
 public sealed record PilotDamage(

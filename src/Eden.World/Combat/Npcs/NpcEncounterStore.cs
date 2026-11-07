@@ -122,7 +122,7 @@ internal sealed class NpcEncounterStore(
                     n.Id,
                     n.TypeId,
                     type.GroupId,
-                    type.Group.CategoryId,
+                    type.CategoryId,
                     n.CorporationId,
                     type.Name,
                     systemId,
@@ -197,7 +197,11 @@ internal sealed class NpcEncounterStore(
         return contacts;
     }
 
-    private sealed record Profile(ItemType Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense);
+    private sealed record Profile(
+        CatalogItemDefinition Type,
+        IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
+        HullDefense Defense
+    );
 
     private Profile ReadProfile(CatalogDbContext catalog, int typeId)
     {

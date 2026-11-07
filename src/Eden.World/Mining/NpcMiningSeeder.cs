@@ -328,8 +328,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
     }
 
     private static double OreVolume(CatalogDbContext catalog, int type) =>
-        catalog.FindSource("client/types", NpcMiningCatalog.Key(type))?.Read<ClientTypes>().Volume is > 0 and var volume
-        && double.IsFinite(volume)
+        catalog.Read(CatalogData.Client.Types, (long)type)?.Volume is > 0 and var volume && double.IsFinite(volume)
             ? volume
             : throw new InvalidDataException("Missing catalog ore volume.");
 

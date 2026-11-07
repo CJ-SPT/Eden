@@ -69,7 +69,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                 {
                     throw new InvalidDataException("The ship is unavailable in your current station hangar.");
                 }
-                var type = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId);
+                var type = catalog.RequireItem(ship.TypeId);
                 var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilot, ship));
                 var saved = world.Set<ShipHealthState>().Find(id);
                 if (
@@ -110,8 +110,8 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                 {
                     throw new InvalidDataException("The assembled item is unavailable in your current station.");
                 }
-                var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);
-                if (type.Group.CategoryId != (int)InventoryCategory.Module)
+                var type = catalog.RequireItem(item.TypeId);
+                if (type.CategoryId != (int)InventoryCategory.Module)
                 {
                     throw new InvalidDataException("This item does not support repairs yet.");
                 }
@@ -125,7 +125,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                             type.Id,
                             type.GroupId,
                             0,
-                            catalog.Set<TypeAttribute>().Find(type.Id, (int)DogmaAttributeId.StructureHitPoints)?.Value ?? 0
+                            catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.StructureHitPoints, 0)
                         ),
                     ]
                 );

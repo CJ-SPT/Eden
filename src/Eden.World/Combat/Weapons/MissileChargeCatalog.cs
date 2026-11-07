@@ -11,13 +11,17 @@ internal static class MissileChargeCatalog
 {
     private const int AbyssalMetaGroup = 15;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(MissileChargeCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (!MissileDefinitions.ChargeGroups.Contains(group))
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         bool automatic =
             group
@@ -60,7 +64,7 @@ internal static class MissileChargeCatalog
 
     internal static MissileDrive Drive(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
-        var type = catalog.Set<ItemType>().Find(typeId) ?? throw new InvalidDataException("Unknown missile type.");
+        var type = catalog.FittingType(typeId) ?? throw new InvalidDataException("Unknown missile type.");
         return new(
             type.Mass ?? 0,
             (float)(type.Radius ?? 0),

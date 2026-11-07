@@ -5,6 +5,7 @@ using Eden.Data.World.Combat;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Fittings;
@@ -21,9 +22,9 @@ internal sealed partial class PilotMissileStore
         if (
             victim?.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
-            || catalog.Set<ItemType>().Find(victim.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup
+            || catalog.FittingType(victim.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup
             || world.Set<ShipLoss>().Any(l => l.ShipId == shipId)
-            || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
+            || world.Set<SavedLogoff>().Find(victim.Id) is { } logoff && logoff.ExpiresAt <= now
         )
         {
             return null;
@@ -31,28 +32,42 @@ internal sealed partial class PilotMissileStore
         return victim;
     }
 
-    private static bool EligibleAutomaticTarget(
-        WorldDbContext world,
-        CatalogDbContext catalog,
-        Pilot pilot,
-        long shipId,
-        int system,
-        long now
-    )
+    private PilotCombatPresence? FindContact(WorldDbContext world, Pilot pilot, int system, long now)
+    {
+        long shipId = pilot.ActiveShipId;
+        if (presence.FindOnline(system, shipId) is { } online)
+        {
+            return online;
+        }
+        // FindVictim has loaded the current logoff row and position under this
+        // transaction. Do not reopen a pilot/fitting transaction through presence.
+        var offline = world.Set<SavedLogoff>().Find(pilot.Id);
+        return
+            offline is not null
+            && offline.ShipId == shipId
+            && offline.SystemId == system
+            && offline.ExpiresAt > now
+            && pilot.ActiveShip.Position is { } position
+            && position.SystemId == system
+            ? new(shipId, new(position.X, position.Y, position.Z), SpacePosition.Zero)
+            : null;
+    }
+
+    private static Pilot? AutomaticVictim(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long shipId, int system, long now)
     {
         var victim = FindVictim(world, catalog, system, shipId, now);
         if (victim is null || victim.Id == pilot.Id)
         {
-            return false;
+            return null;
         }
         try
         {
             _ = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
-            return true;
+            return victim;
         }
         catch (InvalidDataException)
         {
-            return false;
+            return null;
         }
     }
 

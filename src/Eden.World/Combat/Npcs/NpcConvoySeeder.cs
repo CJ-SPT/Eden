@@ -20,14 +20,15 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
         {
             return;
         }
-        var stations = catalog.Set<Station>().Include(s => s.Type).Where(s => s.SolarSystemId == systemId).OrderBy(s => s.Id).ToArray();
-        var obstacles = (
-            from celestial in catalog.Set<Celestial>()
-            join type in catalog.Set<ItemType>() on celestial.TypeId equals type.Id
-            where celestial.SolarSystemId == systemId && celestial.GroupId != AsteroidDefinitions.BeltGroup
-            select new NpcGuardObstacle(new(celestial.X, celestial.Y, celestial.Z), celestial.Radius ?? type.Radius ?? 0)
-        ).ToList();
-        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), s.Type.Radius ?? 0)));
+        var stations = catalog
+            .Set<Station>()
+            .Where(s => s.SolarSystemId == systemId)
+            .OrderBy(s => s.Id)
+            .ToArray()
+            .Where(station => catalog.FittingType(station.TypeId) is not null)
+            .ToArray();
+        var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
+        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
         // Include newly seeded, tracked guard encounters as well as saved ones.
         _ = world.Set<WorldNpcEncounter>().Where(e => e.SystemId == systemId && e.Role == NpcRole.Navy).ToArray();
         obstacles.AddRange(
@@ -41,14 +42,12 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
         );
         foreach (var station in stations)
         {
-            var owner = catalog
-                .FindSource("client/npccorporations", station.OwnerId.ToString(CultureInfo.InvariantCulture))
-                ?.Read<ClientNpccorporations>();
+            var owner = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
             if (
                 owner?.FactionID is not long faction
                 || NpcGuardRules.Roster(checked((int)faction)) is null
                 || owner.RaceID is not long race
-                || !catalog.Set<NpcCorporation>().Any(c => c.Id == station.OwnerId)
+                || catalog.NpcCorporationName(station.OwnerId) is null
             )
             {
                 continue;
@@ -93,7 +92,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             }
             var route = NpcConvoyRules.Route(
                 new(station.X, station.Y, station.Z),
-                station.Type.Radius ?? 0,
+                catalog.FittingType(station.TypeId)?.Radius ?? 0,
                 pool.Max(p => p.Radius),
                 StationUndockCatalog.Read(catalog, station.TypeId),
                 obstacles

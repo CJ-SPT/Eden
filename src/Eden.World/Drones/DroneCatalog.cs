@@ -18,15 +18,26 @@ namespace Eden.World.Drones;
 internal static class DroneCatalog
 {
     private const int AbyssalMetaGroup = 15;
+    private static readonly CatalogDefinition<DroneProfile> s_profile = new(
+        "combat-drone",
+        (catalog, typeId) => ReadProfile(catalog, typeId, null),
+        512
+    );
 
     internal static DroneProfile Profile(
         CatalogDbContext catalog,
         int typeId,
         IReadOnlyDictionary<DogmaAttributeId, double>? fittedAttributes = null
+    ) => fittedAttributes is null ? catalog.Definition(s_profile, typeId) : ReadProfile(catalog, typeId, fittedAttributes);
+
+    private static DroneProfile ReadProfile(
+        CatalogDbContext catalog,
+        int typeId,
+        IReadOnlyDictionary<DogmaAttributeId, double>? fittedAttributes
     )
     {
         var type = catalog.FittingType(typeId) ?? throw new InvalidDataException("Unknown drone type.");
-        var source = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var source = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = fittedAttributes ?? catalog.FittingAttributes(typeId);
         double bandwidth = attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidthUsed);
         if (

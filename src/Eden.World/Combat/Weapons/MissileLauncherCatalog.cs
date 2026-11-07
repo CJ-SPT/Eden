@@ -15,14 +15,18 @@ internal static class MissileLauncherCatalog
     private const int HullOverride = 5994;
     private const int ShieldArmorOverride = 5995;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(MissileLauncherCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (!MissileDefinitions.SupportedLauncher(group, attributes))
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup

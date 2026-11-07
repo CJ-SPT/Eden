@@ -26,9 +26,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         long pilotId,
         NavigationSkill skill,
         DogmaAttributeId source
-    ) =>
-        PilotSkillReader.Level(world, catalog, pilotId, (int)skill)
-        * (catalog.Set<TypeAttribute>().Find((int)skill, (int)source)?.Value ?? 0);
+    ) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill) * (catalog.FittingAttributes((int)skill).GetValueOrDefault(source, 0));
 
     internal static double NavigationSpeed(WorldDbContext world, CatalogDbContext catalog, long pilotId, double speed) =>
         PropulsionRules.NavigationSpeed(speed, Bonus(world, catalog, pilotId, NavigationSkill.Navigation, DogmaAttributeId.VelocityBonus));
@@ -127,7 +125,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
-            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup
+            || catalog.RequireItem(module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup
             || !effects.Contains(activation)
             || effect is not null && activation != effect
             || FittingCatalog.Definition(catalog, module.TypeId) is null
@@ -160,11 +158,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         {
             throw new InvalidDataException("The propulsion module is still cycling.");
         }
-        var groupTypes = catalog
-            .Set<ItemType>()
-            .Where(t => t.GroupId == PropulsionDefinitions.AfterburnerGroup)
-            .Select(t => t.Id)
-            .ToArray();
+        var groupTypes = catalog.Definitions.TypesInGroup(PropulsionDefinitions.AfterburnerGroup).ToArray();
         var groupModules = world
             .Set<OwnedItem>()
             .Where(i => i.LocationId == pilot.ActiveShipId && groupTypes.Contains(i.TypeId))

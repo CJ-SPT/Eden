@@ -249,12 +249,14 @@ public sealed class PilotMissileTests
         Assert.Empty(saved.Set<ShipHealthState>());
     }
 
-    [Fact]
-    public void AutomaticMissilesChooseOnlyAnActualPilotAggressorAndRejectExpiredHostility()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AutomaticMissilesChooseOnlyAnActualPilotAggressorAndRejectExpiredHostility(bool offline)
     {
         using var f = Prepare();
         long launcher = MissileCombatTests.Load(f, Launcher, AutomaticCharge);
-        Space(f);
+        var space = Space(f);
         Assert.Throws<InvalidDataException>(() => Launch(f, launcher, target: null, locked: false));
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -270,6 +272,11 @@ public sealed class PilotMissileTests
                 f.Clock.Now + TimeSpan.TicksPerSecond
             );
             world.SaveChanges();
+        }
+        if (offline)
+        {
+            f.Db.Services.GetRequiredService<IPilotCrimewatch>().Disconnect(Victim, VictimShip);
+            space.Leave(VictimShip);
         }
         Assert.Equal(VictimShip, Launch(f, launcher, target: null, locked: false).Projectile.TargetId);
         f.Clock.AdvanceWallTime(CrimewatchRules.PvpDuration + TimeSpan.FromSeconds(2));
@@ -374,6 +381,8 @@ public sealed class PilotMissileTests
         var crimewatch = f.Db.Services.GetRequiredService<IPilotCrimewatch>();
         crimewatch.Disconnect(Victim, VictimShip);
         space.Leave(VictimShip);
+        Assert.Null(space.FindOnline(SystemId, VictimShip));
+        Assert.NotNull(space.Find(SystemId, VictimShip));
         long initial = Assert.Single(crimewatch.LoggedOff(SystemId)).ExpiresAt;
         Advance(f, 3);
         Assert.True(Assert.Single(Store(f).TakeImpacts(f.PilotId)).Applied > 0);

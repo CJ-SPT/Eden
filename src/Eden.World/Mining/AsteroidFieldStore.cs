@@ -46,7 +46,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
             .OrderBy(a => a.Id)
             .ToArray();
         var types = saved.Select(a => a.TypeId).Distinct().ToArray();
-        var groups = catalog.Set<ItemType>().Where(t => types.Contains(t.Id)).ToDictionary(t => t.Id, t => t.GroupId);
+        var groups = types.Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToDictionary(type => type.Id, type => type.GroupId);
         return saved
             .Select(a => new StaticSpaceObject(
                 a.Id,
@@ -97,10 +97,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
                 continue;
             }
             var counts =
-                catalog
-                    .Set<SourceRecord>()
-                    .Find("client/asteroidcountbytypeidbeltid", belt.Id.ToString(CultureInfo.InvariantCulture))
-                    ?.Read<Dictionary<string, long>>()
+                catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, (long)belt.Id)
                 ?? throw new InvalidDataException($"Missing asteroid counts for belt {belt.Id}.");
             if (counts.Values.Any(count => count < 0) || counts.Values.Sum() > AsteroidDefinitions.IdsPerBelt)
             {
@@ -118,17 +115,11 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
                     type => type,
                     type =>
                     {
-                        if (!catalog.Set<ItemType>().Any(t => t.Id == type && t.Group.CategoryId == AsteroidDefinitions.Category))
+                        if (catalog.FittingType(type)?.CategoryId != AsteroidDefinitions.Category)
                         {
                             throw new InvalidDataException($"Invalid asteroid type {type} in belt {belt.Id}.");
                         }
-                        double volume =
-                            catalog
-                                .Set<SourceRecord>()
-                                .Find("client/types", type.ToString(CultureInfo.InvariantCulture))
-                                ?.Read<ClientTypes>()
-                                .Volume
-                            ?? 0;
+                        double volume = catalog.Read(CatalogData.Client.Types, (long)type)?.Volume ?? 0;
                         return double.IsFinite(volume) && volume > 0
                             ? volume
                             : throw new InvalidDataException($"Invalid ore volume for type {type}.");

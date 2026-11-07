@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
@@ -23,26 +24,29 @@ internal sealed record NpcConvoyProfile(
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcConvoyCatalog(WorldDatabase database)
 {
-    private readonly Lazy<IReadOnlyList<NpcConvoyProfile>> _profiles = new(() => Load(database));
+    private static readonly CatalogDefinition<ImmutableArray<NpcConvoyProfile>> s_profiles = new(
+        "npc-convoy-profiles",
+        (catalog, _) => Load(catalog),
+        Estimate: values => 128 + values.Length * 8192L
+    );
 
-    internal IReadOnlyList<NpcConvoyProfile> Profiles => _profiles.Value;
-
-    private static IReadOnlyList<NpcConvoyProfile> Load(WorldDatabase database)
+    internal IReadOnlyList<NpcConvoyProfile> Profiles
     {
-        using CatalogDbContext catalog = new(database.CatalogPath);
+        get
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            return catalog.Definition(s_profiles, 0);
+        }
+    }
+
+    private static ImmutableArray<NpcConvoyProfile> Load(CatalogDbContext catalog)
+    {
         List<NpcConvoyProfile> profiles = [];
-        foreach (
-            var type in catalog
-                .Set<ItemType>()
-                .Include(t => t.Group)
-                .Where(t => t.GroupId == NpcConvoyRules.GroupId)
-                .OrderBy(t => t.Id)
-                .ToArray()
-        )
+        foreach (var type in catalog.Definitions.TypesInGroup(NpcConvoyRules.GroupId).Select(catalog.RequireItem).OrderBy(t => t.Id))
         {
             try
             {
-                var definition = catalog.FindSource("client/types", type.Id.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();
+                var definition = catalog.Read(CatalogData.Client.Types, (long)type.Id);
                 var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
                 if (
                     type.Mass is not > 0
@@ -50,14 +54,14 @@ internal sealed class NpcConvoyCatalog(WorldDatabase database)
                     || !double.IsFinite(type.Mass.Value)
                     || !double.IsFinite(type.Radius.Value)
                     || type.Radius.Value * 2 >= NpcConvoyRules.MemberSpacing
-                    || type.Group.CategoryId != NpcEncounterDefinitions.EntityCategory
+                    || type.CategoryId != NpcEncounterDefinitions.EntityCategory
                     || definition?.RaceID is not > 0
                     || attributes.Values.Any(v => !double.IsFinite(v))
                     || attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints) <= 0
                     || attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity) < 0
                     || attributes.GetValueOrDefault(DogmaAttributeId.ArmorHitPoints) < 0
                     || definition.WreckTypeID is not long wreck
-                    || !catalog.Set<ItemType>().Any(t => t.Id == wreck && t.GroupId == WreckDefinitions.Group)
+                    || catalog.FittingType(wreck)?.GroupId != WreckDefinitions.Group
                 )
                 {
                     throw new InvalidDataException("Incomplete convoy identity, health, movement or wreck definition.");
@@ -74,6 +78,6 @@ internal sealed class NpcConvoyCatalog(WorldDatabase database)
                 ServerLog.Console.Warning($"NPC convoys: skipped type {type.Id}: {error.Message}");
             }
         }
-        return profiles;
+        return profiles.ToImmutableArray();
     }
 }

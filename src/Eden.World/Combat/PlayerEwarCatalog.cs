@@ -23,13 +23,17 @@ internal static class PlayerEwarCatalog
         Guidance = 6384,
     }
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(PlayerEwarCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (!PlayerEwarRules.Groups.Contains(group))
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = catalog.FittingAttributes(typeId);
         var active = FittingCatalog.DefaultEffect(catalog, typeId);
         if (

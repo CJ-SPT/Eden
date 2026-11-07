@@ -51,7 +51,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             || !module.Singleton
             || !module.Online
             || !InventoryDefinitions.IsMediumSlot(module.FlagId)
-            || catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ShieldBoostDefinitions.Group
+            || catalog.RequireItem(module.TypeId).GroupId != ShieldBoostDefinitions.Group
             || FittingCatalog.Definition(catalog, module.TypeId) is null
         )
         {

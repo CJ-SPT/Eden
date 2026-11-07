@@ -301,7 +301,7 @@ internal sealed partial class LiveCombatRuntime
             MotionAt = npc.MotionAt,
             Mass = type.Mass ?? 0,
             GroupId = type.GroupId,
-            CategoryId = type.Group.CategoryId,
+            CategoryId = type.CategoryId,
             Name = type.Name,
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),

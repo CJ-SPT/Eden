@@ -19,13 +19,15 @@ public sealed class NpcOrbitTests
     private static NpcContact Contact(NpcCombatTests.Fixture f) =>
         f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
 
-    private static (WorldNpc Npc, ItemType Type, Dictionary<DogmaAttributeId, double> Attributes) Motion(NpcCombatTests.Fixture f)
+    private static (WorldNpc Npc, CatalogItemDefinition Type, Dictionary<DogmaAttributeId, double> Attributes) Motion(
+        NpcCombatTests.Fixture f
+    )
     {
         using WorldDbContext world = new(f.Db.Path);
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         return (
             world.Set<WorldNpc>().Find(f.Npc.Id)!,
-            catalog.Set<ItemType>().Single(t => t.Id == f.Npc.TypeId),
+            catalog.RequireItem(f.Npc.TypeId),
             catalog
                 .Set<TypeAttribute>()
                 .Where(a => a.ItemTypeId == f.Npc.TypeId)

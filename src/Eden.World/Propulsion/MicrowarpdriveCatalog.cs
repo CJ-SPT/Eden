@@ -11,7 +11,11 @@ internal static class MicrowarpdriveCatalog
 {
     private const int OverloadSpeedEffect = 3175;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(MicrowarpdriveCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (
             group != PropulsionDefinitions.AfterburnerGroup
@@ -20,7 +24,7 @@ internal static class MicrowarpdriveCatalog
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type is not { Published: 1 }
             || !PropulsionDefinitions.IsSupportedMicrowarpdrive(PilotFittingStore.ReadAttributes(catalog, typeId))

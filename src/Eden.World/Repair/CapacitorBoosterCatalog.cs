@@ -14,13 +14,17 @@ internal static class CapacitorBoosterCatalog
     private const int OverloadPhase = 5;
     private const int ExpectedEffectCount = 4;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(CapacitorBoosterCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (group != CapacitorBoosterDefinitions.Group)
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup

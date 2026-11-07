@@ -8,6 +8,15 @@ public sealed partial class CatalogDbContext
 {
     private readonly CatalogFittingInputs _fittingInputs = writable ? new() : CatalogFittingReadScope.Inputs(path);
 
+    internal CatalogItemDefinition RequireItem(int typeId) =>
+        FittingType(typeId) ?? throw new InvalidDataException($"Missing catalog item type {typeId}.");
+
+    internal CatalogItemDefinition? FittingType(long typeId) =>
+        typeId is >= int.MinValue and <= int.MaxValue ? FittingType((int)typeId) : null;
+
+    internal string? NpcCorporationName(int corporationId) =>
+        writable ? Set<NpcCorporation>().Find(corporationId)?.Name : Definitions.NpcCorporations.GetValueOrDefault(corporationId);
+
     internal CatalogItemDefinition? FittingType(int typeId)
     {
         if (writable)

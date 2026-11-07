@@ -27,7 +27,7 @@ internal static class NpcMotion
     internal static void Patrol(
         WorldNpc npc,
         CatalogDbContext catalog,
-        ItemType type,
+        CatalogItemDefinition type,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         long now
     )
@@ -67,7 +67,7 @@ internal static class NpcMotion
         WorldNpc npc,
         SpacePosition target,
         double targetRadius,
-        ItemType type,
+        CatalogItemDefinition type,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         long now,
         int destinyStamp
@@ -95,7 +95,7 @@ internal static class NpcMotion
     internal static void Advance(
         WorldNpc npc,
         SpacePosition destination,
-        ItemType type,
+        CatalogItemDefinition type,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         long now,
         bool returning = false,

@@ -41,6 +41,7 @@ public sealed class CatalogProvider
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<int>>> _blueprints;
     private readonly Lazy<FrozenDictionary<int, CatalogSystemDefinition>> _systems;
     private readonly Lazy<FrozenDictionary<int, CatalogStationDefinition>> _stations;
+    private readonly Lazy<FrozenDictionary<int, string>> _corporations;
     private readonly CatalogMemo<int, ImmutableDictionary<DogmaAttributeId, double>> _attributes;
     private readonly CatalogMemo<int, ImmutableArray<DogmaEffect>> _effects;
     private readonly CatalogMemo<int, ImmutableDictionary<int, int>> _skills;
@@ -111,6 +112,7 @@ public sealed class CatalogProvider
     public IReadOnlyDictionary<int, CatalogItemDefinition> Items => _items.Value;
     public IReadOnlyDictionary<int, CatalogSystemDefinition> Systems => _systems.Value;
     public IReadOnlyDictionary<int, CatalogStationDefinition> Stations => _stations.Value;
+    public IReadOnlyDictionary<int, string> NpcCorporations => _corporations.Value;
 
     public CatalogCacheStatistics Statistics
     {
@@ -158,6 +160,7 @@ public sealed class CatalogProvider
         _items = new(LoadItems);
         _systems = new(LoadSystems);
         _stations = new(LoadStations);
+        _corporations = new(LoadCorporations);
         _groups = new(() =>
             Items
                 .Values.GroupBy(item => item.GroupId)
@@ -323,6 +326,7 @@ public sealed class CatalogProvider
         _ = Items;
         _ = Systems;
         _ = Stations;
+        _ = NpcCorporations;
         _ = _groups.Value;
         _ = Pin(CatalogData.Client.Types);
         _ = _blueprints.Value;
@@ -395,6 +399,16 @@ public sealed class CatalogProvider
             );
         Interlocked.Add(ref _pinnedRecords, items.Count);
         return items;
+    }
+
+    private FrozenDictionary<int, string> LoadCorporations()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        Interlocked.Increment(ref _loads);
+        var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);
+        Interlocked.Add(ref _pinnedRecords, corporations.Count);
+        return corporations;
     }
 
     private FrozenDictionary<int, ImmutableArray<int>> LoadBlueprints() =>
@@ -476,7 +490,8 @@ public sealed class CatalogProvider
                     () =>
                     {
                         using CatalogDbContext catalog = new(owner.Identity.Path);
-                        return new(true, definition.Load(catalog, typeId), definition.EstimatedBytes);
+                        var value = definition.Load(catalog, typeId);
+                        return new(true, value, definition.Estimate?.Invoke(value) ?? definition.EstimatedBytes);
                     }
                 )
                 .Value;

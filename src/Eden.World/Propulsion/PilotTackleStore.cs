@@ -39,7 +39,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
-        int group = item is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;
+        int group = item is null ? 0 : catalog.RequireItem(item.TypeId).GroupId;
         bool core = effect == DogmaEffect.WarpCoreStabilizer;
         if (
             pilot.ActiveShip.Position is not { } position
@@ -123,8 +123,8 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
                 aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
                 victimId = victim.Id;
             }
-            double sourceRadius = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!.Radius ?? 0;
-            double targetRadius = catalog.Set<ItemType>().Find(targetType)!.Radius ?? 0;
+            double sourceRadius = catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0;
+            double targetRadius = catalog.FittingType(targetType)!.Radius ?? 0;
             double distance = Math.Max(
                 0,
                 new SpacePosition(position.X, position.Y, position.Z).DistanceTo(targetPosition) - sourceRadius - targetRadius
@@ -206,7 +206,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
         foreach (var active in world.Set<ActiveFittedModule>().ToArray())
         {
             var item = world.Set<OwnedItem>().Find(active.ModuleId)!;
-            if (catalog.Set<ItemType>().Find(item.TypeId)!.GroupId != TackleDefinitions.WarpCoreStabilizerGroup)
+            if (catalog.FittingType(item.TypeId)!.GroupId != TackleDefinitions.WarpCoreStabilizerGroup)
             {
                 continue;
             }

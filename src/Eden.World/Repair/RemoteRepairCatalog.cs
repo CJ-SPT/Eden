@@ -15,13 +15,17 @@ internal static class RemoteRepairCatalog
     private const int OverloadCategory = 5;
     private const int MediumFittingAdjustment = 6953;
 
-    internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
+    private static readonly CatalogTypeRule s_support = new(typeof(RemoteRepairCatalog).FullName!, ValidateSupport);
+
+    internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);
+
+    private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
         if (RemoteRepairRules.Effect(group) is not { } active)
         {
             return false;
         }
-        var type = catalog.FindSource("client/types", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();
+        var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = catalog.FittingAttributes(typeId);
         if (
             type?.Published != 1

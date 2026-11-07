@@ -46,16 +46,16 @@ internal sealed partial class NpcMiningSeeder
 
     private static SpacePosition? StationPoint(CatalogDbContext catalog, WorldNpcMiningOperation operation)
     {
-        var station = operation.StationId is int id ? catalog.Set<Station>().Include(s => s.Type).SingleOrDefault(s => s.Id == id) : null;
-        if (station is null)
+        var station = operation.StationId is int id ? catalog.Set<Station>().SingleOrDefault(s => s.Id == id) : null;
+        if (station is null || catalog.FittingType(station.TypeId) is not { } type)
         {
             return null;
         }
         return NpcGuardRules.Home(
             new(station.X, station.Y, station.Z),
-            station.Type.Radius ?? 0,
+            type.Radius ?? 0,
             StationUndockCatalog.Read(catalog, station.TypeId),
-            [new(new(station.X, station.Y, station.Z), station.Type.Radius ?? 0)]
+            [new(new(station.X, station.Y, station.Z), type.Radius ?? 0)]
         );
     }
 

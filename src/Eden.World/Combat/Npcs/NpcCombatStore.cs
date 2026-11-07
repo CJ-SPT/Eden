@@ -75,7 +75,7 @@ internal sealed class NpcCombatStore(
             .ToArray();
         var targets = pilots
             .Where(p => requested.Contains(new(p.Id, p.ActiveShipId)))
-            .Select(p => (Pilot: p, Hull: catalog.Set<ItemType>().Single(t => t.Id == p.ActiveShip.TypeId)))
+            .Select(p => (Pilot: p, Hull: catalog.RequireItem(p.ActiveShip.TypeId)))
             .Where(t => t.Hull.GroupId != FleetDefinitions.CapsuleGroup)
             .ToArray();
         if (targets.Length == 0)
@@ -115,7 +115,7 @@ internal sealed class NpcCombatStore(
             {
                 continue;
             }
-            var type = profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+            var type = profile?.Type ?? catalog.RequireItem(npc.TypeId);
             var home = NpcMotion.Home(npc, catalog);
             var target = targets
                 .Where(t =>
@@ -217,9 +217,9 @@ internal sealed class NpcCombatStore(
         {
             return null;
         }
-        var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
+        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var profile = npc is null ? null : hullProfiles?.Read(catalog, npc.TypeId);
-        var source = npc is null ? null : profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);
+        var source = npc is null ? null : profile?.Type ?? catalog.RequireItem(npc.TypeId);
         var attributes = npc is null
             ? new Dictionary<DogmaAttributeId, double>()
             : PilotTackleStore.NpcAttributes(

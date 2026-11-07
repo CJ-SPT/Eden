@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Offline missile contact reads, November 7, 2026](#offline-missile-contact-reads-november-7-2026)
 - [Pilot missile combat and automatic retaliation (November 6, 2026)](#pilot-missile-combat-and-automatic-retaliation-november-6-2026)
 - [Pilot turret combat and loss settlement (November 6, 2026)](#pilot-turret-combat-and-loss-settlement-november-6-2026)
 - [Enforced safety and persistent aggression (November 6, 2026)](#enforced-safety-and-persistent-aggression-november-6-2026)
@@ -37,6 +38,18 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Automatic belt NPC aggression](#automatic-belt-npc-aggression)
 - [NPC combat orbiting](#npc-combat-orbiting)
 
+
+## Offline missile contact reads, November 7, 2026
+
+A missile-impact transaction previously called the general presence fallback for a logged-off victim. That fallback rebuilt a pilot snapshot in a second write transaction, which locked against the missile transaction. The previous verified build reproduces the same failure.
+
+`IPilotCombatPresence.FindOnline` supplies the existing in-memory contact without an offline database fallback. Missile operations prefer that live contact and otherwise use the active pilot, position and unexpired logoff row already read in their own world transaction. They recheck the same ship/system identity and preserve zero offline velocity. Automatic retaliation loads/validates candidates before contact lookup. No observer packet or damage/timer formula changes. The general `Find` operation retains its existing live/offline observer behavior.
+
+**Automated validation:** `PilotMissileTests.OfflineVictimRemainsHittableAndItsPvpDeadlineExtendsAtImpact` failed with the lock in the previous build and passes with the correction. It also verifies the distinction between live-only and general presence. `AutomaticMissilesChooseOnlyAnActualPilotAggressorAndRejectExpiredHostility` now covers both online and offline aggressors. Wider validation is recorded with the [combat catalog milestone](catalog.md#combat-and-simulation-catalog-adoption-november-7-2026). The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this transaction/read correction.
 
 ## Pilot missile combat and automatic retaliation (November 6, 2026)
 

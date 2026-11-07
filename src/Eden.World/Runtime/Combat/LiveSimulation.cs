@@ -17,7 +17,7 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private NpcProfileCatalog _simulationProfiles = new();
+    private readonly NpcProfileCatalog _simulationProfiles = new();
     private readonly Dictionary<int, long[]> _systemNpcs = [];
     private readonly Dictionary<int, long> _populationDue = [];
     private readonly Dictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> _effectiveNpcs = [];
@@ -370,6 +370,5 @@ internal sealed partial class LiveCombatRuntime
         _savedPositions.Clear();
         _dirtyPositions.Clear();
         _sharedNpcContacts.Clear();
-        _simulationProfiles = new();
     }
 }

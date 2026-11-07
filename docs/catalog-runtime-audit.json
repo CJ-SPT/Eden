@@ -2,8 +2,8 @@
   "build": 3662168,
   "purpose": "Migration inventory; identifiers are not automatically removal candidates.",
   "counts": {
-    "catalog-read": 260,
-    "catalog-context": 419,
+    "catalog-read": 204,
+    "catalog-context": 445,
     "content-identifier": 134,
     "type-selection": 8
   },
@@ -838,9 +838,9 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogDefinition.cs",
-      "line": 5,
+      "line": 7,
       "kind": "catalog-context",
-      "text": "internal sealed record CatalogDefinition<T>(string Name, Func<CatalogDbContext, int, T> Load, long EstimatedBytes = 1024);"
+      "text": "Func<CatalogDbContext, int, T> Load,"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogFittingReads.cs",
@@ -850,33 +850,39 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 137,
+      "line": 139,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 141,
+      "line": 143,
       "kind": "catalog-read",
       "text": "foreach (var dataset in catalog.Set<SourceDataset>().OrderBy(dataset => dataset.Name))"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 311,
+      "line": 314,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 378,
+      "line": 382,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 419,
+      "line": 407,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 409,
+      "kind": "catalog-read",
+      "text": "var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
@@ -886,37 +892,43 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 478,
+      "line": 447,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 492,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 554,
+      "line": 569,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 556,
+      "line": 571,
       "kind": "catalog-read",
       "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 575,
+      "line": 590,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 576,
+      "line": 591,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 601,
+      "line": 616,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
@@ -961,6 +973,24 @@
       "line": 53,
       "kind": "catalog-context",
       "text": "using CatalogDbContext db = new(path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogTypeRule.cs",
+      "line": 5,
+      "kind": "catalog-context",
+      "text": "internal sealed class CatalogTypeRule(string name, Func<CatalogDbContext, int, int, bool> evaluate)"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogTypeRule.cs",
+      "line": 13,
+      "kind": "catalog-context",
+      "text": "internal bool Supports(CatalogDbContext catalog, int typeId, int groupId) =>"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogTypeRule.cs",
+      "line": 14,
+      "kind": "catalog-read",
+      "text": "catalog.FittingType(typeId)?.GroupId == groupId ? catalog.Definition(_definition, typeId) : evaluate(catalog, typeId, groupId);"
     },
     {
       "path": "src/Eden.World/Catalog/NpcDirectory.cs",
@@ -1330,25 +1360,25 @@
     },
     {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
-      "line": 32,
+      "line": 29,
       "kind": "catalog-context",
       "text": "internal static int System(CatalogDbContext catalog, Ship ship) =>"
     },
     {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
-      "line": 33,
+      "line": 30,
       "kind": "catalog-read",
       "text": "ship.Position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == ship.StationId).SolarSystemId;"
     },
     {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
-      "line": 40,
+      "line": 37,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
-      "line": 114,
+      "line": 111,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
@@ -1372,21 +1402,9 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 78,
-      "kind": "catalog-read",
-      "text": ".Select(p => (Pilot: p, Hull: catalog.Set<ItemType>().Single(t => t.Id == p.ActiveShip.TypeId)))"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
       "line": 88,
       "kind": "catalog-read",
       "text": "?? catalog.Set<Station>().Single(s => s.Id == t.Pilot.ActiveShip.StationId).SolarSystemId"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 118,
-      "kind": "catalog-read",
-      "text": "var type = profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
@@ -1402,39 +1420,27 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 220,
-      "kind": "catalog-read",
-      "text": "var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 222,
-      "kind": "catalog-read",
-      "text": "var source = npc is null ? null : profile?.Type ?? catalog.Set<ItemType>().Single(t => t.Id == npc.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
       "line": 232,
       "kind": "catalog-read",
       "text": "int system = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoyCatalog.cs",
-      "line": 32,
+      "line": 37,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoyCatalog.cs",
-      "line": 45,
-      "kind": "catalog-read",
-      "text": "var definition = catalog.FindSource(\"client/types\", type.Id.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();"
+      "line": 42,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<NpcConvoyProfile> Load(CatalogDbContext catalog)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoyCatalog.cs",
-      "line": 60,
+      "line": 64,
       "kind": "catalog-read",
-      "text": "|| !catalog.Set<ItemType>().Any(t => t.Id == wreck && t.GroupId == WreckDefinitions.Group)"
+      "text": "|| catalog.FittingType(wreck)?.GroupId != WreckDefinitions.Group"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoySeeder.cs",
@@ -1444,27 +1450,21 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoySeeder.cs",
-      "line": 23,
+      "line": 28,
       "kind": "catalog-read",
-      "text": "var stations = catalog.Set<Station>().Include(s => s.Type).Where(s => s.SolarSystemId == systemId).OrderBy(s => s.Id).ToArray();"
+      "text": ".Where(station => catalog.FittingType(station.TypeId) is not null)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoySeeder.cs",
-      "line": 25,
+      "line": 31,
       "kind": "catalog-read",
-      "text": "from celestial in catalog.Set<Celestial>()"
+      "text": "obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcConvoySeeder.cs",
-      "line": 26,
+      "line": 95,
       "kind": "catalog-read",
-      "text": "join type in catalog.Set<ItemType>() on celestial.TypeId equals type.Id"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcConvoySeeder.cs",
-      "line": 51,
-      "kind": "catalog-read",
-      "text": "|| !catalog.Set<NpcCorporation>().Any(c => c.Id == station.OwnerId)"
+      "text": "catalog.FittingType(station.TypeId)?.Radius ?? 0,"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcDamagePersistence.cs",
@@ -1480,7 +1480,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcEncounterStore.cs",
-      "line": 202,
+      "line": 206,
       "kind": "catalog-context",
       "text": "private Profile ReadProfile(CatalogDbContext catalog, int typeId)"
     },
@@ -1489,12 +1489,6 @@
       "line": 75,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcEwarStore.cs",
-      "line": 79,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcEwarStore.cs",
@@ -1510,97 +1504,85 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 48,
+      "line": 56,
       "kind": "catalog-context",
-      "text": "private NpcGuardProfile? Profile(CatalogDbContext catalog, int typeId, int factionId)"
+      "text": "private static NpcGuardProfile? Profile(CatalogDbContext catalog, int typeId, int factionId) =>"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 54,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Find(typeId);"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 55,
-      "kind": "catalog-read",
-      "text": "var faction = catalog.Set<SourceRecord>().Find(\"client/factions\", Key(factionId))?.Read<ClientFactions>();"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 58,
-      "kind": "catalog-read",
-      "text": "var definition = catalog.Set<SourceRecord>().Find(\"client/types\", Key(typeId))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 66,
-      "kind": "catalog-read",
-      "text": "|| !catalog.Set<NpcCorporation>().Any(c => c.Id == corporation)"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 104,
-      "kind": "catalog-read",
-      "text": "&& !catalog.Set<ItemType>().Any(t => t.Id == wreckType && t.GroupId == Eden.Gameplay.Loot.WreckDefinitions.Group)"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 124,
+      "line": 61,
       "kind": "catalog-context",
-      "text": "internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)"
+      "text": "private static NpcGuardProfile? LoadProfile(CatalogDbContext catalog, int typeId, int factionId)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 131,
+      "line": 63,
       "kind": "catalog-read",
-      "text": "from celestial in catalog.Set<Celestial>()"
+      "text": "var type = catalog.FittingType(typeId);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 132,
+      "line": 111,
       "kind": "catalog-read",
-      "text": "join type in catalog.Set<ItemType>() on celestial.TypeId equals type.Id"
+      "text": "&& catalog.FittingType(wreckType)?.GroupId != Eden.Gameplay.Loot.WreckDefinitions.Group"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 136,
-      "kind": "catalog-read",
-      "text": "var stations = catalog.Set<Station>().Include(s => s.Type).Where(s => s.SolarSystemId == systemId).OrderBy(s => s.Id).ToArray();"
+      "line": 129,
+      "kind": "catalog-context",
+      "text": "internal static List<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
       "line": 138,
       "kind": "catalog-read",
-      "text": "foreach (var gate in catalog.Set<Stargate>().Where(g => g.SolarSystemId == systemId).OrderBy(g => g.Id).ToArray())"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 140,
-      "kind": "catalog-read",
-      "text": "var body = catalog.Set<Celestial>().Find(gate.Id);"
+      "text": "if (catalog.FittingType(body.TypeId) is { } type)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
       "line": 146,
+      "kind": "catalog-context",
+      "text": "internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)"
+    },
+    {
+      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
+      "line": 158,
       "kind": "catalog-read",
-      "text": "double radius = body.Radius ?? catalog.Set<ItemType>().Find(body.TypeId)?.Radius ?? 0;"
+      "text": ".Where(station => catalog.FittingType(station.TypeId) is not null)"
+    },
+    {
+      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
+      "line": 160,
+      "kind": "catalog-read",
+      "text": "obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));"
+    },
+    {
+      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
+      "line": 161,
+      "kind": "catalog-read",
+      "text": "foreach (var gate in catalog.Set<Stargate>().Where(g => g.SolarSystemId == systemId).OrderBy(g => g.Id).ToArray())"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
       "line": 163,
       "kind": "catalog-read",
-      "text": "var owner = catalog.Set<SourceRecord>().Find(\"client/npccorporations\", Key(station.OwnerId))?.Read<ClientNpccorporations>();"
+      "text": "var body = catalog.Set<Celestial>().Find(gate.Id);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 166,
+      "line": 169,
       "kind": "catalog-read",
-      "text": "?? catalog.Set<SourceRecord>().Find(\"sde/npcCorporations\", Key(station.OwnerId))?.Read<SdeNpcCorporations>().FactionID;"
+      "text": "double radius = body.Radius ?? catalog.FittingType(body.TypeId)?.Radius ?? 0;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
-      "line": 188,
+      "line": 198,
+      "kind": "catalog-read",
+      "text": "catalog.FittingType(station.TypeId)?.Radius ?? 0,"
+    },
+    {
+      "path": "src/Eden.World/Combat/Npcs/NpcGuardSeeder.cs",
+      "line": 209,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
@@ -1620,19 +1602,19 @@
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
       "line": 63,
       "kind": "catalog-read",
-      "text": "var source = catalog.Set<ItemType>().Find(npc.TypeId)!;"
+      "text": "var source = catalog.FittingType(npc.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
       "line": 64,
       "kind": "catalog-read",
-      "text": "var hull = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!;"
+      "text": "var hull = catalog.FittingType(pilot.ActiveShip.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
       "line": 90,
       "kind": "catalog-read",
-      "text": "GroupId = catalog.Set<ItemType>().Find(chargeId)!.GroupId,"
+      "text": "GroupId = catalog.FittingType(chargeId)!.GroupId,"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
@@ -1650,7 +1632,7 @@
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
       "line": 148,
       "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup"
+      "text": "|| catalog.FittingType(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMotion.cs",
@@ -1684,51 +1666,33 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcProfileCatalog.cs",
-      "line": 24,
+      "line": 23,
       "kind": "catalog-context",
       "text": "internal NpcHullProfile Read(CatalogDbContext catalog, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcProfileCatalog.cs",
-      "line": 27,
+      "line": 26,
       "kind": "catalog-context",
       "text": "private static NpcHullProfile Load(CatalogDbContext catalog, int typeId)"
     },
     {
-      "path": "src/Eden.World/Combat/Npcs/NpcProfileCatalog.cs",
-      "line": 29,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == typeId);"
-    },
-    {
       "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
-      "line": 42,
+      "line": 51,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
-      "line": 46,
-      "kind": "catalog-read",
-      "text": "var types = catalog.Set<ItemType>().Where(t => groupIds.Contains(t.GroupId)).OrderBy(t => t.Id).ToArray();"
+      "line": 69,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<NpcSpawnProfile> Load(CatalogDbContext catalog)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
-      "line": 58,
+      "line": 104,
       "kind": "catalog-read",
-      "text": "var definition = catalog.FindSource(\"client/types\", type.Id.ToString(CultureInfo.InvariantCulture))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
-      "line": 78,
-      "kind": "catalog-read",
-      "text": "|| !catalog.Set<NpcCorporation>().Any(c => c.Id == corporation)"
-    },
-    {
-      "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
-      "line": 79,
-      "kind": "catalog-read",
-      "text": "|| !catalog.Set<ItemType>().Any(t => t.Id == wreck && t.GroupId == Eden.Gameplay.Loot.WreckDefinitions.Group)"
+      "text": "|| catalog.FittingType(wreck)?.GroupId != Eden.Gameplay.Loot.WreckDefinitions.Group"
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
@@ -1750,27 +1714,9 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 182,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
       "line": 332,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 352,
-      "kind": "catalog-read",
-      "text": "catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId,"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 369,
-      "kind": "catalog-read",
-      "text": "bool energy = catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;"
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
@@ -1780,31 +1726,7 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 376,
-      "kind": "catalog-read",
-      "text": "var targetType = catalog.Set<ItemType>().Single(t => t.Id == target.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 377,
-      "kind": "catalog-read",
-      "text": "var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 421,
-      "kind": "catalog-read",
-      "text": "catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo!.TypeId).GroupId,"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 427,
-      "kind": "catalog-read",
-      "text": "catalog.Set<ItemType>().Single(t => t.Id == loadedAmmo.TypeId).GroupId"
-    },
-    {
-      "path": "src/Eden.World/Combat/PilotCombatStore.cs",
-      "line": 534,
+      "line": 530,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -1854,13 +1776,13 @@
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
       "line": 104,
       "kind": "catalog-read",
-      "text": "|| !MissileLauncherCatalog.Supported(catalog, module.TypeId, catalog.Set<ItemType>().Find(module.TypeId)!.GroupId)"
+      "text": "|| !MissileLauncherCatalog.Supported(catalog, module.TypeId, catalog.FittingType(module.TypeId)!.GroupId)"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
       "line": 111,
       "kind": "catalog-read",
-      "text": "var chargeType = catalog.Set<ItemType>().Find(loaded.TypeId)!;"
+      "text": "var chargeType = catalog.FittingType(loaded.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
@@ -1870,55 +1792,55 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
-      "line": 200,
+      "line": 201,
       "kind": "catalog-read",
-      "text": "targetType = catalog.Set<ItemType>().Find(npc.TypeId)!;"
+      "text": "targetType = catalog.FittingType(npc.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
-      "line": 212,
+      "line": 213,
       "kind": "catalog-read",
-      "text": "targetType = catalog.Set<ItemType>().Find(victim.ActiveShip.TypeId)!;"
+      "text": "targetType = catalog.FittingType(victim.ActiveShip.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
-      "line": 215,
+      "line": 216,
       "kind": "catalog-read",
-      "text": "var sourceType = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!;"
+      "text": "var sourceType = catalog.FittingType(pilot.ActiveShip.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
-      "line": 292,
+      "line": 293,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileStore.cs",
-      "line": 307,
+      "line": 308,
       "kind": "catalog-read",
       "text": "int sourceSystem = position?.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileTargets.cs",
-      "line": 18,
+      "line": 19,
       "kind": "catalog-context",
       "text": "private static Pilot? FindVictim(WorldDbContext world, CatalogDbContext catalog, int system, long shipId, long now)"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileTargets.cs",
-      "line": 24,
+      "line": 25,
       "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Find(victim.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup"
+      "text": "|| catalog.FittingType(victim.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileTargets.cs",
-      "line": 36,
+      "line": 56,
       "kind": "catalog-context",
-      "text": "CatalogDbContext catalog,"
+      "text": "private static Pilot? AutomaticVictim(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long shipId, int system, long now)"
     },
     {
       "path": "src/Eden.World/Combat/PilotMissileTargets.cs",
-      "line": 63,
+      "line": 78,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
@@ -1936,9 +1858,9 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotSecurityStatusStore.cs",
-      "line": 104,
+      "line": 102,
       "kind": "catalog-read",
-      "text": ": catalog.Set<TypeAttribute>().Find((int)SecuritySkill.FastTalk, (int)DogmaAttributeId.FastTalkMutator)?.Value ?? 0;"
+      "text": "level == 0 ? 0 : catalog.FittingAttributes((int)SecuritySkill.FastTalk).GetValueOrDefault(DogmaAttributeId.FastTalkMutator, 0);"
     },
     {
       "path": "src/Eden.World/Combat/PilotWeaponBankStore.cs",
@@ -1950,7 +1872,7 @@
       "path": "src/Eden.World/Combat/PilotWeaponBankStore.cs",
       "line": 69,
       "kind": "catalog-read",
-      "text": "&& WeaponCatalog.Supported(catalog, i.TypeId, catalog.Set<ItemType>().Find(i.TypeId)!.GroupId)"
+      "text": "&& WeaponCatalog.Supported(catalog, i.TypeId, catalog.FittingType(i.TypeId)!.GroupId)"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarCatalog.cs",
@@ -1960,19 +1882,19 @@
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarCatalog.cs",
-      "line": 26,
+      "line": 28,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarCatalog.cs",
-      "line": 32,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 30,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Combat/PlayerEwarCatalog.cs",
-      "line": 33,
+      "line": 37,
       "kind": "catalog-read",
       "text": "var attributes = catalog.FittingAttributes(typeId);"
     },
@@ -2020,9 +1942,9 @@
     },
     {
       "path": "src/Eden.World/Combat/ShipLossPersistence.cs",
-      "line": 59,
+      "line": 60,
       "kind": "catalog-read",
-      "text": "catalog.Set<ItemType>().SingleOrDefault(t => t.Id == FleetDefinitions.CapsuleType && t.GroupId == FleetDefinitions.CapsuleGroup)"
+      "text": "catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } replacement"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
@@ -2032,27 +1954,27 @@
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
-      "line": 14,
+      "line": 16,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
-      "line": 20,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 18,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
-      "line": 61,
+      "line": 65,
       "kind": "catalog-context",
       "text": "internal static MissileDrive Drive(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileChargeCatalog.cs",
-      "line": 63,
+      "line": 67,
       "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Find(typeId) ?? throw new InvalidDataException(\"Unknown missile type.\");"
+      "text": "var type = catalog.FittingType(typeId) ?? throw new InvalidDataException(\"Unknown missile type.\");"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileLauncherCatalog.cs",
@@ -2068,15 +1990,15 @@
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileLauncherCatalog.cs",
-      "line": 18,
+      "line": 20,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/MissileLauncherCatalog.cs",
-      "line": 25,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 22,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/TurretChargeCatalog.cs",
@@ -2086,15 +2008,15 @@
     },
     {
       "path": "src/Eden.World/Combat/Weapons/TurretChargeCatalog.cs",
-      "line": 14,
+      "line": 16,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/TurretChargeCatalog.cs",
-      "line": 20,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 18,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
@@ -2110,19 +2032,19 @@
     },
     {
       "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
-      "line": 22,
+      "line": 24,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
-      "line": 36,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 26,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Combat/Weapons/WeaponCatalog.cs",
-      "line": 152,
+      "line": 156,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>"
     },
@@ -2554,49 +2476,49 @@
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 23,
+      "line": 28,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 28,
+      "line": 34,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Drones/DroneCatalog.cs",
+      "line": 39,
       "kind": "catalog-read",
       "text": "var type = catalog.FittingType(typeId) ?? throw new InvalidDataException(\"Unknown drone type.\");"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 29,
-      "kind": "catalog-read",
-      "text": "var source = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 30,
+      "line": 41,
       "kind": "catalog-read",
       "text": "var attributes = fittedAttributes ?? catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 85,
+      "line": 96,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyDictionary<DroneSkill, int> Skills(WorldDbContext world, CatalogDbContext catalog, long pilotId) =>"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 92,
+      "line": 103,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 98,
+      "line": 109,
       "kind": "catalog-read",
       "text": "var attributes = catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Drones/DroneCatalog.cs",
-      "line": 116,
+      "line": 127,
       "kind": "catalog-context",
       "text": "internal static double ControlRange(WorldDbContext world, CatalogDbContext catalog, long pilotId)"
     },
@@ -3772,12 +3694,6 @@
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 49,
-      "kind": "catalog-read",
-      "text": "var groups = catalog.Set<ItemType>().Where(t => types.Contains(t.Id)).ToDictionary(t => t.Id, t => t.GroupId);"
-    },
-    {
-      "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
       "line": 63,
       "kind": "catalog-context",
       "text": "private void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)"
@@ -3790,9 +3706,9 @@
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 121,
+      "line": 118,
       "kind": "catalog-read",
-      "text": "if (!catalog.Set<ItemType>().Any(t => t.Id == type && t.Group.CategoryId == AsteroidDefinitions.Category))"
+      "text": "if (catalog.FittingType(type)?.CategoryId != AsteroidDefinitions.Category)"
     },
     {
       "path": "src/Eden.World/Mining/MiningLaserCatalog.cs",
@@ -3802,69 +3718,51 @@
     },
     {
       "path": "src/Eden.World/Mining/MiningLaserCatalog.cs",
-      "line": 16,
+      "line": 18,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Mining/MiningLaserCatalog.cs",
-      "line": 18,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 28,
+      "line": 20,
       "kind": "catalog-context",
-      "text": "internal NpcMiningHull? Hull(CatalogDbContext catalog, int type)"
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
       "line": 36,
-      "kind": "catalog-read",
-      "text": "if (!catalog.Set<ItemType>().Any(t => t.Id == type))"
-    },
-    {
-      "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 41,
-      "kind": "catalog-read",
-      "text": "var definition = catalog.FindSource(\"client/types\", Key(type))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 50,
-      "kind": "catalog-read",
-      "text": "|| !catalog.Set<ItemType>().Any(t => t.Id == wreck)"
-    },
-    {
-      "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 75,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 76,
-      "kind": "catalog-read",
-      "text": "var component = catalog.FindSource(\"client/spacecomponentsbytype\", Key(NpcMiningRules.Venture))?.Read<NpcMiningComponents>();"
+      "line": 41,
+      "kind": "catalog-context",
+      "text": "internal NpcMiningHull? Hull(CatalogDbContext catalog, int type) => catalog.Definition(_hull, type);"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 81,
-      "kind": "catalog-read",
-      "text": "var owner = catalog.FindSource(\"client/npccorporations\", key)?.Read<ClientNpccorporations>();"
+      "line": 43,
+      "kind": "catalog-context",
+      "text": "private static NpcMiningHull? LoadHull(CatalogDbContext catalog, int type, NpcProfileCatalog profiles)"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 86,
+      "line": 47,
       "kind": "catalog-read",
-      "text": "var corporation = catalog.Set<NpcCorporation>().Find(id);"
+      "text": "if (catalog.FittingType(type) is null)"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
-      "line": 93,
+      "line": 61,
       "kind": "catalog-read",
-      "text": "int? box = catalog.Set<ItemType>().Where(t => t.Name == boxName).Select(t => (int?)t.Id).SingleOrDefault();"
+      "text": "|| catalog.FittingType(wreck) is null"
+    },
+    {
+      "path": "src/Eden.World/Mining/NpcMiningCatalog.cs",
+      "line": 82,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<NpcMiningOwner> ReadOwners(CatalogDbContext catalog)"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningHauling.cs",
@@ -3882,7 +3780,13 @@
       "path": "src/Eden.World/Mining/NpcMiningHauling.cs",
       "line": 49,
       "kind": "catalog-read",
-      "text": "var station = operation.StationId is int id ? catalog.Set<Station>().Include(s => s.Type).SingleOrDefault(s => s.Id == id) : null;"
+      "text": "var station = operation.StationId is int id ? catalog.Set<Station>().SingleOrDefault(s => s.Id == id) : null;"
+    },
+    {
+      "path": "src/Eden.World/Mining/NpcMiningHauling.cs",
+      "line": 50,
+      "kind": "catalog-read",
+      "text": "if (station is null || catalog.FittingType(station.TypeId) is not { } type)"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningHauling.cs",
@@ -3922,19 +3826,13 @@
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningSeeder.cs",
-      "line": 331,
-      "kind": "catalog-read",
-      "text": "catalog.FindSource(\"client/types\", NpcMiningCatalog.Key(type))?.Read<ClientTypes>().Volume is > 0 and var volume"
-    },
-    {
-      "path": "src/Eden.World/Mining/NpcMiningSeeder.cs",
-      "line": 336,
+      "line": 335,
       "kind": "catalog-context",
       "text": "private static double CargoVolume(WorldDbContext world, CatalogDbContext catalog, long npc) =>"
     },
     {
       "path": "src/Eden.World/Mining/NpcMiningSeeder.cs",
-      "line": 341,
+      "line": 340,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
@@ -3958,49 +3856,37 @@
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 86,
-      "kind": "catalog-read",
-      "text": "var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Mining/PilotMiningStore.cs",
       "line": 87,
       "kind": "catalog-read",
-      "text": "var ore = catalog.Set<ItemType>().Find(asteroid.TypeId);"
+      "text": "var ore = catalog.FittingType(asteroid.TypeId);"
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 90,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemGroup>().Find(ore.GroupId)?.CategoryId != AsteroidDefinitions.Category"
-    },
-    {
-      "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 101,
+      "line": 97,
       "kind": "catalog-read",
       "text": "int system = position.SystemId ?? catalog.Set<Station>().Single(s => s.Id == pilot.ActiveShip.StationId).SolarSystemId;"
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 135,
+      "line": 131,
       "kind": "catalog-context",
       "text": "private static InventoryFlag OreHold(CatalogDbContext catalog, int hull) =>"
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 142,
+      "line": 138,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 161,
+      "line": 157,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Mining/PilotMiningStore.cs",
-      "line": 188,
+      "line": 184,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -4018,27 +3904,27 @@
     },
     {
       "path": "src/Eden.World/Propulsion/AfterburnerCatalog.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Propulsion/AfterburnerCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
-    },
-    {
-      "path": "src/Eden.World/Propulsion/MicrowarpdriveCatalog.cs",
-      "line": 14,
+      "line": 21,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Propulsion/MicrowarpdriveCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 16,
+      "kind": "catalog-context",
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
+    },
+    {
+      "path": "src/Eden.World/Propulsion/MicrowarpdriveCatalog.cs",
+      "line": 18,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
@@ -4048,55 +3934,49 @@
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 31,
+      "line": 29,
       "kind": "catalog-read",
-      "text": "* (catalog.Set<TypeAttribute>().Find((int)skill, (int)source)?.Value ?? 0);"
+      "text": ") => PilotSkillReader.Level(world, catalog, pilotId, (int)skill) * (catalog.FittingAttributes((int)skill).GetValueOrDefault(source, 0));"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 33,
+      "line": 31,
       "kind": "catalog-context",
       "text": "internal static double NavigationSpeed(WorldDbContext world, CatalogDbContext catalog, long pilotId, double speed) =>"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 41,
+      "line": 39,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 45,
+      "line": 43,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<NavigationBonus> NavigationBonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 93,
+      "line": 91,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 101,
+      "line": 99,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 117,
+      "line": 115,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 130,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != PropulsionDefinitions.AfterburnerGroup"
-    },
-    {
-      "path": "src/Eden.World/Propulsion/PilotPropulsionStore.cs",
-      "line": 202,
+      "line": 196,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -4108,21 +3988,15 @@
     },
     {
       "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
-      "line": 42,
-      "kind": "catalog-read",
-      "text": "int group = item is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == item.TypeId).GroupId;"
-    },
-    {
-      "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
       "line": 126,
       "kind": "catalog-read",
-      "text": "double sourceRadius = catalog.Set<ItemType>().Find(pilot.ActiveShip.TypeId)!.Radius ?? 0;"
+      "text": "double sourceRadius = catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0;"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
       "line": 127,
       "kind": "catalog-read",
-      "text": "double targetRadius = catalog.Set<ItemType>().Find(targetType)!.Radius ?? 0;"
+      "text": "double targetRadius = catalog.FittingType(targetType)!.Radius ?? 0;"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
@@ -4146,7 +4020,7 @@
       "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
       "line": 209,
       "kind": "catalog-read",
-      "text": "if (catalog.Set<ItemType>().Find(item.TypeId)!.GroupId != TackleDefinitions.WarpCoreStabilizerGroup)"
+      "text": "if (catalog.FittingType(item.TypeId)!.GroupId != TackleDefinitions.WarpCoreStabilizerGroup)"
     },
     {
       "path": "src/Eden.World/Propulsion/PilotTackleStore.cs",
@@ -4162,19 +4036,19 @@
     },
     {
       "path": "src/Eden.World/Propulsion/TackleCatalog.cs",
-      "line": 29,
+      "line": 31,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Propulsion/TackleCatalog.cs",
-      "line": 38,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 33,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Propulsion/TackleCatalog.cs",
-      "line": 145,
+      "line": 149,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> CoreModifiers(CatalogDbContext catalog, int typeId) =>"
     },
@@ -4228,15 +4102,15 @@
     },
     {
       "path": "src/Eden.World/Repair/ArmorRepairCatalog.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/ArmorRepairCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 21,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/CapacitorBoosterCatalog.cs",
@@ -4246,15 +4120,15 @@
     },
     {
       "path": "src/Eden.World/Repair/CapacitorBoosterCatalog.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/CapacitorBoosterCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 21,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/HardenerCatalog.cs",
@@ -4264,19 +4138,19 @@
     },
     {
       "path": "src/Eden.World/Repair/HardenerCatalog.cs",
-      "line": 16,
+      "line": 18,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/HardenerCatalog.cs",
-      "line": 22,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 20,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/HardenerCatalog.cs",
-      "line": 56,
+      "line": 60,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>"
     },
@@ -4288,15 +4162,15 @@
     },
     {
       "path": "src/Eden.World/Repair/HullRepairCatalog.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/HullRepairCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 21,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/PilotCapacitorBoosterStore.cs",
@@ -4305,28 +4179,10 @@
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
-      "path": "src/Eden.World/Repair/PilotCapacitorBoosterStore.cs",
-      "line": 39,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != CapacitorBoosterDefinitions.Group"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotCapacitorBoosterStore.cs",
-      "line": 51,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == loaded.TypeId).GroupId != CapacitorBoosterDefinitions.ChargeGroup"
-    },
-    {
       "path": "src/Eden.World/Repair/PilotHardenerStore.cs",
       "line": 27,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotHardenerStore.cs",
-      "line": 30,
-      "kind": "catalog-read",
-      "text": "int group = module is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;"
     },
     {
       "path": "src/Eden.World/Repair/PilotHardenerStore.cs",
@@ -4339,12 +4195,6 @@
       "line": 27,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotLocalRepairStore.cs",
-      "line": 42,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != profile.GroupId"
     },
     {
       "path": "src/Eden.World/Repair/PilotLocalRepairStore.cs",
@@ -4426,21 +4276,9 @@
     },
     {
       "path": "src/Eden.World/Repair/PilotRepairStore.cs",
-      "line": 72,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Single(t => t.Id == ship.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotRepairStore.cs",
-      "line": 113,
-      "kind": "catalog-read",
-      "text": "var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == item.TypeId);"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotRepairStore.cs",
       "line": 128,
       "kind": "catalog-read",
-      "text": "catalog.Set<TypeAttribute>().Find(type.Id, (int)DogmaAttributeId.StructureHitPoints)?.Value ?? 0"
+      "text": "catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.StructureHitPoints, 0)"
     },
     {
       "path": "src/Eden.World/Repair/PilotRepairStore.cs",
@@ -4473,28 +4311,10 @@
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
-      "path": "src/Eden.World/Repair/PilotShieldBoostStore.cs",
-      "line": 54,
-      "kind": "catalog-read",
-      "text": "|| catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId != ShieldBoostDefinitions.Group"
-    },
-    {
       "path": "src/Eden.World/Repair/PilotSupportModuleStore.cs",
       "line": 26,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotSupportModuleStore.cs",
-      "line": 29,
-      "kind": "catalog-read",
-      "text": "int group = module is null ? 0 : catalog.Set<ItemType>().Single(t => t.Id == module.TypeId).GroupId;"
-    },
-    {
-      "path": "src/Eden.World/Repair/PilotSupportModuleStore.cs",
-      "line": 47,
-      "kind": "catalog-read",
-      "text": "int chargeGroup = catalog.Set<ItemType>().Single(t => t.Id == loaded.TypeId).GroupId;"
     },
     {
       "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
@@ -4504,25 +4324,25 @@
     },
     {
       "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
-      "line": 18,
+      "line": 20,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
-      "line": 24,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 22,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
-      "line": 25,
+      "line": 29,
       "kind": "catalog-read",
       "text": "var attributes = catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Repair/RemoteRepairCatalog.cs",
-      "line": 109,
+      "line": 113,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId) =>"
     },
@@ -4534,15 +4354,15 @@
     },
     {
       "path": "src/Eden.World/Repair/ShieldBoosterCatalog.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/ShieldBoosterCatalog.cs",
-      "line": 23,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 21,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/SupportModuleCatalog.cs",
@@ -4552,19 +4372,19 @@
     },
     {
       "path": "src/Eden.World/Repair/SupportModuleCatalog.cs",
-      "line": 15,
+      "line": 17,
       "kind": "catalog-context",
-      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group)"
+      "text": "internal static bool Supported(CatalogDbContext catalog, int typeId, int group) => s_support.Supports(catalog, typeId, group);"
     },
     {
       "path": "src/Eden.World/Repair/SupportModuleCatalog.cs",
-      "line": 21,
-      "kind": "catalog-read",
-      "text": "var type = catalog.FindSource(\"client/types\", PassiveCatalog.Key(typeId))?.Read<ClientTypes>();"
+      "line": 19,
+      "kind": "catalog-context",
+      "text": "private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)"
     },
     {
       "path": "src/Eden.World/Repair/SupportModuleCatalog.cs",
-      "line": 59,
+      "line": 63,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int typeId, int group) =>"
     },

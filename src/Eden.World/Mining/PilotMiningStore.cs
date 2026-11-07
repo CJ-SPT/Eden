@@ -83,13 +83,9 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
-        var hull = catalog.Set<ItemType>().Single(t => t.Id == pilot.ActiveShip.TypeId);
-        var ore = catalog.Set<ItemType>().Find(asteroid.TypeId);
-        if (
-            ore is null
-            || catalog.Set<ItemGroup>().Find(ore.GroupId)?.CategoryId != AsteroidDefinitions.Category
-            || !Enum.IsDefined((MiningResourceGroup)ore.GroupId)
-        )
+        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
+        var ore = catalog.FittingType(asteroid.TypeId);
+        if (ore is null || ore.CategoryId != AsteroidDefinitions.Category || !Enum.IsDefined((MiningResourceGroup)ore.GroupId))
         {
             throw new InvalidDataException("Use an ore mining laser on ordinary ore, not ice, gas or Mercoxit.");
         }

@@ -20,10 +20,7 @@ internal static class CrimewatchPersistence
 
     internal static double Security(CatalogDbContext catalog, int systemId, bool required = true)
     {
-        double? security = catalog
-            .FindSource("client/systems", systemId.ToString(CultureInfo.InvariantCulture))
-            ?.Read<ClientSystems>()
-            .SecurityStatus;
+        double? security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus;
         return security is double value && double.IsFinite(value) ? value
             : !required ? 0
             : throw new InvalidDataException("Missing system security classification.");

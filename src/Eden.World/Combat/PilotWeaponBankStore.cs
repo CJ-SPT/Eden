@@ -66,7 +66,7 @@ internal sealed class PilotWeaponBankStore(WorldDatabase database, TimeProvider 
             .Where(i =>
                 i.Online
                 && InventoryDefinitions.IsHighSlot(i.FlagId)
-                && WeaponCatalog.Supported(catalog, i.TypeId, catalog.Set<ItemType>().Find(i.TypeId)!.GroupId)
+                && WeaponCatalog.Supported(catalog, i.TypeId, catalog.FittingType(i.TypeId)!.GroupId)
             )
             .Select(i => new GroupableWeapon(i.Id, i.TypeId))
             .ToArray();
