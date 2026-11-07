@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
@@ -17,7 +18,7 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class SmallHullBonusTests
 {
-    private sealed record Probe(int ModuleType, int? ChargeType = null);
+    private sealed record Probe(int ModuleType, int? ChargeType = null, int? DroneType = null, bool Character = false);
 
     [Theory]
     [MemberData(nameof(SmallHullTests.Hulls), MemberType = typeof(SmallHullTests))]
@@ -73,10 +74,21 @@ public sealed class SmallHullBonusTests
                 }
             }
         }
+        if (
+            modifiers.Any(modifier =>
+                modifier.Selector == ModifierSelector.OwnerRequiredSkill && DroneRules.SupportsOwnerSkill(modifier.SelectionId!.Value)
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadCombatDrones(f.CatalogPath);
+        }
         foreach (var probe in modifiers.Select(modifier => ProbeFor(modifier, stripMiner)).Distinct())
         {
             InventoryItem? module = null;
-            long target = ship;
+            long target =
+                probe.DroneType is not null ? FittingCalculation.OwnerTargetId
+                : probe.Character ? f.PilotId
+                : ship;
             if (probe.ModuleType != 0)
             {
                 long fitted = f.Fit(probe.ModuleType, online: false);
@@ -91,7 +103,7 @@ public sealed class SmallHullBonusTests
                     target = Assert.Single(world.Set<OwnedItem>(), item => item.LocationId == fitted).Id;
                 }
             }
-            var enhanced = Attributes(f, target);
+            var enhanced = Attributes(f, target, probe.DroneType);
             string definition;
             using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
             {
@@ -101,7 +113,7 @@ public sealed class SmallHullBonusTests
                 string key = PassiveCatalog.Key(type);
                 catalog.Database.ExecuteSql($"UPDATE SourceRecord SET Data={empty} WHERE Dataset='client/typedogma' AND Key={key}");
             }
-            var baseline = Attributes(f, target);
+            var baseline = Attributes(f, target, probe.DroneType);
             using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
             {
                 string key = PassiveCatalog.Key(type);
@@ -154,30 +166,30 @@ public sealed class SmallHullBonusTests
             _ => throw new InvalidDataException("Unexpected hull-source skill operation."),
         };
 
-    private static Dictionary<DogmaAttributeId, double> Attributes(Fixture f, long target)
+    private static Dictionary<DogmaAttributeId, double> Attributes(Fixture f, long target, int? droneType = null)
     {
         using CatalogDbContext catalog = new(f.CatalogPath);
         using WorldDbContext world = new(f.Db.Path);
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == f.PilotId);
-        return FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(target);
+        return FittingCalculation.Read(world, catalog, pilot, ownerTypeId: droneType).Graph.Attributes(target);
     }
 
     private static bool Matches(Fixture f, PassiveModifier modifier, Probe probe)
     {
         if (modifier.Selector == ModifierSelector.Item)
         {
-            return probe.ModuleType == 0;
+            return probe.ModuleType == 0 && probe.DroneType is null && (modifier.Domain == ModifierDomain.Character) == probe.Character;
         }
-        if (probe.ModuleType == 0)
+        if (probe.ModuleType == 0 && probe.DroneType is null)
         {
             return false;
         }
-        if ((modifier.Selector == ModifierSelector.OwnerRequiredSkill) != probe.ChargeType.HasValue)
+        if ((modifier.Selector == ModifierSelector.OwnerRequiredSkill) != (probe.ChargeType.HasValue || probe.DroneType.HasValue))
         {
             return false;
         }
         using CatalogDbContext catalog = new(f.CatalogPath);
-        int type = probe.ChargeType ?? probe.ModuleType;
+        int type = probe.DroneType ?? probe.ChargeType ?? probe.ModuleType;
         if (modifier.Selector == ModifierSelector.Group)
         {
             return catalog.Set<ItemType>().Find(type)!.GroupId == modifier.SelectionId;
@@ -189,7 +201,17 @@ public sealed class SmallHullBonusTests
     private static Probe ProbeFor(PassiveModifier modifier, bool stripMiner) =>
         modifier.Selector switch
         {
-            ModifierSelector.Item => new(0),
+            ModifierSelector.Item => new(0, Character: modifier.Domain == ModifierDomain.Character),
+            ModifierSelector.OwnerRequiredSkill when DroneRules.SupportsOwnerSkill(modifier.SelectionId!.Value) => new(
+                0,
+                DroneType: (DroneSkill)modifier.SelectionId.Value switch
+                {
+                    DroneSkill.MediumDroneOperation => 2185,
+                    DroneSkill.HeavyDroneOperation => 2476,
+                    DroneSkill.SentryDroneInterfacing => 23561,
+                    _ => 2488,
+                }
+            ),
             ModifierSelector.OwnerRequiredSkill => (MissileSkill?)modifier.SelectionId switch
             {
                 MissileSkill.MissileLauncherOperation or MissileSkill.LightMissiles => new(499, 210),

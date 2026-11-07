@@ -22,7 +22,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
-| [Combat drones](protocol/drones.md) | Brutix and Brutix Navy Issue light/medium/heavy/sentry drone launch, control, NPC/pilot combat, recall, reconnect, abandonment and scooping. |
+| [Combat drones](protocol/drones.md) | 149 admitted drone-bay hulls, combat bonuses/control limits, light/medium/heavy/sentry drone launch, control, NPC/pilot combat, recall, reconnect, abandonment and scooping. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
 | [Architecture and typed boundaries](protocol/architecture.md) | Named models, Gameplay boundaries, orchestration, persistence and architecture audits. |
 | [Session performance and resident state](protocol/performance.md) | Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints. |
@@ -36,6 +36,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Capsule destruction and home-station respawn, November 7, 2026](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026)
 
+- [Combat-drone hull bonuses and control limits, November 7, 2026](protocol/drones.md#combat-drone-hull-bonuses-and-control-limits-november-7-2026)
 - [Heavy and sentry combat drones, November 7, 2026](protocol/drones.md#heavy-and-sentry-combat-drones-november-7-2026)
 - [Drone combat against pilot ships, November 7, 2026](protocol/drones.md#drone-combat-against-pilot-ships-november-7-2026)
 

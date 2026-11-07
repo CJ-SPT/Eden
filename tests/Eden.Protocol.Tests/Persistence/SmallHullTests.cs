@@ -81,7 +81,7 @@ public sealed class SmallHullTests
         var report = HullSupportAudit.Read(catalog);
         Assert.Equal(Hulls().Select(h => (int)h[0]).Order(), report.Hulls.Select(h => h.TypeId));
         Assert.All(report.Hulls, hull => Assert.DoesNotContain(HullCapability.Unclassified, hull.Deferred));
-        Assert.Contains(report.Hulls, hull => hull.TypeId == 594 && hull.Deferred.Contains(HullCapability.CombatDrones));
+        Assert.DoesNotContain(HullCapability.CombatDrones, Assert.Single(report.Hulls, hull => hull.TypeId == 594).Deferred);
         Assert.Contains(report.Hulls, hull => hull.TypeId == 2078 && hull.Deferred.Contains(HullCapability.Probes));
         Assert.Contains(report.Hulls, hull => hull.TypeId == 3532 && hull.Deferred.Contains(HullCapability.Hacking));
         Assert.Contains(

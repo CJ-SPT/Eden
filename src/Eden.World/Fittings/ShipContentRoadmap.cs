@@ -24,6 +24,8 @@ internal sealed record ShipContentRoadmap(
         role switch
         {
             HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,
+            HullCapability.MiningDrones => ShipContentMilestone.Mining,
+            HullCapability.UtilityDrones => ShipContentMilestone.UtilityDrones,
             HullCapability.EnergyWarfare or HullCapability.RemoteRepair => ShipContentMilestone.EnergyAndRemoteSupport,
             HullCapability.Probes => ShipContentMilestone.ProbeScanning,
             HullCapability.Hacking => ShipContentMilestone.Exploration,

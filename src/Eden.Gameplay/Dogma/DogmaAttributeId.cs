@@ -114,6 +114,7 @@ public enum DogmaAttributeId
     MaxActiveDrones = 352,
     MiningDroneAmountPercent = 428,
     DroneControlDistance = 458,
+    EcmJamDuration = 2822,
     CpuOutput = 48,
     CpuLoad = 49,
     Cpu = 50,

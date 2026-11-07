@@ -148,6 +148,8 @@ internal sealed class ShipDogmaBuilder(
             attributes[DogmaAttributeId.ShieldCapacity] = drone.Defense.Shield;
             attributes[DogmaAttributeId.MaxVelocity] = drone.MaximumSpeed;
             attributes[DogmaAttributeId.MaxRange] = drone.Optimal;
+            attributes[DogmaAttributeId.AccuracyFalloff] = drone.Falloff;
+            attributes[DogmaAttributeId.TrackingSpeed] = drone.Tracking;
             double baseDamage =
                 attributes.GetValueOrDefault(DogmaAttributeId.EmDamage)
                 + attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)

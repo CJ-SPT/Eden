@@ -3,6 +3,7 @@ using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
@@ -115,7 +116,7 @@ internal static class PassiveCatalog
             && (
                 domain != ModifierDomain.Character
                 || selection is not int ownerSkill
-                || (!rig && !MissileDefinitions.SupportsOwnerSkill(ownerSkill))
+                || (!rig && !MissileDefinitions.SupportsOwnerSkill(ownerSkill) && !(hull && DroneRules.SupportsOwnerSkill(ownerSkill)))
             )
         )
         {

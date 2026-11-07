@@ -1,12 +1,9 @@
 using Eden.Data.Catalog;
-using Eden.Data.World.Characters;
-using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
-using Eden.World.Characters;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
@@ -112,36 +109,25 @@ internal static class DroneCatalog
         var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         long shipId = controllerShipId ?? pilot.ActiveShipId;
+        if (shipId == 0)
+        {
+            return DroneRules.ApplySkills(Profile(catalog, typeId), Skills(world, catalog, pilotId), required);
+        }
         var key = new FitCacheKey(pilotId, shipId, -typeId);
         string? revision = world.FitRevision(pilotId);
         var fitted = world.CachedFit(key, revision);
         if (fitted is null)
         {
-            fitted =
-                shipId == pilot.ActiveShipId && HasRigs(world, pilot)
-                    ? FittingCalculation.Read(world, catalog, pilot, ownerTypeId: typeId).Graph.Attributes(FittingCalculation.OwnerTargetId)
-                    : attributes.ToDictionary();
+            var ship =
+                shipId == pilot.ActiveShipId ? pilot.ActiveShip : world.Ships.SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+            fitted = ship is null
+                ? attributes.ToDictionary()
+                : FittingCalculation.Read(world, catalog, pilot, ship, typeId).Graph.Attributes(FittingCalculation.OwnerTargetId);
             world.StageFit(key, revision, fitted);
         }
         return DroneRules.ApplySkills(Profile(catalog, typeId, fitted), Skills(world, catalog, pilotId), required);
     }
 
-    internal static double ControlRange(WorldDbContext world, CatalogDbContext catalog, long pilotId)
-    {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        double bonus = HasRigs(world, pilot)
-            ? FittingCalculation.Read(world, catalog, pilot).Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance)
-            : 0;
-        return DroneRules.ControlRange(Skills(world, catalog, pilotId)) + bonus;
-    }
-
-    private static bool HasRigs(WorldDbContext world, Pilot pilot) =>
-        world
-            .Set<OwnedItem>()
-            .Any(i =>
-                i.OwnerId == pilot.Id
-                && i.LocationId == pilot.ActiveShipId
-                && i.FlagId >= (int)InventoryFlag.RigSlot0
-                && i.FlagId <= (int)InventoryFlag.RigSlot2
-            );
+    internal static int ControlLimit(FittingCalculation fitting) =>
+        checked((int)fitting.Graph.Read(fitting.PilotId, DogmaAttributeId.MaxActiveDrones));
 }

@@ -81,7 +81,6 @@ internal sealed partial class LiveCombatRuntime
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-                var skills = DroneCatalog.Skills(world, catalog, pilotId);
                 var fit = FittingCalculation.Read(world, catalog, pilot);
                 var saved = world.Set<WorldDroneSettings>().Find(pilotId);
                 HashSet<int> qualified = [];
@@ -98,9 +97,9 @@ internal sealed partial class LiveCombatRuntime
                     }
                 }
                 return new DronePilot(
-                    Math.Min(DroneRules.MaximumDrones, skills.GetValueOrDefault(DroneSkill.Drones)),
+                    DroneCatalog.ControlLimit(fit),
                     fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth),
-                    DroneRules.ControlRange(skills) + fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
+                    fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
                     saved is null ? new() : new(saved.Aggressive, saved.FocusFire),
                     qualified
                 );

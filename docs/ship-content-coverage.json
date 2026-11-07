@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 47
+      "count": 108
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 188
+      "count": 127
     },
     {
       "category": "Ship",
@@ -5810,7 +5810,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -5880,7 +5880,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1996,
         2734
@@ -5902,7 +5902,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -5996,7 +5996,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6073,7 +6073,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5018,
         5019,
@@ -6118,7 +6118,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6213,7 +6213,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6237,7 +6237,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         511,
         514
@@ -6266,7 +6266,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6307,7 +6307,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6331,7 +6331,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2504,
         5087,
@@ -6361,7 +6361,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6378,7 +6378,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         512,
         4934
@@ -6414,7 +6414,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6431,7 +6431,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4990,
         4991,
@@ -6472,7 +6472,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6545,7 +6545,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5090,
         5778
@@ -6581,7 +6581,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6621,7 +6621,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6645,7 +6645,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4999,
         5000,
@@ -6693,7 +6693,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6831,7 +6831,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -6910,10 +6910,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -6957,7 +6964,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7042,7 +7049,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3366,
         3588,
@@ -7065,7 +7072,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7204,7 +7211,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7235,7 +7242,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1024,
         2809,
@@ -7265,7 +7272,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7282,7 +7289,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         602,
         5132
@@ -7311,7 +7318,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7328,7 +7335,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1812,
         1813,
@@ -7367,7 +7374,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7384,7 +7391,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         958,
         959,
@@ -7423,7 +7430,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7466,7 +7473,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7528,10 +7535,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         }
       ],
       "issues": []
@@ -7545,7 +7559,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         562,
         919
@@ -7574,7 +7588,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7615,10 +7629,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -7639,7 +7660,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3706,
         4472
@@ -7668,7 +7689,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7685,7 +7706,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3703,
         5129,
@@ -7715,7 +7736,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7766,10 +7787,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -7790,7 +7818,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1442,
         2756,
@@ -7813,7 +7841,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7837,7 +7865,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3587,
         3590,
@@ -7861,7 +7889,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -7912,10 +7940,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -7936,7 +7971,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [],
       "checks": [
         {
@@ -7955,7 +7990,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8026,7 +8061,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8108,7 +8143,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8185,7 +8220,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8274,7 +8309,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8357,7 +8392,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8438,7 +8473,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8530,7 +8565,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8607,7 +8642,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8638,7 +8673,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         727,
         5468,
@@ -8669,7 +8704,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8686,7 +8721,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         727,
         730,
@@ -8716,7 +8751,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8733,7 +8768,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         726,
         5470,
@@ -8764,7 +8799,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8781,7 +8816,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         527,
         5477,
@@ -8812,7 +8847,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8829,7 +8864,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         527,
         728,
@@ -8859,7 +8894,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8876,7 +8911,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         728,
         5469,
@@ -8907,7 +8942,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8924,7 +8959,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         729,
         5479,
@@ -8955,7 +8990,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -8972,7 +9007,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         729,
         5478,
@@ -9002,7 +9037,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -9019,7 +9054,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         729,
         6789,
@@ -9049,7 +9084,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -9066,7 +9101,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         726,
         729,
@@ -9096,7 +9131,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -11858,7 +11893,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         529,
         732,
@@ -11888,7 +11923,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -12623,7 +12658,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         516,
         907
@@ -12652,7 +12687,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -13172,7 +13207,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5827,
         6354
@@ -13194,7 +13229,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -15492,7 +15527,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         6789
       ],
@@ -15513,7 +15548,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -16340,7 +16375,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -19534,10 +19569,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -19660,7 +19702,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1551,
         5066
@@ -19682,7 +19724,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -21215,7 +21257,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -21499,7 +21541,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         726,
         729,
@@ -21529,7 +21571,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -21572,7 +21614,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         726,
         729,
@@ -21602,7 +21644,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -36470,7 +36512,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         562,
         918
@@ -36499,7 +36541,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -40232,7 +40274,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -40314,7 +40356,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -40999,6 +41041,13 @@
         {
           "operation": "Role",
           "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "RemoteRepair"
@@ -41063,6 +41112,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -41132,6 +41188,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -41209,6 +41272,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -45026,7 +45096,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -80716,7 +80786,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -80855,7 +80925,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -80921,7 +80991,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -83354,7 +83424,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -83440,7 +83510,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -83525,7 +83595,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -85294,7 +85364,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5131,
         5387,
@@ -85324,7 +85394,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -85394,7 +85464,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86080,7 +86150,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5136,
         5382
@@ -86109,7 +86179,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86126,7 +86196,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         602,
         3706,
@@ -86156,7 +86226,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86173,7 +86243,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1812,
         1813,
@@ -86217,7 +86287,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86234,7 +86304,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3483,
         3484,
@@ -86271,7 +86341,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86288,7 +86358,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         968,
         1232,
@@ -86327,7 +86397,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86344,7 +86414,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1233,
         4510,
@@ -86381,7 +86451,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86450,7 +86520,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86533,7 +86603,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86615,7 +86685,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86705,7 +86775,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86797,7 +86867,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -86887,7 +86957,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87122,7 +87192,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         512,
         2504
@@ -87151,7 +87221,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87168,7 +87238,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         562,
         2179,
@@ -87208,7 +87278,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87418,7 +87488,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87510,7 +87580,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87591,7 +87661,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87706,7 +87776,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87777,7 +87847,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1816,
         1817,
@@ -87821,7 +87891,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -87838,7 +87908,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1228,
         2215,
@@ -87877,7 +87947,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -101533,7 +101603,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         529,
         5471,
@@ -101564,7 +101634,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125350,7 +125420,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125439,7 +125509,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125528,7 +125598,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125617,7 +125687,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125679,7 +125749,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125752,7 +125822,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125815,7 +125885,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -125877,7 +125947,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -131698,7 +131768,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -131780,7 +131850,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -135530,6 +135600,13 @@
         {
           "operation": "Role",
           "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "RemoteRepair"
@@ -137022,10 +137099,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -138748,7 +138832,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -138815,7 +138899,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         602,
         6088,
@@ -138853,7 +138937,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -138870,7 +138954,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         909,
         5136
@@ -138906,7 +138990,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -138923,7 +139007,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1024,
         2809,
@@ -138956,7 +139040,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -138973,7 +139057,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         562,
         11416,
@@ -139010,7 +139094,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -156369,7 +156453,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -156468,7 +156552,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -156562,7 +156646,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -156665,7 +156749,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -157424,6 +157508,13 @@
         {
           "operation": "Role",
           "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
           "milestone": "EnergyAndRemoteSupport",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "RemoteRepair"
@@ -157494,7 +157585,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         726,
         729,
@@ -157524,7 +157615,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -157619,7 +157710,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5165,
         5310,
@@ -157650,7 +157741,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -157694,7 +157785,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -157842,7 +157933,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -158593,10 +158684,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         }
       ],
       "issues": []
@@ -158813,7 +158911,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -158876,7 +158974,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -158938,7 +159036,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -160063,7 +160161,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -160132,7 +160230,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -161072,7 +161170,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -161152,7 +161250,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -161254,7 +161352,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -161393,7 +161491,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -161961,7 +162059,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         899,
         1230,
@@ -162002,7 +162100,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -162082,7 +162180,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -168438,7 +168536,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         757,
         6352,
@@ -168469,7 +168567,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -168493,7 +168591,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         6359,
         6360,
@@ -168531,7 +168629,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -168579,10 +168677,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         }
       ],
       "issues": []
@@ -168596,7 +168701,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5087,
         5111,
@@ -168627,7 +168732,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -181398,10 +181503,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -181488,6 +181600,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -181823,7 +181942,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -190079,7 +190198,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -190150,7 +190269,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -190243,7 +190362,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -191198,10 +191317,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "MiningDrones"
         },
         {
           "operation": "Role",
@@ -196198,7 +196324,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -196283,7 +196409,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -196362,6 +196488,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -197954,7 +198087,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -200960,7 +201093,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -202163,7 +202296,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -202234,7 +202367,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -202308,10 +202441,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -202381,7 +202521,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -202610,7 +202750,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -203291,6 +203431,13 @@
         {
           "operation": "Role",
           "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -203366,6 +203513,13 @@
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -203478,7 +203632,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -204121,7 +204275,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -204152,7 +204306,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5816,
         5817,
@@ -204197,7 +204351,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -204255,7 +204409,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -204589,7 +204743,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         6789,
         7117,
@@ -204631,7 +204785,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -208396,7 +208550,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -208495,7 +208649,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -209802,7 +209956,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -209875,7 +210029,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -210143,10 +210297,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -210209,10 +210370,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         },
         {
           "operation": "Role",
@@ -211055,7 +211223,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -211122,7 +211290,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
@@ -211179,10 +211347,17 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "CombatDrones",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CombatDrones"
+        },
+        {
+          "operation": "Role",
+          "implemented": false,
+          "milestone": "UtilityDrones",
+          "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
+          "role": "UtilityDrones"
         }
       ],
       "issues": []

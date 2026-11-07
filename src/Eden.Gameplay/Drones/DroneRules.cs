@@ -8,7 +8,6 @@ public static class DroneRules
 {
     public const int CombatDroneGroup = 100;
 
-    public const int MaximumDrones = 5;
     public const double LightBandwidth = 5;
     public const double MediumBandwidth = 10;
     public const double BaseControlRange = 20_000;
@@ -33,6 +32,14 @@ public static class DroneRules
     public const double NpcRetaliationChance = .25;
 
     public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);
+
+    public static bool SupportsOwnerSkill(int skill) =>
+        (DroneSkill)skill
+            is DroneSkill.Drones
+                or DroneSkill.LightDroneOperation
+                or DroneSkill.MediumDroneOperation
+                or DroneSkill.HeavyDroneOperation
+                or DroneSkill.SentryDroneInterfacing;
 
     public static CombatDroneKind Kind(double bandwidth, IReadOnlySet<int> requiredSkills)
     {
@@ -91,11 +98,18 @@ public static class DroneRules
         + AvionicsRangePerLevel * skills.GetValueOrDefault(DroneSkill.DroneAvionics)
         + AdvancedAvionicsRangePerLevel * skills.GetValueOrDefault(DroneSkill.AdvancedDroneAvionics);
 
-    public static void CheckLaunch(int active, double usedBandwidth, int count, double bandwidth, int skill, double availableBandwidth)
+    public static void CheckLaunch(
+        int active,
+        double usedBandwidth,
+        int count,
+        double bandwidth,
+        int maximumCount,
+        double availableBandwidth
+    )
     {
-        if (count <= 0 || active + count > Math.Min(MaximumDrones, skill))
+        if (count <= 0 || active + count > maximumCount)
         {
-            throw new InvalidDataException("The Drones skill and five-drone control limit do not allow this launch.");
+            throw new InvalidDataException("The trained skills and effective drone control limit do not allow this launch.");
         }
         if (!double.IsFinite(availableBandwidth) || usedBandwidth + bandwidth > availableBandwidth)
         {

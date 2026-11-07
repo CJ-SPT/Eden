@@ -54,10 +54,11 @@ public sealed class ShipContentCoverageTests
     }
 
     [Fact]
-    public void DroneCoverageUsesProductionProfilesAndDoesNotDeferWorkingBrutixBays()
+    public void DroneCoverageUsesProductionProfilesAndDoesNotDeferWorkingHullBays()
     {
         using CatalogFixture fixture = new();
         PassiveCatalogFixture.LoadCombatDrones(fixture.Path);
+        PassiveCatalogFixture.LoadDroneHulls(fixture.Path);
         using CatalogDbContext catalog = new(fixture.Path);
         var report = ShipContentAudit.Read(catalog);
         var drones = report.Entries.Where(entry => entry.Category == InventoryCategory.Drone).ToArray();

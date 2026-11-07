@@ -117,7 +117,7 @@ internal sealed class DroneHandler(
                 ids = context
                     .Flight.VisibleDrones.Where(d => d.PilotId == context.Pilot.PilotId && d.ShipId == 0)
                     .Select(d => d.Id)
-                    .Take(DroneRules.MaximumDrones)
+                    .Take(drones.Control(context.Pilot.PilotId).MaximumDrones)
                     .ToArray();
             }
             else

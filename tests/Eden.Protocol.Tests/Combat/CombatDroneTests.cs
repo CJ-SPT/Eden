@@ -259,7 +259,8 @@ public sealed class CombatDroneTests
             var item = world.Set<OwnedItem>().Find(stack)!;
             if (failure == "hull")
             {
-                world.Ships.Find(f.Ship)!.TypeId = 601;
+                // Badger has no drone bay; the Ibis now has its ordinary combat-drone support.
+                world.Ships.Find(f.Ship)!.TypeId = 648;
             }
             if (failure == "foreign")
             {
@@ -276,6 +277,10 @@ public sealed class CombatDroneTests
         if (failure is "skill" or "heavy-skill" or "sentry-skill")
         {
             Assert.Contains("trained", error.Message);
+        }
+        if (failure == "hull")
+        {
+            Assert.Contains("does not support", error.Message);
         }
         using WorldDbContext after = new(f.Base.Db.Path);
         Assert.Equal(quantity, after.Set<OwnedItem>().Find(stack)!.Quantity);

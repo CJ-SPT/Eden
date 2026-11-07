@@ -51,16 +51,16 @@ internal sealed partial class PilotDroneStore(
         }
         if (requireDroneHull && !DroneRules.SupportsHull(pilot.ActiveShip.TypeId))
         {
-            throw new InvalidDataException("Light and medium combat drones require a Brutix or Brutix Navy Issue in space.");
+            throw new InvalidDataException("This ship does not support combat drone control.");
         }
         return pilot;
     }
 
     private static void CheckIds(IReadOnlyList<long> ids)
     {
-        if (ids.Count is < 1 or > DroneRules.MaximumDrones || ids.Any(id => id <= 0) || ids.Distinct().Count() != ids.Count)
+        if (ids.Count < 1 || ids.Any(id => id <= 0) || ids.Distinct().Count() != ids.Count)
         {
-            throw new InvalidDataException("Choose one to five distinct drones.");
+            throw new InvalidDataException("Choose distinct drones.");
         }
     }
 
@@ -77,16 +77,17 @@ internal sealed partial class PilotDroneStore(
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var skills = DroneCatalog.Skills(world, catalog, pilotId);
-        long ship = world.Pilots.Single(p => p.Id == pilotId).ActiveShipId;
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        long ship = pilot.ActiveShipId;
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
         double bandwidth = world
             .Set<WorldDrone>()
             .Where(d => d.PilotId == pilotId && d.ControllerShipId == ship && d.SystemId != null)
             .AsEnumerable()
             .Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
         return new(
-            Math.Min(DroneRules.MaximumDrones, skills.GetValueOrDefault(DroneSkill.Drones)),
-            (int)DroneCatalog.ControlRange(world, catalog, pilotId),
+            DroneCatalog.ControlLimit(fitting),
+            (int)fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
             bandwidth,
             Settings(world, pilotId)
         );
@@ -125,7 +126,8 @@ internal sealed partial class PilotDroneStore(
         var pilot = InSpace(world, pilotId);
         var ship = pilot.ActiveShip;
         var position = ship.Position!;
-        var shipAttributes = FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(ship.Id);
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
+        var shipAttributes = fitting.Graph.Attributes(ship.Id);
         if (PilotHealthStore.Read(world, ship.Id, ShipHealth.DefenseFrom(shipAttributes), now).Remaining.Destroyed)
         {
             throw new InvalidDataException("A destroyed ship cannot launch drones.");
@@ -158,7 +160,7 @@ internal sealed partial class PilotDroneStore(
             used,
             pending.Sum(p => p.Request.Quantity),
             pending.Sum(p => p.Profile.Bandwidth * p.Request.Quantity),
-            DroneCatalog.Skills(world, catalog, pilotId).GetValueOrDefault(DroneSkill.Drones),
+            DroneCatalog.ControlLimit(fitting),
             shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth)
         );
         List<InventoryChange> changes = [];
@@ -261,7 +263,8 @@ internal sealed partial class PilotDroneStore(
         var pilot = InSpace(world, pilotId);
         var position = pilot.ActiveShip.Position!;
         int systemId = CurrentSystem(catalog, pilot);
-        double range = DroneCatalog.ControlRange(world, catalog, pilotId);
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
+        double range = fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         double droneRange = order == DroneOrder.Reconnect ? NpcEncounterDefinitions.VisibilityRange : DroneRules.ShutdownDistance;
         var selected = drones.Select(id => world.Set<WorldDrone>().Find(id)).ToArray();
         if (
@@ -278,7 +281,7 @@ internal sealed partial class PilotDroneStore(
         }
         if (order == DroneOrder.Engage)
         {
-            var sourceDefense = ShipHealth.DefenseFrom(FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(pilot.ActiveShipId));
+            var sourceDefense = ShipHealth.DefenseFrom(fitting.Graph.Attributes(pilot.ActiveShipId));
             if (PilotHealthStore.Read(world, pilot.ActiveShipId, sourceDefense, now).Remaining.Destroyed)
             {
                 throw new InvalidDataException("A destroyed ship cannot command drone attacks.");
@@ -327,8 +330,8 @@ internal sealed partial class PilotDroneStore(
                 controlled.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth),
                 selected.Length,
                 selected.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).Bandwidth),
-                DroneCatalog.Skills(world, catalog, pilotId).GetValueOrDefault(DroneSkill.Drones),
-                FittingCalculation.Read(world, catalog, pilot).Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
+                DroneCatalog.ControlLimit(fitting),
+                fitting.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth)
             );
         }
         foreach (var entry in selected)
@@ -483,14 +486,13 @@ internal sealed partial class PilotDroneStore(
         List<DroneHit> hits = [];
         List<PendingDroneDamage> pilotHits = [];
         var settings = Settings(world, pilotId);
-        var skills = DroneCatalog.Skills(world, catalog, pilotId);
-        int allowedCount = Math.Min(DroneRules.MaximumDrones, skills.GetValueOrDefault(DroneSkill.Drones));
         var fitting = FittingCalculation.Read(world, catalog, pilot);
+        int allowedCount = DroneCatalog.ControlLimit(fitting);
         bool sourceDestroyed = PilotHealthStore
             .Read(world, ship.Id, ShipHealth.DefenseFrom(fitting.Graph.Attributes(ship.Id)), now)
             .Remaining.Destroyed;
         double allowedBandwidth = fitting.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
-        double controlRange = DroneRules.ControlRange(skills) + fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
+        double controlRange = fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;

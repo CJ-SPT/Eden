@@ -19,6 +19,8 @@ public enum HullCapability
     ShieldExtenders,
     ReinforcedBulkheads,
     CombatDrones,
+    MiningDrones,
+    UtilityDrones,
     Probes,
     Salvaging,
     ElectronicWarfare,
@@ -183,10 +185,9 @@ public static class HullBonusRules
             {
                 ModifierDomain.Ship => HullCapability.HullAttributes,
                 ModifierDomain.Character
-                    when target.Attribute
-                        is DogmaAttributeId.MiningDroneAmountPercent
-                            or DogmaAttributeId.DroneControlDistance
-                            or DogmaAttributeId.MaxActiveDrones => HullCapability.CombatDrones,
+                    when target.Attribute is DogmaAttributeId.DroneControlDistance or DogmaAttributeId.MaxActiveDrones =>
+                    HullCapability.CombatDrones,
+                ModifierDomain.Character when target.Attribute == DogmaAttributeId.MiningDroneAmountPercent => HullCapability.MiningDrones,
                 _ => HullCapability.Unclassified,
             },
             ModifierSelector.OwnerRequiredSkill => target.Selection switch
@@ -197,16 +198,15 @@ public static class HullBonusRules
                     when target.Attribute
                         is DogmaAttributeId.ShieldCapacity
                             or DogmaAttributeId.ArmorHitPoints
-                            or DogmaAttributeId.StructureHitPoints => HullCapability.CombatDrones,
+                            or DogmaAttributeId.StructureHitPoints => HullCapability.UtilityDrones,
                 (int)HullBonusSkill.PropulsionJamming => HullCapability.Interdiction,
+                (int)HullBonusSkill.MiningDroneOperation or (int)HullBonusSkill.IceHarvestingDroneOperation => HullCapability.MiningDrones,
+                (int)HullBonusSkill.SalvageDroneOperation => HullCapability.UtilityDrones,
                 (int)HullBonusSkill.Drones
-                or (int)HullBonusSkill.MiningDroneOperation
-                or (int)HullBonusSkill.SalvageDroneOperation
                 or (int)HullBonusSkill.LightDroneOperation
                 or (int)HullBonusSkill.MediumDroneOperation
                 or (int)HullBonusSkill.HeavyDroneOperation
-                or (int)HullBonusSkill.IceHarvestingDroneOperation
-                or (int)HullBonusSkill.SentryDroneInterfacing => HullCapability.CombatDrones,
+                or (int)HullBonusSkill.SentryDroneInterfacing => DroneCapability(target.Attribute),
                 _ => HullCapability.Unclassified,
             },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)target.Selection switch
@@ -290,6 +290,29 @@ public static class HullBonusRules
             _ => HullCapability.Unclassified,
         };
 
+    private static HullCapability DroneCapability(DogmaAttributeId attribute) =>
+        attribute switch
+        {
+            DogmaAttributeId.ShieldCapacity
+            or DogmaAttributeId.ArmorHitPoints
+            or DogmaAttributeId.StructureHitPoints
+            or DogmaAttributeId.DamageMultiplier
+            or DogmaAttributeId.EmDamage
+            or DogmaAttributeId.ExplosiveDamage
+            or DogmaAttributeId.KineticDamage
+            or DogmaAttributeId.ThermalDamage
+            or DogmaAttributeId.TrackingSpeed
+            or DogmaAttributeId.MaxRange
+            or DogmaAttributeId.AccuracyFalloff
+            or DogmaAttributeId.MaxVelocity => HullCapability.CombatDrones,
+            DogmaAttributeId.ShieldBonus
+            or DogmaAttributeId.ArmorRepairAmount
+            or DogmaAttributeId.HullRepairAmount
+            or DogmaAttributeId.SpeedFactor
+            or DogmaAttributeId.EcmJamDuration => HullCapability.UtilityDrones,
+            _ => HullCapability.Unclassified,
+        };
+
     public static bool Operational(HullCapability capability, int? equipmentGroup = null) =>
         (
             capability == HullCapability.RemoteRepair
@@ -313,5 +336,6 @@ public static class HullBonusRules
                     or HullCapability.ElectronicWarfare
                     or HullCapability.ArmorPlates
                     or HullCapability.ShieldExtenders
-                    or HullCapability.ReinforcedBulkheads;
+                    or HullCapability.ReinforcedBulkheads
+                    or HullCapability.CombatDrones;
 }

@@ -76,7 +76,10 @@ internal sealed class PilotBrain(
                     bonus.Percent
                 ))
         );
-        var fittingBonuses = fitting?.SkillBonuses(pilotId) ?? [];
+        // Drone control is already sent as absolute pilot attributes by primes and live updates.
+        var fittingBonuses = (fitting?.SkillBonuses(pilotId) ?? []).Where(bonus =>
+            bonus.Modifier.Attribute is not (DogmaAttributeId.MaxActiveDrones or DogmaAttributeId.DroneControlDistance)
+        );
         BrainEffect FittingEffect(FittingSkillBonus bonus) =>
             new(
                 bonus.Modifier.Selector == ModifierSelector.OwnerRequiredSkill ? pilotId : shipId,

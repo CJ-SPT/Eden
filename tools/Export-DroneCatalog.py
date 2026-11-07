@@ -5,7 +5,7 @@ import pathlib
 import sqlite3
 
 
-def export(catalog_path, output):
+def export(catalog_path, output, hulls_only=False):
     with sqlite3.connect(catalog_path.resolve().as_uri() + '?mode=ro', uri=True) as catalog:
         def record(dataset, key):
             row = catalog.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?',
@@ -16,7 +16,10 @@ def export(catalog_path, output):
             raise ValueError('Expected the pinned build-3662168 catalog')
         pending = {16229, 33151, 2476, 3436, 3437, 3442, 12305, 12484, 12485, 12486, 12487,
                    23566, 23606, 23618, 24241, 33699, 3441, 23594}
-        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100'):
+        if hulls_only:
+            policy = pathlib.Path(__file__).resolve().parents[1] / 'src/Eden.Gameplay/Content/content-support-3662168.json'
+            pending = set(json.loads(policy.read_text(encoding='utf-8'))['droneHullTypes'])
+        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100') if not hulls_only else []:
             attrs = dict(catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (type_id,)))
             source = record('client/types', type_id)
             if source.get('published') == 1 and source.get('metaGroupID') != 15 and attrs.get(1272, 0) > 0:
@@ -56,7 +59,9 @@ def export(catalog_path, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog', required=True, type=pathlib.Path)
-    parser.add_argument('--output', type=pathlib.Path,
-                        default=pathlib.Path('tests/Eden.Protocol.Tests/Fixtures/CombatDroneCatalog.json'))
+    parser.add_argument('--hulls-only', action='store_true', help='Export admitted combat-drone hulls and their prerequisites')
+    parser.add_argument('--output', type=pathlib.Path)
     args = parser.parse_args()
-    export(args.catalog, args.output)
+    output = args.output or pathlib.Path('tests/Eden.Protocol.Tests/Fixtures/'
+                                        + ('DroneHullCatalog.json' if args.hulls_only else 'CombatDroneCatalog.json'))
+    export(args.catalog, output, args.hulls_only)

@@ -9,6 +9,7 @@ using Eden.Data.World.Propulsion;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -125,7 +126,8 @@ internal sealed record FittingCalculation(
                 new Dictionary<DogmaAttributeId, double>
                 {
                     [DogmaAttributeId.MissileDamageMultiplier] = 1,
-                    [DogmaAttributeId.DroneControlDistance] = 0,
+                    [DogmaAttributeId.DroneControlDistance] = DroneRules.BaseControlRange,
+                    [DogmaAttributeId.MaxActiveDrones] = 0,
                 }
             ),
         ];
@@ -368,6 +370,8 @@ internal sealed record FittingCalculation(
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
+            // Drone work/damage skills remain owned by DroneRules.ApplySkills.
+            .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])
             .Distinct()
             .ToArray();
         var trained = world
