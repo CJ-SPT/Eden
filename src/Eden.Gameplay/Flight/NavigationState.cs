@@ -16,38 +16,6 @@ public sealed class NavigationState
     public WarpCourse? Warp { get; private set; }
     public double SpeedFraction { get; private set; }
 
-    public NavigationFrame Capture() =>
-        new(
-            LastHeading,
-            Direction,
-            Velocity,
-            FollowTarget,
-            FollowMode,
-            FollowRange,
-            WarpDestination,
-            WarpOrder?.Target,
-            WarpOrder?.Range ?? 0,
-            AlignStamp,
-            SpeedFraction,
-            Warp is null ? null : new(Warp.Origin, Warp.Destination, Warp.StartStamp, Warp.EntrySpeed)
-        );
-
-    public static NavigationState Restore(NavigationFrame frame, FlightProperties hull) =>
-        new()
-        {
-            LastHeading = frame.LastHeading,
-            Direction = frame.Direction,
-            Velocity = frame.Velocity,
-            FollowTarget = frame.FollowTarget,
-            FollowMode = frame.FollowMode,
-            FollowRange = frame.FollowRange,
-            WarpDestination = frame.WarpDestination,
-            WarpOrder = frame.WarpTarget is long id ? (id, frame.WarpRange) : null,
-            AlignStamp = frame.AlignStamp,
-            SpeedFraction = frame.SpeedFraction,
-            Warp = frame.Warp is { } warp ? new(warp.Origin, warp.Destination, warp.StartStamp, hull, warp.EntrySpeed) : null,
-        };
-
     public NavigationState Copy() => (NavigationState)MemberwiseClone();
 
     public void SetVelocity(SpacePosition velocity) => Velocity = velocity;
@@ -321,20 +289,3 @@ public enum NavigationOrderResult
     Unchanged,
     Applied,
 }
-
-public sealed record WarpFrame(SpacePosition Origin, SpacePosition Destination, int StartStamp, double EntrySpeed);
-
-public sealed record NavigationFrame(
-    SpacePosition LastHeading,
-    SpacePosition? Direction,
-    SpacePosition Velocity,
-    StaticSpaceObject? FollowTarget,
-    NavigationMode FollowMode,
-    double FollowRange,
-    SpacePosition? WarpDestination,
-    long? WarpTarget,
-    double WarpRange,
-    int AlignStamp,
-    double SpeedFraction,
-    WarpFrame? Warp
-);

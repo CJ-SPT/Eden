@@ -22,7 +22,7 @@
 
 | Reference | Use it for |
 | --- | --- |
-| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Current capsuleer community milestones, economic foundations, offline progression policy and historical gameplay audit. |
+| [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and eventual Blazor configuration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
 
 ## Features and implementation records
 

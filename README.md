@@ -16,9 +16,6 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
-New economy worlds can opt into a persistent capsuleer miner in Kisogo. Its starter Ibis mines while human pilots are playing and returns its ore to station. See [economy world creation](docs/development-client.md#creating-an-economy-world-without-testing-supply).
-
-
 | Area | Implemented scope and limits |
 | --- | --- |
 | Accounts and characters | Launcher registration/login, three character slots, persistent biomass preparation/cancellation and final deletion, profiles, skill training, remapping, learning implants/boosters, skill injectors/extraction, redemption and personal clones. |

@@ -29,8 +29,6 @@ public sealed class WarpCourse
         _cruiseTime = Math.Max(0, (Distance + 1) / _peak - 1 / _acceleration - 1 / _braking);
     }
 
-    public SpacePosition Origin => _origin;
-    public double EntrySpeed => _entrySpeed;
     public SpacePosition Destination { get; }
     public double Distance { get; }
     public int WireFactor { get; }

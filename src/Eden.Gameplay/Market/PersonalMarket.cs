@@ -50,8 +50,7 @@ public sealed record PersonalMarketChange(long Id, MarketOrder Order, MarketOrde
 public sealed record WorldEconomySettings(
     bool TestingMarket = true,
     bool TestingGrants = true,
-    int InstitutionalStock = NpcSupplyRules.Stock,
-    int? CapsuleerSeed = null
+    int InstitutionalStock = NpcSupplyRules.Stock
 )
 {
     public const int SingletonId = 1;

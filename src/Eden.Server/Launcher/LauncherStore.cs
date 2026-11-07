@@ -282,12 +282,8 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         using var db = Open();
         using var tx = db.BeginTransaction(deferred: false);
         var id =
-            Scalar(
-                db,
-                tx,
-                "SELECT Id FROM WorldAccount WHERE Id>0 AND upper(UserName)=$name",
-                ("$name", userName.Trim().ToUpperInvariant())
-            ) ?? throw new InvalidDataException("Unknown account.");
+            Scalar(db, tx, "SELECT Id FROM WorldAccount WHERE upper(UserName)=$name", ("$name", userName.Trim().ToUpperInvariant()))
+            ?? throw new InvalidDataException("Unknown account.");
         Execute(
             db,
             tx,

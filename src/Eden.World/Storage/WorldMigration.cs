@@ -1,4 +1,3 @@
-using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Corporations;
@@ -11,7 +10,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 98;
+    internal const int CurrentVersion = 97;
 
     public static void Open(
         WorldDbContext world,
@@ -21,10 +20,6 @@ internal static class WorldMigration
         Eden.Gameplay.Economy.EconomicConfiguration? economics = null
     )
     {
-        if (economy is { CapsuleerSeed: not null } && (economy.TestingMarket || economy.TestingGrants))
-        {
-            throw new InvalidDataException("A capsuleer community requires an economy world without development supply or grants.");
-        }
         CatalogSources.CheckBuild(catalog);
         using var transaction = world.Database.BeginTransaction();
         int version = world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single();
@@ -46,7 +41,6 @@ internal static class WorldMigration
         NpcSchemaReconciliation.Apply(world, version);
         SavedWorldValidation.ReconcileAndCheck(world, catalog);
         WorldVersions69To84.Apply(world, version);
-        CapsuleerCommunityStore.Initialize(world, economy?.CapsuleerSeed);
         transaction.Commit();
         transaction.Dispose();
         if (version < 78)
@@ -73,8 +67,7 @@ internal static class WorldMigration
             PlayerEwarSchema.Upgrade(world);
         }
         CorporationStorageSchema.Upgrade(world);
-        CapsuleerCommunityStore.Provision(world, catalog, clock);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=98");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=97");
         history.Commit();
     }
 }

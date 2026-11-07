@@ -135,7 +135,16 @@ internal sealed partial class LiveCombatRuntime
         foreach (var player in result.Ships)
         {
             long id = player.Ship.Id;
-            PublishPilotPosition(id, system, player.Ship.Position);
+            _positions[id] = new(_savedPositions[id] is { } saved ? saved.System : system, player.Ship.Position);
+            if (_positions[id] != _savedPositions[id])
+            {
+                _dirtyPositions.Add(id);
+                owner.ObjectsChanged();
+            }
+            if (_shipPilots.TryGetValue(id, out long pilot) && _ships.TryGetValue(pilot, out var ship))
+            {
+                _ships[pilot] = ship with { Position = player.Ship.Position, SystemId = system };
+            }
         }
         database.MotionStamps[system] = stamp;
         foreach (var collision in result.Collisions.Where(c => c.Bumped))
@@ -143,26 +152,6 @@ internal sealed partial class LiveCombatRuntime
             database.CollisionStamps[collision.Id] = stamp;
         }
         return result.Ships;
-    }
-
-    // Both connected and autonomous pilots publish motion under the resident owner after undocking.
-    internal void PublishPilotPosition(long id, int system, SpacePosition position)
-    {
-        if (_positions.TryGetValue(id, out var previous) && previous.Position != position)
-        {
-            _acquisitions.Clear();
-        }
-        _savedPositions.TryAdd(id, null);
-        _positions[id] = new(_savedPositions[id] is { } saved ? saved.System : system, position);
-        if (_positions[id] != _savedPositions[id])
-        {
-            _dirtyPositions.Add(id);
-            owner.ObjectsChanged();
-        }
-        if (_shipPilots.TryGetValue(id, out long pilot) && _ships.TryGetValue(pilot, out var ship))
-        {
-            _ships[pilot] = ship with { Position = position, SystemId = system };
-        }
     }
 
     private void PublishNpc(LiveCombatNpc npc)
