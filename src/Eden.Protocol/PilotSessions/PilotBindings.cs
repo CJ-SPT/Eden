@@ -26,6 +26,19 @@ internal sealed class PilotBindings(long sessionId)
         }
     }
 
+    public void ReleaseFleetReferences(long? keepFleet = null)
+    {
+        foreach (
+            var binding in _references
+                .Values.Where(b => b.Service.StartsWith("@fleet:", StringComparison.Ordinal) && b.Service != $"@fleet:{keepFleet}")
+                .ToArray()
+        )
+        {
+            _references.Remove(binding.Service);
+            _bindings.Remove(binding.Reference.Id);
+        }
+    }
+
     public void ReleaseCorporationReferences()
     {
         if (_references.Remove("corpRegistry", out var binding))

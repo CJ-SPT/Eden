@@ -1,6 +1,7 @@
 using Eden.Gameplay.Chat;
 using Eden.Server.Chat;
 using Eden.Server.Launcher;
+using Eden.World.Fleets;
 
 namespace Eden.Protocol.Tests.Chat;
 
@@ -281,7 +282,7 @@ public sealed class ChatWorldTests
     public void TokensExpireAreSingleUseAndCannotAuthenticateAnotherPilotOrOutliveSelection()
     {
         TestClock clock = new();
-        ChatRuntime runtime = new(new LauncherOptions(), clock);
+        ChatRuntime runtime = new(new LauncherOptions(), clock, new CooperativeFleetStore(clock));
         Guid session = Guid.NewGuid();
         runtime.Update(session, First);
         string token = runtime.IssueToken(session);
@@ -301,7 +302,7 @@ public sealed class ChatWorldTests
     [Fact]
     public async Task ConcurrentPilotsReceiveTheSameOrderedMessagesExactlyOnce()
     {
-        ChatRuntime runtime = new(new LauncherOptions(), new TestClock());
+        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock()));
         Guid a = Guid.NewGuid(),
             b = Guid.NewGuid();
         runtime.Update(a, First);
@@ -335,7 +336,7 @@ public sealed class ChatWorldTests
     [Fact]
     public void SelectingAnotherCharacterRevokesPreviouslyIssuedCredentials()
     {
-        ChatRuntime runtime = new(new LauncherOptions(), new TestClock());
+        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock()));
         Guid session = Guid.NewGuid();
         runtime.Update(session, First);
         string old = runtime.IssueToken(session);

@@ -10,6 +10,8 @@ public abstract record FlightCommand
 
     public sealed record WarpToBookmark(long BookmarkId, double Range) : FlightCommand;
 
+    public sealed record WarpToFleetMember(long PilotId, double Range) : FlightCommand;
+
     public sealed record WarpToPoint(long OrderId, SpacePosition Position, double Range) : FlightCommand;
 
     public sealed record RefreshState : FlightCommand;

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 using Eden.Gameplay.Chat;
+using Eden.Gameplay.Fleets;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Chat;
 using Eden.Server.Launcher;
@@ -9,7 +10,7 @@ using Eden.Server.Launcher;
 namespace Eden.Server.Chat;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) : IPilotChat, IXmppChat
+internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, ICooperativeFleets fleets) : IPilotChat, IXmppChat
 {
     private const int QueueCapacity = 256;
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(1);
@@ -106,6 +107,10 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
     {
         lock (_gate)
         {
+            if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+            {
+                Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+            }
             Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
         }
     }
@@ -122,6 +127,10 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
     {
         lock (_gate)
         {
+            if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+            {
+                Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+            }
             Dispatch(_world.Send(connection, room, text, id, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
         }
     }
@@ -170,6 +179,10 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
     {
         lock (_gate)
         {
+            if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+            {
+                Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+            }
             return _world.Members(connection, room);
         }
     }
@@ -178,6 +191,10 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
     {
         lock (_gate)
         {
+            if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+            {
+                Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+            }
             return _world.RoomInfo(connection, room);
         }
     }
@@ -203,6 +220,18 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock) :
         Queue<ChatDelivery> pending = new(deliveries);
         while (pending.TryDequeue(out var delivery))
         {
+            if (
+                delivery.Event is ChatEvent.Message { Room.Kind: ChatRoomKind.Fleet } message
+                && _world.ConnectedPilot(delivery.Recipient) is { } recipient
+                && fleets.Identity(recipient.Id)?.FleetId != message.Room.Id
+            )
+            {
+                foreach (var revoked in _world.UpdateFleet(delivery.Recipient, fleets.Identity(recipient.Id)?.FleetId))
+                {
+                    pending.Enqueue(revoked);
+                }
+                continue;
+            }
             if (!_queues.TryGetValue(delivery.Recipient, out var queue))
             {
                 continue;

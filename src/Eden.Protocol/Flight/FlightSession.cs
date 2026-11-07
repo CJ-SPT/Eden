@@ -3,6 +3,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -61,7 +62,12 @@ internal sealed class FlightSession(
     internal int CurrentStamp => Stamp;
 
     public bool Translocating => _travel.Translocating;
-    public DockedPilot Pilot { get; private set; } = pilot;
+    private DockedPilot _pilot = pilot;
+    public DockedPilot Pilot
+    {
+        get => _pilot;
+        private set => _pilot = value with { Identity = value.Identity with { Fleet = _pilot.Identity.Fleet } };
+    }
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     public bool CanTarget =>
@@ -98,6 +104,11 @@ internal sealed class FlightSession(
             _dirt = appearance.Read(Pilot.PilotId, Pilot.ShipId);
         }
         return _dirt?.Timestamp;
+    }
+
+    public void UpdateFleet(FleetIdentity? identity)
+    {
+        _pilot = Pilot with { Identity = Pilot.Identity with { Fleet = identity } };
     }
 
     public void UpdateCorporation(CorporationIdentity identity)

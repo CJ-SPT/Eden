@@ -1,4 +1,5 @@
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Docking;
@@ -35,7 +36,8 @@ public sealed record PilotIdentity(
     string CorporationTicker = "",
     long CorporationRoles = 0,
     CorporationMemberAccess? CorporationAccess = null,
-    int CorporationAccountKey = CorporationWalletRules.MasterKey
+    int CorporationAccountKey = CorporationWalletRules.MasterKey,
+    FleetIdentity? Fleet = null
 );
 
 public sealed record PilotShip(
