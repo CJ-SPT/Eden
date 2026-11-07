@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Data;
 using System.Globalization;
 using Eden.Data.Catalog;
@@ -50,6 +51,7 @@ internal sealed record FittingCalculation(
         int? ownerTypeId = null
     )
     {
+        string? revision = ownerTypeId is null ? world.FitRevision(pilot.Id) : null;
         SessionPerformance.FittingCalculated();
         // A fitting graph reads many static rows. Keep this nonpooled connection
         // open for its owning context instead of reopening SQLite for every query.
@@ -438,6 +440,20 @@ internal sealed record FittingCalculation(
         var bonuses = skillModifiers
             .Select(s => new FittingSkillBonus(s.Skill, s.Modifier, graph.Read(s.Skill, s.Modifier.SourceAttribute)))
             .ToArray();
+        if (revision is not null)
+        {
+            // Share evaluated values, never the mutable graph or tracked entities.
+            // Transaction completion publishes the snapshot; rollback discards it.
+            world.StageFittingSnapshot(
+                pilot.Id,
+                ship.Id,
+                revision,
+                new(
+                    modules.ToFrozenDictionary(m => m.Item.Id, m => graph.Attributes(m.Item.Id).ToFrozenDictionary()),
+                    Array.AsReadOnly(bonuses)
+                )
+            );
+        }
         return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels);
 
         void Add(long source, PassiveModifier modifier, bool exempt)

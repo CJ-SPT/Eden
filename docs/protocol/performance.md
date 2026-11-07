@@ -6,6 +6,44 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Bound dogma and ship-call latency, November 7, 2026
+
+The reported console capture showed repeated `dogmaIM.MachoBindObject` dispatches taking 0.77–1.62 seconds, a 421 ms ship binding and a 334 ms activation. The binding name concealed its embedded service method. Warnings and performance traces now include that method, such as `dogmaIM.MachoBindObject (GetAllInfo)`, and initial update-coordinator entry has its own `enter` phase.
+
+An isolated replay of the saved, fully fitted Brutix Navy Issue reproduced the repeated fitting work: warmed `GetAllInfo` constructed 18 complete graphs and issued 3,603 SQL commands with 216 connection opens, including the surrounding session updates. Each module prime and the pilot brain reconstructed the same graph. Two independently registered `IPilotOperationScope` implementations also competed for the host's single scope, so the newer catalog generation scope displaced fitting-input sharing.
+
+The host now registers one catalog operation scope that also opens the fitting-input scope. Read-only catalog contexts in that operation share one connection; nested scopes and awaits retain it, and the outer scope disposes it. Writable and standalone contexts retain their own connections. This does not share saved-world transactions or mutable catalog records between service operations.
+
+The existing build-3662168 dogma/boarding adapters and their named replies remain in place. Reference consulted: [Carbon Blue `Marshal.cpp`, revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp). This change does not alter Blue encoding or Destiny simulation rules.
+
+The bounded resident fit cache now retains immutable evaluated attributes for all fitted modules and the associated skill bonuses. The existing fit revision covers membership, online state, skills, rigs, scripts and incoming effects. Snapshots are staged in the owning transaction and published only on commit. Pending changes bypass cached values, rollback/disposal cannot publish, catalog edits clear both fitting caches and reopening starts cold. Reload/cycling deadlines remain fresh SQL reads, while ammunition, resources, damage and active effect notifications retain their current owners. Pilot lookup now completes a read transaction so character selection and boarding can publish their calculated fits. Propulsion speed and signature reads use the existing fitting reader.
+
+Automated validation uses `FittingSnapshotTests`, `CatalogFittingReadTests` and the affected fitting, ownership, session, propulsion, combat, mining, catalog and live-world tests. The opt-in `ServerPerformanceReplayTests.ReplaySavedDogmaCalls` copies the supplied databases before initializing a live world, uses a fixed `TestClock`, measures complete session calls, and checks selection, module online state, boarding, undocking, successful RPC output and the active propulsion effect. `EDEN_PERFORMANCE_SOURCE` selects a directory containing both SQLite files; `EDEN_PERFORMANCE_PILOT` selects the saved pilot, defaulting to the reported pilot `90000006`. The fixture expects a second owned hull of the same type and a fitted propulsion module. Reports go to `EDEN_PERFORMANCE_OUTPUT` when set. Checkpoint projection and file writing are outside these call measurements.
+
+The before/after replay used baseline `bdefb7e` and the feature worktree, the same frozen database copies, pilot `90000006`, and a fixed November 7, 2026 12:00 UTC clock. Each process measured one first call and five warmed repetitions. These are Debug measurements on this desktop with other desktop work present, rather than production latency guarantees. Reports are retained in ignored `artifacts/slow-calls-baseline-fixed` and `artifacts/slow-calls-optimized-fixed`.
+
+| Complete session call | Baseline ms | Optimized ms | SQL commands before / after | Connections before / after | Fitting graphs before / after |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Initial character selection | 725.65 | 577.46 | 331 / 156 | 116 / 48 | 1 / 0 |
+| First bound `GetAllInfo` | 1467.72 | 399.51 | 3779 / 331 | 217 / 89 | 19 / 0 |
+| Warmed bound `GetAllInfo`, median | 1001.23 | 93.31 | 3603 / 331 | 216 / 89 | 18 / 0 |
+| Warmed bound ship `ItemGetInfo`, median | 42.74 | 10.81 | 34 / 34 | 22 / 10 | 0 / 0 |
+| Take module offline | 1139.23 | 186.55 | 3562 / 491 | 188 / 27 | 18 / 1 |
+| Bring module online | 1162.90 | 138.18 | 3605 / 516 | 201 / 27 | 19 / 2 |
+| Bound ship `Board` | 592.27 | 189.59 | 817 / 436 | 198 / 65 | 3 / 1 |
+| Bound ship `Undock` | 59.18 | 55.55 | 46 / 46 | 5 / 4 | 0 / 0 |
+| Activate propulsion in space | 309.82 | 274.45 | 636 / 457 | 47 / 26 | 3 / 2 |
+
+Warmed dogma median improved by about 91%; its five optimized samples ranged from 83.47 to 109.48 ms. Canonicalized full dogma replies match across revisions, including attributes, effects, magazines and pilot brain: 29,361 bytes, SHA-256 `F883D720B4598879C5FDB5DC2FF3594459BDF559CEEB1B1F10F6A0798A078708`. Only dictionary enumeration order is normalized for that comparison. Initial selection/first dogma calls can still exceed the warning threshold, and propulsion activation shows a smaller improvement. The change does not claim to eliminate every cold or busy-frame warning.
+
+Automated validation: solution/tool restores and the solution build passed (final build 4.44 seconds, zero warnings/errors). The affected .NET selection passed 455 tests in 2 minutes 12 seconds; the final host-registration assertion passed separately. The final fixed-clock baseline and optimized replays passed in 29 and 20 seconds respectively. Both Python policy suites passed (6 catalog tests and 9 formatting tests, 0.70 seconds together); final formatting verification passed in 22.83 seconds. The full .NET suite was not run. The affected filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentFitTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.SessionPerformanceTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotCombatTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.WeaponBankTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwarTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcEwarTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogProviderTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.|FullyQualifiedName~Eden.Protocol.Tests.Repair.ShieldBoost|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled. Cold startup, native rendering, network backpressure and the reported transport disconnect remain outside the established acceptance evidence. Optional maintainer check: restart the rebuilt server and revisit character selection, fitting and boarding to compare the newly identified call warnings.
+
 ## Shared work across player frames, November 7, 2026
 
 Corporation-change polling now caches the highest saved event ID for each pilot. Acknowledged or empty streams return without SQL until the change table is modified. Existing page size, event ordering and payload conversion remain unchanged. Transaction-local reads bypass publication and rollback invalidates conservatively. The existing `(PilotId, Id)` index serves cold head queries.

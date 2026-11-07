@@ -102,6 +102,8 @@ Gameplay builds independently of Protocol, Server, EF Core and the host containe
 
 ### Session performance diagnostics
 
+Bound-call warnings now identify their embedded method. Fitting and brain primes share committed fitting snapshots and operation-local catalog reads; see the [dogma and ship-call latency record](docs/protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026).
+
 Unchanged player-frame polling and stable NPC observer records now share resident inputs; see the [multi-player frame comparison](docs/protocol/performance.md#shared-work-across-player-frames-november-7-2026).
 
 Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.ps1`; see the [capacity measurements](docs/protocol/performance.md#npc-and-player-capacity-november-6-2026) and [implemented NPC optimizations](docs/protocol/performance.md#indexed-npc-scene-updates-november-6-2026).

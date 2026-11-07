@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;
@@ -55,8 +56,9 @@ internal sealed class PilotSessionCalls(
         }
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
-        report($"Call {service}.{method}.");
-        using var performance = SessionPerformance.Begin($"call {service}.{method}", diagnostics?.Trace ?? report);
+        string description = DescribeCall(service, method, call.Arguments);
+        report($"Call {description}.");
+        using var performance = SessionPerformance.Begin($"call {description}", diagnostics?.Trace ?? report);
         long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
@@ -69,6 +71,7 @@ internal sealed class PilotSessionCalls(
         var dispatchTime = Stopwatch.GetElapsedTime(started);
         if (!selected && context.Selected)
         {
+            using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
             updates.Enter(context);
         }
         using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
@@ -79,7 +82,7 @@ internal sealed class PilotSessionCalls(
         if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
         {
             (diagnostics?.Warning ?? report)(
-                $"Slow call {service}.{method}: {elapsed.TotalMilliseconds:F0} ms before reply; "
+                $"Slow call {description}: {elapsed.TotalMilliseconds:F0} ms before reply; "
                     + $"{dispatchTime.TotalMilliseconds:F0} ms dispatch, {(elapsed - dispatchTime).TotalMilliseconds:F0} ms updates."
             );
         }
@@ -166,5 +169,16 @@ internal sealed class PilotSessionCalls(
             _initialStateSent = true;
             await output.WriteAsync(InitialState(accountId, clientId, context.Roles));
         }
+    }
+
+    internal static string DescribeCall(string service, string method, object? arguments)
+    {
+        return
+            method == "MachoBindObject"
+            && arguments is object?[] { Length: 2 } args
+            && args[1] is object?[] { Length: >= 2 } embedded
+            && embedded[0] is string or byte[]
+            ? $"{service}.{method} ({BlueMarshal.Text(embedded[0])})"
+            : $"{service}.{method}";
     }
 }

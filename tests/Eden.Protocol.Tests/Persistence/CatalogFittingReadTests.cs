@@ -1,15 +1,51 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Skills;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.World.Catalog;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class CatalogFittingReadTests
 {
+    [Fact]
+    public async Task HostOperationSharesFittingInputsAndOneConnectionAcrossAwaitAndNestedScopes()
+    {
+        using TestWorld db = new();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        var scopes = db.Services.GetRequiredService<IPilotOperationScope>();
+        using var metrics = SessionPerformance.Begin("operation", _ => { }, force: true)!;
+        using (scopes.Begin())
+        {
+            using (CatalogDbContext first = new(path))
+            {
+                Assert.NotEmpty(first.FittingAttributes(601));
+            }
+            await Task.Yield();
+            using (scopes.Begin())
+            using (CatalogDbContext nested = new(path))
+            {
+                Assert.NotEmpty(nested.FittingAttributes(601));
+                Assert.NotNull(nested.Set<ItemType>().Find(601));
+            }
+            using CatalogDbContext last = new(path);
+            Assert.NotNull(last.Set<ItemType>().Find(601));
+            Assert.Equal(3, metrics.Commands);
+            Assert.Equal(1, metrics.Connections);
+        }
+        using (scopes.Begin())
+        using (CatalogDbContext next = new(path))
+        {
+            Assert.NotEmpty(next.FittingAttributes(601));
+        }
+        Assert.Equal(4, metrics.Commands);
+        Assert.Equal(2, metrics.Connections);
+    }
+
     [Fact]
     public void BatchedSkillLevelsMatchSingleReadsIncludingMissingAndPendingSkillChanges()
     {

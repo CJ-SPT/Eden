@@ -24,7 +24,9 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ModuleAttributes(world, catalog, pilotId, module);
+        var result = ModuleAttributes(world, catalog, pilotId, module);
+        transaction.Commit();
+        return result;
     }
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(

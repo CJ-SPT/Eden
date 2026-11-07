@@ -440,7 +440,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        return FittingCalculation.Read(world, catalog, pilot).SkillBonuses;
+        var snapshot = world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId));
+        var result = snapshot?.SkillBonuses ?? FittingCalculation.Read(world, catalog, pilot).SkillBonuses;
+        transaction.Commit();
+        return result;
     }
 
     internal static void CheckHull(CatalogDbContext catalog, int moduleType, int hullType)
@@ -461,12 +464,25 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         FittingCalculation? calculation = null
     )
     {
-        calculation ??= FittingCalculation.Read(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
-        var attributes = (
-            calculation.Modules.Any(m => m.Item.Id == module.Id)
-                ? calculation.Graph.Attributes(module.Id)
-                : ReadAttributes(catalog, module.TypeId)
-        ).ToDictionary();
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) : null;
+        Dictionary<DogmaAttributeId, double> attributes;
+        if (snapshot is not null)
+        {
+            attributes = snapshot.Modules.TryGetValue(module.Id, out var fitted)
+                ? fitted.ToDictionary()
+                : ReadAttributes(catalog, module.TypeId).ToDictionary();
+        }
+        else
+        {
+            calculation ??= FittingCalculation.Read(world, catalog, pilot);
+            attributes = (
+                calculation.Modules.Any(m => m.Item.Id == module.Id)
+                    ? calculation.Graph.Attributes(module.Id)
+                    : ReadAttributes(catalog, module.TypeId)
+            ).ToDictionary();
+        }
+        // Deadlines are live state and must not be captured with the fitted graph.
         if (module.GroupId == TackleDefinitions.WarpCoreStabilizerGroup)
         {
             attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;
@@ -484,6 +500,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ReadModuleAttributes(world, catalog, pilotId, module);
+        var result = ReadModuleAttributes(world, catalog, pilotId, module);
+        transaction.Commit();
+        return result;
     }
 }
