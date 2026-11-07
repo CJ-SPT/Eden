@@ -32,6 +32,8 @@ internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFl
 
     public FleetIdentity? Identity(long actor) => Read(() => _world.Identity(actor));
 
+    public FleetMembership? Membership(long actor) => Read(() => _world.Membership(actor));
+
     public IReadOnlyList<FleetDelivery> Drain(long actor) => Read(() => _world.Drain(actor));
 
     public CooperativeFleet Create(long actor) => Read(() => _world.Create(actor));

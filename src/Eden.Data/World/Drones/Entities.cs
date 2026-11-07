@@ -28,6 +28,13 @@ internal sealed class WorldDrone
     public long CommandedAt { get; set; }
     public long ShotAt { get; set; }
     public long ShotTargetId { get; set; }
+    public DroneDelegationMode DelegationMode { get; set; }
+    public long DelegatePilotId { get; set; }
+    public long DelegateShipId { get; set; }
+    public long DelegateFleetId { get; set; }
+    public long OwnerMembership { get; set; }
+    public long DelegateMembership { get; set; }
+    public long ReactionRevision { get; set; }
 }
 
 internal sealed class WorldDroneSettings

@@ -333,6 +333,7 @@ public sealed class ShipStorageTests
         Assert.Throws<InvalidDataException>(() => fleet.Board(f.PilotId, stored.Child, stored.Carrier));
         long home = f.StationId;
         const int destinationId = 60003761;
+        Station destination;
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -340,9 +341,9 @@ public sealed class ShipStorageTests
                     + "SELECT 60003761,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,"
                     + "X+1000000,Y,Z FROM Station WHERE Id=60003760"
             );
-            var destination = catalog.Set<Station>().Single(s => s.Id == destinationId);
-            f.Db.Store.SetPosition(stored.Carrier, new(destination.X, destination.Y, destination.Z), destination.SolarSystemId);
+            destination = catalog.Set<Station>().Single(s => s.Id == destinationId);
         }
+        f.Db.Store.SetPosition(stored.Carrier, new(destination.X, destination.Y, destination.Z), destination.SolarSystemId);
         f.Db.Store.Dock(f.PilotId, stored.Carrier, destinationId);
         Assert.DoesNotContain(fleet.Ships(f.PilotId, checked((int)home)), item => item.Id == stored.Child);
         f.Inventory.Move(f.PilotId, [stored.Child], stored.Carrier, destinationId, (int)InventoryFlag.Hangar, null);

@@ -35,6 +35,7 @@ public static class LiveDroneRules
                 ShotAt = 0,
                 ShotTargetId = 0,
                 Velocity = new(0, 0, 0),
+                Delegation = null,
             },
         };
 
@@ -48,7 +49,15 @@ public static class LiveDroneRules
             roll
         );
 
-    public static LiveDroneStep AdvanceTarget(LiveDrone drone, LiveCombatShip ship, DroneTarget? enemy, long now, int stamp, double roll)
+    public static LiveDroneStep AdvanceTarget(
+        LiveDrone drone,
+        LiveCombatShip ship,
+        DroneTarget? enemy,
+        long now,
+        int stamp,
+        double roll,
+        DroneTarget? anchor = null
+    )
     {
         if (now <= drone.UpdatedAt)
         {
@@ -58,10 +67,10 @@ public static class LiveDroneRules
         var profile = contact.Profile;
         if (enemy is null && contact.Activity == DroneActivity.Fighting)
         {
-            contact = contact with { Activity = DroneActivity.Idle, TargetId = ship.ShipId };
+            contact = contact with { Activity = DroneActivity.Idle, TargetId = anchor?.Id ?? ship.ShipId };
         }
-        var target = enemy?.Position ?? ship.Position!;
-        float radius = (float)(enemy?.Radius ?? ship.Radius);
+        var target = enemy?.Position ?? anchor?.Position ?? ship.Position!;
+        float radius = (float)(enemy?.Radius ?? anchor?.Radius ?? ship.Radius);
         double distance = contact.Position.DistanceTo(target) - radius - profile.Radius;
         if (contact.Activity == DroneActivity.Returning && distance <= profile.OrbitRange + DroneRules.LaunchOffset)
         {

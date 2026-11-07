@@ -86,7 +86,8 @@ public sealed record DroneContact(
     long ShotAt = 0,
     long ShotTargetId = 0,
     float SpeedLimit = 0,
-    bool Orbiting = true
+    bool Orbiting = true,
+    DroneDelegation? Delegation = null
 );
 
 public sealed record DroneLaunch(long StackId, IReadOnlyList<long> DroneIds);
@@ -126,6 +127,7 @@ public interface IPilotDrones
 {
     DroneOperation Launch(long pilotId, IReadOnlyList<DroneStack> stacks, long now);
     void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now);
+    void Delegate(long pilotId, IReadOnlyList<long> drones, DroneDelegationMode mode, long memberId, long now);
     IReadOnlyList<InventoryChange> Scoop(long pilotId, IReadOnlyList<long> drones, InventoryFlag hold, long now);
     bool HasControlled(long pilotId, long shipId);
     DroneUpdate Advance(long pilotId, long now, int stamp);

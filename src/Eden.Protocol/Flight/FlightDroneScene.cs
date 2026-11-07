@@ -12,6 +12,14 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
 
     internal void Capture(FlightSceneContext context) => Contacts = ReadDrones(context);
 
+    internal void ReplayActivities()
+    {
+        foreach (var drone in Contacts.Where(d => d.Delegation is not null))
+        {
+            update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
+        }
+    }
+
     private DroneContact[] ReadDrones(FlightSceneContext context) =>
         context.Pilot.Position is not { } position
             ? []
@@ -29,6 +37,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         var current = ReadDrones(context);
         foreach (var departed in Contacts.ExceptBy(current.Select(d => d.Id), d => d.Id))
         {
+            if (departed.Delegation is not null)
+            {
+                update(new DestinyCommand.DroneActivityChanged(departed.Id, null));
+            }
             update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
             update(new DestinyCommand.RemoveBall(departed.Id, drones?.WasDestroyed(departed.Id) == true));
         }
@@ -41,6 +53,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         foreach (var drone in current)
         {
             var old = previous.GetValueOrDefault(drone.Id);
+            if (old?.Delegation?.Mode != drone.Delegation?.Mode || old?.Delegation?.PilotId != drone.Delegation?.PilotId)
+            {
+                update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
+            }
             if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
             {
                 // Michelle uses the control row's owner OR controller to keep a panel entry.

@@ -92,6 +92,7 @@ internal static class DroneNpcCombat
         {
             drone.Saved.SystemId = null;
             drone.Saved.ControllerShipId = 0;
+            DroneDelegationPersistence.Write(drone.Saved, null);
             drone.Saved.TargetId = 0;
             var item = world.Set<OwnedItem>().Find(contact.Id)!;
             item.LocationId = (int)InventoryLocation.Graveyard;

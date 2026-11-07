@@ -20,6 +20,7 @@ internal static class DroneSchema
         model.Entity<WorldDrone>().HasOne<OwnedItem>().WithMany().HasForeignKey(d => d.ItemId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<WorldDrone>().HasIndex(d => new { d.PilotId, d.ControllerShipId });
         model.Entity<WorldDrone>().HasIndex(d => d.SystemId);
+        model.Entity<WorldDrone>().HasIndex(d => d.DelegateShipId);
     }
 
     internal static void Upgrade(WorldDbContext world)

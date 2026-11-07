@@ -55,7 +55,14 @@ internal sealed class DroneHandler(
         bool scoop = service == "ship" && method is "Scoop" or "ScoopDrone";
         bool command =
             service == "entity"
-            && method is "CmdEngage" or "CmdReturnHome" or "CmdReturnBay" or "CmdReconnectToDrones" or "CmdAbandonDrone";
+            && method
+                is "CmdEngage"
+                    or "CmdReturnHome"
+                    or "CmdReturnBay"
+                    or "CmdReconnectToDrones"
+                    or "CmdAbandonDrone"
+                    or "CmdAssist"
+                    or "CmdGuard";
         if (!launch && !command && !scoop)
         {
             return PilotCallResult.Unsupported;
@@ -100,6 +107,22 @@ internal sealed class DroneHandler(
                 context.Flight.RefreshDrones();
                 DroneWire.NotifyControl(context, drones.Control(context.Pilot.PilotId), now);
                 return new DroneLaunchReply(result.Launches);
+            }
+            if (method is "CmdAssist" or "CmdGuard")
+            {
+                if (args is not [long memberId, var selection])
+                {
+                    throw new InvalidDataException("Choose a fleet member and a drone selection.");
+                }
+                drones.Delegate(
+                    context.Pilot.PilotId,
+                    ReadIds(selection),
+                    method == "CmdAssist" ? DroneDelegationMode.Assist : DroneDelegationMode.Guard,
+                    memberId,
+                    now
+                );
+                context.Flight.RefreshDrones();
+                return new DroneCommandReply();
             }
             DroneOrder order = method switch
             {

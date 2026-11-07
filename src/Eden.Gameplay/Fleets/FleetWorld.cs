@@ -19,6 +19,8 @@ public sealed class FleetWorld(long seed)
     private readonly Dictionary<Guid, long> _sessions = [];
     private readonly Dictionary<long, Guid> _owners = [];
     private readonly Dictionary<long, FleetIdentity> _identities = [];
+    private readonly Dictionary<long, FleetMembership> _memberships = [];
+    private long _membershipVersion;
     private readonly Dictionary<long, Invitation> _invitations = [];
     private readonly Dictionary<long, Queue<FleetDelivery>> _events = [];
     private readonly Dictionary<long, long> _broadcastAt = [];
@@ -48,6 +50,21 @@ public sealed class FleetWorld(long seed)
         {
             return;
         }
+        if (
+            _memberships.TryGetValue(pilot.Id, out var membership)
+            && (
+                _owners.GetValueOrDefault(pilot.Id) != session
+                || _online.TryGetValue(pilot.Id, out var previousPilot)
+                    && (
+                        previousPilot.ShipId != pilot.ShipId
+                        || previousPilot.SystemId != pilot.SystemId
+                        || (previousPilot.Position is null) != (pilot.Position is null)
+                    )
+            )
+        )
+        {
+            _memberships[pilot.Id] = new(membership.FleetId, checked(++_membershipVersion));
+        }
         _sessions[session] = pilot.Id;
         _owners[pilot.Id] = session;
         _online[pilot.Id] = pilot;
@@ -63,6 +80,8 @@ public sealed class FleetWorld(long seed)
     }
 
     public FleetIdentity? Identity(long actor) => _identities.GetValueOrDefault(actor);
+
+    public FleetMembership? Membership(long actor) => _memberships.GetValueOrDefault(actor);
 
     public IReadOnlyList<FleetDelivery> Drain(long actor)
     {
@@ -154,6 +173,7 @@ public sealed class FleetWorld(long seed)
         // must not clear or populate that new client cache, even when rejoining the same fleet.
         _events[member.Pilot.Id].Clear();
         fleet.Members.Add(member.Pilot.Id, member);
+        _memberships[member.Pilot.Id] = new(fleet.Id, checked(++_membershipVersion));
         SaveIdentity(fleet, member);
         Publish(fleet, new FleetEvent.Joined(member));
     }
@@ -288,6 +308,7 @@ public sealed class FleetWorld(long seed)
         bool boss = Boss(fleet, actor);
         fleet.Members.Remove(actor);
         _identities.Remove(actor);
+        _memberships.Remove(actor);
         foreach (long invited in _invitations.Where(i => i.Value.Inviter == actor).Select(i => i.Key).ToArray())
         {
             _invitations.Remove(invited);

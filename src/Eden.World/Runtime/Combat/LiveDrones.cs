@@ -115,6 +115,7 @@ internal sealed partial class LiveCombatRuntime
         int stamp,
         IPilotCombatPresence presence,
         IPilotDamageEvents damageEvents,
+        Eden.Gameplay.Fleets.ICooperativeFleets fleets,
         Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle
     )
     {
@@ -181,12 +182,14 @@ internal sealed partial class LiveCombatRuntime
             }
             count++;
             bandwidth += contact.Profile.Bandwidth;
+            var anchor = AdvanceDelegation(drone, ship, presence, fleets, now, out drone);
+            contact = drone.Contact;
             if (now <= drone.UpdatedAt)
             {
                 staged.Add(drone);
                 continue;
             }
-            if (contact.Activity == DroneActivity.Idle && inputs.Settings.Aggressive)
+            if (contact.Delegation is null && contact.Activity == DroneActivity.Idle && inputs.Settings.Aggressive)
             {
                 var candidates = Aggression()
                     .Values.Where(a => a.ShipId == ship.ShipId && a.LastShotAt > drone.CommandedAt)
@@ -225,6 +228,7 @@ internal sealed partial class LiveCombatRuntime
                     || npc.SystemId != ship.SystemId
                     || npc.Transit is not null
                     || npc.Navigation == NpcNavigationState.Warping
+                    || contact.Delegation is not null && position.DistanceTo(npc.Position) > inputs.Range
                 )
             )
             {
@@ -249,12 +253,16 @@ internal sealed partial class LiveCombatRuntime
             {
                 playerShip = null;
             }
+            if (contact.Delegation is not null && playerContact is not null && position.DistanceTo(playerContact.Position) > inputs.Range)
+            {
+                playerShip = null;
+            }
             DroneTarget? target =
                 npc is not null ? new(npc.Id, npc.Position, npc.Velocity, npc.Radius, npc.SignatureRadius)
                 : playerShip is not null
                     ? new(playerShip.ShipId, playerContact!.Position, playerContact.Velocity, playerShip.Radius, playerShip.SignatureRadius)
                 : null;
-            var step = LiveDroneRules.AdvanceTarget(drone, ship, target, now, stamp, roll);
+            var step = LiveDroneRules.AdvanceTarget(drone, ship, target, now, stamp, roll, anchor);
             if (step.Recall)
             {
                 return Settle();
@@ -496,7 +504,12 @@ internal sealed partial class LiveCombatRuntime
                     VelocityX={contact.Velocity.X},VelocityY={contact.Velocity.Y},VelocityZ={contact.Velocity.Z},
                     SpeedLimit={contact.SpeedLimit},Orbiting={contact.Orbiting},Shield={contact.Health.Remaining.Shield},
                     ArmorDamage={drone.ArmorDamage},StructureDamage={drone.StructureDamage},UpdatedAt={drone.UpdatedAt},
-                    ReadyAt={drone.ReadyAt},CommandedAt={drone.CommandedAt},ShotAt={contact.ShotAt},ShotTargetId={contact.ShotTargetId}
+                    ReadyAt={drone.ReadyAt},CommandedAt={drone.CommandedAt},ShotAt={contact.ShotAt},ShotTargetId={contact.ShotTargetId},
+                    DelegationMode={(int)(contact.Delegation?.Mode ?? DroneDelegationMode.None)},
+                    DelegatePilotId={contact.Delegation?.PilotId ?? 0},DelegateShipId={contact.Delegation?.ShipId ?? 0},
+                    DelegateFleetId={contact.Delegation?.FleetId ?? 0},OwnerMembership={contact.Delegation?.OwnerMembership ?? 0},
+                    DelegateMembership={contact.Delegation?.DelegateMembership ?? 0},ReactionRevision={contact.Delegation?.ReactionRevision
+                    ?? 0}
                 WHERE ItemId={contact.Id}
                 """
             );

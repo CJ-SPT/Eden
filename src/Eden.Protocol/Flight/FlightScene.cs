@@ -321,6 +321,7 @@ internal sealed class FlightScene(
                 )
             )
         );
+        Drones.ReplayActivities();
         Npcs.Replay();
         effects.Replay(own, null);
         foreach (var peer in peers)

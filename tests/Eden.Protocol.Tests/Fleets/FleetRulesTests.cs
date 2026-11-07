@@ -31,6 +31,29 @@ public sealed class FleetRulesTests
     }
 
     [Fact]
+    public void MembershipVersionsChangeOnRejoinAndConnectionReplacementButNotRankOrPositionUpdates()
+    {
+        var (world, fleet) = Create();
+        var joined = world.Membership(2)!;
+        world.Move(1, fleet.Id, 2, Member);
+        Assert.Equal(joined, world.Membership(2));
+        Guid replacement = Guid.NewGuid();
+        world.Update(replacement, Pilot(2));
+        var replaced = world.Membership(2)!;
+        Assert.Equal(joined.FleetId, replaced.FleetId);
+        Assert.NotEqual(joined.Version, replaced.Version);
+        world.Update(replacement, Pilot(2, 100));
+        Assert.Equal(replaced, world.Membership(2));
+        world.Leave(2, fleet.Id);
+        Assert.Null(world.Membership(2));
+        world.Invite(1, fleet.Id, 2, Member, 0);
+        world.Accept(2, fleet.Id, 0);
+        Assert.NotEqual(replaced.Version, world.Membership(2)!.Version);
+        world.Update(replacement, null);
+        Assert.Null(world.Membership(2));
+    }
+
+    [Fact]
     public void InvitationsRequireCurrentIssuerAuthorityAndAcceptanceIsSingleUseAndExpiresAtDeadline()
     {
         var (world, fleet) = Create(1);

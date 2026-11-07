@@ -9,6 +9,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
@@ -35,7 +36,8 @@ internal sealed partial class PilotDroneStore(
     IPilotCombatPresence presence,
     IPilotDamageEvents damageEvents,
     SqliteWorld lookup,
-    PilotLossSettlement losses
+    PilotLossSettlement losses,
+    ICooperativeFleets fleets
 ) : IPilotDrones
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -216,6 +218,7 @@ internal sealed partial class PilotDroneStore(
                         )
                         .Entity;
                 saved.PilotId = pilotId;
+                DroneDelegationPersistence.Write(saved, null);
                 saved.ControllerShipId = ship.Id;
                 saved.CorporationId = pilot.CorporationId;
                 saved.SystemId = systemId;
@@ -344,6 +347,7 @@ internal sealed partial class PilotDroneStore(
             }
             int typeId = world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId;
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
+            DroneDelegationPersistence.Write(drone, null);
             drone.ControllerShipId = pilot.ActiveShipId;
             drone.CommandedAt = now;
             drone.TargetId = order == DroneOrder.Engage ? targetId!.Value : pilot.ActiveShipId;
@@ -398,7 +402,8 @@ internal sealed partial class PilotDroneStore(
             drone.ShotAt,
             drone.ShotTargetId,
             drone.SpeedLimit,
-            drone.Orbiting
+            drone.Orbiting,
+            DroneDelegationPersistence.Read(drone)
         );
     }
 
@@ -469,7 +474,7 @@ internal sealed partial class PilotDroneStore(
     public DroneUpdate Advance(long pilotId, long now, int stamp) =>
         LiveCombatRuntime
             .Find(database.Path)
-            ?.AdvanceDrones(pilotId, now, stamp, presence, damageEvents, rolls => AdvanceSql(pilotId, now, stamp, rolls))
+            ?.AdvanceDrones(pilotId, now, stamp, presence, damageEvents, fleets, rolls => AdvanceSql(pilotId, now, stamp, rolls))
         ?? AdvanceSql(pilotId, now, stamp);
 
     private DroneUpdate AdvanceSql(long pilotId, long now, int stamp, IReadOnlyDictionary<long, double>? rolls = null)
@@ -536,13 +541,20 @@ internal sealed partial class PilotDroneStore(
             }
             controlledCount++;
             controlledBandwidth += profile.Bandwidth;
+            var anchor = AdvanceDelegation(world, catalog, pilot, drone, contact, systemId, now);
+            contact = contact with
+            {
+                Activity = drone.Activity,
+                TargetId = drone.TargetId,
+                Delegation = DroneDelegationPersistence.Read(drone),
+            };
             if (now <= drone.UpdatedAt)
             {
                 continue;
             }
             // One bounded step per observed interval. Offline/late callbacks never replay combat.
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
-            if (drone.Activity == DroneActivity.Idle && settings.Aggressive)
+            if (drone.DelegationMode == DroneDelegationMode.None && drone.Activity == DroneActivity.Idle && settings.Aggressive)
             {
                 var attacking = world
                     .Set<NpcAggression>()
@@ -578,6 +590,8 @@ internal sealed partial class PilotDroneStore(
                     || npc.RetiredAt.HasValue
                     || npc.Navigation == NpcNavigationState.Warping
                     || npc.SystemId != drone.SystemId
+                    || drone.DelegationMode != DroneDelegationMode.None
+                        && Position(source).DistanceTo(NpcMotion.Position(npc)) > controlRange
                 )
             )
             {
@@ -588,6 +602,14 @@ internal sealed partial class PilotDroneStore(
                     ? FindVictim(world, catalog, pilot, drone.TargetId, systemId, now)
                     : null;
             var victimContact = victim is null ? null : FindContact(world, victim, systemId, now);
+            if (
+                drone.DelegationMode != DroneDelegationMode.None
+                && victimContact is not null
+                && Position(source).DistanceTo(victimContact.Position) > controlRange
+            )
+            {
+                victimContact = null;
+            }
             AggressionDecision? decision = null;
             if (victimContact is not null)
             {
@@ -603,12 +625,16 @@ internal sealed partial class PilotDroneStore(
             if (npc is null && victimContact is null && drone.Activity == DroneActivity.Fighting)
             {
                 drone.Activity = DroneActivity.Idle;
-                drone.TargetId = ship.Id;
+                drone.TargetId = anchor?.ShipId ?? ship.Id;
             }
-            var target = npc is null ? victimContact?.Position ?? Position(source) : NpcMotion.Position(npc);
+            var target = npc is null ? victimContact?.Position ?? anchor?.Position ?? Position(source) : NpcMotion.Position(npc);
             float radius = (float)(
                 catalog.FittingType(npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))?.Radius ?? 0
             );
+            if (npc is null && victimContact is null && anchor is not null)
+            {
+                radius = (float)anchor.Radius;
+            }
             if (
                 drone.Activity == DroneActivity.Returning
                 && contact.Position.DistanceTo(target) - radius - profile.Radius <= profile.OrbitRange + DroneRules.LaunchOffset
@@ -639,7 +665,18 @@ internal sealed partial class PilotDroneStore(
                 drone.Activity = DroneActivity.Idle;
                 drone.TargetId = ship.Id;
             }
-            contact = DroneRules.Move(contact, target, radius, drone.Activity != DroneActivity.ReturningToBay, stamp, seconds);
+            contact = DroneRules.Move(
+                contact with
+                {
+                    Activity = drone.Activity,
+                    TargetId = drone.TargetId,
+                },
+                target,
+                radius,
+                drone.Activity != DroneActivity.ReturningToBay,
+                stamp,
+                seconds
+            );
             (drone.X, drone.Y, drone.Z) = (contact.Position.X, contact.Position.Y, contact.Position.Z);
             (drone.VelocityX, drone.VelocityY, drone.VelocityZ) = (contact.Velocity.X, contact.Velocity.Y, contact.Velocity.Z);
             if (contact.Position.DistanceTo(Position(source)) > DroneRules.ShutdownDistance)
@@ -711,6 +748,7 @@ internal sealed partial class PilotDroneStore(
 
     private static void Release(WorldDrone drone)
     {
+        DroneDelegationPersistence.Write(drone, null);
         drone.ControllerShipId = 0;
         drone.TargetId = 0;
         drone.Activity = DroneActivity.Idle;

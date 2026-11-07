@@ -49,6 +49,8 @@ public sealed record FleetPlacement(long WingId, long SquadId, FleetRole Role);
 
 public sealed record FleetIdentity(long FleetId, long WingId, long SquadId, FleetRole Role, int Job);
 
+public sealed record FleetMembership(long FleetId, long Version);
+
 public sealed record FleetMember(FleetPilot Pilot, FleetPlacement Placement, int Job, bool TakesFleetWarp = true);
 
 public sealed record FleetSquad(long Id, string Name);
@@ -107,6 +109,7 @@ public interface ICooperativeFleets
 {
     void Update(Guid session, FleetPilot? pilot);
     FleetIdentity? Identity(long actor);
+    FleetMembership? Membership(long actor);
     IReadOnlyList<FleetDelivery> Drain(long actor);
     CooperativeFleet Create(long actor);
     bool CanBind(long actor, long fleet);

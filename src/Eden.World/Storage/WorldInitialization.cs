@@ -85,6 +85,13 @@ public static class WorldInitialization
                     .SetProperty(d => d.Orbiting, false)
                     .SetProperty(d => d.ShotAt, 0)
                     .SetProperty(d => d.ShotTargetId, 0)
+                    .SetProperty(d => d.DelegationMode, Eden.Gameplay.Drones.DroneDelegationMode.None)
+                    .SetProperty(d => d.DelegatePilotId, 0)
+                    .SetProperty(d => d.DelegateShipId, 0)
+                    .SetProperty(d => d.DelegateFleetId, 0)
+                    .SetProperty(d => d.OwnerMembership, 0)
+                    .SetProperty(d => d.DelegateMembership, 0)
+                    .SetProperty(d => d.ReactionRevision, 0)
             );
         // Live module bonuses belong to a connection. A restart retains paid
         // capacitor/cooldowns but never leaves an orphaned active bonus.

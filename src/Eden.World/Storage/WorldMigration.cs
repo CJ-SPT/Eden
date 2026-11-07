@@ -13,7 +13,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 101;
+    internal const int CurrentVersion = 102;
 
     public static void Open(
         WorldDbContext world,
@@ -83,7 +83,8 @@ internal static class WorldMigration
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldPilotHostility ADD COLUMN LastAttackAt INTEGER NOT NULL DEFAULT 0");
         }
         DroneCombatPersistence.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=101");
+        DroneDelegationPersistence.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=102");
         history.Commit();
     }
 }

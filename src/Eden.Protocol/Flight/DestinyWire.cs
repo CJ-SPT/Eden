@@ -1,3 +1,4 @@
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
@@ -20,6 +21,22 @@ internal abstract record DestinyCommand(string Name) : BlueModel
     internal sealed record DroneStateChanged(Eden.Protocol.Drones.DroneState State) : DestinyCommand("OnDroneStateChange")
     {
         protected override object?[] Arguments => State.Arguments;
+    }
+
+    internal sealed record DroneActivityChanged(long DroneId, DroneDelegation? Delegation) : DestinyCommand("OnDroneActivityChange")
+    {
+        // Pinned drone entry callback: droneID, activityID (character), activity.
+        protected override object?[] Arguments =>
+            [
+                DroneId,
+                Delegation?.PilotId,
+                Delegation?.Mode switch
+                {
+                    DroneDelegationMode.Assist => "assist",
+                    DroneDelegationMode.Guard => "guard",
+                    _ => null,
+                },
+            ];
     }
 
     protected abstract object?[] Arguments { get; }
