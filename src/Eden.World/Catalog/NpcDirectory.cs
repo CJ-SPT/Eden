@@ -39,9 +39,11 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
             .OrderBy(row => row.Id)
             .ToArray();
         var nameKeys = raw.Select(row => row.Data.NameID?.ToString(CultureInfo.InvariantCulture)).OfType<string>().Distinct().ToArray();
+        // EF 10 otherwise expands the full catalog's 11,393 names into scalar parameters.
+        // One JSON collection parameter avoids seconds of SQLite parameter preparation/binding.
         var names = catalog
             .Set<SourceRecord>()
-            .Where(record => record.Dataset == "client/localization_fsd_en-us" && nameKeys.Contains(record.Key))
+            .Where(record => record.Dataset == "client/localization_fsd_en-us" && EF.Parameter(nameKeys).Contains(record.Key))
             .AsEnumerable()
             .ToDictionary(
                 record => long.Parse(record.Key, CultureInfo.InvariantCulture),

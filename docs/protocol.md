@@ -30,6 +30,7 @@ Historical native observations apply only to the recorded revision and actions. 
 ## Record index
 
 - [Character biomass (November 6, 2026)](protocol/characters.md#character-biomass-november-6-2026)
+- [Agent directory first-request latency, November 6, 2026](protocol/performance.md#agent-directory-first-request-latency-november-6-2026)
 
 - [Flight coordination extraction, November 6, 2026](protocol/architecture.md#flight-coordination-extraction-november-6-2026)
 

@@ -409,3 +409,31 @@ Combat motion median decreased from 22.57 to 8.49 ms, with median motion command
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Compare native targeting/firing responsiveness with the opt-in performance diagnostics enabled after restarting onto the new build.
+
+## Agent directory first-request latency (November 6, 2026)
+
+The reported `agentMgr.GetAgents` warning spent **4,486 ms in dispatch** and **4 ms in updates**. The handler's first `INpcDirectory.Agents()` call initialized the singleton snapshot, including all NPC names and profiles. A read-only replay of the installed build-3662168 catalog reproduced cold loads of **4,382.78, 3,686.68 and 4,306.43 ms** on parent `ca7a480`.
+
+The dominant operation was the localized-name query. EF Core 10's default collection translation expanded the **11,393 name keys** into individual SQLite parameters. Temporary phase instrumentation measured **4,268–5,219 ms** in the name-query phase in a separate run. `EF.Parameter(nameKeys).Contains(record.Key)` now selects the single JSON collection parameter and SQLite's existing `(Dataset, Key)` index. This is a query-local choice; see Microsoft's [EF Core 10 collection-translation change](https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-10.0/breaking-changes#parameterized-collections-now-use-multiple-parameters-by-default). A regression captures actual database commands for empty and 1,200-name inputs, verifies one parameter, checks every resolved name and avoids parsing an unrelated malformed localization record. Restoring the original query made the 1,200-name regression fail with **1,200 parameters**.
+
+The live host also initializes the directory in `ServerServices.Build(liveWorld: true)` before admitting clients. The remaining catalog materialization therefore belongs to startup. The host-build regression verifies that the first subsequent directory/profile requests perform **zero database commands and connection opens**. Fixture/non-live providers retain lazy loading and the existing restart-bound snapshot semantics.
+
+Final read-only replay results, using a fresh directory for each sample with EF's model initialized as in a running host:
+
+| Sample | Parent cold load | Fixed cold load, now performed at startup | Fixed cached directory/profile lookup |
+| --- | ---: | ---: | ---: |
+| 0 | 4,382.78 ms | 816.44 ms | 0.80 ms |
+| 1 | 3,686.68 ms | 470.73 ms | 0.01 ms |
+| 2 | 4,306.43 ms | 375.80 ms | <0.01 ms |
+
+Every replay returned **10,966 unique agents** and an identical **391,159-byte** encoded rowset, SHA-256 `76D41E30A675C293F4C823C8BC846A51A252E07FCBF928D40152A3A53843BF46`. Timings measure directory/profile access, excluding socket output and native client work; they do not establish an end-to-end RPC latency. Startup still pays the reduced cold-load cost, which exceeds the 250 ms slow-call threshold in this replay. The live host performs this work before client dispatch.
+
+To repeat the catalog-only replay, set `EDEN_AGENT_PERFORMANCE_SOURCE` to a directory containing the pinned `catalog.sqlite`, then run filter `FullyQualifiedName=Eden.Protocol.Tests.Persistence.AgentDirectoryPerformanceTests.ReadOnlyFullCatalogColdAndCachedDirectory` with one xUnit worker. It opens only the catalog in read-only mode; the `world.sqlite` path supplies the sibling catalog location and is never opened. Without that variable the opt-in test returns without measuring a workload. The expected rowset digest is pinned to the installed build-3662168 catalog.
+
+The established client contract is recorded in [Catalog agent directory and saved agents](characters.md#catalog-agent-directory-and-saved-agents): the agent rowset columns and ordering remain identical. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp); the existing wire adapters are reused.
+
+**Automated validation.** Exact development filters selected `ColdDirectoryBindsNameCollectionsOnceRegardlessOfNpcCount` (2 passing cases) and `LiveHostBuildWarmsDirectoryBeforePilotRequests` (1 passing case) through `tools/Test-Feature.ps1`. Final tool/solution restores, solution build with zero warnings/errors, focused tests, Python catalog policy **3/3**, Python formatting policy **9/9**, formatting/140-column verification and diff checks passed in **24.05 seconds**. The final .NET filter was `(FullyQualifiedName~AgentDirectory|FullyQualifiedName~PilotContactsTests|FullyQualifiedName~CharacterSheet|FullyQualifiedName~OnlineStatus|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~SessionPerformanceTests)&FullyQualifiedName!~NativeRemapUpdatesAttributesDogmaTrainingDeadlineAndClientCaches`: **82 passed in approximately 5 seconds**, four workers. This includes the opt-in replay's unconfigured return; its separate configured, single-worker run passed in **4.67 seconds** and produced the measurements above. The initial expanded run had **82 passes and one failure** in `CharacterSheetServiceTests.NativeRemapUpdatesAttributesDogmaTrainingDeadlineAndClientCaches` at its dogma dictionary assertion. That exact failure was reproduced with both production files restored to parent `ca7a480`; it is excluded as a pre-existing unrelated failure. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the server and confirm the first agent-directory request no longer incurs catalog initialization during dispatch.
