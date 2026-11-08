@@ -93,7 +93,7 @@ internal static class WorldMigration
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
-        ModuleConditionPersistence.Reconcile(world, catalog);
+        ModuleConditionPersistence.Reconcile(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         ShipHeatPersistence.ValidateSaved(world);
         world.Database.ExecuteSqlRaw("PRAGMA user_version=108");
         history.Commit();

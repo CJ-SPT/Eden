@@ -8,6 +8,9 @@ public static class ChargedResource
 
     public static double TimeConstant(double rechargeMilliseconds) => rechargeMilliseconds / RechargeTimeScale;
 
+    public static double Resize(double value, double oldCapacity, double newCapacity) =>
+        oldCapacity > 0 ? Math.Clamp(value / oldCapacity, 0, 1) * newCapacity : 0;
+
     public static double Recharged(double charge, double capacity, double rechargeMilliseconds, double elapsedMilliseconds)
     {
         if (capacity <= 0)

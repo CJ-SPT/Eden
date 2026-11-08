@@ -276,7 +276,7 @@ public sealed class MissileHeatTests
         {
             using var tx = world.Database.BeginTransaction();
             using CatalogDbContext catalog = new(f.CatalogPath);
-            Assert.True(ModuleConditionPersistence.ApplyDamage(world, catalog, bank[1], 1000).WentOffline);
+            Assert.True(ModuleConditionPersistence.ApplyDamage(world, catalog, bank[1], 1000, f.Clock.Now).WentOffline);
             world.SaveChanges();
             tx.Commit();
         }

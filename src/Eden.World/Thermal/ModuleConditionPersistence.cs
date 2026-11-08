@@ -8,6 +8,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,15 +34,13 @@ internal static class ModuleConditionPersistence
         );
     }
 
-    internal static double OwnedDamage(WorldDbContext world, long pilot, long module) =>
-        (
-            from condition in world.Set<SavedModuleCondition>()
-            join item in world.Set<OwnedItem>() on condition.ModuleId equals item.Id
-            where condition.ModuleId == module && item.OwnerId == pilot
-            select (double?)condition.Damage
-        ).SingleOrDefault() ?? 0;
+    internal static IQueryable<double> OwnedDamage(WorldDbContext world, long pilot, long module) =>
+        from condition in world.Set<SavedModuleCondition>()
+        join item in world.Set<OwnedItem>() on condition.ModuleId equals item.Id
+        where condition.ModuleId == module && item.OwnerId == pilot
+        select condition.Damage;
 
-    internal static ModuleConditionChange ApplyDamage(WorldDbContext world, CatalogDbContext catalog, long module, double damage)
+    internal static ModuleConditionChange ApplyDamage(WorldDbContext world, CatalogDbContext catalog, long module, double damage, long now)
     {
         if (world.Database.CurrentTransaction is null)
         {
@@ -68,8 +67,7 @@ internal static class ModuleConditionPersistence
         bool offline = current.BurnedOut && item.Online;
         if (current.BurnedOut)
         {
-            item.Online = false;
-            CancelActivity(world, module);
+            BurnOut(world, catalog, item, now);
         }
         return new(before, current, offline);
     }
@@ -96,7 +94,7 @@ internal static class ModuleConditionPersistence
         return condition;
     }
 
-    internal static void Reconcile(WorldDbContext world, CatalogDbContext catalog)
+    internal static void Reconcile(WorldDbContext world, CatalogDbContext catalog, long now)
     {
         foreach (var saved in world.Set<SavedModuleCondition>().ToArray())
         {
@@ -108,11 +106,25 @@ internal static class ModuleConditionPersistence
             }
             if (condition.BurnedOut)
             {
-                item.Online = false;
-                CancelActivity(world, item.Id);
+                BurnOut(world, catalog, item, now);
             }
         }
         world.SaveChanges();
+    }
+
+    private static void BurnOut(WorldDbContext world, CatalogDbContext catalog, OwnedItem item, long now)
+    {
+        // Reconciliation can also encounter already-offline or loose damaged items.
+        var ship = item.Online && ShipHeatPersistence.Rack(item.FlagId) is not null ? world.Ships.Find(item.LocationId) : null;
+        var pilot = ship is not null && ship.OwnerId == item.OwnerId ? world.Pilots.Find(item.OwnerId) : null;
+        var before = pilot is null ? null : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
+        item.Online = false;
+        CancelActivity(world, item.Id);
+        if (pilot is not null && before is not null)
+        {
+            var after = PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
+            ShipResources.ResizeAfterBurnout(world, item.LocationId, before, after, now);
+        }
     }
 
     private static void CancelActivity(WorldDbContext world, long module)

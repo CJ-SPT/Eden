@@ -10,6 +10,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
@@ -58,7 +59,7 @@ public sealed class ModuleConditionTests
         using WorldDbContext world = new(f.Db.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(f.CatalogPath);
-        var change = ModuleConditionPersistence.ApplyDamage(world, catalog, module, amount);
+        var change = ModuleConditionPersistence.ApplyDamage(world, catalog, module, amount, f.Clock.Now);
         world.SaveChanges();
         transaction.Commit();
         return change;
@@ -156,6 +157,104 @@ public sealed class ModuleConditionTests
         Assert.True(saved.Set<OwnedItem>().Find(module)!.Online);
     }
 
+    // Build 3662168 shield extender, shield recharger, small cap battery and capacitor flux coil.
+    [Theory]
+    [InlineData(377, true)]
+    [InlineData(393, true)]
+    [InlineData(1185, false)]
+    [InlineData(1246, false)]
+    public void BurnoutSettlesChargeAtTheOldRateAndPreservesTheFractionAcrossReopen(int type, bool shield)
+    {
+        using Fixture f = new();
+        long module = f.Fit(type);
+        long ship = f.ShipId;
+        long started = f.Clock.Now;
+        var active = f.Fitting.ShipAttributes(f.PilotId);
+        var capacity = shield ? DogmaAttributeId.ShieldCapacity : DogmaAttributeId.CapacitorCapacity;
+        var rate = shield ? DogmaAttributeId.ShieldRechargeTime : DogmaAttributeId.CapacitorRechargeTime;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var health = world.Set<ShipHealthState>().Find(ship) ?? world.Add(new ShipHealthState { ShipId = ship }).Entity;
+            health.ShieldCharge = active[DogmaAttributeId.ShieldCapacity] / 4;
+            health.ArmorDamage = 13;
+            health.StructureDamage = 7;
+            health.UpdatedAt = started;
+            var energy = world.Set<ShipEnergy>().Find(ship) ?? world.Add(new ShipEnergy { ShipId = ship }).Entity;
+            energy.Charge = active[DogmaAttributeId.CapacitorCapacity] / 4;
+            energy.UpdatedAt = started;
+            world.SaveChanges();
+        }
+        f.Clock.Milliseconds += 5000;
+        using (LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { }))
+        {
+            Assert.False(Damage(f, module, 1).WentOffline);
+            Assert.True(Damage(f, module, 1000).WentOffline);
+            Assert.False(Damage(f, module, 1).WentOffline);
+            double currentCapacity = f.Fitting.ShipAttributes(f.PilotId)[capacity];
+            double settled = ChargedResource.Recharged(active[capacity] / 4, active[capacity], active[rate], 5000);
+            var seen = f.Db.Services.GetRequiredService<IPilotShipResources>().Read(f.PilotId, ship, f.Clock.Now);
+            Assert.Equal(settled / active[capacity] * currentCapacity, shield ? seen.Health.Remaining.Shield : seen.Capacitor, 8);
+        }
+        var offline = f.Fitting.ShipAttributes(f.PilotId);
+        Assert.True(active[capacity] != offline[capacity] || active[rate] != offline[rate]);
+        double expected =
+            ChargedResource.Recharged(active[capacity] / 4, active[capacity], active[rate], 5000) / active[capacity] * offline[capacity];
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        using WorldDbContext saved = new(f.Db.Path);
+        var savedHealth = saved.Set<ShipHealthState>().Find(ship)!;
+        var savedEnergy = saved.Set<ShipEnergy>().Find(ship)!;
+        Assert.Equal(expected, shield ? savedHealth.ShieldCharge : savedEnergy.Charge, 8);
+        Assert.Equal(f.Clock.Now, shield ? savedHealth.UpdatedAt : savedEnergy.UpdatedAt);
+        Assert.Equal(started, shield ? savedEnergy.UpdatedAt : savedHealth.UpdatedAt);
+        Assert.Equal(13, savedHealth.ArmorDamage);
+        Assert.Equal(7, savedHealth.StructureDamage);
+    }
+
+    [Fact]
+    public void RolledBackBatteryBurnoutAndStartupReconciliationUseOneResourceTransition()
+    {
+        using Fixture f = new();
+        const int SmallCapBattery = 1185;
+        var capacity = DogmaAttributeId.CapacitorCapacity;
+        double bare = f.Fitting.ShipAttributes(f.PilotId)[capacity];
+        long module = f.Fit(SmallCapBattery);
+        long ship = f.ShipId;
+        double fitted = f.Fitting.ShipAttributes(f.PilotId)[capacity];
+        Assert.True(fitted > bare);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var row = world.Set<ShipEnergy>().Find(ship)!;
+            row.Charge = fitted / 2;
+            row.UpdatedAt = f.Clock.Now;
+            world.SaveChanges();
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        using (var transaction = world.Database.BeginTransaction())
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            ModuleConditionPersistence.ApplyDamage(world, catalog, module, 1000, f.Clock.Now);
+            world.SaveChanges();
+            Assert.Equal(bare / 2, world.Set<ShipEnergy>().Find(ship)!.Charge, 8);
+            transaction.Rollback();
+        }
+        Assert.Equal(fitted, f.Fitting.ShipAttributes(f.PilotId)[capacity]);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Empty(world.Set<SavedModuleCondition>());
+            Assert.Equal(fitted / 2, world.Set<ShipEnergy>().Find(ship)!.Charge);
+            // Simulate an older or inconsistent save with an online, burned-out fitted battery.
+            using CatalogDbContext catalog = new(f.CatalogPath);
+            var condition = ModuleConditionPersistence.Read(world, catalog, world.Set<OwnedItem>().Find(module)!);
+            world.Add(new SavedModuleCondition { ModuleId = module, Damage = condition.HitPoints });
+            world.SaveChanges();
+        }
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.False(saved.Set<OwnedItem>().Find(module)!.Online);
+        Assert.Equal(bare / 2, saved.Set<ShipEnergy>().Find(ship)!.Charge, 8);
+    }
+
     [Fact]
     public void BurnoutRemovesPassiveAndPaidActiveResistanceFromTheCommittedGraph()
     {
@@ -235,7 +334,7 @@ public sealed class ModuleConditionTests
         using (var transaction = world.Database.BeginTransaction())
         using (CatalogDbContext catalog = new(f.CatalogPath))
         {
-            ModuleConditionPersistence.ApplyDamage(world, catalog, module, 40);
+            ModuleConditionPersistence.ApplyDamage(world, catalog, module, 40, f.Clock.Now);
             world.SaveChanges();
             Assert.Empty(world.Set<ActiveFittedModule>());
             // Disposing the owning transaction rolls back damage and activity.
@@ -266,8 +365,8 @@ public sealed class ModuleConditionTests
         {
             world.Set<OwnedItem>().Find(module)!.OwnerId = wing.PilotId;
             world.SaveChanges();
-            Assert.Equal(0, ModuleConditionPersistence.OwnedDamage(world, f.PilotId, module));
-            Assert.Equal(15, ModuleConditionPersistence.OwnedDamage(world, wing.PilotId, module));
+            Assert.Equal(0, ModuleConditionPersistence.OwnedDamage(world, f.PilotId, module).FirstOrDefault());
+            Assert.Equal(15, ModuleConditionPersistence.OwnedDamage(world, wing.PilotId, module).FirstOrDefault());
             world.Set<OwnedItem>().Find(module)!.OwnerId = f.PilotId;
             world.SaveChanges();
         }
@@ -398,9 +497,9 @@ public sealed class ModuleConditionTests
         long packaged = f.Grant(ShieldBooster);
         using WorldDbContext world = new(f.Db.Path);
         using CatalogDbContext catalog = new(f.CatalogPath);
-        Assert.Throws<InvalidOperationException>(() => ModuleConditionPersistence.ApplyDamage(world, catalog, packaged, 1));
+        Assert.Throws<InvalidOperationException>(() => ModuleConditionPersistence.ApplyDamage(world, catalog, packaged, 1, f.Clock.Now));
         using var transaction = world.Database.BeginTransaction();
-        Assert.Throws<InvalidDataException>(() => ModuleConditionPersistence.ApplyDamage(world, catalog, packaged, 1));
+        Assert.Throws<InvalidDataException>(() => ModuleConditionPersistence.ApplyDamage(world, catalog, packaged, 1, f.Clock.Now));
         Assert.Empty(world.Set<SavedModuleCondition>());
     }
 }

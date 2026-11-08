@@ -61,12 +61,7 @@
     {
       "category": "Charge",
       "state": "Complete",
-      "count": 800
-    },
-    {
-      "category": "Charge",
-      "state": "Partial",
-      "count": 1
+      "count": 801
     },
     {
       "category": "Charge",
@@ -139739,7 +139734,7 @@
       "techLevel": null,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [],
       "checks": [
         {
@@ -139751,9 +139746,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Overheating",
-          "evidence": "Ancillary repair fuel is implemented; repair of overheated modules remains unfinished.",
+          "evidence": "PilotNaniteRepairStore spends cargo paste on module repairs. Ancillary armor repairers consume loaded paste.",
           "role": null
         }
       ],

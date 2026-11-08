@@ -463,7 +463,15 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         FittingCalculation? calculation = null
     )
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        // Read mutable condition alongside pilot membership, outside the committed fitting cache.
+        bool isModule = module.CategoryId == (int)InventoryCategory.Module;
+        var damage = ModuleConditionPersistence.OwnedDamage(world, pilotId, module.Id);
+        var current = world
+            .Pilots.Include(p => p.ActiveShip)
+            .Where(p => p.Id == pilotId)
+            .Select(p => new { Pilot = p, Damage = isModule ? damage.FirstOrDefault() : 0 })
+            .Single();
+        var pilot = current.Pilot;
         var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) : null;
         Dictionary<DogmaAttributeId, double> attributes;
         if (snapshot is not null)
@@ -481,10 +489,9 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                     : ReadAttributes(catalog, module.TypeId)
             ).ToDictionary();
         }
-        // Condition and deadlines are live state, outside the fitted graph cache.
-        if (module.CategoryId == (int)InventoryCategory.Module)
+        if (isModule)
         {
-            attributes[DogmaAttributeId.Damage] = ModuleConditionPersistence.OwnedDamage(world, pilotId, module.Id);
+            attributes[DogmaAttributeId.Damage] = current.Damage;
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (

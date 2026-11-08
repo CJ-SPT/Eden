@@ -25,6 +25,16 @@ internal static class NaniteRepairCatalog
     internal static IReadOnlyList<PassiveModifier> SkillModifiers(CatalogDbContext catalog, int skill) =>
         catalog.Definition(s_skills, skill);
 
+    internal static double? PastePrice(CatalogDbContext catalog, int type)
+    {
+        if (type != NaniteRepairRules.PasteType)
+        {
+            return null;
+        }
+        double? price = catalog.Read(CatalogData.Client.Types, (long)type)?.BasePrice;
+        return price is > 0 && double.IsFinite(price.Value) ? price : null;
+    }
+
     private static NaniteRepairPrice ReadPrice(CatalogDbContext catalog, int type)
     {
         var source = catalog.Read(CatalogData.Client.Types, (long)type);
@@ -52,11 +62,8 @@ internal static class NaniteRepairCatalog
             })
             .ToArray();
         long computed = NaniteRepairRules.ComputedBasePrice(basePrice, portionSize, materials);
-        double paste = catalog.Read(CatalogData.Client.Types, (long)NaniteRepairRules.PasteType)?.BasePrice ?? 0;
-        if (!double.IsFinite(paste) || paste <= 0)
-        {
-            throw new InvalidDataException("Missing nanite repair paste base price.");
-        }
+        double paste =
+            PastePrice(catalog, NaniteRepairRules.PasteType) ?? throw new InvalidDataException("Missing nanite repair paste base price.");
         return new(computed, paste);
     }
 

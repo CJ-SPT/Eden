@@ -425,12 +425,15 @@ internal static class ShipContentAudit
         checks.Add(new(ContentOperation.ChargeLoading, admitted, milestone, "AmmunitionCatalog.Supported; shared with real loading."));
         if (type.GroupId == AncillaryRepairRules.PasteGroup && admitted)
         {
+            bool repair = NaniteRepairCatalog.PastePrice(catalog, type.Id) is not null;
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
-                    false,
+                    repair,
                     ShipContentMilestone.Overheating,
-                    "Ancillary repair fuel is implemented; repair of overheated modules remains unfinished."
+                    repair
+                        ? "PilotNaniteRepairStore spends cargo paste on module repairs. Ancillary armor repairers consume loaded paste."
+                        : "Ancillary fuel is admitted. Paid module repair requires the recognized paste type and a positive catalog price."
                 )
             );
         }
