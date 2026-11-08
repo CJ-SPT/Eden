@@ -202,7 +202,7 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
                     NpcMotion.Position(n),
                     NpcMotion.Home(n, catalog),
                     profile.Type.Radius ?? 0,
-                    NpcPopulationRules.Leash(profile.Attributes),
+                    NpcPopulationRules.Leash(profile.Attributes, acquisitionRange: n.AcquisitionRange),
                     aggression[n.Id].ReadyAt,
                     profile.ElectronicWarfare
                 );

@@ -65,6 +65,7 @@ public static class NpcEncounterDefinitions
     public const int GuristasCorporation = 1000127;
     public const int GuristasFaction = 500010;
     public const int EntityCategory = 11;
+    public const int SentryGroup = 383;
     public const long FirstNpcId = 4_000_000_000_000;
     public const double AnchorOffset = 3500;
     public const double VisibilityRange = 250_000;

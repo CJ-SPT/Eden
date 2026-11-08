@@ -107,11 +107,14 @@ internal sealed class NpcCombatStore(
             var profile = hullProfiles?.Read(catalog, npc.TypeId);
             var attributes = profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
             double missileRange = MissileRange(catalog, npc, attributes);
-            if (!attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay))
+            var type = profile?.Type ?? catalog.RequireItem(npc.TypeId);
+            if (
+                !attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
+                && type.GroupId != NpcEncounterDefinitions.SentryGroup
+            )
             {
                 continue;
             }
-            var type = profile?.Type ?? catalog.RequireItem(npc.TypeId);
             var home = NpcMotion.Home(npc, catalog);
             var target = targets
                 .Where(t =>
@@ -129,8 +132,8 @@ internal sealed class NpcCombatStore(
                     );
                 })
                 .Where(t =>
-                    t.Range <= NpcPopulationRules.DetectionRange(attributes, missileRange)
-                    && t.Position.DistanceTo(home) <= NpcPopulationRules.Leash(attributes, missileRange)
+                    t.Range <= NpcPopulationRules.DetectionRange(attributes, missileRange, npc.AcquisitionRange)
+                    && t.Position.DistanceTo(home) <= NpcPopulationRules.Leash(attributes, missileRange, npc.AcquisitionRange)
                 )
                 .OrderBy(t => t.Range)
                 .ThenBy(t => t.ActiveShipId)
@@ -244,7 +247,7 @@ internal sealed class NpcCombatStore(
             return null;
         }
         var home = NpcMotion.Home(npc, catalog);
-        double leash = NpcPopulationRules.Leash(attributes, MissileRange(catalog, npc, attributes));
+        double leash = NpcPopulationRules.Leash(attributes, MissileRange(catalog, npc, attributes), npc.AcquisitionRange);
         var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
         if (targetPosition.DistanceTo(home) > leash || NpcMotion.Position(npc).DistanceTo(home) > leash)
         {

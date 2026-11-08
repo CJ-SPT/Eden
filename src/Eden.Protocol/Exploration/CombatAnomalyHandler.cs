@@ -19,6 +19,18 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, TimeProvider 
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "dungeonInstanceCacheMgr" && args.Length == 0)
+        {
+            _ = sites.List(context.Pilot.SystemId, Now);
+            if (method == "GetCombatAnomalyInstances")
+            {
+                return new AnomalyDirectory(sites.Directory(Now));
+            }
+            if (method == "GetCombatAnomaliesCount")
+            {
+                return new AnomalyCounts(sites.Directory(Now));
+            }
+        }
         if (service == "scanMgr" && method == "SignalTrackerRegister" && args.Length == 0)
         {
             _system = context.Pilot.SystemId;
@@ -44,12 +56,20 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, TimeProvider 
             return;
         }
         int system = context.Pilot.SystemId;
-        if (context.Flight.CanTarget && context.Pilot.Position is { } position)
+        if (context.Flight.CanTarget && context.Pilot.Position is { } arrival)
         {
-            sites.Arrive(system, position, Now);
+            sites.Arrive(system, arrival, Now);
         }
         var current = sites.List(system, Now);
-        context.Flight.RefreshAnomalies(current.SelectMany(s => s.Objects).ToArray());
+        var position = context.Pilot.Position;
+        context.Flight.RefreshAnomalies(
+            current
+                .SelectMany(s => s.Objects)
+                .Where(o =>
+                    position is not null && position.DistanceTo(o.Position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
+                )
+                .ToArray()
+        );
         if (_system != system)
         {
             _known = [];

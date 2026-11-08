@@ -32,6 +32,10 @@ public static class TranslocationRules
             bool moved = false;
             foreach (var body in obstacles)
             {
+                if (!body.Solid)
+                {
+                    continue;
+                }
                 double surface = Math.Max(0, body.Radius) + shipRadius + ArrivalClearance;
                 if (position.DistanceTo(body.Position) < surface)
                 {

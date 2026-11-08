@@ -1,6 +1,6 @@
 namespace Eden.Gameplay.Combat;
 
-public sealed record NpcPirateGroup(int GroupId, NpcPirateFaction Faction, NpcHullClass Hull);
+public sealed record NpcPirateGroup(int GroupId, NpcPirateFaction Faction, NpcHullClass Hull, bool Commander = false);
 
 public static class NpcPirateGroups
 {
@@ -38,5 +38,71 @@ public static class NpcPirateGroups
             new(757, NpcPirateFaction.RogueDrones, NpcHullClass.Cruiser),
             new(755, NpcPirateFaction.RogueDrones, NpcHullClass.Battlecruiser),
             new(756, NpcPirateFaction.RogueDrones, NpcHullClass.Battleship),
+        ]);
+
+    // Build 3662168 client/groups. These groups support encounter loot without
+    // admitting deadspace or commander hulls into the ordinary belt spawn pools.
+    public static IReadOnlyList<NpcPirateGroup> EncounterLoot { get; } =
+        Array.AsReadOnly<NpcPirateGroup>([
+            new(597, NpcPirateFaction.Angels, NpcHullClass.Frigate),
+            new(596, NpcPirateFaction.Angels, NpcHullClass.Destroyer),
+            new(595, NpcPirateFaction.Angels, NpcHullClass.Cruiser),
+            new(593, NpcPirateFaction.Angels, NpcHullClass.Battlecruiser),
+            new(594, NpcPirateFaction.Angels, NpcHullClass.Battleship),
+            new(606, NpcPirateFaction.BloodRaiders, NpcHullClass.Frigate),
+            new(605, NpcPirateFaction.BloodRaiders, NpcHullClass.Destroyer),
+            new(604, NpcPirateFaction.BloodRaiders, NpcHullClass.Cruiser),
+            new(602, NpcPirateFaction.BloodRaiders, NpcHullClass.Battlecruiser),
+            new(603, NpcPirateFaction.BloodRaiders, NpcHullClass.Battleship),
+            new(615, NpcPirateFaction.Guristas, NpcHullClass.Frigate),
+            new(614, NpcPirateFaction.Guristas, NpcHullClass.Destroyer),
+            new(613, NpcPirateFaction.Guristas, NpcHullClass.Cruiser),
+            new(611, NpcPirateFaction.Guristas, NpcHullClass.Battlecruiser),
+            new(612, NpcPirateFaction.Guristas, NpcHullClass.Battleship),
+            new(624, NpcPirateFaction.Sansha, NpcHullClass.Frigate),
+            new(623, NpcPirateFaction.Sansha, NpcHullClass.Destroyer),
+            new(622, NpcPirateFaction.Sansha, NpcHullClass.Cruiser),
+            new(620, NpcPirateFaction.Sansha, NpcHullClass.Battlecruiser),
+            new(621, NpcPirateFaction.Sansha, NpcHullClass.Battleship),
+            new(633, NpcPirateFaction.Serpentis, NpcHullClass.Frigate),
+            new(632, NpcPirateFaction.Serpentis, NpcHullClass.Destroyer),
+            new(631, NpcPirateFaction.Serpentis, NpcHullClass.Cruiser),
+            new(629, NpcPirateFaction.Serpentis, NpcHullClass.Battlecruiser),
+            new(630, NpcPirateFaction.Serpentis, NpcHullClass.Battleship),
+            new(805, NpcPirateFaction.RogueDrones, NpcHullClass.Frigate),
+            new(804, NpcPirateFaction.RogueDrones, NpcHullClass.Destroyer),
+            new(803, NpcPirateFaction.RogueDrones, NpcHullClass.Cruiser),
+            new(801, NpcPirateFaction.RogueDrones, NpcHullClass.Battlecruiser),
+            new(802, NpcPirateFaction.RogueDrones, NpcHullClass.Battleship),
+            new(789, NpcPirateFaction.Angels, NpcHullClass.Frigate, true),
+            new(794, NpcPirateFaction.Angels, NpcHullClass.Destroyer, true),
+            new(790, NpcPirateFaction.Angels, NpcHullClass.Cruiser, true),
+            new(793, NpcPirateFaction.Angels, NpcHullClass.Battlecruiser, true),
+            new(848, NpcPirateFaction.Angels, NpcHullClass.Battleship, true),
+            new(792, NpcPirateFaction.BloodRaiders, NpcHullClass.Frigate, true),
+            new(796, NpcPirateFaction.BloodRaiders, NpcHullClass.Destroyer, true),
+            new(791, NpcPirateFaction.BloodRaiders, NpcHullClass.Cruiser, true),
+            new(795, NpcPirateFaction.BloodRaiders, NpcHullClass.Battlecruiser, true),
+            new(849, NpcPirateFaction.BloodRaiders, NpcHullClass.Battleship, true),
+            new(800, NpcPirateFaction.Guristas, NpcHullClass.Frigate, true),
+            new(799, NpcPirateFaction.Guristas, NpcHullClass.Destroyer, true),
+            new(798, NpcPirateFaction.Guristas, NpcHullClass.Cruiser, true),
+            new(797, NpcPirateFaction.Guristas, NpcHullClass.Battlecruiser, true),
+            new(850, NpcPirateFaction.Guristas, NpcHullClass.Battleship, true),
+            new(810, NpcPirateFaction.Sansha, NpcHullClass.Frigate, true),
+            new(809, NpcPirateFaction.Sansha, NpcHullClass.Destroyer, true),
+            new(808, NpcPirateFaction.Sansha, NpcHullClass.Cruiser, true),
+            new(807, NpcPirateFaction.Sansha, NpcHullClass.Battlecruiser, true),
+            new(851, NpcPirateFaction.Sansha, NpcHullClass.Battleship, true),
+            new(814, NpcPirateFaction.Serpentis, NpcHullClass.Frigate, true),
+            new(813, NpcPirateFaction.Serpentis, NpcHullClass.Destroyer, true),
+            new(812, NpcPirateFaction.Serpentis, NpcHullClass.Cruiser, true),
+            new(811, NpcPirateFaction.Serpentis, NpcHullClass.Battlecruiser, true),
+            new(852, NpcPirateFaction.Serpentis, NpcHullClass.Battleship, true),
+            new(847, NpcPirateFaction.RogueDrones, NpcHullClass.Frigate, true),
+            new(846, NpcPirateFaction.RogueDrones, NpcHullClass.Destroyer, true),
+            new(845, NpcPirateFaction.RogueDrones, NpcHullClass.Cruiser, true),
+            new(843, NpcPirateFaction.RogueDrones, NpcHullClass.Battlecruiser, true),
+            new(844, NpcPirateFaction.RogueDrones, NpcHullClass.Battleship, true),
         ]);
 }

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Exploration;
 using Eden.Gameplay.Combat;
@@ -16,102 +17,190 @@ namespace Eden.World.Exploration;
 [Injectable(InjectionType.Singleton)]
 internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomalies
 {
-    private static readonly ConcurrentDictionary<string, long> s_versions = new(StringComparer.OrdinalIgnoreCase);
-    private IReadOnlyList<CombatAnomaly>? _sites;
-    private long _version = -1;
-    private long _catalogGeneration = -1;
-    private long _deadline = long.MaxValue;
+    private sealed record View(
+        long Version,
+        long Catalog,
+        long Deadline,
+        IReadOnlyList<CombatAnomaly> Sites,
+        bool MajorThreat = false,
+        bool Pirates = true
+    );
 
-    internal static void Invalidate(WorldDbContext world) => s_versions.AddOrUpdate(world.WorldPath, 1, (_, old) => old + 1);
+    private static readonly ConcurrentDictionary<(string Path, int System), long> s_versions = new();
+    private readonly Dictionary<int, View> _views = [];
+    private CatalogProvider? _catalog;
+    private bool _directoryMajorThreat;
+    private bool _directoryPirates;
+    private long _directoryVersion = -1;
+    private long _directoryCatalog = -1;
+    private long _directoryDeadline;
+    private IReadOnlyList<AnomalySystemSites> _directory = [];
+    private ImmutableArray<CombatAnomalyDefinition> _definitions;
+
+    internal static void Invalidate(WorldDbContext world, int systemId = 0) =>
+        s_versions.AddOrUpdate((world.WorldPath, systemId), 1, (_, old) => old + 1);
+
+    private long Version(int systemId) =>
+        s_versions.GetValueOrDefault((database.Path, 0)) + s_versions.GetValueOrDefault((database.Path, systemId));
 
     public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
     {
-        if (systemId != CombatAnomalyRules.SystemId)
-        {
-            return [];
-        }
         lock (database.MotionLock)
         {
-            long version = s_versions.GetValueOrDefault(database.Path);
-            long catalogGeneration = database.Catalog.Identity.Generation;
-            if (_sites is not null && version == _version && catalogGeneration == _catalogGeneration && now < _deadline)
+            var provider = database.Catalog;
+            long version = Version(systemId);
+            bool majorThreat = database.Settings.NpcPopulation.MajorThreatAnomalies;
+            bool pirates = database.Settings.NpcPopulation.Pirates;
+            if (
+                _views.TryGetValue(systemId, out var view)
+                && view.Version == version
+                && view.Catalog == provider.Identity.Generation
+                && now < view.Deadline
+                && view.MajorThreat == majorThreat
+                && view.Pirates == pirates
+            )
             {
-                return _sites;
+                return view.Sites;
+            }
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            if (!ReferenceEquals(_catalog, provider))
+            {
+                _definitions = CombatAnomalyCatalog.Read(catalog);
+                _catalog = provider;
+            }
+            var system = catalog.FindSystem(systemId);
+            var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
+            if (faction is null || _definitions.IsEmpty)
+            {
+                _views[systemId] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
+                return _views[systemId].Sites;
+            }
+            double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
+            var eligible = _definitions
+                .Where(d =>
+                    (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
+                    && (!d.RequiresMajorThreat || majorThreat)
+                    && AnomalyEncounterRules.Allows(d.Name, security)
+                )
+                .OrderBy(d => d.DungeonId)
+                .ToArray();
+            if (eligible.Length == 0)
+            {
+                _views[systemId] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
+                return _views[systemId].Sites;
             }
             using WorldDbContext world = new(database.Path);
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            // Small test catalogs and older reduced catalogs can omit dungeon data.
-            if (catalog.Read(CatalogData.Client.Dungeons, (long)CombatAnomalyRules.DungeonId) is null)
-            {
-                _sites = [];
-                _catalogGeneration = catalogGeneration;
-                _version = version;
-                return _sites;
-            }
             using var transaction = world.Database.BeginTransaction();
-            var latest = world.Set<WorldCombatAnomaly>().OrderByDescending(s => s.Id).FirstOrDefault();
-            if (latest is null || latest.ReplaceAt <= now)
+            var latest = world
+                .Set<WorldCombatAnomaly>()
+                .Where(s =>
+                    s.SystemId == systemId
+                    && !world.Set<WorldCombatAnomaly>().Any(n => n.SystemId == systemId && n.Slot == s.Slot && n.Id > s.Id)
+                )
+                .ToDictionary(s => s.Slot);
+            int slots = Math.Min(AnomalyEncounterRules.SitesPerSystem, eligible.Length);
+            long nextId = Math.Max(
+                CombatAnomalyRules.FirstSiteId,
+                (world.Set<WorldCombatAnomaly>().Max(s => (long?)s.Id) ?? CombatAnomalyRules.FirstSiteId - 1) + 1
+            );
+            bool created = false;
+            for (int slot = 0; slot < slots; slot++)
             {
-                var system = catalog.RequireSystem(systemId);
-                // Eden placement policy, a fixed offset from the first catalog celestial.
-                var sun = catalog.CelestialsInSystem(system.Id).OrderBy(c => c.Id).First();
-                long id = latest is null ? CombatAnomalyRules.FirstSiteId : checked(latest.Id + 1);
-                latest = new()
+                if (!pirates)
                 {
-                    Id = id,
+                    break;
+                }
+                latest.TryGetValue(slot, out var site);
+                if (site is not null && (site.ReplaceAt is null || site.ReplaceAt > now))
+                {
+                    continue;
+                }
+                uint choice = NpcSpawnRules.Seed(systemId, slot, checked((int)(nextId - CombatAnomalyRules.FirstSiteId)));
+                var definition = eligible[(int)(choice % eligible.Length)];
+                var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).First();
+                double offset = CombatAnomalyRules.PlacementOffset * (slot + 1);
+                site = new()
+                {
+                    Id = nextId++,
                     SystemId = systemId,
-                    X = sun.X + CombatAnomalyRules.PlacementOffset,
-                    Y = sun.Y + CombatAnomalyRules.PlacementOffset,
-                    Z = sun.Z + CombatAnomalyRules.PlacementOffset,
+                    Slot = slot,
+                    DungeonId = definition.DungeonId,
+                    DefinitionVersion = 1,
+                    X = anchor.X + offset,
+                    Y = anchor.Y + offset,
+                    Z = anchor.Z - offset,
                 };
-                world.Add(latest);
-                world.SaveChanges();
+                world.Add(site);
+                created = true;
+                latest[slot] = site;
             }
+            foreach (var site in latest.Values.Where(s => s.CompletedAt is null))
+            {
+                while (site.NextWaveAt is long due && due <= now)
+                {
+                    site.NextWaveAt = null;
+                    NextWave(world, catalog, site, due);
+                    world.SaveChanges();
+                }
+            }
+            bool changed = world.ChangeTracker.HasChanges();
+            world.SaveChanges();
             transaction.Commit();
-            _deadline = latest.ReplaceAt ?? long.MaxValue;
-            _sites = latest.CompletedAt is null ? [Read(catalog, latest)] : [];
-            _version = version;
-            _catalogGeneration = catalogGeneration;
-            return _sites;
+            if (changed || created)
+            {
+                Invalidate(world, -1);
+            }
+            long deadline = latest
+                .Values.Where(s => s.ReplaceAt.HasValue)
+                .Select(s => s.ReplaceAt!.Value)
+                .DefaultIfEmpty(long.MaxValue)
+                .Min();
+            if (!pirates)
+            {
+                deadline = long.MaxValue;
+            }
+            deadline = Math.Min(
+                deadline,
+                latest.Values.Where(s => s.NextWaveAt.HasValue).Select(s => s.NextWaveAt!.Value).DefaultIfEmpty(long.MaxValue).Min()
+            );
+            var sites = latest
+                .Values.Where(s => s.CompletedAt is null)
+                .OrderBy(s => s.Id)
+                .Select(s => Contact(s, _definitions.Single(d => d.DungeonId == s.DungeonId)))
+                .ToArray();
+            _views[systemId] = new(version, provider.Identity.Generation, deadline, sites, majorThreat, pirates);
+            return sites;
         }
     }
 
-    private static CombatAnomaly Read(CatalogDbContext catalog, WorldCombatAnomaly site)
+    private static CombatAnomaly Contact(WorldCombatAnomaly site, CombatAnomalyDefinition definition)
     {
-        var dungeon = catalog.Read(CatalogData.Client.Dungeons, (long)CombatAnomalyRules.DungeonId)!;
-        var room = dungeon.Rooms!.Single().Value;
-        var origin = new SpacePosition(site.X, site.Y, site.Z);
-        var entry = room.Objects!.Values.Single(o => o.ObjectID == dungeon.EntryObjectID).Position!;
-        var offset = origin - new SpacePosition(entry.X!.Value, entry.Y!.Value, entry.Z!.Value);
-        // The radio telescope is the visible landmark. Invisible spawners, audio
-        // objects and client environment effects have no ordinary ball adapter.
-        var objects = room
-            .Objects.Values.Where(o => o.TypeID == CombatAnomalyRules.TelescopeTypeId)
-            .Select(o =>
-            {
-                var type = catalog.RequireItem(checked((int)o.TypeID!.Value));
-                var p = o.Position!;
-                return new StaticSpaceObject(
-                    CombatAnomalyRules.FirstObjectId + site.Id - CombatAnomalyRules.FirstSiteId,
-                    type.Id,
-                    type.GroupId,
-                    type.CategoryId,
-                    NpcEncounterDefinitions.GuristasCorporation,
-                    offset + new SpacePosition(p.X!.Value, p.Y!.Value, p.Z!.Value),
-                    (float)(type.Radius ?? 0)
-                );
-            })
+        var position = new SpacePosition(site.X, site.Y, site.Z);
+        var objects = definition
+            .Objects.Select(
+                (o, index) =>
+                    o with
+                    {
+                        Id = checked(
+                            CombatAnomalyRules.FirstObjectId
+                            + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
+                            + index
+                        ),
+                        Position = position + o.Position,
+                    }
+            )
             .ToArray();
         return new(
             site.Id,
             $"EDN-{site.Id - CombatAnomalyRules.FirstSiteId + 1:000}",
             site.SystemId,
-            CombatAnomalyRules.DungeonId,
-            checked((int)dungeon.DungeonNameID!.Value),
-            checked((int)dungeon.Difficulty!.Value),
-            origin,
+            site.DungeonId,
+            definition.NameId,
+            definition.Difficulty,
+            position,
             site.Wave >= 0,
-            objects
+            objects,
+            (int)definition.Faction
         );
     }
 
@@ -119,23 +208,27 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
     {
         lock (database.MotionLock)
         {
-            var contact = List(systemId, now).SingleOrDefault();
-            if (contact is null || contact.Started || position.DistanceTo(contact.Position) > CombatAnomalyRules.ArrivalRange)
+            var nearby = List(systemId, now)
+                .Where(s => !s.Started && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange)
+                .ToArray();
+            if (nearby.Length == 0)
             {
                 return;
             }
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
             using var transaction = world.Database.BeginTransaction();
-            var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
-            if (site.Wave < 0 && site.CompletedAt is null)
+            foreach (var contact in nearby)
             {
-                site.Wave = 0;
-                Spawn(world, catalog, site, now);
-                world.SaveChanges();
+                var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
+                if (site.Wave < 0 && site.CompletedAt is null)
+                {
+                    NextWave(world, catalog, site, now);
+                }
             }
+            world.SaveChanges();
             transaction.Commit();
-            Invalidate(world);
+            Invalidate(world, systemId);
         }
     }
 
@@ -146,58 +239,164 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             return;
         }
         var site = world.Set<WorldCombatAnomaly>().Find(npc.EncounterId) ?? throw new InvalidDataException("Anomaly NPC has no site.");
-        // Materialization reuses tracked entities, including other deaths in this transaction.
-        bool remaining = world
-            .Set<WorldNpc>()
-            .Where(n => n.EncounterId == site.Id && n.Id != npc.Id)
-            .ToArray()
-            .Any(n => n.DestroyedAt is null && n.RetiredAt is null);
-        if (remaining || site.CompletedAt is not null)
+        if (site.CompletedAt is not null)
         {
             return;
         }
-        if (site.Wave == 3)
+        var alive = world
+            .Set<WorldNpc>()
+            .Where(n => n.EncounterId == site.Id && n.Id != npc.Id && n.DestroyedAt == null && n.RetiredAt == null)
+            .ToArray()
+            .Where(n => n.DestroyedAt is null && n.RetiredAt is null)
+            .ToArray();
+        var definition =
+            CombatAnomalyCatalog.Find(catalog, site.DungeonId)
+            ?? throw new InvalidDataException($"Anomaly definition {site.DungeonId} is missing.");
+        var member = world.Set<WorldAnomalyMember>().Find(npc.Id);
+        if (site.DefinitionVersion == 0)
         {
-            site.CompletedAt = now;
-            site.ReplaceAt = checked(now + CombatAnomalyRules.ReplacementSeconds * TimeSpan.TicksPerSecond);
+            if (alive.Length == 0)
+            {
+                NextWave(world, catalog, site, now);
+            }
         }
-        else
+        else if (member?.Wave == site.Wave)
         {
-            site.Wave++;
-            Spawn(world, catalog, site, now);
+            var members = world.Set<WorldAnomalyMember>().Where(m => m.SiteId == site.Id && m.Wave == site.Wave).ToArray();
+            bool triggers = members.Any(m => m.Trigger);
+            var blocking = members.Where(m => triggers ? m.Trigger : !m.Sentry).Select(m => m.NpcId).ToHashSet();
+            if (!site.NextWaveAt.HasValue && !alive.Any(n => blocking.Contains(n.Id)))
+            {
+                NextWave(world, catalog, site, now);
+            }
         }
-        // Eviction publishes no uncommitted state. The next reader reloads after
-        // the owner releases the transaction, including after rollback.
-        Invalidate(world);
+        if (
+            site.Wave >= definition.Waves.Length - 1
+            && alive.Length == 0
+            && !world.Set<WorldNpc>().Local.Any(n => n.EncounterId == site.Id && n.DestroyedAt is null && n.RetiredAt is null)
+        )
+        {
+            Complete(site, now);
+        }
+        Invalidate(world, site.SystemId);
+        if (site.CompletedAt.HasValue)
+        {
+            Invalidate(world, -1);
+        }
     }
 
-    private static void Spawn(WorldDbContext world, CatalogDbContext catalog, WorldCombatAnomaly site, long now)
+    public IReadOnlyList<AnomalySystemSites> Directory(long now)
     {
-        var dungeon = catalog.Read(CatalogData.Client.Dungeons, (long)CombatAnomalyRules.DungeonId)!;
-        var spawner = dungeon.Rooms!.Single().Value.Objects!.Values.Single(o => o.Entities is not null).Position!;
-        var entry = dungeon.Rooms!.Single().Value.Objects!.Values.Single(o => o.ObjectID == dungeon.EntryObjectID).Position!;
-        var origin = new SpacePosition(
-            site.X + spawner.X!.Value - entry.X!.Value,
-            site.Y + spawner.Y!.Value - entry.Y!.Value,
-            site.Z + spawner.Z!.Value - entry.Z!.Value
-        );
-        var roster = CombatAnomalyRules.Wave(site.Id, site.Wave);
-        for (int slot = 0; slot < roster.Count; slot++)
+        lock (database.MotionLock)
         {
-            var profile = new NpcProfileCatalog().Read(catalog, roster[slot]);
-            var p = origin + new SpacePosition(slot * NpcSpawnRules.MemberSpacing, 0, 0);
+            long version = Version(-1);
+            if (
+                _directoryVersion == version
+                && now < _directoryDeadline
+                && _directoryCatalog == database.Catalog.Identity.Generation
+                && _directoryMajorThreat == database.Settings.NpcPopulation.MajorThreatAnomalies
+                && _directoryPirates == database.Settings.NpcPopulation.Pirates
+            )
+            {
+                return _directory;
+            }
+            int[] systems;
+            using (WorldDbContext world = new(database.Path))
+            {
+                systems = world.Set<WorldCombatAnomaly>().Select(s => s.SystemId).Distinct().ToArray();
+            }
+            _directory = systems.Order().Select(id => new AnomalySystemSites(id, List(id, now))).ToArray();
+            _directoryDeadline = systems.Select(id => _views[id].Deadline).DefaultIfEmpty(long.MaxValue).Min();
+            _directoryVersion = Version(-1);
+            _directoryCatalog = database.Catalog.Identity.Generation;
+            _directoryMajorThreat = database.Settings.NpcPopulation.MajorThreatAnomalies;
+            _directoryPirates = database.Settings.NpcPopulation.Pirates;
+            return _directory;
+        }
+    }
+
+    private static void Complete(WorldCombatAnomaly site, long now)
+    {
+        site.NextWaveAt = null;
+        site.CompletedAt = now;
+        site.ReplaceAt = checked(now + CombatAnomalyRules.ReplacementSeconds * TimeSpan.TicksPerSecond);
+    }
+
+    private static void NextWave(WorldDbContext world, CatalogDbContext catalog, WorldCombatAnomaly site, long now)
+    {
+        if (site.DefinitionVersion == 0)
+        {
+            if (site.Wave == 3)
+            {
+                Complete(site, now);
+                return;
+            }
+            site.Wave++;
+            var legacy = CombatAnomalyRules.Wave(site.Id, site.Wave).Select(id => new AnomalySpawnMember(id, 0, false, false)).ToArray();
+            Spawn(world, catalog, site, legacy, now);
+            return;
+        }
+        var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
+        while (site.Wave + 1 < definition.Waves.Length)
+        {
+            site.Wave++;
+            var members = AnomalyEncounterRules.Members(site.Id, site.Wave, definition.Waves[site.Wave]);
+            if (members.Count > 0)
+            {
+                Spawn(world, catalog, site, members, now);
+                if (site.Wave + 1 < definition.Waves.Length && definition.Waves[site.Wave + 1].DelaySeconds > 0)
+                {
+                    site.NextWaveAt = checked(now + definition.Waves[site.Wave + 1].DelaySeconds * TimeSpan.TicksPerSecond);
+                }
+                return;
+            }
+        }
+        // Reinforcements may have arrived before earlier hostiles were cleared.
+        bool remaining = world
+            .Set<WorldNpc>()
+            .Where(n => n.EncounterId == site.Id && n.DestroyedAt == null && n.RetiredAt == null)
+            .ToArray()
+            .Any(n => n.DestroyedAt is null && n.RetiredAt is null);
+        if (!remaining)
+        {
+            Complete(site, now);
+        }
+    }
+
+    private static void Spawn(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        WorldCombatAnomaly site,
+        IReadOnlyList<AnomalySpawnMember> members,
+        long now
+    )
+    {
+        var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
+        var origin = new SpacePosition(site.X, site.Y, site.Z) + definition.Spawner;
+        for (int slot = 0; slot < members.Count; slot++)
+        {
+            var member = members[slot];
+            var profile = new NpcProfileCatalog().Read(catalog, member.TypeId);
+            var p = origin + new SpacePosition((slot % 8) * NpcSpawnRules.MemberSpacing, 0, (slot / 8) * NpcSpawnRules.MemberSpacing);
+            long id = checked(
+                CombatAnomalyRules.FirstNpcId
+                + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.NpcsPerSite
+                + site.Wave * AnomalyEncounterRules.MembersPerWave
+                + slot
+            );
             world.Add(
                 new WorldNpc
                 {
-                    Id = checked(CombatAnomalyRules.FirstNpcId + (site.Id - CombatAnomalyRules.FirstSiteId) * 100 + site.Wave * 10 + slot),
+                    Id = id,
                     SystemId = site.SystemId,
-                    TypeId = roster[slot],
+                    TypeId = member.TypeId,
                     Role = NpcRole.Pirate,
                     AnchorKind = NpcAnchorKind.Anomaly,
                     EncounterId = site.Id,
                     SpawnSlot = slot,
-                    CorporationId = NpcEncounterDefinitions.GuristasCorporation,
-                    FactionId = NpcEncounterDefinitions.GuristasFaction,
+                    AcquisitionRange = definition.AcquisitionRange,
+                    CorporationId = definition.CorporationId,
+                    FactionId = (int)definition.Faction,
                     HomeX = p.X,
                     HomeY = p.Y,
                     HomeZ = p.Z,
@@ -207,6 +406,16 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                     ShieldCharge = profile.Attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
                     UpdatedAt = now,
                     MotionAt = now,
+                }
+            );
+            world.Add(
+                new WorldAnomalyMember
+                {
+                    NpcId = id,
+                    SiteId = site.Id,
+                    Wave = site.Wave,
+                    Trigger = member.Trigger,
+                    Sentry = member.Sentry,
                 }
             );
         }

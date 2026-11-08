@@ -28,6 +28,7 @@ internal sealed class SettingsForm
     public bool Guards { get; set; }
     public bool Convoys { get; set; }
     public bool Mining { get; set; }
+    public bool MajorThreatAnomalies { get; set; }
     public bool StartingSkills { get; set; }
 
     [Range(1, 300)]
@@ -56,6 +57,7 @@ internal sealed class SettingsForm
             Guards = settings.NpcPopulation.Guards,
             Convoys = settings.NpcPopulation.Convoys,
             Mining = settings.NpcPopulation.Mining,
+            MajorThreatAnomalies = settings.NpcPopulation.MajorThreatAnomalies,
             StartingSkills = settings.Progression.GrantStartingSkills,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
@@ -75,7 +77,7 @@ internal sealed class SettingsForm
                 Cents(GrantIsk)
             ),
             Resources = new(RenewBelts, RenewalHourUtc),
-            NpcPopulation = new(Pirates, Guards, Convoys, Mining),
+            NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(StartingSkills),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
         };

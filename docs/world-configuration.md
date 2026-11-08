@@ -11,7 +11,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Economy | Charge service costs; default manufacturing index. |
 | Development supply | Testing market and initial wallet grants; institutional stock; testing stock/price; grant amount for future pilots. |
 | Resources | Enable belt renewal and set its UTC hour. |
-| NPC population | Enable new pirates, guards, convoys and mining populations independently. Existing living residents remain. |
+| NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Progression | Grant catalog starting skills to future pilots. Native training formulas remain unchanged. |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 

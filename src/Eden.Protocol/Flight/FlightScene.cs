@@ -242,6 +242,10 @@ internal sealed class FlightScene(
 
     internal void RefreshAnomalies(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> objects)
     {
+        if (_anomalies.SequenceEqual(objects))
+        {
+            return;
+        }
         var previous = _anomalies;
         Objects = Objects.ExceptBy(previous.Select(o => o.Id), o => o.Id).Concat(objects).ToArray();
         _anomalies = objects;

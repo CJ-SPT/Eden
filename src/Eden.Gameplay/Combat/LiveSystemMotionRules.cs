@@ -124,6 +124,10 @@ public static class LiveSystemMotionRules
         bool contactsOnly = false
     )
     {
+        if (npc.GroupId == NpcEncounterDefinitions.SentryGroup)
+        {
+            return npc with { Velocity = SpacePosition.Zero, Navigation = NpcNavigationState.Idle, MotionAt = now };
+        }
         if (npc.Transit is { } warp)
         {
             FlightProperties hull = new(

@@ -9,6 +9,7 @@ using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -150,6 +151,10 @@ public sealed class NpcPursuitTests
         Assert.Equal(2, saved.Set<WorldNpc>().Count());
         Assert.Empty(saved.Set<NpcBounty>());
         Assert.Empty(saved.Set<ShipLoss>());
+        if (resident)
+        {
+            f.Db.Services.GetRequiredService<LiveWorld>().Dispose();
+        }
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(returned, Contact(f));
     }

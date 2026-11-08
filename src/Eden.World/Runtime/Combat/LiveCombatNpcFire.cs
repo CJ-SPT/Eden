@@ -105,7 +105,7 @@ internal sealed partial class LiveCombatRuntime
         {
             return now < Math.Min(aggression.ReadyAt, aggression.MissileReadyAt);
         }
-        double leash = NpcPopulationRules.Leash(attributes, 0);
+        double leash = NpcPopulationRules.Leash(attributes, npc.MissileRange, npc.AcquisitionRange);
         if (ship.Position.DistanceTo(npc.Home) > leash || npc.Position.DistanceTo(npc.Home) > leash)
         {
             return false;

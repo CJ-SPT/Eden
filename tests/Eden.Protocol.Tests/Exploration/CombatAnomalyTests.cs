@@ -33,8 +33,16 @@ public sealed class CombatAnomalyTests
 
     private static CombatAnomalyStore Prepare(NpcCombatTests.Fixture f)
     {
+        PassiveCatalogFixture.LoadNpcPopulation(new WorldDatabase(f.Db.Path).CatalogPath);
         PassiveCatalogFixture.LoadCombatAnomalies(new WorldDatabase(f.Db.Path).CatalogPath);
-        return new(new(f.Db.Path));
+        CombatAnomalyStore sites = new(new(f.Db.Path));
+        var site = Assert.Single(sites.List(CombatAnomalyRules.SystemId, f.Clock.Now));
+        using WorldDbContext world = new(f.Db.Path);
+        // Preserve the schema-109 Hideaway contract through the content expansion.
+        world.Set<WorldCombatAnomaly>().Find(site.Id)!.DefinitionVersion = 0;
+        world.SaveChanges();
+        CombatAnomalyStore.Invalidate(world);
+        return sites;
     }
 
     [Fact]
@@ -44,7 +52,7 @@ public sealed class CombatAnomalyTests
         var sites = Prepare(f);
         var site = Assert.Single(sites.List(CombatAnomalyRules.SystemId, f.Clock.Now));
         Assert.False(site.Started);
-        Assert.Equal(CombatAnomalyRules.TelescopeTypeId, Assert.Single(site.Objects).TypeId);
+        Assert.Contains(site.Objects, o => o.TypeId == CombatAnomalyRules.TelescopeTypeId);
         sites.Arrive(site.SystemId, site.Position + new SpacePosition(CombatAnomalyRules.ArrivalRange + 1, 0, 0), f.Clock.Now);
         using (WorldDbContext world = new(f.Db.Path))
         {

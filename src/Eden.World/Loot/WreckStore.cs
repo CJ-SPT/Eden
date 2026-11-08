@@ -39,7 +39,11 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : null;
-        if (type is null && npc.Role != NpcRole.Pirate && definition is { WreckTypeID: null })
+        if (
+            type is null
+            && definition is { WreckTypeID: null }
+            && (npc.Role != NpcRole.Pirate || catalog.RequireItem(npc.TypeId).GroupId == NpcEncounterDefinitions.SentryGroup)
+        )
         {
             // Several pinned customs officials have no wreck link. They leave
             // no wreck instead of borrowing an unrelated ship's wreck.
@@ -124,7 +128,11 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             return [new(WreckDefinitions.StarterLootType, WreckDefinitions.StarterLootQuantity)];
         }
         int groupId = catalog.RequireItem(npc.TypeId).GroupId;
-        var group = NpcPirateGroups.All.SingleOrDefault(g => g.GroupId == groupId);
+        var group = NpcPirateGroups.All.Concat(NpcPirateGroups.EncounterLoot).SingleOrDefault(g => g.GroupId == groupId);
+        if (group?.Commander == true)
+        {
+            return NpcCommanderLootRules.Roll(group.Faction, NpcSpawnRules.Seed(npc.SystemId, npc.Id));
+        }
         return group is null
             ? []
             : NpcLootRules.Roll(

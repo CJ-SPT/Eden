@@ -346,6 +346,7 @@ internal sealed partial class LiveCombatRuntime
             attributes
         )
         {
+            AcquisitionRange = npc.AcquisitionRange,
             Navigation = npc.Navigation,
             MotionAt = npc.MotionAt,
             Mass = type.Mass ?? 0,

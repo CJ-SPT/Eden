@@ -19,7 +19,7 @@ internal sealed record AnomalySiteInfo(CombatAnomaly Site) : BlueModel
                 ["dungeonID"] = Site.DungeonId,
                 ["archetypeID"] = CombatAnomalyRules.CombatSiteArchetypeId,
                 ["dungeonNameID"] = Site.NameId,
-                ["factionID"] = NpcEncounterDefinitions.GuristasFaction,
+                ["factionID"] = Site.FactionId,
                 ["scanStrengthAttribute"] = null,
                 ["allowedTypes"] = null,
             }
@@ -56,4 +56,18 @@ internal sealed record SignalTrackerAnomalyUpdate(int SystemId, IReadOnlyList<Co
     // Python removal sets use the codec's explicit constructor representation.
     public override object?[] Arguments =>
         [SystemId, new AnomalyMap(Added), new BlueConstructor("__builtin__.set", [Removed.Select(id => (object?)id).ToList()])];
+}
+
+internal sealed record AnomalyDirectory(IReadOnlyList<AnomalySystemSites> Systems) : BlueModel
+{
+    public override object ToBlue() =>
+        Systems.ToDictionary(
+            s => (long)s.SystemId,
+            s => (object?)new BlueList<AnomalySiteInfo>(s.Sites.Select(site => new AnomalySiteInfo(site)).ToArray())
+        );
+}
+
+internal sealed record AnomalyCounts(IReadOnlyList<AnomalySystemSites> Systems) : BlueModel
+{
+    public override object ToBlue() => Systems.ToDictionary(s => (long)s.SystemId, s => (object?)s.Sites.Count);
 }

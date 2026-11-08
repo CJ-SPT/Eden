@@ -12,7 +12,10 @@ public sealed record StaticSpaceObject(
     float Radius,
     int? DestinationGateId = null,
     int? DestinationSystemId = null
-);
+)
+{
+    public bool Solid { get; init; } = true;
+}
 
 public interface ISystemObjects
 {

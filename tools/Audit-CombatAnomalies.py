@@ -3,9 +3,9 @@
 Reads the catalog in SQLite read-only mode. NPC grouping references remain unresolved.
 """
 import argparse
-import collections
 import json
 import pathlib
+import re
 import sqlite3
 
 
@@ -18,6 +18,15 @@ def audit(catalog, output, fixture=None):
         build = db.execute("SELECT Source FROM SourceDataset WHERE Name='sde/dungeons'").fetchone()[0]
         if '3662168' not in build:
             raise ValueError("Expected pinned build 3662168")
+        pirate_name = re.compile(
+            r'^(Angel|Blood(?: Raider)?|Guristas|Sansha|Serpentis) '
+            r'(?:(?:Hidden|Forsaken|Forlorn) )?'
+            r'(?:Hideaway|Burrow|Refuge|Den|Yard|Rally Point|Port|Hub|Haven|Sanctum)$'
+        )
+        drone_names = {'Drone ' + family for family in (
+            'Cluster', 'Collection', 'Assembly', 'Gathering', 'Surveillance',
+            'Menagerie', 'Herd', 'Squad', 'Patrol', 'Horde'
+        )} | {'Teeming Drone Horde'}
         sites = []
         for key, payload in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='sde/dungeons'"):
             definition = json.loads(payload)
@@ -32,7 +41,9 @@ def audit(catalog, output, fixture=None):
                                   o.get('objectID') == dungeon.get('entryObjectID') and bool(o.get('position')) for o in objects),
                               npcGroupIds=sorted({e['npcGroupingID'] for e in entities}),
                               triggered=any(e.get('triggerSpawn') == 1 for e in entities),
-                              objectivesId=dungeon.get('objectivesID')))
+                              objectivesId=dungeon.get('objectivesID'),
+                              ordinaryKnownSpace=bool(pirate_name.fullmatch(definition['name']['en'])
+                                                      or definition['name']['en'] in drone_names)))
         summary = dict(variants=len(sites), names=len({s['name'] for s in sites}),
                        entries=sum(s['entryResolved'] for s in sites), singleRoom=sum(s['roomCount'] == 1 for s in sites),
                        multiRoom=sum(s['roomCount'] > 1 for s in sites),
@@ -40,6 +51,9 @@ def audit(catalog, output, fixture=None):
                        triggered=sum(s['triggered'] for s in sites),
                        objectives=sum(s['objectivesId'] is not None for s in sites),
                        unresolvedGroups=len({g for s in sites for g in s['npcGroupIds']}))
+        ordinary = [site for site in sites if site['ordinaryKnownSpace']]
+        summary['ordinaryKnownSpaceVariants'] = len(ordinary)
+        summary['ordinaryKnownSpaceNames'] = len({site['name'] for site in ordinary})
         result = dict(build=3662168, summary=summary, sites=sorted(sites, key=lambda s: s['dungeonId']))
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

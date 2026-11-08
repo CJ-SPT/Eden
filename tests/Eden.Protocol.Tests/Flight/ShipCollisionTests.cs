@@ -22,6 +22,17 @@ public sealed class ShipCollisionTests
     }
 
     [Fact]
+    public void DecorativeAnomalyCloudsDoNotApplyCollisionImpulse()
+    {
+        var moving = Coast(1, SpacePosition.Zero, new(200, 0, 0));
+        StaticSpaceObject cloud = new(2, 0, 227, 2, 0, new(200, 0, 0), 5000) { Solid = false };
+        var result = ShipCollisions.ResolveStatic(moving, [cloud]);
+        Assert.False(result.Bumped);
+        Assert.Equal(moving.Position, result.Position);
+        Assert.Equal(moving.Velocity, result.Velocity);
+    }
+
+    [Fact]
     public void FixedBodyReflectsRadialVelocityUsingCarbonsDampedImpulse()
     {
         var moving = Coast(1, SpacePosition.Zero, new(200, 0, 0));

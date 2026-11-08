@@ -206,6 +206,7 @@ public sealed class NpcPopulationTests
                 DROP INDEX IX_WorldNpc_EncounterId;
                 DROP INDEX IX_WorldNpc_SystemId_RetiredAt_DestroyedAt;
                 DROP INDEX IX_WorldNpc_EncounterId_SpawnSlot;
+                DROP INDEX IX_WorldNpc_EncounterId_DestroyedAt_RetiredAt;
                 """
             );
             string[] columns =

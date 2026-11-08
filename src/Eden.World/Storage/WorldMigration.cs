@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 109;
+    internal const int CurrentVersion = 111;
 
     public static void Open(
         WorldDbContext world,
@@ -48,6 +48,7 @@ internal static class WorldMigration
         }
         // NPC columns must exist before the history backfills materialize current entities.
         NpcSchemaReconciliation.Apply(world, version);
+        Eden.World.Exploration.CombatAnomalySchema.Upgrade(world);
         SavedWorldValidation.ReconcileAndCheck(world, catalog);
         WorldVersions69To84.Apply(world, version);
         transaction.Commit();
@@ -95,8 +96,7 @@ internal static class WorldMigration
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
         ModuleConditionPersistence.Reconcile(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         ShipHeatPersistence.ValidateSaved(world);
-        Eden.World.Exploration.CombatAnomalySchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=109");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=111");
         history.Commit();
     }
 }

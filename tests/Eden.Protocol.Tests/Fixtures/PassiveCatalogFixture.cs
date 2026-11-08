@@ -159,6 +159,12 @@ internal static class PassiveCatalogFixture
         }
     }
 
+    internal static void LoadCombatAnomalyWorld(string path)
+    {
+        LoadNpcPopulation(path);
+        Load(path, "CombatAnomalyWorldCatalog.json", null);
+    }
+
     internal static void LoadCombatAnomalies(string path) => Load(path, "CombatAnomalyCatalog.json", null);
 
     internal static void LoadNpcConvoys(string path) => Load(path, "NpcConvoyCatalog.json", null);

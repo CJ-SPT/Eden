@@ -11,13 +11,17 @@ public sealed record CombatAnomaly(
     int Difficulty,
     SpacePosition Position,
     bool Started,
-    IReadOnlyList<StaticSpaceObject> Objects
+    IReadOnlyList<StaticSpaceObject> Objects,
+    int FactionId = 500010
 );
+
+public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);
 
 public interface ICombatAnomalies
 {
     IReadOnlyList<CombatAnomaly> List(int systemId, long now);
     void Arrive(int systemId, SpacePosition position, long now);
+    IReadOnlyList<AnomalySystemSites> Directory(long now);
 }
 
 public static class CombatAnomalyRules

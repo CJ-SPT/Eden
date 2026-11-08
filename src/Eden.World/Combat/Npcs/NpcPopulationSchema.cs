@@ -23,6 +23,7 @@ internal static class NpcPopulationSchema
             new("HomeY", "REAL"),
             new("HomeZ", "REAL"),
             new("RetiredAt", "INTEGER"),
+            new("AcquisitionRange", "REAL"),
         ];
         var existing = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpc')").ToHashSet();
         foreach (var column in columns)

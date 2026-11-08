@@ -21,6 +21,7 @@ public sealed class WorldNpc
     public NpcAnchorKind AnchorKind { get; set; }
     public long EncounterId { get; set; }
     public int SpawnSlot { get; set; }
+    public double? AcquisitionRange { get; set; }
     public double? HomeX { get; set; }
     public double? HomeY { get; set; }
     public double? HomeZ { get; set; }

@@ -25,6 +25,7 @@ internal static class ConfigurationDisplay
         ["npcPopulation.guards"] = "New guards",
         ["npcPopulation.convoys"] = "New convoys",
         ["npcPopulation.mining"] = "New mining populations",
+        ["npcPopulation.majorThreatAnomalies"] = "Major Threat anomaly tiers",
         ["progression.grantStartingSkills"] = "Starting skills for new pilots",
         ["simulation.checkpointSeconds"] = "Checkpoint interval (seconds)",
         ["simulation.marketPollMilliseconds"] = "Market polling (milliseconds)",

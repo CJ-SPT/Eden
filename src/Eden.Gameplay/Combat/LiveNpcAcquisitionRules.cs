@@ -21,7 +21,10 @@ public static class LiveNpcAcquisitionRules
                 npc.Role != NpcRole.Pirate
                 || npc.Navigation != NpcNavigationState.Idle
                 || occupied.Contains(npc.Id)
-                || !npc.Attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
+                || (
+                    !npc.Attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
+                    && npc.GroupId != NpcEncounterDefinitions.SentryGroup
+                )
             )
             {
                 continue;
@@ -32,8 +35,9 @@ public static class LiveNpcAcquisitionRules
                 .Where(t =>
                     PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, t.Ship.Id)
                     && t.Range <= npc.Attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange, double.MaxValue)
-                    && t.Range <= NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange)
-                    && t.Ship.Position.DistanceTo(npc.Home) <= NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange)
+                    && t.Range <= NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange, npc.AcquisitionRange)
+                    && t.Ship.Position.DistanceTo(npc.Home)
+                        <= NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange, npc.AcquisitionRange)
                 )
                 .OrderBy(t => t.Range)
                 .ThenBy(t => t.Ship.Id)

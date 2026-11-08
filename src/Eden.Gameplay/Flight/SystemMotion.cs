@@ -78,6 +78,7 @@ public static class ShipCollisions
                 SpacePosition.Zero,
                 body.Position,
                 SpacePosition.Zero,
+                Solid: body.Solid,
                 Fixed: true
             ))
         );

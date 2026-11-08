@@ -80,7 +80,7 @@ internal static partial class Ballpark
         // Rigid balls have only the formation ID after the common header. Asteroids
         // use local coordinates; global celestials remain selectable system-wide.
         var flags =
-            (body.GroupId == AsteroidDefinitions.BeltGroup ? DestinyBallFlags.None : DestinyBallFlags.Massive)
+            (body.GroupId == AsteroidDefinitions.BeltGroup || !body.Solid ? DestinyBallFlags.None : DestinyBallFlags.Massive)
             | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
         WriteBallHeader(writer, body.Id, (byte)NavigationMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);

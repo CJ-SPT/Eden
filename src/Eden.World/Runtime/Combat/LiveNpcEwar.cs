@@ -55,7 +55,7 @@ internal sealed partial class LiveCombatRuntime
                     npc.Position,
                     npc.Home,
                     npc.Radius,
-                    NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange),
+                    NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange, npc.AcquisitionRange),
                     aggression.ReadyAt,
                     npc.ElectronicWarfare
                 )

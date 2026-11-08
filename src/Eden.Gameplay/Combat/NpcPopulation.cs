@@ -47,15 +47,23 @@ public static class NpcPopulationRules
 
     public static bool AwardsBounty(NpcRole role) => role is NpcRole.Pirate or NpcRole.MiningMiner or NpcRole.MiningHauler;
 
-    public static double DetectionRange(IReadOnlyDictionary<DogmaAttributeId, double> attributes, double missileRange = 0) =>
+    public static double DetectionRange(
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        double missileRange = 0,
+        double? acquisitionRange = null
+    ) =>
         Math.Min(
             NpcEncounterDefinitions.VisibilityRange,
-            Math.Max(
-                NpcEncounterDefinitions.DetectionRange,
-                Math.Max(attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange), missileRange)
-            )
+            acquisitionRange
+                ?? Math.Max(
+                    NpcEncounterDefinitions.DetectionRange,
+                    Math.Max(attributes.GetValueOrDefault(DogmaAttributeId.EntityAttackRange), missileRange)
+                )
         );
 
-    public static double Leash(IReadOnlyDictionary<DogmaAttributeId, double> attributes, double missileRange = 0) =>
-        Math.Max(NpcEncounterDefinitions.ChaseLeash, DetectionRange(attributes, missileRange) * 2);
+    public static double Leash(
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        double missileRange = 0,
+        double? acquisitionRange = null
+    ) => Math.Max(NpcEncounterDefinitions.ChaseLeash, DetectionRange(attributes, missileRange, acquisitionRange) * 2);
 }

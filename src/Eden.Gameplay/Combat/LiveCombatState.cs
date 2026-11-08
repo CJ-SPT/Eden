@@ -124,6 +124,7 @@ public sealed record LiveCombatNpc(
 {
     public IReadOnlyList<ElectronicWarfareContact> IncomingElectronicWarfare { get; init; } = [];
 
+    public double? AcquisitionRange { get; init; }
     public NpcNavigationState Navigation { get; init; }
     public long MotionAt { get; init; }
     public double Mass { get; init; }

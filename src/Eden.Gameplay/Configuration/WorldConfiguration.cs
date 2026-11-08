@@ -16,7 +16,13 @@ public sealed record DevelopmentSupplyPolicy(
 
 public sealed record ResourcePolicy(bool RenewBelts = true, int RenewalHourUtc = 11);
 
-public sealed record NpcPopulationPolicy(bool Pirates = true, bool Guards = true, bool Convoys = true, bool Mining = true);
+public sealed record NpcPopulationPolicy(
+    bool Pirates = true,
+    bool Guards = true,
+    bool Convoys = true,
+    bool Mining = true,
+    bool MajorThreatAnomalies = false
+);
 
 public sealed record ProgressionPolicy(bool GrantStartingSkills = true);
 

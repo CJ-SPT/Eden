@@ -739,3 +739,114 @@ Validation passed tool restore, solution restore/build, 67 focused .NET cases in
 host startup, eight catalog policy cases, nine formatting policy cases and `tools/Format.ps1 -Check`.
 The initial filter was `FullyQualifiedName~NpcCatalogSharingTests.ActiveSpawnPoolsSurviveCatalogCachePressureWithoutReloading`.
 The combined filter was `FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcPopulationTests`.
+
+## Known-space combat anomalies (November 8, 2026)
+
+The encounter catalog now covers all 199 ordinary known-space pirate and rogue-drone dungeon definitions
+selected from build 3662168, representing 127 catalog display names and 126 normalized report names.
+The five regional pirate factions and rogue drones use their own catalog hulls. Deadspace and commander
+groups have separate loot metadata and never enter ordinary belt spawn pools.
+
+The underlying audit remains 5,516 client dungeons, 507 published Combat Sites, and 325 Cosmic Anomaly
+definitions. All 325 have room geometry and a positioned entry. Of these, 258 are single-room and 67
+multi-room, 255 reference NPC groups, 229 contain waiting groups, and 185 link client objectives. The
+1,081 referenced NPC group IDs still have no exported roster table. These facts do not establish encounter
+scripts. The ordinary subset has 199 single-room definitions.
+
+Gameplay sources are the [EVE University combat-site table](https://wiki.eveuniversity.org/Combat_site)
+and 122 linked encounter pages. The committed numeric encounter file records their exact revision IDs,
+reported quantities, alternative NPC identities and trigger markers. The dated
+[EVE-Survival Hideaway report](https://eve-survival.org/?wakka=GuristasHideaway), edited October 6, 2015,
+distinguishes telescope and bunker final waves. Dungeon 2134 and its duplicate 14211 use the telescope
+recipe, while 2154 and 14212 use the bunker recipe. Guristas Haven gas/rock and Sanctum ring/station
+bindings are also explicit. Other report-to-dungeon bindings are stable authored assignments exported
+by the importer, because those reports do not identify client dungeon IDs.
+
+Angel, Blood and Guristas Forsaken Sanctums plus Teeming Drone Horde have labeled authored recipes.
+They use the documented Sansha Forsaken Sanctum wave quantities with faction-specific upper-third
+deadspace hull pools ranked by catalog bounty. They are separate catalog definitions, and
+[CCP's Equinox expansion notes](https://www.eveonline.com/news/view/equinox-expansion-notes)
+explicitly describe Forsaken Sanctums and Teeming Drone Hordes as tougher Major Threat Detection Array
+sites. Eden has no sovereignty-upgrade simulation yet. All six Major Threat families therefore default
+to disabled availability. The administrator setting `NpcPopulation.MajorThreatAnomalies` allows these
+tiers in null security as an explicit global development override. It does not simulate installed upgrades.
+
+### Shared lifecycle and combat
+
+Each visited known-space system lazily receives up to four independent persistent slots. The regional
+pirate mapping and the combat-site table's high/low/null bands constrain selection. Rogue drones can
+appear in any supported known-space region. A replacement chooses another eligible definition after
+ten minutes. Site density, selection weights, coordinates, replacement delay and unknown probabilities
+are Eden policy. Coordinates use the lowest-ID celestial plus a separate ten-billion-metre offset per slot.
+The system directory lists materialized systems and does not populate the universe on an Agency read.
+
+First arrival activates the saved encounter once. Group trigger kills can release reinforcements while
+earlier enemies survive, ordinary waves wait for the final blocking ship, and reported timed headings
+save their due time. Optional commanders use a deterministic five-percent roll. Four optional report rows
+without a usable identity or quantity remain recorded in the import audit and omitted. Commanders use a
+small explicit faction loot pool with a twenty-five-percent module roll, plus a tag and ammunition or drone
+components. These are authored reward defaults, not reproduced CCP loot tables or exact drop rates.
+Ordinary deadspace hulls use the existing faction/hull loot rules, catalog bounties and linked wreck types.
+
+Stationary batteries remain stationary, acquire without ship reaction-delay dogma, use existing direct,
+missile and EWAR paths, and may have no wreck where the catalog supplies none. Encounter acquisition
+range follows the catalog spawner's guard range and is retained in SQL and resident combat. The same
+range feeds acquisition, pursuit limits and EWAR. Scenery uses supported generic static-object adapters
+at catalog offsets from the entry. Spawn formations currently use the first catalog entity spawner.
+
+Schema 111 saves dungeon identity, slot, progress, NPC wave/trigger membership and reinforcement deadlines.
+Schema-109 active Hideaways retain their original four-wave recipe. Fatal kills advance or complete the
+site in the destruction transaction. Earned wrecks retain their independent expiry. Cache invalidation is
+per system, and warmed scanner and directory reads reuse shared snapshots without SQL or fitting work.
+
+The scanner retains `scanMgr.SignalTrackerRegister`, bound `GetFullState`, add/remove notifications and
+both overlay item-ID and scan-target-ID warp paths. The pinned `dungeonInstanceCacheMgr` methods
+`GetCombatAnomalyInstances` and `GetCombatAnomaliesCount` take no arguments and return system-keyed
+Python lists and integer counts respectively. Verified by inert inspection of build 3662168 `code.ccp`,
+SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The existing Carbon-derived point warp and explicit Blue set reduction remain unchanged, with source
+revisions recorded in the foundation and scanner-correction sections above.
+
+### Reproducing the data
+
+With the pinned generated catalog installed, run these read-only source tools from the repository root.
+Reference snapshots and audits remain under ignored `artifacts`, while numeric facts and test fixtures
+are committed. The importer uses explicit spelling corrections and faction/hull-constrained generic pools,
+with no fuzzy NPC-name matching.
+
+```powershell
+python tools/Audit-CombatAnomalies.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output artifacts/combat-anomaly-scope.json
+python tools/Fetch-CombatAnomalyReferences.py --output artifacts/anomaly-references/pages.json
+python tools/Import-CombatAnomalyEncounters.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --references artifacts/anomaly-references/pages.json --output src/Eden.World/Exploration/combat-anomaly-encounters-3662168.json
+python tools/Export-AnomalyCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures/CombatAnomalyWorldCatalog.json
+```
+
+### Remaining fidelity and validation boundaries
+
+The encounters are playable reconstructions from public reports and pinned geometry. Unknown or
+conflicting proximity/structure scripts use the ordinary wave fallback. Exact per-group spawn positions,
+environmental effects, native object orientation, complete loot tables, capital/officer behavior and
+sovereignty distribution are not reproduced. Escalations, gated DED follow-ups, wormhole encounters and
+special/event sites are not implemented by this expansion. Agency counts cover systems already materialized.
+
+Automated validation covers all 199 definitions and their resolved NPC profiles, explicit Hideaway layouts,
+regional/security filtering, independent slots, SQL-free warm reads, shared activation, fatal-hit ordering,
+rollback, trigger overlap, timed restart recovery, legacy-save upgrades, rewards and scanner serialization.
+Live acceptance: Not performed; agent client testing is disabled. Optional maintainer checks are scanner
+presentation and warp landing, scenery placement, and battery/commander visuals during a shared fight.
+
+Stable validation passed tool restore, solution restore/build with zero warnings/errors, 302 focused .NET
+cases in 92.31 seconds including test-host startup, eight catalog policy cases, nine formatting policy
+cases, and `tools/Format.ps1 -Check`. The first new methods were exercised individually during development.
+The filter was:
+
+```text
+FullyQualifiedName~CombatAnomaly|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~WreckTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~AdministrationComponentTests
+```
+
+An earlier combined run was interrupted after finding a historical migration fixture that did not remove
+the new NPC index, and a pre-existing pursuit test that reconciled an actively running resident world.
+The fixture now drops its dependent index and the restart test stops the world before reopening it.
+Roster inspection also corrected duplicate irregular drone names and generic commander hull selection,
+with a focused regression. Refetching the 122 exact wiki revisions reproduces the committed encounter
+facts byte for byte. The audit reproduces all coverage counts. Full .NET regression was not requested or run.

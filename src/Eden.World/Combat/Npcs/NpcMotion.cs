@@ -74,6 +74,10 @@ internal static class NpcMotion
         int destinyStamp
     )
     {
+        if (type.GroupId == NpcEncounterDefinitions.SentryGroup)
+        {
+            return;
+        }
         if (!Engaged(npc))
         {
             npc.MotionAt = now;
@@ -101,7 +105,13 @@ internal static class NpcMotion
         long now,
         bool returning = false,
         SpacePosition? orbitDirection = null
-    ) =>
+    )
+    {
+        if (type.GroupId == NpcEncounterDefinitions.SentryGroup)
+        {
+            npc.Navigation = NpcNavigationState.Idle;
+            return;
+        }
         Save(
             npc,
             NpcMotionRules.Advance(
@@ -115,6 +125,7 @@ internal static class NpcMotion
                 orbitDirection
             )
         );
+    }
 
     internal static NpcNavigationContact? Contact(
         WorldNpc npc,

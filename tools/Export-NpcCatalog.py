@@ -12,7 +12,8 @@ def export(catalog_path, output):
     groups = {
         int(value) for value in re.findall(
             r"new\((\d+), NpcPirateFaction",
-            (root / "src/Eden.Gameplay/Combat/NpcPirateGroups.cs").read_text(encoding="utf-8"),
+            (root / "src/Eden.Gameplay/Combat/NpcPirateGroups.cs").read_text(encoding="utf-8")
+                .split("public static IReadOnlyList<NpcPirateGroup> EncounterLoot", 1)[0],
         )
     }
     loot = {
