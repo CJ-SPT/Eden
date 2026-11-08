@@ -40,8 +40,25 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
     {
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
-        var saved = world.Positions.Find(shipId);
         using CatalogDbContext catalog = new(_database.CatalogPath);
+        bool transfer = SetPosition(world, catalog, shipId, position, systemId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        if (transfer && world.Ships.Where(s => s.Id == shipId).Select(s => (long?)s.OwnerId).SingleOrDefault() is long owner)
+        {
+            LiveWorld.Find(_database.Path)?.Heat.ClearSelection(owner, shipId);
+        }
+    }
+
+    internal static bool SetPosition(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long shipId,
+        SpacePosition? position,
+        int? systemId,
+        long now
+    )
+    {
+        var saved = world.Positions.Find(shipId);
         var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
         bool transfer =
             position is null
@@ -63,7 +80,6 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         }
         if (pilot is not null && position is not null)
         {
-            long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             if (saved is null)
             {
                 PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Undocked);
@@ -91,11 +107,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             (saved.X, saved.Y, saved.Z) = (position.X, position.Y, position.Z);
         }
         world.SaveChanges();
-        transaction.Commit();
-        if (transfer && (pilot?.Id ?? world.Ships.Find(shipId)?.OwnerId) is long owner)
-        {
-            LiveWorld.Find(_database.Path)?.Heat.ClearSelection(owner, shipId);
-        }
+        return transfer;
     }
 
     public AccountProfile ReadAccount(long accountId)

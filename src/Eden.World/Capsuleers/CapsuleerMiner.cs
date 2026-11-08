@@ -31,7 +31,8 @@ internal sealed class CapsuleerMiner(
     INpcEncounters encounters,
     INpcMissiles missiles,
     IPilotHealth health,
-    IPilotMining mining
+    IPilotMining mining,
+    CapsuleerTrade trade
 ) : ICapsuleerSimulation
 {
     private const int RetrySeconds = 60;
@@ -254,6 +255,10 @@ internal sealed class CapsuleerMiner(
                 Pilot.StationId,
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null)
             );
+        }
+        if (trade.Enabled())
+        {
+            trade.ListStock(Pilot.PilotId, Pilot.StationId);
         }
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)

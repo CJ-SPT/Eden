@@ -13,7 +13,8 @@ internal sealed class WorldSnapshot(
     TimeSpan capture,
     ShipHeatCheckpoint? heat = null,
     TractorCheckpoint? tractors = null,
-    Eden.World.Capsuleers.MinerCheckpoint? miner = null
+    Eden.World.Capsuleers.MinerCheckpoint? miner = null,
+    Eden.World.Capsuleers.HaulerCheckpoint? hauler = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -24,7 +25,7 @@ internal sealed class WorldSnapshot(
     internal TimeSpan Project()
     {
         long started = Stopwatch.GetTimestamp();
-        if (combat is not null || heat is not null || tractors is not null || miner is not null)
+        if (combat is not null || heat is not null || tractors is not null || miner is not null || hauler is not null)
         {
             using WorldDbContext world = new(database);
             using var transaction = world.Database.BeginTransaction();
@@ -32,6 +33,7 @@ internal sealed class WorldSnapshot(
             heat?.Apply(world);
             tractors?.Apply(world);
             miner?.Apply(world);
+            hauler?.Apply(world);
             transaction.Commit();
         }
         return Stopwatch.GetElapsedTime(started);

@@ -6,7 +6,8 @@ using Eden.Protocol.Flight;
 namespace Eden.Protocol.Combat;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class PilotDamageSignal(SharedSpace space, ICapsuleerSimulation? capsuleers = null) : IPilotDamageEvents
+internal sealed class PilotDamageSignal(SharedSpace space, ICapsuleerSimulation? capsuleers = null, ICapsuleerHauling? hauling = null)
+    : IPilotDamageEvents
 {
     internal event Action<PilotDamage>? Applied;
 
@@ -14,6 +15,7 @@ internal sealed class PilotDamageSignal(SharedSpace space, ICapsuleerSimulation?
     {
         space.ApplyDamage(damage.Health);
         capsuleers?.ObserveAggression(damage.Health.ShipId);
+        hauling?.ObserveAggression(damage.Health.ShipId);
         Applied?.Invoke(damage);
     }
 }

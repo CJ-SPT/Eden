@@ -29,11 +29,10 @@ internal sealed record FlightJumpDecision(PilotCallResult Result, GateDestinatio
 
 internal sealed class FlightTravel
 {
-    private const double GateActivationRange = 2500;
-    internal const int ArrivalDurationTicks = 8;
+    internal const int ArrivalDurationTicks = GateTravelRules.ArrivalTicks;
 
     // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
-    internal const int JumpDurationTicks = 10;
+    internal const int JumpDurationTicks = GateTravelRules.DurationTicks;
 
     // Allow the pinned cyno camera's look phase and source-scene handoff to begin.
     internal const int TranslocationDurationTicks = 3;
@@ -88,7 +87,7 @@ internal sealed class FlightTravel
             || request.ShipId != context.Pilot.ShipId
             || objects.FirstOrDefault(o => o.Id == request.SourceId) is not { DestinationSystemId: int systemId } source
             || source.DestinationGateId != request.ExitId
-            || position.DistanceTo(source.Position) > source.Radius + context.Pilot.Flight.ShipRadius + GateActivationRange
+            || !GateTravelRules.InRange(position, context.Pilot.Flight.ShipRadius, source)
         )
         {
             return new(PilotCallResult.Unsupported);

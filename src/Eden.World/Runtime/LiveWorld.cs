@@ -71,6 +71,14 @@ internal sealed class LiveWorld : IDisposable
         {
             MinerHullRevision++;
         }
+        if (HaulerCheckpoint is { } hauler && changes.Any(c => c.Table == "WorldPilot" && c.Id == hauler.PilotId))
+        {
+            HaulerHullRevision++;
+        }
+        if (changes.Any(c => c.Table is "WorldCapsuleerHauler" or "WorldCapsuleerCommunity"))
+        {
+            CapsuleerRevision++;
+        }
         _timedModules?.Observe(changes);
         Heat.Observe(changes);
         Nanites.Observe(changes);
@@ -79,6 +87,9 @@ internal sealed class LiveWorld : IDisposable
         Combat?.Observe(changes);
     }
 
+    internal long CapsuleerRevision { get; private set; }
+    internal long HaulerHullRevision { get; private set; }
+    internal Eden.World.Capsuleers.HaulerCheckpoint? HaulerCheckpoint { get; set; }
     internal long MinerHullRevision { get; private set; }
     internal Eden.World.Capsuleers.MinerCheckpoint? MinerCheckpoint { get; set; }
 
@@ -356,7 +367,8 @@ internal sealed class LiveWorld : IDisposable
                     Stopwatch.GetElapsedTime(started),
                     Heat.Capture(),
                     Tractors.Capture(),
-                    MinerCheckpoint
+                    MinerCheckpoint,
+                    HaulerCheckpoint
                 );
             }
             catch

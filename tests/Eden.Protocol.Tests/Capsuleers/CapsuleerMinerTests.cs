@@ -466,7 +466,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         );
     }
 
-    private static void CreateWorld(WorldDatabase database, TestClock clock)
+    internal static void CreateWorld(WorldDatabase database, TestClock clock)
     {
         TestCatalog.Create(database.CatalogPath);
         TestCatalog.AddSchool(database.CatalogPath, 17, 1, 1, Kisogo, SchoolStation, 601);

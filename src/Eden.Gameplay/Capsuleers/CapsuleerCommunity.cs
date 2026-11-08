@@ -8,6 +8,7 @@ namespace Eden.Gameplay.Capsuleers;
 public enum CapsuleerCareer
 {
     Mining = 1,
+    Hauling = 2,
 }
 
 public sealed record CapsuleerIdentity(long PilotId, int Seed, int SchoolId, CapsuleerCareer Career);
@@ -59,4 +60,5 @@ public interface ICapsuleerScene
 {
     int Stamp { get; }
     void Publish(MinerObservation observation);
+    void Publish(HaulerObservation observation);
 }

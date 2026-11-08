@@ -8,14 +8,19 @@ using Eden.Server.Chat;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerMaintenance(ICapsuleerSimulation simulation, ICapsuleerScene scene, ChatRuntime chat, TimeProvider clock)
-    : IDisposable
+internal sealed class CapsuleerMaintenance(
+    ICapsuleerSimulation simulation,
+    ICapsuleerScene scene,
+    ChatRuntime chat,
+    TimeProvider clock,
+    ICapsuleerHauling hauling
+) : IDisposable
 {
     private readonly Lock _gate = new();
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
     private long _lastSecond;
-    private ChatPilot? _lastPresence;
+    private readonly Dictionary<long, ChatPilot> _lastPresence = [];
 
     internal void Start()
     {
@@ -52,27 +57,36 @@ internal sealed class CapsuleerMaintenance(ICapsuleerSimulation simulation, ICap
                 return null;
             }
             _lastSecond = second;
-            if (simulation.Advance(scene.Stamp) is not { } observation)
+            var observation = simulation.Advance(scene.Stamp);
+            if (observation is not null)
             {
-                return null;
+                scene.Publish(observation);
+                PublishPresence(observation.Pilot);
             }
-            scene.Publish(observation);
-            var pilot = observation.Pilot;
-            var presence = new ChatPilot(
-                pilot.PilotId,
-                pilot.Name,
-                pilot.CorpId,
-                pilot.SystemId,
-                (long)PilotRole.Player,
-                pilot.Profile.GenderId,
-                ChatRules.LocalKind(pilot.SystemId, pilot.RegionId)
-            );
-            if (presence != _lastPresence)
+            if (hauling.Advance(scene.Stamp) is { } delivery)
             {
-                chat.PublishCapsuleer(presence);
-                _lastPresence = presence;
+                scene.Publish(delivery);
+                PublishPresence(delivery.Pilot);
             }
             return observation;
+        }
+    }
+
+    private void PublishPresence(Eden.Gameplay.Docking.DockedPilot pilot)
+    {
+        var presence = new ChatPilot(
+            pilot.PilotId,
+            pilot.Name,
+            pilot.CorpId,
+            pilot.SystemId,
+            (long)PilotRole.Player,
+            pilot.Profile.GenderId,
+            ChatRules.LocalKind(pilot.SystemId, pilot.RegionId)
+        );
+        if (presence != _lastPresence.GetValueOrDefault(pilot.PilotId))
+        {
+            chat.PublishCapsuleer(presence);
+            _lastPresence[pilot.PilotId] = presence;
         }
     }
 

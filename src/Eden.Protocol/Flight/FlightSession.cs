@@ -32,7 +32,8 @@ internal sealed class FlightSession(
     IPilotShipAppearance? appearance = null,
     IPilotDrones? drones = null,
     IPilotCrimewatch? crimewatch = null,
-    IPilotElectronicWarfare? electronicWarfare = null
+    IPilotElectronicWarfare? electronicWarfare = null,
+    IPilotGateTravel? gates = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -809,9 +810,15 @@ internal sealed class FlightSession(
         {
             return false;
         }
-        var lane = Pilot.ShipId % 2 == 0 ? -1 : 1;
-        var position = jump.Exit.Position + new SpacePosition(lane * (jump.Exit.Radius + Pilot.Flight.ShipRadius + 12_000), 0, 0);
-        world.SetPosition(Pilot.ShipId, position, jump.System.Id);
+        var position = GateTravelRules.Arrival(Pilot.ShipId, jump.Exit.Position, jump.Exit.Radius, Pilot.Flight.ShipRadius);
+        if (gates is not null)
+        {
+            position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+        }
+        else
+        {
+            world.SetPosition(Pilot.ShipId, position, jump.System.Id);
+        }
         LeaveSpace();
         Scene.ReplaceObjects(jump.Objects);
         Pilot = Pilot with { Position = position, CurrentSystem = jump.System };

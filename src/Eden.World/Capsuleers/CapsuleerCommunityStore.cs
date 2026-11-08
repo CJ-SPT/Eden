@@ -11,6 +11,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Skills;
@@ -31,6 +32,9 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
         var community = model.Entity<SavedCapsuleerCommunity>();
         community.ToTable("WorldCapsuleerCommunity").HasKey(c => c.Id);
         community.HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
+        var hauler = model.Entity<SavedCapsuleerHauler>();
+        hauler.ToTable("WorldCapsuleerHauler").HasKey(h => h.Id);
+        hauler.HasOne<Pilot>().WithMany().HasForeignKey(h => h.PilotId);
     }
 
     internal static void Initialize(WorldDbContext world)
@@ -42,6 +46,10 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
                 Career INTEGER NOT NULL, PilotId INTEGER REFERENCES WorldPilot(Id), Progress TEXT,
                 HomeStationId INTEGER NOT NULL, FounderShipId INTEGER NOT NULL, FounderModuleId INTEGER NOT NULL,
                 StartingCents INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerHauler(
+                Id INTEGER PRIMARY KEY CHECK(Id=1), PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id),
+                SourceStationId INTEGER NOT NULL, DestinationStationId INTEGER NOT NULL,
+                FounderShipId INTEGER NOT NULL, StartingCents INTEGER NOT NULL, Progress TEXT);
             """
         );
     }
@@ -50,6 +58,7 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
     {
         if (world.Set<SavedCapsuleerCommunity>().Any())
         {
+            ProvisionHauler(world, catalog, clock);
             return;
         }
         var human = world
@@ -136,6 +145,80 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
             }
         );
         world.SaveChanges();
+        ProvisionHauler(world, catalog, clock);
+    }
+
+    private static void ProvisionHauler(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
+    {
+        if (world.Set<SavedCapsuleerHauler>().Any() || catalog.FittingType(HaulingRules.BadgerType) is null)
+        {
+            return;
+        }
+        var community = world.Set<SavedCapsuleerCommunity>().Single();
+        if (community.PilotId is not long minerId)
+        {
+            return;
+        }
+        int source = community.HomeStationId;
+        var home = catalog.RequireStation(source);
+        if (!StationCapabilities.Has(catalog, home.OperationId, StationService.Market))
+        {
+            return;
+        }
+        int system = home.SolarSystemId;
+        var destination = catalog
+            .GatesInSystem(system)
+            .OrderBy(g => g.DestinationSystemId)
+            .Where(g => catalog.Read(CatalogData.Client.Solarsystemcontent, (long)g.DestinationSystemId)?.Security >= 0.45)
+            .Where(g =>
+                catalog
+                    .GatesInSystem(g.DestinationSystemId)
+                    .Any(exit => exit.Id == g.DestinationId && exit.DestinationId == g.Id && exit.DestinationSystemId == system)
+            )
+            .SelectMany(g => catalog.StationsInSystem(g.DestinationSystemId).OrderBy(station => station.Id))
+            .FirstOrDefault(station => StationCapabilities.Has(catalog, station.OperationId, StationService.Market));
+        if (destination is null)
+        {
+            return;
+        }
+        var miner = world.Pilots.Find(minerId)!;
+        long pilot = world.Pilots.Max(p => p.Id) + 1;
+        long ship = InventoryPersistence.NextId(world);
+        string name = "Kira Auvinen";
+        int suffix = 1;
+        while (world.Pilots.Any(p => p.Name == name))
+        {
+            name = "Kira Auvinen " + suffix++;
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,ActiveShipId,CreatedAt,RaceId,BloodlineId,
+                GenderId,AncestryId,SchoolId)
+            VALUES ({pilot},{MinerAccountId},{name},{miner.CorporationId},{ship},{now},{miner.RaceId},{miner.BloodlineId},
+                {miner.GenderId},{miner.AncestryId},{miner.SchoolId})
+            """
+        );
+        world.Database.ExecuteSql(
+            $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},{HaulingRules.BadgerType},{source},{name})"
+        );
+        StartingSkills.Grant(world, catalog, pilot, miner.RaceId);
+        GrantRequirements(world, catalog, pilot, HaulingRules.BadgerType, []);
+        world.Add(new SavedHomeStation { PilotId = pilot, StationId = source });
+        world.Add(new PilotWallet { PilotId = pilot, Cents = HaulingRules.StartingCents });
+        world.Add(
+            new SavedCapsuleerHauler
+            {
+                Id = 1,
+                PilotId = pilot,
+                FounderShipId = ship,
+                SourceStationId = source,
+                DestinationStationId = destination.Id,
+                StartingCents = HaulingRules.StartingCents,
+            }
+        );
+        world.SaveChanges();
     }
 
     private static void GrantRequirements(WorldDbContext world, CatalogDbContext catalog, long pilot, int type, HashSet<int> visited)
@@ -209,6 +292,13 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
             .Set<SavedCapsuleerCommunity>()
             .Where(c => c.PilotId != null)
             .Select(c => new CapsuleerIdentity(c.PilotId!.Value, c.Seed, c.SchoolId, c.Career))
+            .AsEnumerable()
+            .Concat(
+                world
+                    .Set<SavedCapsuleerHauler>()
+                    .AsEnumerable()
+                    .Select(h => new CapsuleerIdentity(h.PilotId, 0, 0, CapsuleerCareer.Hauling))
+            )
             .ToArray();
     }
 }
