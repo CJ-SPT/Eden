@@ -30,7 +30,7 @@ internal sealed record CombatCheckpoint(
     internal void Apply(WorldDbContext world)
     {
         using var phase = SessionPerformance.Phase("combat.project");
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = world.Database.CurrentTransaction is null ? world.Database.BeginTransaction() : null;
         foreach (var position in Positions)
         {
             world.Database.ExecuteSql(
@@ -65,7 +65,7 @@ internal sealed record CombatCheckpoint(
             );
         }
         world.SaveChanges();
-        transaction.Commit();
+        transaction?.Commit();
     }
 }
 

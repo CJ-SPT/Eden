@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 106;
+    internal const int CurrentVersion = 107;
 
     public static void Open(
         WorldDbContext world,
@@ -39,6 +39,7 @@ internal static class WorldMigration
         WorldVersions21To34.Apply(world, clock, version);
         TimedModuleSchema.Upgrade(world);
         ModuleConditionSchema.Upgrade(world);
+        ShipHeatSchema.Upgrade(world);
         if (version < CurrentVersion)
         {
             WorldVersions35To49.Apply(world, version);
@@ -91,7 +92,8 @@ internal static class WorldMigration
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
         ModuleConditionPersistence.Reconcile(world, catalog);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=106");
+        ShipHeatPersistence.ValidateSaved(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=107");
         history.Commit();
     }
 }

@@ -53,6 +53,7 @@ internal sealed class LiveWorld : IDisposable
     internal string ConnectionString { get; }
     internal LiveCombatRuntime? Combat { get; }
     internal LiveReadModels? Reads { get; }
+    internal LiveShipHeat Heat { get; }
     internal bool MeasureCheckpoints { get; set; }
     internal int SqlConnections { get; private set; }
     private readonly LiveTimedModules? _timedModules;
@@ -65,6 +66,7 @@ internal sealed class LiveWorld : IDisposable
     {
         SqlConnections--;
         _timedModules?.Observe(changes);
+        Heat.Observe(changes);
         Reads?.Observe(changes);
         Combat?.Observe(changes);
     }
@@ -86,6 +88,7 @@ internal sealed class LiveWorld : IDisposable
             using var ownership = world.Enter();
             world.Combat?.Clear();
             world.Reads?.Clear();
+            world.Heat.InvalidateProfiles();
         }
     }
 
@@ -123,6 +126,7 @@ internal sealed class LiveWorld : IDisposable
     )
     {
         _path = Path.GetFullPath(database.Path);
+        Heat = new(this, database, clock);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
@@ -169,6 +173,7 @@ internal sealed class LiveWorld : IDisposable
             Reads = residentReads ? new(this, database) : null;
             _timedModules = new(database);
             Combat?.WarmDrones();
+            Heat.Warm();
             var interval = TimeSpan.FromSeconds(database.Settings.Simulation.CheckpointSeconds);
             _timer = clock.CreateTimer(_ => QueueSave(), null, interval, interval);
         }
@@ -205,6 +210,7 @@ internal sealed class LiveWorld : IDisposable
                 try
                 {
                     _timedModules?.Expire(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+                    Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
                 }
                 finally
                 {
@@ -311,6 +317,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("Complete world connections before capturing a checkpoint.");
             }
+            Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             long generation = ObserveGeneration();
             if (generation == _savedGeneration)
             {
@@ -322,7 +329,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 database.Open();
                 _memory.BackupDatabase(database);
-                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started));
+                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started), Heat.Capture());
             }
             catch
             {

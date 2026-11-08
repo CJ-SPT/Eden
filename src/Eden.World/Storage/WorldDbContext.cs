@@ -86,6 +86,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         ModuleConditionSchema.Configure(model);
+        ShipHeatSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);
         model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
         model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);

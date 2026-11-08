@@ -12,6 +12,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -36,7 +37,14 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         InventoryItem module
     ) => PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module);
 
-    public ShieldBoost Boost(long pilotId, long moduleId, long now, bool ancillary = false)
+    public ShieldBoost Boost(long pilotId, long moduleId, long now, bool ancillary = false) =>
+        BoostCycle(pilotId, moduleId, now, ancillary, false);
+
+    // Kept internal until native overload commands also own damage settlement.
+    internal ShieldBoost BoostOverloaded(long pilotId, long moduleId, long now, bool ancillary = false) =>
+        BoostCycle(pilotId, moduleId, now, ancillary, true);
+
+    private ShieldBoost BoostCycle(long pilotId, long moduleId, long now, bool ancillary, bool overloaded)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -58,7 +66,16 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             throw new InvalidDataException("Use an online fitted shield booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
-        var attributes = ModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
+            world,
+            catalog,
+            pilotId,
+            PilotInventoryStore.Read(catalog, module),
+            calculation
+        );
         ShieldBooster booster = new(
             moduleId,
             module.TypeId,
@@ -71,7 +88,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         {
             throw new InvalidDataException("The shield booster is still cycling.");
         }
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now);
         if (health.Remaining.Destroyed)
         {
@@ -100,8 +117,15 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(booster.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        var heat = calculation is null
+            ? null
+            : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, cooldown.ReadyAt);
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(
             booster,
             health with

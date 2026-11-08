@@ -50,6 +50,7 @@ internal sealed record FittingCalculation(
 {
     internal const long OwnerTargetId = long.MinValue;
     internal bool Transient { get; init; }
+    internal IReadOnlySet<long> OverloadedModules { get; init; } = FrozenSet<long>.Empty;
 
     internal IReadOnlyList<FittedResourceUsage> ResourceUsage(CatalogDbContext catalog) =>
         Modules
@@ -534,6 +535,7 @@ internal sealed record FittingCalculation(
         return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels)
         {
             Transient = ownerTypeId is not null || overloadedModules is not null,
+            OverloadedModules = overloads,
         };
 
         void Add(long source, PassiveModifier modifier, bool exempt)

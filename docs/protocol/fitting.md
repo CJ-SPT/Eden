@@ -1242,6 +1242,12 @@ FullyQualifiedName~Eden.Protocol.Tests.Thermal|FullyQualifiedName~ShipContentCov
 
 Both Python suites passed (**8 catalog**, **9 formatting** cases; **0.91 seconds** combined). Formatting verification passed across **1,102 files** in **14.18 seconds**, including the 140-character width check. Fixture, matrix and native-vector reproduction are byte-identical; source catalog bytes remain unchanged and source overwrite is rejected (**10.12 seconds** combined evidence checks). SHA-256 values are **41626964E894F14BB678A599902F0311C4E3613276842D08516A02B33043B8F3** (representatives), **A406408B52AF7C3B2FA3DDF51DE870B27B40E74D669B5968DCC64CBD33A6AD5A** (matrix) and **F26491B09C6A0E9880B1FE68B3DA39DFDE6F649B8E1CF096BCF2AC7755DA5C93** (native vectors). The regenerated 6,079-entry inventory changes exactly **1,826 evidence strings**; every admitted ID, support state and total remains unchanged (**235 hulls**, **3,408 modules/rigs**, **801 charges**, **76 combat drones**). Every overheating check remains false. Local documentation links and anchors were checked. No saved-world migration or live simulation path changes, and no full .NET suite was requested or run.
 
+Development began with the exact thirteen-vector native comparison, which passed before the broader selection. The first thermal selection passed 60 of 66 cases; six malformed-program fixture cases failed because the edited no-tracking source record was not explicitly updated. Explicit fixture attachment made those edits persistent, and the exact six-case rejection filter passed. An initial formatting pass identified a long evidence string, which was split without an exception. The final affected selection includes all corrections and the additional immutable/effective-source case. Failed/intermediate checks are not counted as final validation.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None; this checkpoint adds calculation and catalog evidence without enabling a client operation.
+
 ## Persistent module condition and station repair, November 7, 2026
 
 Milestone 6 now has a persistent condition boundary for the forthcoming heat-cycle owner. This checkpoint enables no overload bonus or player-callable damage command. The native calculation and catalog evidence remain in the [preceding record](#overheating-calculation-foundation-november-7-2026). Paid-cycle heat generation, rack damage probability/spread, module/rack commands, scoped activation cancellation and observer notifications, resource resizing on burnout, and nanite paste repair remain open. Overheating coverage stays false for every existing profile.
@@ -1336,8 +1342,53 @@ Not performed; agent client testing is disabled. Native brain display and eventu
 
 None for this internal fitting boundary. Native overload acceptance belongs to the later paid-cycle integration.
 
-Development began with the exact thirteen-vector native comparison, which passed before the broader selection. The first thermal selection passed 60 of 66 cases; six malformed-program fixture cases failed because the edited no-tracking source record was not explicitly updated. Explicit fixture attachment made those edits persistent, and the exact six-case rejection filter passed. An initial formatting pass identified a long evidence string, which was split without an exception. The final affected selection includes all corrections and the additional immutable/effective-source case. Failed/intermediate checks are not counted as final validation.
+## Resident rack heat and paid cycles, November 7, 2026
 
-**Live acceptance:** Not performed; agent client testing is disabled.
+Milestone 6 now has a world-owned temperature lifecycle for paid overload contributions. High, medium and low racks use the pinned scalar heat curve with their own capacities, dissipation and the sum of current effective absorption rates. Rigs do not contribute a rack. Contributions stop at their saved completion deadlines even when advancement is late, then the rack cools for the rest of the elapsed interval. Overlapping contributions use their actual intervals. Exact cycle keys prevent duplicate registration and stale cancellation; fractional filetime deadlines and clock regressions preserve ordering. Cooling below the native cutoff resets in the same tick when the final source stops. Profile/capacity changes preserve existing heat and apply the new rate at the mutation boundary.
 
-**Optional maintainer checks:** None; this checkpoint adds calculation and catalog evidence without enabling a client operation.
+This checkpoint does **not** enable native overload commands. Temperature completions carry their exact rack heat and can be advanced one deadline at a time, allowing the future damage owner to settle a burnout and remove its source before continuing a late frame. Stochastic damage/spread, the remaining paid module producers, native module/rack pending states and notifications, scoped burnout cancellation, resource resizing and paste repair remain open. No temperature-only path is exposed to players, and every production overheating check remains false.
+
+Saved-world schema **107** adds `WorldShipHeat`, with a cascading ship identity and a validated named snapshot containing rack profiles, heat, timestamps and the remaining paid contributions. Older saves gain an empty table, and malformed timelines fail initialization. Pure immutable Gameplay snapshots separate temperature calculations from SQLite and wire models. The typed `IPilotShipHeat` reader authorizes current ownership; cold foreign reads reject before fitting work. Idle healthy reads do not create saved heat, and unchanged saved idle reads do not queue projection. Ownership, fitting, skill, membership, module condition and catalog changes invalidate their actual resident inputs; ordinary coordinate writes do not force heat hydration. Catalog changes preserve unprojected heat rather than reloading an older SQL value.
+
+The resident owner advances active/cooling ships before subsequent world work, independently of a particular client frame. A newly paid contribution is published to that owner only after its transaction commits. Startup restores saved active/cooling ships before frames begin; neither path requires a heat read to start advancement. Warm reads perform no SQL or fitting calculations. Unheated idle entries are bounded and excluded from background advancement; their invalidated profiles reload only when requested. Dirty temperature snapshots project before SQL transaction boundaries, survive rollback of a later command and remain pending after failed saves. Checkpoints capture immutable heat and the relational image from one generation, then project heat and combat together in one transaction outside the owner. A heat-projection failure rolls back earlier combat projection, including spent ammunition in the detached image, and can retry the same captured generation.
+
+An internal shield-booster producer exercises the real operation: the selected temporary fitting graph supplies overloaded amount/duration, and capacitor or ancillary charges, shield restoration, cooldown and heat contribution commit together. A rejected heat write rolls all of them back. Both ordinary and ancillary shield boosters have automated operation cases at actual fitting budgets; thermal cancellation does not refund their payment. The public shield-booster operation retains its ordinary behavior and cannot register heat. The internal overload producer still prepares a temporary fitting graph per call; player activation integration must reuse effective cycle profiles by fitting/overload generation before enablement. This is one producer, not coverage of every active family.
+
+Pinned temperature evidence remains the [native calculation record](#overheating-calculation-foundation-november-7-2026), and fitting/skill composition remains in the [preceding checkpoint](#overload-fitting-composition-and-thermodynamics-november-7-2026). Carbon Destiny's [server ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) was consulted for its ordered world-update boundary. No Destiny timestamps, bubble updates or packet formats change; dogma temperature follows the pinned client instead of importing movement tick arithmetic.
+
+### Automated validation
+
+Development started with the exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.HeatCycleRuleTests.LateAdvancementUsesEachPaidDeadlineAndThenCoolsWithoutInventingCycles` (**1 passed**, **2.69 seconds**, feature build **9.09 seconds**). Two later exact-method cases verified committed registration and restart advancement before any heat read (**2 passed**, **5.58 seconds**, feature build **3.75 seconds**). The final affected filter was:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.ShieldBoostTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.ShieldBoosterTierTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.AncillaryRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveCombatObjectTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveSimulationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentCombatMonitoringTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+All **308 affected cases** passed in **56.14 seconds** (feature build **1.08 seconds**), including **32 new cases**. They cover exact/overlapping deadlines, same-time ordering, immutable snapshots, fractional ticks, cutoff boundaries, invalid input/overflow, clock regression, actual ordinary/ancillary shield-booster payment, unchanged state after rejection, stale cancellation, docking/burnout interruption, catalog changes, schema upgrade, invalid saved timelines, detached-generation consistency, restart, failed-save retry and atomic combat/heat projection rollback. Both unobserved paid/restored advancement and 100 warmed frames assert **zero SQL commands, connections and fitting calculations**. TRX: `artifacts/feature-tests/results/163eeef85f384be4a8e441aa1789755e/tests.trx`.
+
+Development compile/type errors were corrected before final validation. An injected heat-write test initially expected a raw SQLite exception; it now checks EF's `DbUpdateException` and the inner `SqliteException`, alongside unchanged resources and saved state. No full .NET suite was requested or run.
+
+Pinned tool restore, root solution restore and build passed with zero warnings/errors in **2.13 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **0.94 seconds** combined). Formatting verification passed across **1,117 files** in **14.46 seconds**, including the 140-character width check. Documentation checks verified **556 local links and anchors**, and the whitespace check passed. The production coverage export reproduced byte-for-byte with all 6,079 entries and false overheating flags unchanged; source catalog bytes remained unchanged (**13.22 seconds**, output SHA-256 **7004CDD18A15156E35365EC2965E9E99F368FC4BF29A5E845D47DEF654D74393**).
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Heat gauges, overload controls and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+None for this internal temperature boundary. Native overload acceptance belongs to the later damage and activation integration.

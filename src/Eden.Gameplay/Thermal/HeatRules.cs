@@ -15,7 +15,7 @@ public static class HeatRules
     // branches at this incoming rate, independently of the current temperature.
     public const double MinimumIncomingHeat = 5e-8;
     private const double MillisecondsPerSecond = 1000;
-    private const double CoolingCutoff = .5;
+    public const double CoolingCutoff = .5;
 
     public static HeatRackProfile Define(ModuleRack rack, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {

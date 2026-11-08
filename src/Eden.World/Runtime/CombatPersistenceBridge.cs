@@ -14,6 +14,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
         if (data.Context?.Database.CurrentTransaction is null)
         {
             LiveCombatRuntime.Find(path)?.BeforeSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
+            LiveWorld.Find(path)?.Heat.BeforeSql(command.CommandText);
         }
     }
 
@@ -86,6 +87,7 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     )
     {
         LiveCombatRuntime.Find(path)?.Flush();
+        LiveWorld.Find(path)?.Heat.Flush();
         return result;
     }
 
@@ -97,6 +99,7 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     )
     {
         LiveCombatRuntime.Find(path)?.Flush();
+        LiveWorld.Find(path)?.Heat.Flush();
         return ValueTask.FromResult(result);
     }
 }

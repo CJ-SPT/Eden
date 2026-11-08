@@ -1,3 +1,4 @@
+using Eden.Gameplay.Thermal;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Microsoft.Data.Sqlite;
@@ -36,6 +37,16 @@ internal static class WorldConnections
         }
     }
 
+    // Publish only after the owning transaction commits, while its connection
+    // still holds the world owner. Failed payments must never create live heat.
+    internal static void PublishHeat(WorldDbContext context, long pilot, long ship, ShipHeatSnapshot state)
+    {
+        if (context.Database.GetDbConnection() is LiveConnection connection)
+        {
+            connection.PublishHeat(pilot, ship, state);
+        }
+    }
+
     // Existing persistence operations use synchronous SQLite scopes. The lease serializes
     // complete connection/transaction lifetimes, avoiding shared-cache lock retries.
     private sealed class LiveConnection(LiveWorld world) : SqliteConnection(world.ConnectionString)
@@ -46,6 +57,12 @@ internal static class WorldConnections
         private bool _positionMembershipWrite;
         private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
+
+        internal void PublishHeat(long pilot, long ship, ShipHeatSnapshot state)
+        {
+            world.Heat.PublishCommitted(pilot, ship, state);
+            _changes.Remove(new("WorldShipHeat", ship));
+        }
 
         internal void Synchronize(WorldDbContext context)
         {
