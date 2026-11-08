@@ -102,6 +102,15 @@ public sealed class SmallHullBonusTests
         {
             PassiveCatalogFixture.LoadCombatDrones(f.CatalogPath);
         }
+        if (
+            modifiers.Any(m =>
+                m.Selector == ModifierSelector.Group && m.SelectionId == (int)HullBonusEquipmentGroup.TractorBeam
+                || m.Selector == ModifierSelector.RequiredSkill && m.SelectionId == (int)HullBonusSkill.Salvaging
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadInformation(f.CatalogPath);
+        }
         foreach (var probe in modifiers.Select(modifier => ProbeFor(modifier, stripMiner)).Distinct())
         {
             InventoryItem? module = null;
@@ -245,6 +254,7 @@ public sealed class SmallHullBonusTests
             ModifierSelector.Group => (HullBonusEquipmentGroup?)modifier.SelectionId switch
             {
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
+                HullBonusEquipmentGroup.TractorBeam => new(24348),
                 HullBonusEquipmentGroup.WarpScrambler => new(447),
                 HullBonusEquipmentGroup.StasisWeb => new(527),
                 HullBonusEquipmentGroup.RemoteShieldBooster => new(3596),
@@ -282,6 +292,7 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.LargeEnergyTurret => new(460),
                 HullBonusSkill.MissileLauncherOperation => new(499),
                 HullBonusSkill.Mining => new(stripMiner ? 17482 : 482),
+                HullBonusSkill.Salvaging => new(25861),
                 HullBonusSkill.RepairSystems => new(523),
                 HullBonusSkill.ShieldOperation => new(399),
                 HullBonusSkill.CapacitorEmissionSystems => new(modifier.Attribute == DogmaAttributeId.PowerTransferAmount ? 530 : 533),

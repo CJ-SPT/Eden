@@ -59,6 +59,11 @@ internal sealed class SupportModuleWire(
     internal static string? Graphic(DogmaEffect effect) =>
         effect switch
         {
+            DogmaEffect.CargoScan => "effects.CargoScan",
+            DogmaEffect.ShipScan => "effects.ShipScan",
+            DogmaEffect.TractorBeam => "effects.TractorBeam",
+            DogmaEffect.Salvaging => "effects.Salvaging",
+            DogmaEffect.PassiveTargeting or DogmaEffect.AutomaticTargeting => null,
             // Pinned effect 6557 declares no world graphic; the HUD cycle still uses ShipEffectChanged.
             DogmaEffect.OmnidirectionalTrackingLink => null,
             DogmaEffect.SensorBooster => "effects.ElectronicAttributeModifyActivate",

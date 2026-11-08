@@ -92,21 +92,23 @@ public sealed class TargetingTests
 
         public Fixture()
         {
-            using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true);
-            catalog.Database.ExecuteSqlRaw(
-                """
-                INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
-                    (564,'scanResolution');
-                INSERT INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3428,'Long Range Targeting',257),(3429,'Target Management',257),
-                    (3430,'Advanced Target Management',257),(3431,'Signature Analysis',257);
-                INSERT INTO TypeAttribute VALUES (3428,275,2),(3429,275,1),(3430,275,3),(3431,275,1);
-                INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
-                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
-                INSERT INTO TypeAttribute VALUES (1230,552,100);
-                """
-            );
+            using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT INTO DogmaAttribute(Id,Name) VALUES (76,'maxTargetRange'),(192,'maxLockedTargets'),(552,'signatureRadius'),
+                        (564,'scanResolution');
+                    INSERT INTO TypeAttribute VALUES (601,76,27000),(601,192,3),(601,552,52),(601,564,475);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (3428,'Long Range Targeting',257),(3429,'Target Management',257),
+                        (3430,'Advanced Target Management',257),(3431,'Signature Analysis',257);
+                    INSERT INTO TypeAttribute VALUES (3428,275,2),(3429,275,1),(3430,275,3),(3431,275,1);
+                    INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
+                    INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
+                    INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462);
+                    INSERT INTO TypeAttribute VALUES (1230,552,100);
+                    """
+                );
+            }
             Fitting = Db.Services.GetRequiredService<IPilotFitting>();
             var pilot = Db.Store.FindPilot(1000001)!;
             var launch = StationUndocking.Launch(pilot.ShipId, pilot.Home, pilot.Flight).Position;

@@ -28,6 +28,8 @@ internal sealed partial class LiveCombatRuntime
     private readonly Dictionary<long, LivePosition?> _savedPositions = [];
     private readonly HashSet<long> _dirtyPositions = [];
 
+    internal SpacePosition? InformationPosition(long shipId) => _positions.GetValueOrDefault(shipId)?.Position;
+
     private LiveCombatNpc[] SystemNpcs(int system, long now)
     {
         if (!_systemNpcs.TryGetValue(system, out var ids))

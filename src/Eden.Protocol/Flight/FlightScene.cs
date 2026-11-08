@@ -196,7 +196,7 @@ internal sealed class FlightScene(
                     ? new(
                         wreck.Id,
                         wreck.TypeId,
-                        WreckDefinitions.Group,
+                        wreck.GroupId,
                         WreckDefinitions.Category,
                         checked((int)wreck.OwnerId),
                         wreck.Position,
@@ -234,7 +234,19 @@ internal sealed class FlightScene(
         {
             if (_wrecks.FirstOrDefault(w => w.Id == wreck.Id) is { } previous && previous != wreck)
             {
-                update(new DestinyCommand.OnSlimItemChange(wreck.Id, Ballpark.WreckSlim(wreck)));
+                if (previous.TypeId != wreck.TypeId)
+                {
+                    update(new DestinyCommand.RemoveBall(wreck.Id, false));
+                    update(new DestinyCommand.AddBalls(Ballpark.AddWrecks([wreck], space.Stamp(clock))));
+                }
+                else
+                {
+                    update(new DestinyCommand.OnSlimItemChange(wreck.Id, Ballpark.WreckSlim(wreck)));
+                    if (previous.Position != wreck.Position)
+                    {
+                        update(new DestinyCommand.SetBallPosition(wreck.Id, wreck.Position.X, wreck.Position.Y, wreck.Position.Z));
+                    }
+                }
             }
         }
         _wrecks = current;

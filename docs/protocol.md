@@ -22,6 +22,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, [combat anomalies](protocol/combat.md#combat-anomaly-foundation-november-8-2026), NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
+| [Information modules and salvage](protocol/information.md) | Cargo/ship and mining scans, directional scans, targeting, tractors and saved salvage. |
 | [Combat drones](protocol/drones.md) | 149 admitted drone-bay hulls, combat bonuses/control limits, drone equipment/scripts/rig consumers, light/medium/heavy/sentry drone launch, control, NPC/pilot combat, fleet assist/guard, recall, reconnect, abandonment and scooping. |
 | [Tech I hull expansion](protocol/hulls.md) | Hull cohorts, admission limits, utility roles and historical client observations. |
 | [Architecture and typed boundaries](protocol/architecture.md) | Named models, Gameplay boundaries, orchestration, persistence and architecture audits. |
@@ -29,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Compatibility and route audits](protocol/compatibility.md) | RPC inventory, placeholder routes, localization settings and native rejection dialogs. |
 
 ## Record index
+
+- [Scanners and salvage operations, November 8, 2026](protocol/information.md#scanners-and-salvage-operations-november-8-2026)
 
 - [Personalization SKIN license reads, November 8, 2026](protocol/characters.md#personalization-skin-license-reads-november-8-2026)
 

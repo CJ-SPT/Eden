@@ -1,12 +1,15 @@
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Defenses;
+using Eden.Protocol.Information;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Docking;
 
@@ -30,7 +33,9 @@ internal sealed class ModuleActivationHandler(
     CapacitorWarfareHandler? capacitorWarfare = null,
     RemoteAssistanceHandler? remoteAssistance = null,
     SignatureSuppressionHandler? signatureSuppression = null,
-    AssaultDamageControlHandler? assaultDamageControl = null
+    AssaultDamageControlHandler? assaultDamageControl = null,
+    InformationHandler? information = null,
+    SharedTargetLocks? targetLocks = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -45,8 +50,11 @@ internal sealed class ModuleActivationHandler(
         {
             return PilotCallResult.Unsupported;
         }
-        return BlueMarshal.Text(args[1]) switch
+        string effectName = BlueMarshal.Text(args[1]);
+        var result = effectName switch
         {
+            var name when InformationWire.Effect(name) is not null => information?.CallModule(context, method, args)
+                ?? PilotCallResult.Unsupported,
             AssaultDamageControlHandler.EffectName => assaultDamageControl?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             SignatureSuppressionHandler.EffectName => signatureSuppression?.Call(context, service, method, args)
@@ -92,6 +100,16 @@ internal sealed class ModuleActivationHandler(
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,
         };
+        bool offensive =
+            effectName is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect or MissileHandler.EffectName
+            || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
+            || PlayerEwarWire.Effect(effectName) is not null
+            || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
+        if (method == "Activate" && result is PilotCallResult.Success && offensive && args is [_, _, long target, _])
+        {
+            targetLocks?.Reveal(context.Pilot.ShipId, target);
+        }
+        return result;
     }
 
     private PilotCallResult Online(PilotCallContext context, string method, object?[] args) =>

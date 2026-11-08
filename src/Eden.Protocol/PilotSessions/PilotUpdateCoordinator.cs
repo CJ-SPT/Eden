@@ -13,6 +13,7 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.Industry;
+using Eden.Protocol.Information;
 using Eden.Protocol.Mail;
 using Eden.Protocol.Market;
 using Eden.Protocol.Mining;
@@ -74,7 +75,8 @@ internal sealed class PilotUpdateCoordinator(
     AssaultDamageControlHandler assaultDamageControl,
     NaniteRepairHandler naniteRepairs,
     ModuleBurnoutMonitor burnout,
-    OverloadHandler overload
+    OverloadHandler overload,
+    InformationHandler information
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -174,6 +176,7 @@ internal sealed class PilotUpdateCoordinator(
         remoteRepairs.Cancel(context);
         capacitorWarfare.Cancel(context);
         remoteAssistance.Cancel(context);
+        information.Cancel(context);
         hardeners.Cancel(context);
         signatureSuppression.Cancel(context);
         assaultDamageControl.Cancel(context);
@@ -208,6 +211,7 @@ internal sealed class PilotUpdateCoordinator(
         remoteRepairs.Advance(context);
         capacitorWarfare.Advance(context);
         remoteAssistance.Advance(context);
+        information.Advance(context);
         capacitorBoosters.Advance(context);
         drones.Advance(context);
         hardeners.Advance(context);

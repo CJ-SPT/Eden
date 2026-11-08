@@ -73,6 +73,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 }
             )
             .Entity;
+        Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
         foreach (var drop in Drops(world, catalog, npc))
         {
             _ = catalog.RequireItem(drop.TypeId);
@@ -187,6 +188,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             .Entity;
         // Surviving modules retain their singleton identity but are loose,
         // offline cargo. The old hull's cooldowns must not follow them.
+        Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
         var ids = items.Select(i => i.Id).ToArray();
         world.Set<ModuleCooldown>().Where(c => ids.Contains(c.ModuleId)).ExecuteDelete();
         foreach (var item in items)
@@ -208,9 +210,10 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
     public IReadOnlyList<WreckContact> List(int systemId, long now)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.wrecks");
-        return LiveReadModels.Find(database.Path) is { } resident
+        var contacts = LiveReadModels.Find(database.Path) is { } resident
             ? resident.Wrecks(systemId, now, () => ListSql(systemId, now))
             : ListSql(systemId, now);
+        return LiveWorld.Find(database.Path)?.Tractors.Contacts(contacts, now) ?? contacts;
     }
 
     private IReadOnlyList<WreckContact> ListSql(int systemId, long now)
@@ -258,7 +261,8 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                     new(w.X, w.Y, w.Z),
                     type.Mass ?? 0,
                     (float)(type.Radius ?? 0),
-                    !occupied.Contains(w.Id)
+                    !occupied.Contains(w.Id),
+                    type.GroupId
                 );
             })
             .ToArray();
@@ -311,7 +315,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                 wreck.SystemId,
                 (int)InventoryFlag.AutoFit,
                 1,
-                WreckDefinitions.Group,
+                catalog.RequireItem(wreck.TypeId).GroupId,
                 WreckDefinitions.Category,
                 PilotInventoryStore.Volume(catalog, wreck.TypeId),
                 true

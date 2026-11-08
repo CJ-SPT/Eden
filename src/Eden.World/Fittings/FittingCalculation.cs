@@ -394,7 +394,10 @@ internal sealed record FittingCalculation(
                     Add(module.Item.Id, MicrowarpdriveCatalog.SignatureModifier, false);
                 }
             }
-            if (!PassiveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            if (
+                !PassiveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+                && !Eden.World.Information.InformationCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+            )
             {
                 continue;
             }
@@ -419,6 +422,7 @@ internal sealed record FittingCalculation(
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
+            .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Concat([OverloadRules.ThermodynamicsSkill])

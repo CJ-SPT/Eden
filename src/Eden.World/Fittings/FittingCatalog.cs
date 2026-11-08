@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
@@ -12,6 +13,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
 using Eden.World.Defenses;
+using Eden.World.Information;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Repair;
@@ -30,6 +32,10 @@ internal static class FittingCatalog
     {
         var type = catalog.FittingType(typeId);
         if (type is null)
+        {
+            return null;
+        }
+        if (Enum.IsDefined((InformationGroup)type.GroupId) && !InformationCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

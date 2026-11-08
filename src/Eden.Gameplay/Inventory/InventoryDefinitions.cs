@@ -91,6 +91,12 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    ShipScan = 46,
+    CargoScan = 47,
+    PassiveTargeting = 54,
+    AutomaticTargeting = 55,
+    TractorBeam = 2255,
+    Salvaging = 2757,
     BehaviorArmorRepair = 6741,
     BehaviorShieldRepair = 6742,
     BehaviorWeb = 6743,

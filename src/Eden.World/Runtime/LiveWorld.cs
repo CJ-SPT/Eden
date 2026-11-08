@@ -55,6 +55,7 @@ internal sealed class LiveWorld : IDisposable
     internal LiveReadModels? Reads { get; }
     internal LiveShipHeat Heat { get; }
     internal LiveNaniteRepairs Nanites { get; }
+    internal LiveTractors Tractors { get; }
     internal bool MeasureCheckpoints { get; set; }
     internal int SqlConnections { get; private set; }
     private readonly LiveTimedModules? _timedModules;
@@ -69,6 +70,7 @@ internal sealed class LiveWorld : IDisposable
         _timedModules?.Observe(changes);
         Heat.Observe(changes);
         Nanites.Observe(changes);
+        Tractors.Observe(changes);
         Reads?.Observe(changes);
         Combat?.Observe(changes);
     }
@@ -129,6 +131,7 @@ internal sealed class LiveWorld : IDisposable
     {
         _path = Path.GetFullPath(database.Path);
         Heat = new(this, database, clock);
+        Tractors = new(this, database);
         Nanites = new(database, clock);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
@@ -338,7 +341,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 database.Open();
                 _memory.BackupDatabase(database);
-                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started), Heat.Capture());
+                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started), Heat.Capture(), Tractors.Capture());
             }
             catch
             {

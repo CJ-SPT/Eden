@@ -11,7 +11,8 @@ internal sealed class WorldSnapshot(
     long generation,
     TimeSpan wait,
     TimeSpan capture,
-    ShipHeatCheckpoint? heat = null
+    ShipHeatCheckpoint? heat = null,
+    TractorCheckpoint? tractors = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -22,12 +23,13 @@ internal sealed class WorldSnapshot(
     internal TimeSpan Project()
     {
         long started = Stopwatch.GetTimestamp();
-        if (combat is not null || heat is not null)
+        if (combat is not null || heat is not null || tractors is not null)
         {
             using WorldDbContext world = new(database);
             using var transaction = world.Database.BeginTransaction();
             combat?.Apply(world);
             heat?.Apply(world);
+            tractors?.Apply(world);
             transaction.Commit();
         }
         return Stopwatch.GetElapsedTime(started);

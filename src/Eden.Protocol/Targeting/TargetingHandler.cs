@@ -17,7 +17,7 @@ internal sealed class TargetingHandler(
     IPilotElectronicWarfare? electronicWarfare = null
 ) : ISelectedPilotCallHandler, IDisposable
 {
-    private sealed record PendingLock(long Started, double Seconds)
+    private sealed record PendingLock(long Started, double Seconds, bool Silent = false)
     {
         internal TaskCompletionSource<PilotCallResult> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
@@ -82,7 +82,7 @@ internal sealed class TargetingHandler(
                 {
                     _pending.Remove(id);
                     _locked.Add(id);
-                    shared.Add(_shipId, id);
+                    shared.Add(_shipId, id, pending.Silent);
                     Notify(context, TargetChange.Added, id);
                     pending.Completion.TrySetResult(new PilotCallResult.Success(new TargetLockReply(true, _locked.Order().ToArray())));
                 }
@@ -118,7 +118,15 @@ internal sealed class TargetingHandler(
         }
     }
 
-    private PilotCallResult Add(PilotCallContext context, long id)
+    internal PilotCallResult LockPassively(PilotCallContext context, long id) => Add(context, id, true);
+
+    internal bool IsPending(long id) => _pending.ContainsKey(id);
+
+    internal void CancelPassive(PilotCallContext context, long id) => Remove(context, id);
+
+    internal PilotCallResult LockAutomatically(PilotCallContext context, long id) => Add(context, id);
+
+    private PilotCallResult Add(PilotCallContext context, long id, bool silent = false)
     {
         if (id == _shipId)
         {
@@ -158,7 +166,7 @@ internal sealed class TargetingHandler(
         {
             return new PilotCallResult.NamedFailure("TargetingSystemsNotInstalled", BlueEmpty.Dictionary);
         }
-        PendingLock pending = new(clock.GetTimestamp(), seconds);
+        PendingLock pending = new(clock.GetTimestamp(), seconds, silent);
         _pending.Add(id, pending);
         // OnTarget("add") supplies success. If this scan is interrupted, the
         // outstanding RPC must fail so native FailLockTarget clears its animation.

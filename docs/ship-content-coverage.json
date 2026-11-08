@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 120
+      "count": 121
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 115
+      "count": 114
     },
     {
       "category": "Ship",
@@ -26,17 +26,17 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3231
+      "count": 3265
     },
     {
       "category": "Module",
       "state": "Partial",
-      "count": 177
+      "count": 175
     },
     {
       "category": "Module",
       "state": "Planned",
-      "count": 464
+      "count": 432
     },
     {
       "category": "Module",
@@ -2835,8 +2835,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -2845,9 +2845,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -2861,8 +2868,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -2871,9 +2878,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "InformationAndSalvage",
+          "evidence": "Paid optimal-range ship scans work; exact server falloff and hardware sampling remain evidence-blocked.",
           "role": null
         }
       ],
@@ -2887,8 +2908,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -2900,9 +2921,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -5809,8 +5837,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -5819,9 +5847,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -6059,7 +6094,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Salvaging"
@@ -6894,7 +6929,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Salvaging"
@@ -7027,7 +7062,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Salvaging"
@@ -9341,8 +9376,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -9352,9 +9387,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -10947,8 +10989,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -10958,9 +11000,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -11811,8 +11860,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -11821,9 +11870,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "InformationAndSalvage",
+          "evidence": "Paid optimal-range ship scans work; exact server falloff and hardware sampling remain evidence-blocked.",
           "role": null
         }
       ],
@@ -12936,8 +12999,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -12946,9 +13009,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -14062,8 +14132,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -14075,9 +14145,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -14091,8 +14168,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -14101,9 +14178,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -16469,7 +16553,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4667,
         4668,
@@ -16501,14 +16585,14 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Salvaging"
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "TractorBeams"
@@ -20924,8 +21008,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20934,9 +21018,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -20950,8 +21041,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -20960,9 +21051,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "IndustrialCommand",
+          "evidence": "Capital tractor profiles validate; their required capital industrial hull cohort remains unavailable.",
           "role": null
         }
       ],
@@ -25008,8 +25113,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25018,9 +25123,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25034,8 +25146,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25044,9 +25156,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25060,8 +25179,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25070,9 +25189,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25086,8 +25212,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25096,9 +25222,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25478,8 +25611,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -25489,9 +25622,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25505,8 +25645,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -25516,9 +25656,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25532,8 +25679,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -25543,9 +25690,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25559,8 +25713,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -25570,9 +25724,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25620,8 +25781,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25630,9 +25791,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -25646,8 +25814,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -25656,9 +25824,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -26022,8 +26197,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         13,
         16,
@@ -26032,9 +26207,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "InformationAndSalvage",
+          "evidence": "Paid optimal-range ship scans work; exact server falloff and hardware sampling remain evidence-blocked.",
           "role": null
         }
       ],
@@ -26048,8 +26237,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -26061,9 +26250,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -26077,8 +26273,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -26090,9 +26286,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -126216,8 +126419,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -126226,9 +126429,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -127538,8 +127748,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -127548,9 +127758,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "IndustrialCommand",
+          "evidence": "Capital tractor profiles validate; their required capital industrial hull cohort remains unavailable.",
           "role": null
         }
       ],
@@ -128645,8 +128869,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -128655,9 +128879,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -128905,7 +129136,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -128928,9 +129159,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -129362,7 +129593,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -129402,7 +129633,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -129473,7 +129704,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -131126,7 +131357,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -131513,7 +131744,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -131536,9 +131767,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -132201,7 +132432,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -132274,7 +132505,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -132345,7 +132576,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -132557,7 +132788,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -139389,7 +139620,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "TractorBeams"
@@ -141115,7 +141346,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Salvaging"
@@ -142040,8 +142271,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -142050,9 +142281,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -143624,7 +143862,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143647,9 +143885,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -143664,7 +143902,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143687,9 +143925,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -143704,7 +143942,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143727,9 +143965,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -143744,7 +143982,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143767,9 +144005,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -143784,7 +144022,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143807,9 +144045,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -143824,7 +144062,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2717,
@@ -143847,9 +144085,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Salvage Tackle feeds the paid salvager\u0027s additive access chance.",
           "role": null
         }
       ],
@@ -145479,7 +145717,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145519,7 +145757,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145559,7 +145797,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145599,7 +145837,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145639,7 +145877,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145679,7 +145917,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145718,7 +145956,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145757,7 +145995,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145796,7 +146034,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145835,7 +146073,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145874,7 +146112,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -145913,7 +146151,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146145,7 +146383,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146185,7 +146423,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146225,7 +146463,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146265,7 +146503,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146305,7 +146543,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -146345,7 +146583,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147405,7 +147643,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147445,7 +147683,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147485,7 +147723,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147525,7 +147763,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147565,7 +147803,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147605,7 +147843,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -160050,8 +160288,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -160089,8 +160327,8 @@
         {
           "operation": "ConsumerCoverage",
           "implemented": false,
-          "milestone": "InformationAndSalvage",
-          "evidence": "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished.",
+          "milestone": "Mining",
+          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
           "role": null
         }
       ],
@@ -185417,7 +185655,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "TractorBeams"
@@ -209141,8 +209379,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -209151,9 +209389,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -209167,8 +209412,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -209177,9 +209422,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "IndustrialCommand",
+          "evidence": "Capital tractor profiles validate; their required capital industrial hull cohort remains unavailable.",
           "role": null
         }
       ],
@@ -217928,8 +218187,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -217941,9 +218200,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "InformationAndSalvage",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "InformationAndSalvage",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],

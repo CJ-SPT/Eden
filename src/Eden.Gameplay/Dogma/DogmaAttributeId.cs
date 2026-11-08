@@ -3,6 +3,17 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ShipScanRange = 125,
+    CargoScanRange = 126,
+    TargetHostileRange = 143,
+    ShipScanFalloff = 510,
+    AccessDifficulty = 901,
+    AccessDifficultyBonus = 902,
+    MaxTractorVelocity = 1045,
+    IntegratedMiningScanner = 5978,
+    MiningScannerUpgrade = 5979,
+    MaxDirectionalScanRange = 5796,
+    DirectionalScanImmune = 1958,
     DevelopmentIndexMilitary = 1583,
     DevelopmentIndexIndustrial = 1584,
     ChargedArmorMultiplier = 1886,

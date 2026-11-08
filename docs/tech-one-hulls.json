@@ -48,16 +48,9 @@
           "effectId": 6368,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6368,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 583,
@@ -227,7 +220,7 @@
         {
           "effectId": 5051,
           "capability": "Salvaging",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
@@ -237,7 +230,6 @@
       ],
       "deferred": [
         "Probes",
-        "Salvaging",
         "Hacking"
       ]
     },
@@ -417,11 +409,6 @@
           "operational": true
         },
         {
-          "effectId": 2135,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 5109,
           "capability": "RemoteRepair",
           "operational": true
@@ -435,16 +422,9 @@
           "effectId": 6373,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6373,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 591,
@@ -529,11 +509,6 @@
           "operational": true
         },
         {
-          "effectId": 2135,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 5107,
           "capability": "RemoteRepair",
           "operational": true
@@ -547,16 +522,9 @@
           "effectId": 6373,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6373,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 593,
@@ -868,16 +836,9 @@
           "effectId": 6368,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6368,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 601,
@@ -1097,7 +1058,7 @@
         {
           "effectId": 5045,
           "capability": "Salvaging",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
@@ -1107,7 +1068,6 @@
       ],
       "deferred": [
         "Probes",
-        "Salvaging",
         "Hacking"
       ]
     },
@@ -1223,7 +1183,7 @@
         {
           "effectId": 5048,
           "capability": "Salvaging",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
@@ -1233,7 +1193,6 @@
       ],
       "deferred": [
         "Probes",
-        "Salvaging",
         "Hacking"
       ]
     },
@@ -1477,11 +1436,6 @@
           "operational": true
         },
         {
-          "effectId": 2134,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 5121,
           "capability": "EnergyWarfare",
           "operational": true
@@ -1495,16 +1449,9 @@
           "effectId": 6368,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6368,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 621,
@@ -1764,11 +1711,6 @@
           "operational": true
         },
         {
-          "effectId": 2135,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 5121,
           "capability": "EnergyWarfare",
           "operational": true
@@ -1787,16 +1729,9 @@
           "effectId": 6373,
           "capability": "RemoteRepair",
           "operational": true
-        },
-        {
-          "effectId": 6373,
-          "capability": "RemoteRepair",
-          "operational": false
         }
       ],
-      "deferred": [
-        "RemoteRepair"
-      ]
+      "deferred": []
     },
     {
       "typeId": 626,
@@ -2090,11 +2025,6 @@
           "operational": true
         },
         {
-          "effectId": 2134,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 3172,
           "capability": "UtilityDrones",
           "operational": false
@@ -2120,19 +2050,13 @@
           "operational": true
         },
         {
-          "effectId": 6368,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 6374,
           "capability": "UtilityDrones",
           "operational": false
         }
       ],
       "deferred": [
-        "UtilityDrones",
-        "RemoteRepair"
+        "UtilityDrones"
       ]
     },
     {
@@ -2283,11 +2207,6 @@
           "operational": true
         },
         {
-          "effectId": 2135,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 3172,
           "capability": "UtilityDrones",
           "operational": false
@@ -2308,19 +2227,13 @@
           "operational": true
         },
         {
-          "effectId": 6373,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 6374,
           "capability": "UtilityDrones",
           "operational": false
         }
       ],
       "deferred": [
-        "UtilityDrones",
-        "RemoteRepair"
+        "UtilityDrones"
       ]
     },
     {
@@ -3793,22 +3706,22 @@
         {
           "effectId": 4667,
           "capability": "Salvaging",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4668,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4669,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4670,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6789,
@@ -3816,10 +3729,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Salvaging",
-        "TractorBeams"
-      ]
+      "deferred": []
     },
     {
       "typeId": 3532,
@@ -8352,11 +8262,6 @@
           "operational": true
         },
         {
-          "effectId": 2134,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 2251,
           "capability": "CommandBursts",
           "operational": false
@@ -8364,12 +8269,12 @@
         {
           "effectId": 3739,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3740,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3744,
@@ -8434,9 +8339,7 @@
       ],
       "deferred": [
         "MiningDrones",
-        "RemoteRepair",
         "CommandBursts",
-        "TractorBeams",
         "IndustrialCores",
         "FleetAccess",
         "FleetRefitting"
@@ -8477,7 +8380,7 @@
         {
           "effectId": 5036,
           "capability": "Salvaging",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5119,
@@ -8492,7 +8395,6 @@
       ],
       "deferred": [
         "Probes",
-        "Salvaging",
         "Hacking"
       ]
     },
@@ -11373,11 +11275,6 @@
           "operational": true
         },
         {
-          "effectId": 2134,
-          "capability": "RemoteRepair",
-          "operational": false
-        },
-        {
           "effectId": 2251,
           "capability": "CommandBursts",
           "operational": false
@@ -11385,12 +11282,12 @@
         {
           "effectId": 3739,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3740,
           "capability": "TractorBeams",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3744,
@@ -11445,9 +11342,7 @@
       ],
       "deferred": [
         "MiningDrones",
-        "RemoteRepair",
         "CommandBursts",
-        "TractorBeams",
         "FleetAccess"
       ]
     },
@@ -12053,21 +11948,20 @@
         {
           "effectId": 7168,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7169,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7170,
           "capability": "RemoteRepair",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "RemoteRepair",
         "Smartbombs"
       ]
     },

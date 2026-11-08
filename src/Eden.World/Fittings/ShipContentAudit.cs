@@ -6,6 +6,7 @@ using Eden.Gameplay.Content;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
@@ -354,14 +355,43 @@ internal static class ShipContentAudit
                 )
             );
         }
-        if (rig && milestone is ShipContentMilestone.Exploration or ShipContentMilestone.InformationAndSalvage)
+        if (type.GroupId == (int)InformationGroup.ShipScanner)
         {
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
                     false,
-                    milestone,
-                    "Rig fitting/modifiers work; complete scanning, hacking or salvage consumers remain unfinished."
+                    ShipContentMilestone.InformationAndSalvage,
+                    "Paid optimal-range ship scans work; exact server falloff and hardware sampling remain evidence-blocked."
+                )
+            );
+        }
+        if (
+            type.GroupId == (int)InformationGroup.TractorBeam
+            && InventoryDefinitions.RequiresSpecificShip(catalog.FittingAttributes(type.Id))
+        )
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.IndustrialCommand,
+                    "Capital tractor profiles validate; their required capital industrial hull cohort remains unavailable."
+                )
+            );
+        }
+        if (rig && milestone is ShipContentMilestone.Exploration or ShipContentMilestone.InformationAndSalvage)
+        {
+            const int salvageAccessEffect = 2794;
+            bool salvage = effects.Any(e => e.EffectID == salvageAccessEffect);
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    salvage,
+                    milestone == ShipContentMilestone.InformationAndSalvage && !salvage ? ShipContentMilestone.Mining : milestone,
+                    salvage
+                        ? "Salvage Tackle feeds the paid salvager's additive access chance."
+                        : "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished."
                 )
             );
         }

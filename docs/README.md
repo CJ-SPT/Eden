@@ -42,6 +42,7 @@
 | [Starter production audit](starter-production.json) | Pinned Merlin/Venture/Badger recipes, starter fits, NPC suppliers, populated ore sources and stargate routes; reproduce with `tools/Export-StarterProduction.py`. |
 | [Tech I hull inventory](tech-one-hulls.json) | Machine-readable hull cohorts and deferred roles. |
 | [Ship and module completion](feature-notes.md#ship-and-module-completion-program) | Ordered role milestones and production-backed coverage inventory. |
+| [Information modules and salvage](protocol/information.md) | Native scanners, targeting equipment, tractor movement, saved salvage and distribution policy. |
 | [Carbon licensing notes](carbon-license.md) | Reference-source licensing and attribution. |
 
 ## Keeping documentation organized

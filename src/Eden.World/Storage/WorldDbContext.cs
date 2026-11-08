@@ -86,6 +86,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        Eden.World.Information.InformationSchema.Configure(model);
         Eden.World.Exploration.CombatAnomalySchema.Configure(model);
         ModuleConditionSchema.Configure(model);
         ShipHeatSchema.Configure(model);

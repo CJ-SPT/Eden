@@ -7,12 +7,17 @@ internal sealed class SharedTargetLocks
 {
     private readonly Lock _gate = new();
     private readonly HashSet<(long Ship, long Target)> _locks = [];
+    private readonly HashSet<(long Ship, long Target)> _silent = [];
 
-    public void Add(long ship, long target)
+    public void Add(long ship, long target, bool silent = false)
     {
         lock (_gate)
         {
             _locks.Add((ship, target));
+            if (silent)
+            {
+                _silent.Add((ship, target));
+            }
         }
     }
 
@@ -24,11 +29,20 @@ internal sealed class SharedTargetLocks
         }
     }
 
+    internal void Reveal(long ship, long target)
+    {
+        lock (_gate)
+        {
+            _silent.Remove((ship, target));
+        }
+    }
+
     public void Remove(long ship, long target)
     {
         lock (_gate)
         {
             _locks.Remove((ship, target));
+            _silent.Remove((ship, target));
         }
     }
 
@@ -37,6 +51,7 @@ internal sealed class SharedTargetLocks
         lock (_gate)
         {
             _locks.RemoveWhere(edge => edge.Ship == ship || edge.Target == ship);
+            _silent.RemoveWhere(edge => edge.Ship == ship || edge.Target == ship);
         }
     }
 
@@ -44,7 +59,7 @@ internal sealed class SharedTargetLocks
     {
         lock (_gate)
         {
-            return _locks.Where(edge => edge.Target == target).Select(edge => edge.Ship).Order().ToArray();
+            return _locks.Where(edge => edge.Target == target && !_silent.Contains(edge)).Select(edge => edge.Ship).Order().ToArray();
         }
     }
 }

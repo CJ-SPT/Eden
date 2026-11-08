@@ -108,7 +108,7 @@ internal sealed record WreckSlimItem(WreckContact Wreck) : SlimItem
 {
     public override object ToBlue()
     {
-        var fields = Fields(Wreck.Id, Wreck.TypeId, Wreck.OwnerId, WreckDefinitions.Group, WreckDefinitions.Category);
+        var fields = Fields(Wreck.Id, Wreck.TypeId, Wreck.OwnerId, Wreck.GroupId, WreckDefinitions.Category);
         fields["name"] = Wreck.Name;
         fields["corpID"] = Wreck.CorporationId;
         fields["charID"] = null;

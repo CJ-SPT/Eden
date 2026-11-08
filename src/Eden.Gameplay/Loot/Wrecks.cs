@@ -14,7 +14,8 @@ public sealed record WreckContact(
     SpacePosition Position,
     double Mass,
     float Radius,
-    bool Empty
+    bool Empty,
+    int GroupId = WreckDefinitions.Group
 );
 
 public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);
