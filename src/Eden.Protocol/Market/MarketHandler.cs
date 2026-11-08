@@ -167,6 +167,11 @@ internal sealed class MarketHandler(
                     return PilotCallResult.None;
                 case "GetOldPriceHistory" or "GetNewPriceHistory" when args is [long type] && type is > 0 and <= int.MaxValue:
                     return HistoryPair(market.History(context.Pilot.PilotId, [(int)type])).For(method == "GetNewPriceHistory");
+                // Build 3662168 MarketQuote.GetPriceHistory uses zero-argument PLEX
+                // variants, with the same CRowset shape as ordinary type history.
+                case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory" when args.Length == 0:
+                    return HistoryPair(market.History(context.Pilot.PilotId, [MarketDefinitions.PlexTypeId]))
+                        .For(method == "GetPlexNewPriceHistory");
                 case "GetHistoryForManyTypeIDs" when args is [HashSet<long> types] && types.All(t => t is > 0 and <= int.MaxValue):
                     var days = market.History(context.Pilot.PilotId, types.Select(t => (int)t).ToArray());
                     return new BlueMap<long, MarketHistoryPair>(
@@ -272,6 +277,8 @@ internal sealed class MarketHandler(
                 case "ModifyCharOrder":
                 case "CancelCharOrder":
                     return new PilotCallResult.Failure("Choose personal station orders, station range and a minimum volume of one.");
+                case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory":
+                    return new PilotCallResult.Failure("PLEX price history does not accept arguments.");
                 default:
                     return PilotCallResult.Unsupported;
             }

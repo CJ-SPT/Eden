@@ -309,6 +309,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [PLEX history and multibuy structure discovery (November 8, 2026)](protocol/industry.md#plex-history-and-multibuy-structure-discovery-november-8-2026)
+
 - [Renewable belts and economic service charges (November 6, 2026)](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026)
 
 - [Tech I starter production chain (November 6, 2026)](protocol/industry.md#tech-i-starter-production-chain-november-6-2026)

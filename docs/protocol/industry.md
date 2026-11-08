@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [PLEX history and multibuy structure discovery (November 8, 2026)](#plex-history-and-multibuy-structure-discovery-november-8-2026)
 - [Currency redemption and loyalty wallets](#currency-redemption-and-loyalty-wallets)
 - [Mining-laser fitting, November 2, 2026](#mining-laser-fitting-november-2-2026)
 - [Persistent asteroid fields, November 2, 2026](#persistent-asteroid-fields-november-2-2026)
@@ -380,3 +381,19 @@ Both Python policy suites passed (3 catalog tests in 0.227 seconds; 9 formatting
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect priced Industry/reprocessing quotes and resulting wallet entries; inspect belt removal/restoration across a renewal boundary; inspect the three hulls' native insurance quotes. Use an isolated economy world. Native rendering, input and economic pacing remain unverified.
+
+## PLEX history and multibuy structure discovery (November 8, 2026)
+
+The maintainer reported `Invalid Packet Destination` for `marketProxy.GetPlexOldPriceHistory` when viewing PLEX history, and `structureDirectory.GetMyCharacterStructures` when opening multibuy. Offline inspection of pinned build **3662168** confirms that `MarketQuote.GetPriceHistory` in `eve/client/script/ui/services/marketsvc.pyj` calls both `GetPlexOldPriceHistory()` and `GetPlexNewPriceHistory()` without arguments. Both now use the existing named history models and native CRowset descriptor, selecting PLEX **44992** and dividing actual saved executions into completed UTC days and the current UTC day. Empty history remains empty; testing-market PLEX executions appear through the existing ledger. This does not add PLEX vault services, account purchases or global trading.
+
+`StructureDirectory.GetMarketDockableLocationsInRegion` in `eve/client/script/ui/services/structure/structureDirectory.pyj` calls `GetMyCharacterStructures()` without arguments and iterates the result with `iteritems()`, filtering each entry's `services` for market access. Eden has no player structures, so the selected-pilot handler returns an empty Python dictionary. NPC stations remain client static data. A list would break this consumer. Both services reject unexpected arguments and keywords and remain unavailable before pilot selection.
+
+Source archive SHA-256: `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Gameplay references: [EVE University PLEX Vault](https://wiki.eveuniversity.org/PLEX_Vault) and its linked [Trading guide](https://wiki.eveuniversity.org/Trading). Wire forms were reconciled against the pinned client; the unchanged Blue codec reference is [Carbon Blue `af0d65b29f951260ea09140ca11adf5d40566997`, Marshal.cpp](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp). No client code was executed.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors; final build 4.50 seconds). Filter `FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests` ran **84 tests in 16.89 seconds: 83 passed, one pre-existing failure**. `TestingMarketTests.GrantJournalUsesNativeCashTransferAndNewPilotsReceiveFundsWithinCreation` expects one selection card after creating a second character. The exact method also failed on unchanged baseline `df862df` in a separate worktree (8.08 seconds including runner startup). All three new regression cases passed in the affected run. No full .NET suite was requested or run.
+
+New coverage exercises selected-pilot gating, docked and in-space empty collections, malformed arguments/keywords, no read notifications or trade seeding, a real multibuy purchase after structure discovery, saved wallet/executions after reopening, and exact UTC-midnight history separation matching the existing batch reply. Outbound CRowset constructors are inspected and encoded; Eden's inbound decoder does not implement those native reductions. Initial development runs exposed missing routes and test-fixture assumptions, which were corrected; they are not passing validation. Both Python policy suites passed (8 catalog checks in 1.806 seconds; 9 formatting checks in 0.044 seconds). Formatting verification passed for 1,176 files, including the 140-column policy; combined Python/format verification took 40.70 seconds. UTF-8, final-newline, trailing-whitespace, local documentation targets, new section anchors and diff checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open the PLEX price-history view; open multibuy and purchase an available station item. Native rendering and input remain unverified.
