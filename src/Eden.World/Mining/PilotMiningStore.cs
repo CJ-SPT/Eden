@@ -159,6 +159,20 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var start = Begin(world, catalog, pilotId, moduleId, asteroidId, now);
+        transaction.Commit();
+        return start;
+    }
+
+    internal static MiningStart Begin(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long asteroidId,
+        long now
+    )
+    {
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
@@ -182,7 +196,6 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.MiningLaserActivated);
         world.SaveChanges();
-        transaction.Commit();
         return new(laser, charge);
     }
 
@@ -191,14 +204,22 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var (pilot, asteroid, laser) = Validate(
-            world,
-            catalog,
-            pilotId,
-            moduleId,
-            asteroidId,
-            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
-        );
+        var result = Collect(world, catalog, pilotId, moduleId, asteroidId, collection, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        return result;
+    }
+
+    internal static MiningYield Collect(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long asteroidId,
+        MiningCollection collection,
+        long now
+    )
+    {
+        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -231,13 +252,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         asteroid.Quantity -= (long)extracted + collected.Residue;
         if (extracted + bonus > 0)
         {
-            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }
         world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
         world.SaveChanges();
-        transaction.Commit();
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull);
     }
 

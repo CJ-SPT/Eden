@@ -15,6 +15,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Navigation and travel](protocol/navigation.md) | Maps, bookmarks, undocking, warp, gates, orbiting and ship collisions. |
 | [Characters and skills](protocol/characters.md) | Profiles, settings, training, clones, implants, redemption and interaction history. |
 | [Chat, mail and contacts](protocol/social.md) | Native chat, certificate trust, contacts, guests, calendars and notifications. |
+| [Autonomous capsuleers](protocol/capsuleers.md) | Persistent default miner, active-time scheduling, native presence and restart-safe ore collection. |
 | [Cooperative fleets](protocol/fleets.md) | Membership, hierarchy, session identity, broadcasts, chat and point fleet travel. |
 | [Corporations](protocol/corporations.md) | Creation, membership, administration, roles, wallets, ownership and shares. |
 | [Personal contracts](protocol/contracts.md) | Wizard compatibility, item exchange, courier contracts, auctions and bulk offers. |

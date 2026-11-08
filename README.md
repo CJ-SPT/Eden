@@ -1,5 +1,7 @@
 # Eden
 
+A persistent [local capsuleer miner](docs/protocol/capsuleers.md) now works near the first human pilot’s home by default, with real ore, owned equipment and saved progress.
+
 Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It supports persistent local worlds and multiple pilots using separate Windows clients. Supply the matching EVE installation and resource cache separately.
 
 ## Start here

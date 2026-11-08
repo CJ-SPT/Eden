@@ -2,7 +2,9 @@
 
 [Documentation index](README.md)
 
-**Status: Early design; implementation deferred until the required core gameplay systems are ready.**
+**Status: First autonomous-miner milestone implemented. Community trade and additional careers remain planned.**
+
+The [default local miner](protocol/capsuleers.md) is the first implementation slice. It begins with an equipped Venture and stockpiles ore while human pilots are online. Its permanent home follows the first human pilot’s home area. The historical stages below describe the broader economy and future careers.
 
 Agreed design direction, November 6, 2026. Continue implementing core gameplay before starting this roadmap. The stages below describe the long-term destination and its dependencies; implementation details and tuning should be revisited against the available mechanics when this work begins.
 

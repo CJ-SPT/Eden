@@ -25,6 +25,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Mining;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,6 +157,7 @@ public sealed partial class NpcMiningTests
         Assert.Equal(before - 480, Ore(db));
         Assert.Equal(after, Read(db, clock.Now));
         long nextDue = MiningDue(db);
+        db.Services.GetService<LiveWorld>()?.Dispose();
         WorldInitialization.Initialize(new(db.Path), clock);
         Assert.Equal(after.Select(n => n.Id), Read(db, clock.Now).Select(n => n.Id));
         Assert.Equal(before - 480, Ore(db));
@@ -225,6 +227,7 @@ public sealed partial class NpcMiningTests
             db.Store.Advance(SystemId, tick, clock.Now, [], []);
         }
         Assert.True(departing);
+        db.Services.GetService<LiveWorld>()?.Dispose();
         WorldInitialization.Initialize(new(db.Path), clock);
         clock.AdvanceWallTime(TimeSpan.FromTicks(arrival - clock.Now));
         Assert.DoesNotContain(Read(db, clock.Now), n => n.Id == hauler.Id);

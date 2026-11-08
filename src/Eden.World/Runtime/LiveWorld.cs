@@ -67,6 +67,10 @@ internal sealed class LiveWorld : IDisposable
     internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
     {
         SqlConnections--;
+        if (MinerCheckpoint is { } miner && changes.Any(c => c.Table == "WorldPilot" && c.Id == miner.PilotId))
+        {
+            MinerHullRevision++;
+        }
         _timedModules?.Observe(changes);
         Heat.Observe(changes);
         Nanites.Observe(changes);
@@ -74,6 +78,9 @@ internal sealed class LiveWorld : IDisposable
         Reads?.Observe(changes);
         Combat?.Observe(changes);
     }
+
+    internal long MinerHullRevision { get; private set; }
+    internal Eden.World.Capsuleers.MinerCheckpoint? MinerCheckpoint { get; set; }
 
     internal void ObjectsChanged() => _generation++;
 
@@ -341,7 +348,16 @@ internal sealed class LiveWorld : IDisposable
             {
                 database.Open();
                 _memory.BackupDatabase(database);
-                return new(database, combat, generation, wait, Stopwatch.GetElapsedTime(started), Heat.Capture(), Tractors.Capture());
+                return new(
+                    database,
+                    combat,
+                    generation,
+                    wait,
+                    Stopwatch.GetElapsedTime(started),
+                    Heat.Capture(),
+                    Tractors.Capture(),
+                    MinerCheckpoint
+                );
             }
             catch
             {

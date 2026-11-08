@@ -18,7 +18,42 @@ public sealed class ChatWorld(long roomSeed = 0)
 
     public ChatPilot? Pilot(Guid session) => _sessions.GetValueOrDefault(session);
 
-    public ChatPilot? OnlinePilot(long id) => _sessions.Values.FirstOrDefault(p => p.Id == id);
+    private readonly Dictionary<long, ChatPilot> _capsuleers = [];
+
+    public bool HasHumanPilots => _sessions.Count > 0;
+
+    public ChatPilot? OnlinePilot(long id) => _sessions.Values.FirstOrDefault(p => p.Id == id) ?? _capsuleers.GetValueOrDefault(id);
+
+    private IEnumerable<ChatPilot> LocalCapsuleers(ChatRoom room) =>
+        room.Kind == ChatRoomKind.Local ? _capsuleers.Values.Where(p => p.SystemId == room.Id && p.LocalKind == room.Kind) : [];
+
+    public IReadOnlyList<ChatDelivery> UpdateCapsuleer(ChatPilot pilot)
+    {
+        var previous = _capsuleers.GetValueOrDefault(pilot.Id);
+        if (previous == pilot)
+        {
+            return [];
+        }
+        _capsuleers[pilot.Id] = pilot;
+        List<ChatDelivery> events = [];
+        if (previous is not null)
+        {
+            Notify(previous, false);
+        }
+        Notify(pilot, true);
+        return events;
+
+        void Notify(ChatPilot member, bool available)
+        {
+            var room = new ChatRoom(member.LocalKind, member.SystemId);
+            if (room.Kind == ChatRoomKind.Local && _members.TryGetValue(room, out var connections))
+            {
+                events.AddRange(
+                    connections.Select(connection => new ChatDelivery(connection, new ChatEvent.Presence(room, member, available)))
+                );
+            }
+        }
+    }
 
     public ChatPilot? ConnectedPilot(Guid connection) => _connections.TryGetValue(connection, out var session) ? Pilot(session) : null;
 
@@ -208,6 +243,7 @@ public sealed class ChatWorld(long roomSeed = 0)
         var visible = members
             .Where(member => !ChatRules.Delayed(room) || _speakers.GetValueOrDefault(room)?.Contains(member) == true)
             .Select(member => ConnectedPilot(member)!)
+            .Concat(LocalCapsuleers(room))
             .OrderBy(member => member.Id)
             .ToArray();
         if (room.Kind is ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian)
@@ -374,6 +410,7 @@ public sealed class ChatWorld(long roomSeed = 0)
                 !ChatRules.Delayed(room) || member == connection || _speakers.GetValueOrDefault(room)?.Contains(member) == true
             )
             .Select(member => ConnectedPilot(member)!)
+            .Concat(LocalCapsuleers(room))
             .OrderBy(p => p.Id)
             .ToArray();
     }

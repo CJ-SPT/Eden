@@ -204,6 +204,7 @@ internal static class Program
         await using var administration = administrationEnabled ? AdministrationHost.Create(services, worldPath, administrationPort) : null;
         services.GetRequiredService<LauncherMaintenance>().Start();
         services.GetRequiredService<MarketMaintenance>().Start();
+        services.GetRequiredService<CapsuleerMaintenance>().Start();
         await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
         await using var api = LauncherApi.Create(
             options,

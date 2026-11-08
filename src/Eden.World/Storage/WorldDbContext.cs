@@ -89,6 +89,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Information.InformationSchema.Configure(model);
         Eden.World.Exploration.CombatAnomalySchema.Configure(model);
         ModuleConditionSchema.Configure(model);
+        Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);
         ShipHeatSchema.Configure(model);
         NaniteRepairSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);

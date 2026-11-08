@@ -1,0 +1,25 @@
+# Autonomous capsuleers
+
+[Protocol index](../protocol.md)
+
+## Persistent local miner — November 8, 2026
+
+Eden provisions one world-owned miner by default on new and upgraded saves. Its home is selected once from the earliest human pilot's saved home, searching by gate distance for a highsec system with a station and generated mineable ore. Systems and stations use catalog ID ordering, with preference for the pilot's home station. The founder is deferred when there is no human pilot or eligible catalog location. Normal character creation retries provisioning inside its transaction.
+
+The one-time founder grant is a Venture, Miner I, required fitting skills and 10,000 ISK. The pilot inherits the founding human's racial background and uses the school NPC corporation, falling back to the home station owner. Its negative account ID has no launcher credentials. The community record prevents repeat grants. Existing development supply settings continue to apply to their world.
+
+The miner fits through ordinary fitting operations, undocks, aligns and warps using shared NavigationState, approaches and locks ordinary ore, pays each laser cycle through PilotMiningStore, fills its mining hold, returns to its permanent home and unloads into its personal hangar. Ore remains stockpiled. Depleted targets are replaced. Mining payments, collection and saved progress share transactions. A failed collection preserves the ore and is retryable. Checkpoints capture navigation and active-time progress with the resident world generation, then project them outside the world owner.
+
+Server scheduling advances one active second per admitted tick while a selected human pilot is online, including docked pilots and pilots elsewhere. There is no offline trip or mining catch-up. Local membership, station guests, Show Info, ship contacts, warp and laser effects use the existing native presentation. Player damage signals and visible NPC aggression initiate retreat through ordinary warp and docking. NPC fire and missile impacts use the existing loss settlement. A pilot whose Venture is lost returns in its capsule and waits docked for replacement equipment.
+
+The miner currently retains its starting skills without autonomous training decisions. Replacement purchasing, sales, hauling and autonomous pirate hunting are subsequent milestones.
+
+Gameplay reference checked against [EVE University mining](https://wiki.eveuniversity.org/Mining). Native flight presentation reuses the existing Destiny implementation and [Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp). Build-3662168 Venture and Miner I attributes and required skills are exercised with the committed starter-production catalog extract.
+
+**Automated validation** — Tool and solution restore passed. Solution build passed with zero warnings/errors in 1.13 seconds. The affected filter was `FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~MiningTests|FullyQualifiedName~MiningTierTests|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~ChatWorldTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~PilotCombatTests`. This selected 202 cases, with 196 passing and six existing NPC-mining restart cases failing because their resident world was still open. Those two test methods now stop/checkpoint the resident owner before reconciliation. Their focused rerun passed all 12 variants in 17 seconds, 21.59 seconds including runner startup. Both Python policy suites passed, eight catalog and nine formatting cases. Formatting verification passed.
+
+The measured warmed miner frame took 1.17 ms with zero SQL commands, connections or fitting calculations. The empty-server frame took less than 0.01 ms with the same zero-work counts. In that fixture, checkpoint capture took 1.95 ms, projection 23.65 ms and writing 14.81 ms. These are diagnostic fixture measurements, not capacity or native-client claims. Tests cover two observers, paid-cycle pause/restart, collection rollback, founder grants across concurrent character creation, retreat/restart, depletion and ordinary ship loss. Warm paid-cycle and empty-server frames assert zero SQL commands, connections and fitting calculations. Checkpoint capture, projection and writing are reported separately. The full .NET suite was not requested.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer checks** — Observe the same pilot in Local, station guests and Overview. Follow one mining round trip and verify the Venture's warp and laser rendering.
