@@ -16,6 +16,7 @@ public sealed class SovereigntyTests
     private static SovereigntyCall[] PanelCalls(long systemId) =>
         [
             new("sovMgr", "GetSovStructuresInfoForLocalSolarSystem", []),
+            new("beyonce", "GetCynoJammerState", []),
             new("sovMgr", "GetSovStructuresInfoForSolarSystem", [systemId]),
             new("devIndexManager", "GetDevelopmentIndicesForSystem", [systemId]),
             new("sovMgr", "GetInfrastructureHubInfo", [systemId]),
@@ -34,7 +35,13 @@ public sealed class SovereigntyTests
         using TestWorld world = new();
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
-        var pilot = inSpace ? savedPilot with { Position = new SpacePosition(1_000_000, 0, 0) } : savedPilot;
+        var pilot = inSpace
+            ? savedPilot with
+            {
+                Position = new SpacePosition(1_000_000, 0, 0),
+                CurrentSystem = savedPilot.Home.System with { Id = checked((int)systemId) },
+            }
+            : savedPilot;
         using PilotCallContext context = new(
             1000001,
             pilot.Account,
@@ -59,26 +66,25 @@ public sealed class SovereigntyTests
         }
         foreach (var call in PanelCalls(systemId).DistinctBy(call => (call.Service, call.Method)))
         {
-            object?[][] invalidArguments =
-                call.Method == "GetSovStructuresInfoForLocalSolarSystem"
-                    ?
-                    [
-                        [systemId],
-                        [null],
-                        [systemId, systemId],
-                    ]
-                    :
-                    [
-                        [],
-                        [null],
-                        [true],
-                        ["30000142"],
-                        [1.0],
-                        [0L],
-                        [-1L],
-                        [(long)int.MaxValue + 1],
-                        [systemId, systemId],
-                    ];
+            object?[][] invalidArguments = call.Method is "GetSovStructuresInfoForLocalSolarSystem" or "GetCynoJammerState"
+                ?
+                [
+                    [systemId],
+                    [null],
+                    [systemId, systemId],
+                ]
+                :
+                [
+                    [],
+                    [null],
+                    [true],
+                    ["30000142"],
+                    [1.0],
+                    [0L],
+                    [-1L],
+                    [(long)int.MaxValue + 1],
+                    [systemId, systemId],
+                ];
             foreach (var args in invalidArguments)
             {
                 Assert.IsType<PilotCallResult.Failure>(Call(call with { Args = args }));

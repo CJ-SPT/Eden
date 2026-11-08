@@ -205,6 +205,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
+- [Sovereignty nullsec cyno-jammer state, November 8, 2026](protocol/navigation.md#sovereignty-nullsec-cyno-jammer-state-november-8-2026)
 - <a id="npc-visibility-after-same-system-gm-translocation"></a>[NPC visibility after same-system GM translocation](protocol/navigation.md#npc-visibility-after-same-system-gm-translocation)
 - <a id="npc-spawn-and-translocation-follow-up"></a>[NPC spawn and translocation follow-up](protocol/navigation.md#npc-spawn-and-translocation-follow-up)
 - <a id="developer-translocation"></a>[Developer translocation](protocol/navigation.md#developer-translocation)

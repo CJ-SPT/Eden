@@ -24,6 +24,16 @@ internal sealed class FlightCallHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "beyonce" && method == "GetCynoJammerState")
+        {
+            if (args.Length != 0 || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Cyno jammer state does not accept arguments.");
+            }
+            // Build 3662168 CynoJammerIcon uses None for no jammer; zero means online.
+            // Eden has no deployed jammers. Handle this read before movement checkpointing.
+            return PilotCallResult.None;
+        }
         if (service == "beyonce" && method == "GetFleetLocationAndInfo")
         {
             return fleets.Locations(context, args, keywords);

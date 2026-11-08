@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Sovereignty nullsec cyno-jammer state, November 8, 2026](#sovereignty-nullsec-cyno-jammer-state-november-8-2026)
 - [Sovereignty information tab, November 8, 2026](#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](#null-security-system-information-november-8-2026)
 - [NPC visibility after same-system GM translocation](#npc-visibility-after-same-system-gm-translocation)
@@ -24,6 +25,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Sovereignty nullsec cyno-jammer state, November 8, 2026
+
+The maintainer reported `Invalid Packet Destination: Unsupported local call beyonce.GetCynoJammerState` when entering sovereignty nullsec. In pinned build **3662168**, `InfoPanelLocationInfo.DrawClaimableSystemInfo` constructs `sovDashboard.CynoJammerIcon`; `CynoJammerIcon._UpdateFromServer` calls `sm.RemoteSvc('beyonce').GetCynoJammerState()` without arguments or a bound ballpark reference. `UpdateIconState` consumes one value named `onlineSimTime`. `GetJamStatus` maps Python **None** to jammer off; numeric **zero** and elapsed timestamps mean on, while a future timestamp means pending. Returning false or zero would incorrectly indicate an active jammer.
+
+`FlightCallHandler` now owns this local state read and returns successful Python **None**, consistent with Eden having no deployed sovereignty jammers. It handles the read before the general `beyonce` movement-checkpoint fallback. The call requires selected-pilot authentication, rejects service arguments and keywords, and accepts the router's existing `machoVersion` transport metadata handling. It changes no movement, ship, sovereignty or notification state. Jammer deployment, warm-up scheduling and cynosural field restrictions remain unsupported. The existing empty structures, absent claim/hub and zero development-index replies retain their contracts.
+
+Evidence: offline inspection of verified build-3662168 `code.ccp`, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, including `sovDashboard/cynoJammerIcon.pyj` and `eve/client/script/ui/shared/infoPanels/infoPanelLocationInfo.pyj`. Gameplay references: [EVE University navigation structures](https://wiki.eveuniversity.org/Navigation_structures#Tenebrex_Cyno_Jammer) and its supporting [CCP Onslaught patch notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-onslaught). The wire contract comes from the pinned client. No client code was executed. This reuses the existing None adapter; the Blue codec and its [Carbon Blue `af0d65b29f951260ea09140ca11adf5d40566997` reference](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) are unchanged.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors; final build 5.67 seconds). Filter `FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.CombatAnomalyTests` passed **25 tests in 14.09 seconds**, including movement/anomaly dispatch through the same flight handler. No full .NET suite was requested or run. The expanded `SovereigntyTests.NativeSovereigntyPanelPacketsReturnUnclaimedSystemInformationWithoutDestinationErrors` exact-method development filter reproduced the destination error before implementation; all five expanded sovereignty cases then passed. An earlier 11-test run covered the initial handler placement; the final 25-test run covers the direct flight-handler read before checkpointing and includes main `5563f1a` (scanners and salvage). Coverage includes exact decoded None, selected-pilot gating, repeated reads, docked/in-space contexts, current and remote nullsec system IDs, malformed arguments/keywords and unchanged saved pilot/notification state. In-space contexts now explicitly carry the requested system ID rather than only changing coordinates. These are automated snapshots and packet exchanges, not live gate-travel acceptance. Both Python policy suites passed (8 catalog checks in 0.666 seconds; 9 formatting checks in 0.018 seconds). Formatting verification passed for 1,194 files, including the 140-column policy; combined Python/format verification took 19.34 seconds. UTF-8, final-newline, trailing-whitespace, local documentation targets, new section anchors and diff checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart the server, enter sovereignty nullsec and inspect the location panel's inactive cyno-jammer status. Native rendering and input remain unverified.
 
 ## Sovereignty information tab, November 8, 2026
 
