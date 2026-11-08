@@ -667,6 +667,19 @@ internal sealed class FlightSession(
         _travel.QueueTranslocation(travel, target, destinationObjects);
     }
 
+    public void SourceStatePublished() => _travel.SourceStatePublished(Stamp);
+
+    public void StartPendingTranslocation()
+    {
+        lock (space.MotionLock)
+        {
+            if (_travel.DepartureReady(Stamp) is { } pending)
+            {
+                StartTranslocation(pending.Travel, pending.Target, pending.Objects);
+            }
+        }
+    }
+
     public PilotTranslocation? CompleteTranslocation()
     {
         lock (space.MotionLock)
@@ -698,6 +711,12 @@ internal sealed class FlightSession(
 
     private void SnapshotCore()
     {
+        // A new source SetState would run the client's asynchronous DoBallClear
+        // and finalize the active jump camera before destination arrival.
+        if (_travel.Translocation is { } transfer && (!transfer.AwaitingSourceState || transfer.PublishedSourceStamp is not null))
+        {
+            return;
+        }
         Checkpoint();
         if (!InBallpark && Pilot.Position is { } position)
         {
@@ -731,12 +750,6 @@ internal sealed class FlightSession(
             {
                 ArrivalEffect(Pilot.ShipId);
             }
-        }
-        if (_travel.Translocation is { AwaitingSourceState: true } departure)
-        {
-            // A station-origin TR first loads a real source-space ego. Only then
-            // can the client's native jump camera take over from its undock camera.
-            StartTranslocation(departure.Travel, departure.Target, departure.Objects);
         }
     }
 

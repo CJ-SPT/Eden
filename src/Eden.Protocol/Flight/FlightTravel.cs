@@ -19,7 +19,8 @@ internal sealed record TranslocationTransit(
     TranslocationTarget Target,
     IReadOnlyList<StaticSpaceObject> Objects,
     int TransferStamp,
-    bool AwaitingSourceState = false
+    bool AwaitingSourceState = false,
+    int? PublishedSourceStamp = null
 );
 
 internal readonly record struct FlightTravelContext(DockedPilot Pilot, bool InBallpark, bool InWarp, bool Aligning);
@@ -124,6 +125,17 @@ internal sealed class FlightTravel
 
     internal void QueueTranslocation(IPilotTranslocation travel, TranslocationTarget target, IReadOnlyList<StaticSpaceObject> objects) =>
         Translocation = new(travel, target, objects, int.MaxValue, AwaitingSourceState: true);
+
+    internal void SourceStatePublished(int stamp)
+    {
+        if (Translocation is { AwaitingSourceState: true, PublishedSourceStamp: null } pending)
+        {
+            Translocation = pending with { PublishedSourceStamp = stamp };
+        }
+    }
+
+    internal TranslocationTransit? DepartureReady(int stamp) =>
+        Translocation is { AwaitingSourceState: true, PublishedSourceStamp: int published } pending && stamp > published ? pending : null;
 
     internal TranslocationTransit? TranslocationDue(int stamp) =>
         Translocation is { AwaitingSourceState: false } transit && stamp >= transit.TransferStamp ? transit : null;

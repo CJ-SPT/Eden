@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Station-origin TR camera sequencing, November 8, 2026](#station-origin-tr-camera-sequencing-november-8-2026)
 - [Sovereignty nullsec cyno-jammer state, November 8, 2026](#sovereignty-nullsec-cyno-jammer-state-november-8-2026)
 - [Sovereignty information tab, November 8, 2026](#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](#null-security-system-information-november-8-2026)
@@ -25,6 +26,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Station-origin TR camera sequencing, November 8, 2026
+
+The maintainer reports that TR from a station into sovereignty nullsec leaves the camera unresponsive. Offline inspection of pinned build **3662168** shows a sequencing race in the source-space bootstrap: Eden's first source `SetState` immediately queued `effects.JumpDriveOut` in the same Destiny update. `michelle.Park.SetState` sends `DoBallClear`, and `GameUI.DoBallClear` starts the asynchronous `_DoBallClear` task. That task finalizes any active space-to-space transition. Meanwhile `JumpTransitionTunnel.Prepare` selects `CAM_JUMP`, and `InflightLayer.OnActiveCameraChanged` assigns no mouse camera controller to that cinematic camera. A source scene reset can therefore overlap the newly started jump transition. Additional source `UpdateStateRequest` replies during departure could also finalize it before destination arrival. This is a protocol-order finding; no client exception trace or live camera recovery was captured.
+
+Queued station/unbound-source translocations now publish the source full state separately. Only after its Destiny notification has been successfully sent may a later Destiny tick start the departure effect and its existing three-tick transfer interval. Failed writes cannot start that interval. Source full-state retries are suppressed after publication and during departure, while the destination still receives its own full state and one jump-drive arrival effect. The ready, already-bound space-origin path retains its immediate departure. Disconnect cancels pending travel and retains the actual source undock position. No database schema, client files, saved camera preferences or sovereignty state change.
+
+Sources: verified `code.ccp` SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, inspected offline as inert code objects: `remote/michelle.pyj`, `parklife/gameui.pyj`, `environment/effects/Jump.pyj`, `ui/view/spaceToSpaceTransition.pyj`, `ui/view/spaceView.pyj`, `ui/view/transitions.pyj`, `ui/inflight/navigation.pyj` and the undock camera/controller. [EVE University Camera](https://wiki.eveuniversity.org/Camera) establishes the expected mouse orbit controls. The unchanged Destiny snapshot/motion codec was checked against [Carbon Destiny Ballpark.cpp `27ee40b38a563d29054b32f64c3ebc87fabaec1f`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp). No gameplay Python was executed and no game was launched.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors; final build 5.84 seconds). Final filter `FullyQualifiedName~TranslocationTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~StationUndockTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TypedSessionTests|FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests` passed **178 tests in 50.06 seconds**, including integration with main `9b30bb1` (loyalty stores). An earlier affected run before that integration also passed 178 tests in 49.89 seconds. No full .NET suite was requested or run. The exact new sequence regression failed for both station and unbound-space origins before implementation, showing a source `SetState` and `TranslocationOut` in the same batch. The corrected regressions check successful source publication, same-tick and later-tick ordering, duplicate source-state suppression, unchanged transfer duration, destination state before the single arrival effect, failed output and disconnect preservation. Existing source-bootstrap tests now use the real notification-flush step rather than treating snapshot construction as client readiness. Both Python policy suites passed (8 catalog checks in 0.665 seconds; 9 formatting checks in 0.019 seconds). Formatting verification passed for 1,199 files, including the 140-column policy; combined Python/format verification took 18.63 seconds. UTF-8, final-newline, trailing-whitespace, local documentation targets, new section anchors and diff checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Mouse camera input and transition rendering remain unverified; successful packet-order tests do not establish live recovery.
+
+**Optional maintainer checks:** After rebuilding/restarting, TR from a station to nullsec and check camera rotation and context menus without docking; repeat from an already-loaded space scene.
 
 ## Sovereignty nullsec cyno-jammer state, November 8, 2026
 

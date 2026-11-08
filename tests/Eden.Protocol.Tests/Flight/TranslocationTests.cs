@@ -87,6 +87,9 @@ public sealed class TranslocationTests
                 if (!f.Context.Flight.InBallpark)
                 {
                     f.Context.Flight.Snapshot();
+                    await f.TickAsync([]);
+                    f.Clock.Seconds++;
+                    await f.TickAsync([]);
                 }
                 f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
                 await f.TickAsync([]);
@@ -149,6 +152,9 @@ public sealed class TranslocationTests
         if (!f.Context.Flight.InBallpark)
         {
             f.Context.Flight.Snapshot();
+            await f.TickAsync([]);
+            f.Clock.Seconds++;
+            await f.TickAsync([]);
         }
         List<object?> output = [];
         await f.TickAsync(output);
@@ -280,7 +286,9 @@ public sealed class TranslocationTests
         Assert.DoesNotContain(f.Context.Flight.Updates, u => u.Command is DestinyCommand.TranslocationOut);
         f.Context.Flight.Snapshot();
         Assert.IsType<DestinyCommand.SetState>(f.Context.Flight.Updates[0].Command);
-        Assert.Single(f.Context.Flight.Updates, u => u.Command is DestinyCommand.TranslocationOut);
+        Assert.DoesNotContain(f.Context.Flight.Updates, u => u.Command is DestinyCommand.TranslocationOut);
+        await f.TickAsync(packets);
+        f.Clock.Seconds++;
         await f.TickAsync(packets);
         f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
         await f.TickAsync(packets);
@@ -292,6 +300,73 @@ public sealed class TranslocationTests
         Assert.Equal(original.ShipId, f.Context.Pilot.ShipId);
         Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked));
         Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.Jumped));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SourceStateIsPublishedBeforeJumpCameraStartsAndRetriesCannotClearTheTransition(bool inSpace)
+    {
+        using Fixture f = new(inSpace: inSpace);
+        f.Select();
+        int source = f.Context.Pilot.SystemId;
+        Assert.Equal(PilotCallResult.None, f.Call($"/tr me {OtherSystem}"));
+        var flight = f.Context.Flight;
+        flight.Snapshot();
+        Assert.Single(flight.Updates, update => update.Command is DestinyCommand.SetState);
+        Assert.DoesNotContain(flight.Updates, update => update.Command is DestinyCommand.TranslocationOut);
+        List<object?> packets = [];
+        await f.TickAsync(packets);
+        Assert.Equal(source, f.Context.Pilot.SystemId);
+        Assert.Empty(flight.Updates);
+        flight.Snapshot();
+        Assert.Empty(flight.Updates);
+        packets.Clear();
+        await f.TickAsync(packets);
+        Assert.Empty(packets);
+        f.Clock.Seconds++;
+        await f.TickAsync(packets);
+        Assert.Contains(packets, packet => BlueMarshal.Encode(packet).AsSpan().IndexOf("effects.JumpDriveOut"u8) >= 0);
+        flight.Snapshot();
+        Assert.DoesNotContain(flight.Updates, update => update.Command is DestinyCommand.SetState);
+        packets.Clear();
+        f.Clock.Seconds += FlightSession.TranslocationDurationTicks - 1;
+        await f.TickAsync(packets);
+        Assert.Equal(source, f.Context.Pilot.SystemId);
+        f.Clock.Seconds++;
+        await f.TickAsync(packets);
+        Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);
+        flight.Snapshot();
+        Assert.IsType<DestinyCommand.SetState>(flight.Updates[0].Command);
+        Assert.Single(flight.Updates, update => update.Command is DestinyCommand.SpecialEffect { Graphic: "effects.JumpDriveIn" });
+    }
+
+    [Fact]
+    public async Task FailedSourceStateSendCannotStartTheCameraCountdownAndDisconnectPreservesTheSourceLocation()
+    {
+        using Fixture f = new();
+        f.Select();
+        int source = f.Context.Pilot.SystemId;
+        Assert.Equal(PilotCallResult.None, f.Call($"/tr me {OtherSystem}"));
+        f.Context.Flight.Snapshot();
+        PilotSessionOutput failed = new(
+            f.Context,
+            1000001,
+            42,
+            _ => Task.FromException(new IOException("Failed source-state send.")),
+            _ => { }
+        );
+        await Assert.ThrowsAsync<IOException>(failed.FlushFlightUpdatesAsync);
+        f.Clock.Seconds += 10;
+        List<object?> packets = [];
+        await f.TickAsync(packets);
+        Assert.Equal(source, f.Context.Pilot.SystemId);
+        Assert.DoesNotContain(packets, packet => BlueMarshal.Encode(packet).AsSpan().IndexOf("effects.JumpDriveOut"u8) >= 0);
+        f.Context.Dispose();
+        f.Clock.Seconds += 10;
+        var saved = f.Db.Store.FindPilot(1000001)!;
+        Assert.NotNull(saved.Position);
+        Assert.Equal(source, saved.SystemId);
     }
 
     [Fact]
@@ -446,7 +521,7 @@ public sealed class TranslocationTests
     [InlineData(PilotRole.Developer, true)]
     [InlineData(PilotRole.WorldMod, true)]
     [InlineData(PilotRole.GameMasterLow, true)]
-    public void NativeRoleGateAndPilotSelectionControlAccess(PilotRole roles, bool allowed)
+    public async Task NativeRoleGateAndPilotSelectionControlAccess(PilotRole roles, bool allowed)
     {
         using Fixture f = new(roles);
         Assert.Same(PilotCallResult.Unsupported, f.Call($"/tr me {OtherSystem}"));
@@ -457,6 +532,9 @@ public sealed class TranslocationTests
         {
             Assert.Equal(PilotCallResult.None, result);
             f.Context.Flight.Snapshot();
+            await f.TickAsync([]);
+            f.Clock.Seconds++;
+            await f.TickAsync([]);
             f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
             Assert.NotNull(f.Context.Flight.CompleteTranslocation());
             Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);

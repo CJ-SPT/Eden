@@ -53,6 +53,7 @@ internal sealed class PilotSessionTick(
         {
             flight.Checkpoint();
         }
+        flight.StartPendingTranslocation();
         var departure = flight.Pilot;
         if (flight.CompleteTranslocation() is { } moved)
         {
