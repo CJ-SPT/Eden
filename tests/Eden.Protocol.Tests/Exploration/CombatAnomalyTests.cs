@@ -6,11 +6,13 @@ using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Combat;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
@@ -24,6 +26,11 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class CombatAnomalyTests
 {
+    private sealed class EmptyAsteroids : IAsteroidField
+    {
+        public IReadOnlyList<StaticSpaceObject> List(int systemId) => [];
+    }
+
     private static CombatAnomalyStore Prepare(NpcCombatTests.Fixture f)
     {
         PassiveCatalogFixture.LoadCombatAnomalies(new WorldDatabase(f.Db.Path).CatalogPath);
@@ -330,5 +337,47 @@ public sealed class CombatAnomalyTests
             CombatAnomalyRules.Wave(site.Id, 1).Count,
             saved.Set<WorldNpc>().Count(n => n.EncounterId == site.Id && n.DestroyedAt == null)
         );
+    }
+
+    [Fact]
+    public async Task NormalSessionTickActivatesSiteAfterAuthoritativePositionAdvance()
+    {
+        using NpcCombatTests.Fixture f = new(useTestClock: true);
+        var sites = Prepare(f);
+        var site = Assert.Single(sites.List(f.Pilot.SystemId, f.Clock.Now));
+        SharedSpace space = new();
+        foreach (long account in new[] { 1000001L, 1000002L })
+        {
+            var pilot = f.Db.Store.FindPilot(account)!;
+            f.Db.Store.SetPosition(pilot.ShipId, site.Position, site.SystemId);
+            pilot = f.Db.Store.FindPilot(account)!;
+            using var scope = f.Db.Services.CreateScope();
+            using PilotCallContext context = new(
+                account,
+                pilot.Account,
+                [pilot],
+                p => new(f.Db.Store, p, f.Clock, space, []),
+                account,
+                SignedSettings.Empty
+            );
+            context.Select(pilot);
+            context.Flight.Snapshot();
+            CombatAnomalyHandler handler = new(sites, f.Clock);
+            handler.Call(context, "scanMgr", "SignalTrackerRegister", []);
+            var fullState = Assert.IsType<SignalTrackerFullState>(Assert.Single(context.Notifications));
+            Assert.Equal(site.Id, Assert.Single(fullState.Sites).Id);
+            PilotSessionTick tick = new(
+                f.Clock,
+                scope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>(),
+                scope.ServiceProvider.GetRequiredService<SkillHandler>(),
+                new EmptyAsteroids(),
+                anomalies: handler
+            );
+            PilotSessionOutput output = new(context, account, account, _ => Task.CompletedTask, _ => { });
+            await tick.AdvanceAsync(context, output, _ => { }, account, account);
+        }
+        Assert.True(Assert.Single(sites.List(site.SystemId, f.Clock.Now)).Started);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Equal(CombatAnomalyRules.Wave(site.Id, 0).Count, world.Set<WorldNpc>().Count(n => n.EncounterId == site.Id));
     }
 }

@@ -673,3 +673,10 @@ The .NET filter was `FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~Np
 The first new lifecycle method was exercised individually before the combined run. Full .NET regression was
 outside this milestone's requested validation. Early development fixture-resource, scope-resolution, nullable
 and assertion-analyzer failures were corrected before the passing combined run.
+
+
+After integration with main, the final focused run passed 101 cases in 30.08 seconds including test-host
+startup (27 seconds reported test duration). It includes two simulated pilots discovering the same scanner
+identity and activating one fleet through normal flight ticks after position advancement. The solution build
+passed with zero warnings/errors. The Python policy suites again passed eight and nine cases respectively.
+Anomaly refresh now belongs to the flight tick immediately after authoritative movement, before contacts.

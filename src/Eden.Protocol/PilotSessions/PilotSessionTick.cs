@@ -14,7 +14,8 @@ internal sealed class PilotSessionTick(
     SkillHandler skills,
     IAsteroidField asteroids,
     IPilotOperationScope? operations = null,
-    SessionDiagnostics? diagnostics = null
+    SessionDiagnostics? diagnostics = null,
+    Eden.Protocol.Exploration.CombatAnomalyHandler? anomalies = null
 )
 {
     private const int SlowUpdateMilliseconds = 250;
@@ -68,6 +69,7 @@ internal sealed class PilotSessionTick(
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
+        anomalies?.Advance(context);
         using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
         {
             if (flight.InBallpark)

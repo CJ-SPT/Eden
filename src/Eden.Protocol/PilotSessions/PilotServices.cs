@@ -22,6 +22,7 @@ internal sealed class PilotServices(
     IAsteroidField asteroids,
     ILoginIdentity identity,
     StationGuestHandler guests,
+    Eden.Protocol.Exploration.CombatAnomalyHandler anomalies,
     IPilotOperationScope? operations = null,
     ChatHandler? chat = null,
     SessionDiagnostics? diagnostics = null
@@ -66,7 +67,7 @@ internal sealed class PilotServices(
             operations,
             diagnostics
         );
-        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics);
+        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics, anomalies);
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();
