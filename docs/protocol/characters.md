@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Pilot services subscription and checkout, November 8, 2026](#pilot-services-subscription-and-checkout-november-8-2026)
 - [Character biomass (November 6, 2026)](#character-biomass-november-6-2026)
 - [Character interaction history (November 5, 2026)](#character-interaction-history-november-5-2026)
 - [Private pilot Show Info notes (November 4, 2026)](#private-pilot-show-info-notes-november-4-2026)
@@ -29,6 +30,32 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Pilot services subscription and checkout, November 8, 2026
+
+The supplied Pilot's Services screenshots report missing `subscriptionMgr.GetSubscriptionTime`, `FastCheckoutService.GetTestingConfiguration` and `storeManager.get_offers`. Account-level handlers now support these reads before and after pilot selection, plus related fast-checkout capability/cache and store catalog calls. Subscription/checkout calls require an empty positional tuple and no service keywords; the three store catalog reads require one supported store ID. The router retains transport metadata filtering. Invalid requests fail without changing account or pilot state; unknown calls remain unsupported.
+
+| Native call | Reply |
+| --- | --- |
+| `subscriptionMgr.GetSubscriptionTime` | Integer FILETIME: zero for saved Alpha, a fixed **9999-12-31 00:00 UTC** presentation date for saved Omega |
+| `FastCheckoutService.GetTestingConfiguration` | Python tuple `(False, '', False)`: China funnel disabled, no fake purchase URL, shell execution disabled |
+| `FastCheckoutService.IsFastCheckoutEnabledForUser` | Python False |
+| `FastCheckoutService.ClearFastCheckoutCacheForUser` | Python None; Eden has no payment/cache integration |
+| `storeManager.get_offers`, `get_products`, `get_categories` | Empty Python lists for pinned store IDs 4 (in-game), 5 (code) and 9 (real money) |
+
+Eden persists a clone grade, not a subscription expiry. Omega therefore keeps its existing non-expiring gameplay behavior; the distant date only lets the native panel select its Omega branch and format its remaining-time description. It is stable across repeated reads and advancing the clock, and never creates a saved deadline or changes eligibility/training. Alpha reports zero, consistent with `GetCloneGrade`. The native panel has no separate permanent-Omega label in this path. No PLEX, offers, purchases, billing, timed subscriptions or additional training entitlements are implemented. `userSvc.GetMultiCharactersTrainingSlots` retains its existing empty dictionary. Unknown purchase calls, including `FastCheckoutService.BuyOffer` and `storeManager.buy_offer`, remain unsupported.
+
+Inert inspection of pinned build **3662168** `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, confirms `plexPanel.PLEXPanel.GetOmegaTime` makes a no-argument subscription call. `RefreshOmegaTime` selects Omega for a truthy scalar and passes it as `expireDate` to `PilotLicense/DaysLeft`; a falsy value selects Alpha. `fastCheckoutClientService.FastCheckoutClientService._update_config` unpacks exactly three values in the documented order. `is_fast_checkout_enabled` expects a boolean, while cache clearing discards its result. No client modules were executed.
+
+`vgs/client/vgsClient.pyj` passes one `store_id` to each catalog read. Its empty-list branch marks the store unavailable and raises the existing `StoreUnavailableError`; this is the intended disabled-store path rather than a Macho unsupported-call error. Eden does not supply fabricated offers merely to bypass that branch. `vgs/common/const.pyj` defines the three accepted IDs. Store rendering and its unavailable-state presentation remain unverified.
+
+Gameplay reference: [EVE University clone states](https://wiki.eveuniversity.org/Clone_states) describes account-wide Alpha/Omega status and ordinary subscription lapse. Eden's existing permanent saved-grade policy is distinct from retail billing; the pinned client determines the wire reply. Consulted local [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectInt64` and `ReadObjectTuple`, against the unchanged integer/tuple adapters. No codec, schema or gameplay rules changed.
+
+**Automated validation.** Exact development filter `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.SubscriptionServiceTests.NativePilotServicesPacketsReturnSubscriptionTimeWithoutDestinationErrors` passed **2 tests** after including all three reported errors (build-command **8.02 seconds**, test-command **7.55 seconds**). An initial development build failed on five test collection expressions targeting `object`; explicit empty arrays corrected those errors before the passing runs. Final root checks passed **66 affected tests** in approximately **3 seconds**, with filter `FullyQualifiedName~SubscriptionServiceTests|FullyQualifiedName~CloneGradeTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` and `xUnit.MaxParallelThreads=4`. Tool/solution restores, build (**0.63 seconds**, zero warnings/errors), both Python policy suites (**8 catalog**, **9 formatting**), formatting verification (**1,167 files**), documentation links and diff checks passed. Preparation took **16.54 seconds**, and final build/test/policy/format checks took **23.16 seconds**, using isolated `artifacts/feature-tests` output. The earlier **65-test** sequence passed before store catalog support was added; final results cover that addition too. Coverage includes actual Alpha/Omega session packets before/after selection, native integer/tuple/bool/None/list replies, all three pinned store IDs, inactive additional training, cache resets, docked/in-space repeated reads, a ten-year clock advance, malformed requests, account isolation, unchanged saved grade after reopen and absent notifications. No full .NET suite was requested or run. A running server requires a rebuild/restart to load the correction.
+
+**Live acceptance.** Not performed; agent client testing is disabled. A later maintainer-provided screenshot shows the Omega description rendering `9999.12.31 00:00` while reporting the subsequent missing `storeManager.get_offers` call. This establishes that particular date display only; it does not establish acceptance of the complete corrected panel, Alpha state, checkout controls or unavailable store.
+
+**Optional maintainer checks.** Restart the updated server and reopen Pilot's Services on an Omega account and an Alpha account. Confirm the clone-state label matches each saved grade and the reported dialogs are gone.
 
 ## Character biomass (November 6, 2026)
 
