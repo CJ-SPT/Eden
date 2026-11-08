@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Sovereignty information tab, November 8, 2026](#sovereignty-information-tab-november-8-2026)
 - [Null-security system information, November 8, 2026](#null-security-system-information-november-8-2026)
 - [NPC visibility after same-system GM translocation](#npc-visibility-after-same-system-gm-translocation)
 - [NPC spawn and translocation follow-up](#npc-spawn-and-translocation-follow-up)
@@ -23,6 +24,30 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Sovereignty information tab, November 8, 2026
+
+The supplied screenshot shows the null-security system Sovereignty tab failing on `sovMgr.GetSovStructuresInfoForSolarSystem`. A selected-pilot `SovereigntyHandler` now owns the complete read sequence needed by that tab. Eden has no deployed sovereignty hubs, alliance territorial claims or saved development indices; these replies describe that unclaimed state. This correction does not implement sovereignty deployment, capture, alliance ownership, upgrades or index accrual.
+
+| Native call | Arguments | Reply |
+| --- | --- | --- |
+| `sovMgr.GetSovStructuresInfoForSolarSystem` | One positive 32-bit system ID | Empty Python list |
+| `sovMgr.GetSovStructuresInfoForLocalSolarSystem` | None | Empty Python list |
+| `sovMgr.GetInfrastructureHubInfo` | One positive 32-bit system ID | Python None |
+| `sovMgr.GetSystemSovereigntyInfo` | One positive 32-bit system ID | Python None |
+| `devIndexManager.GetDevelopmentIndicesForSystem` | One positive 32-bit system ID | Integer-keyed dictionary with military/industrial `utillib.KeyVal` records: `points=0`, `increasing=False` |
+
+The router preserves character-selection gating and strips transport metadata such as `machoVersion`. The handler rejects invalid argument shapes, nonpositive/overflow IDs and service keywords, and leaves unknown methods unsupported. These reads do not change saved state or queue notifications. They do not perform catalog existence checks for the supplied system ID.
+
+Inert inspection of pinned build **3662168** `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, establishes the contract: `sovSvc.GetSovStructuresInfoForSolarSystem` selects the local no-argument route or the remote one-ID route, then iterates structure records. `sovDashboard.GetSovStructureInfoByTypeID` seeds a default empty hub record before iterating, so an empty list supports the unclaimed tab. `panelSov.PanelSov.Load` then calls `GetSovInfoForSolarsystem` and `GetDevelopmentIndicesForSystem`; the former obtains the military/industrial indices, hub claim time for the strategic index and system ownership. An absent hub/claim is explicitly handled as zero strategic index/no alliance owner. Military/industrial records expose `points` and `increasing` attributes. Catalog `client/dogmaattributes` confirms the keys **1583** (`devIndexMilitary`) and **1584** (`devIndexIndustrial`), now named in `DogmaAttributeId`. No client modules were executed.
+
+Gameplay reference: [EVE University sovereignty](https://wiki.eveuniversity.org/Sovereignty) describes system claims and sovereignty hubs. Pinned-client code and the local catalog establish the wire contract rather than assuming current wiki descriptions match the client. Consulted local [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectList0` / `ReadObjectDict`, against the reused Blue list/dictionary adapters. No codec or simulation changes were required.
+
+**Automated validation.** Exact development filter `FullyQualifiedName=Eden.Protocol.Tests.Maps.SovereigntyTests.NativeSovereigntyPanelPacketsReturnUnclaimedSystemInformationWithoutDestinationErrors` passed **1 test**, with **10.39 seconds** build / **10.86 seconds** test-command elapsed time. Final root checks passed **65 affected tests** in approximately **7 seconds**, with filter `FullyQualifiedName~SovereigntyTests|FullyQualifiedName~MapStartupTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` and `xUnit.MaxParallelThreads=4`. Tool/solution restores, build (**4.50 seconds**, zero warnings/errors), both Python policy suites (**8 catalog**, **9 formatting**), formatting verification (**1,163 files**), documentation links and diff checks passed. Preparation took **17.87 seconds**, and the final build/test/policy/format sequence took **32.63 seconds**, using isolated `artifacts/feature-tests` output. Coverage includes the native packet loading sequence with repeated index/hub reads, decoded list/None/dictionary/KeyVal shapes and numeric keys, selected-pilot gating, docked/in-space reads, current-system and remote null-security IDs, malformed arguments/keywords, unsupported methods and unchanged pilot/notification state. No full .NET suite was requested or run. A running server requires a rebuild/restart to load the correction.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The screenshot records the reported failure, not visual acceptance of this correction.
+
+**Optional maintainer checks.** Restart the server with the updated build and open the Sovereignty tab for a remote null-security system, then for the current null-security system. Confirm the unclaimed status and zero development indices render.
 
 ## Null-security system information, November 8, 2026
 

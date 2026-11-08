@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
+
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)
 
 - [NPC population template exclusion and resident spawn pools, November 8, 2026](protocol/combat.md#npc-population-template-exclusion-and-resident-spawn-pools-november-8-2026)
