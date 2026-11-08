@@ -32,7 +32,7 @@ internal static class RemoteRepairCatalog
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
-            || InventoryDefinitions.RequiresSpecificShip(attributes)
+            || (group != RemoteRepairRules.MutadaptiveArmorGroup && InventoryDefinitions.RequiresSpecificShip(attributes))
             || FittingCatalog.DefaultEffect(catalog, typeId) != active
         )
         {
@@ -42,7 +42,8 @@ internal static class RemoteRepairCatalog
         int overload = group switch
         {
             RemoteRepairRules.ShieldGroup or RemoteRepairRules.AncillaryShieldGroup => ShieldOverload,
-            RemoteRepairRules.ArmorGroup or RemoteRepairRules.AncillaryArmorGroup => ArmorOverload,
+            RemoteRepairRules.ArmorGroup or RemoteRepairRules.AncillaryArmorGroup or RemoteRepairRules.MutadaptiveArmorGroup =>
+                ArmorOverload,
             _ => HullOverload,
         };
         var expected = new HashSet<int> { (int)DogmaEffect.HighPower, (int)DogmaEffect.Online, (int)active, overload };
@@ -63,7 +64,8 @@ internal static class RemoteRepairCatalog
                     || effect.DurationAttributeID != (int)DogmaAttributeId.Duration
                     || effect.DischargeAttributeID != (int)DogmaAttributeId.CapacitorNeed
                     || effect.RangeAttributeID != (int)DogmaAttributeId.MaxRange
-                    || effect.FalloffAttributeID != (int)DogmaAttributeId.FalloffEffectiveness
+                    || effect.FalloffAttributeID
+                        != (group == RemoteRepairRules.MutadaptiveArmorGroup ? null : (int?)DogmaAttributeId.FalloffEffectiveness)
                     || effect.ResistanceAttributeID != (int)DogmaAttributeId.RemoteRepairImpedance
                     || effect.IsAssistance != 1
                     || effect.IsWarpSafe != 0
@@ -108,6 +110,22 @@ internal static class RemoteRepairCatalog
         }
         try
         {
+            if (group == RemoteRepairRules.MutadaptiveArmorGroup)
+            {
+                // Build 3662168 limits these repairers to Rodiva and Zarmazd, one
+                // per ship. Retain the explicit type restrictions at fit and use.
+                const int rodiva = 49712;
+                const int zarmazd = 49713;
+                var restrictions = ShipFittingRestrictions.Read(attributes);
+                if (
+                    restrictions.Groups.Count != 0
+                    || !restrictions.Types.SetEquals([rodiva, zarmazd])
+                    || attributes.GetValueOrDefault(DogmaAttributeId.MaxGroupFitted) != 1
+                )
+                {
+                    return false;
+                }
+            }
             _ = RemoteRepairRules.Define(0, typeId, active, attributes);
             if (RemoteRepairRules.AncillaryKind(group) is { } ancillary)
             {

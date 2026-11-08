@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Mutadaptive remote armor repairs, November 7, 2026](protocol/fitting.md#mutadaptive-remote-armor-repairs-november-7-2026)
+
 - [Ship content milestone 2: hull and fitting foundation, November 7, 2026](protocol/fitting.md#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026)
 
 - [Ship content coverage milestone 1, November 7, 2026](protocol/fitting.md#ship-content-coverage-milestone-1-november-7-2026)

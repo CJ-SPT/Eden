@@ -31,12 +31,12 @@
     {
       "category": "Module",
       "state": "Partial",
-      "count": 1928
+      "count": 1933
     },
     {
       "category": "Module",
       "state": "Planned",
-      "count": 477
+      "count": 472
     },
     {
       "category": "Module",
@@ -200343,7 +200343,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "EnergyAndRemoteSupport",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "RemoteRepair"
@@ -200583,8 +200583,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -200594,9 +200594,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
           "role": null
         }
       ],
@@ -200610,8 +200624,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -200621,9 +200635,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
           "role": null
         }
       ],
@@ -200637,8 +200665,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -200648,9 +200676,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
           "role": null
         }
       ],
@@ -200664,8 +200706,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -200675,9 +200717,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
           "role": null
         }
       ],
@@ -200691,8 +200747,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -200702,9 +200758,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": false,
+          "milestone": "Overheating",
+          "evidence": "Native overload routes have no owner.",
           "role": null
         }
       ],

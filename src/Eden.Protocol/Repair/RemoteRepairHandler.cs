@@ -85,7 +85,8 @@ internal sealed class RemoteRepairHandler(
             effect,
             target,
             targeting.IsLocked(target) ? new HashSet<long> { target } : [],
-            Now()
+            Now(),
+            continuation: previous is not null
         );
         Cycle cycle = new(context.Pilot.PilotId, result.Cycle, repeats, FuelDepleted: result.Magazine is { Quantity: 0 });
         _cycles[module] = cycle;
@@ -136,12 +137,16 @@ internal sealed class RemoteRepairHandler(
         foreach (var cycle in _cycles.Values.ToArray())
         {
             var repair = cycle.Repair;
+            var target = context.Flight.FindTarget(repair.TargetId);
             if (
                 repair.ShipId != context.Pilot.ShipId
                 || !context.Flight.CanTarget
                 || context.Flight.InWarp
                 || !targeting.IsLocked(repair.TargetId)
-                || context.Flight.FindTarget(repair.TargetId) is null
+                || target is null
+                || repair.Module.Effect == DogmaEffect.MutadaptiveRemoteArmorRepair
+                    && context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius
+                        > repair.Module.Optimal
                 || !repairing.IsOnline(cycle.PilotId, repair.ShipId, repair.Module.ItemId)
             )
             {

@@ -46,7 +46,15 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             );
     }
 
-    public RemoteRepairActivation Start(long pilotId, long moduleId, DogmaEffect effect, long targetId, IReadOnlySet<long> locks, long now)
+    public RemoteRepairActivation Start(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool continuation = false
+    )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -64,6 +72,11 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             || !InventoryDefinitions.IsHighSlot(item.FlagId)
             || !RemoteRepairCatalog.Supported(catalog, item.TypeId, group)
             || RemoteRepairRules.Effect(group) != effect
+            || !InventoryDefinitions.CanFitShip(
+                catalog.FittingAttributes(item.TypeId),
+                pilot.ActiveShip.TypeId,
+                catalog.FittingType(pilot.ActiveShip.TypeId)!.GroupId
+            )
         )
         {
             throw new InvalidDataException("Use an online fitted remote repairer on your active ship in space.");
@@ -87,9 +100,32 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             throw new InvalidDataException("The remote repair target is outside range.");
         }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
-        if (cooldown?.ReadyAt > now || world.Set<WorldRemoteRepair>().Any(r => r.ModuleId == moduleId))
+        var row = world.Set<WorldRemoteRepair>().Find(moduleId);
+        var previous = row is null ? null : JsonSerializer.Deserialize<RemoteRepairCycle>(row.CycleJson);
+        if (cooldown?.ReadyAt > now || previous is { Settled: false })
         {
             throw new InvalidDataException("The remote repairer is still cycling.");
+        }
+        int rampCycles = 0;
+        if (effect == DogmaEffect.MutadaptiveRemoteArmorRepair)
+        {
+            if (continuation)
+            {
+                if (
+                    previous is not { Settled: true }
+                    || row!.PilotId != pilotId
+                    || row.SourceShipId != pilot.ActiveShipId
+                    || row.TargetId != targetId
+                    || row.SystemId != CrimewatchPersistence.System(catalog, pilot.ActiveShip)
+                    || previous.Module.TypeId != item.TypeId
+                    || previous.Module.Effect != effect
+                )
+                {
+                    throw new InvalidDataException("The mutadaptive repair chain has ended.");
+                }
+                rampCycles = Math.Min(previous.RampCycles, int.MaxValue - 1) + 1;
+            }
+            module = RemoteRepairRules.Ramp(module, rampCycles);
         }
         long end = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, end);
@@ -108,18 +144,13 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             module = module with { Amount = fuel.Payment.Amount, CapacitorNeed = fuel.Payment.CapacitorNeed };
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
-        RemoteRepairCycle cycle = new(module, pilot.ActiveShipId, targetId, now, end);
-        world.Add(
-            new WorldRemoteRepair
-            {
-                ModuleId = moduleId,
-                PilotId = pilotId,
-                SourceShipId = pilot.ActiveShipId,
-                TargetId = targetId,
-                SystemId = CrimewatchPersistence.System(catalog, pilot.ActiveShip),
-                CycleJson = JsonSerializer.Serialize(cycle),
-            }
-        );
+        RemoteRepairCycle cycle = new(module, pilot.ActiveShipId, targetId, now, end, rampCycles);
+        row ??= world.Set<WorldRemoteRepair>().Add(new() { ModuleId = moduleId }).Entity;
+        row.PilotId = pilotId;
+        row.SourceShipId = pilot.ActiveShipId;
+        row.TargetId = targetId;
+        row.SystemId = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
+        row.CycleJson = JsonSerializer.Serialize(cycle);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
@@ -143,7 +174,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             return;
         }
         var cycle = JsonSerializer.Deserialize<RemoteRepairCycle>(row.CycleJson)!;
-        if (cycle.CompletesAt > now)
+        if (cycle.CompletesAt > now || cycle.Settled)
         {
             return;
         }
@@ -158,6 +189,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
                 || pilot.ActiveShip.Position is null
                 || CrimewatchPersistence.System(catalog, pilot.ActiveShip) != row.SystemId
                 || item is not { Singleton: true, Online: true }
+                || item.TypeId != cycle.Module.TypeId
                 || item.OwnerId != pilotId
                 || item.LocationId != row.SourceShipId
                 || !InventoryDefinitions.IsHighSlot(item.FlagId)
@@ -167,10 +199,24 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             }
             _ = Health(world, pilot, PilotFittingStore.ShipAttributes(world, catalog, pilot), now);
             var target = Target(world, catalog, pilot, row.TargetId, now);
+            double distance = Distance(catalog, pilot, target.Pilot);
+            if (cycle.Module.Effect == DogmaEffect.MutadaptiveRemoteArmorRepair && distance > cycle.Module.Optimal)
+            {
+                throw new InvalidDataException("The mutadaptive repair target has left optimal range.");
+            }
             AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, now);
-            applied = Apply(world, target, cycle.Module, Distance(catalog, pilot, target.Pilot), now);
+            applied = Apply(world, target, cycle.Module, distance, now);
         }
-        world.Remove(row);
+        if (cycle.Module.Effect == DogmaEffect.MutadaptiveRemoteArmorRepair)
+        {
+            // Retain only the completed chain, so a paid repeat can earn its
+            // next step. Stop/disconnect/restart delete this connection-owned row.
+            row.CycleJson = JsonSerializer.Serialize(cycle with { Settled = true });
+        }
+        else
+        {
+            world.Remove(row);
+        }
         world.SaveChanges();
         transaction.Commit();
         if (applied is not null)

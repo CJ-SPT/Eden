@@ -31,10 +31,20 @@ public sealed record RemoteRepairModule(
     double CapacitorNeed,
     double Amount,
     double Optimal,
-    double Falloff
+    double Falloff,
+    double RampPerCycle = 0,
+    double RampMaximum = 0
 );
 
-public sealed record RemoteRepairCycle(RemoteRepairModule Module, long ShipId, long TargetId, long StartedAt, long CompletesAt);
+public sealed record RemoteRepairCycle(
+    RemoteRepairModule Module,
+    long ShipId,
+    long TargetId,
+    long StartedAt,
+    long CompletesAt,
+    int RampCycles = 0,
+    bool Settled = false
+);
 
 public sealed record RemoteRepairActivation(RemoteRepairCycle Cycle, double Capacitor, Magazine? Magazine = null);
 
@@ -47,7 +57,15 @@ public interface IRemoteRepairEvents
 
 public interface IPilotRemoteRepairing
 {
-    RemoteRepairActivation Start(long pilotId, long moduleId, DogmaEffect effect, long targetId, IReadOnlySet<long> locks, long now);
+    RemoteRepairActivation Start(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool continuation = false
+    );
     void Complete(long pilotId, long moduleId, long now);
     void Stop(long pilotId, long moduleId);
     bool IsOnline(long pilotId, long shipId, long moduleId);
@@ -60,6 +78,7 @@ public static class RemoteRepairRules
     public const int HullGroup = 585;
     public const int AncillaryShieldGroup = 1697;
     public const int AncillaryArmorGroup = 1698;
+    public const int MutadaptiveArmorGroup = 2018;
 
     public static AncillaryRepairKind? AncillaryKind(int group) =>
         group switch
@@ -77,6 +96,7 @@ public static class RemoteRepairRules
             HullGroup => DogmaEffect.RemoteHullRepair,
             AncillaryShieldGroup => DogmaEffect.AncillaryRemoteShieldBoost,
             AncillaryArmorGroup => DogmaEffect.AncillaryRemoteArmorRepair,
+            MutadaptiveArmorGroup => DogmaEffect.MutadaptiveRemoteArmorRepair,
             _ => null,
         };
 
@@ -85,7 +105,8 @@ public static class RemoteRepairRules
         var kind = effect switch
         {
             DogmaEffect.RemoteShieldBoost or DogmaEffect.AncillaryRemoteShieldBoost => RemoteRepairKind.Shield,
-            DogmaEffect.RemoteArmorRepair or DogmaEffect.AncillaryRemoteArmorRepair => RemoteRepairKind.Armor,
+            DogmaEffect.RemoteArmorRepair or DogmaEffect.AncillaryRemoteArmorRepair or DogmaEffect.MutadaptiveRemoteArmorRepair =>
+                RemoteRepairKind.Armor,
             DogmaEffect.RemoteHullRepair => RemoteRepairKind.Hull,
             _ => throw new InvalidDataException("Unsupported remote repair effect."),
         };
@@ -111,7 +132,34 @@ public static class RemoteRepairRules
         {
             throw new InvalidDataException("Invalid remote repair profile.");
         }
-        return new(item, type, kind, effect, duration, cost, amount, optimal, falloff);
+        double perCycle = 0;
+        double maximum = 0;
+        if (effect == DogmaEffect.MutadaptiveRemoteArmorRepair)
+        {
+            perCycle = values.GetValueOrDefault(DogmaAttributeId.RepairMultiplierBonusPerCycle);
+            maximum = values.GetValueOrDefault(DogmaAttributeId.RepairMultiplierBonusMax);
+            if (!double.IsFinite(perCycle) || perCycle <= 0 || !double.IsFinite(maximum) || maximum <= 0 || falloff != 0)
+            {
+                throw new InvalidDataException("Invalid mutadaptive repair ramp.");
+            }
+        }
+        return new(item, type, kind, effect, duration, cost, amount, optimal, falloff, perCycle, maximum);
+    }
+
+    public static RemoteRepairModule Ramp(RemoteRepairModule module, int completedCycles)
+    {
+        if (completedCycles < 0 || module.Effect != DogmaEffect.MutadaptiveRemoteArmorRepair)
+        {
+            throw new InvalidDataException("Only mutadaptive repairs have a repair ramp.");
+        }
+        // CCP's December 2018 rules: the first paid cycle is unboosted; each
+        // additional cycle on the same target adds a fraction of the base repair.
+        double amount = module.Amount * (1 + Math.Min(module.RampMaximum, completedCycles * module.RampPerCycle));
+        if (!double.IsFinite(amount) || amount <= 0)
+        {
+            throw new InvalidDataException("Invalid ramped repair amount.");
+        }
+        return module with { Amount = amount };
     }
 
     public static double Amount(RemoteRepairModule module, double distance, double impedance)

@@ -403,6 +403,8 @@ public enum DogmaAttributeId
     MaxVelocityMultiplier = 1470,
     StasisWebifierResistance = 2115,
     FalloffEffectiveness = 2044,
+    RepairMultiplierBonusPerCycle = 2796,
+    RepairMultiplierBonusMax = 2797,
     RemoteResistanceId = 2138,
     ModuleReactivationDelay = 669,
     DroneBandwidth = 1271,

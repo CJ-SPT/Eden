@@ -198,22 +198,27 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
     }
 
-    internal void RemoteRepairEffect(long shipId, RemoteRepairCycle repair, bool active) =>
-        emit(
-            new DestinyCommand.TimedSpecialEffect(
-                shipId,
-                repair.Module.ItemId,
-                repair.Module.TypeId,
-                repair.TargetId,
-                null,
-                RemoteRepairWire.Graphic(repair.Module.Effect),
-                false,
-                active,
-                active,
-                repair.Module.DurationMilliseconds,
-                repair.StartedAt
-            )
-        );
+    internal void RemoteRepairEffect(long shipId, RemoteRepairCycle repair, bool active)
+    {
+        foreach (string graphic in RemoteRepairWire.Graphics(repair.Module.Effect))
+        {
+            emit(
+                new DestinyCommand.TimedSpecialEffect(
+                    shipId,
+                    repair.Module.ItemId,
+                    repair.Module.TypeId,
+                    repair.TargetId,
+                    null,
+                    graphic,
+                    false,
+                    active,
+                    active,
+                    repair.Module.DurationMilliseconds,
+                    repair.StartedAt
+                )
+            );
+        }
+    }
 
     internal void LocalRepairEffect(long shipId, LocalRepairContact effect, bool active) =>
         emit(
