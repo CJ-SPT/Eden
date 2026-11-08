@@ -113,5 +113,47 @@ public sealed class OverloadCatalogTests
         double bonus = OverloadCatalog.ThermodynamicsBonus(catalog);
         Assert.Equal(-5, bonus);
         Assert.Equal(2.3 * .75, OverloadRules.ThermodynamicsDamage(2.3, 5, bonus), 8);
+        Assert.Equal(2, OverloadCatalog.ThermodynamicsModifiers(catalog).Count);
+        var effect = Assert.Single(PassiveCatalog.Effects(catalog, OverloadRules.ThermodynamicsSkill), e => e.EffectID == 3196);
+        Assert.Null(PassiveCatalog.Parse(Assert.Single(effect.ModifierInfo!.Value), (int)PassiveEffectPhase.Fitted));
+    }
+
+    [Theory]
+    [InlineData("phase")]
+    [InlineData("function")]
+    [InlineData("domain")]
+    [InlineData("target")]
+    [InlineData("operation")]
+    public void ChangedThermodynamicsProgramsCannotEnterTheFittingOrBrainGraph(string change)
+    {
+        using Fixture f = new();
+        using CatalogDbContext catalog = new(f.Path, writable: true);
+        var row = catalog.Set<SourceRecord>().Find("client/dogmaeffects", "3196")!;
+        var data = JsonNode.Parse(row.Data)!;
+        var modifier = data["modifierInfo"]![0]!;
+        if (change == "phase")
+        {
+            data["effectCategory"] = 1;
+        }
+        if (change == "function")
+        {
+            modifier["func"] = "LocationGroupModifier";
+        }
+        if (change == "domain")
+        {
+            modifier["domain"] = "charID";
+        }
+        if (change == "target")
+        {
+            modifier["modifiedAttributeID"] = (int)DogmaAttributeId.StructureHitPoints;
+        }
+        if (change == "operation")
+        {
+            modifier["operation"] = (int)DogmaOperation.Add;
+        }
+        row.Data = data.ToJsonString();
+        catalog.Update(row);
+        catalog.SaveChanges();
+        Assert.Throws<InvalidDataException>(() => OverloadCatalog.ThermodynamicsModifiers(catalog));
     }
 }

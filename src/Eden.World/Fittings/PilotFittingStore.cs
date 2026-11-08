@@ -65,7 +65,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         ship ??= pilot.ActiveShip;
         var key = new FitCacheKey(pilot.Id, ship.Id, 0);
-        string? revision = world.FitRevision(pilot.Id);
+        string? revision = calculation?.Transient == true ? null : world.FitRevision(pilot.Id);
         if (world.CachedFit(key, revision) is { } cached)
         {
             return cached;

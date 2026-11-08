@@ -21,16 +21,51 @@ internal static class OverloadCatalog
     internal static double ThermodynamicsBonus(CatalogDbContext catalog) =>
         catalog.Definition(s_thermodynamics, OverloadRules.ThermodynamicsSkill);
 
+    internal static IReadOnlyList<PassiveModifier> ThermodynamicsModifiers(CatalogDbContext catalog)
+    {
+        // Validate both native programs before admitting this selector. The
+        // general passive parser deliberately does not accept LocationModifier.
+        _ = ThermodynamicsBonus(catalog);
+        return
+        [
+            new(
+                ModifierDomain.Item,
+                ModifierSelector.Item,
+                null,
+                DogmaAttributeId.ThermodynamicsHeatDamage,
+                DogmaAttributeId.SkillLevel,
+                DogmaOperation.PreMultiply,
+                PassiveEffectPhase.Fitted
+            ),
+            new(
+                ModifierDomain.Ship,
+                ModifierSelector.Location,
+                null,
+                DogmaAttributeId.HeatDamage,
+                DogmaAttributeId.ThermodynamicsHeatDamage,
+                DogmaOperation.PostPercent,
+                PassiveEffectPhase.Fitted
+            ),
+        ];
+    }
+
     private static double ReadThermodynamics(CatalogDbContext catalog, int skill)
     {
+        const int standardSkillEffect = 132;
         const int skillLevelEffect = 3195;
         const int damageEffect = 3196;
         var effects = PassiveCatalog.Effects(catalog, skill);
-        var level = effects.SingleOrDefault(e => e.EffectID == skillLevelEffect)?.ModifierInfo;
-        var damage = effects.SingleOrDefault(e => e.EffectID == damageEffect)?.ModifierInfo;
+        var levelProgram = effects.SingleOrDefault(e => e.EffectID == skillLevelEffect);
+        var damageProgram = effects.SingleOrDefault(e => e.EffectID == damageEffect);
+        var level = levelProgram?.ModifierInfo;
+        var damage = damageProgram?.ModifierInfo;
         double bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.ThermodynamicsHeatDamage);
         if (
-            level is not { Length: 1 }
+            effects.Count != 3
+            || effects.SingleOrDefault(e => e.EffectID == standardSkillEffect)?.EffectCategory != (int)PassiveEffectPhase.Fitted
+            || levelProgram?.EffectCategory != (int)PassiveEffectPhase.Fitted
+            || damageProgram?.EffectCategory != (int)PassiveEffectPhase.Fitted
+            || level is not { Length: 1 }
             || damage is not { Length: 1 }
             || !double.IsFinite(bonus)
             || bonus < MinimumThermodynamicsBonusPerLevel

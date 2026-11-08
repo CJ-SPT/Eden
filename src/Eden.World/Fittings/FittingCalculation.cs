@@ -16,6 +16,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Targeting;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -28,6 +29,7 @@ using Eden.World.Propulsion;
 using Eden.World.Repair;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
@@ -47,6 +49,7 @@ internal sealed record FittingCalculation(
 )
 {
     internal const long OwnerTargetId = long.MinValue;
+    internal bool Transient { get; init; }
 
     internal IReadOnlyList<FittedResourceUsage> ResourceUsage(CatalogDbContext catalog) =>
         Modules
@@ -66,12 +69,19 @@ internal sealed record FittingCalculation(
         CatalogDbContext catalog,
         Pilot pilot,
         Ship? ship = null,
-        int? ownerTypeId = null
+        int? ownerTypeId = null,
+        IReadOnlySet<long>? overloadedModules = null
     )
     {
-        string? revision = ownerTypeId is null ? world.FitRevision(pilot.Id) : null;
+        // A paid-cycle owner supplies its explicit overload selection. Neither
+        // the module snapshot nor derived ship values may enter the normal cache.
+        string? revision = ownerTypeId is null && overloadedModules is null ? world.FitRevision(pilot.Id) : null;
         SessionPerformance.FittingCalculated();
         ship ??= pilot.ActiveShip;
+        if (overloadedModules is not null && ship.OwnerId != pilot.Id)
+        {
+            throw new InvalidDataException("Overload selection requires an owned ship.");
+        }
         var hull = catalog.FittingType(ship.TypeId)!;
         var hullAttributes = PilotFittingStore.ReadAttributes(catalog, ship.TypeId).ToDictionary();
         hullAttributes[DogmaAttributeId.Mass] = hull.Mass ?? 0;
@@ -103,6 +113,11 @@ internal sealed record FittingCalculation(
             ))
             .ToArray();
         var moduleIds = items.Select(i => i.Id).ToArray();
+        var overloads = overloadedModules?.ToFrozenSet() ?? FrozenSet<long>.Empty;
+        if (overloads.Except(moduleIds).Any())
+        {
+            throw new InvalidDataException("Overload selection must belong to this owned ship's fitted modules.");
+        }
         var loaded = world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.Id && moduleIds.Contains(i.LocationId)).ToArray();
         var chargeAttributes = loaded
             .Select(i => i.TypeId)
@@ -405,6 +420,7 @@ internal sealed record FittingCalculation(
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
+            .Concat([OverloadRules.ThermodynamicsSkill])
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])
             .Distinct()
@@ -432,7 +448,11 @@ internal sealed record FittingCalculation(
             var attributes = PilotFittingStore.ReadAttributes(catalog, skill).ToDictionary();
             attributes[DogmaAttributeId.SkillLevel] = level;
             nodes.Add(new(skill, attributes));
-            foreach (var modifier in PassiveCatalog.Modifiers(catalog, skill))
+            var modifiersForSkill =
+                skill == OverloadRules.ThermodynamicsSkill
+                    ? OverloadCatalog.ThermodynamicsModifiers(catalog)
+                    : PassiveCatalog.Modifiers(catalog, skill);
+            foreach (var modifier in modifiersForSkill)
             {
                 Add(skill, modifier, true);
                 if (modifier.Domain != ModifierDomain.Item)
@@ -440,6 +460,20 @@ internal sealed record FittingCalculation(
                     skillModifiers.Add((skill, modifier));
                 }
             }
+        }
+        foreach (var module in modules.Where(m => overloads.Contains(m.Item.Id)))
+        {
+            var profile = OverloadCatalog.Definition(catalog, module.Item.TypeId);
+            if (
+                profile is null
+                || !module.Item.Online
+                || levels.GetValueOrDefault(OverloadRules.ThermodynamicsSkill) < profile.RequiredThermodynamics
+                || ModuleConditionPersistence.Read(world, catalog, module.Item).BurnedOut
+            )
+            {
+                throw new InvalidDataException("Overload requires a working online supported module and the earned Thermodynamics level.");
+            }
+            modifiers.AddRange(OverloadRules.Modifiers(profile, module.Item.Id, true));
         }
         var requested = modifiers
             .Select(m => m.Attribute)
@@ -497,7 +531,10 @@ internal sealed record FittingCalculation(
                 )
             );
         }
-        return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels);
+        return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels)
+        {
+            Transient = ownerTypeId is not null || overloadedModules is not null,
+        };
 
         void Add(long source, PassiveModifier modifier, bool exempt)
         {
@@ -510,6 +547,7 @@ internal sealed record FittingCalculation(
                 ModifierSelector.OwnerRequiredSkill => ownerTargets
                     .Where(m => m.RequiredSkills.Contains(modifier.SelectionId!.Value))
                     .Select(m => m.Item.Id),
+                ModifierSelector.Location => modules.Select(m => m.Item.Id),
                 _ =>
                 [
                     modifier.Domain switch

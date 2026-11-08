@@ -80,6 +80,7 @@ internal enum BrainModifier
     LocationRequiredSkill,
     LocationGroup,
     OwnerRequiredSkill,
+    Location,
 }
 
 internal sealed record BrainEffect(
@@ -105,6 +106,9 @@ internal sealed record BrainEffect(
                     BrainModifier.LocationRequiredSkill => "LRS",
                     BrainModifier.LocationGroup => "LG",
                     BrainModifier.OwnerRequiredSkill => "ORS",
+                    // Pinned effect.py ApplyBrainEffect dispatches L to the
+                    // ship's AddLocationModifierWithSource, without extras.
+                    BrainModifier.Location => "L",
                     _ => throw new InvalidOperationException("Unknown brain modifier."),
                 },
                 ["toAttribID"] = (int)Attribute,

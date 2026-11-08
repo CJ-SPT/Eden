@@ -88,6 +88,7 @@ internal sealed class PilotBrain(
                     ModifierSelector.Group => BrainModifier.LocationGroup,
                     ModifierSelector.RequiredSkill => BrainModifier.LocationRequiredSkill,
                     ModifierSelector.OwnerRequiredSkill => BrainModifier.OwnerRequiredSkill,
+                    ModifierSelector.Location => BrainModifier.Location,
                     _ => BrainModifier.Item,
                 },
                 bonus.Modifier.Attribute,

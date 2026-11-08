@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Overload fitting composition and Thermodynamics, November 7, 2026](protocol/fitting.md#overload-fitting-composition-and-thermodynamics-november-7-2026)
+
 - [Persistent module condition and station repair, November 7, 2026](protocol/fitting.md#persistent-module-condition-and-station-repair-november-7-2026)
 
 - [Overheating calculation foundation, November 7, 2026](protocol/fitting.md#overheating-calculation-foundation-november-7-2026)

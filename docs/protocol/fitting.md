@@ -1290,6 +1290,52 @@ Not performed; agent client testing is disabled. Native module damage display an
 
 None for this internal condition boundary. Native overload and burnout acceptance belongs to the later operational integration.
 
+## Overload fitting composition and Thermodynamics, November 7, 2026
+
+Milestone 6 now evaluates explicit overload selections within the same typed fitting graph as earned skills, hull bonuses, loaded scripts and active module-to-ship modifiers. The internal cycle-calculation input admits only owned fitted working online modules with validated overload profiles and the required Thermodynamics level. An unselected module retains its ordinary values. This is a calculation boundary for the future paid-cycle owner: native overload commands and automatic heat generation/damage are still disabled. Saved-world schema remains **106** and every production overheating check remains false.
+
+Thermodynamics (28164) is now a relevant fitting skill. Pinned fitted effects **3195/3196** scale attribute **1229** by the trained level and apply it to fitted module heat damage (**1211**) through the ship's location selector. Base bonus **-5% per level** changes damage, independently of rack heat absorption/generation. Cargo and loose hangar equipment do not receive that ship-location modifier. Training invalidates the existing fitting cache and updates the effective damage and skill brain together. The exact native skill program, phases and selectors are checked; the general passive parser still rejects arbitrary `LocationModifier` programs.
+
+Native brain serialization adds selector **`L`**, without extras, for that ship-wide modifier. Inert inspection of build 3662168's `eve/common/script/dogma/effect.pyj` confirms that `ApplyBrainEffect['L']` calls `AddLocationModifierWithSource`. The existing new-style `BrainEffect` wire class and Blue codec are unchanged. The archive SHA-256 is **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. No game module-level code or client UI was executed.
+
+Explicit cycle calculations bypass ordinary module and ship caches and cannot publish their temporary values into those caches, including a cold cache and a successful transaction commit. Overload source attributes are evaluated inside the graph, so scripted tracking/range bonuses propagate through the active computer to its weapon, resistance bonuses propagate through an active hardener to the ship, and eligible Raven torpedo-launcher bonuses compose with the earned hull rate-of-fire reduction at actual catalog fitting budgets. Optional neutral missile-guidance attributes use their native defaults when overload introduces the modifier. All 19 native overload programs have real fitted composition cases, in addition to the existing 1,826-profile matrix.
+
+The next integration must retain paid cycle boundaries and stable burnout ordering rather than simply toggling a permanent fitting overlay. Further inert inspection distinguishes the network calls from client-local simulation: Godma's `StateManager.Overload(itemID,effectID)` first calls `GetDogmaLM().Overload`, then updates its pending flag and local dogma effect. `OverloadRack(itemID)` receives the selected module IDs from the server before applying local state. Paste repair uses `InitiateModuleRepair(itemID)` and `StopModuleRepair(itemID)`; its native UI estimates completion from damage divided by character `moduleRepairRate` (**1267**, default **10 HP/minute**). These findings are evidence for unfinished lifecycle/payment integration, not enabled commands. The [historical heat research](https://github.com/pyfa-org/eos/issues/12) remains supporting evidence for later stochastic damage work, not a substitute for establishing pinned cycle and cancellation behavior.
+
+### Automated validation
+
+Development began with the exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.OverloadFittingTests.EarnedThermodynamicsReducesEffectiveModuleDamageAndSendsTheNativeLocationBrainModifier` (**4 passed**, **6.18 seconds**, feature build **2.96 seconds**). The final affected filter was:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotBrainTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DogmaGraphTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.HardenerTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Market.TypedServiceModelsTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+All **260 affected cases** passed in **39.86 seconds**, including **41 new cases** (36 fitting/composition and five catalog rejection cases); the feature build took **1.09 seconds**. Assertions cover every native overload program, Thermodynamics levels 0/1/3/5, warm skill changes, native `L` serialization, unchanged heat generation, ownership/online/burnout/skill rejection, active resistance propagation, both tracking scripts, ordinary versus temporary cache isolation across commit, actual-budget Ibis fits and an eligible Raven/torpedo fit. Existing graph, skill brain, support, missile, hardener, condition and cache-count checks also pass. TRX: `artifacts/feature-tests/results/c001c835afc349e7a1fe2f11a66f3944/tests.trx`.
+
+Development failures in native-default, resistance and cache assertions were investigated and corrected. The stricter skill-program allowlist initially omitted standard skill effect **132**; inspection of the actual typedogma program corrected that omission. The Raven case uses an eligible torpedo launcher rather than an unbonused light launcher. The final run covers all corrections. No full .NET suite was requested or run.
+
+Pinned tool restore and root solution restore/build passed with no warnings or errors (**4.10 seconds** for root restore/build). Both Python suites passed (**8 catalog** cases in **0.82 seconds**, **9 formatting** cases in **0.14 seconds**). Formatting verification passed across **1,109 files** in **14.00 seconds**, including the 140-character width check. The production coverage export is byte-identical: all 6,079 records, admitted cohorts and false overheating flags remain unchanged; source catalog bytes are unchanged (**13.95 seconds**). The pinned archive hash was verified and local documentation links and anchors were checked.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native brain display and eventual overload HUD behavior remain unverified.
+
+### Optional maintainer checks
+
+None for this internal fitting boundary. Native overload acceptance belongs to the later paid-cycle integration.
+
 Development began with the exact thirteen-vector native comparison, which passed before the broader selection. The first thermal selection passed 60 of 66 cases; six malformed-program fixture cases failed because the edited no-tracking source record was not explicitly updated. Explicit fixture attachment made those edits persistent, and the exact six-case rejection filter passed. An initial formatting pass identified a long evidence string, which was split without an exception. The final affected selection includes all corrections and the additional immutable/effective-source case. Failed/intermediate checks are not counted as final validation.
 
 **Live acceptance:** Not performed; agent client testing is disabled.
