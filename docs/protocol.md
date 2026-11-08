@@ -44,6 +44,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Paid electronic and remote support overload cycles, November 8, 2026](protocol/fitting.md#paid-electronic-and-remote-support-overload-cycles-november-8-2026)
 
+- [Paid missile launcher overload cycles, November 8, 2026](protocol/fitting.md#paid-missile-launcher-overload-cycles-november-8-2026)
+
 - [Overload fitting composition and Thermodynamics, November 7, 2026](protocol/fitting.md#overload-fitting-composition-and-thermodynamics-november-7-2026)
 
 - [Persistent module condition and station repair, November 7, 2026](protocol/fitting.md#persistent-module-condition-and-station-repair-november-7-2026)

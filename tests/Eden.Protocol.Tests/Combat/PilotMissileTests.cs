@@ -11,6 +11,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Thermal;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -217,6 +218,60 @@ public sealed class PilotMissileTests
         Assert.Empty(saved.Set<SavedCrimewatch>());
         Assert.Empty(saved.Set<SavedPilotHostility>());
         Assert.Empty(saved.Set<WorldMissile>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OverloadedLauncherPaysAtLegalLaunchAndDamagesThePilotOnlyAtImpact(bool automatic)
+    {
+        using var f = Prepare(security: .2);
+        PassiveCatalogFixture.LoadOverload(f.CatalogPath);
+        f.Train(OverloadRules.ThermodynamicsSkill, 3);
+        long launcher = MissileCombatTests.Load(f, Launcher, automatic ? AutomaticCharge : Charge);
+        Space(f);
+        var store = f.Db.Services.GetRequiredService<PilotMissileStore>();
+        var heat = f.Db.Services.GetRequiredService<IPilotShipHeat>();
+        IReadOnlyList<MissileLaunch> Pay() =>
+            store.LaunchOverloadedBank(
+                f.PilotId,
+                launcher,
+                automatic ? null : VictimShip,
+                automatic ? new HashSet<long>() : new HashSet<long> { VictimShip },
+                new(SpacePosition.Zero, 295, new(0, 0, -1), 42),
+                f.Clock.Now
+            );
+
+        f.Db.Services.GetRequiredService<IPilotSafety>().Set(f.PilotId, ShipSafetyLevel.Full);
+        Assert.Throws<InvalidDataException>(() => Pay());
+        Assert.True(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Idle);
+        Assert.Empty(store.List(SystemId));
+        Assert.Equal(3, Assert.Single(f.Db.Services.GetRequiredService<IPilotAmmunition>().Read(f.PilotId, f.ShipId)).Quantity);
+        if (automatic)
+        {
+            using WorldDbContext world = new(f.Db.Path);
+            CrimewatchPersistence.Player(
+                world,
+                Victim,
+                f.PilotId,
+                SystemId,
+                new(CrimewatchFlag.None, false),
+                f.Clock.Now,
+                f.Clock.Now + TimeSpan.TicksPerSecond
+            );
+            world.SaveChanges();
+        }
+        f.Db.Services.GetRequiredService<IPilotSafety>().Set(f.PilotId, ShipSafetyLevel.Partial);
+        var launch = Assert.Single(Pay());
+        Assert.Equal(VictimShip, launch.Projectile.TargetId);
+        Assert.Equal(automatic, launch.Launcher.Automatic);
+        Assert.Equal(2, launch.Magazine.Quantity);
+        var cycle = Assert.Single(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Cycles);
+        Assert.Equal(f.Clock.Now + (long)Math.Ceiling(launch.Launcher.CycleMilliseconds * TimeSpan.TicksPerMillisecond), cycle.CompletesAt);
+        Assert.Empty(store.TakeImpacts(f.PilotId));
+        Advance(f);
+        Assert.True(Assert.Single(store.TakeImpacts(f.PilotId)).Applied > 0);
+        Assert.Empty(store.TakeImpacts(f.PilotId));
     }
 
     [Fact]

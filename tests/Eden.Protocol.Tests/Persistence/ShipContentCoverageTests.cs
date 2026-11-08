@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
@@ -101,6 +102,25 @@ public sealed class ShipContentCoverageTests
                 entry.State == ContentSupportState.Partial
                 && entry.Checks.Any(check => check.Operation == ContentOperation.ConsumerCoverage && !check.Implemented)
         );
+    }
+
+    [Fact]
+    public void MissileLaunchEvidenceKeepsNativeOverheatingPartialAndExcludesTheCivilianLauncher()
+    {
+        const int LightLauncher = 499;
+        using CatalogFixture fixture = new();
+        PassiveCatalogFixture.LoadMissileTiers(fixture.Path, new HashSet<int> { LightLauncher, MissileDefinitions.CivilianLauncher });
+        PassiveCatalogFixture.LoadOverload(fixture.Path);
+        using CatalogDbContext catalog = new(fixture.Path);
+        var entries = ShipContentAudit.Read(catalog).Entries;
+        var launcher = Assert.Single(entries, e => e.TypeId == LightLauncher);
+        Assert.True(launcher.Admitted);
+        Assert.Equal(ContentSupportState.Partial, launcher.State);
+        var heat = Assert.Single(launcher.Checks, check => check.Operation == ContentOperation.Overheating);
+        Assert.False(heat.Implemented);
+        Assert.Contains("banked missile launches", heat.Evidence, StringComparison.Ordinal);
+        var civilian = Assert.Single(entries, e => e.TypeId == MissileDefinitions.CivilianLauncher);
+        Assert.DoesNotContain(civilian.Checks, check => check.Operation == ContentOperation.Overheating);
     }
 
     [Fact]

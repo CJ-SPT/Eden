@@ -1736,3 +1736,33 @@ Not performed; agent client testing is disabled. These overload paths remain int
 ### Optional maintainer checks
 
 None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration.
+
+## Paid missile launcher overload cycles, November 8, 2026
+
+Milestone 6 now covers paid launches from a single missile launcher or a linked bank. Selecting either bank member resolves the same fitted items. The launch operation verifies each launcher and magazine, then reads one fitting graph for the volley. Every member spends its own rounds, creates its own projectile and heat source, and records its modified cooldown. These changes and aggression share one transaction. The world publishes the combined high-rack heat state after the entire volley commits.
+
+The build-3662168 matrix contains 138 admitted heatable launchers across ten launcher groups. All use effect 3001, which modifies the firing interval (51) through the launcher's effective rate-of-fire bonus (1205). A two-launcher Ibis with Light Missile Launcher I uses its catalog budgets and hardpoints. In the tested fit each launcher cycles in 12.24 seconds overloaded and 14.4 seconds on the next ordinary launch. Each Mjolnir Light Missile deals the same 103.75 applied damage to the stationary test NPC at impact. Automatic acquisition, safety checks and the existing in-flight projectile lifecycle still apply. The saved heat deadline belongs to the launcher, so a missile arriving early does not stop the rack heating. See the [catalog and native temperature evidence](#overheating-calculation-foundation-november-7-2026) and the [pinned Carbon Destiny ballpark](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp) for the movement reference.
+
+These producer calls are internal. The production coverage inventory continues to mark player overheating as unfinished. Turret volleys and other module families still need paid cycle integration. Native module and rack controls, the damage probability and propagation rules, and burnout during active cycles remain open.
+
+Historical heat research describes a slot-distance probability for individual modules. The simultaneous case still needs build-specific evidence. When two launchers finish together and one burns out, the damage order can change whether its neighbor takes damage. The bank heat owner retains both funded deadlines at the same timestamp, leaving that decision to damage settlement. [Original heat research](https://github.com/pyfa-org/eos/issues/12)
+
+### Automated validation
+
+The exact existing grouped-missile test passed before the change. Development then used the exact new bank-payment method, which passed both resident and file-backed cases. The expanded 16 new cases cover T1, T2, named, faction, storyline, polarized and officer examples, normal and automatic pilot targeting, per-launcher payment, missing Thermodynamics, an empty magazine, a failed second heat write, a funded nanite repair on another rack, physical burnout and detached checkpoint recovery. The warmed test measures one fitting calculation for a two-launcher start and zero SQL commands, connection opens and fitting calculations over 100 subsequent paired heat and projectile-contact reads. These measurements cover reads between launch and impact.
+
+The first exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Combat.WeaponBankTests.GroupedMissileLaunchesPersistSeparateProjectilesAndRollbackOnAnEmptySlave` (one pass in 5.33 seconds). The first new exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Thermal.MissileHeatTests.BankPaysOneRoundAndOneHighRackCyclePerLauncher` (two passes in 6.81 seconds). The affected gameplay selection passed 638 tests in 213.20 seconds with zero skipped:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Thermal|FullyQualifiedName~Missile|FullyQualifiedName~WeaponBank|FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorld|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentRead
+```
+
+A subsequent exporter correction replaces stale heat and paste-repair evidence. Regeneration against the installed catalog updates 1,826 evidence descriptions, including specific launch evidence for all 138 heatable missile launchers. Comparison across all 6,079 entries verified every admission, support state, capability flag and other field. The new exact filter `FullyQualifiedName=Eden.Protocol.Tests.Persistence.ShipContentCoverageTests.MissileLaunchEvidenceKeepsNativeOverheatingPartialAndExcludesTheCivilianLauncher` passed. The final exporter selection `FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~OverloadCatalogTests` passed 39 cases in 6.25 seconds with zero skipped. Tool and solution restores passed, and the final solution build took 0.70 seconds with zero warnings or errors. Both Python policy suites passed (8 catalog and 9 formatting cases in 0.95 seconds combined). Formatting verification passed for 1,135 files in 15.86 seconds. The full .NET suite was not requested.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for the internal launch path.

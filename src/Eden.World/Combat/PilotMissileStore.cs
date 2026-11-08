@@ -9,6 +9,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
@@ -57,6 +58,15 @@ internal sealed partial class PilotMissileStore(
         long now
     ) => LaunchVolley(pilotId, moduleId, targetId, lockedTargets, motion, now, true);
 
+    internal IReadOnlyList<MissileLaunch> LaunchOverloadedBank(
+        long pilotId,
+        long moduleId,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now
+    ) => LaunchVolley(pilotId, moduleId, targetId, lockedTargets, motion, now, banked: true, overloaded: true);
+
     private IReadOnlyList<MissileLaunch> LaunchVolley(
         long pilotId,
         long moduleId,
@@ -64,38 +74,43 @@ internal sealed partial class PilotMissileStore(
         IReadOnlySet<long> lockedTargets,
         MissileFiringState motion,
         long now,
-        bool banked
+        bool banked,
+        bool overloaded = false
     )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-        var members = banked ? PilotWeaponBankStore.Members(world, shipId, moduleId) : [moduleId];
-        var launches = members.Select(id => LaunchCore(world, catalog, pilotId, id, targetId, lockedTargets, motion, now)).ToArray();
-        if (launches.Select(l => l.Launcher.ChargeTypeId).Distinct().Count() > 1)
+        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
+        var launchers = members.Select(id => ReadLauncher(world, catalog, pilot, id, now)).ToArray();
+        if (launchers.Any(l => l.Charge.TypeId != launchers[0].Charge.TypeId))
         {
             throw new InvalidDataException("Load the same ammunition in every grouped launcher.");
         }
+        var calculation = FittingCalculation.Read(world, catalog, pilot, overloadedModules: overloaded ? members.ToHashSet() : null);
+        List<MissileLaunch> launches = [];
+        ShipHeatSnapshot? heat = null;
+        foreach (var launcher in launchers)
+        {
+            launches.Add(LaunchCore(world, catalog, pilot, calculation, launcher, targetId, lockedTargets, motion, now, out heat));
+        }
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return launches;
     }
 
-    private MissileLaunch LaunchCore(
-        WorldDbContext world,
-        CatalogDbContext catalog,
-        long pilotId,
-        long moduleId,
-        long? targetId,
-        IReadOnlySet<long> lockedTargets,
-        MissileFiringState motion,
-        long now
-    )
+    private sealed record LoadedLauncher(OwnedItem Module, OwnedItem Charge, CatalogItemDefinition ChargeType);
+
+    private static LoadedLauncher ReadLauncher(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long moduleId, long now)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        long pilotId = pilot.Id;
         var module = world.Set<OwnedItem>().Find(moduleId);
         if (
-            pilot.ActiveShip.Position is not { } position
+            pilot.ActiveShip.Position is null
             || module is null
             || module.OwnerId != pilotId
             || module.LocationId != pilot.ActiveShipId
@@ -117,7 +132,25 @@ internal sealed partial class PilotMissileStore(
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, loaded.TypeId);
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        return new(module, loaded, chargeType);
+    }
+
+    private MissileLaunch LaunchCore(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        FittingCalculation calculation,
+        LoadedLauncher launcher,
+        long? targetId,
+        IReadOnlySet<long> lockedTargets,
+        MissileFiringState motion,
+        long now,
+        out ShipHeatSnapshot? heat
+    )
+    {
+        var (module, loaded, chargeType) = launcher;
+        var position = pilot.ActiveShip.Position!;
+        long pilotId = pilot.Id;
         var attributes = calculation.Graph.Attributes(module.Id);
         var charge = calculation.Graph.Attributes(loaded.Id);
         int rounds = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate));
@@ -278,6 +311,9 @@ internal sealed partial class PilotMissileStore(
             NpcHostility.Record(world, catalog, npc!, pilot.ActiveShipId, now);
             CrimewatchPersistence.Npc(world, pilotId, systemId, cooldown.ReadyAt);
         }
+        heat = calculation.OverloadedModules.Contains(module.Id)
+            ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, module.Id, now, cooldown.ReadyAt)
+            : null;
         world.SaveChanges();
         return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);
     }

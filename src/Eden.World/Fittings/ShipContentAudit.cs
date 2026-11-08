@@ -299,16 +299,19 @@ internal static class ShipContentAudit
         );
         if (effects.Any(effect => effect.EffectCategory == OverloadEffectCategory))
         {
-            bool calculation = OverloadCatalog.Definition(catalog, type.Id) is not null;
+            string evidence = "Unverified overload calculation profile.";
+            if (OverloadCatalog.Definition(catalog, type.Id) is not null)
+            {
+                evidence = MissileDefinitions.LauncherGroups.Contains(type.GroupId)
+                    ? "Single and banked missile launches commit ammunition, cooldowns and rack heat together."
+                    : "The fitted module's overload program validates.";
+            }
             checks.Add(
                 new(
                     ContentOperation.Overheating,
                     false,
                     ShipContentMilestone.Overheating,
-                    calculation
-                        ? "Typed overload programs are validated; native toggles, rack heat/damage, "
-                            + "burnout and paste repair remain unfinished."
-                        : "Unverified overload calculation profile; native heat operation remains unfinished."
+                    evidence + " Native overload controls and rack damage settlement remain unfinished."
                 )
             );
         }
