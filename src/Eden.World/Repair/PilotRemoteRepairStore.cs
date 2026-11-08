@@ -3,7 +3,6 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
-using Eden.Data.World.Thermal;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -269,14 +268,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         {
             var cycle = JsonSerializer.Deserialize<RemoteRepairCycle>(row.CycleJson)!;
             HeatCycleKey key = new(moduleId, cycle.StartedAt, cycle.CompletesAt);
-            if (
-                world.Set<SavedShipHeat>().Find(row.SourceShipId) is { } heat
-                && ShipHeatPersistence.Decode(heat.StateJson).Cycles.Any(c => c.Key == key)
-                && world.Ships.Any(s => s.Id == row.SourceShipId && s.OwnerId == pilotId)
-            )
-            {
-                ShipHeatPersistence.CancelPaidCycle(world, pilotId, row.SourceShipId, key, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            }
+            ShipHeatPersistence.CancelSource(world, pilotId, row.SourceShipId, key, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             world.Remove(row);
             world.SaveChanges();
         }

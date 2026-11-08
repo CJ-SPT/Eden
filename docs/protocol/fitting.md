@@ -1637,3 +1637,53 @@ Not performed; agent client testing is disabled. These overload producer entry p
 ### Optional maintainer checks
 
 None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration. Other paid producer families, native module/rack controls, stochastic damage/spread, scoped burnout cancellation and resource resizing remain open in milestone 6.
+
+## Paid propulsion and tackle overload cycles, November 8, 2026
+
+Milestone 6's internal paid producer paths now include admitted afterburners, microwarpdrives, webifiers, warp scramblers and warp disruptors. The active pilot's earned module graph supplies the selected overload program. Propulsion retains the existing navigation-skill calculations, pays for the modified cycle and returns its effective speed/mass inputs; MWD signature bloom still follows the ordinary active marker. Tackle pays for the modified range and persists that same profile for pilot/NPC consumers, retaining ordinary strength, web percent and MWD blocking. Heat, payment, cooldowns, effects and aggression commit together, and heat is published only after commit. Production calls still select ordinary cycles; no player overload toggle, new admission or overheating coverage flag is enabled.
+
+Propulsion stop now removes its current paid source with the active marker. Tackle stop, source disconnect, source/target travel and invalid-source/target sweep remove their matching heat source with the effect row. The host clock is captured once for bulk cancellation. Already-generated heat and paid cooldowns remain; stopped sources cool rather than continuing to heat. Incoming target travel can remove another pilot's outgoing source through the source row's actual ownership. An unrelated pilot's explicit stop cannot remove an owned source. Shared `ShipHeatPersistence.CancelSource` supports current-effect removal and exact paid-key removal; stale expected keys leave the current source intact. The preceding remote-repair stop uses that same exact-key helper without changing its payment contract.
+
+Rejected heat insertion rolls back capacitor, active/tackle effects, cooldowns and aggression. Rejected effect removal preserves both the effect and its heat source. Nanite work on another fitted module excludes a mobility overload cycle for the ship, and missing Thermodynamics, a second active propulsion module and a non-heatable core stabilizer cannot pay for heat. Detached snapshots retain effect, cooldown and heat from the same generation even after a later live cancellation. Reopening clears connection-owned effects, retains the paid cooldown, and bounds heat by the captured paid deadline under the existing restore policy.
+
+The build-3662168 catalog programs and pinned temperature function remain the [calculation evidence](#overheating-calculation-foundation-november-7-2026). Carbon Destiny's [ordered ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) was consulted for ordered authoritative updates. No movement packet, heat-damage approximation or client overload command is introduced.
+
+### Automated validation
+
+Development began with exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.MobilityHeatTests.OverloadedPropulsionPaysItsEarnedSpeedAndDurationAndRegistersTheSameHeatCycle&DisplayName~439`: **1 passed**, **6.27 seconds** (feature build **4.85 seconds**). The first producer-class selection passed **11 of 14 cases** in **13.85 seconds**; its fixture lowered a required heavy-scrambler skill after fitting and selected capital propulsion types **41239/41253**, both explicitly unadmitted in the production inventory. Skill preparation now precedes fitting, and the large-module cases use admitted 100MN/500MN profiles. The corrected **14-case** selection passed in **14.36 seconds**; the later **30-case** selection passed in **21.76 seconds**.
+
+An expanded **40-case** development run passed **36 cases** and failed four fixture setups (**26.42 seconds**): two lacked NPC encounter seeds, and two older tier payloads overwrote complete native price records required for nanite quotes. The NPC cases now use the established encounter fixture, and native overload payloads load after older tier records. The exact NPC/unrelated-module nanite pair of method filters then passed all **4 cases** (**11.01 seconds**, build **2.82 seconds**). The three actual extended-range cases and stale-key case also passed (**4 cases**, **7.06 seconds**, build **2.94 seconds**). No production rule or admission was relaxed for these fixture corrections.
+
+The final affected filter is:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Propulsion'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MutadaptiveRemoteRepairTests.PaidMutadaptiveHeat'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorld'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentRead'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitialization'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigration'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+The final affected selection passed **552 cases**, with zero failed/skipped, in **183.62 seconds** (feature build **1.09 seconds**). It includes **44 new mobility cases**, covering the paid profiles and cleanup paths above, actual range rejection versus overloaded admission, NPC retirement, unchanged state after rejected payment/ownership, two 100-frame warmed read variants, and detached/reopened checkpoints. Warmed heat/incoming-effect reads assert **zero SQL commands, connection opens and fitting calculations**. Existing propulsion/tackle protocol lifecycles, travel, aggression, shared repair cancellation and immediate persistence/runtime dependencies are included. TRX: `artifacts/feature-tests/results/033c97e7fb1c48ef9340f59597f19925/tests.trx`.
+
+Pinned tool and solution restores passed. The final root build passed with zero warnings/errors in **3.38 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **0.92 seconds** combined). Formatting verification passed across **1,133 files**, including the 140-character width check, in **15.75 seconds**. Documentation checks verified **522 local links and anchors**; whitespace verification passed. No full .NET suite was requested or run. Catalog payloads, fixture data and the production coverage inventory are unchanged.
+
+The added cases use representative admitted T1/T2 and heavy profiles with explicit artificial fitting budgets; they do not establish real corvette fits or capital admission. NPC and pilot targets, actual range rejection/payment, earned skills, signature restoration, cancellation/rollback, ownership, heat/repair exclusion, warmed reads and detached/reopened checkpoints are covered. Other paid producer families, native module/rack commands, stochastic heat damage/spread, scoped burnout cancellation and resource resizing remain open. The full 23-stage completion program remains active.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. These overload paths remain internal; native overload presentation, input, burnout and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration.

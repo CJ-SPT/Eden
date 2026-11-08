@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting) : IPilotPropulsion
+internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting, TimeProvider clock) : IPilotPropulsion
 {
     private static double Bonus(
         WorldDbContext world,
@@ -99,17 +99,25 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        InventoryItem module
+        InventoryItem module,
+        FittingCalculation? calculation = null
     )
     {
         return PropulsionRules.ModuleAttributes(
             module.GroupId,
-            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module, calculation),
             NavigationBonuses(world, catalog, pilotId)
         );
     }
 
-    public PropulsionCycle Activate(long pilotId, long moduleId, long now, DogmaEffect? effect = null)
+    public PropulsionCycle Activate(long pilotId, long moduleId, long now, DogmaEffect? effect = null) =>
+        ActivateCycle(pilotId, moduleId, now, effect, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal PropulsionCycle ActivateOverloaded(long pilotId, long moduleId, long now, DogmaEffect? effect = null) =>
+        ActivateCycle(pilotId, moduleId, now, effect, true);
+
+    private PropulsionCycle ActivateCycle(long pilotId, long moduleId, long now, DogmaEffect? effect, bool overloaded)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -136,8 +144,11 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
         var item = PilotInventoryStore.Read(catalog, module);
-        var attributes = ModuleAttributes(world, catalog, pilotId, item);
+        var attributes = ModuleAttributes(world, catalog, pilotId, item, calculation);
         if (attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlocked) > 0)
         {
             throw new InvalidDataException("A warp scrambler is blocking the microwarpdrive.");
@@ -152,7 +163,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
             attributes.GetValueOrDefault(DogmaAttributeId.MassAddition),
             activation
         );
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         double mass = ship.GetValueOrDefault(DogmaAttributeId.Mass);
         _ = burner.Apply(new(0, 0, mass, 1, (float)ship.GetValueOrDefault(DogmaAttributeId.MaxVelocity), 1));
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
@@ -183,9 +194,16 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         {
             world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
         }
+        var heat = calculation is null
+            ? null
+            : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, cooldown.ReadyAt);
         world.SaveChanges();
         double signature = PilotFittingStore.ShipAttributes(world, catalog, pilotId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(burner, capacitor, signature);
     }
 
@@ -204,6 +222,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
         var active = world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
         if (active is not null)
         {
+            ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             world.Remove(active);
             world.SaveChanges();
         }

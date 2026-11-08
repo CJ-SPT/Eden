@@ -193,4 +193,33 @@ internal static class ShipHeatPersistence
             saved.StateJson = Encode(HeatCycleRules.Cancel(Decode(saved.StateJson), expected, now).State);
         }
     }
+
+    // Effect removal owns the current module source. A delayed completion
+    // instead supplies its exact paid key so it cannot remove a replacement.
+    internal static void CancelSource(WorldDbContext world, long pilot, long ship, long module, long now) =>
+        CancelSource(world, pilot, ship, module, null, now);
+
+    internal static void CancelSource(WorldDbContext world, long pilot, long ship, HeatCycleKey expected, long now) =>
+        CancelSource(world, pilot, ship, expected.ModuleId, expected, now);
+
+    private static void CancelSource(WorldDbContext world, long pilot, long ship, long module, HeatCycleKey? expected, long now)
+    {
+        if (world.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException("Paid heat contributions require the owning transaction.");
+        }
+        if (world.Set<SavedShipHeat>().Find(ship) is not { } saved)
+        {
+            return;
+        }
+        var state = Decode(saved.StateJson);
+        if (
+            state.Cycles.SingleOrDefault(c => c.ModuleId == module) is { } source
+            && (expected is null || source.Key == expected)
+            && world.Ships.Any(s => s.Id == ship && s.OwnerId == pilot)
+        )
+        {
+            saved.StateJson = Encode(HeatCycleRules.Cancel(state, source.Key, now).State);
+        }
+    }
 }
