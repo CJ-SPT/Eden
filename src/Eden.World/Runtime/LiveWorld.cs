@@ -55,12 +55,16 @@ internal sealed class LiveWorld : IDisposable
     internal LiveReadModels? Reads { get; }
     internal bool MeasureCheckpoints { get; set; }
     internal int SqlConnections { get; private set; }
+    private readonly LiveTimedModules? _timedModules;
+    internal bool TracksTimedModules => _timedModules is not null;
+    private bool _expiringTimedModules;
 
     internal void SqlOpened() => SqlConnections++;
 
     internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
     {
         SqlConnections--;
+        _timedModules?.Observe(changes);
         Reads?.Observe(changes);
         Combat?.Observe(changes);
     }
@@ -163,6 +167,7 @@ internal sealed class LiveWorld : IDisposable
             }
             Combat = combatObjects ? new(this, database, simulationObjects) : null;
             Reads = residentReads ? new(this, database) : null;
+            _timedModules = new(database);
             Combat?.WarmDrones();
             var interval = TimeSpan.FromSeconds(database.Settings.Simulation.CheckpointSeconds);
             _timer = clock.CreateTimer(_ => QueueSave(), null, interval, interval);
@@ -193,6 +198,18 @@ internal sealed class LiveWorld : IDisposable
             if (Volatile.Read(ref _stopping) && !nested)
             {
                 throw new InvalidOperationException("The resident world is shutting down.");
+            }
+            if (SqlConnections == 0 && !_expiringTimedModules)
+            {
+                _expiringTimedModules = true;
+                try
+                {
+                    _timedModules?.Expire(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+                }
+                finally
+                {
+                    _expiringTimedModules = false;
+                }
             }
             return new Lease(_gate);
         }

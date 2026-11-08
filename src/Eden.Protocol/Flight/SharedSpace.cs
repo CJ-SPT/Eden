@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -37,6 +38,8 @@ internal sealed record SupportContact(SupportModule Module, long StartedAt, long
 internal sealed record TackleContact(TackleModule Module, long TargetId, long StartedAt);
 
 internal sealed record HardenerContact(Hardener Module, long StartedAt);
+
+internal sealed record SignatureSuppressionContact(SignatureSuppressor Module, SignatureSuppressionSchedule Schedule);
 
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 
@@ -111,13 +114,14 @@ internal sealed record ShipContact(
     long? DirtTime = null,
     ElectronicWarfareSpaceContact[]? ElectronicWarfare = null,
     RemoteRepairCycle[]? RemoteRepairs = null,
-    CapacitorCycle[]? CapacitorEffects = null
+    CapacitorCycle[]? CapacitorEffects = null,
+    SignatureSuppressionContact[]? SignatureSuppressions = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null) : IPilotCombatPresence
+internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null, TimeProvider? clock = null) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
@@ -352,8 +356,25 @@ internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null) : IPilotC
                     && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)
+                .Select(ExpireSignatureSuppression)
                 .ToArray();
         }
+    }
+
+    private ShipContact ExpireSignatureSuppression(ShipContact ship)
+    {
+        if (ship.SignatureSuppressions is not { Length: > 0 } effects)
+        {
+            return ship;
+        }
+        long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (effects.All(e => e.Schedule.Active(now)))
+        {
+            return ship;
+        }
+        var current = ship with { SignatureSuppressions = effects.Where(e => e.Schedule.Active(now)).ToArray() };
+        _ships.TryUpdate(ship.Pilot.ShipId, current, ship);
+        return current;
     }
 
     public PilotCombatPresence? FindOnline(int systemId, long shipId)

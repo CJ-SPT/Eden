@@ -64,6 +64,7 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
 
     internal void ClearEffects()
     {
+        SignatureSuppressions = [];
         Propulsion = null;
         Mining = [];
         Weapons = [];
@@ -95,6 +96,17 @@ internal sealed class FlightModuleEffects(FlightProperties flight, FittedSpaceMo
     {
         Mining = Mining.Where(m => m.ModuleId != effect.ModuleId).Concat(active ? [effect] : Array.Empty<MiningContact>()).ToArray();
         effects.MiningEffect(shipId, effect, active);
+    }
+
+    internal SignatureSuppressionContact[] SignatureSuppressions { get; private set; } = [];
+
+    internal void SetSignatureSuppressionEffect(long ship, SignatureSuppressionContact effect, bool active)
+    {
+        SignatureSuppressions = SignatureSuppressions
+            .Where(e => e.Module.ItemId != effect.Module.ItemId)
+            .Concat(active ? [effect] : Array.Empty<SignatureSuppressionContact>())
+            .ToArray();
+        effects.SignatureSuppressionEffect(ship, effect, active);
     }
 
     internal void SetElectronicWarfareEffect(long shipId, ElectronicWarfareSpaceContact effect, bool active)

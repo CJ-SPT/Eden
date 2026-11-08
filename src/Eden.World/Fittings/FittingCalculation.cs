@@ -8,6 +8,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
@@ -21,6 +22,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
+using Eden.World.Defenses;
 using Eden.World.Inventory;
 using Eden.World.Propulsion;
 using Eden.World.Repair;
@@ -280,6 +282,20 @@ internal sealed record FittingCalculation(
         }
         foreach (var module in modules)
         {
+            if (
+                module.Item.Online
+                && module.GroupId == SignatureSuppressionRules.Group
+                && SignatureSuppressionCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+            )
+            {
+                foreach (var modifier in SignatureSuppressionCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.Contains(module.Item.Id))
+                    {
+                        Add(module.Item.Id, modifier, false);
+                    }
+                }
+            }
             if (InventoryDefinitions.IsRigSlot(module.Item.FlagId))
             {
                 if (!RigCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))

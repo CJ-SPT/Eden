@@ -8,6 +8,7 @@ using Eden.Protocol.Chat;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Contracts;
 using Eden.Protocol.Corporations;
+using Eden.Protocol.Defenses;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
 using Eden.Protocol.Fleets;
@@ -68,7 +69,8 @@ internal sealed class PilotUpdateCoordinator(
     CooperativeFleetHandler fleets,
     RemoteRepairHandler remoteRepairs,
     CapacitorWarfareHandler capacitorWarfare,
-    RemoteAssistanceHandler remoteAssistance
+    RemoteAssistanceHandler remoteAssistance,
+    SignatureSuppressionHandler signatureSuppression
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -164,6 +166,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorWarfare.Cancel(context);
         remoteAssistance.Cancel(context);
         hardeners.Cancel(context);
+        signatureSuppression.Cancel(context);
         capacitorBoosters.Cancel(context);
         support.Cancel(context);
         tackle.Leave(context);
@@ -194,6 +197,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorBoosters.Advance(context);
         drones.Advance(context);
         hardeners.Advance(context);
+        signatureSuppression.Advance(context);
         support.Advance(context);
         using (SessionPerformance.Phase("update.tackle"))
         {

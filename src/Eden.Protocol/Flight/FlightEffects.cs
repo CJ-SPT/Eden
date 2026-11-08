@@ -3,6 +3,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
+using Eden.Protocol.Defenses;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
@@ -21,6 +22,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshShieldBoosts(ship, previous);
         RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
+        RefreshSignatureSuppression(ship, previous);
         RefreshSupport(ship, previous);
         if (Changed(ship.Tackle, previous?.Tackle))
         {
@@ -246,6 +248,39 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.StartedAt
             )
         );
+
+    internal void SignatureSuppressionEffect(long ship, SignatureSuppressionContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                ship,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                ship,
+                null,
+                SignatureSuppressionHandler.Graphic,
+                false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.Schedule.StartedAt
+            )
+        );
+
+    private void RefreshSignatureSuppression(ShipContact ship, ShipContact? previous)
+    {
+        if (!Changed(ship.SignatureSuppressions, previous?.SignatureSuppressions))
+        {
+            return;
+        }
+        foreach (var effect in (previous?.SignatureSuppressions ?? []).Except(ship.SignatureSuppressions ?? []))
+        {
+            SignatureSuppressionEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.SignatureSuppressions ?? []).Except(previous?.SignatureSuppressions ?? []))
+        {
+            SignatureSuppressionEffect(ship.Pilot.ShipId, effect, true);
+        }
+    }
 
     private void RefreshHardeners(ShipContact ship, ShipContact? previous)
     {

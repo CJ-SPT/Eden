@@ -100,6 +100,7 @@ public enum PassiveModuleSkill
     WeaponUpgrades = 3318,
     AdvancedWeaponUpgrades = 11207,
     PropulsionJamming = 3435,
+    SignatureMasking = 4411,
 }
 
 public static class PassiveModules

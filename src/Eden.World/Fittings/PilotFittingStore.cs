@@ -2,9 +2,11 @@ using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -92,6 +94,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        ExpireTimedModules(world);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ShipAttributes(world, catalog, world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId));
         transaction.Commit();
@@ -102,15 +105,29 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        ExpireTimedModules(world);
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (world.Ships.Find(itemId) is not { } ship)
         {
-            return PlayerEwarStore
+            double npcSignature = PlayerEwarStore
                 .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
                 .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            transaction.Commit();
+            return npcSignature;
         }
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.OwnerId);
-        return ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+        double signature = ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+        transaction.Commit();
+        return signature;
+    }
+
+    private void ExpireTimedModules(WorldDbContext world)
+    {
+        if (LiveWorld.Find(database.Path) is null)
+        {
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            world.Set<ActiveFittedModule>().Where(m => m.ExpiresAt > 0 && m.ExpiresAt <= now).ExecuteDelete();
+        }
     }
 
     public IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId)
@@ -455,7 +472,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             ).ToDictionary();
         }
         // Deadlines are live state and must not be captured with the fitted graph.
-        if (module.GroupId == TackleDefinitions.WarpCoreStabilizerGroup)
+        if (module.GroupId is TackleDefinitions.WarpCoreStabilizerGroup or SignatureSuppressionRules.Group)
         {
             attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;
         }

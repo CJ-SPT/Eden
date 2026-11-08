@@ -48,7 +48,7 @@ public sealed class SignatureSuppressionTests
     [InlineData(83644, .875, .275, 14000, 520)]
     [InlineData(83660, .85, .2, 16000, 660)]
     [InlineData(83661, .85, .225, 16000, 520)]
-    public void EveryStaticProfilePreservesItsTwoNativeMultipliersAndRemainsUnadmitted(
+    public void EveryStaticProfilePreservesItsTwoNativeMultipliersAndHasValidatedFitting(
         int type,
         double passive,
         double active,
@@ -62,7 +62,7 @@ public sealed class SignatureSuppressionTests
         var values = catalog.FittingAttributes(type);
         var module = SignatureSuppressionRules.Define(Module, type, values);
         Assert.Equal(new(Module, type, duration, capacitor, 150000, passive, active), module);
-        Assert.Null(FittingCatalog.Definition(catalog, type));
+        Assert.NotNull(FittingCatalog.Definition(catalog, type));
         var metadata = catalog.Require(CatalogData.Client.Dogmaattributes, (long)DogmaAttributeId.SignatureRadius);
         Assert.Equal(0, metadata.Stackable);
         var definition = new DogmaAttributeDefinition(

@@ -11,6 +11,9 @@ public sealed class ActiveFittedModule
 {
     public long ModuleId { get; set; }
     public long ShipId { get; set; }
+
+    // Zero retains the connection-owned lifecycle of ordinary repeating modules.
+    public long ExpiresAt { get; set; }
 }
 
 public sealed class SavedFittingRecord

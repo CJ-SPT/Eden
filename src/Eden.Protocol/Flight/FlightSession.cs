@@ -385,7 +385,8 @@ internal sealed class FlightSession(
             DirtTime: DirtTimestamp(),
             ElectronicWarfare: ModuleEffects.ElectronicWarfare,
             RemoteRepairs: ModuleEffects.RemoteRepairs,
-            CapacitorEffects: ModuleEffects.CapacitorEffects
+            CapacitorEffects: ModuleEffects.CapacitorEffects,
+            SignatureSuppressions: ModuleEffects.SignatureSuppressions
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -489,6 +490,12 @@ internal sealed class FlightSession(
     public void SetHardenerEffect(HardenerContact effect, bool active)
     {
         ModuleEffects.SetHardenerEffect(Pilot.ShipId, effect, active);
+        PublishContact();
+    }
+
+    public void SetSignatureSuppressionEffect(SignatureSuppressionContact effect, bool active)
+    {
+        ModuleEffects.SetSignatureSuppressionEffect(Pilot.ShipId, effect, active);
         PublishContact();
     }
 

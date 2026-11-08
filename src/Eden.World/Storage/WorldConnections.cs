@@ -72,7 +72,7 @@ internal static class WorldConnections
                 using var command = CreateCommand();
                 command.CommandText = "PRAGMA temp_store=MEMORY";
                 command.ExecuteNonQuery();
-                if (world.Combat is not null || world.Reads is not null)
+                if (world.Combat is not null || world.Reads is not null || world.TracksTimedModules)
                 {
                     SQLitePCL.raw.sqlite3_update_hook(
                         Handle!,

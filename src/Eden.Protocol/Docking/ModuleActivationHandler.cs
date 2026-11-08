@@ -1,6 +1,7 @@
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
+using Eden.Protocol.Defenses;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Propulsion;
@@ -27,7 +28,8 @@ internal sealed class ModuleActivationHandler(
     PlayerEwarHandler? electronicWarfare = null,
     RemoteRepairHandler? remoteRepairs = null,
     CapacitorWarfareHandler? capacitorWarfare = null,
-    RemoteAssistanceHandler? remoteAssistance = null
+    RemoteAssistanceHandler? remoteAssistance = null,
+    SignatureSuppressionHandler? signatureSuppression = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -44,6 +46,8 @@ internal sealed class ModuleActivationHandler(
         }
         return BlueMarshal.Text(args[1]) switch
         {
+            SignatureSuppressionHandler.EffectName => signatureSuppression?.Call(context, service, method, args)
+                ?? PilotCallResult.Unsupported,
             MiningWireDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),

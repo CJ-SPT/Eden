@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -49,7 +50,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            AncillaryRepairRules.Kind(groupId) is { } ancillary
+            groupId == SignatureSuppressionRules.Group && effects.Contains(DogmaEffect.SignatureSuppression)
+            || AncillaryRepairRules.Kind(groupId) is { } ancillary
                 && effects.Contains(AncillaryRepairRules.Effect(ancillary))
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)
             || RemoteAssistanceRules.Effect(groupId) is { } assistance

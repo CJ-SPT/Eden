@@ -16,6 +16,13 @@ internal static class SignatureSuppressionCatalog
 
     internal static bool Supported(CatalogDbContext catalog, int type, int group) => s_support.Supports(catalog, type, group);
 
+    internal static IReadOnlyList<PassiveModifier> Modifiers(CatalogDbContext catalog, int type) =>
+        PassiveCatalog
+            .Effects(catalog, type)
+            .Where(e => e.EffectID is (int)DogmaEffect.SignatureSuppressionOnline or (int)DogmaEffect.SignatureSuppression)
+            .Select(e => PassiveCatalog.Parse(e.ModifierInfo!.Value.Single(), e.EffectCategory!.Value)!)
+            .ToArray();
+
     private static bool Validate(CatalogDbContext catalog, int type, int group)
     {
         var source = catalog.Read(CatalogData.Client.Types, (long)type);

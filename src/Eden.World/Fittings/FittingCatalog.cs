@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
+using Eden.World.Defenses;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Repair;
@@ -28,6 +30,10 @@ internal static class FittingCatalog
     {
         var type = catalog.FittingType(typeId);
         if (type is null)
+        {
+            return null;
+        }
+        if (type.GroupId == SignatureSuppressionRules.Group && !SignatureSuppressionCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

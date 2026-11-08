@@ -2,10 +2,12 @@ using System.Collections.Frozen;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
@@ -71,7 +73,7 @@ internal sealed partial class LiveReadModels
     internal IReadOnlyList<NpcEwarContact> NpcEwarSource(long source) =>
         NpcEwar().Select(e => e.Contact).OfType<NpcEwarContact>().Where(e => e.SourceId == source).ToArray();
 
-    private readonly ResidentSnapshot<int, bool> _activeModules = new("resident.activeModules", "WorldActiveModule");
+    private readonly ResidentSnapshot<int, bool> _activeCores = new("resident.activeCores", "WorldActiveModule", "WorldItemMembership");
 
     private MissileIndex Missiles() =>
         Read(
@@ -149,12 +151,19 @@ internal sealed partial class LiveReadModels
     internal bool HasTackleWork() =>
         Tackles().Count > 0
         || Read(
-            _activeModules,
+            _activeCores,
             0,
             () =>
             {
                 using WorldDbContext world = new(database.Path);
-                return world.Set<ActiveFittedModule>().Any();
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                return (
+                    from active in world.Set<ActiveFittedModule>()
+                    join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
+                    select item.TypeId
+                )
+                    .AsEnumerable()
+                    .Any(type => catalog.FittingType(type)?.GroupId == TackleDefinitions.WarpCoreStabilizerGroup);
             }
         );
 
@@ -186,6 +195,15 @@ internal sealed partial class LiveReadModels
     internal bool HasPlayerEwar() => PlayerEwar().Count > 0;
 
     private readonly record struct EwarModuleKey(long Pilot, long Ship, long Module);
+
+    private readonly ResidentSnapshot<EwarModuleKey, long> _signatureSuppression = new(
+        "resident.signatureSuppression",
+        "WorldActiveModule",
+        "WorldItemMembership"
+    );
+
+    internal bool SignatureSuppressionActive(long pilot, long ship, long module, long now, Func<long, long, long, long> load) =>
+        Read(_signatureSuppression, new(pilot, ship, module), () => load(pilot, ship, module)) > now;
 
     private readonly ResidentSnapshot<long, IReadOnlyList<RemoteAssistanceContact>> _remoteAssistance = new(
         "resident.remoteAssistance",
@@ -234,10 +252,11 @@ internal sealed partial class LiveReadModels
 
     private void ObserveSpace(IReadOnlyCollection<CombatRowChange> changes)
     {
+        _signatureSuppression.Observe(changes);
         _missileWork.Observe(changes);
         _missileContacts.Observe(changes);
         _tackle.Observe(changes);
-        _activeModules.Observe(changes);
+        _activeCores.Observe(changes);
         _npcEwar.Observe(changes);
         _playerEwar.Observe(changes);
         _ewarOnline.Observe(changes);
@@ -248,10 +267,11 @@ internal sealed partial class LiveReadModels
 
     private void ClearSpace()
     {
+        _signatureSuppression.Clear();
         _missileWork.Clear();
         _missileContacts.Clear();
         _tackle.Clear();
-        _activeModules.Clear();
+        _activeCores.Clear();
         _npcEwar.Clear();
         _playerEwar.Clear();
         _ewarOnline.Clear();
