@@ -13,7 +13,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Startup and authentication](protocol/startup.md) | Handshake, encryption, launcher accounts, character selection and initial sessions. |
 | [Catalog and provenance](protocol/catalog.md) | Pinned-build data, export inputs and catalog verification. |
 | [Navigation and travel](protocol/navigation.md) | Maps, bookmarks, undocking, warp, gates, orbiting and ship collisions. |
-| [Characters and skills](protocol/characters.md) | Profiles, settings, training, clones, implants, redemption and interaction history. |
+| [Characters and skills](protocol/characters.md) | Profiles, settings, training, clones, implants, redemption, interaction history and [player-corporation Show Info](protocol/characters.md#character-show-info-from-a-player-corporation--november-8-2026). |
 | [Chat, mail and contacts](protocol/social.md) | Native chat, certificate trust, contacts, guests, calendars and notifications. |
 | [Autonomous capsuleers](protocol/capsuleers.md) | Persistent default miner, active-time scheduling, native presence and restart-safe ore collection. |
 | [Cooperative fleets](protocol/fleets.md) | Membership, hierarchy, session identity, broadcasts, chat and point fleet travel. |

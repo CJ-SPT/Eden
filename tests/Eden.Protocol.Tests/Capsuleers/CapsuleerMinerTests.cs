@@ -12,6 +12,8 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Server;
 using Eden.Server.Chat;
 using Eden.Server.Maintenance;
@@ -393,6 +395,51 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 saved.Ships.Where(ship => ship.OwnerId == paid.Pilot.PilotId),
                 ship => ship.TypeId == CapsuleerCommunityStore.VentureType
             );
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ShowInfoFromPlayerCorporationReadsMinerProfileAndContactDictionary()
+    {
+        var directory = TestDirectory.Create("capsuleer-show-info-");
+        var database = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));
+        var clock = new TestClock();
+        try
+        {
+            CreateWorld(database, clock);
+            using var host = ServerServices.Build(database, clock);
+            using var scope = host.CreateScope();
+            var human = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+            var member = human with { Identity = human.Identity with { CorporationId = 98000000 } };
+            using PilotCallContext context = new(
+                1000001,
+                human.Account,
+                [human],
+                scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+                42,
+                SignedSettings.Empty
+            );
+            context.Select(member);
+            long miner = Assert.Single(host.GetRequiredService<ICapsuleerCommunity>().Pilots()).PilotId;
+            var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            object? Read(string service, string method, object?[] args)
+            {
+                var result = Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { }));
+                return BlueMarshal.Decode(BlueMarshal.Encode(result.Reply));
+            }
+            var profile = Assert.IsType<BlueInstance>(Read("charMgr", "GetPublicInfo3", [miner]));
+            var state = BlueRead.Fields(profile.State);
+            Assert.Single(Assert.IsType<List<object?>>(state["lines"]));
+            var corporation = BlueRead.Fields(Assert.IsType<BlueInstance>(Read("corpRegistry", "GetInfoWindowDataForChar", [miner])).State);
+            Assert.Equal(1000035L, corporation["corpID"]);
+            // The native standing service calls corpContacts.get(characterID) after drawing security status.
+            var contacts = Assert.IsAssignableFrom<System.Collections.IDictionary>(Read("corpRegistry", "GetCorporateContacts", []));
+            Assert.Empty(contacts.Keys);
+            Assert.False(contacts.Contains(miner));
         }
         finally
         {
