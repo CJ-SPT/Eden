@@ -40,6 +40,14 @@ internal sealed class RemoteAssistanceHandler(
             cycle.Repeats
         );
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.Contact.SourceShipId == pilot.ShipId ? Active(cycle) : null;
 

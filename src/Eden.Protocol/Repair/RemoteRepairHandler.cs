@@ -67,6 +67,14 @@ internal sealed class RemoteRepairHandler(
             cycle.Repeats
         );
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.Repair.ShipId == pilot.ShipId ? Effect(cycle) : null;
 

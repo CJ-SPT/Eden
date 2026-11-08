@@ -46,6 +46,14 @@ internal sealed class CombatHandler(
         }
     }
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } cycle)
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.Values.FirstOrDefault(c => c.Weapons.Any(w => w.ItemId == module)) is { } cycle && cycle.ShipId == pilot.ShipId
             ? new(

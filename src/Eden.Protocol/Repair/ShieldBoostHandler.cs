@@ -26,6 +26,14 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
 
     private readonly Dictionary<long, Cycle> _cycles = [];
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId
             ? new(

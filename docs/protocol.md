@@ -44,6 +44,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Paid electronic and remote support overload cycles, November 8, 2026](protocol/fitting.md#paid-electronic-and-remote-support-overload-cycles-november-8-2026)
 
+- [Scoped burnout cancellation and overload notifications, November 8, 2026](protocol/fitting.md#scoped-burnout-cancellation-and-overload-notifications-november-8-2026)
+
 - [Burnout and charged ship resources, November 8, 2026](protocol/fitting.md#burnout-and-charged-ship-resources-november-8-2026)
 
 - [Remaining paid module overload cycles, November 8, 2026](protocol/fitting.md#remaining-paid-module-overload-cycles-november-8-2026)

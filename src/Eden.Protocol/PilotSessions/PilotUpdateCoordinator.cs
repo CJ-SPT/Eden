@@ -72,7 +72,8 @@ internal sealed class PilotUpdateCoordinator(
     RemoteAssistanceHandler remoteAssistance,
     SignatureSuppressionHandler signatureSuppression,
     AssaultDamageControlHandler assaultDamageControl,
-    NaniteRepairHandler naniteRepairs
+    NaniteRepairHandler naniteRepairs,
+    ModuleBurnoutMonitor burnout
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -183,12 +184,14 @@ internal sealed class PilotUpdateCoordinator(
         npcCombat.Leave();
         industry.Reset();
         refits.Clear();
+        burnout.Reset();
     }
 
     public DockedPilot? Advance(PilotCallContext context)
     {
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         ApplyPlayerDamage(context);
+        burnout.Advance(context);
         naniteRepairs.Advance(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);

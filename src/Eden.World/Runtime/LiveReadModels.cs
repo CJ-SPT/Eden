@@ -10,6 +10,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Characters;
 using Eden.World.Loot;
@@ -23,6 +24,20 @@ namespace Eden.World.Runtime;
 
 internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase database)
 {
+    private readonly ResidentSnapshot<(long Pilot, long Ship), IReadOnlyList<FittedModuleCondition>> _moduleConditions = new(
+        "resident.moduleConditions",
+        "WorldModuleCondition",
+        "WorldItemMembership",
+        "WorldPilot",
+        "WorldShip"
+    );
+
+    internal IReadOnlyList<FittedModuleCondition> ModuleConditions(
+        long pilot,
+        long ship,
+        Func<IReadOnlyList<FittedModuleCondition>> load
+    ) => Read(_moduleConditions, (pilot, ship), load);
+
     private readonly ResidentSnapshot<long, LiveLearningState> _learning = new(
         "resident.learning",
         "WorldPilot",
@@ -185,6 +200,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             Clear();
             return;
         }
+        _moduleConditions.Observe(changes);
         _learning.Observe(changes);
         _points.Observe(changes);
         _extraction.Observe(changes);
@@ -208,6 +224,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal void Clear()
     {
+        _moduleConditions.Clear();
         _learning.Clear();
         _points.Clear();
         _extraction.Clear();

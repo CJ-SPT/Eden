@@ -24,6 +24,14 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
 
     private Cycle? _cycle;
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycle is { } cycle && cycle.Module.ItemId == module)
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycle is { } cycle && cycle.ShipId == pilot.ShipId && cycle.Module.ItemId == module
             ? new(

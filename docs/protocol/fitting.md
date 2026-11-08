@@ -1826,3 +1826,41 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None for the internal burnout transition.
+
+## Scoped burnout cancellation and overload notifications, November 8, 2026
+
+The selected pilot's update coordinator now checks committed module condition before controllers can repeat a paid activation. Every module effect controller implements a scoped stop through its existing cancellation path. A burned-out turret or launcher member stops the containing bank. Other fitted modules retain their running cycles. Already launched missiles keep their paid projectile lifecycle. Damage, capacitor, ammunition and cooldown settlement continue under their existing world owners.
+
+A resident, ownership-checked module view caches condition, online state and the catalog overload effect. Condition and membership commits invalidate it. Quantity-only ammunition writes and position coordinates do not invalidate that view. Cold reads batch condition rows for the requested ship. Unsupported definitions without module HP have no condition entry. A saved condition still requires a valid HP profile.
+
+The native adapter emits damage changes, the online effect stopping, and overload start/stop through the existing named dogma notifications. Overload effects follow committed paid heat contributions and their exact cycle identities. Duplicate observations emit no repeat event. A natural expiry supplies the exact paid stop deadline, including late observations. Session cleanup resets the monitor before a fresh prime.
+
+Inert inspection verified the staged build-3662168 archive SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. `godma.StateManager.OnGodmaShipEffect` takes item/effect IDs, event time, start/active flags, environment, start time, duration, repeat and actual stop time. Category-5 starts clear pending-overload state. Category-5 stops clear pending-stop-overload state. `ProcessPendingOverloadUpdate` is a client-local scatter event. The existing `ShipEffectChanged` wire model supplies the remote notification. Carbon's pinned movement implementation remains the reference for flight simulation. [Carbon Destiny revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+
+Native overload commands and stochastic heat damage remain open. These notifications observe the internal funded producer paths. Production overheating coverage remains partial for all 1,826 admitted heatable profiles.
+
+### Automated validation
+
+Development started with the exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.ModuleConditionTests.BurnoutCancelsThePaidLocalRepairWithoutRefundingCapacitorOrCooldown`. The first build identified a missing inventory namespace import. The new controller cases initially required their flight snapshot before activation. The bank fixture also needed its native 40 module HP. Those fixture inputs are now explicit. All eight new cases passed in the affected selections.
+
+The broad affected filter was
+
+```text
+FullyQualifiedName~Thermal|FullyQualifiedName~WeaponBankTests|FullyQualifiedName~ShieldBoostTests|FullyQualifiedName~ArmorRepairTests|FullyQualifiedName~LocalRepairTests|FullyQualifiedName~HardenerTests|FullyQualifiedName~SupportModuleTests|FullyQualifiedName~RemoteRepairTests|FullyQualifiedName~CapacitorWarfareTests|FullyQualifiedName~RemoteAssistanceTests|FullyQualifiedName~PlayerEwarTests|FullyQualifiedName~PropulsionTests|FullyQualifiedName~TackleTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~PilotSessionTickTests
+```
+
+All **963 cases** passed with zero skipped in **499.91 seconds**. Final corrections batch condition reads for the owning ship, preserve the exact paid stop key and leave healing notices with their existing repair owner. Final verification against `main` at `66877a4`, including the concurrent combat-anomaly session changes, used
+
+```text
+FullyQualifiedName~ModuleConditionTests|FullyQualifiedName~BurnoutOfEitherBankMember|FullyQualifiedName~MissileBankBurnout|FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~NaniteRepairProtocolTests
+```
+
+All **40 selected cases** passed with zero skipped in **27.20 seconds**. The new cases exercise independent local shield/armor cycles, both turret-bank members, both missile-bank members, paid projectile retention, native overload start/expiry/burnout notices and duplicate observation. Each active overload and post-burnout 100-frame monitor case asserts **zero SQL commands, connection opens and fitting calculations**. The final solution build passed in **6.94 seconds** with zero warnings or errors. Tool/solution restores, both Python policy suites (8 catalog and 9 formatting cases), formatting verification across 1,146 files and 536 documentation references passed. The full .NET suite was outside these focused selections. Production overheating capability flags retain their partial state.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for the internal paid producer boundary. Native module presentation remains unverified.

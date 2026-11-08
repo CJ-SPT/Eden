@@ -29,6 +29,14 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
 
     public bool IsActive(long module) => _cycles.ContainsKey(module);
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle)
             ? new(

@@ -38,6 +38,14 @@ internal sealed class MissileHandler(
     private long _pilotId;
     private long _shipId;
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.Values.FirstOrDefault(c => c.Launchers.Any(w => w.ItemId == module)) is { } cycle)
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.Values.FirstOrDefault(c => c.Launchers.Any(l => l.ItemId == module)) is { } cycle && cycle.ShipId == pilot.ShipId
             ? Effect(pilot.PilotId, cycle with { Launcher = cycle.Launchers.Single(l => l.ItemId == module) })

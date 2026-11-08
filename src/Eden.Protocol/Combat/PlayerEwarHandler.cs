@@ -49,6 +49,14 @@ internal sealed class PlayerEwarHandler(
     private static ElectronicWarfareSpaceContact Contact(Cycle cycle) =>
         new(cycle.Module, cycle.Target?.Id ?? cycle.ShipId, cycle.StartTime);
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId ? Effect(cycle) : null;
 

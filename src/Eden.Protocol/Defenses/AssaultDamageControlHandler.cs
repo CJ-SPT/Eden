@@ -36,6 +36,14 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
             0
         );
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId && cycle.Schedule.Active(Now()) ? Effect(cycle) : null;
 

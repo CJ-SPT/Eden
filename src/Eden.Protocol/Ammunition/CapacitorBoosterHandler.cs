@@ -19,6 +19,14 @@ internal sealed class CapacitorBoosterHandler(TimeProvider clock, IPilotCapacito
 
     private readonly Dictionary<long, Cycle> _cycles = [];
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
         _cycles.TryGetValue(module, out var cycle) && cycle.ShipId == pilot.ShipId ? Effect(pilot.PilotId, cycle) : null;
 

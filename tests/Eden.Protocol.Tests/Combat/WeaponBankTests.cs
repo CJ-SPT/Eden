@@ -8,11 +8,13 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Repair;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Ammunition;
@@ -23,6 +25,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -339,6 +342,79 @@ public sealed class WeaponBankTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void BurnoutOfEitherBankMemberStopsTheWholeControllerBeforeAnotherVolley(bool slave)
+    {
+        using AmmunitionTests.Fixture f = new(liveWorld: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            // The minimal ammunition fixture omits the native turret's 40 module HP.
+            catalog.Database.ExecuteSqlRaw("INSERT OR REPLACE INTO TypeAttribute VALUES (561,9,40)");
+        }
+        long second = SecondGun(f);
+        Link(f, second);
+        f.Load(quantity: 400);
+        f.Clock.Milliseconds += 5000;
+        f.Space();
+        var pilot = f.Pilot;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), [], encounters: f.Db.Services.GetRequiredService<INpcEncounters>()),
+            7,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        TargetingHandler targeting = new(f.Clock, f.Fitting, new());
+        Assert.IsType<object?[]>(targeting.CallWire(context, "dogmaIM", "AddTarget", [f.Npc.Id]));
+        f.Clock.Milliseconds += 5000;
+        targeting.Advance(context);
+        Assert.True(targeting.IsLocked(f.Npc.Id));
+        CombatHandler handler = new(f.Clock, f.Combat, targeting);
+        context.Notifications.Clear();
+        context.NotificationsBeforeFlight.Clear();
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [f.Gun, "projectileFired", f.Npc.Id, 100L]));
+        Assert.Equal(398, f.Total(222));
+        Assert.NotNull(handler.ActiveEffect(pilot, second));
+        Assert.Null(handler.CallWire(context, "dogmaIM", "Activate", [second, "projectileFired", f.Npc.Id, 100L]));
+        Assert.Equal(398, f.Total(222));
+        Assert.Equal(2, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
+        Assert.True(
+            Assert.IsType<DamageMessageNotification>(Assert.Single(context.NotificationsBeforeFlight)).Message
+                is OutgoingCombatMessage { Banked: true }
+        );
+        var monitor = new ModuleBurnoutMonitor(
+            f.Db.Services.GetRequiredService<IPilotModuleConditions>(),
+            f.Db.Services.GetRequiredService<IPilotShipHeat>(),
+            [handler],
+            f.Clock
+        );
+        monitor.Advance(context);
+        using (WorldDbContext world = new(f.Db.Path))
+        using (var transaction = world.Database.BeginTransaction())
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath))
+        {
+            ModuleConditionPersistence.ApplyDamage(world, catalog, slave ? second : f.Gun, 1000, f.Clock.Now);
+            world.SaveChanges();
+            transaction.Commit();
+        }
+        context.Notifications.Clear();
+        monitor.Advance(context);
+        Assert.Null(handler.ActiveEffect(pilot, f.Gun));
+        Assert.Null(handler.ActiveEffect(pilot, second));
+        Assert.Equal(
+            2,
+            context.Notifications.OfType<ShipEffectChanged>().Count(n => n.Effect.Effect == DogmaEffect.ProjectileFired && !n.Active)
+        );
+        f.Clock.Milliseconds += 6000;
+        handler.Advance(context);
+        Assert.Equal(398, f.Total(222));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void FatalVolleyPaysEveryWeaponAndSettlesTheKillOnce(bool resident)
     {
         using AmmunitionTests.Fixture f = new(resident);
@@ -480,5 +556,52 @@ public sealed class WeaponBankTests
         Assert.Equal(4, context.Notifications.Count(n => n.Name == "OnGodmaShipEffect"));
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(4, saved.Set<WorldMissile>().Count());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MissileBankBurnoutStopsRepetitionAndRetainsPaidProjectiles(bool slave)
+    {
+        using var f = MissileCombatTests.Prepare(499, 212);
+        long first = MissileCombatTests.Load(f, 499, 212);
+        long second = MissileCombatTests.Load(f, 499, 212);
+        PilotWeaponBankStore banks = new(new(f.Db.Path), f.Clock);
+        banks.Change(f.PilotId, f.ShipId, WeaponBankOperation.Link, first, second);
+        var npc = MissileCombatTests.Space(f, 10000);
+        using var scope = f.Db.Services.CreateScope();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create(p),
+            7,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        var targeting = scope.ServiceProvider.GetRequiredService<TargetingHandler>();
+        Assert.IsType<object?[]>(targeting.CallWire(context, "dogmaIM", "AddTarget", [npc.Id]));
+        f.Clock.Milliseconds += 5000;
+        targeting.Advance(context);
+        var activation = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
+        var controller = scope.ServiceProvider.GetRequiredService<MissileHandler>();
+        context.Notifications.Clear();
+        Assert.Null(activation.CallWire(context, "dogmaIM", "Activate", [first, "useMissiles", npc.Id, 100L]));
+        Assert.Null(activation.CallWire(context, "dogmaIM", "Activate", [second, "useMissiles", npc.Id, 100L]));
+        Assert.Equal(2, MissileCombatTests.Missiles(f).List(npc.SystemId).Count);
+        Assert.NotNull(controller.ActiveEffect(pilot, second));
+        controller.CancelModule(context, slave ? second : first);
+        Assert.Null(controller.ActiveEffect(pilot, first));
+        Assert.Null(controller.ActiveEffect(pilot, second));
+        Assert.Equal(2, MissileCombatTests.Missiles(f).List(npc.SystemId).Count);
+        Assert.Equal(4, context.Notifications.OfType<ShipEffectChanged>().Count());
+        controller.CancelModule(context, slave ? second : first);
+        Assert.Equal(4, context.Notifications.OfType<ShipEffectChanged>().Count());
+        f.Clock.Milliseconds += 15000;
+        controller.Advance(context);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(2, saved.Set<WorldMissile>().Count());
     }
 }

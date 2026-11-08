@@ -14,11 +14,13 @@ using Eden.Gameplay.Ships;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Repair;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -283,6 +285,115 @@ public sealed class ModuleConditionTests
         Assert.Empty(saved.Set<ActiveFittedModule>());
         Assert.Equal(paid.Capacitor, saved.Set<ShipEnergy>().Find(ship)!.Charge);
         Assert.True(saved.Set<ModuleCooldown>().Find(active)!.ReadyAt > f.Clock.Now);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeOverloadEventsFollowCommittedPaidHeatAndStopOnce(bool burnout)
+    {
+        using Fixture f = Prepare();
+        f.Train(OverloadRules.ThermodynamicsSkill, 3);
+        long module = f.Fit(ShieldBooster);
+        f.Db.Store.SetPosition(f.ShipId, SpacePosition.Zero);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var scope = f.Db.Services.CreateScope();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new SharedSpace(), f.Db.Objects),
+            7,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        var monitor = scope.ServiceProvider.GetRequiredService<ModuleBurnoutMonitor>();
+        monitor.Advance(context);
+        new PilotShieldBoostStore(new(f.Db.Path)).BoostOverloaded(f.PilotId, module, f.Clock.Now);
+        monitor.Advance(context);
+        var start = Assert.Single(context.Notifications.OfType<ShipEffectChanged>());
+        Assert.True(start.Start && start.Active);
+        Assert.Equal(module, start.Arguments[0]);
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        Assert.Equal((DogmaEffect)OverloadCatalog.Definition(catalog, ShieldBooster)!.EffectId, start.Effect.Effect);
+        context.Notifications.Clear();
+        using (var metrics = SessionPerformance.Begin("warmed native overload monitor", _ => { }, force: true)!)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                f.Clock.Milliseconds++;
+                monitor.Advance(context);
+            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        Assert.Empty(context.Notifications);
+        if (burnout)
+        {
+            Damage(f, module, 1000);
+        }
+        else
+        {
+            f.Clock.Milliseconds += 10000;
+        }
+        monitor.Advance(context);
+        var stop = Assert.Single(context.Notifications.OfType<ShipEffectChanged>(), n => n.Effect.Effect == start.Effect.Effect);
+        Assert.False(stop.Start || stop.Active);
+        Assert.Equal(start.Effect, stop.Effect);
+        context.Notifications.Clear();
+        monitor.Advance(context);
+        Assert.Empty(context.Notifications);
+    }
+
+    [Theory]
+    [InlineData(ShieldBooster, "shieldBoosting")]
+    [InlineData(ArmorRepairer, "armorRepair")]
+    public void BurnoutStopsOnlyTheAffectedControllerBeforeItsNextPaidCycle(int type, string effect)
+    {
+        using Fixture f = Prepare();
+        long module = f.Fit(type);
+        long other = f.Fit(type);
+        f.Db.Store.SetPosition(f.ShipId, SpacePosition.Zero);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using var scope = f.Db.Services.CreateScope();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new SharedSpace(), f.Db.Objects),
+            7,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        context.Flight.Snapshot();
+        var activation = scope.ServiceProvider.GetRequiredService<ModuleActivationHandler>();
+        Assert.IsType<PilotCallResult.Success>(activation.Call(context, "dogmaIM", "Activate", [module, effect, null, 100L]));
+        Assert.IsType<PilotCallResult.Success>(activation.Call(context, "dogmaIM", "Activate", [other, effect, null, 100L]));
+        var monitor = scope.ServiceProvider.GetRequiredService<ModuleBurnoutMonitor>();
+        monitor.Advance(context);
+        context.Notifications.Clear();
+        Damage(f, module, 1000);
+        monitor.Advance(context);
+        var sources = scope.ServiceProvider.GetServices<IModuleEffectSource>().ToArray();
+        Assert.All(sources, source => Assert.Null(source.ActiveEffect(pilot, module)));
+        Assert.Contains(sources, source => source.ActiveEffect(pilot, other) is not null);
+        Assert.Contains(context.Notifications.OfType<ShipEffectChanged>(), n => n.Effect.ModuleId == module && !n.Active);
+        Assert.DoesNotContain(context.Notifications.OfType<ShipEffectChanged>(), n => n.Effect.ModuleId == other);
+        context.Notifications.Clear();
+        monitor.Advance(context);
+        using var metrics = SessionPerformance.Begin("warmed burnout monitor", _ => { }, force: true)!;
+        for (int i = 0; i < 100; i++)
+        {
+            monitor.Advance(context);
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+        Assert.Empty(context.Notifications);
     }
 
     [Fact]

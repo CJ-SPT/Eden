@@ -19,6 +19,14 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
     private readonly Dictionary<long, Cycle> _cycles = [];
     private long _restoredShip;
 
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        if (_cycles.TryGetValue(module, out var cycle))
+        {
+            Stop(context, cycle);
+        }
+    }
+
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module)
     {
         var schedule = _cycles.GetValueOrDefault(module)?.Schedule;
