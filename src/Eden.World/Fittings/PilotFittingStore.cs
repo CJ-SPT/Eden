@@ -506,6 +506,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        ExpireTimedModules(world);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ReadModuleAttributes(world, catalog, pilotId, module);
         transaction.Commit();

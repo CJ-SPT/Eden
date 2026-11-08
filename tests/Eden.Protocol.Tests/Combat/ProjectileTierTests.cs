@@ -177,6 +177,7 @@ public sealed class ProjectileTierTests
         Assert.Equal(result.Weapon.Falloff, attributes[DogmaAttributeId.BarrageFalloff], 8);
         Assert.Equal(magazine.Quantity - 1, result.Magazine!.Quantity);
         Assert.True(result.Applied > 0);
+        live.Dispose();
         WorldInitialization.Open(f.Db.Path);
         Assert.Throws<InvalidDataException>(() => Combat(f).Fire(f.PilotId, gun, npc.Id, SpacePosition.Zero, f.Clock.Now, .5));
         Assert.Equal(result.Magazine.Quantity, Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId)).Quantity);

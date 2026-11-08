@@ -235,7 +235,7 @@ internal sealed record FittingCalculation(
                 )
             );
         }
-        var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).Select(a => a.ModuleId).ToHashSet();
+        var activeModules = world.Set<ActiveFittedModule>().Where(a => a.ShipId == ship.Id).ToDictionary(a => a.ModuleId, a => a.ExpiresAt);
         var incoming = world
             .Set<WorldTackle>()
             .Where(t => t.TargetId == ship.Id && t.TargetKind == TackleTargetKind.Ship)
@@ -305,7 +305,7 @@ internal sealed record FittingCalculation(
             )
             {
                 var control = AssaultDamageControlRules.Define(module.Item.Id, module.Item.TypeId, moduleAttributes[module.Item.TypeId]);
-                modifiers.AddRange(AssaultDamageControlRules.Modifiers(control, ship.Id, true, activeModules.Contains(module.Item.Id)));
+                modifiers.AddRange(AssaultDamageControlRules.Modifiers(control, ship.Id, true, activeModules.ContainsKey(module.Item.Id)));
             }
             if (
                 module.Item.Online
@@ -315,7 +315,7 @@ internal sealed record FittingCalculation(
             {
                 foreach (var modifier in SignatureSuppressionCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
-                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.Contains(module.Item.Id))
+                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.ContainsKey(module.Item.Id))
                     {
                         Add(module.Item.Id, modifier, false);
                     }
@@ -341,7 +341,7 @@ internal sealed record FittingCalculation(
             {
                 foreach (var modifier in TackleCatalog.CoreModifiers(catalog, module.Item.TypeId))
                 {
-                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.Contains(module.Item.Id))
+                    if (modifier.Phase == PassiveEffectPhase.Online || activeModules.ContainsKey(module.Item.Id))
                     {
                         Add(module.Item.Id, modifier, false);
                     }
@@ -349,7 +349,7 @@ internal sealed record FittingCalculation(
             }
             if (
                 module.Item.Online
-                && activeModules.Contains(module.Item.Id)
+                && activeModules.ContainsKey(module.Item.Id)
                 && SupportModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
             )
             {
@@ -374,7 +374,7 @@ internal sealed record FittingCalculation(
             }
             if (
                 module.Item.Online
-                && activeModules.Contains(module.Item.Id)
+                && activeModules.ContainsKey(module.Item.Id)
                 && HardenerCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
             )
             {
@@ -389,7 +389,7 @@ internal sealed record FittingCalculation(
                 {
                     Add(module.Item.Id, modifier, false);
                 }
-                if (activeModules.Contains(module.Item.Id))
+                if (activeModules.ContainsKey(module.Item.Id))
                 {
                     Add(module.Item.Id, MicrowarpdriveCatalog.SignatureModifier, false);
                 }
@@ -466,6 +466,19 @@ internal sealed record FittingCalculation(
                 {
                     skillModifiers.Add((skill, modifier));
                 }
+            }
+        }
+        // Local hardener and support markers carry the funded overload interval.
+        // Their modifier sources must also reach ship, weapon and drone consumers.
+        foreach (var module in modules.Where(m => activeModules.GetValueOrDefault(m.Item.Id) > 0 && !overloads.Contains(m.Item.Id)))
+        {
+            if (HardenerDefinitions.Effect(module.GroupId) is null && SupportModuleDefinitions.Effect(module.GroupId) is null)
+            {
+                continue;
+            }
+            if (OverloadCatalog.Definition(catalog, module.Item.TypeId) is { } profile)
+            {
+                modifiers.AddRange(OverloadRules.Modifiers(profile, module.Item.Id, true));
             }
         }
         foreach (var module in modules.Where(m => overloads.Contains(m.Item.Id)))

@@ -19,9 +19,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardening
+internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider clock) : IPilotHardening
 {
-    public HardenerActivation Activate(long pilotId, long moduleId, DogmaEffect effect, long now)
+    public HardenerActivation Activate(long pilotId, long moduleId, DogmaEffect effect, long now) =>
+        Activate(pilotId, moduleId, effect, now, false);
+
+    internal HardenerActivation ActivateOverloaded(long pilotId, long moduleId, DogmaEffect effect, long now) =>
+        Activate(pilotId, moduleId, effect, now, true);
+
+    private HardenerActivation Activate(long pilotId, long moduleId, DogmaEffect effect, long now, bool overloaded)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -50,29 +56,45 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
-        var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
+            world,
+            catalog,
+            pilotId,
+            PilotInventoryStore.Read(catalog, module),
+            calculation
+        );
         var hardener = HardenerDefinitions.Define(moduleId, module.TypeId, group, attributes);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)
         {
             throw new InvalidDataException("The hardener is still cycling.");
         }
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
             throw new InvalidDataException("A destroyed ship cannot activate a hardener.");
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, hardener.CapacitorNeed, now);
-        if (world.Set<ActiveFittedModule>().Find(moduleId) is null)
-        {
-            world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId });
-        }
+        var active =
+            world.Set<ActiveFittedModule>().Find(moduleId)
+            ?? world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId }).Entity;
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(hardener.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        active.ExpiresAt = overloaded ? cooldown.ReadyAt : 0;
+        var heat = calculation is null
+            ? null
+            : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, cooldown.ReadyAt);
         world.SaveChanges();
         var updated = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(hardener, capacitor, updated);
     }
 
@@ -89,6 +111,10 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
         var active = world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == moduleId && a.ShipId == shipId);
         if (active is not null)
         {
+            if (active.ExpiresAt > 0)
+            {
+                ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            }
             world.Remove(active);
             world.SaveChanges();
         }

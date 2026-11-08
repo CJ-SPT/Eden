@@ -100,6 +100,14 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         Trim(ship);
     }
 
+    internal void PublishResident(long ship, ShipHeatSnapshot state)
+    {
+        _ships[ship] = _ships[ship] with { State = state };
+        _active.Add(ship);
+        _dirty.Add(ship);
+        owner.ObjectsChanged();
+    }
+
     internal ShipHeatSnapshot Read(long pilot, long ship, long now)
     {
         using var ownership = owner.Enter();

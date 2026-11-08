@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -11,6 +12,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
@@ -121,6 +123,25 @@ internal sealed class PilotCombatStore(
         WeaponActivation? activation = null
     ) => FireVolley(pilotId, moduleId, target.ShipId, velocity, now, roll, activation, null, true, target);
 
+    internal CombatVolley FireOverloadedBank(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation = null,
+        double? crystalRoll = null,
+        PilotWeaponTarget? playerTarget = null
+    )
+    {
+        if (playerTarget is not null && playerTarget.ShipId != targetId)
+        {
+            throw new InvalidDataException("The selected pilot target must match the volley target.");
+        }
+        return FireVolley(pilotId, moduleId, targetId, velocity, now, roll, activation, crystalRoll, true, playerTarget, overloaded: true);
+    }
+
     private sealed record TurretTarget(
         int SystemId,
         int TypeId,
@@ -139,7 +160,8 @@ internal sealed class PilotCombatStore(
         WeaponActivation? activation,
         double? crystalRoll,
         bool banked,
-        PilotWeaponTarget? playerTarget = null
+        PilotWeaponTarget? playerTarget = null,
+        bool overloaded = false
     )
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("bank.volley");
@@ -157,7 +179,8 @@ internal sealed class PilotCombatStore(
                     activation,
                     crystalRoll,
                     banked,
-                    plan => SettleLiveFatal(plan, now)
+                    overloaded,
+                    (plan, heatState) => SettleLiveFatal(plan, now, heatState)
                 )
                 is { } resident
         )
@@ -208,6 +231,8 @@ internal sealed class PilotCombatStore(
             );
         }
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
+        var overloadFit = overloaded ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: members.ToHashSet()) : null;
+        ShipHeatSnapshot? heat = null;
         List<PaidShot> paid = [];
         foreach (long member in members)
         {
@@ -216,7 +241,20 @@ internal sealed class PilotCombatStore(
                     ? roll
                     : System.Security.Cryptography.RandomNumberGenerator.GetInt32(CrystalProbabilityResolution)
                         / (double)CrystalProbabilityResolution;
-            paid.Add(Prepare(world, catalog, pilot, pilotId, member, target, velocity, now, accuracy, activation, crystalRoll));
+            paid.Add(
+                Prepare(world, catalog, pilot, pilotId, member, target, velocity, now, accuracy, activation, crystalRoll, overloadFit)
+            );
+            if (overloadFit is not null)
+            {
+                heat = ShipHeatPersistence.BeginPaidCycle(
+                    world,
+                    catalog,
+                    overloadFit,
+                    member,
+                    now,
+                    world.Set<ModuleCooldown>().Find(member)!.ReadyAt
+                );
+            }
         }
         if (paid.Select(p => p.Weapon.ChargeTypeId).Distinct().Count() > 1)
         {
@@ -271,6 +309,10 @@ internal sealed class PilotCombatStore(
         }
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         if (settlement.Destroyed && victim is null)
         {
             security.Publish();
@@ -330,8 +372,9 @@ internal sealed class PilotCombatStore(
         SpacePosition velocity,
         long now,
         double roll,
-        WeaponActivation? activation = null,
-        double? crystalRoll = null
+        WeaponActivation? activation,
+        double? crystalRoll,
+        FittingCalculation? overloadFit
     )
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1)
@@ -371,10 +414,11 @@ internal sealed class PilotCombatStore(
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var separation = target.Position - new SpacePosition(position.X, position.Y, position.Z);
         double distance = Math.Max(0, separation.DistanceTo(SpacePosition.Zero) - (hull.Radius ?? 0) - (targetType.Radius ?? 0));
-        string? revision = world.FitRevision(pilotId);
+        string? revision = overloadFit is null ? world.FitRevision(pilotId) : null;
         var cachedShip = world.CachedFit(new(pilotId, pilot.ActiveShipId, 0), revision);
         var cachedWeapon = world.CachedFit(new(pilotId, pilot.ActiveShipId, moduleId), revision);
-        var calculation = cachedShip is not null && cachedWeapon is not null ? null : FittingCalculation.Read(world, catalog, pilot);
+        var calculation =
+            overloadFit ?? (cachedShip is not null && cachedWeapon is not null ? null : FittingCalculation.Read(world, catalog, pilot));
         var ship = cachedShip ?? PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (target.SystemId != system || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
@@ -517,7 +561,7 @@ internal sealed class PilotCombatStore(
 
     private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);
 
-    private CombatVolley SettleLiveFatal(Eden.Gameplay.Combat.LiveVolley plan, long now)
+    private CombatVolley SettleLiveFatal(Eden.Gameplay.Combat.LiveVolley plan, long now, ShipHeatSnapshot? heat)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -540,8 +584,18 @@ internal sealed class PilotCombatStore(
             now,
             plan.Volley.Shot.Weapon.TypeId
         );
+        if (heat is not null)
+        {
+            var saved =
+                world.Set<SavedShipHeat>().Find(plan.Ship.ShipId) ?? world.Add(new SavedShipHeat { ShipId = plan.Ship.ShipId }).Entity;
+            saved.StateJson = ShipHeatPersistence.Encode(heat);
+        }
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilot.Id, plan.Ship.ShipId, heat);
+        }
         security.Publish();
         return plan.Volley with
         {

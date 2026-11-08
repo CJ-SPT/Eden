@@ -302,9 +302,19 @@ internal static class ShipContentAudit
             string evidence = "Unverified overload calculation profile.";
             if (OverloadCatalog.Definition(catalog, type.Id) is not null)
             {
-                evidence = MissileDefinitions.LauncherGroups.Contains(type.GroupId)
-                    ? "Single and banked missile launches commit ammunition, cooldowns and rack heat together."
-                    : "The fitted module's overload program validates.";
+                evidence = type.GroupId switch
+                {
+                    CombatDefinitions.EnergyWeaponGroup or CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup =>
+                        "Single and grouped turrets pay the native overload rate or damage with their rack heat.",
+                    CapacitorBoosterDefinitions.Group => "Injection spends a booster charge and registers its shortened heat cycle.",
+                    HardenerDefinitions.ShieldGroup or HardenerDefinitions.ArmorGroup =>
+                        "Paid overload modifies active resistances until the hardener stops or its deadline expires.",
+                    _ when SupportModuleDefinitions.Effect(type.GroupId) is not null =>
+                        "The paid local support cycle applies overload to the active fitting graph until stop or expiry.",
+                    _ when MissileDefinitions.LauncherGroups.Contains(type.GroupId) =>
+                        "Single and banked missile launches commit ammunition, cooldowns and rack heat together.",
+                    _ => "The fitted module's overload program validates.",
+                };
             }
             checks.Add(
                 new(

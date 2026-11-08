@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
 using Eden.Data.World.Repair;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Dogma;
@@ -99,6 +100,22 @@ internal static class ShipHeatPersistence
                     })
                     .ToHashSet()
                 : null;
+        var localCycles = liveChange
+            ? calculation
+                .Modules.Where(m =>
+                    ids.Contains(m.Item.Id)
+                    && (HardenerDefinitions.Effect(m.GroupId) is not null || SupportModuleDefinitions.Effect(m.GroupId) is not null)
+                )
+                .Select(m => m.Item.Id)
+                .ToHashSet()
+            : [];
+        var localDeadlines =
+            localCycles.Count == 0
+                ? null
+                : world
+                    .Set<ActiveFittedModule>()
+                    .Where(a => a.ShipId == shipId && localCycles.Contains(a.ModuleId))
+                    .ToDictionary(a => a.ModuleId, a => a.ExpiresAt);
         var available = modules
             .Where(i =>
                 ship.Position is not null
@@ -106,6 +123,14 @@ internal static class ShipHeatPersistence
                 && i.Singleton
                 && i.Quantity == 1
                 && state.Cycles.Any(c => c.ModuleId == i.Id && Rack(i.FlagId) == c.Rack && InSlot(i.FlagId, c.Rack, capacity))
+                && (
+                    !localCycles.Contains(i.Id)
+                    // The timed owner can remove a naturally expired marker before this read.
+                    // Settle its last funded interval through the original deadline.
+                    || state.Cycles.Any(c =>
+                        c.ModuleId == i.Id && (c.CompletesAt <= now || c.CompletesAt == localDeadlines!.GetValueOrDefault(i.Id))
+                    )
+                )
                 && OverloadCatalog.Definition(catalog, i.TypeId) is not null
                 && !ModuleConditionPersistence.Read(world, catalog, i).BurnedOut
                 && (

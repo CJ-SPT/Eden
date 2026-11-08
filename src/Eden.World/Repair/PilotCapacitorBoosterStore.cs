@@ -22,7 +22,11 @@ namespace Eden.World.Repair;
 [Injectable]
 internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilotCapacitorBoosting
 {
-    public CapacitorInjection Inject(long pilotId, long moduleId, long now)
+    public CapacitorInjection Inject(long pilotId, long moduleId, long now) => Inject(pilotId, moduleId, now, false);
+
+    internal CapacitorInjection InjectOverloaded(long pilotId, long moduleId, long now) => Inject(pilotId, moduleId, now, true);
+
+    private CapacitorInjection Inject(long pilotId, long moduleId, long now, bool overloaded)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -55,7 +59,16 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
         {
             throw new InvalidDataException("Load a compatible capacitor booster charge first.");
         }
-        var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
+            world,
+            catalog,
+            pilotId,
+            PilotInventoryStore.Read(catalog, module),
+            calculation
+        );
         var booster = CapacitorBoosterDefinitions.Define(
             moduleId,
             module.TypeId,
@@ -71,7 +84,7 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
         {
             throw new InvalidDataException("The capacitor booster is still cycling or reloading.");
         }
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
             throw new InvalidDataException("A destroyed ship cannot use its capacitor booster.");
@@ -91,8 +104,15 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(now + (long)Math.Ceiling(booster.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        var heat = calculation is null
+            ? null
+            : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, cooldown.ReadyAt);
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(booster, charge, magazine);
     }
 }

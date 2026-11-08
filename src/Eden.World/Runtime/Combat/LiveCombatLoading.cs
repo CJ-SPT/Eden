@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
@@ -34,6 +35,56 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
+    private sealed record BankHeatProfile(Dictionary<long, CombatWeapon> Weapons, Dictionary<long, double> Absorption);
+
+    // Bank membership and fitted definitions are replaced on a fit reload.
+    // Keep this cache tied to that generation rather than a module ID alone.
+    private readonly ConditionalWeakTable<LiveTurretDefinition, BankHeatProfile> _bankHeat = new();
+
+    private BankHeatProfile OverloadedTurrets(LiveCombatShip ship, IReadOnlyList<long> members)
+    {
+        var first = ship.Turrets.GetValueOrDefault(members[0]) ?? throw new InvalidDataException("Use a fitted turret.");
+        if (
+            _bankHeat.TryGetValue(first.Definition, out var cached)
+            && members.Count == cached.Weapons.Count
+            && members.All(cached.Weapons.ContainsKey)
+        )
+        {
+            return cached;
+        }
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.PilotId);
+        var fit = FittingCalculation.Read(world, catalog, pilot, overloadedModules: members.ToHashSet());
+        BankHeatProfile profile = new([], []);
+        foreach (long member in members)
+        {
+            var item = fit.Modules.Single(m => m.Item.Id == member).Item;
+            var values = PilotCombatStore.ModuleAttributes(world, catalog, pilot.Id, PilotInventoryStore.Read(catalog, item), fit);
+            var turret = ship.Turrets[member].Definition;
+            var damage = turret.ChargeAttributes;
+            DamageVector vector = new(
+                damage.GetValueOrDefault(DogmaAttributeId.EmDamage),
+                damage.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
+                damage.GetValueOrDefault(DogmaAttributeId.KineticDamage),
+                damage.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
+            );
+            profile.Weapons.Add(
+                member,
+                turret.Weapon with
+                {
+                    Damage = vector.Scale(values[DogmaAttributeId.DamageMultiplier]),
+                    CycleMilliseconds = values[DogmaAttributeId.WeaponCycleTime],
+                }
+            );
+            profile.Absorption.Add(member, values[DogmaAttributeId.HeatAbsorption]);
+        }
+        transaction.Commit();
+        _bankHeat.AddOrUpdate(first.Definition, profile);
+        return profile;
+    }
+
     private LiveCombatShip LoadShip(long pilotId, long now)
     {
         using var phase = SessionPerformance.Phase("combat.hydrate.ship");

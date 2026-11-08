@@ -1766,3 +1766,31 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None for the internal launch path.
+
+## Remaining paid module overload cycles, November 8, 2026
+
+The remaining 916 admitted heatable profiles in build 3662168 now have internal paid cycles. The catalog groups comprise 580 hybrid, projectile and energy turrets, 251 armor and shield hardeners, 43 capacitor boosters and 42 local support modules. Local support includes sensor boosters, tracking computers, missile guidance computers and omnidirectional tracking links. Together with the preceding producer checkpoints, these groups cover the paid-cycle portion of milestone 6 for all 1,826 admitted profiles.
+
+A turret bank resolves its catalog damage or firing-rate program on the earned fit. Each member pays its own ammunition, crystal wear, capacitor and cooldown, and contributes heat for its funded interval. Resident nonfatal NPC volleys reuse the calculated weapon profiles across shots within one fitting generation. Fatal settlement records heat alongside the payment and destruction transaction. Pilot-target volleys use the existing aggression and damage settlement. Local hardeners and support modules project their overload modifiers through the active fitting graph until stop or paid expiry. Capacitor boosters spend their usual charge on the shortened cycle.
+
+The tests use representative fits with explicit fixture budgets for turrets. They exercise nonfatal NPC fire, fatal NPC settlement, pilot targets, grouped payment, repeated commands and detached heat/cooldown snapshots. Warm repeats with each resident turret family incurred zero SQL commands, connection opens and fitting calculations. These counts describe the volley operation. Local activation cases cover stop and deadline expiry, including module fields with catalog defaults. The build-specific source remains the [native heat and overload calculation record](#overheating-calculation-foundation-november-7-2026). This checkpoint reuses the existing Destiny movement and Blue wire behavior.
+
+Native overload controls, notifications, stochastic damage to nearby modules and the resulting burnout during active cycles remain unfinished. The inventory retains the partial overheating state for all 1,826 profiles. The 916 updated entries describe their paid cycle owners. No additional module or hull admission is implied.
+
+### Automated validation
+
+Development began with the exact existing method `FullyQualifiedName=Eden.Protocol.Tests.Combat.WeaponBankTests.EnergyAndProjectileBanksUseTheirExistingChargeRules`. The expanded turret cases initially advanced the clock after seeding a nearly destroyed NPC, allowing shield recharge, and later changed a catalog security row after opening the read cache. Final fixtures set security before the first catalog read and seed the fatal target at the firing timestamp. The six-case turret filter passed in 9.21 seconds after these corrections.
+
+```text
+FullyQualifiedName~Thermal|FullyQualifiedName~WeaponBank|FullyQualifiedName~PilotTurret|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~LiveCombat|FullyQualifiedName~HybridTier|FullyQualifiedName~EnergyTier|FullyQualifiedName~ProjectileTier|FullyQualifiedName~Hardener|FullyQualifiedName~CapacitorBooster|FullyQualifiedName~SupportModule|FullyQualifiedName~OverloadFitting|FullyQualifiedName~ShipContentCoverage|FullyQualifiedName~LiveWorld|FullyQualifiedName~ResidentRead
+```
+
+The first broad run passed 697 of 711 cases. All 14 failures came from the existing projectile-tier restart test calling startup reconciliation on its running world. The fixture now stops and saves that world before reopening it. The exact failing method plus the new overload class passed all 27 cases in 17.82 seconds. The final affected selection above passed **711 cases** with zero skipped in **268.25 seconds**. Tool and solution restores passed. The final build took 0.86 seconds with zero warnings or errors. Both Python policy suites passed (8 catalog and 9 formatting tests), and formatting verification passed across 1,136 files. Document checks verified 513 distinct local references. Regeneration against the installed catalog changed exactly 916 evidence descriptions across 6,079 entries. All admission decisions and capability flags were preserved.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for these internal overload operations.

@@ -2,6 +2,8 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
@@ -55,7 +57,8 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         WeaponActivation? activation,
         double? crystalRoll,
         bool banked,
-        Func<LiveVolley, CombatVolley> settleFatal
+        bool overloaded,
+        Func<LiveVolley, ShipHeatSnapshot?, CombatVolley> settleFatal
     )
     {
         using var ownership = owner.Enter();
@@ -91,7 +94,22 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         }
         int count = bank?.Count ?? 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
-        var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation);
+        var profiles = overloaded ? OverloadedTurrets(ship, bank ?? [moduleId]) : null;
+        var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation, profiles?.Weapons);
+        ShipHeatSnapshot? heat = null;
+        if (profiles is not null)
+        {
+            if (owner.Nanites.Read(pilotId, ship.ShipId).Any(r => r.Key.CompletesAt > now))
+            {
+                throw new InvalidDataException("Stop nanite repairs before paying for an overload cycle.");
+            }
+            heat = owner.Heat.Read(pilotId, ship.ShipId, now);
+            foreach (long member in profiles.Weapons.Keys)
+            {
+                var cycle = new PaidHeatCycle(member, ModuleRack.High, now, plan.Ship.Turrets[member].ReadyAt, profiles.Absorption[member]);
+                heat = HeatCycleRules.Start(heat, cycle).State;
+            }
+        }
         long cycleEnd = checked(now + (long)Math.Ceiling(plan.Volley.Shot.Weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
         plan = plan with
         {
@@ -106,7 +124,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             _internal++;
             try
             {
-                var result = settleFatal(plan);
+                var result = settleFatal(plan, heat);
                 _ships.Remove(pilotId);
                 _savedShips.Remove(pilotId);
                 _npcs.Remove(targetId);
@@ -129,6 +147,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         RecordDroneModule(ship.ShipId, target.Id, now);
         _ships[pilotId] = plan.Ship;
         _npcs[targetId] = RepairNpc(plan.Target, now);
+        if (heat is not null)
+        {
+            owner.Heat.PublishResident(ship.ShipId, heat);
+        }
         _dirtyShips.Add(pilotId);
         _dirtyNpcs.Add(targetId);
         owner.ObjectsChanged();

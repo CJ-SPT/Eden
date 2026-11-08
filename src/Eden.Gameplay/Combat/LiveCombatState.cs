@@ -161,7 +161,8 @@ public static class LiveCombatRules
         SpacePosition velocity,
         long now,
         IReadOnlyList<TurretDraw> draws,
-        WeaponActivation? activation
+        WeaponActivation? activation,
+        IReadOnlyDictionary<long, CombatWeapon>? overloadedWeapons = null
     )
     {
         ship = ship.SettleRepairs(now);
@@ -202,7 +203,7 @@ public static class LiveCombatRules
                 throw new InvalidDataException(turret?.Definition.Error ?? "Use an online fitted supported turret.");
             }
             var definition = turret.Definition;
-            var weapon = definition.Weapon;
+            var weapon = overloadedWeapons is null ? definition.Weapon : overloadedWeapons[members[index]];
             if (
                 activation is not null
                 && activation != (definition.AmmoFed && !definition.Energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser)
