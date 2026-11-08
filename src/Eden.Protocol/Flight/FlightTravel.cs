@@ -60,6 +60,8 @@ internal sealed class FlightTravel
 
     internal void ArrivedAt(int stamp) => _arrivalStamp = stamp;
 
+    internal void ExpectArrival() => _awaitingArrival = true;
+
     internal void BeginGate(GateDestination destination, int stamp)
     {
         _arrivalStamp = null;

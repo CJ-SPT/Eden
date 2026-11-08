@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Direct station-to-space TR, November 8, 2026](#direct-station-to-space-tr-november-8-2026)
 - [Station-origin TR camera sequencing, November 8, 2026](#station-origin-tr-camera-sequencing-november-8-2026)
 - [Sovereignty nullsec cyno-jammer state, November 8, 2026](#sovereignty-nullsec-cyno-jammer-state-november-8-2026)
 - [Sovereignty information tab, November 8, 2026](#sovereignty-information-tab-november-8-2026)
@@ -27,7 +28,25 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
 
+## Direct station-to-space TR, November 8, 2026
+
+The maintainer reports that `d5c19f1` did **not** restore station-origin TR camera input. They also report that **Alt+2 does not restore rotation** and that the space right-click menu cannot be opened. The earlier notification-order correction is therefore not live acceptance of camera recovery.
+
+Additional pinned-client inspection explains why forcing a cinematic camera is unsafe here. `JumpCamera.IsLocked()` returns true. `EveCommandService._IsSpaceCameraSwitchAllowed` rejects a locked camera, including the Alt+2 orbit shortcut, while `InflightLayer.OnActiveCameraChanged` assigns no mouse controller to `CAM_JUMP`. This is consistent with the reported symptoms; the running client's actual camera object was not inspected. A source jump-drive cinematic is unnecessary for a station-to-space GM relocation.
+
+Station-origin `/tr me` now commits the ship directly at its destination and emits one station-to-destination session delta. There is no temporary source undock/ballpark, no queued transfer, and no `JumpDriveOut`/`JumpDriveIn` cinematic on this route. The native `StationToSpaceTransition` can choose its supported undock/registered space camera, and the destination ballpark binds at the destination system ID. The usual arrival protection starts with the first destination state. The undocked task counter commits once with the new position, rolls back with a failed move and does not repeat for a subsequent in-space TR. Inventory notification history retains the actual station as its previous location. Existing unbound/ready space-origin travel retains its separate lifecycle.
+
+Sources: offline inspection of the verified build **3662168** `code.ccp`, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, including `ui/camera/jumpCamera.pyj`, `ui/eveCommands.pyj`, `ui/inflight/navigation.pyj`, `ui/view/transitions.pyj` and `ui/view/spaceView.pyj`. [EVE University Camera](https://wiki.eveuniversity.org/Camera) describes normal mouse orbit and the Alt+2 shortcut. Existing session, inventory and Destiny codecs are reused; the unchanged engine reference remains [Carbon Destiny Ballpark.cpp `27ee40b38a563d29054b32f64c3ebc87fabaec1f`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp). No gameplay Python was executed or client launched by the agent.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors; final build 4.72 seconds). Filter `FullyQualifiedName~TranslocationTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~StationUndockTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TypedSessionTests|FullyQualifiedName~TaskTrackingTests|FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests` passed **196 tests in 55.99 seconds**. No full .NET suite was requested or run. The new exact-method station regression reproduced the staged source-system behavior before implementation. Corrected cases cover a system destination, a gate, a same-system moon and EIDI-N **30000249** (pinned Z-DO53/Vale of the Silent geography). Authenticated packet coverage binds the destination ballpark, reads cyno-jammer state, checks the destination delta before the successful TR reply, and rejects the old jump-drive cinematic. Persistence tests cover one undock event, no duplicate event, transaction rollback, unchanged contents/hull and reopening; existing NPC arrival-grace tests cover the new direct route. All checks ran on main as requested. Both Python policy suites passed (8 catalog checks in 0.699 seconds; 9 formatting checks in 0.017 seconds). Formatting verification passed for 1,199 files, including the 140-column policy; combined Python/format verification took 18.61 seconds. UTF-8, final-newline, trailing-whitespace, local documentation targets, new section anchors and diff checks passed.
+
+**Live acceptance:** The maintainer reports **"it works now"** after the direct station-to-space route was applied on main. This is maintainer-reported acceptance of the camera/menu correction; the agent did not launch or operate the client. Individual shortcut and space-origin scenarios were not separately reported.
+
+**Optional maintainer checks:** None required for the reported station-origin camera/menu issue.
+
 ## Station-origin TR camera sequencing, November 8, 2026
+
+**Superseded for station origins:** The maintainer reports this change did not fix their camera/menu lock. See [direct station-to-space TR](#direct-station-to-space-tr-november-8-2026). The following record is historical evidence for station origins and still describes the unbound-space preparation path.
 
 The maintainer reports that TR from a station into sovereignty nullsec leaves the camera unresponsive. Offline inspection of pinned build **3662168** shows a sequencing race in the source-space bootstrap: Eden's first source `SetState` immediately queued `effects.JumpDriveOut` in the same Destiny update. `michelle.Park.SetState` sends `DoBallClear`, and `GameUI.DoBallClear` starts the asynchronous `_DoBallClear` task. That task finalizes any active space-to-space transition. Meanwhile `JumpTransitionTunnel.Prepare` selects `CAM_JUMP`, and `InflightLayer.OnActiveCameraChanged` assigns no mouse camera controller to that cinematic camera. A source scene reset can therefore overlap the newly started jump transition. Additional source `UpdateStateRequest` replies during departure could also finalize it before destination arrival. This is a protocol-order finding; no client exception trace or live camera recovery was captured.
 

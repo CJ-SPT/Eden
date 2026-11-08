@@ -1,8 +1,10 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Docking;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Runtime;
@@ -13,7 +15,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Flight;
 
 [Injectable]
-internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorld lookup, ISystemObjects objects) : IPilotTranslocation
+internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorld lookup, ISystemObjects objects, TimeProvider clock)
+    : IPilotTranslocation
 {
     // Build 3662168 inventorycommon.const.groupSun.
     private const int StarGroup = 6;
@@ -86,7 +89,17 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
             {
                 double radius = catalog.RequireItem(ship.TypeId).Radius ?? 0;
                 var point = TranslocationRules.Arrival(target, radius, destinationObjects);
-                ship.Position ??= world.Positions.Add(new FlightPosition { ShipId = ship.Id }).Entity;
+                if (ship.Position is null)
+                {
+                    ship.Position = world.Positions.Add(new FlightPosition { ShipId = ship.Id }).Entity;
+                    PilotTaskTrackingStore.Record(
+                        world,
+                        catalog,
+                        pilotId,
+                        clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                        TaskEvents.Undocked
+                    );
+                }
                 ship.Position.SystemId = target.System.Id;
                 (ship.Position.X, ship.Position.Y, ship.Position.Z) = (point.X, point.Y, point.Z);
             }

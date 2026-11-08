@@ -66,19 +66,10 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
             // Cancel old activities before committing the move. Their checkpoints must
             // never write a source-system position over the committed destination.
             updates.PrepareTranslocation(context);
-            if (context.Pilot.Position is null && context.Pilot.SystemId != target.System.Id && target.StationId is null)
-            {
-                var undock = context.Flight.Execute(new FlightCommand.Undock(context.Pilot.ShipId));
-                if (undock is not PilotCallResult.Success)
-                {
-                    return undock;
-                }
-                context.Flight.QueueTranslocationAfterSourceState(travel, target, destinationObjects);
-                context.ReleaseLocationReferences();
-                updates.Enter(context);
-                return PilotCallResult.None;
-            }
-            if (context.Pilot.SystemId != target.System.Id && target.StationId is null)
+            // A docked pilot enters the destination through StationToSpaceTransition.
+            // A synthetic source undock followed by JumpDriveOut can strand CAM_JUMP,
+            // whose locked camera rejects both mouse controls and camera shortcuts.
+            if (context.Pilot.Position is not null && context.Pilot.SystemId != target.System.Id && target.StationId is null)
             {
                 if (context.Flight.InBallpark)
                 {

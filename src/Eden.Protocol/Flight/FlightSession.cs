@@ -593,6 +593,7 @@ internal sealed class FlightSession(
     {
         lock (space.MotionLock)
         {
+            bool enteringSpace = Pilot.Position is null && destination.Position is not null;
             bool keepBallpark = InBallpark && destination.Position is not null && Pilot.SystemId == destination.SystemId;
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
             LeaveSpace(keepBallpark);
@@ -606,6 +607,10 @@ internal sealed class FlightSession(
             _navigation = new();
             _simulatedStamp = Stamp;
             _travel.Reset();
+            if (enteringSpace)
+            {
+                _travel.ExpectArrival();
+            }
             if (wasWarping)
             {
                 WarpEffect(Pilot.ShipId, false);

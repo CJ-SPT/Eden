@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -32,6 +33,7 @@ public sealed class TranslocationTests
     private const int OtherSystem = 30000144;
     private const int SourceMoon = 40009087;
     private const int OtherGate = 50002185;
+    private const int NullsecSystem = 30000249; // EIDI-N in pinned build 3662168.
 
     [Theory]
     [InlineData(false)]
@@ -149,7 +151,7 @@ public sealed class TranslocationTests
             f.Context.Flight.Snapshot();
         }
         Assert.Equal(PilotCallResult.None, f.Call("/tr me 40009232"));
-        if (!f.Context.Flight.InBallpark)
+        if (f.Context.Flight.Translocating && !f.Context.Flight.InBallpark)
         {
             f.Context.Flight.Snapshot();
             await f.TickAsync([]);
@@ -158,8 +160,11 @@ public sealed class TranslocationTests
         }
         List<object?> output = [];
         await f.TickAsync(output);
-        f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
-        await f.TickAsync(output);
+        if (f.Context.Flight.Translocating)
+        {
+            f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
+            await f.TickAsync(output);
+        }
         Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);
         Assert.False(f.Context.Flight.InBallpark);
         Assert.Empty(f.Context.Flight.VisibleNpcs);
@@ -265,13 +270,79 @@ public sealed class TranslocationTests
     }
 
     [Theory]
-    [InlineData(OtherSystem, false)]
-    [InlineData(OtherGate, false)]
-    [InlineData(OtherSystem, true)]
-    [InlineData(OtherGate, true)]
-    public async Task UnboundAndStationOriginsLoadSourceSpaceBeforeStartingTheCrossSystemCameraHandoff(int target, bool inSpace)
+    [InlineData(OtherSystem, OtherSystem)]
+    [InlineData(OtherGate, OtherSystem)]
+    [InlineData(SourceMoon, 30000142)]
+    [InlineData(NullsecSystem, NullsecSystem)]
+    public async Task StationTranslocationLoadsDestinationWithoutSelectingTheLockedJumpCamera(int target, int destination)
     {
-        using Fixture f = new(inSpace: inSpace);
+        using Fixture f = new();
+        PrepareNullsecDestination(f.Db);
+        f.Select();
+        var original = f.Context.Pilot;
+        string contents = Items(f.Db);
+        Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
+        Assert.Equal(destination, f.Context.Pilot.SystemId);
+        Assert.NotNull(f.Context.Pilot.Position);
+        Assert.Equal(original.ShipId, f.Context.Pilot.ShipId);
+        Assert.False(f.Context.Flight.Translocating);
+        var itemChange = Assert.Single(f.Context.Notifications.OfType<ItemChanged>());
+        Assert.Equal((long)original.StationId, itemChange.Previous[InventoryColumn.Location]);
+        f.Context.Flight.Snapshot();
+        Assert.Single(f.Context.Flight.Updates, update => update.Command is DestinyCommand.SetState);
+        Assert.DoesNotContain(f.Context.Flight.Updates, update => update.Command is DestinyCommand.TranslocationOut);
+        Assert.DoesNotContain(
+            f.Context.Flight.Updates,
+            update => update.Command is DestinyCommand.SpecialEffect { Graphic: "effects.JumpDriveOut" or "effects.JumpDriveIn" }
+        );
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked));
+        Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.Jumped));
+        List<object?> packets = [];
+        await f.TickAsync(packets);
+        f.Clock.Seconds += 10;
+        packets.Clear();
+        await f.TickAsync(packets);
+        Assert.DoesNotContain(
+            packets.Cast<BlueInstance>(),
+            packet => packet.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal)
+        );
+        Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
+        Assert.Equal(1, TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked));
+        Assert.Equal(contents, Items(f.Db));
+        var reopened = WorldInitialization.Open(f.Db.Path).FindPilot(1000001)!;
+        Assert.Equal(destination, reopened.SystemId);
+        Assert.Equal(original.ShipId, reopened.ShipId);
+    }
+
+    private static void PrepareNullsecDestination(TestWorld db)
+    {
+        using Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
+        catalog.Add(new Region { Id = 10000003, Name = "Vale of the Silent" });
+        catalog.Add(
+            new Constellation
+            {
+                Id = 20000035,
+                Name = "Z-DO53",
+                RegionId = 10000003,
+            }
+        );
+        catalog.Add(
+            new SolarSystem
+            {
+                Id = NullsecSystem,
+                Name = "EIDI-N",
+                ConstellationId = 20000035,
+            }
+        );
+        catalog.SaveChanges();
+    }
+
+    [Theory]
+    [InlineData(OtherSystem)]
+    [InlineData(OtherGate)]
+    public async Task UnboundSpaceOriginsLoadSourceSpaceBeforeStartingTheCrossSystemCameraHandoff(int target)
+    {
+        using Fixture f = new(inSpace: true);
         f.Select();
         var original = f.Context.Pilot;
         Assert.Equal(PilotCallResult.None, f.Call($"/tr me {target}"));
@@ -302,12 +373,10 @@ public sealed class TranslocationTests
         Assert.Equal(0, TaskTrackingTestData.Count(f.Db, TaskEvents.Jumped));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SourceStateIsPublishedBeforeJumpCameraStartsAndRetriesCannotClearTheTransition(bool inSpace)
+    [Fact]
+    public async Task SourceStateIsPublishedBeforeJumpCameraStartsAndRetriesCannotClearTheTransition()
     {
-        using Fixture f = new(inSpace: inSpace);
+        using Fixture f = new(inSpace: true);
         f.Select();
         int source = f.Context.Pilot.SystemId;
         Assert.Equal(PilotCallResult.None, f.Call($"/tr me {OtherSystem}"));
@@ -344,7 +413,7 @@ public sealed class TranslocationTests
     [Fact]
     public async Task FailedSourceStateSendCannotStartTheCameraCountdownAndDisconnectPreservesTheSourceLocation()
     {
-        using Fixture f = new();
+        using Fixture f = new(inSpace: true);
         f.Select();
         int source = f.Context.Pilot.SystemId;
         Assert.Equal(PilotCallResult.None, f.Call($"/tr me {OtherSystem}"));
@@ -491,6 +560,7 @@ public sealed class TranslocationTests
     {
         using Fixture f = new(inSpace: stationTarget);
         var pilot = f.Db.Store.FindPilot(1000001)!;
+        long undocks = TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked);
         string items = Items(f.Db);
         var travel = f.Db.Services.GetRequiredService<IPilotTranslocation>();
         foreach (int target in new[] { 0, -1, int.MaxValue, (int)pilot.PilotId })
@@ -512,6 +582,7 @@ public sealed class TranslocationTests
         );
         Assert.Equal(pilot, f.Db.Store.FindPilot(1000001));
         Assert.Equal(items, Items(f.Db));
+        Assert.Equal(undocks, TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked));
         Assert.Equal(50_000_000, f.Db.Services.GetRequiredService<IPilotWalletReader>().Balance(pilot.PilotId));
     }
 
@@ -521,7 +592,7 @@ public sealed class TranslocationTests
     [InlineData(PilotRole.Developer, true)]
     [InlineData(PilotRole.WorldMod, true)]
     [InlineData(PilotRole.GameMasterLow, true)]
-    public async Task NativeRoleGateAndPilotSelectionControlAccess(PilotRole roles, bool allowed)
+    public void NativeRoleGateAndPilotSelectionControlAccess(PilotRole roles, bool allowed)
     {
         using Fixture f = new(roles);
         Assert.Same(PilotCallResult.Unsupported, f.Call($"/tr me {OtherSystem}"));
@@ -532,11 +603,7 @@ public sealed class TranslocationTests
         {
             Assert.Equal(PilotCallResult.None, result);
             f.Context.Flight.Snapshot();
-            await f.TickAsync([]);
-            f.Clock.Seconds++;
-            await f.TickAsync([]);
-            f.Clock.Seconds += FlightSession.TranslocationDurationTicks;
-            Assert.NotNull(f.Context.Flight.CompleteTranslocation());
+            Assert.False(f.Context.Flight.Translocating);
             Assert.Equal(OtherSystem, f.Context.Pilot.SystemId);
         }
         else
@@ -651,14 +718,12 @@ public sealed class TranslocationTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task NativeMenuPacketUsesAuthenticatedRolesAndAnnouncesDockingOrSourceUndockBeforeTheReply(
-        bool developer,
-        bool stationTarget
-    )
+    public async Task NativeMenuPacketUsesAuthenticatedRolesAndAnnouncesDestinationBeforeTheReply(bool developer, bool stationTarget)
     {
         using Fixture f = new();
-        int targetId = stationTarget ? HomeStationTestData.School : OtherSystem;
-        int systemId = stationTarget ? HomeStationTestData.System : OtherSystem;
+        PrepareNullsecDestination(f.Db);
+        int targetId = stationTarget ? HomeStationTestData.School : NullsecSystem;
+        int systemId = stationTarget ? HomeStationTestData.System : NullsecSystem;
         f.Db.Services.GetRequiredService<LauncherStore>().Initialize();
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -677,6 +742,13 @@ public sealed class TranslocationTests
                 PilotServicesTests.Request("slash", "SlashCmd", [$"/tr me {targetId}"]),
             }.Select(packet => BlueMarshal.Decode(BlueMarshal.Encode(packet)))
         );
+        if (developer && !stationTarget)
+        {
+            input.Enqueue(
+                BlueMarshal.Decode(BlueMarshal.Encode(PilotServicesTests.Request("beyonce", "MachoBindObject", [(long)systemId, null])))
+            );
+            input.Enqueue(BlueMarshal.Decode(BlueMarshal.Encode(PilotServicesTests.Request("beyonce", "GetCynoJammerState", []))));
+        }
         List<BlueInstance> output = [];
         using var scope = f.Db.Services.CreateScope();
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
@@ -703,23 +775,22 @@ public sealed class TranslocationTests
             Assert.DoesNotContain(output, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
             var body = BlueRead.Tuple(BlueRead.Tuple(transitions[1].State, 14)[4], 3);
             var delta = BlueRead.Fields(BlueRead.Tuple(body[1], 2)[1]);
+            Assert.Equal(new object?[] { 30000142L, (long)systemId }, delta["solarsystemid2"]);
             if (stationTarget)
             {
-                Assert.Equal(new object?[] { 30000142L, (long)systemId }, delta["solarsystemid2"]);
+                Assert.DoesNotContain("solarsystemid", delta.Keys);
             }
             else
             {
-                Assert.Equal(new object?[] { null, 30000142L }, delta["solarsystemid"]);
-                Assert.DoesNotContain("solarsystemid2", delta.Keys);
+                Assert.Equal(new object?[] { null, (long)systemId }, delta["solarsystemid"]);
+                Assert.DoesNotContain(output, packet => BlueMarshal.Encode(packet).AsSpan().IndexOf("effects.JumpDriveOut"u8) >= 0);
             }
             Assert.Equal(new object?[] { (long)HomeStationTestData.Origin, stationTarget ? (long)targetId : null }, delta["stationid"]);
             int index = output.IndexOf(transitions[1]);
             Assert.EndsWith(".CallRsp", output[index + 1].Name);
             var response = BlueRead.Tuple(BlueRead.Tuple(output[index + 1].State, 14)[4], 1);
             Assert.Null(BlueMarshal.Decode(BlueRead.Bytes(response[0])));
-            // Closing this simulated connection before its source bind cancels
-            // a queued space transfer; the real timer/state sequence is covered above.
-            Assert.Equal(stationTarget ? systemId : 30000142, f.Db.Store.FindPilot(1000001)!.SystemId);
+            Assert.Equal(systemId, f.Db.Store.FindPilot(1000001)!.SystemId);
         }
         else
         {
