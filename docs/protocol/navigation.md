@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Null-security system information, November 8, 2026](#null-security-system-information-november-8-2026)
 - [NPC visibility after same-system GM translocation](#npc-visibility-after-same-system-gm-translocation)
 - [NPC spawn and translocation follow-up](#npc-spawn-and-translocation-follow-up)
 - [Developer translocation](#developer-translocation)
@@ -22,6 +23,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Null-security system information, November 8, 2026
+
+The maintainer's screenshot shows `Invalid Packet Destination: Unsupported local call solarsystemInterferenceMgr.GetAllInterferenceBands` when opening a null-security system's information from the map. The selected-pilot map handler now owns `GetAllInterferenceBands` and `GetLocalInterferenceState`, both without arguments. Eden does not simulate CONCORD Rogue Analysis Beacon (CRAB) interference, so these return an empty Python dictionary and Python None respectively. Unknown methods remain unsupported; positional arguments and service keywords are rejected. Transport metadata such as `machoVersion` retains the router's existing handling.
+
+Inert inspection of build **3662168** `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, confirms `infoContentBase.InfoWindowMonolith.update_description_caption_and_sub_caption` requests an interference band for eligible systems. `solarsystemInterferenceSvc.GetSolarSystemInterferenceBand` reads the local state for the current system and otherwise performs dictionary membership/indexing against `GetAllInterferenceBands`; a missing entry or None local state falls back to `INTERFERENCE_BAND_NONE`. Both map interference color handlers iterate the dictionary with `iteritems`. No client modules were executed.
+
+Gameplay reference: [EVE University mobile structures, CONCORD Rogue Analysis Beacon](https://wiki.eveuniversity.org/Mobile_structures#CONCORD_Rogue_Analysis_Beacon) describes system signal interference from CRAB use. This reference explains the mechanic; pinned-client inspection establishes the response contract. Consulted the local [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectDict` and `ReadObjectList0`, against the unchanged explicit Blue adapters. There are no codec, persistence or simulation changes.
+
+**Automated validation.** The exact development filter `FullyQualifiedName=Eden.Protocol.Tests.Maps.MapStartupTests.NativeMapInformationPacketsIncludeInterferenceWithoutDestinationErrors` passed **1 test** (build **9.92 seconds**, tests approximately **7 seconds**). Final root checks passed **60 affected tests** in approximately **5 seconds**, using `FullyQualifiedName~MapStartupTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` with `xUnit.MaxParallelThreads=4`. Tool/solution restores, build (**3.54 seconds**, zero warnings/errors), both Python policy suites (**8 catalog**, **9 formatting**), formatting verification (**1,161 files**), documentation links and diff checks passed. Preparation took **21.00 seconds**, and the final build/test/policy/format sequence took **33.33 seconds**, using isolated `artifacts/feature-tests` output. Coverage extends the native session packet sequence with both interference calls and checks their decoded dictionary/None replies, selected-pilot gating, docked/in-space repeated reads, malformed arguments and keywords, unknown methods, unchanged saved pilot state and absent notifications. No full .NET suite was requested or run. A running server requires a rebuild/restart to load the correction.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot establishes the original failure, not acceptance of this correction. Native rendering remains unverified.
+
+**Optional maintainer checks.** Restart the server with the corrected build, then open Show Info on a remote null-security system and on the current null-security system from the map.
 
 ## NPC visibility after same-system GM translocation
 

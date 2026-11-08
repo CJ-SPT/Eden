@@ -24,6 +24,8 @@ internal sealed class MapStartupHandler : ISelectedPilotCallHandler
                 ("stationSvc", "GetAllianceSystems")
                 or
                 ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStates" or "GetAllWarzonesOccupationStatesUncached")
+                or
+                ("solarsystemInterferenceMgr", "GetAllInterferenceBands" or "GetLocalInterferenceState")
             )
         )
         {
@@ -31,13 +33,16 @@ internal sealed class MapStartupHandler : ISelectedPilotCallHandler
         }
         if (args.Length != 0 || keywords is { Count: > 0 })
         {
-            return new PilotCallResult.Failure("Map startup information does not accept arguments.");
+            return new PilotCallResult.Failure("Map information does not accept arguments.");
         }
 
         // Eden has no player jump bridges, alliance sovereignty or faction-war occupations.
         // The client retains its own static universe and NPC faction ownership data.
+        // No CRAB interference is simulated. Build 3662168 uses an absent system
+        // dictionary entry or a None local state as its no-interference fallback.
         return service switch
         {
+            "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState" => PilotCallResult.None,
             "structureDirectory" => new EmptyJumpBridgeAccessReply(),
             "stationSvc" => BlueEmpty.List,
             _ => BlueEmpty.IndexedDictionary,

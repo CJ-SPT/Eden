@@ -16,6 +16,8 @@ public sealed class MapStartupTests
         ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStates"),
         ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStatesUncached"),
         ("charMgr", "GetHomeStationRow"),
+        ("solarsystemInterferenceMgr", "GetAllInterferenceBands"),
+        ("solarsystemInterferenceMgr", "GetLocalInterferenceState"),
     ];
 
     [Theory]
@@ -51,7 +53,7 @@ public sealed class MapStartupTests
             foreach (var (service, method) in StartupCalls)
             {
                 var success = Assert.IsType<PilotCallResult.Success>(Call(service, method, [], new() { ["machoVersion"] = 1L }));
-                AssertStartupReply(service, BlueMarshal.Decode(BlueMarshal.Encode(success.Reply)), home);
+                AssertStartupReply(service, method, BlueMarshal.Decode(BlueMarshal.Encode(success.Reply)), home);
             }
         }
         foreach (var (service, method) in StartupCalls)
@@ -73,7 +75,7 @@ public sealed class MapStartupTests
     }
 
     [Fact]
-    public async Task NativeMapStartupPacketsReturnBridgeTupleAndFactionLookupsWithoutDestinationErrors()
+    public async Task NativeMapInformationPacketsIncludeInterferenceWithoutDestinationErrors()
     {
         using TestWorld world = new();
         var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(world.Store.FindPilot(1000001)!.PilotId);
@@ -107,15 +109,18 @@ public sealed class MapStartupTests
         for (int index = 0; index < StartupCalls.Length; index++)
         {
             var body = BlueRead.Tuple(BlueRead.Tuple(responses[index + 1].State, 14)[4], 1);
-            AssertStartupReply(StartupCalls[index].Service, BlueMarshal.Decode(BlueRead.Bytes(body[0])), home);
+            AssertStartupReply(StartupCalls[index].Service, StartupCalls[index].Method, BlueMarshal.Decode(BlueRead.Bytes(body[0])), home);
             Assert.Contains($"Call {StartupCalls[index].Service}.{StartupCalls[index].Method}.", reports);
         }
     }
 
-    private static void AssertStartupReply(string service, object? reply, HomeStation home)
+    private static void AssertStartupReply(string service, string method, object? reply, HomeStation home)
     {
         switch (service)
         {
+            case "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState":
+                Assert.Null(reply);
+                break;
             case "structureDirectory":
                 var bridgesAndAccess = BlueRead.Tuple(reply, 3);
                 Assert.All(bridgesAndAccess, collection => Assert.Empty(Assert.IsType<List<object?>>(collection)));

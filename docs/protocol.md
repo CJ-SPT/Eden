@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)
+
 - [NPC population template exclusion and resident spawn pools, November 8, 2026](protocol/combat.md#npc-population-template-exclusion-and-resident-spawn-pools-november-8-2026)
 
 - [Anomaly scanner update serialization correction, November 8, 2026](protocol/combat.md#anomaly-scanner-update-serialization-correction-november-8-2026)
