@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
@@ -25,7 +26,9 @@ internal sealed class PilotServices(
     Eden.Protocol.Exploration.CombatAnomalyHandler anomalies,
     IPilotOperationScope? operations = null,
     ChatHandler? chat = null,
-    SessionDiagnostics? diagnostics = null
+    SessionDiagnostics? diagnostics = null,
+    ICapsuleerHandoff? handoff = null,
+    ICapsuleerPresentation? presentation = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -65,9 +68,11 @@ internal sealed class PilotServices(
             accountId,
             clientId,
             operations,
-            diagnostics
+            diagnostics,
+            handoff,
+            presentation
         );
-        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics, anomalies);
+        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics, anomalies, handoff, presentation);
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();

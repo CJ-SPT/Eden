@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -40,25 +41,15 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
 }
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class HumanPresence(WorldDatabase database, TimeProvider clock) : IHumanPresence
+internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvider clock, IWorldSynchronization synchronization)
 {
-    private readonly Lock _gate = new();
     private readonly CapsuleerActivity _standalone = new(database, clock);
-
-    public IHumanPresenceLease Select(long pilotId, int systemId)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pilotId);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
-        Guid session = Guid.NewGuid();
-        Update(session, systemId);
-        return new Lease(this, session);
-    }
 
     public HumanActivitySnapshot Read()
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
-        lock (_gate)
+        lock (synchronization.Gate)
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
             return activity.Read();
@@ -69,7 +60,7 @@ internal sealed class HumanPresence(WorldDatabase database, TimeProvider clock) 
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
-        lock (_gate)
+        lock (synchronization.Gate)
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
             activity.Update(session, systemId);
@@ -84,31 +75,76 @@ internal sealed class HumanPresence(WorldDatabase database, TimeProvider clock) 
             }
         }
     }
+}
+
+[Injectable(InjectionType.Singleton)]
+internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleerHandoff handoff, IWorldSynchronization synchronization)
+    : IHumanPresence
+{
+    public IHumanPresenceLease Select(long pilotId, int systemId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pilotId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
+        Guid session = Guid.NewGuid();
+        Update(session, systemId);
+        return new Lease(this, session);
+    }
+
+    public HumanActivitySnapshot Read() => activity.Read();
+
+    public void Update(Guid session, int? systemId) => Change(session, systemId, () => true);
+
+    private void Change(Guid session, int? systemId, Func<bool> validate, Action? committed = null)
+    {
+        handoff.Synchronize(() =>
+        {
+            if (validate())
+            {
+                activity.Update(session, systemId);
+                committed?.Invoke();
+            }
+        });
+    }
+
+    private void Forget(Guid session, Action committed)
+    {
+        lock (synchronization.Gate)
+        {
+            activity.Update(session, null);
+            committed();
+        }
+    }
 
     private sealed class Lease(HumanPresence presence, Guid session) : IHumanPresenceLease
     {
-        private readonly Lock _gate = new();
         private bool _disposed;
 
         public void Transfer(int systemId)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
-            lock (_gate)
-            {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-                presence.Update(session, systemId);
-            }
+            presence.Change(
+                session,
+                systemId,
+                () =>
+                {
+                    ObjectDisposedException.ThrowIf(_disposed, this);
+                    return true;
+                }
+            );
         }
 
         public void Dispose()
         {
-            lock (_gate)
+            try
             {
-                if (!_disposed)
-                {
-                    presence.Update(session, null);
-                    _disposed = true;
-                }
+                presence.Change(session, null, () => !_disposed, () => _disposed = true);
+            }
+            catch
+            {
+                // A failed due action must not retain a disconnected human and
+                // leave the economic clock running without a selected session.
+                presence.Forget(session, () => _disposed = true);
+                throw;
             }
         }
     }

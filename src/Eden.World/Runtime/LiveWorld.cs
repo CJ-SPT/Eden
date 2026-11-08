@@ -31,6 +31,7 @@ internal sealed class LiveWorld : IDisposable
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
     private static readonly ConcurrentDictionary<string, LiveWorld> s_worlds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
+    internal object SynchronizationGate => _gate;
     private readonly object _scheduleGate = new();
     private readonly Queue<WorldCheckpoint> _checkpoints = new();
     private const int RetainedCheckpointReports = 32;

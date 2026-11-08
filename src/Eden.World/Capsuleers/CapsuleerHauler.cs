@@ -24,11 +24,12 @@ namespace Eden.World.Capsuleers;
 internal sealed class CapsuleerHaulerFactory(
     WorldDatabase database,
     SqliteWorld ships,
-    ISystemObjects systems,
+    CapsuleerGeometry systems,
     IPilotTackle tackle,
     INpcCombat combat,
-    INpcEncounters encounters,
+    INpcSimulation encounters,
     INpcMissiles missiles,
+    INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
     MarketChangeSignal marketSignal,
@@ -36,18 +37,19 @@ internal sealed class CapsuleerHaulerFactory(
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
-        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, health, clock, marketSignal, marketStore);
+        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal, marketStore);
 }
 
 internal sealed class CapsuleerHauler(
     long pilotId,
     WorldDatabase database,
     SqliteWorld ships,
-    ISystemObjects systems,
+    CapsuleerGeometry systems,
     IPilotTackle tackle,
     INpcCombat combat,
-    INpcEncounters encounters,
+    INpcSimulation encounters,
     INpcMissiles missiles,
+    INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
     MarketChangeSignal marketSignal,
@@ -67,6 +69,7 @@ internal sealed class CapsuleerHauler(
     private int _sourceSystem;
     private long _threatenedShip;
     private bool _loaded;
+    private bool _background;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
     private long _miner;
@@ -84,6 +87,18 @@ internal sealed class CapsuleerHauler(
         }
     }
 
+    internal int SystemId
+    {
+        get
+        {
+            if (!_loaded)
+            {
+                Load();
+            }
+            return _pilot?.SystemId ?? throw new InvalidDataException("The scheduled capsuleer is missing.");
+        }
+    }
+
     internal HaulerObservation? Read()
     {
         if (!_loaded)
@@ -93,7 +108,7 @@ internal sealed class CapsuleerHauler(
         return _pilot is null ? null : Observation();
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp)
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false)
     {
         if (!_loaded)
         {
@@ -112,6 +127,7 @@ internal sealed class CapsuleerHauler(
                 Load();
             }
         }
+        _background = background;
         ObserveDanger(destinyStamp);
         if (Pilot.Position is not null)
         {
@@ -212,9 +228,48 @@ internal sealed class CapsuleerHauler(
     {
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        if (
+            _background
+            && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
+        )
+        {
+            schedule = schedule with { DueTicks = exit };
+        }
+        else if (_background && Work.Activity == HaulerActivity.Jumping && Work.DueTicks > Work.ActiveTicks)
+        {
+            schedule = schedule with { DueTicks = Work.DueTicks };
+        }
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
         return next;
+    }
+
+    internal bool Sample(long throughTicks)
+    {
+        if (Live is not { } live || !_loaded || _pilot?.Position is null || _navigation.Warp is not { } warp)
+        {
+            return false;
+        }
+        int stamp = CapsuleerScheduleRules.Stamp(throughTicks, Work.ClockOffsetTicks);
+        if (
+            stamp <= Work.Stamp
+            || warp.Sample(stamp, Math.Min(Pilot.Flight.MaxSpeed / 2, CapsuleerScheduleRules.MaximumWarpExitSpeed)).Exited
+        )
+        {
+            return false;
+        }
+        var tick = _navigation.Advance(Pilot.ShipId, stamp, Pilot.Flight, Pilot.Position!, _ => null, []);
+        _pilot = Pilot with { Position = tick.Position };
+        _work = Work with
+        {
+            Stamp = stamp,
+            ActiveTicks = checked(Work.ClockOffsetTicks + stamp * TimeSpan.TicksPerSecond),
+            Navigation = _navigation.Capture(),
+        };
+        live.Combat?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
+        live.HaulerCheckpoints[pilotId] = new(pilotId, Work);
+        live.ObjectsChanged();
+        return true;
     }
 
     private HaulerObservation Observation() => new(Pilot, Work, health.Read(pilotId, Now));
@@ -273,7 +328,7 @@ internal sealed class CapsuleerHauler(
     private void RefreshObjects()
     {
         _objects = _operation is { HasWorld: true }
-            ? SystemObjects.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
+            ? CapsuleerGeometry.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
             : systems.Load(Pilot.SystemId);
         _obstacles = _objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
     }
@@ -585,11 +640,12 @@ internal sealed class CapsuleerHauler(
             return;
         }
         var visible = encounters
-            .List(Pilot.SystemId, Now)
-            .Where(n => n.Warp is null && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
+            .Advance(Pilot.SystemId, Now)
+            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
             .Select(n => n.Id)
             .ToHashSet();
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
+        warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
         var attackers = combat.Aggressors(Pilot.ShipId).Where(visible.Contains).ToArray();
         foreach (long npc in attackers)
         {

@@ -44,6 +44,9 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
         return [.. catalog.Definition(s_objects, systemId), .. Eden.World.Mining.AsteroidFieldStore.List(world, catalog, systemId)];
     }
 
+    internal static IReadOnlyList<StaticSpaceObject> Geometry(CatalogDbContext catalog, int systemId) =>
+        catalog.Definition(s_objects, systemId);
+
     private static ImmutableArray<StaticSpaceObject> LoadStatic(CatalogDbContext catalog, int systemId)
     {
         var gates = catalog.Definitions.GatesInSystem(systemId).ToDictionary(gate => gate.Id);

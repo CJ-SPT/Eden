@@ -1,8 +1,15 @@
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
+
 namespace Eden.Gameplay.Capsuleers;
 
 public sealed record CapsuleerSchedule(long DueTicks, CapsuleerAction Action);
 
-public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObservation> Miners, IReadOnlyList<HaulerObservation> Haulers);
+public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObservation> Miners, IReadOnlyList<HaulerObservation> Haulers)
+{
+    public long Revision { get; init; }
+    public IReadOnlyList<SystemSimulationState> Systems { get; init; } = [];
+}
 
 public interface ICapsuleerScheduler
 {
@@ -14,9 +21,11 @@ public interface ICapsuleerScheduler
 
 public static class CapsuleerScheduleRules
 {
-    // Detailed navigation and combat still need one-second samples in this increment.
-    // Docked retries can sleep until their actual deadline. Background event handoff
-    // replaces these in-space samples in the following increment.
+    // The native NavigationState warp sampler caps exit speed at 100 m/s.
+    public const double MaximumWarpExitSpeed = 100;
+
+    // Subwarp collision and threatened work retain the shared one-second rules.
+    // Background warps use the same analytic course at their exact exit boundary.
     public static CapsuleerSchedule Next(MinerProgress work, bool inSpace)
     {
         var action = work.Activity switch
@@ -40,6 +49,28 @@ public static class CapsuleerScheduleRules
             _ => CapsuleerAction.Arrival,
         };
         return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == HaulerActivity.Waiting);
+    }
+
+    public static long? WarpDeadline(NavigationFrame navigation, FlightProperties flight, long offsetTicks, long activeTicks)
+    {
+        if (navigation.Warp is not { } frame)
+        {
+            return null;
+        }
+        WarpCourse course = new(frame.Origin, frame.Destination, frame.StartStamp, flight, frame.EntrySpeed);
+        double exitSpeed = Math.Min(flight.MaxSpeed / 2, MaximumWarpExitSpeed);
+        double duration = course.DurationSeconds(exitSpeed);
+        if (!double.IsFinite(duration))
+        {
+            return null;
+        }
+        // WarpCourse exits strictly below the exit speed, including an integer boundary.
+        int exitStamp = checked((int)Math.Floor(frame.StartStamp + duration) + 1);
+        while (!course.Sample(exitStamp, exitSpeed).Exited)
+        {
+            exitStamp = checked(exitStamp + 1);
+        }
+        return Math.Max(checked(activeTicks + 1), checked(offsetTicks + exitStamp * TimeSpan.TicksPerSecond));
     }
 
     public static int Stamp(long activeTicks, long offsetTicks) => checked((int)((activeTicks - offsetTicks) / TimeSpan.TicksPerSecond));

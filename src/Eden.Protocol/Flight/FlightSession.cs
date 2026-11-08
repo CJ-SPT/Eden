@@ -35,7 +35,9 @@ internal sealed class FlightSession(
     IPilotCrimewatch? crimewatch = null,
     IPilotElectronicWarfare? electronicWarfare = null,
     IPilotGateTravel? gates = null,
-    IHumanPresence? presence = null
+    IHumanPresence? presence = null,
+    IHumanPresenceLease? humanPresenceLease = null,
+    ICapsuleerPresentation? presentation = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -45,7 +47,7 @@ internal sealed class FlightSession(
     private FlightEffects? _effects;
     private FlightScene? _scene;
     private FlightModuleEffects? _moduleEffects;
-    private readonly IHumanPresenceLease? _humanPresence = presence?.Select(pilot.PilotId, pilot.SystemId);
+    private readonly IHumanPresenceLease? _humanPresence = humanPresenceLease ?? presence?.Select(pilot.PilotId, pilot.SystemId);
 
     // Docking can replace Pilot before the lazy effect state is first needed.
     private readonly FlightProperties _initialFlight = pilot.Flight;
@@ -76,6 +78,7 @@ internal sealed class FlightSession(
             if (value.SystemId != _pilot.SystemId)
             {
                 _humanPresence?.Transfer(value.SystemId);
+                presentation?.Refresh();
             }
             _pilot = value with { Identity = value.Identity with { Fleet = _pilot.Identity.Fleet } };
         }
@@ -593,7 +596,14 @@ internal sealed class FlightSession(
             }
             finally
             {
-                _humanPresence?.Dispose();
+                try
+                {
+                    _humanPresence?.Dispose();
+                }
+                finally
+                {
+                    presentation?.Refresh();
+                }
             }
         }
     }

@@ -192,7 +192,7 @@ internal sealed partial class LiveCombatRuntime
             }
             : ship;
 
-    private IReadOnlyList<NpcContact> SimulationContacts(int system, long now, Action refresh, Func<long> nextPopulation)
+    private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Action refresh, Func<long> nextPopulation)
     {
         if (!_populationDue.TryGetValue(system, out long due) || now >= due)
         {
@@ -204,9 +204,6 @@ internal sealed partial class LiveCombatRuntime
         var npcs = SystemNpcs(system, now);
         var effective = Effective(npcs);
         var aggression = Aggression();
-        List<NpcContact> contacts = [];
-        List<LiveCombatNpc> updated = [];
-        bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
         foreach (var source in npcs)
         {
             var active = aggression.GetValueOrDefault(source.Id);
@@ -227,7 +224,45 @@ internal sealed partial class LiveCombatRuntime
             {
                 npc = npc with { Navigation = NpcNavigationState.Returning };
             }
-            updated.Add(npc);
+            PublishNpc(npc);
+        }
+        return SystemNpcs(system, now);
+    }
+
+    internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Action refresh, Func<long> nextPopulation)
+    {
+        using var ownership = owner.Enter();
+        if (!simulationObjects || !CanRun)
+        {
+            return null;
+        }
+        Trim();
+        return AdvanceSimulationNpcs(system, now, refresh, nextPopulation)
+            .Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null))
+            .ToArray();
+    }
+
+    internal void ReleaseObserverContacts(int system)
+    {
+        using var ownership = owner.Enter();
+        _contacts.Remove(system);
+        foreach (long id in _sharedNpcContacts.Where(p => p.Value.Source.SystemId == system).Select(p => p.Key).ToArray())
+        {
+            _sharedNpcContacts.Remove(id);
+        }
+        database.MotionStamps.TryRemove(system, out _);
+    }
+
+    private IReadOnlyList<NpcContact> SimulationContacts(int system, long now, Action refresh, Func<long> nextPopulation)
+    {
+        var npcs = AdvanceSimulationNpcs(system, now, refresh, nextPopulation);
+        var effective = Effective(npcs);
+        var aggression = Aggression();
+        List<NpcContact> contacts = [];
+        bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
+        foreach (var npc in npcs)
+        {
+            var active = aggression.GetValueOrDefault(npc.Id);
             bool bumped = database.CollisionStamps.GetValueOrDefault(npc.Id, -1) == stamp;
             if (motionStamped && TrySharedNpcContact(npc, active, stamp, bumped, now, out var shared))
             {
@@ -288,10 +323,6 @@ internal sealed partial class LiveCombatRuntime
             {
                 ShareNpcContact(npc, active, stamp, bumped, now, contact);
             }
-        }
-        foreach (var npc in updated)
-        {
-            PublishNpc(npc);
         }
         return contacts;
     }

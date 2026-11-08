@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -20,7 +21,9 @@ internal sealed class PilotSessionCalls(
     long accountId,
     long clientId,
     IPilotOperationScope? operations = null,
-    SessionDiagnostics? diagnostics = null
+    SessionDiagnostics? diagnostics = null,
+    ICapsuleerHandoff? handoff = null,
+    ICapsuleerPresentation? presentation = null
 )
 {
     private const int SlowCallMilliseconds = 250;
@@ -62,21 +65,35 @@ internal sealed class PilotSessionCalls(
         long started = Stopwatch.GetTimestamp();
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
-        updates.ApplyPlayerDamage(context);
-        PilotCallResult result;
-        using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
+        PilotCallResult result = PilotCallResult.None;
+        TimeSpan dispatchTime = default;
+        void Dispatch()
         {
-            result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+            presentation?.Refresh();
+            updates.ApplyPlayerDamage(context);
+            using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
+            {
+                result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+            }
+            dispatchTime = Stopwatch.GetElapsedTime(started);
+            if (!selected && context.Selected)
+            {
+                using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
+                updates.Enter(context);
+            }
+            using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
+            {
+                updates.Advance(context);
+            }
+            presentation?.Refresh();
         }
-        var dispatchTime = Stopwatch.GetElapsedTime(started);
-        if (!selected && context.Selected)
+        if (handoff is not null)
         {
-            using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
-            updates.Enter(context);
+            await handoff.SynchronizeAsync(Dispatch);
         }
-        using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
+        else
         {
-            updates.Advance(context);
+            Dispatch();
         }
         var elapsed = Stopwatch.GetElapsedTime(started);
         if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
@@ -160,7 +177,18 @@ internal sealed class PilotSessionCalls(
             && context.ActiveFlight?.Pilot.Position is not null
         )
         {
-            context.Flight.Snapshot();
+            if (handoff is not null)
+            {
+                await handoff.SynchronizeAsync(() =>
+                {
+                    presentation?.Refresh();
+                    context.Flight.Snapshot();
+                });
+            }
+            else
+            {
+                context.Flight.Snapshot();
+            }
         }
         await output.FlushFlightUpdatesAsync();
         await output.FlushNotificationsAsync();

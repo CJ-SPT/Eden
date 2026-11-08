@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
@@ -15,7 +16,9 @@ internal sealed class PilotSessionTick(
     IAsteroidField asteroids,
     IPilotOperationScope? operations = null,
     SessionDiagnostics? diagnostics = null,
-    Eden.Protocol.Exploration.CombatAnomalyHandler? anomalies = null
+    Eden.Protocol.Exploration.CombatAnomalyHandler? anomalies = null,
+    ICapsuleerHandoff? handoff = null,
+    ICapsuleerPresentation? presentation = null
 )
 {
     private const int SlowUpdateMilliseconds = 250;
@@ -31,6 +34,10 @@ internal sealed class PilotSessionTick(
         using var operation = operations?.Begin();
         using var performance = SessionPerformance.Begin("tick", diagnostics?.Trace ?? report);
         long started = Stopwatch.GetTimestamp();
+        if (handoff is not null)
+        {
+            await handoff.SynchronizeAsync(() => presentation?.Refresh());
+        }
         if (!context.Selected)
         {
             updates.Advance(context);

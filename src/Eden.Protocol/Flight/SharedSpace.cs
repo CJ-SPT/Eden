@@ -6,6 +6,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Combat;
 
@@ -124,12 +125,17 @@ internal sealed record ShipContact(
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null, TimeProvider? clock = null) : IPilotCombatPresence
+internal sealed class SharedSpace(
+    IPilotCrimewatch? crimewatch = null,
+    TimeProvider? clock = null,
+    IWorldSynchronization? synchronization = null
+) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
 
-    internal object MotionLock { get; } = new();
+    private readonly object _standaloneMotion = new();
+    internal object MotionLock => synchronization?.Gate ?? _standaloneMotion;
     internal const int MovementHistoryTicks = 32;
     private readonly Dictionary<long, List<MotionOrder>> _orders = new();
     private readonly Dictionary<long, long> _orderSequences = new();

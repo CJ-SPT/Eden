@@ -7,6 +7,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -25,14 +26,16 @@ namespace Eden.World.Capsuleers;
 internal sealed class CapsuleerMinerFactory(
     WorldDatabase database,
     SqliteWorld ships,
-    ISystemObjects systems,
+    CapsuleerGeometry systems,
     IAsteroidField belts,
     IPilotInventory inventory,
     IPilotFitting fitting,
     TimeProvider clock,
     INpcCombat combat,
-    INpcEncounters encounters,
+    INpcSimulation encounters,
     INpcMissiles missiles,
+    INpcElectronicWarfare warfare,
+    IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
     PilotMarketStore marketStore
@@ -51,6 +54,8 @@ internal sealed class CapsuleerMinerFactory(
             combat,
             encounters,
             missiles,
+            warfare,
+            tackle,
             health,
             marketSignal,
             marketStore
@@ -61,14 +66,16 @@ internal sealed class CapsuleerMiner(
     long pilotId,
     WorldDatabase database,
     SqliteWorld ships,
-    ISystemObjects systems,
+    CapsuleerGeometry systems,
     IAsteroidField belts,
     IPilotInventory inventory,
     IPilotFitting fitting,
     TimeProvider clock,
     INpcCombat combat,
-    INpcEncounters encounters,
+    INpcSimulation encounters,
     INpcMissiles missiles,
+    INpcElectronicWarfare warfare,
+    IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
     PilotMarketStore marketStore
@@ -77,6 +84,9 @@ internal sealed class CapsuleerMiner(
     private const int RetrySeconds = 60;
     private const double ApproachRange = 500;
     private bool _loaded;
+    private bool _background;
+    private TackleEffect[] _incoming = [];
+    private bool _warpBlocked;
     private CapsuleerOperation _operation = null!;
     private long _threatenedShip;
     private long _resumeCount = -1;
@@ -103,6 +113,18 @@ internal sealed class CapsuleerMiner(
     private MinerProgress Work => _work!;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
+    internal int SystemId
+    {
+        get
+        {
+            if (!_loaded)
+            {
+                Load();
+            }
+            return _pilot?.SystemId ?? throw new InvalidDataException("The scheduled capsuleer is missing.");
+        }
+    }
+
     internal MinerObservation? Read()
     {
         if (!_loaded)
@@ -112,7 +134,7 @@ internal sealed class CapsuleerMiner(
         return _pilot is null ? null : Observation();
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes)
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
     {
         if (!_loaded)
         {
@@ -131,7 +153,12 @@ internal sealed class CapsuleerMiner(
                 Load();
             }
         }
+        _background = background;
         ObserveDanger(destinyStamp);
+        if (Pilot.Position is not null)
+        {
+            RefreshTackle();
+        }
         if (
             Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
             && Pilot.Position is not null
@@ -167,6 +194,10 @@ internal sealed class CapsuleerMiner(
                 cooldown.Kind = Eden.Data.World.Combat.ModuleCooldownKind.Cycle;
                 cooldown.ReadyAt = completes;
                 _work = Work with { PaidUntil = completes };
+            }
+            if (_warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
+            {
+                throw new InvalidDataException("Warp disruption interrupts the miner's alignment.");
             }
             Step();
             var next = Commit(job);
@@ -242,9 +273,44 @@ internal sealed class CapsuleerMiner(
     {
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        if (
+            _background
+            && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
+        )
+        {
+            schedule = schedule with { DueTicks = exit };
+        }
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
+    }
+
+    internal bool Sample(long throughTicks)
+    {
+        if (Live is not { } live || !_loaded || _pilot?.Position is null || _navigation.Warp is not { } warp)
+        {
+            return false;
+        }
+        int stamp = CapsuleerScheduleRules.Stamp(throughTicks, Work.ClockOffsetTicks);
+        if (
+            stamp <= Work.Stamp
+            || warp.Sample(stamp, Math.Min(Pilot.Flight.MaxSpeed / 2, CapsuleerScheduleRules.MaximumWarpExitSpeed)).Exited
+        )
+        {
+            return false;
+        }
+        var tick = _navigation.Advance(Pilot.ShipId, stamp, Pilot.Flight, Pilot.Position!, _ => null, []);
+        _pilot = Pilot with { Position = tick.Position };
+        _work = Work with
+        {
+            Stamp = stamp,
+            ActiveTicks = checked(Work.ClockOffsetTicks + stamp * TimeSpan.TicksPerSecond),
+            Navigation = _navigation.Capture(),
+        };
+        live.Combat?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
+        live.MinerCheckpoints[pilotId] = new(pilotId, Work);
+        live.ObjectsChanged();
+        return true;
     }
 
     private MinerObservation Observation() => new(Pilot, Work, _laser, Work.WaitingReason) { Health = health.Read(pilotId, Now) };
@@ -256,11 +322,12 @@ internal sealed class CapsuleerMiner(
             return;
         }
         var visible = encounters
-            .List(Pilot.SystemId, Now)
-            .Where(n => n.Warp is null && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
+            .Advance(Pilot.SystemId, Now)
+            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
             .Select(n => n.Id)
             .ToHashSet();
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
+        warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
         var attackers = combat.Aggressors(Pilot.ShipId).Where(visible.Contains).ToArray();
         foreach (long npc in attackers)
         {
@@ -331,6 +398,8 @@ internal sealed class CapsuleerMiner(
                     Stamp = previous?.Stamp ?? 0,
                 };
             }
+            _incoming = [];
+            _warpBlocked = false;
             _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
             RefreshObjects();
             _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
@@ -339,10 +408,29 @@ internal sealed class CapsuleerMiner(
         _loaded = true;
     }
 
+    private void RefreshTackle()
+    {
+        var incoming = tackle.Incoming(Pilot.ShipId).ToArray();
+        if (_incoming.SequenceEqual(incoming))
+        {
+            return;
+        }
+        _incoming = incoming;
+        var attributes = tackle.ShipAttributes(Pilot.PilotId);
+        _warpBlocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
+        _pilot = Pilot with
+        {
+            Ship = Pilot.Ship with
+            {
+                Flight = Pilot.Flight with { MaxSpeed = (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity) },
+            },
+        };
+    }
+
     private void RefreshObjects()
     {
         _objects = _operation is { HasWorld: true }
-            ? SystemObjects.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
+            ? CapsuleerGeometry.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
             : systems.Load(Pilot.SystemId);
         _obstacles = _objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
     }
@@ -460,6 +548,10 @@ internal sealed class CapsuleerMiner(
     {
         _target = target;
         _work = Work with { TargetId = target.Id, Activity = activity };
+        if (_warpBlocked)
+        {
+            throw new InvalidDataException("Warp disruption prevents the miner from leaving.");
+        }
         if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
         {
             Follow(target);

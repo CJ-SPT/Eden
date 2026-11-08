@@ -22,7 +22,7 @@ internal sealed class NpcEncounterStore(
     WorldDatabase database,
     INpcPopulationSeeder? population = null,
     NpcProfileCatalog? hullProfiles = null
-) : INpcEncounters
+) : INpcEncounters, INpcSimulation
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
     {
@@ -44,13 +44,39 @@ internal sealed class NpcEncounterStore(
         }
     }
 
+    public IReadOnlyList<NpcSimulationContact> Advance(int systemId, long now)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            if (
+                LiveCombatRuntime
+                    .Find(database.Path)
+                    ?.Simulate(systemId, now, () => Read(systemId, now, false), () => NextPopulation(systemId, now)) is
+                { } resident
+            )
+            {
+                return resident;
+            }
+            Read(systemId, now, false);
+            using WorldDbContext world = new(database.Path);
+            return world
+                .Set<WorldNpc>()
+                .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+                .OrderBy(n => n.Id)
+                .AsEnumerable()
+                .Select(n => new NpcSimulationContact(n.Id, new(n.X, n.Y, n.Z), n.Navigation == NpcNavigationState.Warping))
+                .ToArray();
+        }
+    }
+
     private long NextPopulation(int systemId, long now)
     {
         using WorldDbContext world = new(database.Path);
         return population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
     }
 
-    private IReadOnlyList<NpcContact> Read(int systemId, long now)
+    private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -118,79 +144,81 @@ internal sealed class NpcEncounterStore(
             }
         }
         world.SaveChanges();
-        var contacts = npcs.Select(n =>
-            {
-                var (type, attributes, defense) = profiles[n.TypeId];
-                return new NpcContact(
-                    n.Id,
-                    n.TypeId,
-                    type.GroupId,
-                    type.CategoryId,
-                    n.CorporationId,
-                    type.Name,
-                    systemId,
-                    new(n.X, n.Y, n.Z),
-                    type.Mass ?? 0,
-                    (float)(type.Radius ?? 0),
-                    (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-                    NpcMotion.Agility(attributes),
-                    new(
-                        n.Id,
-                        defense,
-                        new(
-                            ChargedResource.Recharged(
-                                n.ShieldCharge,
-                                defense.Shield,
-                                defense.ShieldRechargeMilliseconds,
-                                Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
-                            ),
-                            Math.Max(0, defense.Armor - n.ArmorDamage),
-                            Math.Max(0, defense.Structure - n.StructureDamage)
-                        )
-                    ),
-                    Weapon(n),
-                    NpcMotion.Contact(
-                        n,
-                        effective[n.Id],
-                        aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
-                        NpcMotion.Home(n, catalog),
-                        now
-                    ),
-                    database.MotionStamps.GetValueOrDefault(systemId),
-                    database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
-                    n.Role,
-                    n.FactionId,
-                    n.RepairRevision,
-                    ewar[n.Id].Any() ? ewar[n.Id].ToArray() : null,
-                    mining
-                        .GetValueOrDefault(n.Id)
-                        ?.Activity(
-                            n,
-                            attributes.GetValueOrDefault(DogmaAttributeId.BehaviorMiningDuration),
-                            now,
-                            checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType))
-                        ),
-                    mining
-                        .GetValueOrDefault(n.Id)
-                        ?.Transit(n)
-                        ?.Course(
-                            database.MotionStamps.GetValueOrDefault(systemId),
-                            now,
-                            new(
-                                0,
-                                (float)(type.Radius ?? 0),
-                                type.Mass ?? 0,
-                                NpcMotion.Agility(attributes),
-                                (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
-                                0
-                            )
-                        )
-                )
+        NpcContact[] contacts = buildContacts
+            ? npcs.Select(n =>
                 {
-                    StandingThresholds = profiles[n.TypeId].StandingThresholds,
-                };
-            })
-            .ToArray();
+                    var (type, attributes, defense) = profiles[n.TypeId];
+                    return new NpcContact(
+                        n.Id,
+                        n.TypeId,
+                        type.GroupId,
+                        type.CategoryId,
+                        n.CorporationId,
+                        type.Name,
+                        systemId,
+                        new(n.X, n.Y, n.Z),
+                        type.Mass ?? 0,
+                        (float)(type.Radius ?? 0),
+                        (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                        NpcMotion.Agility(attributes),
+                        new(
+                            n.Id,
+                            defense,
+                            new(
+                                ChargedResource.Recharged(
+                                    n.ShieldCharge,
+                                    defense.Shield,
+                                    defense.ShieldRechargeMilliseconds,
+                                    Math.Max(0, (now - n.UpdatedAt) / (double)TimeSpan.TicksPerMillisecond)
+                                ),
+                                Math.Max(0, defense.Armor - n.ArmorDamage),
+                                Math.Max(0, defense.Structure - n.StructureDamage)
+                            )
+                        ),
+                        Weapon(n),
+                        NpcMotion.Contact(
+                            n,
+                            effective[n.Id],
+                            aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
+                            NpcMotion.Home(n, catalog),
+                            now
+                        ),
+                        database.MotionStamps.GetValueOrDefault(systemId),
+                        database.CollisionStamps.GetValueOrDefault(n.Id, -1) == database.MotionStamps.GetValueOrDefault(systemId),
+                        n.Role,
+                        n.FactionId,
+                        n.RepairRevision,
+                        ewar[n.Id].Any() ? ewar[n.Id].ToArray() : null,
+                        mining
+                            .GetValueOrDefault(n.Id)
+                            ?.Activity(
+                                n,
+                                attributes.GetValueOrDefault(DogmaAttributeId.BehaviorMiningDuration),
+                                now,
+                                checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType))
+                            ),
+                        mining
+                            .GetValueOrDefault(n.Id)
+                            ?.Transit(n)
+                            ?.Course(
+                                database.MotionStamps.GetValueOrDefault(systemId),
+                                now,
+                                new(
+                                    0,
+                                    (float)(type.Radius ?? 0),
+                                    type.Mass ?? 0,
+                                    NpcMotion.Agility(attributes),
+                                    (float)effective[n.Id].GetValueOrDefault(DogmaAttributeId.MaxVelocity),
+                                    0
+                                )
+                            )
+                    )
+                    {
+                        StandingThresholds = profiles[n.TypeId].StandingThresholds,
+                    };
+                })
+                .ToArray()
+            : [];
         // A route deadline can fall between two reads in the same wall-clock
         // second. Keep the exact due time in addition to the coarse seed stamp.
         long nextPopulation = population?.NextUpdate(world, systemId, now) ?? long.MaxValue;

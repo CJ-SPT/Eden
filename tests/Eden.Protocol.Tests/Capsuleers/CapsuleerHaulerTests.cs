@@ -268,6 +268,12 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         var arrival = ships.FindPilot(-1, hauler)!;
         var human = ships.FindPilot(1000001)!;
         var space = host.GetRequiredService<SharedSpace>();
+        Assert.DoesNotContain(
+            space.Peers(human with { Position = arrival.Position, CurrentSystem = arrival.CurrentSystem }),
+            peer => peer.Pilot.PilotId == hauler
+        );
+        using var destinationObserver = host.GetRequiredService<IHumanPresence>().Select(human.PilotId, DestinationSystem);
+        host.GetRequiredService<ICapsuleerPresentation>().Refresh();
         Assert.Contains(
             space.Peers(human with { Position = arrival.Position, CurrentSystem = arrival.CurrentSystem }),
             peer => peer.Pilot.PilotId == hauler && peer.Arriving

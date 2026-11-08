@@ -9,6 +9,12 @@ internal sealed partial class LiveCombatRuntime
     private readonly Dictionary<int, ContactSnapshot> _contacts = [];
     private long _contactEpoch;
 
+    internal int ObserverContactCount(int system)
+    {
+        using var ownership = owner.Enter();
+        return (_contacts.GetValueOrDefault(system)?.Values.Count ?? 0) + _sharedNpcContacts.Values.Count(c => c.Source.SystemId == system);
+    }
+
     private sealed record AcquisitionSnapshot(NpcTargetCandidate[] Candidates, long At);
 
     private const int RetainedAcquisitions = 128;

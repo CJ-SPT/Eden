@@ -12,7 +12,70 @@ namespace Eden.Protocol.Flight;
 internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, SharedStationGuests guests) : ICapsuleerScene
 {
     private readonly Dictionary<long, PilotScene> _pilots = [];
+    private readonly Dictionary<long, object> _presence = [];
+    private long _revision;
     public int Stamp => space.Stamp(clock);
+    internal int MaterializedPilots => _pilots.Count;
+
+    public void Apply(CapsuleerBatch batch)
+    {
+        lock (space.MotionLock)
+        {
+            if (batch.Revision <= _revision)
+            {
+                return;
+            }
+            var active = batch.Systems.Where(s => s.Mode == SystemSimulationMode.Active).Select(s => s.SystemId).ToHashSet();
+            foreach (long id in _pilots.Where(p => !active.Contains(p.Value.SystemId)).Select(p => p.Key).ToArray())
+            {
+                _pilots[id].Leave();
+                _pilots.Remove(id);
+            }
+            foreach (var observation in batch.Miners)
+            {
+                Presence(observation.Pilot);
+                if (active.Contains(observation.Pilot.SystemId))
+                {
+                    Publish(observation);
+                }
+                else
+                {
+                    Remove(observation.Pilot.PilotId);
+                }
+            }
+            foreach (var observation in batch.Haulers)
+            {
+                Presence(observation.Pilot);
+                if (active.Contains(observation.Pilot.SystemId))
+                {
+                    Publish(observation);
+                }
+                else
+                {
+                    Remove(observation.Pilot.PilotId);
+                }
+            }
+            _revision = batch.Revision;
+        }
+    }
+
+    private void Presence(DockedPilot pilot)
+    {
+        if (!_presence.TryGetValue(pilot.PilotId, out var key))
+        {
+            key = new object();
+            _presence[pilot.PilotId] = key;
+        }
+        guests.Update(key, pilot);
+    }
+
+    private void Remove(long pilotId)
+    {
+        if (_pilots.Remove(pilotId, out var previous))
+        {
+            previous.Leave();
+        }
+    }
 
     public void Publish(MinerObservation observation) =>
         Publish(
@@ -47,7 +110,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         {
             if (!_pilots.TryGetValue(observation.Pilot.PilotId, out var pilot))
             {
-                pilot = new(space, clock, guests);
+                pilot = new(space, clock);
                 _pilots.Add(observation.Pilot.PilotId, pilot);
             }
             pilot.Publish(observation);
@@ -68,8 +131,18 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         bool Arriving = false
     );
 
-    private sealed class PilotScene(SharedSpace space, TimeProvider clock, SharedStationGuests guests)
+    private sealed class PilotScene(SharedSpace space, TimeProvider clock)
     {
+        internal int SystemId { get; private set; }
+
+        internal void Leave()
+        {
+            if (_previous is { } previous)
+            {
+                space.Leave(previous.Pilot.ShipId);
+            }
+        }
+
         private ShipContact? _previous;
         private WarpFrame? _warp;
         private int _lastWorkStamp;
@@ -80,7 +153,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         {
             var pilot = observation.Pilot;
             var laser = observation.Laser;
-            guests.Update(this, pilot);
+            SystemId = pilot.SystemId;
             lock (space.MotionLock)
             {
                 if (

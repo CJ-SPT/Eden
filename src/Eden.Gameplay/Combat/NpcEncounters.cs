@@ -54,6 +54,14 @@ public sealed record NpcNavigationContact(
     NpcNavigationState State = NpcNavigationState.Pursuing
 );
 
+// Authoritative background callers need identity and geometry, not native observer records.
+public sealed record NpcSimulationContact(long Id, SpacePosition Position, bool Warping);
+
+public interface INpcSimulation
+{
+    IReadOnlyList<NpcSimulationContact> Advance(int systemId, long now);
+}
+
 public interface INpcEncounters
 {
     IReadOnlyList<NpcContact> List(int systemId, long now);

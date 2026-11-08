@@ -28,35 +28,54 @@ internal sealed class FlightSessionFactory(
     IPilotCrimewatch? crimewatch = null,
     IPilotElectronicWarfare? electronicWarfare = null,
     IPilotGateTravel? gates = null,
-    IHumanPresence? presence = null
+    IHumanPresence? presence = null,
+    ICapsuleerPresentation? presentation = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
     {
-        crimewatch?.Connect(pilot.PilotId);
-        return new FlightSession(
-            positions,
-            pilot,
-            clock,
-            space,
-            objects.Load(pilot.SystemId),
-            inventory
-                .List(pilot.PilotId, pilot.ShipId)
-                .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
-                .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId))
-                .ToArray(),
-            docking,
-            health,
-            encounters,
-            wrecks,
-            missiles,
-            tackle,
-            appearance,
-            drones,
-            crimewatch,
-            electronicWarfare,
-            gates,
-            presence
-        );
+        var selected = presence?.Select(pilot.PilotId, pilot.SystemId);
+        try
+        {
+            presentation?.Refresh();
+            crimewatch?.Connect(pilot.PilotId);
+            return new FlightSession(
+                positions,
+                pilot,
+                clock,
+                space,
+                objects.Load(pilot.SystemId),
+                inventory
+                    .List(pilot.PilotId, pilot.ShipId)
+                    .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
+                    .Select(i => new FittedSpaceModule(i.Id, i.TypeId, i.FlagId))
+                    .ToArray(),
+                docking,
+                health,
+                encounters,
+                wrecks,
+                missiles,
+                tackle,
+                appearance,
+                drones,
+                crimewatch,
+                electronicWarfare,
+                gates,
+                humanPresenceLease: selected,
+                presentation: presentation
+            );
+        }
+        catch
+        {
+            try
+            {
+                selected?.Dispose();
+            }
+            finally
+            {
+                presentation?.Refresh();
+            }
+            throw;
+        }
     }
 }

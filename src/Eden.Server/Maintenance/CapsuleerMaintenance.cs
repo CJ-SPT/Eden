@@ -1,6 +1,7 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Chat;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Chat;
@@ -8,13 +9,19 @@ using Eden.Server.Chat;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerMaintenance(ICapsuleerScheduler scheduler, ICapsuleerScene scene, ChatRuntime chat, TimeProvider clock)
-    : IDisposable
+internal sealed class CapsuleerMaintenance(
+    ICapsuleerScheduler scheduler,
+    ICapsuleerHandoff handoff,
+    ICapsuleerScene scene,
+    ChatRuntime chat,
+    TimeProvider clock,
+    IWorldSynchronization synchronization
+) : IDisposable, ICapsuleerPresentation
 {
-    private readonly Lock _gate = new();
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
+    private CapsuleerBatch? _retryPresentation;
 
     internal void Start()
     {
@@ -42,20 +49,43 @@ internal sealed class CapsuleerMaintenance(ICapsuleerScheduler scheduler, ICapsu
 
     internal MinerObservation? Tick()
     {
-        lock (_gate)
+        lock (synchronization.Gate)
         {
-            var batch = scheduler.Run(scene.Stamp);
+            try
+            {
+                return scheduler.Run(scene.Stamp).Miners.LastOrDefault();
+            }
+            finally
+            {
+                Refresh();
+            }
+        }
+    }
+
+    public void Refresh()
+    {
+        lock (synchronization.Gate)
+        {
+            var batch = handoff.Capture();
+            if (_retryPresentation is { } retry)
+            {
+                batch = batch with
+                {
+                    Miners = retry.Miners.Concat(batch.Miners).GroupBy(m => m.Pilot.PilotId).Select(g => g.Last()).ToArray(),
+                    Haulers = retry.Haulers.Concat(batch.Haulers).GroupBy(h => h.Pilot.PilotId).Select(g => g.Last()).ToArray(),
+                };
+            }
+            _retryPresentation = batch;
+            scene.Apply(batch);
             foreach (var observation in batch.Miners)
             {
-                scene.Publish(observation);
                 PublishPresence(observation.Pilot);
             }
-            foreach (var delivery in batch.Haulers)
+            foreach (var observation in batch.Haulers)
             {
-                scene.Publish(delivery);
-                PublishPresence(delivery.Pilot);
+                PublishPresence(observation.Pilot);
             }
-            return batch.Miners.LastOrDefault();
+            _retryPresentation = null;
         }
     }
 
