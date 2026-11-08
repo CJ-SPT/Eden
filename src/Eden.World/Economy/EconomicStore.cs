@@ -6,6 +6,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Economy;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
@@ -153,6 +154,31 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
             (double)Index(world, system),
             alpha,
             security
+        );
+    }
+
+    internal static ManufacturingCharge IndustryCharge(
+        WorldDbContext world,
+        long pilotId,
+        int system,
+        double value,
+        IndustryActivity activity,
+        double security,
+        double blueprintCostMultiplier = 1
+    )
+    {
+        if (!Enabled(world))
+        {
+            return new(0, 0, 0);
+        }
+        long account = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
+        bool alpha = world.Set<Account>().Find(account)!.CloneGrade == AccountCloneGrade.Alpha;
+        return EconomicRules.ManufacturingFromClientValue(
+            value,
+            (double)Index(world, system) * blueprintCostMultiplier,
+            alpha,
+            security,
+            activity is IndustryActivity.ResearchMaterial or IndustryActivity.ResearchTime
         );
     }
 

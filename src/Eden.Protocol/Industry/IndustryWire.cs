@@ -9,7 +9,7 @@ internal static class IndustryWire
 {
     private static BlueInstance KeyVal(Dictionary<string, object?> values) => new("utillib.KeyVal", values);
 
-    internal static object Facility(IndustryFacility facility, IReadOnlyList<int> products) =>
+    internal static object Facility(IndustryFacility facility, IReadOnlyList<int> products, IReadOnlyList<int> scienceCategories) =>
         new Dictionary<string, object?>
         {
             ["facilityID"] = facility.Id,
@@ -24,20 +24,24 @@ internal static class IndustryWire
             ["globalModifiers"] = new Dictionary<string, object?>
             {
                 ["faction"] = 1d,
-                ["system"] = new Dictionary<long, object?> { [(long)IndustryActivity.Manufacturing] = facility.CostIndex },
+                ["system"] = IndustryDefinitions.Activities.ToDictionary(a => (long)a, _ => (object?)facility.CostIndex),
             },
-            ["activities"] = new Dictionary<long, object?>
-            {
-                [(long)IndustryActivity.Manufacturing] = new object?[]
-                {
-                    new List<object?>(),
-                    new List<object?>(),
-                    new List<object?>(),
-                    new List<object?>(),
-                    new List<object?>(),
-                    products.Cast<object?>().ToList(),
-                },
-            },
+            ["activities"] = IndustryDefinitions
+                .Activities.Where(a => a == IndustryActivity.Manufacturing ? facility.Manufacturing : facility.Laboratory)
+                .ToDictionary(
+                    a => (long)a,
+                    a =>
+                        (object?)
+                            new object?[]
+                            {
+                                new List<object?>(),
+                                new List<object?>(),
+                                new List<object?>(),
+                                a == IndustryActivity.Manufacturing ? new List<object?>() : scienceCategories.Cast<object?>().ToList(),
+                                new List<object?>(),
+                                a == IndustryActivity.Manufacturing ? products.Cast<object?>().ToList() : new List<object?>(),
+                            }
+                ),
         };
 
     internal static BlueInstance Blueprint(OwnedBlueprint blueprint)
@@ -49,10 +53,10 @@ internal static class IndustryWire
                 ["itemID"] = item.Id,
                 ["typeID"] = item.TypeId,
                 ["ownerID"] = item.OwnerId,
-                ["quantity"] = item.Singleton ? InventoryWireDefinitions.AssembledQuantity : item.Quantity,
-                ["timeEfficiency"] = 0,
-                ["materialEfficiency"] = 0,
-                ["runs"] = -1,
+                ["quantity"] = InventoryRow.From(item).Quantity,
+                ["timeEfficiency"] = blueprint.TimeEfficiency,
+                ["materialEfficiency"] = blueprint.MaterialEfficiency,
+                ["runs"] = blueprint.RunsRemaining,
                 ["locationID"] = item.LocationId,
                 ["locationTypeID"] = blueprint.Facility.TypeId,
                 ["locationFlagID"] = item.FlagId,
@@ -65,7 +69,7 @@ internal static class IndustryWire
         );
     }
 
-    internal static BlueInstance Job(ManufacturingJob job) =>
+    internal static BlueInstance Job(IndustryJobDetails job) =>
         KeyVal(
             new()
             {
@@ -74,26 +78,26 @@ internal static class IndustryWire
                 ["installerID"] = job.PilotId,
                 ["blueprintID"] = job.BlueprintId,
                 ["blueprintTypeID"] = job.BlueprintTypeId,
-                ["blueprintCopy"] = false,
+                ["blueprintCopy"] = job.BlueprintCopy,
                 ["blueprintLocationID"] = job.Facility.Id,
                 ["blueprintLocationFlagID"] = (int)InventoryFlag.Hangar,
                 ["facilityID"] = job.Facility.Id,
                 ["stationID"] = job.Facility.Id,
                 ["solarSystemID"] = job.Facility.SystemId,
-                ["activityID"] = (int)IndustryActivity.Manufacturing,
+                ["activityID"] = (int)job.Activity,
                 ["status"] = (int)job.Status,
                 ["completedCharacterID"] = job.CompletedAt.HasValue ? job.PilotId : null,
                 ["startDate"] = job.StartTime,
                 ["endDate"] = job.EndTime,
                 ["pauseDate"] = null,
                 ["runs"] = job.Runs,
-                ["licensedRuns"] = 0,
-                ["successfulRuns"] = job.Status == IndustryJobStatus.Delivered ? job.Runs : null,
+                ["licensedRuns"] = job.LicensedRuns,
+                ["successfulRuns"] = job.SuccessfulRuns,
                 ["cost"] = job.CostCents / 100d,
                 ["timeInSeconds"] = job.DurationSeconds,
-                ["probability"] = 1d,
+                ["probability"] = job.Probability,
                 ["productTypeID"] = job.ProductTypeId,
-                ["optionalTypeID"] = null,
+                ["optionalTypeID"] = job.OptionalTypeId,
                 ["optionalTypeID2"] = null,
                 ["outputLocationID"] = job.Facility.Id,
                 ["outputFlagID"] = (int)InventoryFlag.Hangar,

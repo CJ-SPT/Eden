@@ -2,6 +2,8 @@
 
 [Project overview and build instructions](../README.md)
 
+[Science jobs](protocol/industry.md#science-jobs-november-8-2026) records research, copying, invention, blueprint persistence and current production limits.
+
 ## Setup and hosting
 
 | Guide | Use it for |

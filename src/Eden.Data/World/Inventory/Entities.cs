@@ -11,6 +11,9 @@ public sealed class InventoryOwner
 
 public sealed class OwnedItem
 {
+    public int MaterialEfficiency { get; set; }
+    public int TimeEfficiency { get; set; }
+    public int BlueprintRuns { get; set; } = -1;
     public double? VolumeOverride { get; set; }
     public double CrystalDamage { get; set; }
     public bool Singleton { get; set; }

@@ -5,6 +5,7 @@ using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Drones;
 using Eden.World.Fittings;
+using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
@@ -15,7 +16,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 113;
+    internal const int CurrentVersion = 114;
 
     public static void Open(
         WorldDbContext world,
@@ -36,7 +37,15 @@ internal static class WorldMigration
         LegacyWorldMigration.Initialize(world, version);
         InitialEconomyMigration.Initialize(world, version, economy, economics);
         WorldVersions06To20.Apply(world, catalog, version);
+        if (version is >= 6 and < ScienceSchema.Version)
+        {
+            ScienceSchema.UpgradeInventory(world);
+        }
         WorldVersions21To34.Apply(world, clock, version);
+        if (version is >= 6 and < ScienceSchema.Version)
+        {
+            ScienceSchema.UpgradeJobs(world);
+        }
         TimedModuleSchema.Upgrade(world);
         ModuleConditionSchema.Upgrade(world);
         ShipHeatSchema.Upgrade(world);
@@ -45,6 +54,10 @@ internal static class WorldMigration
         {
             WorldVersions35To49.Apply(world, version);
             WorldVersions50To68.Apply(world, version);
+        }
+        if (version is >= 6 and < ScienceSchema.Version)
+        {
+            ScienceSchema.UpgradeContracts(world);
         }
         // NPC columns must exist before the history backfills materialize current entities.
         NpcSchemaReconciliation.Apply(world, version);
@@ -98,7 +111,7 @@ internal static class WorldMigration
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
         ModuleConditionPersistence.Reconcile(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         ShipHeatPersistence.ValidateSaved(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=113");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=114");
         history.Commit();
     }
 }

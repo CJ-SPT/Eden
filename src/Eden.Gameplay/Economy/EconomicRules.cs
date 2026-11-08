@@ -45,6 +45,7 @@ public static class EconomicRules
     // Build 3662168 industry.const, clonegrade and the NPC facility policy.
     public const decimal NpcFacilityTax = 0.0025m;
     public const decimal SccSurcharge = 0.04m;
+    public const double ResearchSccDiscount = 0.5;
     public const decimal AlphaTax = 0.0025m;
     public const double SafeSecurityThreshold = 0.95;
     public const decimal IndustrySecurityTax = 0.05m;
@@ -93,7 +94,13 @@ public static class EconomicRules
     public static ManufacturingCharge Manufacturing(decimal value, decimal index, bool alpha) =>
         ManufacturingFromClientValue((double)value, (double)index, alpha);
 
-    public static ManufacturingCharge ManufacturingFromClientValue(double value, double index, bool alpha, double security = 0)
+    public static ManufacturingCharge ManufacturingFromClientValue(
+        double value,
+        double index,
+        bool alpha,
+        double security = 0,
+        bool research = false
+    )
     {
         if (!double.IsFinite(value) || !double.IsFinite(index) || value < 0 || index is < 0 or > 1)
         {
@@ -106,14 +113,16 @@ public static class EconomicRules
         return new(
             checked(ClientRound(value * index + alphaCost, 0) * MarketDefinitions.CentsPerIsk),
             checked(ClientRound(baseValue * (double)NpcFacilityTax, 0) * MarketDefinitions.CentsPerIsk),
-            checked(ClientRound(baseValue * (double)SccSurcharge, 0) * MarketDefinitions.CentsPerIsk),
+            checked(
+                ClientRound(baseValue * (double)SccSurcharge * (research ? ResearchSccDiscount : 1), 0) * MarketDefinitions.CentsPerIsk
+            ),
             security >= SafeSecurityThreshold
                 ? checked(ClientRound(baseValue * (double)IndustrySecurityTax, 0) * MarketDefinitions.CentsPerIsk)
                 : 0
         );
     }
 
-    private static long ClientRound(double value, int digits)
+    public static long ClientRound(double value, int digits)
     {
         if (!double.IsFinite(value) || value < 0)
         {

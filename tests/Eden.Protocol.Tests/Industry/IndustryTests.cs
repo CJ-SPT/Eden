@@ -34,13 +34,14 @@ namespace Eden.Protocol.Tests.Industry;
 
 public sealed class IndustryTests
 {
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         public const long BlueprintId = InventoryDefinitions.FirstOwnedItemId + 100;
         public TestWorld Db { get; } = new();
         public Clock Clock { get; } = new(new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero));
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
-        public PilotIndustryStore Store => new(new(Db.Path), Clock);
+        public IIndustryRandom Random { get; set; } = new IndustryRandom();
+        public PilotIndustryStore Store => new(new(Db.Path), Clock, Random);
 
         public Fixture()
         {
@@ -103,7 +104,7 @@ public sealed class IndustryTests
             world.SaveChanges();
         }
 
-        public ManufacturingRequest Request(int runs = 1) =>
+        public IndustryRequest Request(int runs = 1) =>
             new(
                 BlueprintId,
                 1130,
@@ -114,7 +115,7 @@ public sealed class IndustryTests
                 new Dictionary<int, int> { [34] = 27 * runs, [35] = 21 * runs }
             );
 
-        public ManufacturingRequest ModuleRequest(IndustryBlueprintType blueprint, int runs = 1)
+        public IndustryRequest ModuleRequest(IndustryBlueprintType blueprint, int runs = 1)
         {
             var (product, tritanium, pyerite, mexallon, nocxium) = blueprint switch
             {
@@ -492,7 +493,7 @@ public sealed class IndustryTests
             .Cast<BlueNewObject>()
             .Select(e => Assert.IsType<Dictionary<string, object?>>(e.State))
             .ToArray();
-        Assert.Equal(3, effects.Length);
+        Assert.Equal(7, effects.Length);
         Assert.All(
             effects,
             e =>

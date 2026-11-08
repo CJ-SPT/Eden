@@ -16,6 +16,15 @@ namespace Eden.Data.World.Industry;
 
 public sealed class IndustryJob
 {
+    public IndustryActivity Activity { get; set; } = IndustryActivity.Manufacturing;
+    public int LicensedRuns { get; set; }
+    public bool BlueprintCopy { get; set; }
+    public int MaterialEfficiency { get; set; }
+    public int TimeEfficiency { get; set; }
+    public int OutputRuns { get; set; }
+    public double Probability { get; set; } = 1;
+    public int? SuccessfulRuns { get; set; }
+    public int? OptionalTypeId { get; set; }
     public long Id { get; set; }
     public long PilotId { get; set; }
     public long BlueprintId { get; set; }

@@ -201,7 +201,7 @@ public sealed class EconomicLifecycleTests
         var materials = recipe.Materials.ToDictionary(m => m.TypeID, m => m.Quantity);
         f.Gather(materials);
         long blueprint = f.BuyInput(recipe.BlueprintId);
-        var request = new ManufacturingRequest(blueprint, recipe.BlueprintId, Station, 1, 215, recipe.Time * 0.8, materials);
+        var request = new IndustryRequest(blueprint, recipe.BlueprintId, Station, 1, 215, recipe.Time * 0.8, materials);
         ManufacturingCharge charge;
         using (WorldDbContext world = new(f.Db.Path))
         {

@@ -207,7 +207,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 }
                 if (PilotIndustryStore.IsInstalled(world, item.Id))
                 {
-                    throw new InvalidDataException("Deliver or cancel the manufacturing job before contracting its blueprint.");
+                    throw new InvalidDataException("Deliver or cancel the industry job before contracting its blueprint.");
                 }
                 world.Add(new SavedContractEscrow { ItemId = item.Id, ContractId = contract.Id });
                 SaveItem(world, contract.Id, item, true, item.Id == root.Id ? null : item.LocationId);
@@ -260,6 +260,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 ParentId = parent,
                 FlagId = item.FlagId,
                 Singleton = item.Singleton,
+                BlueprintRuns = item.BlueprintRuns,
+                MaterialEfficiency = item.MaterialEfficiency,
+                TimeEfficiency = item.TimeEfficiency,
                 Damage =
                     item.CategoryId == (int)InventoryCategory.Ship ? world.Set<ShipHealthState>().Find(item.Id)?.StructureDamage ?? 0 : 0,
                 GroupId = item.GroupId,

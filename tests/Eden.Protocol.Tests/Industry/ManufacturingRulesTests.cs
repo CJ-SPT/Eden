@@ -14,7 +14,7 @@ public sealed class ManufacturingRulesTests
             [new(34, 27), new(35, 21)]
         );
 
-    private static ManufacturingRequest Request => new(1, 1130, 60003760, 1, 215, 288, new Dictionary<int, int> { [34] = 27, [35] = 21 });
+    private static IndustryRequest Request => new(1, 1130, 60003760, 1, 215, 288, new Dictionary<int, int> { [34] = 27, [35] = 21 });
 
     [Fact]
     public void CalculatesCatalogRecipeAndTrainedDurationWithoutStorage()
@@ -26,9 +26,9 @@ public sealed class ManufacturingRulesTests
     }
 
     [Theory]
-    [InlineData(288.5, 288)]
+    [InlineData(288.5, 289)]
     [InlineData(289.5, 290)]
-    public void RoundsManufacturingDurationToEven(double seconds, long expected)
+    public void RoundsManufacturingDurationLikePinnedPython(double seconds, long expected)
     {
         var plan = ManufacturingRules.Plan(Request with { QuotedSeconds = expected }, Inputs with { BaseSeconds = seconds, Bonuses = [] });
         Assert.Equal(expected, plan.DurationSeconds);

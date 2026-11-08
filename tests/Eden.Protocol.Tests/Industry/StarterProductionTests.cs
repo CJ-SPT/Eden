@@ -294,7 +294,7 @@ public sealed class StarterProductionTests
         internal void Manufacture(Recipe recipe, int runs)
         {
             long blueprint = BuyInput(recipe.BlueprintId);
-            var request = new ManufacturingRequest(
+            var request = new IndustryRequest(
                 blueprint,
                 recipe.BlueprintId,
                 Home,

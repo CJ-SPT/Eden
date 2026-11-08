@@ -104,6 +104,9 @@ public sealed class SavedContractEscrow
 
 public sealed class SavedContractItem
 {
+    public int BlueprintRuns { get; set; } = -1;
+    public int MaterialEfficiency { get; set; }
+    public int TimeEfficiency { get; set; }
     public long Id { get; set; }
     public long ContractId { get; set; }
     public long ItemId { get; set; }
@@ -117,7 +120,22 @@ public sealed class SavedContractItem
     public int GroupId { get; set; }
     public int CategoryId { get; set; }
 
-    public ContractItem Snapshot() => new(ItemId, TypeId, Quantity, Offered, ParentId, FlagId, Singleton, Damage, GroupId, CategoryId);
+    public ContractItem Snapshot() =>
+        new(
+            ItemId,
+            TypeId,
+            Quantity,
+            Offered,
+            ParentId,
+            FlagId,
+            Singleton,
+            Damage,
+            GroupId,
+            CategoryId,
+            BlueprintRuns,
+            MaterialEfficiency,
+            TimeEfficiency
+        );
 }
 
 public sealed class SavedContractPayment

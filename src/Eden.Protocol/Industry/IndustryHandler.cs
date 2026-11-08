@@ -27,11 +27,12 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         _available = new Dictionary<int, long>();
     }
 
-    private IndustryFacilityReply Facility(IndustryFacility facility) => new(facility, industry.ProductTypes());
+    private IndustryFacilityReply Facility(IndustryFacility facility) =>
+        new(facility, industry.ProductTypes(), industry.ScienceProductCategories());
 
     private static BlueprintReply Blueprint(OwnedBlueprint blueprint) => new(blueprint);
 
-    private static ManufacturingJobReply Job(ManufacturingJob job) => new(job);
+    private static IndustryJobReply Job(IndustryJobDetails job) => new(job);
 
     private static IndustryLocationReply Location(IndustryFacility facility, long pilotId) => new(facility, pilotId);
 
@@ -60,11 +61,11 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             Dictionary<string, object?> values => values,
             BlueInstance { Name: "utillib.KeyVal", State: Dictionary<string, object?> values } => values,
             BlueNewObject { Name: BlueNewObject.IndustryLocationClass, State: Dictionary<string, object?> values } => values,
-            _ => throw new InvalidDataException("Invalid manufacturing request data."),
+            _ => throw new InvalidDataException("Invalid industry request data."),
         };
 
     private static long Number(Dictionary<string, object?> values, string key) =>
-        values.GetValueOrDefault(key) is long number ? number : throw new InvalidDataException($"Missing manufacturing {key}.");
+        values.GetValueOrDefault(key) is long number ? number : throw new InvalidDataException($"Missing industry {key}.");
 
     private static int Integer(Dictionary<string, object?> values, string key) => checked((int)Number(values, key));
 
@@ -80,7 +81,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             || station != Integer(request, "facilityID")
         )
         {
-            throw new InvalidDataException("Choose your current station's personal Item Hangar for manufacturing.");
+            throw new InvalidDataException("Choose your current station's personal Item Hangar for industry.");
         }
         industry.CheckStation(context.Pilot.PilotId, station);
         return station;
@@ -103,27 +104,29 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         _ = CheckLocation(context, values, "outputLocation");
         if (
             Number(values, "characterID") != context.Pilot.PilotId
-            || Number(values, "activityID") != (int)IndustryActivity.Manufacturing
+            || !IndustryDefinitions.Activities.Contains((IndustryActivity)Integer(values, "activityID"))
+            || values.GetValueOrDefault("corporationID") is not null
             || values.GetValueOrDefault("account") is not object?[] { Length: 2 } account
             || !Equals(account[0], context.Pilot.PilotId)
             || !Equals(account[1], (long)WalletAccountKey.Cash)
         )
         {
-            throw new InvalidDataException("Use personal manufacturing with the current installation quote.");
+            throw new InvalidDataException("Use personal industry with the current installation quote.");
         }
         var materials = values.GetValueOrDefault("materials") switch
         {
+            Dictionary<string, object?> { Count: 0 } => new Dictionary<int, int>(),
             Dictionary<long, object?> items when items.Values.All(v => v is long) => items.ToDictionary(
                 i => checked((int)i.Key),
                 i => checked((int)(long)i.Value!)
             ),
-            _ => throw new InvalidDataException("Missing manufacturing material quote."),
+            _ => throw new InvalidDataException("Missing industry material quote."),
         };
         double seconds = values.GetValueOrDefault("time") switch
         {
             long n => n,
             double n => n,
-            _ => throw new InvalidDataException("Missing manufacturing time quote."),
+            _ => throw new InvalidDataException("Missing industry time quote."),
         };
         // Job.dump leaves productTypeID as None for a single-output recipe.
         // The server resolves that product from the owned blueprint's catalog.
@@ -132,9 +135,9 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             {
                 null => null,
                 long type => checked((int)type),
-                _ => throw new InvalidDataException("Invalid manufacturing product selection."),
+                _ => throw new InvalidDataException("Invalid industry product selection."),
             }
-            : throw new InvalidDataException("Missing manufacturing product selection.");
+            : throw new InvalidDataException("Missing industry product selection.");
         var result = industry.Install(
             context.Pilot.PilotId,
             new(
@@ -145,7 +148,9 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 product,
                 seconds,
                 materials,
-                new ManufacturingCharge(QuotedCents(values, "cost"), QuotedCents(values, "tax"), 0)
+                new ManufacturingCharge(QuotedCents(values, "cost"), QuotedCents(values, "tax"), 0),
+                (IndustryActivity)Integer(values, "activityID"),
+                values.GetValueOrDefault("licensedRuns") is null ? 0 : Integer(values, "licensedRuns")
             )
         );
         Notify(context, result);
@@ -173,11 +178,11 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         {
             long number => number,
             double number => number,
-            _ => throw new InvalidDataException("Missing manufacturing price quote."),
+            _ => throw new InvalidDataException("Missing industry price quote."),
         };
         if (!double.IsFinite(isk) || isk < 0 || isk != Math.Truncate(isk))
         {
-            throw new InvalidDataException("Invalid manufacturing price quote.");
+            throw new InvalidDataException("Invalid industry price quote.");
         }
         return checked((long)((decimal)isk * 100));
     }
@@ -191,7 +196,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     )
     {
         // The native Industry button checks both factory and laboratory access
-        // before opening its shared window. This does not enable research jobs.
+        // before opening its shared window; each install verifies its activity service.
         bool standing =
             service == "corpStationMgr"
             && method == "DoStandingCheckForStationService"
@@ -218,23 +223,26 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                     var blueprints = industry.Blueprints(pilotId, args[1] is long facility ? checked((int)facility) : null);
                     return new BlueprintOwnerReply(blueprints, BlueprintResultLimit);
                 case ("facilityManager", "GetFacilities") when args.Length == 0:
-                    return new BlueList<IndustryFacilityReply>(industry.Facilities(pilotId).Select(Facility).ToArray());
+                    var products = industry.ProductTypes();
+                    var categories = industry.ScienceProductCategories();
+                    return new BlueList<IndustryFacilityReply>(
+                        industry.Facilities(pilotId).Select(f => new IndustryFacilityReply(f, products, categories)).ToArray()
+                    );
                 case ("facilityManager", "GetFacility") when args is [long station]:
                     return Facility(industry.Facility(pilotId, checked((int)station)));
                 case ("facilityManager", "GetFacilityLocations") when args is [long station, long owner] && owner == pilotId:
                     industry.CheckStation(pilotId, checked((int)station));
                     return new BlueList<IndustryLocationReply>([Location(industry.Facility(pilotId, (int)station), pilotId)]);
                 case ("facilityManager", "GetMaxActivityModifiers") when args.Length == 0:
-                    return new BlueMap<IndustryActivity, double>(
-                        new Dictionary<IndustryActivity, double> { [IndustryActivity.Manufacturing] = 1d }
-                    );
+                    return new BlueMap<IndustryActivity, double>(IndustryDefinitions.Activities.ToDictionary(a => a, _ => 1d));
                 case ("industryManager", "GetJobsByOwner") when args is [long owner, var completed] && owner == pilotId:
-                    return new BlueList<ManufacturingJobReply>(industry.Jobs(pilotId, IsTrue(completed)).Select(Job).ToArray());
+                    return new BlueList<IndustryJobReply>(industry.Jobs(pilotId, IsTrue(completed)).Select(Job).ToArray());
                 case ("industryManager", "GetJob") when args is [long job]:
                     return Job(industry.Job(pilotId, job));
                 case ("industryManager", "GetJobCounts") when args is [long owner] && owner == pilotId:
+                    var jobs = industry.Jobs(pilotId, false);
                     return new BlueMap<IndustryActivity, int>(
-                        new Dictionary<IndustryActivity, int> { [IndustryActivity.Manufacturing] = industry.Jobs(pilotId, false).Count }
+                        IndustryDefinitions.Activities.ToDictionary(a => a, a => jobs.Count(j => j.Activity == a))
                     );
                 case ("industryManager", "InstallJob") when args is [var request]:
                     return Install(context, request);
@@ -260,7 +268,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         }
         catch (OverflowException)
         {
-            return new PilotCallResult.Failure("The manufacturing job exceeds the supported quantity or time limit.");
+            return new PilotCallResult.Failure("The industry job exceeds the supported quantity or time limit.");
         }
     }
 }

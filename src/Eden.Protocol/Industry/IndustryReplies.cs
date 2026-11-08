@@ -4,9 +4,10 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Industry;
 
-internal sealed record IndustryFacilityReply(IndustryFacility Facility, IReadOnlyList<int> Products) : BlueModel
+internal sealed record IndustryFacilityReply(IndustryFacility Facility, IReadOnlyList<int> Products, IReadOnlyList<int> ScienceCategories)
+    : BlueModel
 {
-    public override object ToBlue() => IndustryWire.Facility(Facility, Products);
+    public override object ToBlue() => IndustryWire.Facility(Facility, Products, ScienceCategories);
 }
 
 internal sealed record BlueprintReply(OwnedBlueprint Blueprint) : BlueModel
@@ -14,7 +15,7 @@ internal sealed record BlueprintReply(OwnedBlueprint Blueprint) : BlueModel
     public override object ToBlue() => IndustryWire.Blueprint(Blueprint);
 }
 
-internal sealed record ManufacturingJobReply(ManufacturingJob Job) : BlueModel
+internal sealed record IndustryJobReply(IndustryJobDetails Job) : BlueModel
 {
     public override object ToBlue() => IndustryWire.Job(Job);
 }
@@ -54,8 +55,7 @@ internal sealed record IndustryMaterialsChanged(long MonitorId, IReadOnlyDiction
     public override object?[] Arguments => [MonitorId, Materials.ToDictionary(p => (long)p.Key, p => (object?)p.Value)];
 }
 
-internal sealed record IndustryJobChanged(ManufacturingJob Job) : PilotNotification("OnIndustryJob")
+internal sealed record IndustryJobChanged(IndustryJobDetails Job) : PilotNotification("OnIndustryJob")
 {
-    public override object?[] Arguments =>
-        [Job.Id, Job.PilotId, Job.BlueprintId, Job.PilotId, (int)Job.Status, Job.Status == IndustryJobStatus.Delivered ? Job.Runs : null];
+    public override object?[] Arguments => [Job.Id, Job.PilotId, Job.BlueprintId, Job.PilotId, (int)Job.Status, Job.SuccessfulRuns];
 }
