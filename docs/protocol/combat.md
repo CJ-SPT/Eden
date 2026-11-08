@@ -850,3 +850,64 @@ The fixture now drops its dependent index and the restart test stops the world b
 Roster inspection also corrected duplicate irregular drone names and generic commander hull selection,
 with a focused regression. Refetching the 122 exact wiki revisions reproduces the committed encounter
 facts byte for byte. The audit reproduces all coverage counts. Full .NET regression was not requested or run.
+
+## Drone NPC damage messages and frame diagnostics (November 8, 2026)
+
+A maintainer reported missing incoming damage messages in a rogue-drone combat site and choppy camera/UI
+rendering without slow pilot-update warnings. They also noted concurrent work on main as a possible cause.
+Investigation used an isolated worktree based on committed `cd817d3`, without the pending thermal changes.
+The rendering slowdown has not been reproduced or attributed by these automated checks.
+
+The notification adapter did contain an independent pinned-client incompatibility. NPCs with no
+`gfxTurretID`, including Silverfish Alvi and several Strain and Sentient drone variants, sent `weapon=None`
+with `attackType=otherPlayer`. The pinned logger's `AddCombatMessage` tests for key presence and calls
+`evetypes.GetName` even when the value is None. Its `AttackMissRD` localization also requires a valid weapon
+item. Omitting the weapon alone would therefore leave misses broken. The adapter now omits absent weapons
+and selects `otherPlayerWeapons`, whose `AttackHitsR`/`AttackMissR` templates identify the source without
+requiring a separate weapon. Hits, misses, source identity and damage attributes remain explicit. NPCs
+with a graphics weapon retain their existing `otherPlayer` representation.
+
+Confirmed by inert inspection of build 3662168 `Godma.OnDamageMessage`,
+`Logger.AddCombatMessageFromDict`, `Logger.AddCombatMessage` and `_GetObjectName` from `code.ccp`, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The English localization resource's
+MD5 is `61aa7c6ea396176c7daa072ebdb9273a`; messages 285198/285203 use source names, while 285202 needs
+`weapon.name`. Localization was read with executable pickle globals rejected. No client code or game
+process was launched. Existing dictionary, None and integer serialization was cross-checked against
+[Carbon Blue Marshal.cpp revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+[EVE University's log guide](https://wiki.eveuniversity.org/EVE_logs) distinguishes recorded combat feedback
+from game-client error messages. Combat wire round trips now cover hits and misses with and without a
+graphics weapon. The actual integrated-weapon regression retains its paid damage assertion.
+
+Two automated 35-second session replays exercise Drone Horde dungeons 2351 and 2352, including scenery,
+NPC acquisition, combat handlers, actual packet serialization and the test clock. Five frames warm each
+world, followed by 30 measured frames. The observer's shield capacity is increased solely to keep it alive.
+Both layouts deliver damage notifications and avoid repeated `AddBalls`/`SetState` scene reloads. In one
+development measurement, both peaked below 10 KB and at 17 outgoing packets per frame. The tower-sentry
+layout had zero warmed SQL commands, connections and fitting calculations, with 2.30 ms p95 frames. The
+missile layout had 45.66 ms p95 frames, 4,303 SQL commands, 463 connections and 76 fitting calculations
+across the 30 measured frames. Missile launches/impacts still use existing persistence paths. RNG affects
+shot outcomes and costs; these are diagnostic measurements, not native FPS or capacity claims. The initial
+SQL-free assertion was restricted to the direct/sentry layout after the missile replay exposed that distinction.
+
+These checks do not establish that the camera/UI lag is fixed. Packet flooding and repeated scene loads
+were absent in the tested committed workload. Native visual effects, scene rendering and the concurrent
+uncommitted changes remain unverified. Live acceptance: Not performed; agent client testing is disabled.
+Optional maintainer checks are incoming hit/miss text from drones without graphics weapons, and native
+FPS/client profiling in the same site using a committed build.
+
+The maintainer subsequently identified low available memory with multiple applications running as a
+possible explanation for the rendering slowdown. No renderer or scenery changes were made on that assumption.
+
+Validation passed tool and solution restore, a solution build with zero warnings/errors, 91 focused .NET
+cases in 22.13 seconds including test-host startup, both Python policy suites (8 catalog and 9 formatting
+cases), and formatting verification. The filter was:
+
+```text
+FullyQualifiedName~CombatMessageTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~DroneAnomalyProtocolTests|FullyQualifiedName~SessionPerformanceTests|FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~BlueMarshalTests
+```
+
+The initial integrated-weapon regression reproduced the invalid present weapon key before the fix.
+An expanded run was interrupted after two unchanged connection-count assertions expected two connections
+and observed one. Both failures reproduced on parent `cd817d3`. The test now preserves its two-connection
+ceiling while accepting the shared catalog cache avoiding the second connection. Tackle and aggression
+read-count assertions remain exact. Full .NET regression was not requested or run.

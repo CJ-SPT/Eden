@@ -187,7 +187,17 @@ public sealed class NpcCombatTests
         var shot = Assert.IsType<NpcShot>(f.Fire());
         Assert.Equal(2.475, shot.Applied, 8);
         Assert.Equal(0, shot.Weapon.TurretTypeId);
-        Assert.Null(CombatMessages.Incoming(shot).ToBlue()["weapon"]);
+        var message = Assert.IsType<Dictionary<string, object?>>(
+            Assert.Single(
+                Assert.IsType<object?[]>(
+                    BlueMarshal.Decode(BlueMarshal.Encode(new DamageMessageNotification(CombatMessages.Incoming(shot)).Arguments))
+                )
+            )
+        );
+        Assert.DoesNotContain("weapon", message.Keys);
+        Assert.Equal("otherPlayerWeapons", BlueMarshal.Text(message["attackType"]));
+        Assert.Equal(shot.Applied, message["damage"]);
+        Assert.Equal(shot.NpcId, message["attackerID"]);
     }
 
     [Theory]

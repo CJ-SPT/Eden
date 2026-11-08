@@ -65,7 +65,9 @@ public sealed class SessionPerformanceTests
         db.Store.Advance(contact.SystemId, 1, DateTime.UtcNow.ToFileTimeUtc(), [], []);
         Assert.Equal(1, metrics.TackleReads);
         Assert.Equal(1, metrics.AggressionReads);
-        Assert.Equal(2, metrics.Connections);
+        // A shared catalog hit can avoid the second connection. The bound
+        // remains constant for both one NPC and a populated scene.
+        Assert.InRange(metrics.Connections, 1, 2);
     }
 
     [Fact]

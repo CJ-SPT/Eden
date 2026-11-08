@@ -34,6 +34,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Anomaly scanner update serialization correction, November 8, 2026](protocol/combat.md#anomaly-scanner-update-serialization-correction-november-8-2026)
 - [Known-space combat anomalies, November 8, 2026](protocol/combat.md#known-space-combat-anomalies-november-8-2026)
+- [Drone NPC damage messages and frame diagnostics, November 8, 2026](protocol/combat.md#drone-npc-damage-messages-and-frame-diagnostics-november-8-2026)
 
 - [Resident rack heat and paid cycles, November 7, 2026](protocol/fitting.md#resident-rack-heat-and-paid-cycles-november-7-2026)
 

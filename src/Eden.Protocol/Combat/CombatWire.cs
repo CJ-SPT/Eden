@@ -50,21 +50,30 @@ internal sealed record IncomingCombatMessage(
     DamageVector Attributes
 ) : CombatMessage(Applied, Quality, WeaponType, Attributes)
 {
-    public override Dictionary<string, object?> ToBlue() =>
-        new()
+    public override Dictionary<string, object?> ToBlue()
+    {
+        Dictionary<string, object?> fields = new()
         {
             ["damage"] = Damage,
             ["hitQuality"] = (int)HitQuality,
             ["isBanked"] = false,
-            ["attackType"] = "otherPlayer",
+            // The R templates use source names without requiring a weapon.
+            // RD's miss template requires a valid item type for weapon.name.
+            ["attackType"] = Weapon > 0 ? "otherPlayer" : "otherPlayerWeapons",
             ["source"] = Source,
             ["attackerID"] = Source,
             // An NPC owner is localized by type rather than capsuleer identity.
             ["owner"] = new object?[] { (int)MessageArgumentType.TypeId, SourceType },
-            // Hull-integrated NPC weapons may have no separate turret type.
-            ["weapon"] = Weapon > 0 ? Weapon : null,
             ["damageAttributes"] = AttributeFields(),
         };
+        // The pinned logger calls evetypes.GetName whenever this key exists,
+        // including when its value is None. Integrated NPC weapons omit it.
+        if (Weapon > 0)
+        {
+            fields["weapon"] = Weapon;
+        }
+        return fields;
+    }
 }
 
 internal sealed record DamageMessageNotification(CombatMessage Message) : PilotNotification("OnDamageMessage")
