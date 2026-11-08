@@ -1,5 +1,6 @@
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.World.Ammunition;
@@ -19,7 +20,8 @@ internal static class AncillaryFuelPersistence
         CatalogDbContext catalog,
         long pilotId,
         OwnedItem module,
-        AncillaryRepairer repairer
+        AncillaryRepairer repairer,
+        DogmaAttributeId chargeGroupAttribute = DogmaAttributeId.ChargeGroup2
     )
     {
         var loaded = PilotAmmunitionStore.Contents(world, module.Id);
@@ -39,7 +41,8 @@ internal static class AncillaryFuelPersistence
                 repairer.Kind,
                 type.GroupId,
                 catalog.FittingAttributes(module.TypeId),
-                catalog.FittingAttributes(loaded.TypeId)
+                catalog.FittingAttributes(loaded.TypeId),
+                chargeGroupAttribute
             )
             || !double.IsFinite(volume)
             || volume <= 0

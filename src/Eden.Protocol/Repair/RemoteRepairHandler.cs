@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -21,7 +22,7 @@ internal sealed class RemoteRepairHandler(
     IPilotHealth healthStore
 ) : IModuleEffectSource, IDisposable
 {
-    private sealed record Cycle(long PilotId, RemoteRepairCycle Repair, long Repeats, bool Stopping = false);
+    private sealed record Cycle(long PilotId, RemoteRepairCycle Repair, long Repeats, bool Stopping = false, bool FuelDepleted = false);
 
     private readonly Dictionary<long, Cycle> _cycles = [];
     private readonly Dictionary<long, RemoteRepairApplied> _received = [];
@@ -86,7 +87,7 @@ internal sealed class RemoteRepairHandler(
             targeting.IsLocked(target) ? new HashSet<long> { target } : [],
             Now()
         );
-        Cycle cycle = new(context.Pilot.PilotId, result.Cycle, repeats);
+        Cycle cycle = new(context.Pilot.PilotId, result.Cycle, repeats, FuelDepleted: result.Magazine is { Quantity: 0 });
         _cycles[module] = cycle;
         if (previous is null)
         {
@@ -97,6 +98,10 @@ internal sealed class RemoteRepairHandler(
             context.Flight.SetRemoteRepairEffect(previous.Repair, false);
         }
         context.Flight.SetRemoteRepairEffect(cycle.Repair, true);
+        if (result.Magazine is { } magazine)
+        {
+            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, Now());
+        }
         context.Notifications.Add(
             new ModuleAttributesChanged([
                 new(
@@ -150,7 +155,7 @@ internal sealed class RemoteRepairHandler(
             try
             {
                 repairing.Complete(cycle.PilotId, repair.Module.ItemId, Now());
-                if (!cycle.Stopping && cycle.Repeats > 0)
+                if (!cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
                 {
                     Start(context, repair.Module.ItemId, repair.Module.Effect, repair.TargetId, cycle.Repeats - 1, cycle);
                     continue;

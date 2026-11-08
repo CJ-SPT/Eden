@@ -15,6 +15,7 @@
     <EmbeddedResource Include="Fixtures/PlayerEwarCatalog.json" />
     <EmbeddedResource Include="Fixtures/RemoteRepairCatalog.json" />
     <EmbeddedResource Include="Fixtures/AncillaryRepairCatalog.json" />
+    <EmbeddedResource Include="Fixtures/AncillaryRemoteRepairCatalog.json" />
     <EmbeddedResource Include="Fixtures/RemoteAssistanceCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />

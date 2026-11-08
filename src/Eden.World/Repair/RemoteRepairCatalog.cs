@@ -2,6 +2,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 
@@ -40,8 +41,8 @@ internal static class RemoteRepairCatalog
         var effects = PassiveCatalog.Effects(catalog, typeId);
         int overload = group switch
         {
-            RemoteRepairRules.ShieldGroup => ShieldOverload,
-            RemoteRepairRules.ArmorGroup => ArmorOverload,
+            RemoteRepairRules.ShieldGroup or RemoteRepairRules.AncillaryShieldGroup => ShieldOverload,
+            RemoteRepairRules.ArmorGroup or RemoteRepairRules.AncillaryArmorGroup => ArmorOverload,
             _ => HullOverload,
         };
         var expected = new HashSet<int> { (int)DogmaEffect.HighPower, (int)DogmaEffect.Online, (int)active, overload };
@@ -108,6 +109,17 @@ internal static class RemoteRepairCatalog
         try
         {
             _ = RemoteRepairRules.Define(0, typeId, active, attributes);
+            if (RemoteRepairRules.AncillaryKind(group) is { } ancillary)
+            {
+                _ = AncillaryRepairRules.Define(ancillary, attributes);
+                return catalog.FittingType(typeId)?.Capacity > 0
+                    && attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1)
+                        == (
+                            ancillary == AncillaryRepairKind.Shield
+                                ? CapacitorBoosterDefinitions.ChargeGroup
+                                : AncillaryRepairRules.PasteGroup
+                        );
+            }
             return true;
         }
         catch (InvalidDataException)

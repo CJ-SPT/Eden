@@ -139,6 +139,11 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(RemoteAssistanceCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(
+                    RemoteRepairRules.AncillaryKind(group) is not null
+                    && RemoteRepairCatalog.Supported(catalog, module.TypeId, group)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                )
+                && !(
                     AncillaryRepairCatalog.Supported(catalog, module.TypeId, group)
                     && (
                         group == AncillaryRepairRules.ArmorGroup
@@ -263,6 +268,14 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             bool compatible =
                 AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
                     ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
+                : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary
+                    ? AncillaryRepairRules.Compatible(
+                        remoteAncillary,
+                        chargeType.GroupId,
+                        attributes,
+                        chargeAttributes,
+                        DogmaAttributeId.ChargeGroup1
+                    )
                 : script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId

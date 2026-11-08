@@ -326,6 +326,8 @@ public static class HullBonusRules
                 is null
                     or (int)HullBonusEquipmentGroup.RemoteShieldBooster
                     or (int)HullBonusEquipmentGroup.RemoteArmorRepairer
+                    or (int)HullBonusEquipmentGroup.AncillaryRemoteShieldBooster
+                    or (int)HullBonusEquipmentGroup.AncillaryRemoteArmorRepairer
             )
         )
         || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer

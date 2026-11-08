@@ -76,6 +76,17 @@ public sealed class SmallHullBonusTests
             }
         }
         if (
+            modifiers.Any(m =>
+                m.Selector == ModifierSelector.Group
+                && m.SelectionId
+                    is (int)HullBonusEquipmentGroup.AncillaryRemoteShieldBooster
+                        or (int)HullBonusEquipmentGroup.AncillaryRemoteArmorRepairer
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadAncillaryRemoteRepairs(f.CatalogPath, type);
+        }
+        if (
             modifiers.Any(modifier =>
                 modifier.Selector == ModifierSelector.OwnerRequiredSkill && DroneRules.SupportsOwnerSkill(modifier.SelectionId!.Value)
             )
@@ -230,6 +241,8 @@ public sealed class SmallHullBonusTests
                 HullBonusEquipmentGroup.StasisWeb => new(527),
                 HullBonusEquipmentGroup.RemoteShieldBooster => new(3596),
                 HullBonusEquipmentGroup.RemoteArmorRepairer => new(11357),
+                HullBonusEquipmentGroup.AncillaryRemoteShieldBooster => new(41480),
+                HullBonusEquipmentGroup.AncillaryRemoteArmorRepairer => new(41476),
                 HullBonusEquipmentGroup.RemoteCapacitorTransmitter => new(529),
                 HullBonusEquipmentGroup.EnergyNosferatu => new(530),
                 HullBonusEquipmentGroup.EnergyNeutralizer => new(533),

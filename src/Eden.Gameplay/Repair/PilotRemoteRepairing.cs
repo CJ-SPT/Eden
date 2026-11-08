@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -35,7 +36,7 @@ public sealed record RemoteRepairModule(
 
 public sealed record RemoteRepairCycle(RemoteRepairModule Module, long ShipId, long TargetId, long StartedAt, long CompletesAt);
 
-public sealed record RemoteRepairActivation(RemoteRepairCycle Cycle, double Capacitor);
+public sealed record RemoteRepairActivation(RemoteRepairCycle Cycle, double Capacitor, Magazine? Magazine = null);
 
 public sealed record RemoteRepairApplied(long PilotId, ShipHealth Health);
 
@@ -57,6 +58,16 @@ public static class RemoteRepairRules
     public const int ShieldGroup = 41;
     public const int ArmorGroup = 325;
     public const int HullGroup = 585;
+    public const int AncillaryShieldGroup = 1697;
+    public const int AncillaryArmorGroup = 1698;
+
+    public static AncillaryRepairKind? AncillaryKind(int group) =>
+        group switch
+        {
+            AncillaryShieldGroup => AncillaryRepairKind.Shield,
+            AncillaryArmorGroup => AncillaryRepairKind.Armor,
+            _ => null,
+        };
 
     public static DogmaEffect? Effect(int group) =>
         group switch
@@ -64,6 +75,8 @@ public static class RemoteRepairRules
             ShieldGroup => DogmaEffect.RemoteShieldBoost,
             ArmorGroup => DogmaEffect.RemoteArmorRepair,
             HullGroup => DogmaEffect.RemoteHullRepair,
+            AncillaryShieldGroup => DogmaEffect.AncillaryRemoteShieldBoost,
+            AncillaryArmorGroup => DogmaEffect.AncillaryRemoteArmorRepair,
             _ => null,
         };
 
@@ -71,8 +84,8 @@ public static class RemoteRepairRules
     {
         var kind = effect switch
         {
-            DogmaEffect.RemoteShieldBoost => RemoteRepairKind.Shield,
-            DogmaEffect.RemoteArmorRepair => RemoteRepairKind.Armor,
+            DogmaEffect.RemoteShieldBoost or DogmaEffect.AncillaryRemoteShieldBoost => RemoteRepairKind.Shield,
+            DogmaEffect.RemoteArmorRepair or DogmaEffect.AncillaryRemoteArmorRepair => RemoteRepairKind.Armor,
             DogmaEffect.RemoteHullRepair => RemoteRepairKind.Hull,
             _ => throw new InvalidDataException("Unsupported remote repair effect."),
         };

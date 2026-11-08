@@ -117,6 +117,8 @@ public enum DogmaEffect
     RemoteHullRepair = 6185,
     RemoteShieldBoost = 6186,
     RemoteArmorRepair = 6188,
+    AncillaryRemoteArmorRepair = 6651,
+    AncillaryRemoteShieldBoost = 6652,
     EnergyNeutralizer = 6187,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,

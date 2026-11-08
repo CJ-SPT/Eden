@@ -10,14 +10,16 @@ internal static class RemoteRepairWire
             "shipModuleRemoteShieldBooster" => DogmaEffect.RemoteShieldBoost,
             "shipModuleRemoteArmorRepairer" => DogmaEffect.RemoteArmorRepair,
             "shipModuleRemoteHullRepairer" => DogmaEffect.RemoteHullRepair,
+            "shipModuleAncillaryRemoteShieldBooster" => DogmaEffect.AncillaryRemoteShieldBoost,
+            "shipModuleAncillaryRemoteArmorRepairer" => DogmaEffect.AncillaryRemoteArmorRepair,
             _ => null,
         };
 
     internal static string Graphic(DogmaEffect effect) =>
         effect switch
         {
-            DogmaEffect.RemoteShieldBoost => "effects.ShieldTransfer",
-            DogmaEffect.RemoteArmorRepair => "effects.RemoteArmourRepair",
+            DogmaEffect.RemoteShieldBoost or DogmaEffect.AncillaryRemoteShieldBoost => "effects.ShieldTransfer",
+            DogmaEffect.RemoteArmorRepair or DogmaEffect.AncillaryRemoteArmorRepair => "effects.RemoteArmourRepair",
             DogmaEffect.RemoteHullRepair => "effects.RemoteHullRepair",
             _ => throw new InvalidDataException("Unsupported remote repair graphic."),
         };

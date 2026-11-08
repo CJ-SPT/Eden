@@ -49,9 +49,10 @@ public static class AncillaryRepairRules
         AncillaryRepairKind kind,
         int chargeGroup,
         IReadOnlyDictionary<DogmaAttributeId, double> module,
-        IReadOnlyDictionary<DogmaAttributeId, double> charge
+        IReadOnlyDictionary<DogmaAttributeId, double> charge,
+        DogmaAttributeId chargeGroupAttribute = DogmaAttributeId.ChargeGroup2
     ) =>
-        module.GetValueOrDefault(DogmaAttributeId.ChargeGroup2) == chargeGroup
+        module.GetValueOrDefault(chargeGroupAttribute) == chargeGroup
         && kind switch
         {
             // ASB charge size zero is meaningful: small boosters use size-zero

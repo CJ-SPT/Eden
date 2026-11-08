@@ -93,6 +93,20 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         }
         long end = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         AssistancePersistence.Apply(world, catalog, pilot, target.Pilot, now, end);
+        var fuel = RemoteRepairRules.AncillaryKind(group) is { } ancillary
+            ? AncillaryFuelPersistence.Consume(
+                world,
+                catalog,
+                pilotId,
+                item,
+                AncillaryRepairRules.Define(ancillary, calculation.Graph.Attributes(item.Id)),
+                DogmaAttributeId.ChargeGroup1
+            )
+            : null;
+        if (fuel is not null)
+        {
+            module = module with { Amount = fuel.Payment.Amount, CapacitorNeed = fuel.Payment.CapacitorNeed };
+        }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
         RemoteRepairCycle cycle = new(module, pilot.ActiveShipId, targetId, now, end);
         world.Add(
@@ -116,7 +130,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         {
             events.Publish(applied);
         }
-        return new(cycle, capacitor);
+        return new(cycle, capacitor, fuel?.Magazine);
     }
 
     public void Complete(long pilotId, long moduleId, long now)
