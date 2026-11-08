@@ -87,6 +87,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     {
         ModuleConditionSchema.Configure(model);
         ShipHeatSchema.Configure(model);
+        NaniteRepairSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);
         model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
         model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);

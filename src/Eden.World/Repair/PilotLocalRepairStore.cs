@@ -12,6 +12,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -50,6 +51,7 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
             throw new InvalidDataException("Use an online fitted local repairer of the requested kind on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
         var repairer = LocalRepairRules.Define(moduleId, module.TypeId, attributes, layer);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);

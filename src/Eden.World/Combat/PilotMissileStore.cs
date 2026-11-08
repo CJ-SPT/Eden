@@ -21,6 +21,7 @@ using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
@@ -114,6 +115,7 @@ internal sealed partial class PilotMissileStore(
             throw new InvalidDataException("Load supported missile ammunition.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, loaded.TypeId);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var attributes = calculation.Graph.Attributes(module.Id);

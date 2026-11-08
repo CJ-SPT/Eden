@@ -13,6 +13,7 @@ using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Defenses;
@@ -44,6 +45,7 @@ internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : I
             throw new InvalidDataException("Use an online fitted assault damage control on your eligible ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var controls = calculation.Modules.Where(m => m.GroupId == AssaultDamageControlRules.Group).Select(m => m.Item.Id).ToArray();
         if (

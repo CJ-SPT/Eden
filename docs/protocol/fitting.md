@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Paid nanite repair runtime, November 7, 2026](#paid-nanite-repair-runtime-november-7-2026)
+
 - [Nanite repair calculations and character skills, November 7, 2026](#nanite-repair-calculations-and-character-skills-november-7-2026)
 
 - [Overheating calculation foundation, November 7, 2026](#overheating-calculation-foundation-november-7-2026)
@@ -1443,3 +1445,96 @@ Not performed; agent client testing is disabled. Native Nanite skill displays an
 ### Optional maintainer checks
 
 None for the internal quote boundary. Paid native repair acceptance belongs to the later lifecycle integration.
+
+## Paid nanite repair runtime, November 7, 2026
+
+Milestone 6 now has an internal typed paid repair operation and world-owned deadline processing. `IPilotNaniteRepair` starts explicit distinct module selections, stops an exact repair identity, and cancels an owning pilot/ship's work. This checkpoint does **not** bind `InitiateModuleRepair`, `InitiateModuleRepairMany` or `StopModuleRepair`. Native weapon-bank expansion, client-local repair flags, notification/controller cleanup and system-transfer integration still need their adapter. Overload toggles, damage/spread, remaining producers and live burnout orchestration also remain unfinished; production overheating flags stay false.
+
+Saved-world schema **108** adds `WorldNaniteRepair`: one pending repair per module, with pilot/ship identity, a fresh generation, start/completion times, original damage/HP and paid paste quantity. Ship/item/pilot deletion cascades the schedule; the active generation is unique. A same-tick cancel/restart gets a new generation even when both timestamps match, so an old typed stop cannot cancel the replacement. Validated immutable Gameplay schedules clamp elapsed work at both boundaries, preserve fractional ticks, reject invalid profiles/keys and avoid clock-rewind credit. Quotes for positive repair work have at least one filetime tick; a verified zero-value repair remains immediate and free.
+
+The internal payment contract spends the complete quoted amount from owned, unassembled paste stacks in the active ship's ordinary cargo, in stable item order. Hangar, fitted charges and foreign stacks do not fund repairs. Batch results separately name started modules, modules missing paste and rejected modules; a failed selection consumes no partial item quantity. Damage, timer creation/removal and inventory changes commit together. Duplicate starts cannot spend again. Early cancellation applies only the elapsed fraction, without refund; late completion applies at most the original paid work, once. The paid rate and cost are fixed by the earned graph at start. Burned-out modules are neither paste-healed nor brought online. These are the implemented internal lifecycle rules; native payment/refund fidelity remains part of the unbound client lifecycle rather than a claim of observed CCP server behavior.
+
+The world owner caches the active identities and next deadline. Empty worlds, unchanged active repairs and completed/idle frames need no polling SQL or fitting recalculation. Cache dependencies distinguish relevant module/ship/pilot changes from coordinates and unrelated item membership. Invalidation records the mutation's commit time, so a delayed frame after docking settles at the docking boundary rather than crediting time spent in station. The wreck transaction settles earned work before modules move or disappear; surviving item identities retain the resulting damage. Checkpoints copy the paid row, initial condition and consumed cargo together. Reopening settles bounded paid elapsed work once at the reopen clock, then removes the outstanding timer; it does not recreate the client's lost local timer or replay payment. This includes bounded paid work during an offline interval, not a second repair.
+
+Current SQL activation owners and the resident turret/weapon-bank path reject repairing modules before publishing a paid activation. A bank rejects if any selected member is repairing. Other modules remain usable. Paid overload contributions and nanite repairs exclude each other for the ship. Mining now records its funded beam deadline and clears it on collection or cancellation, so repair checks can see active mining without depending on a socket controller. Stale controller stops cannot remove a replacement cycle from the handler's active map.
+
+The preceding [pricing and skill record](#nanite-repair-calculations-and-character-skills-november-7-2026) remains the calculation evidence. Further inert inspection of pinned Godma shows that repair-many deconstructs **three** lists: success, missing charges and failed modules. The single-module path also has weapon-bank-specific failure handling; these must be preserved when the native calls are connected. Carbon Destiny's [ordered ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) was consulted for update ordering. No movement arithmetic or packets change, and no repair math is taken from the ticker.
+
+### Automated validation
+
+Development began with `FullyQualifiedName=Eden.Protocol.Tests.Thermal.PaidNaniteRepairTests.PaidRepairCommitsCargoAndItsExactDeadlineAndCancelsOnlyElapsedWork` (**1 passed**, **4.93 seconds**, feature build **3.13 seconds**). Intermediate paid-repair, pure-rule and mining selections passed before the final loss/fixture corrections. The broader activation-family selection was:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Propulsion'
+  'FullyQualifiedName~Eden.Protocol.Tests.Defenses'
+  'FullyQualifiedName~Eden.Protocol.Tests.Ammunition.CapacitorBooster'
+  'FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotCombatTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveCombatObjectTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveSimulationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.WeaponBankTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.CapacitorWarfare'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcCapacitorTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwar'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteHullRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.AncillaryRemoteRepair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MutadaptiveRemoteRepair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteAssistance'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+That pre-final selection completed **1,324 cases: 1,323 passed and one failed**, in **588.68 seconds** (feature build **1.15 seconds**). The failure was the existing Rodiva case's missing operational probe for mutadaptive group **2018**. The exact filter `FullyQualifiedName=Eden.Protocol.Tests.Combat.CapacitorWarfareTests.AdmittedEnergyHullBonusesConsumeTheirEarnedModifiersOnce&DisplayName~49712` reproduces it on untouched baseline **9c547f481827053020607c96a04bec0c3c60b302** (**1 failed**, **6.97 seconds**, build **13.23 seconds**). The test helper now loads the full mutadaptive fixture and probes native module **49770**, preserving its assertions. This broader result precedes the final wreck hook and batched membership-input reads; it is not presented as a passing final run. TRX: `artifacts/feature-tests/results/d76d38cdae2246c3887ca497b452add8/tests.trx`; copied baseline evidence: `artifacts/overheating/nanite-baseline-rodiva.trx`.
+
+The later 383-case selection exposed five existing wreck restart/migration tests using a running resident fixture, contrary to the unchanged stopped-world startup contract. Only those reconciliation fixtures now use stopped SQL worlds; ordinary wreck tests retain their live owner. All **13 wreck cases** then passed (**7.54 seconds**, build **2.90 seconds**). The dedicated loss regression uses the complete capsule/wreck transition and native capsule fixture data, rather than fabricating a wreck without its required loss parent. Other development corrections included required namespaces, raw-string layout, fitting setup before undocking, and holding the malformed-input test's constraint pragma on one connection. No full .NET suite was requested or run.
+
+The final affected selection, including actual missile activation classes omitted by the earlier `MissileTests` prefix, is:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.InsuranceLossTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotMissileTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileCombatTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveCombatObjectTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests'
+  ('FullyQualifiedName=Eden.Protocol.Tests.Combat.CapacitorWarfareTests.' +
+    'AdmittedEnergyHullBonusesConsumeTheirEarnedModifiersOnce&DisplayName~49712')
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+The final selection passed **383 cases**, with zero failed/skipped, in **89.36 seconds** (feature build **1.12 seconds**). It includes **28 new cases**: 25 paid persistence/runtime cases, two pure scheduling cases and the mining-deadline regression. A subsequent test-only addition verifies the reverse, ship-wide exclusion with a different module: exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.PaidNaniteRepairTests.ARepairCannotStartOnAnotherModuleWhileAnOverloadCycleIsAlreadyPaid` passed **1 case** (**5.50 seconds**, build **3.07 seconds**), bringing the new coverage to **29 cases** without changing production code. TRX files: `artifacts/feature-tests/results/bbedbeaccaa84da899ac2eb21db8c7b8/tests.trx` and `artifacts/feature-tests/results/e7795a71089f4fc480b7042e4922df9c/tests.trx`.
+
+Combined coverage includes same-tick generation replacement, stale/duplicate calls, exact/fractional completion, rewind/overflow, free repair, partial batch funding, unchanged state after rejected ownership/location/funding, both directions of overload exclusion, both volley owners and master/slave bank members, transactional start/stop failure, docking commit-time settlement, burnout, surviving wreck identity, detached generations, restart and schema upgrade/malformed input. Active and idle 100-frame runs, unrelated metadata and checkpoint capture assert **zero SQL commands, connections and fitting calculations**. Membership validation reads module, condition and pilot-location inputs in batches.
+
+Final pinned tool restore, root solution restore and build passed with zero warnings/errors in **1.56 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **0.95 seconds** combined). Formatting verification passed across **1,127 files** in **15.58 seconds**, including the 140-character width check. Documentation checks verified **566 local links and anchors**; the whitespace check passed. The expanded 96-type overload fixture and unchanged thermal matrix reproduced byte-for-byte, production coverage retained all 6,079 entries and false overheating flags, and source catalog bytes remained unchanged (**17.51 seconds** combined). Current overload fixture SHA-256: **CA2B9D060EF7764CA476616B30E9F5104E35A4746E252F7D68D8C4FC837118EE**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native repair controls, bank presentation and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+None for the internal paid operation. Native repair acceptance belongs to the later call/controller integration.

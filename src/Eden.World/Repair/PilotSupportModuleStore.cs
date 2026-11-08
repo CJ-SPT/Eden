@@ -12,6 +12,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -42,6 +43,7 @@ internal sealed class PilotSupportModuleStore(WorldDatabase database) : IPilotSu
             throw new InvalidDataException("Use an online fitted support module on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } loaded)
         {
             int chargeGroup = catalog.RequireItem(loaded.TypeId).GroupId;

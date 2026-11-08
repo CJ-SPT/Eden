@@ -15,6 +15,7 @@ using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
@@ -81,6 +82,7 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
         var target = ReadTarget(world, catalog, targetId, system, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         var calculation = FittingCalculation.Read(world, catalog, source);
         var module = CapacitorWarfareRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var sourceAttributes = PilotFittingStore.ShipAttributes(world, catalog, source, calculation: calculation);

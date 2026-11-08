@@ -23,6 +23,7 @@ using Eden.World.Inventory;
 using Eden.World.Runtime.Combat;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
@@ -364,6 +365,7 @@ internal sealed class PilotCombatStore(
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var targetType = catalog.RequireItem(target.TypeId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);

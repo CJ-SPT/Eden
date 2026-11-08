@@ -17,7 +17,10 @@ namespace Eden.World.Thermal;
 // not a player-callable damage or repair command.
 internal static class ModuleConditionPersistence
 {
-    internal static ModuleCondition Read(WorldDbContext world, CatalogDbContext catalog, OwnedItem item)
+    internal static ModuleCondition Read(WorldDbContext world, CatalogDbContext catalog, OwnedItem item) =>
+        Read(catalog, item, world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0);
+
+    internal static ModuleCondition Read(CatalogDbContext catalog, OwnedItem item, double damage)
     {
         if (catalog.RequireItem(item.TypeId).CategoryId != (int)InventoryCategory.Module || !item.Singleton || item.Quantity != 1)
         {
@@ -26,7 +29,7 @@ internal static class ModuleConditionPersistence
         return ModuleConditionRules.Define(
             item.Id,
             catalog.FittingAttributes(item.TypeId).GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
-            world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0
+            damage
         );
     }
 

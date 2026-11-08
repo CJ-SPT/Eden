@@ -4,6 +4,56 @@ namespace Eden.Protocol.Tests.Thermal;
 
 public sealed class NaniteRepairRuleTests
 {
+    private static readonly Guid Generation = Guid.Parse("4906e4f7-727d-4ad1-aa62-83b14afafce7");
+
+    private static NaniteRepairSchedule? Start(NaniteRepairQuote quote, long pilot, long ship, long now) =>
+        NaniteRepairRules.Start(quote, pilot, ship, now, Generation);
+
+    [Fact]
+    public void PaidSchedulePreservesFractionalTicksStopsAtItsDeadlineAndDoesNotAdvanceOnClockRewind()
+    {
+        ModuleCondition condition = new(1, 40, 20);
+        var quote = NaniteRepairRules.Quote(condition, 104000, 6500, new(10, .5));
+        var schedule = Assert.IsType<NaniteRepairSchedule>(Start(quote, 2, 3, 1000));
+        Assert.Equal(new(1, 1000, 1000 + 2 * TimeSpan.TicksPerMinute, Generation), schedule.Key);
+        Assert.Equal(40, schedule.InitialHitPoints);
+        Assert.Equal(20, schedule.InitialDamage);
+        Assert.Equal(0, NaniteRepairRules.Repaired(schedule, 999));
+        Assert.Equal(0, NaniteRepairRules.Repaired(schedule, 1000));
+        Assert.Equal(20.0 / (2 * TimeSpan.TicksPerMinute), NaniteRepairRules.Repaired(schedule, 1001), 14);
+        Assert.Equal(10, NaniteRepairRules.Repaired(schedule, 1000 + TimeSpan.TicksPerMinute));
+        Assert.Equal(20, NaniteRepairRules.Repaired(schedule, schedule.Key.CompletesAt));
+        Assert.Equal(20, NaniteRepairRules.Repaired(schedule, long.MaxValue));
+        Assert.Equal(20, condition.Damage);
+    }
+
+    [Fact]
+    public void InvalidAndOverflowingSchedulesCannotBecomePaidRepairs()
+    {
+        ModuleCondition condition = new(1, 40, 20);
+        NaniteRepairQuote quote = new(condition, 1, 10);
+        Assert.Throws<OverflowException>(() => Start(quote, 2, 3, long.MaxValue));
+        Assert.Throws<InvalidDataException>(() => Start(quote, 0, 3, 0));
+        Assert.Throws<InvalidDataException>(() => Start(quote, 2, 0, 0));
+        Assert.Throws<InvalidDataException>(() => Start(quote, 2, 3, -1));
+        Assert.Throws<InvalidDataException>(() => NaniteRepairRules.Start(quote, 2, 3, 0, Guid.Empty));
+        Assert.Throws<InvalidDataException>(() => Start(quote with { DurationTicks = 0 }, 2, 3, 0));
+        Assert.Throws<InvalidDataException>(() => Start(quote with { PasteUnits = -1 }, 2, 3, 0));
+        Assert.Throws<InvalidDataException>(() => Start(quote with { Condition = condition with { Damage = 40 } }, 2, 3, 0));
+        var schedule = Start(quote, 2, 3, 0)!;
+        Assert.Throws<InvalidDataException>(() => NaniteRepairRules.Validate(schedule with { InitialHitPoints = 20 }));
+        Assert.Throws<InvalidDataException>(() =>
+            NaniteRepairRules.Validate(schedule with { Key = schedule.Key with { Generation = Guid.Empty } })
+        );
+        Assert.Throws<InvalidDataException>(() => NaniteRepairRules.Validate(schedule with { InitialDamage = double.PositiveInfinity }));
+        Assert.Throws<InvalidDataException>(() => NaniteRepairRules.Repaired(schedule, -1));
+        Assert.Null(Start(new(condition, 0, 0), 2, 3, 0));
+        Assert.Equal(
+            1,
+            NaniteRepairRules.Quote(condition with { Damage = double.Epsilon }, long.MaxValue, 6500, new(double.MaxValue, .5)).DurationTicks
+        );
+    }
+
     internal sealed record Profile(
         int TypeId,
         double BasePrice,

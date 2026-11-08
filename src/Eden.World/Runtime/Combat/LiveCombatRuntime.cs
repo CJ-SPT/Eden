@@ -80,7 +80,16 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             return null;
         }
-        int count = banked ? ship.Banks.Values.FirstOrDefault(b => b.Contains(moduleId))?.Count ?? 1 : 1;
+        var bank = banked ? ship.Banks.Values.FirstOrDefault(b => b.Contains(moduleId)) : null;
+        if (bank is null)
+        {
+            owner.Nanites.RequireAvailable(moduleId, now);
+        }
+        else
+        {
+            owner.Nanites.RequireAvailable(bank, now);
+        }
+        int count = bank?.Count ?? 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
         var plan = LiveCombatRules.Fire(ship, target, moduleId, banked, velocity, now, draws, activation);
         long cycleEnd = checked(now + (long)Math.Ceiling(plan.Volley.Shot.Weapon.CycleMilliseconds * TimeSpan.TicksPerMillisecond));

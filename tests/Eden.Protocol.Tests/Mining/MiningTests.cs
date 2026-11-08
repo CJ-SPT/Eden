@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Data.World.Skills;
@@ -25,6 +26,7 @@ using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
@@ -33,6 +35,23 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTests
 {
+    [Fact]
+    public void PaidMiningCycleHasAnAuthoritativeDeadlineForRepairExclusion()
+    {
+        using Fixture f = new();
+        var (context, _, mining, module) = f.Client();
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, MiningWireDefinitions.EffectName, Fixture.Asteroid, 100L]));
+        using WorldDbContext world = new(f.Db.Path);
+        var cooldown = world.Set<ModuleCooldown>().Find(module)!;
+        Assert.Equal(ModuleCooldownKind.Cycle, cooldown.Kind);
+        Assert.True(cooldown.ReadyAt > f.Clock.Now);
+        Assert.True(NaniteRepairPersistence.Active(world, module, f.Clock.Now));
+        Assert.False(NaniteRepairPersistence.Active(world, module, cooldown.ReadyAt));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, MiningWireDefinitions.EffectName]));
+        world.ChangeTracker.Clear();
+        Assert.Null(world.Set<ModuleCooldown>().Find(module));
+    }
+
     [Fact]
     public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()
     {

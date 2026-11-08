@@ -19,6 +19,7 @@ using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -86,6 +87,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
             throw new InvalidDataException("Lock another pilot's nearby ship before applying remote repairs.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var module = RemoteRepairRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);

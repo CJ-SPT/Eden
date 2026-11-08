@@ -13,6 +13,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Propulsion;
@@ -134,6 +135,7 @@ internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting
             throw new InvalidDataException("Use an online fitted propulsion module on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         var item = PilotInventoryStore.Read(catalog, module);
         var attributes = ModuleAttributes(world, catalog, pilotId, item);
         if (attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlocked) > 0)

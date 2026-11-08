@@ -23,6 +23,7 @@ using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Loot;
@@ -155,6 +156,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             throw new InvalidDataException("The lost ship has no supported catalog wreck.");
         }
         var position = ship.Position ?? throw new InvalidDataException("A destroyed ship must be in space.");
+        NaniteRepairPersistence.BeforeShipLoss(world, catalog, ship.Id, now);
         var wreck = world
             .Set<WorldWreck>()
             .Add(

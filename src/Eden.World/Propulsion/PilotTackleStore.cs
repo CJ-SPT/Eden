@@ -18,6 +18,7 @@ using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Propulsion;
@@ -56,6 +57,7 @@ internal sealed class PilotTackleStore(WorldDatabase database) : IPilotTackle
             throw new InvalidDataException("Use an online fitted tackle module on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var module = TackleDefinitions.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);

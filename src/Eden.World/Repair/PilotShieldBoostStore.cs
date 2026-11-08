@@ -66,6 +66,7 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
             throw new InvalidDataException("Use an online fitted shield booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         var calculation = overloaded
             ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
             : null;

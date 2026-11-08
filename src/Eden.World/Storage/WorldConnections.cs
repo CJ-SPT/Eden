@@ -37,6 +37,16 @@ internal static class WorldConnections
         }
     }
 
+    internal static bool TryNaniteRepairing(WorldDbContext context, long module, long now, out bool repairing)
+    {
+        if (context.Database.GetDbConnection() is LiveConnection connection)
+        {
+            return connection.TryNaniteRepairing(module, now, out repairing);
+        }
+        repairing = false;
+        return false;
+    }
+
     // Publish only after the owning transaction commits, while its connection
     // still holds the world owner. Failed payments must never create live heat.
     internal static void PublishHeat(WorldDbContext context, long pilot, long ship, ShipHeatSnapshot state)
@@ -57,6 +67,9 @@ internal static class WorldConnections
         private bool _positionMembershipWrite;
         private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
+
+        internal bool TryNaniteRepairing(long module, long now, out bool repairing) =>
+            world.Nanites.TryRepairing(module, now, out repairing);
 
         internal void PublishHeat(long pilot, long ship, ShipHeatSnapshot state)
         {

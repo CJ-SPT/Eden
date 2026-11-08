@@ -16,6 +16,79 @@ public static class NaniteRepairRules
 {
     public const int PasteType = 28668;
 
+    public static NaniteRepairSchedule? Start(NaniteRepairQuote quote, long pilot, long ship, long now, Guid generation)
+    {
+        _ = ModuleConditionRules.Define(quote.Condition.ItemId, quote.Condition.HitPoints, quote.Condition.Damage);
+        if (
+            pilot <= 0
+            || ship <= 0
+            || quote.Condition.ItemId <= 0
+            || now < 0
+            || generation == Guid.Empty
+            || quote.Condition.BurnedOut
+            || quote.Condition.Damage <= 0
+            || quote.PasteUnits < 0
+            || quote.DurationTicks < 0
+            || quote.DurationTicks == 0 && quote.PasteUnits != 0
+        )
+        {
+            throw new InvalidDataException("Invalid paid nanite repair.");
+        }
+        return quote.DurationTicks == 0
+            ? null
+            : new(
+                new(quote.Condition.ItemId, now, checked(now + quote.DurationTicks), generation),
+                pilot,
+                ship,
+                quote.Condition.Damage,
+                quote.Condition.HitPoints,
+                quote.PasteUnits
+            );
+    }
+
+    public static double Repaired(NaniteRepairSchedule schedule, long now)
+    {
+        Validate(schedule);
+        if (now < 0)
+        {
+            throw new InvalidDataException("Invalid nanite repair clock.");
+        }
+        if (now <= schedule.Key.StartedAt)
+        {
+            return 0;
+        }
+        if (now >= schedule.Key.CompletesAt)
+        {
+            return schedule.InitialDamage;
+        }
+        return schedule.InitialDamage * ((now - schedule.Key.StartedAt) / (double)(schedule.Key.CompletesAt - schedule.Key.StartedAt));
+    }
+
+    public static void Validate(NaniteRepairSchedule schedule)
+    {
+        ValidateKey(schedule.Key);
+        if (
+            schedule.PilotId <= 0
+            || schedule.ShipId <= 0
+            || !double.IsFinite(schedule.InitialDamage)
+            || schedule.InitialDamage <= 0
+            || !double.IsFinite(schedule.InitialHitPoints)
+            || schedule.InitialHitPoints <= schedule.InitialDamage
+            || schedule.PasteUnits < 0
+        )
+        {
+            throw new InvalidDataException("Invalid saved nanite repair.");
+        }
+    }
+
+    public static void ValidateKey(NaniteRepairKey key)
+    {
+        if (key.ModuleId <= 0 || key.StartedAt < 0 || key.CompletesAt <= key.StartedAt || key.Generation == Guid.Empty)
+        {
+            throw new InvalidDataException("Invalid nanite repair identity.");
+        }
+    }
+
     // Build 3662168 inventoryUtil.GetComputedBasePrice(typeID, 1). The native
     // material path divides by the material portion twice and truncates each
     // material's unit price before summing. Do not replace it with market value.
@@ -70,7 +143,7 @@ public static class NaniteRepairRules
         double unitPrice = computedBasePrice / condition.HitPoints;
         double repairCost = condition.Damage * unitPrice * rates.CostMultiplier;
         long units = checked((long)Math.Ceiling(repairCost / pasteBasePrice));
-        long duration = checked((long)Math.Ceiling(condition.Damage / rates.HitPointsPerMinute * TimeSpan.TicksPerMinute));
+        long duration = Math.Max(1, checked((long)Math.Ceiling(condition.Damage / rates.HitPointsPerMinute * TimeSpan.TicksPerMinute)));
         return new(condition, units, duration);
     }
 

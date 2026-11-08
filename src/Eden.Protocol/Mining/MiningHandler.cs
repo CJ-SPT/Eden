@@ -140,6 +140,12 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
 
     private void Stop(PilotCallContext context, Cycle cycle)
     {
+        if (!_cycles.TryGetValue(cycle.Laser.ItemId, out var active) || !ReferenceEquals(active, cycle))
+        {
+            return;
+        }
+        long completesAt = checked(cycle.StartTime + (long)Math.Ceiling(cycle.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
+        mining.Stop(context.Pilot.PilotId, cycle.Laser.ItemId, completesAt);
         if (!_cycles.Remove(cycle.Laser.ItemId))
         {
             return;

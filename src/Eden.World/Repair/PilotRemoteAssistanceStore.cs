@@ -18,6 +18,7 @@ using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -57,6 +58,7 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
             throw new InvalidDataException("Lock another pilot's nearby ship before applying remote assistance.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } script)
         {
             int scriptGroup = catalog.FittingType(script.TypeId)!.GroupId;

@@ -1,5 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -15,6 +17,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mining;
@@ -82,6 +85,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var ore = catalog.FittingType(asteroid.TypeId);
@@ -171,6 +175,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             laser.CapacitorNeed,
             now
         );
+        // Keep the already funded beam visible to authoritative repair checks,
+        // even when its owning protocol controller has not collected it yet.
+        var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
+        cooldown.ReadyAt = checked(now + (long)Math.Ceiling(laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.MiningLaserActivated);
         world.SaveChanges();
         transaction.Commit();
@@ -226,8 +235,25 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }
+        world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
         world.SaveChanges();
         transaction.Commit();
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull);
+    }
+
+    public void Stop(long pilotId, long moduleId, long expectedCompletesAt)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        world
+            .Set<ModuleCooldown>()
+            .Where(c =>
+                c.ModuleId == moduleId
+                && c.Kind == ModuleCooldownKind.Cycle
+                && c.ReadyAt == expectedCompletesAt
+                && world.Set<OwnedItem>().Any(i => i.Id == moduleId && i.OwnerId == pilotId)
+            )
+            .ExecuteDelete();
+        transaction.Commit();
     }
 }

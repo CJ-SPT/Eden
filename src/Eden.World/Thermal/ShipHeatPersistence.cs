@@ -141,6 +141,10 @@ internal static class ShipHeatPersistence
         {
             throw new InvalidOperationException("Paid heat contributions require the owning transaction.");
         }
+        if (world.Set<SavedNaniteRepair>().Any(r => r.ShipId == calculation.ShipId && r.CompletesAt > startedAt))
+        {
+            throw new InvalidDataException("Stop nanite repairs before paying for an overload cycle.");
+        }
         var item = calculation.Modules.SingleOrDefault(m => m.Item.Id == moduleId)?.Item;
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (

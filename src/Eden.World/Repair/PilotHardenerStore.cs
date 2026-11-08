@@ -13,6 +13,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -48,6 +49,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database) : IPilotHardeni
             throw new InvalidDataException("Use an online fitted hardener on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
         var hardener = HardenerDefinitions.Define(moduleId, module.TypeId, group, attributes);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);

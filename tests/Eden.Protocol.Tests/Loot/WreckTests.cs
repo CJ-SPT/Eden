@@ -32,14 +32,15 @@ public sealed class WreckTests
 
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new(liveWorld: true);
+        public TestWorld Db { get; }
         public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
         public IWrecks Store => Db.Services.GetRequiredService<IWrecks>();
         public WreckContact Wreck { get; }
         public long Item => Store.Read(Pilot.PilotId, Wreck.Id, Now).Items.Single().Id;
 
-        public Fixture(bool development = true)
+        public Fixture(bool development = true, bool liveWorld = true)
         {
+            Db = new(liveWorld: liveWorld);
             if (!development)
             {
                 using WorldDbContext settings = new(Db.Path);
@@ -72,7 +73,7 @@ public sealed class WreckTests
     [Fact]
     public void EconomyRookieWreckDoesNotInjectTheDevelopmentMineralDrop()
     {
-        using Fixture f = new(development: false);
+        using Fixture f = new(development: false, liveWorld: false);
         Assert.Empty(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
         WorldInitialization.Initialize(new(f.Db.Path));
         Assert.Empty(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
@@ -81,7 +82,7 @@ public sealed class WreckTests
     [Fact]
     public void CatalogWreckAndItsSingleLootStackSurviveRestartAndKeepTheKillersRights()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: false);
         var inventory = f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now);
         Assert.Equal(26557, inventory.Container.TypeId);
         Assert.Equal(WreckDefinitions.Group, inventory.Container.GroupId);
@@ -99,7 +100,7 @@ public sealed class WreckTests
     [Fact]
     public void FullPickupMovesTheExistingStackOnceAndLeavesAnEmptyWreck()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: false);
         long id = f.Item;
         var moved = Assert.Single(f.Take());
         Assert.Equal(id, moved.Item.Id);
@@ -311,7 +312,7 @@ public sealed class WreckTests
     [Fact]
     public void VersionTwentyTwoUpgradeDoesNotInventLootForEarlierKills()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: false);
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Database.ExecuteSql($"DELETE FROM WorldItem WHERE LocationId={f.Wreck.Id}");
@@ -333,7 +334,7 @@ public sealed class WreckTests
     [Fact]
     public void VersionTwentyThreeUpgradePreservesNpcWreckContentsAndDoesNotInventPlayerDrops()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: false);
         long itemId = f.Item;
         var pilot = f.Pilot;
         using (WorldDbContext world = new(f.Db.Path))

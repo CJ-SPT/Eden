@@ -14,6 +14,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -43,6 +44,7 @@ internal sealed class PilotCapacitorBoosterStore(WorldDatabase database) : IPilo
             throw new InvalidDataException("Use an online fitted capacitor booster on your active ship in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         var loaded = PilotAmmunitionStore.Contents(world, moduleId);
         if (
             loaded is null

@@ -37,6 +37,7 @@ public interface IPilotMining
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
     MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now);
     MiningYield Collect(long pilotId, long moduleId, long asteroidId, MiningCollection collection);
+    void Stop(long pilotId, long moduleId, long expectedCompletesAt);
 }
 
 public enum MiningSkill

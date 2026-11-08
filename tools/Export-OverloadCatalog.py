@@ -78,7 +78,7 @@ def export(catalog_path, output, matrix, coverage):
         cohort = sorted(representatives.values())
         # Include all program shapes, normal excluded profiles, real hull racks
         # and the complete Thermodynamics prerequisite/modifier closure.
-        pending = set(cohort) | {601, 638, 587, 28164, 2048, 4409, 47254, 28879, 28880, 28668}
+        pending = set(cohort) | {561, 601, 638, 587, 670, 28164, 2048, 4409, 47254, 28879, 28880, 28668}
         types, records, attributes, effects = [], {}, thermal_attrs | attrs | {1229}, set()
         while pending:
             type_id = min(pending)
