@@ -19,6 +19,10 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
     private IReadOnlyDictionary<long, NaniteRepairSchedule> _current = FrozenDictionary<long, NaniteRepairSchedule>.Empty;
     private IReadOnlySet<long> _ships = FrozenSet<long>.Empty;
     private IReadOnlySet<long> _pilots = FrozenSet<long>.Empty;
+    private IReadOnlyDictionary<(long Pilot, long Ship), IReadOnlyList<NaniteRepairSchedule>> _views = FrozenDictionary<
+        (long Pilot, long Ship),
+        IReadOnlyList<NaniteRepairSchedule>
+    >.Empty;
     private long _next = long.MaxValue;
     private bool _valid;
     private bool _membership;
@@ -61,6 +65,10 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
         repairing = _current.ContainsKey(module);
         return _valid && !_membership && now < _next;
     }
+
+    // LiveWorld.Enter owns advancement before this coherent snapshot is read.
+    internal IReadOnlyList<NaniteRepairSchedule> Read(long pilot, long ship) =>
+        _views.GetValueOrDefault((pilot, ship)) ?? Array.Empty<NaniteRepairSchedule>();
 
     // The caller already holds the world owner. Resident volleys bypass the
     // SQL activation stores and must reject every selected bank member here.
@@ -175,6 +183,9 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
         _current = schedules.ToFrozenDictionary(s => s.Key.ModuleId);
         _ships = schedules.Select(s => s.ShipId).ToFrozenSet();
         _pilots = schedules.Select(s => s.PilotId).ToFrozenSet();
+        _views = schedules
+            .GroupBy(s => (s.PilotId, s.ShipId))
+            .ToFrozenDictionary(g => g.Key, g => (IReadOnlyList<NaniteRepairSchedule>)Array.AsReadOnly(g.ToArray()));
         _next = schedules.Length == 0 ? long.MaxValue : schedules.Min(s => s.Key.CompletesAt);
         _membership = schedules.Length > 0;
         if (schedules.Length == 0)

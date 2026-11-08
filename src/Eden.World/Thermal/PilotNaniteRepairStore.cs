@@ -7,6 +7,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,29 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
 {
     // Eight physical slots in each of the three ordinary racks; rigs cannot repair.
     private const int MaximumModules = 3 * InventoryDefinitions.SlotsPerRack;
+
+    public IReadOnlyList<NaniteRepairSchedule> Read(long pilotId, long shipId, long now)
+    {
+        CheckClock(now);
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            using var ownership = live.Enter();
+            live.Nanites.Advance(now);
+            return live.Nanites.Read(pilotId, shipId);
+        }
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var rows = world.Set<SavedNaniteRepair>().Where(r => r.PilotId == pilotId && r.ShipId == shipId).ToArray();
+        foreach (var row in rows.Where(r => r.CompletesAt <= now))
+        {
+            NaniteRepairPersistence.Finish(world, catalog, row, now);
+        }
+        var active = rows.Where(r => r.CompletesAt > now).Select(NaniteRepairPersistence.Schedule).ToArray();
+        world.SaveChanges();
+        transaction.Commit();
+        return Array.AsReadOnly(active);
+    }
 
     public NaniteRepairBatch Start(long pilotId, long shipId, IReadOnlyList<long> modules, long now)
     {

@@ -71,7 +71,8 @@ internal sealed class PilotUpdateCoordinator(
     CapacitorWarfareHandler capacitorWarfare,
     RemoteAssistanceHandler remoteAssistance,
     SignatureSuppressionHandler signatureSuppression,
-    AssaultDamageControlHandler assaultDamageControl
+    AssaultDamageControlHandler assaultDamageControl,
+    NaniteRepairHandler naniteRepairs
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -92,10 +93,12 @@ internal sealed class PilotUpdateCoordinator(
         || loyalty.IsMonitoring
         || implants.IsMonitoring
         || boosters.IsMonitoring
-        || crimewatch.IsMonitoring;
+        || crimewatch.IsMonitoring
+        || naniteRepairs.IsMonitoring;
 
     public void Enter(PilotCallContext context)
     {
+        naniteRepairs.Enter(context);
         playerDamage.Enter(context);
         remoteRepairs.Enter(context);
         capacitorWarfare.Enter(context);
@@ -137,6 +140,7 @@ internal sealed class PilotUpdateCoordinator(
     // Chat presence updates Local access after arrival without closing its transport.
     public void PrepareTranslocation(PilotCallContext context)
     {
+        naniteRepairs.Cancel(context);
         playerDamage.Dispose();
         crimewatch.Reset();
         corporations.Reset();
@@ -185,6 +189,7 @@ internal sealed class PilotUpdateCoordinator(
     {
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         ApplyPlayerDamage(context);
+        naniteRepairs.Advance(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);
         electronicWarfare.Advance(context);

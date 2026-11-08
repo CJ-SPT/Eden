@@ -24,6 +24,7 @@ public sealed record NaniteRepairBatch(
 
 public interface IPilotNaniteRepair
 {
+    IReadOnlyList<NaniteRepairSchedule> Read(long pilotId, long shipId, long now);
     NaniteRepairBatch Start(long pilotId, long shipId, IReadOnlyList<long> modules, long now);
     ModuleCondition? Stop(long pilotId, long shipId, NaniteRepairKey expected, long now);
     IReadOnlyList<ModuleCondition> Cancel(long pilotId, long shipId, long now);

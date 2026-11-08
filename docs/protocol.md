@@ -36,6 +36,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Paid nanite repair runtime, November 7, 2026](protocol/fitting.md#paid-nanite-repair-runtime-november-7-2026)
 
+- [Native nanite repair controls, November 7, 2026](protocol/fitting.md#native-nanite-repair-controls-november-7-2026)
+
 - [Overload fitting composition and Thermodynamics, November 7, 2026](protocol/fitting.md#overload-fitting-composition-and-thermodynamics-november-7-2026)
 
 - [Persistent module condition and station repair, November 7, 2026](protocol/fitting.md#persistent-module-condition-and-station-repair-november-7-2026)

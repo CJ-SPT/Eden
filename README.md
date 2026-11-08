@@ -28,7 +28,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 See [feature implementation notes](docs/feature-notes.md) for catalog coverage, restrictions and examples, and [protocol records](docs/protocol.md) for milestone evidence. Agent validation is automated; native rendering, input and gameplay feel remain unverified unless a record explicitly documents live acceptance for that change. Historical observations do not establish acceptance of later changes.
 
-The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. The overheating stage has verified fitting calculations, earned thermal/Nanite skills, saved module condition, station repairs, resident rack temperature from paid cycles, native paste pricing and internal paid repair timing; player overload controls, heat damage and native paste-repair controls remain pending.
+The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. The overheating stage has verified fitting calculations, earned thermal/Nanite skills, saved module condition, station repairs, resident rack temperature from paid cycles, native paste pricing and paid repair timing with native single/batch repair controls; player overload controls, remaining producers and heat damage/spread remain pending.
 
 ## Local game data
 

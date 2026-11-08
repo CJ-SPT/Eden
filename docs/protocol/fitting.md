@@ -1538,3 +1538,55 @@ Not performed; agent client testing is disabled. Native repair controls, bank pr
 ### Optional maintainer checks
 
 None for the internal paid operation. Native repair acceptance belongs to the later call/controller integration.
+
+## Native nanite repair controls, November 7, 2026
+
+Milestone 6 now binds `dogmaIM.InitiateModuleRepair`, `InitiateModuleRepairMany` and `StopModuleRepair` to the paid nanite runtime. The single call returns a boolean, or the named `NotEnoughRepairMaterialToFinishAllRepairs` error when paste is insufficient. The batch returns one tuple containing three Python lists: started module IDs, missing-paste IDs and failed IDs, in selection order. Invalid, repeated, empty and oversized selections cannot spend cargo. Successful payments use the shared inventory-change adapter, including exhausted-stack removal. Free immediate work publishes its resulting damage directly.
+
+The scoped handler tracks exact paid generations, monitors world-owned completion, and sends native damage attributes once when work stops or completes. It checks live module controllers as well as saved activation guards: a repeating module remains busy at its paid deadline until its controller stops, even when dispatch happens before the next update. Unchanged active frames share an immutable schedule view and perform no SQL, connection opens or fitting calculations. Docking, gate initiation, developer travel and disconnect clear the session's work; a fresh session settles any orphaned paid schedule rather than replaying payment or restoring a lost client-local timestamp. If the world has already settled docking or expiry, cleanup reads the resulting condition without applying a second repair.
+
+### Pinned native evidence
+
+Inert code-object inspection used build **3662168** `tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. No client module was executed and no game was launched. `eve/client/script/environment/godma.pyj`, `StateManager.RepairModule`, starts its local timestamp/thread only when the remote result is not false. `RepairManyModules` unpacks the three result lists and starts local timers for successes. `RepairModule_thread` waits for the damage/rate duration plus one second, then checks the original local timestamp before issuing a stop. `StopRepairModule` sends the remote stop and clears the local state/event itself. `ProcessSessionChange` stops its outstanding module repairs when processing the new session.
+
+`eve/client/script/ui/inflight/shipModuleButton/shipmodulebutton.pyj`, `ModuleButton.RepairModule`, sends separate calls for the master and each slave. It catches the insufficient-material error while continuing other members. The server therefore repairs only the explicitly requested item; expanding the bank again would risk duplicate requests and payment. Automated tests exercise the master/slave calls separately. Inspection output is retained locally in `artifacts/overheating/paste-inspection.txt` and `artifacts/overheating/repair-lifecycle-inspection.txt`.
+
+Carbon Destiny's [ordered ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) was consulted for update ordering. Its ticker does not specify dogma repair pricing or payment/refund behavior. The preceding paid-runtime record remains the implemented payment contract; these client call shapes do not independently establish CCP server refund or offline-repair semantics.
+
+### Automated validation
+
+Development started with exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.PaidNaniteRepairTests.NativeSingleRepairRoutesOnceSpendsCargoAndPublishesElapsedDamageOnStop`: **1 passed**, **6.95 seconds** (feature build **5.47 seconds**). The first paid-repair class selection passed **37 cases** in **23.01 seconds**. A subsequent four-case development selection found the docking handoff missing its damage notification after the world had already settled the timer; cleanup now reads and publishes that settled condition. The exact docking regression passed after correction (**1 case**, **6.04 seconds**), followed by the exact gate-initiation case (**1 case**, **7.80 seconds**).
+
+The final affected selection uses:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TypedSessionTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentRead'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorld'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitialization'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigration'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+The final selection passed **558 cases**, with zero failed/skipped, in **195.88 seconds** (feature build **1.38 seconds**). It includes **15 new protocol cases** covering routed single starts, repeated starts/stops, three-list batch shape, partial funding, the named insufficient-paste error, invalid selections, exact completion, bank-member charging, a still-running controller at its paid deadline, orphaned sessions, docking, gate initiation, developer travel and disconnect. The completion case uses the session coordinator and asserts **zero SQL commands, connections and fitting calculations across 100 unchanged active frames**. Existing paid persistence, restart/migration, repair-family and session/hosting coverage is included. TRX: `artifacts/feature-tests/results/c778087c811f41339fb9dc92206140fa/tests.trx`.
+
+Pinned tool and solution restores passed. The final root build passed with zero warnings/errors in **5.60 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **1.10 seconds** combined). Formatting verification passed across **1,130 files**, including the 140-character width check, in **30.30 seconds**. Documentation checks verified **568 local links and anchors**; whitespace verification passed. No full .NET suite was requested or run. No catalog, fixture or production content-coverage data changed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native button/menu presentation, local repair indicators and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+- On a damaged bank, start and cancel paste repairs through the module menu, including insufficient cargo paste; inspect per-member indicators and cargo updates.
+- Let a repair complete, then repeat after docking or a gate jump; confirm damage and local repair indicators agree after the session change.
+
+Overheating remains incomplete: native overload controls, the remaining paid producers, heat damage/spread and live burnout orchestration are still pending. This checkpoint enables no player overload bonus and changes no production overheating coverage flag.

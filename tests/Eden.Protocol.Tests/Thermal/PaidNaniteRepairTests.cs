@@ -26,7 +26,7 @@ using FittingFixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixtu
 
 namespace Eden.Protocol.Tests.Thermal;
 
-public sealed class PaidNaniteRepairTests
+public sealed partial class PaidNaniteRepairTests
 {
     private const int ShieldBooster = 399;
 
@@ -46,13 +46,13 @@ public sealed class PaidNaniteRepairTests
         internal long Now => Fit.Clock.Now;
         internal IPilotNaniteRepair Repairs => Fit.Db.Services.GetRequiredService<IPilotNaniteRepair>();
 
-        internal Fixture(bool live = false, int paste = 50, bool second = false)
+        internal Fixture(bool live = false, int paste = 50, bool second = false, int type = ShieldBooster)
         {
             PassiveCatalogFixture.LoadOverload(Fit.CatalogPath);
             Pilot = Fit.PilotId;
             Ship = Fit.ShipId;
-            Module = Fit.Fit(ShieldBooster);
-            Second = second ? Fit.Fit(ShieldBooster) : 0;
+            Module = Fit.Fit(type);
+            Second = second ? Fit.Fit(type) : 0;
             Damage(Module, 20);
             if (paste > 0)
             {
