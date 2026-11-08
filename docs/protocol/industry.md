@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [LP-store Resource Wars presence read (November 8, 2026)](#lp-store-resource-wars-presence-read-november-8-2026)
 - [Loyalty point stores (November 8, 2026)](#loyalty-point-stores-november-8-2026)
 - [PLEX history and multibuy structure discovery (November 8, 2026)](#plex-history-and-multibuy-structure-discovery-november-8-2026)
 - [Currency redemption and loyalty wallets](#currency-redemption-and-loyalty-wallets)
@@ -20,6 +21,20 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Manufacturing from mined minerals, November 2, 2026](#manufacturing-from-mined-minerals-november-2-2026)
 - [Tech I module manufacturing](#tech-i-module-manufacturing)
 - [Full catalog testing market (world version 28)](#full-catalog-testing-market-world-version-28)
+
+## LP-store Resource Wars presence read (November 8, 2026)
+
+A user-provided native screenshot after the store implementation reported `Unsupported local call RWManager.solarsystem_contains_rw_instances`. Inert inspection of build **3662168** `EveCommandService.OpenLpstore` shows that, after the station-service check, the client calls `RWService.get_rw_corp_for_faction_and_system` before constructing the store tabs. Its `is_rw_system` helper invokes this remote method with **zero arguments** and consumes its truth value. `FirstCompletionTracker._should_highlight_lp_store` uses the same read. This prerequisite was missing from the initial automated opening sequence.
+
+The selected-pilot compatibility handler now returns native **False** for the exact zero-argument call, reflecting Eden's absence of Resource Wars instances. It accepts an omitted or empty keyword map; supplied system/owner arguments and nonempty keywords reject. Unknown methods remain unsupported, and preselection calls remain gated by the router. Repeated reads while docked or in space do not modify inventories, wallets, LP, notifications or event state. Resource Wars events, payouts and event-specific purchase access remain unsupported. This changes no LP-store offer or purchase rules.
+
+References: the same pinned `code.ccp` hash and Carbon primitive-boolean adapter reference recorded in the store implementation below; inert inspection of `eve/client/script/ui/eveCommands.pyj`, `resourcewars/client/rwservice.pyj` and `resourcewars/client/firstcompletiontracker.pyj`; [EVE University Resource Wars](https://wiki.eveuniversity.org/Resource_Wars), whose historical description explains the additional faction store tab. The screenshot establishes the reported missing call; it does not establish agent client acceptance.
+
+**Automated validation:** exact development filter `FullyQualifiedName=Eden.Protocol.Tests.Market.LoyaltyStoreTests.ResourceWarsPresenceReadReturnsNativeFalseWithoutChangingLoyaltyState` passed two docked/space cases in **3 seconds**. The native opening regression now exercises station binding, this presence probe, offer listing and a committed purchase in sequence. Coverage also checks preselection gating, native boolean type, repeated reads, empty/nonempty keywords, supplied system arguments, unknown methods, continued offer browsing and unchanged saved funds/items/receipts/notifications. Final filter `FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`, with `xUnit.MaxParallelThreads=4`, passed **68 cases in 8 seconds**. Tool/solution restores, solution build (zero warnings/errors), both Python suites (**8 catalog**, **9 formatting**), formatting (**1,199 files**), documentation links/anchors and diff checks passed. The required sequence took **32.81 seconds**; ignored `artifacts/loyalty-rw-validation/` retains the logs/TRX. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Reopen the station LP store and confirm it advances past this presence read into its offer tabs.
 
 ## Loyalty point stores (November 8, 2026)
 

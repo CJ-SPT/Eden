@@ -82,6 +82,7 @@ public sealed class LoyaltyStoreTests
             [(long)Station, new object?[] { "DoStandingCheckForStationService", new object?[] { 25L }, null }]
         );
         Assert.IsType<PilotCallResult.Success>(bind);
+        Assert.False(Assert.IsType<bool>(Reply(client.CallService("RWManager", "solarsystem_contains_rw_instances", []))));
         var rows = Assert.IsType<List<object?>>(Reply(client.CallService("LPStoreMgr", "GetAvailableOffersFromCorp", [(long)Navy])));
         var offer = rows.Select(row => Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(row).State))
             .Single(row => Equals(row["offerID"], (long)MissileOffer));
@@ -522,5 +523,41 @@ public sealed class LoyaltyStoreTests
         using WorldDbContext verify = new(db.Path);
         Assert.Equal(before, verify.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
         Assert.Equal(100, verify.Set<SavedLoyaltyBalance>().Find(Pilot, LoyaltyStoreRules.ConcordCorporation)!.Points);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResourceWarsPresenceReadReturnsNativeFalseWithoutChangingLoyaltyState(bool inSpace)
+    {
+        using var db = Create();
+        using (CourierServiceTests.Client unselected = new(db, new TestClock(), 1000001))
+        {
+            Assert.Same(PilotCallResult.Unsupported, unselected.Call("solarsystem_contains_rw_instances", [], "RWManager"));
+        }
+        if (inSpace)
+        {
+            var pilot = db.Store.FindPilot(1000001)!;
+            db.Store.SetPosition(pilot.ShipId, new(1, 2, 3), pilot.SystemId);
+        }
+        using CorporationTestClient client = new(db, 1000001);
+        client.Context.Notifications.Clear();
+        for (int read = 0; read < 2; read++)
+        {
+            Assert.False(Assert.IsType<bool>(Reply(client.CallService("RWManager", "solarsystem_contains_rw_instances", []))));
+        }
+        Assert.False(Assert.IsType<bool>(Reply(client.CallService("RWManager", "solarsystem_contains_rw_instances", [], new()))));
+        Assert.IsType<PilotCallResult.Failure>(client.CallService("RWManager", "solarsystem_contains_rw_instances", [30000142L]));
+        Assert.IsType<PilotCallResult.Failure>(
+            client.CallService("RWManager", "solarsystem_contains_rw_instances", [], new() { ["solarsystemID"] = 30000142L })
+        );
+        Assert.IsType<PilotCallResult.UnsupportedCall>(client.CallService("RWManager", "UnknownMethod", []));
+        Assert.NotEmpty(Assert.IsType<List<object?>>(Reply(client.CallService("LPStoreMgr", "GetAvailableOffersFromCorp", [(long)Navy]))));
+        Assert.Empty(client.Context.Notifications);
+        using WorldDbContext saved = new(db.Path);
+        Assert.Equal(100_000, saved.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
+        Assert.Equal(Budget, saved.Set<PilotWallet>().Find(Pilot)!.Cents);
+        Assert.Equal(20_000, saved.Set<OwnedItem>().Single(item => item.TypeId == RequiredMissile).Quantity);
+        Assert.Empty(saved.Set<SavedServicePayment>());
     }
 }

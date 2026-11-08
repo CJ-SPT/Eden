@@ -37,6 +37,11 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedP
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new DynamicBountyState(),
             ("ProjectDiscovery", "is_enabled") => false,
             ("ProjectDiscovery", "get_player_analysis_kredits") when args.Length == 0 => 0,
+            // Build 3662168 OpenLpstore probes event presence before creating the store tabs.
+            ("RWManager", "solarsystem_contains_rw_instances") when args.Length == 0 && keywords is null or { Count: 0 } => false,
+            ("RWManager", "solarsystem_contains_rw_instances") => new PilotCallResult.Failure(
+                "Read Resource Wars presence for your current system without additional arguments."
+            ),
             ("clientStatLogger", "LogString") => PilotCallResult.None,
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
