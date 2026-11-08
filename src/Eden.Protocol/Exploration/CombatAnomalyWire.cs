@@ -53,5 +53,7 @@ internal sealed record SignalTrackerFullState(int SystemId, IReadOnlyList<Combat
 internal sealed record SignalTrackerAnomalyUpdate(int SystemId, IReadOnlyList<CombatAnomaly> Added, IReadOnlyList<long> Removed)
     : PilotNotification("OnSignalTrackerAnomalyUpdate")
 {
-    public override object?[] Arguments => [SystemId, new AnomalyMap(Added), Removed.ToHashSet()];
+    // Python removal sets use the codec's explicit constructor representation.
+    public override object?[] Arguments =>
+        [SystemId, new AnomalyMap(Added), new BlueConstructor("__builtin__.set", [Removed.Select(id => (object?)id).ToList()])];
 }

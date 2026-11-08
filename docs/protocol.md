@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Anomaly scanner update serialization correction, November 8, 2026](protocol/combat.md#anomaly-scanner-update-serialization-correction-november-8-2026)
+
 - [Resident rack heat and paid cycles, November 7, 2026](protocol/fitting.md#resident-rack-heat-and-paid-cycles-november-7-2026)
 
 - [Nanite repair calculations and character skills, November 7, 2026](protocol/fitting.md#nanite-repair-calculations-and-character-skills-november-7-2026)

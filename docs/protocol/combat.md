@@ -680,3 +680,29 @@ startup (27 seconds reported test duration). It includes two simulated pilots di
 identity and activating one fleet through normal flight ticks after position advancement. The solution build
 passed with zero warnings/errors. The Python policy suites again passed eight and nine cases respectively.
 Anomaly refresh now belongs to the flight tick immediately after authoritative movement, before contacts.
+
+
+## Anomaly scanner update serialization correction (November 8, 2026)
+
+The native report showed `Session rejected: Unsupported Blue value` followed by account disconnection
+while killing NPCs. Automated reproduction traced this error to `SignalTrackerAnomalyUpdate.Arguments`:
+the removed-site collection was an outbound CLR HashSet, which BlueMarshal cannot encode. Both populated
+and empty removal sets failed at `PilotSessionWire.Notification`, affecting completion/removal and later
+replacement/addition updates. The original anomaly tests inspected notification models before this boundary.
+
+The wire adapter now explicitly reduces `__builtin__.set` with one Python list argument using the existing
+BlueConstructor adapter. Round-trip regressions exercise the actual session notification packet with no
+changes, additions alone, removals alone and simultaneous additions/removals, and assert native set identity
+and site fields after decoding. This preserves the client's Python set semantics for zero or multiple IDs.
+
+Consulted [Carbon Blue Marshal.cpp revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp),
+`TY_REDUCE` callable and argument handling. The existing Eden codec already supports
+this representation. Automated reproduction failed all four new cases before the adapter correction and
+passed all four afterward. Live acceptance was not performed; agent client testing is disabled. The optional
+maintainer check is to complete an anomaly and confirm the session stays connected as its scanner entry clears.
+
+
+Correction validation passed tool restore, solution restore/build, 39 focused .NET cases in 8.69 seconds
+including host startup, eight catalog policy cases, nine formatting policy cases and formatting verification.
+The initial filter was `FullyQualifiedName~CombatAnomalyTests.ScannerUpdateSerializesThroughSessionPacketWithNativeRemovalSet`.
+The combined filter was `FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~BlueMarshalTests`.

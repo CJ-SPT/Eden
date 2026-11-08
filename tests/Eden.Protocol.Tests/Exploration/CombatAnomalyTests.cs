@@ -380,4 +380,38 @@ public sealed class CombatAnomalyTests
         using WorldDbContext world = new(f.Db.Path);
         Assert.Equal(CombatAnomalyRules.Wave(site.Id, 0).Count, world.Set<WorldNpc>().Count(n => n.EncounterId == site.Id));
     }
+
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    [InlineData(true, 2)]
+    public void ScannerUpdateSerializesThroughSessionPacketWithNativeRemovalSet(bool addSite, int removedCount)
+    {
+        CombatAnomaly site = new(
+            CombatAnomalyRules.FirstSiteId,
+            "EDN-001",
+            CombatAnomalyRules.SystemId,
+            CombatAnomalyRules.DungeonId,
+            110912,
+            1,
+            SpacePosition.Zero,
+            false,
+            []
+        );
+        var removed = Enumerable.Range(0, removedCount).Select(i => site.Id + i).ToArray();
+        SignalTrackerAnomalyUpdate notification = new(site.SystemId, addSite ? [site] : [], removed);
+        var packet = PilotSessionWire.Notification(1000001, 42, notification);
+        Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(packet)));
+        var arguments = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(notification.Arguments)));
+        Assert.Equal(site.SystemId, Assert.IsType<long>(arguments[0]));
+        Assert.Equal(removed.Order(), Assert.IsType<HashSet<long>>(arguments[2]).Order());
+        if (addSite)
+        {
+            var sites = Assert.IsType<Dictionary<long, object?>>(arguments[1]);
+            var fields = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(sites[site.Id]).State);
+            Assert.Equal(site.Id, fields["instanceID"]);
+            Assert.Equal(site.TargetId, BlueMarshal.Text(fields["targetID"]));
+        }
+    }
 }
