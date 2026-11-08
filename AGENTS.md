@@ -25,6 +25,7 @@
 
 ## Services and protocol calls
 
+- Always search for a relevant [EVE University Wiki](https://wiki.eveuniversity.org/) page when implementing or investigating an EVE gameplay feature. Use it as a gameplay reference, follow its supporting sources where available, and reconcile its descriptions with the pinned client and catalog for build-specific behavior.
 - Consult the [open-source Carbon engine](https://github.com/carbonengine) when implementing or investigating behavior it owns, such as Blue serialization, transport, or Destiny simulation. Check gameplay service methods and response fields against the pinned client and catalog. Record the relevant source revision and live observations in the protocol notes.
 - Mark service classes with `[Injectable]` from Infrastructure and declare dependencies in their public constructor. The server explicitly scans the Server, Protocol and World assemblies at startup. Each class is available by its concrete type and its Eden interfaces, including Gameplay and Infrastructure contracts.
 - Use the default transient lifetime for stateless handlers. Use `[Injectable(InjectionType.Scoped)]` for one instance per client connection and `[Injectable(InjectionType.Singleton)]` for shared infrastructure. Keep service resolution in the host. Pass connection data, such as the authenticated session ID, to the operation that uses it.
