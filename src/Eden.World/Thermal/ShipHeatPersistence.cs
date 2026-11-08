@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Repair;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -78,6 +80,25 @@ internal static class ShipHeatPersistence
         var state = current ?? original ?? HeatCycleRules.Create(profiles, now);
         var ids = state.Cycles.Select(c => c.ModuleId).ToArray();
         var modules = calculation.Modules.Where(m => ids.Contains(m.Item.Id)).Select(m => m.Item).ToArray();
+        // Physical membership triggers remove projected assistance before the
+        // source controller runs. Keep its heat source on that same boundary.
+        var assistance =
+            liveChange
+            && calculation.Modules.Any(m =>
+                ids.Contains(m.Item.Id) && m.GroupId is RemoteAssistanceRules.TrackingGroup or RemoteAssistanceRules.SensorGroup
+            )
+                ? world
+                    .Set<WorldRemoteAssistance>()
+                    .Where(r => r.SourceShipId == shipId && ids.Contains(r.ModuleId))
+                    .AsNoTracking()
+                    .AsEnumerable()
+                    .Select(r =>
+                    {
+                        var contact = r.Contact();
+                        return new HeatCycleKey(r.ModuleId, contact.StartedAt, contact.ExpiresAt);
+                    })
+                    .ToHashSet()
+                : null;
         var available = modules
             .Where(i =>
                 ship.Position is not null
@@ -87,6 +108,12 @@ internal static class ShipHeatPersistence
                 && state.Cycles.Any(c => c.ModuleId == i.Id && Rack(i.FlagId) == c.Rack && InSlot(i.FlagId, c.Rack, capacity))
                 && OverloadCatalog.Definition(catalog, i.TypeId) is not null
                 && !ModuleConditionPersistence.Read(world, catalog, i).BurnedOut
+                && (
+                    assistance is null
+                    || catalog.FittingType(i.TypeId)!.GroupId
+                        is not (RemoteAssistanceRules.TrackingGroup or RemoteAssistanceRules.SensorGroup)
+                    || state.Cycles.Any(c => c.ModuleId == i.Id && assistance.Contains(c.Key))
+                )
             )
             .Select(i => i.Id)
             .ToHashSet();

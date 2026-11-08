@@ -21,7 +21,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEvents events, NpcProfileCatalog profiles)
+internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEvents events, NpcProfileCatalog profiles, TimeProvider clock)
     : IPilotCapacitorWarfare
 {
     private sealed record Target(
@@ -53,7 +53,34 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
             );
     }
 
-    public CapacitorActivation Activate(long pilotId, long moduleId, DogmaEffect effect, long targetId, IReadOnlySet<long> locks, long now)
+    public CapacitorActivation Activate(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now
+    ) => ActivateCycle(pilotId, moduleId, effect, targetId, locks, now, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal CapacitorActivation ActivateOverloaded(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now
+    ) => ActivateCycle(pilotId, moduleId, effect, targetId, locks, now, true);
+
+    private CapacitorActivation ActivateCycle(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool overloaded
+    )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -83,7 +110,12 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         var target = ReadTarget(world, catalog, targetId, system, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(world, catalog, source);
+        var calculation = FittingCalculation.Read(
+            world,
+            catalog,
+            source,
+            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        );
         var module = CapacitorWarfareRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var sourceAttributes = PilotFittingStore.ShipAttributes(world, catalog, source, calculation: calculation);
         var targetAttributes = target.Attributes;
@@ -179,8 +211,13 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         {
             world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = source.ActiveShipId });
         }
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, source.ActiveShipId, heat);
+        }
         events.Publish(new(source.Id, source.ActiveShipId));
         if (target.Pilot is { } receiver)
         {
@@ -258,9 +295,16 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
     public void Stop(long pilotId, long shipId, long moduleId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         if (world.Set<OwnedItem>().Any(i => i.Id == moduleId && i.OwnerId == pilotId && i.LocationId == shipId))
         {
-            world.Set<ActiveFittedModule>().Where(i => i.ModuleId == moduleId && i.ShipId == shipId).ExecuteDelete();
+            ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            if (world.Set<ActiveFittedModule>().SingleOrDefault(i => i.ModuleId == moduleId && i.ShipId == shipId) is { } active)
+            {
+                world.Remove(active);
+            }
+            world.SaveChanges();
         }
+        transaction.Commit();
     }
 }

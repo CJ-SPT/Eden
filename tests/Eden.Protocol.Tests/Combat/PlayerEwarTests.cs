@@ -113,7 +113,7 @@ public sealed partial class PlayerEwarTests
         return f;
     }
 
-    private static PlayerEwarStore Store(Fixture f, double roll = 0) => new(new(f.Db.Path), new Roll(roll));
+    private static PlayerEwarStore Store(Fixture f, double roll = 0) => new(new(f.Db.Path), new Roll(roll), f.Clock);
 
     private static long Wing(Fixture f) => f.Db.Store.FindPilot(1000002)!.ShipId;
 

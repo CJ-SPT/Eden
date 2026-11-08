@@ -9,6 +9,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -24,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls) : IPilotElectronicWarfare
+internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls, TimeProvider clock) : IPilotElectronicWarfare
 {
     public bool IsOnline(long pilotId, long shipId, long moduleId) =>
         LiveReadModels.Find(database.Path)?.EwarModuleOnline(pilotId, shipId, moduleId, ReadOnline)
@@ -62,6 +63,26 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         TackleTarget? target,
         IReadOnlySet<long> lockedTargets,
         long now
+    ) => ActivateCycle(pilotId, moduleId, effect, target, lockedTargets, now, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal ElectronicWarfareActivation ActivateOverloaded(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        TackleTarget? target,
+        IReadOnlySet<long> lockedTargets,
+        long now
+    ) => ActivateCycle(pilotId, moduleId, effect, target, lockedTargets, now, true);
+
+    private ElectronicWarfareActivation ActivateCycle(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        TackleTarget? target,
+        IReadOnlySet<long> lockedTargets,
+        long now,
+        bool overloaded
     )
     {
         using WorldDbContext world = new(database.Path);
@@ -86,7 +107,12 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        var calculation = FittingCalculation.Read(
+            world,
+            catalog,
+            pilot,
+            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        );
         var module = PlayerEwarRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
@@ -152,8 +178,13 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = expires;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, expires) : null;
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(module, target, capacitor, [contact]);
 
         double Distance(Target victim) =>
@@ -241,7 +272,7 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
                 && ReadTarget(world, catalog, new(row.TargetId, row.TargetKind), row.SystemId, now) is not null;
             if (!valid)
             {
-                world.Remove(row);
+                Remove(world, row, now);
             }
         }
         world.SaveChanges();
@@ -252,11 +283,18 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        world.Set<WorldPlayerEwar>().Where(e => e.PilotId == pilotId && e.SourceShipId == shipId && e.ModuleId == moduleId).ExecuteDelete();
-        if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        if (
+            world.Set<WorldPlayerEwar>().SingleOrDefault(e => e.PilotId == pilotId && e.SourceShipId == shipId && e.ModuleId == moduleId) is
+            { } row
+        )
+        {
+            Remove(world, row, Now);
+        }
+        else if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
         {
             world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == shipId).ExecuteDelete();
         }
+        world.SaveChanges();
         transaction.Commit();
     }
 
@@ -264,21 +302,39 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        var modules = world
-            .Set<WorldPlayerEwar>()
-            .Where(e => e.PilotId == pilotId && e.SourceShipId == shipId)
-            .Select(e => e.ModuleId)
-            .Distinct()
-            .ToArray();
-        world
+        var rows = world
             .Set<WorldPlayerEwar>()
             .Where(e =>
                 e.PilotId == pilotId && e.SourceShipId == shipId
                 || incoming && e.TargetId == shipId && e.TargetKind == TackleTargetKind.Ship
             )
-            .ExecuteDelete();
-        world.Set<ActiveFittedModule>().Where(m => modules.Contains(m.ModuleId) && m.ShipId == shipId).ExecuteDelete();
+            .ToArray();
+        long now = Now;
+        foreach (var row in rows)
+        {
+            Remove(world, row, now);
+        }
+        world.SaveChanges();
         transaction.Commit();
+    }
+
+    private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    private static void Remove(WorldDbContext world, WorldPlayerEwar row, long now)
+    {
+        var contact = row.Contact();
+        ShipHeatPersistence.CancelSource(
+            world,
+            row.PilotId,
+            row.SourceShipId,
+            new HeatCycleKey(row.ModuleId, contact.StartedAt, contact.ExpiresAt),
+            now
+        );
+        if (world.Set<ActiveFittedModule>().SingleOrDefault(a => a.ModuleId == row.ModuleId && a.ShipId == row.SourceShipId) is { } active)
+        {
+            world.Remove(active);
+        }
+        world.Remove(row);
     }
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> NpcAttributes(

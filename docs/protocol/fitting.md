@@ -1687,3 +1687,52 @@ Not performed; agent client testing is disabled. These overload paths remain int
 ### Optional maintainer checks
 
 None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration.
+
+## Paid electronic and remote support overload cycles, November 8, 2026
+
+Milestone 6's internal paid producers now include player ECM, dampeners, tracking/guidance disruption and target painting; remote tracking/sensor assistance; and capacitor transfers, neutralizers and nosferatu. Each selected module uses its earned overload graph for the funded cycle. EWAR and assistance persist that profile in their recipient contact, including compatible scripts. Capacitor modules use the modified duration while retaining their established payment, percentage, impedance and pool rules. Payment, effects, cooldowns, aggression and rack heat commit together; heat and capacitor events publish after commit. Normal calls still select ordinary cycles. No player overload control, new admission or production overheating flag is enabled.
+
+Stop and travel remove stored effects and paid heat together, preserving spent resources, generated temperature and cooldowns. EWAR incoming cancellation and invalid-target sweep now also remove the corresponding source activation marker. Remote assistance retains its existing mutual deletion triggers between effect and marker; the store deletes the effect once rather than scheduling both deletions through EF. The heat owner observes assistance membership changes and validates its exact live source key against the remaining projected effect. Recipient docking/system transfer and source burnout therefore stop heat at the physical cleanup boundary, even when the next read arrives later. Ordinary coordinate changes do not add polling work. The existing cold restore policy for bounded paid heat remains unchanged.
+
+The recipient receives the actual overloaded bonuses: sensor assistance changes targeting attributes, and a scripted tracking link changes the recipient's fitted weapon. Stop restores the weapon's baseline. Normal/overloaded repeat cycles select their respective profiles without accumulating an overlay. Capacitor transfers/drains update both pilot pools once; rejected duplicate starts cannot repeat the transfer or publish another event. Rejected heat insertion rolls back pools, effects and cooldowns; rejected removal preserves the effect and heat source. Foreign stops and missing Thermodynamics leave paid state unchanged.
+
+The [overheating foundation](#overheating-calculation-foundation-november-7-2026) remains the build-3662168 catalog and pinned temperature evidence. Carbon Destiny's [ordered ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) remains the authoritative-update ordering reference. No packet shape, movement arithmetic or stochastic damage approximation changes.
+
+### Automated validation
+
+Development started with exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.ElectronicSupportHeatTests.EwarCommitsTheSelectedNativeOverloadProfileWithItsPaidContactAndHeat&DisplayName~1948`: **1 passed**, **5.65 seconds** (feature build **2.89 seconds**). The initial **29-case** selection passed **23 cases** and failed six test expectations (**27.96 seconds**): optional sensor bonus attributes needed their catalog defaults, and an artificial targeting-range input exceeded the native boosted-range bound. With valid inputs and catalog-aware expectations, all **29 cases** passed (**23.04 seconds**, build **3.07 seconds**).
+
+The **49-case** expansion passed **45 cases** and exposed four remote-assistance double-deletion failures (**64.68 seconds**, build **5.34 seconds**). The existing SQL trigger already removes the marker when its effect is deleted; cleanup now schedules only the effect deletion. Heat membership invalidation also follows those physical triggers. Exact stop/travel/recipient-weapon method filters then passed **8 cases** (**11.66 seconds**, build **3.71 seconds**). The subsequent repeat, warmed-read, NPC and checkpoint selection passed **13 of 14 cases** (**15.11 seconds**); its remaining fixture attempted ordinary offlining in space. The physical source-removal case now uses the existing burnout transition, and the exact physical-cleanup filter passed all **3 cases** (**7.15 seconds**, build **3.00 seconds**). No production fitting restriction was relaxed.
+
+The final affected filter is:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwar'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.CapacitorWarfare'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteAssistance'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorld'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentRead'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitialization'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigration'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+The final affected selection passed **738 cases**, with zero failed/skipped, in **257.06 seconds** (feature build **1.09 seconds**). It includes **63 new cases** covering native overload profiles and scripts, actual recipient weapon/targeting changes, both capacitor pools, repeated starts, normal/overloaded repeats, source/recipient cleanup, NPC retirement, ownership, skill rejection, insertion/removal rollback, delayed physical cleanup, and detached/reopened checkpoints. Three 100-frame variants assert **zero SQL commands, connection opens and fitting calculations** for warmed heat and recipient snapshots. Existing service/protocol and immediate runtime/persistence dependencies are included. TRX: `artifacts/feature-tests/results/156424f25de442eeb842c8deea6a8ed1/tests.trx`.
+
+Pinned tool and solution restores passed. The final root build passed with zero warnings/errors in **3.47 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **0.93 seconds** combined). Formatting verification passed across **1,134 files**, including the 140-character width check, in **15.86 seconds**. Documentation checks verified **525 local links and anchors**; whitespace verification passed. No full .NET suite was requested or run. Catalog payloads, fixture data and the production coverage inventory are unchanged.
+
+The cases use representative T1/T2 profiles, declared script variants, pilot and NPC targets, explicit artificial fitting budgets and private test worlds. They do not establish real corvette fits or additional hull admission. Other producer families, native module/rack controls, stochastic heat damage/spread, scoped burnout orchestration and resource resizing remain open in milestone 6. NPC neutralizer repair suppression and reactive-hardener timing retain their separate evidence blockers. The full 23-stage program remains active.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. These overload paths remain internal; native overload presentation, input and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration.

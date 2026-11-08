@@ -147,7 +147,13 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         bool positionMembership = changes.Any(c => c.Table == "WorldPositionMembership");
         if (
             !changes.Any(c =>
-                c.Table is "schema" or "WorldShip" or "WorldShipHeat" or "WorldFitRevision" or "WorldModuleCondition"
+                c.Table
+                    is "schema"
+                        or "WorldShip"
+                        or "WorldShipHeat"
+                        or "WorldFitRevision"
+                        or "WorldModuleCondition"
+                        or "WorldRemoteAssistance"
                 || positionMembership && c.Table == "WorldPosition"
             )
         )
@@ -168,6 +174,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     || c.Table == "WorldFitRevision" && c.Id == loaded.PilotId
                     || positionMembership && c.Table == "WorldPosition" && c.Id == loaded.ShipId
                     || c.Table == "WorldModuleCondition" && loaded.State.Cycles.Any(s => s.ModuleId == c.Id)
+                    || c.Table == "WorldRemoteAssistance" && loaded.State.Cycles.Any(s => s.ModuleId == c.Id)
                 )
             )
             {

@@ -10,6 +10,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
@@ -24,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilotRemoteAssistance
+internal sealed class PilotRemoteAssistanceStore(WorldDatabase database, TimeProvider clock) : IPilotRemoteAssistance
 {
     public RemoteAssistanceActivation Activate(
         long pilotId,
@@ -33,6 +34,26 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
         long targetId,
         IReadOnlySet<long> locks,
         long now
+    ) => ActivateCycle(pilotId, moduleId, effect, targetId, locks, now, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal RemoteAssistanceActivation ActivateOverloaded(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now
+    ) => ActivateCycle(pilotId, moduleId, effect, targetId, locks, now, true);
+
+    private RemoteAssistanceActivation ActivateCycle(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool overloaded
     )
     {
         using WorldDbContext world = new(database.Path);
@@ -77,7 +98,12 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
                 throw new InvalidDataException("Load a compatible remote assistance script.");
             }
         }
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        var calculation = FittingCalculation.Read(
+            world,
+            catalog,
+            pilot,
+            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        );
         var module = RemoteAssistanceRules.Define(moduleId, item.TypeId, effect, calculation.Graph.Attributes(moduleId));
         var source = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         CheckAlive(pilot, source);
@@ -140,8 +166,13 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(contact, capacitor);
 
         void CheckAlive(Pilot owner, IReadOnlyDictionary<DogmaAttributeId, double> values)
@@ -202,14 +233,20 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        world
-            .Set<WorldRemoteAssistance>()
-            .Where(e => e.ModuleId == moduleId && e.PilotId == pilotId && e.SourceShipId == shipId)
-            .ExecuteDelete();
-        if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        if (
+            world
+                .Set<WorldRemoteAssistance>()
+                .SingleOrDefault(e => e.ModuleId == moduleId && e.PilotId == pilotId && e.SourceShipId == shipId) is
+            { } row
+        )
+        {
+            Remove(world, row, Now);
+        }
+        else if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
         {
             world.Set<ActiveFittedModule>().Where(e => e.ModuleId == moduleId && e.ShipId == shipId).ExecuteDelete();
         }
+        world.SaveChanges();
         transaction.Commit();
     }
 
@@ -221,11 +258,32 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database) : IPilo
         {
             var rows = world
                 .Set<WorldRemoteAssistance>()
-                .Where(e => e.SourceShipId == shipId && e.PilotId == pilotId || e.TargetId == shipId);
-            var modules = rows.Select(e => e.ModuleId).ToArray();
-            rows.ExecuteDelete();
-            world.Set<ActiveFittedModule>().Where(e => modules.Contains(e.ModuleId)).ExecuteDelete();
+                .Where(e => e.SourceShipId == shipId && e.PilotId == pilotId || e.TargetId == shipId)
+                .ToArray();
+            long now = Now;
+            foreach (var row in rows)
+            {
+                Remove(world, row, now);
+            }
+            world.SaveChanges();
         }
         transaction.Commit();
+    }
+
+    private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    private static void Remove(WorldDbContext world, WorldRemoteAssistance row, long now)
+    {
+        var contact = row.Contact();
+        ShipHeatPersistence.CancelSource(
+            world,
+            row.PilotId,
+            row.SourceShipId,
+            new HeatCycleKey(row.ModuleId, contact.StartedAt, contact.ExpiresAt),
+            now
+        );
+        // The existing effect-deletion trigger removes its active marker.
+        // Tracking both deletes would race that trigger during SaveChanges.
+        world.Remove(row);
     }
 }
