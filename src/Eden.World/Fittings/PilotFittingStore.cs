@@ -472,7 +472,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             ).ToDictionary();
         }
         // Deadlines are live state and must not be captured with the fitted graph.
-        if (module.GroupId is TackleDefinitions.WarpCoreStabilizerGroup or SignatureSuppressionRules.Group)
+        if (
+            module.GroupId is TackleDefinitions.WarpCoreStabilizerGroup or SignatureSuppressionRules.Group
+            || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
+        )
         {
             attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;
         }

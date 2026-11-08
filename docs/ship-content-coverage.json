@@ -31,17 +31,17 @@
     {
       "category": "Module",
       "state": "Partial",
-      "count": 1933
+      "count": 1939
     },
     {
       "category": "Module",
       "state": "Planned",
-      "count": 472
+      "count": 464
     },
     {
       "category": "Module",
       "state": "EvidenceBlocked",
-      "count": 7
+      "count": 9
     },
     {
       "category": "Module",
@@ -22061,7 +22061,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": false,
-      "state": "Planned",
+      "state": "EvidenceBlocked",
       "effects": [
         11,
         16,
@@ -22077,7 +22077,13 @@
           "role": null
         }
       ],
-      "issues": []
+      "issues": [
+        {
+          "state": "EvidenceBlocked",
+          "milestone": "AdvancedDefenses",
+          "reason": "Pinned reactive-hardener damage sampling and adaptation timing remain unverified; fitting simulation is not server evidence."
+        }
+      ]
     },
     {
       "typeId": 4405,
@@ -193888,8 +193894,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -193899,9 +193905,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -193915,8 +193935,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -193926,9 +193946,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -193942,8 +193976,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -193953,9 +193987,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -193969,8 +194017,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -193980,9 +194028,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -193996,8 +194058,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -194007,9 +194069,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -210249,8 +210325,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         11,
         16,
@@ -210260,9 +210336,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
-          "milestone": "StaticCatalogClosure",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AdvancedDefenses",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "TechTwoSubcapitals",
+          "evidence": "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone.",
           "role": null
         }
       ],
@@ -213713,7 +213803,7 @@
       "techLevel": 1,
       "metaGroup": 3,
       "admitted": false,
-      "state": "Planned",
+      "state": "EvidenceBlocked",
       "effects": [
         11,
         16,
@@ -213729,7 +213819,13 @@
           "role": null
         }
       ],
-      "issues": []
+      "issues": [
+        {
+          "state": "EvidenceBlocked",
+          "milestone": "AdvancedDefenses",
+          "reason": "Pinned reactive-hardener damage sampling and adaptation timing remain unverified; fitting simulation is not server evidence."
+        }
+      ]
     },
     {
       "typeId": 88710,

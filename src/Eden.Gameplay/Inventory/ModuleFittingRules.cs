@@ -50,7 +50,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == SignatureSuppressionRules.Group && effects.Contains(DogmaEffect.SignatureSuppression)
+            groupId == AssaultDamageControlRules.Group && effects.Contains(DogmaEffect.AssaultDamageControl)
+            || groupId == SignatureSuppressionRules.Group && effects.Contains(DogmaEffect.SignatureSuppression)
             || AncillaryRepairRules.Kind(groupId) is { } ancillary
                 && effects.Contains(AncillaryRepairRules.Effect(ancillary))
                 && !InventoryDefinitions.RequiresSpecificShip(attributes)

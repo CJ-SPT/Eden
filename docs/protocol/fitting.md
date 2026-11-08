@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Assault damage controls and reactive-hardener evidence, November 7, 2026](#assault-damage-controls-and-reactive-hardener-evidence-november-7-2026)
+
 - [Mutadaptive remote armor repairs, November 7, 2026](#mutadaptive-remote-armor-repairs-november-7-2026)
 
 - [Ship content milestone 2: hull and fitting foundation, November 7, 2026](#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026)
@@ -1172,3 +1174,44 @@ Development began with the exact `EveryStaticProfileUsesActualRodivaBonusesAndPa
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Optionally confirm the native Rodiva ramp presentation and both beam/ship animation effects. Automated checks establish event contents and timing, not rendering.
+
+## Assault damage controls and reactive-hardener evidence, November 7, 2026
+
+Milestone 5 now implements the **six ordinary static assault damage control profiles** in build 3662168, including T1/compact/enduring, T2, faction and officer tiers. Their group **60** remains shared with ordinary damage controls, so the catalog one-per-group fitted limit prevents combining an ordinary and assault damage control. The Abyssal template **52230** remains rejected. Group 60's six active profiles now map individually to Advanced Defenses in the coverage inventory; ordinary passive damage controls retain their previous classification.
+
+| Type | Profile | Capacitor | Paid duration |
+| --- | --- | --- | --- |
+| 47254 | Assault Damage Control I | 32 GJ | 8.775 s |
+| 47255 | EFFA Compact Assault Damage Control | 32 GJ | 8.775 s |
+| 47256 | FFR Enduring Assault Damage Control | 26 GJ | 8.775 s |
+| 47257 | Assault Damage Control II | 35 GJ | 10.125 s |
+| 47258 | Shadow Serpentis Assault Damage Control | 30 GJ | 10.8 s |
+| 84961 | Asine's Modified Assault Damage Control | 35 GJ | 12.5 s |
+
+The exact restrictions are heavy assault cruisers (**358**), assault frigates (**324**) and the individual Herald (**97793**, electronic-attack group 893). This checkpoint enables **no hull cohort**: all eligible hulls remain outside the current 235-hull assembly set. Production coverage records these six modules as **Partial** for milestone-15 hull consumers. Tests seed existing owned Wolf, Vagabond and Herald hulls with their real catalog attributes, budgets and earned requirements; they do not claim player-reachable T2 assembly or complete hull-role acceptance. The complete T2 cohorts remain in milestone 15.
+
+Online effect **2302** projects twelve module resonance attributes onto the ship by native pre-multiplication, covering all four damage types in shield, armor and structure. Active effect **7012**, `moduleBonusAssaultDamageControl`, post-assigns those twelve module attributes from **2746**, `resistanceMultiplier` (**0.25** on all six profiles). Activation therefore replaces the module's passive values with 0.25; it does not multiply an additional 0.25 into those passive values. Structure module attributes **974–977** map to ship structure attributes **113/111/109/110**. The shared Gameplay graph evaluates these assignments and their dependent ship multipliers. Catalog validation admits exactly those two modifier programs, fitting/online effects, restrictions and one-shot metadata; the generic passive parser is not relaxed to accept arbitrary assignments. Other armor/shield resistance modules retain their existing operator and stacking behavior. Health and damage consumers read the same committed fitting graph.
+
+Activation validates ownership, fitted low slot, online membership, hull restriction, earned skills, hull health and capacitor. Payment, positive `WorldActiveModule.ExpiresAt` and `WorldWeaponCooldown.ReadyAt` commit atomically. The cooldown is the end of the paid interval plus the catalog **150 seconds**. Repeated Activate requests are idempotent while active; requested repeats are normalized to zero. Manual deactivation finishes the paid burst. Offlining, docking, travel, loss and disconnect clear active work while retaining spent capacitor and the original cooldown. Online passive protection remains whenever the module remains online. Checkpoints/restart retain payment and cooldown but clear active bursts; a restart cannot replay or refund activation. Cleanup matches the original paid expiry, so a delayed old controller cannot remove a newer paid burst.
+
+This reuses world schema **105** and the existing world-owner timed expiry and SQL fallback. Resistance bonuses disappear before health/fitting reads at the exact deadline even when the source session is late. Native priming/HUD uses effect 7012, capacitor/resistance/next-activation notifications carry typed values, and observer contacts use `effects.Invulnerability`. SharedSpace prunes expired signature-suppression and assault-control contacts independently, once per expired membership, so observer refresh/re-entry cannot replay a stale burst. Warm active-membership reads use their actual active-row/item-membership dependencies.
+
+The two **reactive armor hardeners**, 4403 and 88709, remain unadmitted and now have an explicit **EvidenceBlocked** classification. Their pinned profiles expose initial armor resonances (0.85 and 0.84 respectively), duration/capacitor, shift amount 6 and active effect **4928**, `adaptiveArmorHardener`, but no modifier program defining adaptation. Inert client inspection found constants and the current-resistance tooltip, not an authoritative server algorithm. [EOS's simulator at c2cc80fd3b1951ac44be3702d59e5047cc7fa494](https://github.com/pyfa-org/eos/blob/c2cc80fd3b1951ac44be3702d59e5047cc7fa494/eos/sim/reactive_armor_hardener.py) models fitting outcomes and averages repeated resistance states; its tick/cycle model does not establish the pinned live server's damage-sampling window, adaptation deadline and edge behavior. The [original investigator discussion](https://github.com/pyfa-org/Pyfa/issues/680) also distinguishes combat-source cases. These are useful evidence, not authority to substitute a steady fitting profile for live adaptation. No simulator source was copied, and no approximate hardener was enabled. Milestone 5 remains open on that evidence; independent overheating work can proceed.
+
+Sources: read-only build-3662168 catalog fingerprint **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**; `tools/Export-AssaultDamageControlCatalog.py` exports all six static profiles, the mutation template, representative eligible/rejected hulls, ordinary controls, both reactive profiles and prerequisite/wreck closure into a **37-type** fixture. The hash-verified client archive remains SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Existing Carbon Destiny revision **114e89fa584f0e1a81eb0a679aabf41af8870072** and its ordered special-effect/history behavior are reused; no Blue codec, Destiny wire format or movement arithmetic changes are introduced. No client was launched or controlled.
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors in **3.84 seconds**. The final affected selection passed **186 cases**, including **49 new cases**, in **37.30 seconds** for the test command (feature build **1.09 seconds**). It covers every static profile and all twelve resistance channels, exact duration/cooldown boundaries, pure invalid profiles and overflow, owned eligible-hull fixtures with unchanged budgets, restricted/duplicate fitting, rejected activation with unchanged resources, stale cleanup after a newer payment, health/damage consumers, native one-shot priming/HUD/notifications, observer expiry/re-entry, cancellation, checkpoint and restart. The selection was:
+
+```text
+FullyQualifiedName~AssaultDamageControl|FullyQualifiedName~SignatureSuppression|FullyQualifiedName~HardenerTests|FullyQualifiedName~ModuleFittingTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~FittingConstraintTests|FullyQualifiedName~FittingCapabilityRulesTests|FullyQualifiedName~FittingSnapshotTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~FlightSessionTests
+```
+
+Paired complete owner/observer frames use the same 50 ms clock cadence, 40 warm-up frames and 40 measured frames per sample. Online-only control took **8.14 ms** total; active control took **6.02 ms** total. Both performed **zero SQL commands, connections and fitting calculations**; this establishes the warmed budget, not a speedup claim. A separate checkpoint took **13.05 ms**: capture **0.70 ms**, projection **0.21 ms**, writing **11.68 ms**, **1,380,352 bytes**.
+
+Both Python suites passed (**8 catalog**, **9 formatting** cases; **0.92 seconds** combined). Formatting verification passed across **1,095 files** in **14.46 seconds**, including the 140-character width check. The reproducible inventory retains **6,079 entries**, the exact **235 admitted hull IDs**, **801 charges** and **76 combat drones**. Admitted modules/rigs rise from 3,402 to **3,408**. Exactly **eight** entries change: six assault controls become admitted/Partial with their T2 consumer dependency, and the two reactive profiles become EvidenceBlocked. Fixture reproduction is byte-identical, source catalog bytes remain unchanged, and source overwrite is rejected (**9.70 seconds** combined evidence checks). Fixture SHA-256: **EA935F671A99E30EB1FBB006E1A1368E2D0CC3EFEB4DF0D42AE05001DD1F5EAD**. Local documentation links and anchors were checked. No full .NET suite was requested or run.
+
+Development began with the exact six-profile lifecycle method before expanding to the new rule/protocol/consumer cases. The first expanded run passed 46 of 47 cases and exposed an open audit SQL reader when nested catalog definitions initialized. Materializing the query fixed the immediate failure. The catalog-policy gate then rejected that direct feature-table access; the final implementation enumerates typed source records through the shared catalog boundary, with its exact coverage regression and all final checks passing. A formatting failure identified a long evidence string, which was split without an exception. A 185-case selection passed before the shared-reader correction; the final 186-case selection covers that correction and the additional stale-cleanup regression. Failed/intermediate checks are not counted as final validation.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After eligible T2 hull admission, optionally check the native resistance/cooldown display and burst graphics. Automated event verification does not establish rendering.

@@ -284,6 +284,15 @@ internal sealed record FittingCalculation(
         {
             if (
                 module.Item.Online
+                && module.GroupId == AssaultDamageControlRules.Group
+                && AssaultDamageControlCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+            )
+            {
+                var control = AssaultDamageControlRules.Define(module.Item.Id, module.Item.TypeId, moduleAttributes[module.Item.TypeId]);
+                modifiers.AddRange(AssaultDamageControlRules.Modifiers(control, ship.Id, true, activeModules.Contains(module.Item.Id)));
+            }
+            if (
+                module.Item.Online
                 && module.GroupId == SignatureSuppressionRules.Group
                 && SignatureSuppressionCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
             )

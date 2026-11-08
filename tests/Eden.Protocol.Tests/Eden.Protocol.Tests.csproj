@@ -18,6 +18,7 @@
     <EmbeddedResource Include="Fixtures/AncillaryRepairCatalog.json" />
     <EmbeddedResource Include="Fixtures/AncillaryRemoteRepairCatalog.json" />
     <EmbeddedResource Include="Fixtures/SignatureSuppressionCatalog.json" />
+    <EmbeddedResource Include="Fixtures/AssaultDamageControlCatalog.json" />
     <EmbeddedResource Include="Fixtures/RemoteAssistanceCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />

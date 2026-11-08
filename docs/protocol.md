@@ -30,6 +30,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Assault damage controls and reactive-hardener evidence, November 7, 2026](protocol/fitting.md#assault-damage-controls-and-reactive-hardener-evidence-november-7-2026)
+
 - [Mutadaptive remote armor repairs, November 7, 2026](protocol/fitting.md#mutadaptive-remote-armor-repairs-november-7-2026)
 
 - [Ship content milestone 2: hull and fitting foundation, November 7, 2026](protocol/fitting.md#ship-content-milestone-2-hull-and-fitting-foundation-november-7-2026)

@@ -29,7 +29,8 @@ internal sealed class ModuleActivationHandler(
     RemoteRepairHandler? remoteRepairs = null,
     CapacitorWarfareHandler? capacitorWarfare = null,
     RemoteAssistanceHandler? remoteAssistance = null,
-    SignatureSuppressionHandler? signatureSuppression = null
+    SignatureSuppressionHandler? signatureSuppression = null,
+    AssaultDamageControlHandler? assaultDamageControl = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -46,6 +47,8 @@ internal sealed class ModuleActivationHandler(
         }
         return BlueMarshal.Text(args[1]) switch
         {
+            AssaultDamageControlHandler.EffectName => assaultDamageControl?.Call(context, service, method, args)
+                ?? PilotCallResult.Unsupported,
             SignatureSuppressionHandler.EffectName => signatureSuppression?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             MiningWireDefinitions.EffectName => mining.Call(context, service, method, args, keywords),

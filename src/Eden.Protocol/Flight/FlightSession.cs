@@ -386,7 +386,8 @@ internal sealed class FlightSession(
             ElectronicWarfare: ModuleEffects.ElectronicWarfare,
             RemoteRepairs: ModuleEffects.RemoteRepairs,
             CapacitorEffects: ModuleEffects.CapacitorEffects,
-            SignatureSuppressions: ModuleEffects.SignatureSuppressions
+            SignatureSuppressions: ModuleEffects.SignatureSuppressions,
+            AssaultDamageControls: ModuleEffects.AssaultDamageControls
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -496,6 +497,12 @@ internal sealed class FlightSession(
     public void SetSignatureSuppressionEffect(SignatureSuppressionContact effect, bool active)
     {
         ModuleEffects.SetSignatureSuppressionEffect(Pilot.ShipId, effect, active);
+        PublishContact();
+    }
+
+    public void SetAssaultDamageControlEffect(AssaultDamageControlContact effect, bool active)
+    {
+        ModuleEffects.SetAssaultDamageControlEffect(Pilot.ShipId, effect, active);
         PublishContact();
     }
 

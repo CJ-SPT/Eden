@@ -205,6 +205,15 @@ internal sealed partial class LiveReadModels
     internal bool SignatureSuppressionActive(long pilot, long ship, long module, long now, Func<long, long, long, long> load) =>
         Read(_signatureSuppression, new(pilot, ship, module), () => load(pilot, ship, module)) > now;
 
+    private readonly ResidentSnapshot<EwarModuleKey, long> _assaultDamageControls = new(
+        "resident.assaultDamageControls",
+        "WorldActiveModule",
+        "WorldItemMembership"
+    );
+
+    internal bool AssaultDamageControlActive(long pilot, long ship, long module, long now, Func<long, long, long, long> load) =>
+        Read(_assaultDamageControls, new(pilot, ship, module), () => load(pilot, ship, module)) > now;
+
     private readonly ResidentSnapshot<long, IReadOnlyList<RemoteAssistanceContact>> _remoteAssistance = new(
         "resident.remoteAssistance",
         "WorldRemoteAssistance"

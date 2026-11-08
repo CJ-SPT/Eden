@@ -23,6 +23,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         RefreshLocalRepairs(ship, previous);
         RefreshHardeners(ship, previous);
         RefreshSignatureSuppression(ship, previous);
+        RefreshAssaultDamageControl(ship, previous);
         RefreshSupport(ship, previous);
         if (Changed(ship.Tackle, previous?.Tackle))
         {
@@ -284,6 +285,39 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         foreach (var effect in (ship.SignatureSuppressions ?? []).Except(previous?.SignatureSuppressions ?? []))
         {
             SignatureSuppressionEffect(ship.Pilot.ShipId, effect, true);
+        }
+    }
+
+    internal void AssaultDamageControlEffect(long ship, AssaultDamageControlContact effect, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                ship,
+                effect.Module.ItemId,
+                effect.Module.TypeId,
+                ship,
+                null,
+                AssaultDamageControlHandler.Graphic,
+                false,
+                active,
+                active,
+                effect.Module.DurationMilliseconds,
+                effect.Schedule.StartedAt
+            )
+        );
+
+    private void RefreshAssaultDamageControl(ShipContact ship, ShipContact? previous)
+    {
+        if (!Changed(ship.AssaultDamageControls, previous?.AssaultDamageControls))
+        {
+            return;
+        }
+        foreach (var effect in (previous?.AssaultDamageControls ?? []).Except(ship.AssaultDamageControls ?? []))
+        {
+            AssaultDamageControlEffect(ship.Pilot.ShipId, effect, false);
+        }
+        foreach (var effect in (ship.AssaultDamageControls ?? []).Except(previous?.AssaultDamageControls ?? []))
+        {
+            AssaultDamageControlEffect(ship.Pilot.ShipId, effect, true);
         }
     }
 

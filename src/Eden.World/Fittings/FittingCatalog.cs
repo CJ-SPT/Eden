@@ -33,6 +33,14 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (
+            type.GroupId == AssaultDamageControlRules.Group
+            && Effects(catalog, typeId).Contains(DogmaEffect.AssaultDamageControl)
+            && !AssaultDamageControlCatalog.Supported(catalog, typeId, type.GroupId)
+        )
+        {
+            return null;
+        }
         if (type.GroupId == SignatureSuppressionRules.Group && !SignatureSuppressionCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;

@@ -41,6 +41,8 @@ internal sealed record HardenerContact(Hardener Module, long StartedAt);
 
 internal sealed record SignatureSuppressionContact(SignatureSuppressor Module, SignatureSuppressionSchedule Schedule);
 
+internal sealed record AssaultDamageControlContact(AssaultDamageControl Module, AssaultDamageControlSchedule Schedule);
+
 internal sealed record ShieldBoostContact(long ModuleId, int TypeId, long StartedAt, double Duration);
 
 internal sealed record PropulsionContact(PropulsionModule Module, long StartedAt);
@@ -115,7 +117,8 @@ internal sealed record ShipContact(
     ElectronicWarfareSpaceContact[]? ElectronicWarfare = null,
     RemoteRepairCycle[]? RemoteRepairs = null,
     CapacitorCycle[]? CapacitorEffects = null,
-    SignatureSuppressionContact[]? SignatureSuppressions = null
+    SignatureSuppressionContact[]? SignatureSuppressions = null,
+    AssaultDamageControlContact[]? AssaultDamageControls = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -356,23 +359,33 @@ internal sealed class SharedSpace(IPilotCrimewatch? crimewatch = null, TimeProvi
                     && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)
-                .Select(ExpireSignatureSuppression)
+                .Select(ExpireTimedDefenses)
                 .ToArray();
         }
     }
 
-    private ShipContact ExpireSignatureSuppression(ShipContact ship)
+    private ShipContact ExpireTimedDefenses(ShipContact ship)
     {
-        if (ship.SignatureSuppressions is not { Length: > 0 } effects)
+        if (ship.SignatureSuppressions is not { Length: > 0 } && ship.AssaultDamageControls is not { Length: > 0 })
         {
             return ship;
         }
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        if (effects.All(e => e.Schedule.Active(now)))
+        bool signatureExpired = ship.SignatureSuppressions?.Any(e => !e.Schedule.Active(now)) ?? false;
+        bool assaultExpired = ship.AssaultDamageControls?.Any(e => !e.Schedule.Active(now)) ?? false;
+        if (!signatureExpired && !assaultExpired)
         {
             return ship;
         }
-        var current = ship with { SignatureSuppressions = effects.Where(e => e.Schedule.Active(now)).ToArray() };
+        var current = ship with
+        {
+            SignatureSuppressions = signatureExpired
+                ? ship.SignatureSuppressions!.Where(e => e.Schedule.Active(now)).ToArray()
+                : ship.SignatureSuppressions,
+            AssaultDamageControls = assaultExpired
+                ? ship.AssaultDamageControls!.Where(e => e.Schedule.Active(now)).ToArray()
+                : ship.AssaultDamageControls,
+        };
         _ships.TryUpdate(ship.Pilot.ShipId, current, ship);
         return current;
     }

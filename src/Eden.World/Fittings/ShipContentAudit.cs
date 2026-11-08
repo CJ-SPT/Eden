@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
+using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
+using Eden.World.Defenses;
 using Eden.World.Drones;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,6 +69,10 @@ internal static class ShipContentAudit
         List<ContentCoverageIssue> issues = [];
         bool admitted = false;
         var effects = FittingCatalog.Effects(catalog, type.Id).Select(effect => (int)effect).Order().ToArray();
+        if (category == InventoryCategory.Module && effects.Contains((int)DogmaEffect.AssaultDamageControl))
+        {
+            milestone = ShipContentMilestone.AdvancedDefenses;
+        }
         if (category == InventoryCategory.StructureModule || roadmap.ExternalGroups.Contains(type.GroupId))
         {
             issues.Add(new(ContentSupportState.ExternalDependency, ShipContentMilestone.StaticCatalogClosure, ExternalReason(category)));
@@ -119,6 +125,18 @@ internal static class ShipContentAudit
                     InventoryCategory.Drone => Drone(catalog, type, milestone!.Value, checks),
                     _ => false,
                 };
+                const int reactiveArmorHardenerGroup = 1150;
+                if (category == InventoryCategory.Module && type.GroupId == reactiveArmorHardenerGroup)
+                {
+                    issues.Add(
+                        new(
+                            ContentSupportState.EvidenceBlocked,
+                            ShipContentMilestone.AdvancedDefenses,
+                            "Pinned reactive-hardener damage sampling and adaptation timing remain unverified; "
+                                + "fitting simulation is not server evidence."
+                        )
+                    );
+                }
                 if (checks.Count == 0)
                 {
                     checks.Add(
@@ -283,6 +301,17 @@ internal static class ShipContentAudit
             checks.Add(new(ContentOperation.Overheating, false, ShipContentMilestone.Overheating, "Native overload routes have no owner."));
         }
         AddDroneConsumers(effects, checks);
+        if (effects.Any(e => e.EffectID == (int)DogmaEffect.AssaultDamageControl))
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    AssaultDamageControlCatalog.ConsumersAdmitted(catalog),
+                    ShipContentMilestone.TechTwoSubcapitals,
+                    "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone."
+                )
+            );
+        }
         if (type.GroupId == CapacitorWarfareRules.NeutralizerGroup)
         {
             checks.Add(

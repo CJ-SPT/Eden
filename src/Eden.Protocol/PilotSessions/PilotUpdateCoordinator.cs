@@ -70,7 +70,8 @@ internal sealed class PilotUpdateCoordinator(
     RemoteRepairHandler remoteRepairs,
     CapacitorWarfareHandler capacitorWarfare,
     RemoteAssistanceHandler remoteAssistance,
-    SignatureSuppressionHandler signatureSuppression
+    SignatureSuppressionHandler signatureSuppression,
+    AssaultDamageControlHandler assaultDamageControl
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -167,6 +168,7 @@ internal sealed class PilotUpdateCoordinator(
         remoteAssistance.Cancel(context);
         hardeners.Cancel(context);
         signatureSuppression.Cancel(context);
+        assaultDamageControl.Cancel(context);
         capacitorBoosters.Cancel(context);
         support.Cancel(context);
         tackle.Leave(context);
@@ -198,6 +200,7 @@ internal sealed class PilotUpdateCoordinator(
         drones.Advance(context);
         hardeners.Advance(context);
         signatureSuppression.Advance(context);
+        assaultDamageControl.Advance(context);
         support.Advance(context);
         using (SessionPerformance.Phase("update.tackle"))
         {
